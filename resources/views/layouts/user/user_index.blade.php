@@ -7,6 +7,7 @@
         </div>
     </x-slot>
 
+    
     <div class="flex justify-end mb-4">
         <x-button target="_blank" variant="primary" class="justify-end max-w-xs gap-2"
             x-on:click.prevent="$dispatch('open-modal', 'add-user')">
@@ -15,11 +16,9 @@
     </div>
 
 
-
-
     <div class="p-6 overflow-hidden bg-white rounded-md shadow-md dark:bg-dark-eval-1">
         <div class="flex justify-center">
-            <table class="min-w-full table-auto text-center">
+            <table class="min-w-full text-center table-auto">
                 <thead class="bg-gray-50">
                     <tr>
                         <th class="p-3">RUN</th>

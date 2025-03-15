@@ -30,7 +30,7 @@
         <span
             x-show="isSidebarOpen || isSidebarHovered"
             aria-hidden="true"
-            class="relative block ml-auto w-6 h-6"
+            class="relative block w-6 h-6 ml-auto"
         >
             <span
                 :class="open ? '-rotate-45' : 'rotate-45'"

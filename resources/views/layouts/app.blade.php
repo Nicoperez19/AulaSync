@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -17,6 +18,11 @@
         [x-cloak] {
             display: none;
         }
+
+        .main-content, header {
+            transition: margin-left 150ms ease;
+        }
+    
     </style>
 
     <!-- Scripts -->
@@ -24,45 +30,32 @@
 </head>
 
 <body class="font-sans antialiased">
-    <div
-        x-data="mainState"
-        :class="{ dark: isDarkMode }"
-        x-on:resize.window="handleWindowResize"
-        x-cloak
-    >
+    <div x-data="mainState" :class="{ dark: isDarkMode }" x-on:resize.window="handleWindowResize" x-cloak>
+
         <div class="min-h-screen text-gray-900 bg-gray-100 dark:bg-dark-eval-0 dark:text-gray-200">
-            <!-- Sidebar -->
+            <!-- Navbar -->
+            <x-navbar />
             <x-sidebar.sidebar />
-
-            <!-- Page Wrapper -->
-            <div
-                class="flex flex-col min-h-screen"
-                :class="{
-                    'lg:ml-64': isSidebarOpen,
-                    'md:ml-16': !isSidebarOpen
-                }"
-                style="transition-property: margin; transition-duration: 150ms;"
-            >
-
-                <!-- Navbar -->
-                <x-navbar />
-
+            <div class="flex flex-col min-h-screen" style="transition-property: margin; transition-duration: 150ms;">
                 <!-- Page Heading -->
-                <header>
+                <header :style="{ 'margin-left': isSidebarOpen || isSidebarHovered ? '16rem' : '4rem' }">
                     <div class="p-4 sm:p-6">
                         {{ $header }}
                     </div>
                 </header>
 
                 <!-- Page Content -->
-                <main class="px-4 sm:px-6 flex-1">
+                <main class="flex-1 px-4 main-content sm:px-6"
+                    :style="{ 'margin-left': isSidebarOpen || isSidebarHovered ? '16rem' : '4rem' }">
                     {{ $slot }}
                 </main>
 
                 <!-- Page Footer -->
                 <x-footer />
             </div>
+
         </div>
     </div>
 </body>
+
 </html>
