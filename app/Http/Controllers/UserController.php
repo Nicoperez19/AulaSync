@@ -60,13 +60,33 @@ class UserController extends Controller
 
     public function edit(string $id)
     {
-        //
+        $users = User::all();
+        return view('layouts.user.user_index', compact('users'));
     }
 
-    public function update(Request $request, string $id)
+    public function update(Request $request)
     {
-        //
+        try {
+            $user = User::findOrFail($request->id);
+
+            $validatedData = $request->validate([
+                'run' => 'required|string|regex:/^\d{7,8}-[0-9K]$/|unique:users,run,' . $user->id,
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            ]);
+
+            $user->update([
+                'run' => $validatedData['run'],
+                'name' => $validatedData['name'],
+                'email' => $validatedData['email'],
+            ]);
+
+            return redirect()->back()->with('success', 'Usuario actualizado correctamente.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Error al actualizar el usuario.');
+        }
     }
+
 
 
     public function destroy(string $id)

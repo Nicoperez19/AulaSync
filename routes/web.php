@@ -24,17 +24,11 @@ Route::get('dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');//el ultimo es el nombre de la ruta simplemente.
 
 Route::middleware('auth')->group(function () {
-    Route::get('user/user_index', [UserController::class, 'index'])->name('users.index');
+    Route::get('/user/user_index', [UserController::class, 'index'])->name('users.index');
+    Route::post('/user/user_store', [UserController::class, 'store'])->name('users.add');
+    Route::delete('/user/user_delete/{id}', [UserController::class, 'destroy'])->name('users.delete');
+    Route::put('/user/user_update/{id}', [UserController::class, 'update'])->name('users.update');
 });
-
-Route::middleware('auth')->group(function () {
-    Route::post('user/user_store', [UserController::class, 'store'])->name('users.add');
-});
-
-Route::middleware('auth')->group(function () {
-    Route::delete('user/user_delete/{id}', [UserController::class, 'destroy'])->name('users.delete');
-});
-
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
