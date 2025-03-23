@@ -24,10 +24,6 @@
     </div>
 
     <div class="flex items-center gap-3">
-        <x-button type="button" class="hidden md:inline-flex" icon-only variant="secondary"
-            sr-text="Ir a la página de inicio">
-        </x-button>
-
         <x-button type="button" class="hidden md:inline-flex" icon-only variant="secondary" sr-text="Toggle dark mode"
             x-on:click="toggleTheme">
             <x-heroicon-o-moon x-show="!isDarkMode" aria-hidden="true" class="w-6 h-6" />
@@ -37,7 +33,7 @@
         <x-dropdown align="right" width="48">
             <x-slot name="trigger">
                 <button
-                    class="flex items-center p-2 text-sm font-medium text-gray-500 transition duration-150 ease-in-out rounded-md hover:text-gray-700 focus:outline-none focus:ring focus:ring-purple-500 focus:ring-offset-1 focus:ring-offset-white dark:focus:ring-offset-dark-eval-1 dark:text-gray-400 dark:hover:text-gray-200">
+                    class="flex items-center p-2 text-sm font-medium transition duration-150 ease-in-out rounded-md text-dark-blue-500 hover:text-gray-700 focus:outline-none focus:ring focus:ring-purple-500 focus:ring-offset-1 focus:ring-offset-white dark:focus:ring-offset-dark-eval-1 dark:text-gray-400 dark:hover:text-gray-200">
                     <div>{{ Auth::user()->name }}</div>
 
                     <div class="ml-1">
@@ -70,7 +66,8 @@
 </nav>
 
 <!-- Mobile bottom bar -->
-<div class="fixed inset-x-0 bottom-0 flex items-center justify-between px-4 py-4 bg-white sm:px-6 md:hidden dark:bg-dark-eval-1">
+<div
+    class="fixed inset-x-0 bottom-0 flex items-center justify-between px-4 py-4 bg-white sm:px-6 md:hidden dark:bg-dark-eval-1">
     <x-button type="button" icon-only variant="secondary" sr-text="Search">
         <x-heroicon-o-search aria-hidden="true" class="w-6 h-6" />
     </x-button>

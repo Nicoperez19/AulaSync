@@ -1,18 +1,19 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 use Illuminate\Validation\Rules;
-use App\Http\Controllers\Exception;
 
 class UserController extends Controller
 {
-
     public function index()
     {
         $users = User::all();
@@ -23,7 +24,6 @@ class UserController extends Controller
     {
     }
 
-
     public function store(Request $request)
     {
         try {
@@ -32,6 +32,7 @@ class UserController extends Controller
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
                 'password' => ['required', Rules\Password::defaults()],
+                'roles' => 'required|array', // Validación de roles
             ]);
 
             $user = User::create([
@@ -41,58 +42,74 @@ class UserController extends Controller
                 'password' => Hash::make($validatedData['password']),
             ]);
 
+            // Asignar roles y permisos
+            $user->syncRoles($validatedData['roles']); // Sincronizar roles
+
             event(new Registered($user));
 
             return redirect()->route('users.index')->with('success', 'Usuario creado exitosamente.');
 
         } catch (\Exception $e) {
-            // dd($e->getMessage()); // Agregar esto para depurar
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al crear el usuario. Por favor, intente nuevamente.'])->withInput();
         }
     }
 
-
     public function show(string $id)
     {
-        //
     }
 
-
-    public function edit(string $id)
+    public function edit($id)
     {
-        $users = User::all();
-        return view('layouts.user.user_index', compact('users'));
+        $user = User::findOrFail($id);
+        $roles = Role::all();
+        $permissions = Permission::all();
+        return view('layouts.user.user_update', compact('user', 'roles', 'permissions'));
     }
 
-    public function update(Request $request)
+    public function update(Request $request, $id, Role $role)
     {
         try {
-            $user = User::findOrFail($request->id);
+            $user = User::findOrFail($id);
 
+            // Validación de datos
             $validatedData = $request->validate([
                 'run' => 'required|string|regex:/^\d{7,8}-[0-9K]$/|unique:users,run,' . $user->id,
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,' . $user->id],
+                'password' => ['nullable', Rules\Password::defaults()],
+                'roles' => 'required|array',
+                'permissions' => 'nullable|array', 
             ]);
 
+            // Actualizar datos básicos del usuario
             $user->update([
                 'run' => $validatedData['run'],
                 'name' => $validatedData['name'],
                 'email' => $validatedData['email'],
             ]);
 
-            return redirect()->back()->with('success', 'Usuario actualizado correctamente.');
+            // Si se proporciona una nueva contraseña, la actualiza
+            if ($request->filled('password')) {
+                $user->update([
+                    'password' => Hash::make($validatedData['password']),
+                ]);
+            }
+
+            $user->roles()->sync($request->roles);
+            $user->permissions()->sync($request->permissions);  
+
+            return redirect()->route('users.index')->with('success', 'Usuario actualizado exitosamente.');
+
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Error al actualizar el usuario.');
+            return redirect()->back()->withErrors(['error' => 'Hubo un problema al actualizar el usuario.'])->withInput();
         }
     }
 
 
-
-    public function destroy(string $id)
+    public function destroy($id)
     {
         try {
-            $user = User::findOrFail($id); // Usar findOrFail para lanzar una excepción si no se encuentra el usuario
+            $user = User::findOrFail($id);
             $user->delete();
             return redirect()->route('users.index')->with('success', 'Usuario eliminado exitosamente.');
 

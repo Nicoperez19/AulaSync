@@ -19,8 +19,24 @@
             display: none;
         }
 
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        .min-h-screen {
+            min-height: 100vh; 
+        }
+
         .main-content, header {
             transition: margin-left 150ms ease;
+        }
+
+        main {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
         }
     
     </style>

@@ -5,7 +5,7 @@
 
 @php
 
-$classes = 'transition-colors hover:text-gray-900 dark:hover:text-gray-100';
+$classes = 'transition-colors hover:text-black-900 dark:hover:text-black-100';
 
 $active
     ? $classes .= ' text-gray-900 dark:text-gray-200'

@@ -2,11 +2,10 @@
     <x-slot name="header">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <h2 class="text-xl font-semibold leading-tight">
-                {{ __('Usuarios') }}
+                {{ __('Usuarios/ Usuarios') }}
             </h2>
         </div>
     </x-slot>
-
 
     <div class="flex justify-end mb-4">
         <x-button target="_blank" variant="primary" class="justify-end max-w-xs gap-2"
@@ -14,7 +13,6 @@
             <x-icons.add class="w-6 h-6" aria-hidden="true" />
         </x-button>
     </div>
-
 
     <div class="p-6 overflow-hidden bg-white rounded-md shadow-md dark:bg-dark-eval-1">
         <div class="flex justify-center">
@@ -34,9 +32,8 @@
                             <td class="p-3">{{ $user->name }}</td>
                             <td class="p-3">{{ $user->email }}</td>
                             <td>
-                                <x-button target="_blank" href="" variant="primary"
-                                    class="justify-center max-w-xs gap-2" data-id="{{ $user->id }}"
-                                    x-on:click.prevent="$dispatch('open-modal', 'edit-user')">
+                                <x-button href="{{ route('users.edit', $user->id) }}" variant="primary"
+                                    class="justify-center max-w-xs gap-2">
                                     <x-icons.edit class="w-6 h-6" aria-hidden="true" />
                                 </x-button>
 
@@ -56,6 +53,7 @@
             </table>
         </div>
     </div>
+
     {{-- MODAL AGREGAR  --}}
     <div class="space-y-6">
         <x-modal name="add-user" :show="$errors->any()" focusable>
@@ -65,57 +63,56 @@
                 <div class="grid gap-6 p-6">
                     <!-- RUN -->
                     <div class="space-y-2">
-                        <x-form.label for="run" :value="__('RUN')" />
+                        <x-form.label for="run" :value="__('RUN')" class="text-left" />
 
                         <x-form.input-with-icon-wrapper>
                             <x-slot name="icon">
                                 <x-heroicon-o-user aria-hidden="true" class="w-5 h-5" />
                             </x-slot>
 
-                            <x-form.input withicon id="run_add" class="block w-full" type="text" name="run"
+                            <x-form.input withicon id="run_add" class="block w-1/2" type="text" name="run"
                                 :value="old('run')" required autofocus placeholder="{{ __('RUN') }}" />
                         </x-form.input-with-icon-wrapper>
                     </div>
 
-
                     <!-- Name -->
                     <div class="space-y-2">
-                        <x-form.label for="name" :value="__('Nombre')" />
+                        <x-form.label for="name" :value="__('Nombre')" class="text-left" />
 
                         <x-form.input-with-icon-wrapper>
                             <x-slot name="icon">
                                 <x-heroicon-o-user aria-hidden="true" class="w-5 h-5" />
                             </x-slot>
 
-                            <x-form.input withicon id="name_add" class="block w-full" type="text" name="name"
+                            <x-form.input withicon id="name_add" class="block w-1/2" type="text" name="name"
                                 :value="old('name')" required autofocus placeholder="{{ __('Nombre') }}" />
                         </x-form.input-with-icon-wrapper>
                     </div>
 
                     <!-- Email Address -->
                     <div class="space-y-2">
-                        <x-form.label for="email" :value="__('Correo')" />
+                        <x-form.label for="email" :value="__('Correo')" class="text-left" />
 
                         <x-form.input-with-icon-wrapper>
                             <x-slot name="icon">
                                 <x-heroicon-o-mail aria-hidden="true" class="w-5 h-5" />
                             </x-slot>
 
-                            <x-form.input withicon id="email_add" class="block w-full" type="email" name="email"
+                            <x-form.input withicon id="email_add" class="block w-1/2" type="email" name="email"
                                 :value="old('email')" required placeholder="{{ __('Correo') }}" />
                         </x-form.input-with-icon-wrapper>
                     </div>
 
                     <!-- Password -->
                     <div class="space-y-2">
-                        <x-form.label for="password" :value="__('Contraseña')" />
+                        <x-form.label for="password" :value="__('Contraseña')" class="text-left" />
 
                         <x-form.input-with-icon-wrapper>
                             <x-slot name="icon">
                                 <x-heroicon-o-lock-closed aria-hidden="true" class="w-5 h-5" />
                             </x-slot>
 
-                            <x-form.input withicon id="password_add" class="block w-full" type="password"
+                            <x-form.input withicon id="password_add" class="block w-1/2" type="password"
                                 name="password" required autocomplete="new-password"
                                 placeholder="{{ __('Contraseña') }}" />
                         </x-form.input-with-icon-wrapper>
@@ -124,83 +121,12 @@
                     <div>
                         <x-button class="justify-center w-full gap-2">
                             <x-heroicon-o-user-add class="w-6 h-6" aria-hidden="true" />
-
                             <span>{{ __('Agregar') }}</span>
                         </x-button>
                     </div>
-
-
                 </div>
             </form>
         </x-modal>
     </div>
-
-    {{-- MODAL EDITAR --}}
-    {{-- MODAL EDITAR --}}
-    <x-modal name="edit-user" :show="$errors->any()" focusable>
-        <form method="POST" action="{{ route('users.update', $user->id) }}">
-            @csrf
-            @method('PUT')
-
-            <div class="grid gap-6 p-6">
-                <!-- RUN -->
-                <div class="space-y-2">
-                    <x-form.label for="run" :value="__('RUN')" />
-                    <x-form.input-with-icon-wrapper>
-                        <x-slot name="icon">
-                            <x-heroicon-o-user aria-hidden="true" class="w-5 h-5" />
-                        </x-slot>
-                        <x-form.input withicon id="run_update" class="block w-full" type="text" name="run"
-                            value="{{ old('run', $user->run) }}" required autofocus
-                            placeholder="{{ __('RUN') }}" />
-                    </x-form.input-with-icon-wrapper>
-                </div>
-
-                <!-- Name -->
-                <div class="space-y-2">
-                    <x-form.label for="name" :value="__('Nombre')" />
-                    <x-form.input-with-icon-wrapper>
-                        <x-slot name="icon">
-                            <x-heroicon-o-user aria-hidden="true" class="w-5 h-5" />
-                        </x-slot>
-                        <x-form.input withicon id="name_update" class="block w-full" type="text" name="name"
-                            value="{{ old('name', $user->name) }}" required autofocus
-                            placeholder="{{ __('Nombre') }}" />
-                    </x-form.input-with-icon-wrapper>
-                </div>
-
-                <!-- Email Address -->
-                <div class="space-y-2">
-                    <x-form.label for="email" :value="__('Correo')" />
-                    <x-form.input-with-icon-wrapper>
-                        <x-slot name="icon">
-                            <x-heroicon-o-mail aria-hidden="true" class="w-5 h-5" />
-                        </x-slot>
-                        <x-form.input withicon id="email_update" class="block w-full" type="email" name="email"
-                            value="{{ old('email', $user->email) }}" required placeholder="{{ __('Correo') }}" />
-                    </x-form.input-with-icon-wrapper>
-                </div>
-
-                <!-- Password -->
-                <div class="space-y-2">
-                    <x-form.label for="password" :value="__('Contraseña')" />
-                    <x-form.input-with-icon-wrapper>
-                        <x-slot name="icon">
-                            <x-heroicon-o-lock-closed aria-hidden="true" class="w-5 h-5" />
-                        </x-slot>
-                        <x-form.input withicon id="password_update" class="block w-full" type="password"
-                            name="password" placeholder="{{ __('Contraseña') }}" />
-                    </x-form.input-with-icon-wrapper>
-                </div>
-
-                <div>
-                    <x-button class="justify-center w-full gap-2">
-                        <x-icons.ajust class="w-6 h-6" aria-hidden="true" />
-                        <span>{{ __('Editar') }}</span>
-                    </x-button>
-                </div>
-            </div>
-        </form>
-    </x-modal>
 
 </x-app-layout>

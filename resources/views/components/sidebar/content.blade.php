@@ -6,12 +6,18 @@
         </x-slot>
     </x-sidebar.link>
 
-    <x-sidebar.link title="Users" href="{{ route('users.index') }}" :isActive="request()->routeIs('users')">
-        <x-slot name="icon">
-            <x-icons.github class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
-        </x-slot>
-    </x-sidebar.link>
 
+
+    @role('admin')
+        <x-sidebar.dropdown title="Usuarios" :active="Str::startsWith(request()->route()->uri(), 'users')">
+            <x-slot name="icon">
+                <x-icons.user class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
+            </x-slot>
+            <x-sidebar.sublink title="Usuarios" href="{{ route('users.index') }}" :active="request()->routeIs('users.index')" />
+            <x-sidebar.sublink title="Roles" href="{{ route('roles.index') }}" :active="request()->routeIs('roles.index')" />
+            <x-sidebar.sublink title="Permisos" href="" :active="request()->routeIs('permissions.index')" />
+        </x-sidebar.dropdown>
+    @endrole
     {{-- <x-sidebar.dropdown title="Buttons" :active="Str::startsWith(request()->route()->uri(), 'buttons')">
         <x-slot name="icon">
             <x-heroicon-o-view-grid class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
