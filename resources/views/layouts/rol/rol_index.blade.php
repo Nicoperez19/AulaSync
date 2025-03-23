@@ -50,7 +50,7 @@
 
     {{-- Modal para agregar rol --}}
     <x-modal name="add-role" :show="$errors->any()" focusable>
-        <form method="POST" action="">
+        <form method="POST" action="{{ route('roles.add') }}">
             @csrf
             <div class="p-6 space-y-6">
                 <!-- Nombre del Rol -->
@@ -58,7 +58,24 @@
                     <x-form.label for="name" :value="__('Nombre del Rol')" class="text-left" />
                     <x-form.input id="name" class="block w-full" type="text" name="name" required autofocus placeholder="{{ __('Nombre del rol') }}" />
                 </div>
-
+    
+                <div class="p-4 bg-gray-100 border rounded-lg shadow-md">
+                    <div class="py-2 text-lg font-semibold text-center bg-gray-200 rounded-t-lg">
+                        {{ __('Permisos') }}
+                    </div>
+                    <div class="p-2 overflow-y-auto max-h-64">
+                        <ul>
+                            @foreach ($permissions as $permission)
+                                <li class="flex items-center mb-2">
+                                    <!-- Sin marcar por defecto -->
+                                    <input type="checkbox" name="permissions[]" value="{{ $permission->id }}" class="mr-2" />
+                                    <label for="permission-{{ $permission->id }}">{{ $permission->name }}</label>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                </div>
+    
                 <div class="flex justify-end">
                     <x-button class="justify-center w-full gap-2">
                         <x-heroicon-o-user-add class="w-6 h-6" aria-hidden="true" />
@@ -68,4 +85,5 @@
             </div>
         </form>
     </x-modal>
+    
 </x-app-layout>

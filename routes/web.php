@@ -1,4 +1,5 @@
 <?php
+use App\Http\Controllers\PermisionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UserController;
 
@@ -41,6 +42,16 @@ Route::group(['middleware' => ['permission:mantenedor de roles']], function () {
     Route::delete('/rol/rol_delete/{id}', [RoleController::class, 'destroy'])->name('roles.delete');
     Route::get('/rol/rol_edit/{id}', [RoleController::class, 'edit'])->name('roles.edit');
     Route::put('/rol/rol_update/{id}', [RoleController::class, 'update'])->name('roles.update');
+    Route::post('/rol/rol_store', [RoleController::class, 'store'])->name('roles.add');
+
+});
+
+Route::group(['middleware' => ['permission:mantenedor de permisos']], function () {
+    Route::get('/permission/permission_index', [PermisionController::class, 'index'])->name('permissions.index');
+    Route::delete('/permission/permission_delete/{id}', [PermisionController::class, 'destroy'])->name('permissions.delete');
+    Route::get('/permission/permission_edit/{id}', [PermisionController::class, 'edit'])->name('permissions.edit');
+    Route::put('/permission/permission_update/{id}', [PermisionController::class, 'update'])->name('permissions.update');
+    Route::post('/permission/permission_store', [PermisionController::class, 'store'])->name('permission.add');
 
 });
 

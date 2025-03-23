@@ -15,7 +15,7 @@
             </x-slot>
             <x-sidebar.sublink title="Usuarios" href="{{ route('users.index') }}" :active="request()->routeIs('users.index')" />
             <x-sidebar.sublink title="Roles" href="{{ route('roles.index') }}" :active="request()->routeIs('roles.index')" />
-            <x-sidebar.sublink title="Permisos" href="" :active="request()->routeIs('permissions.index')" />
+            <x-sidebar.sublink title="Permisos" href="{{ route('permissions.index') }}" :active="request()->routeIs('permissions.index')" />
         </x-sidebar.dropdown>
     @endrole
     {{-- <x-sidebar.dropdown title="Buttons" :active="Str::startsWith(request()->route()->uri(), 'buttons')">
