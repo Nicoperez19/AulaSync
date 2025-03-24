@@ -1,7 +1,7 @@
 <img 
     src="{{ asset('images/logo_active.png') }}" 
     alt="Logo"
-    class="block object-contain w-24 my-0 ml-0 sm:w-32 md:w-36 lg:w-52 xl:w-62"
+    class="block object-contain w-24 my-0 ml-0 sm:w-32 md:w-36 lg:w-48 xl:w-62"
 />
 
 
