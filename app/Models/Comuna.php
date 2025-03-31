@@ -14,6 +14,6 @@ class Comuna extends Model
     protected $fillable = ['nombre_comuna', 'id_provincia'];
     public function provincia()
     {
-        return $this->belongsTo(Provincia::class, 'id_provincia', 'id_provincia');
+        return $this->belongsTo(Provincia::class, 'provincias_id', 'id_provincia');
     }
 }

@@ -11,15 +11,15 @@ class Provincia extends Model
 
     protected $table = 'provincias';
     protected $primaryKey = 'id_provincia';
-    protected $fillable = ['nombre_provincia', 'id_region'];
+    protected $fillable = ['nombre_provincia ','regiones_id'];
 
     public function region()
     {
-        return $this->belongsTo(Region::class, 'id_region', 'id_region');
+        return $this->belongsTo(Region::class, 'regiones_id', 'id_region');
     }
 
     public function comunas()
     {
-        return $this->hasMany(Comuna::class, 'id_provincia', 'id_provincia');
+        return $this->hasMany(Comuna::class, 'provincias_id', 'id_provincia');
     }
 }

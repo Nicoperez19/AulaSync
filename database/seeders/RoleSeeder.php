@@ -14,14 +14,16 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         $role1 = Role::create(['name' => 'admin']);
-        $role2 = Role::create(['name' => 'user']);
+        $role2 = Role::create(['name' => 'Usuario']);
 
         $permission1 = Permission::create(['name' => 'dashboard']);
         $permission2 = Permission::create(['name' => 'mantenedor de roles']);
         $permission3 = Permission::create(['name' => 'mantenedor de permisos']);
+        $permission4 = Permission::create(['name' => 'mantenedor de universidades']);
 
         $role1->givePermissionTo($permission1);
         $role1->givePermissionTo($permission2);
         $role1->givePermissionTo($permission3);
+        $role1->givePermissionTo($permission4);
     }
 }

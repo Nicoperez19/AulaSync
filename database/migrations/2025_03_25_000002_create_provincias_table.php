@@ -12,10 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('provincias', function (Blueprint $table) {
-            $table->string('id_provincia',20)->primary();
-            $table->string('nombre_provincia', 100);
-            $table->string('id_region',20);
-            $table->foreign('id_region')->references('id_region')->on('regiones')->onDelete('cascade');
+            $table->id();
+            $table->string('nombre_provincia');
+            $table->foreignId('regiones_id')->constrained();
             $table->timestamps();
         });
     }

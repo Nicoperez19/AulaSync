@@ -185,4 +185,7 @@ return [
         // 'Example' => App\Facades\Example::class,
     ])->toArray(),
 
+    'dark_mode' => env('APP_DARK_MODE', false),
+
+
 ];

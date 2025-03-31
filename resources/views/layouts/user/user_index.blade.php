@@ -14,45 +14,9 @@
         </x-button>
     </div>
 
-    <div class="p-6 overflow-hidden bg-white rounded-md shadow-md dark:bg-dark-eval-1">
-        <div class="flex justify-center">
-            <table class="min-w-full text-center table-auto">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="p-3">RUN</th>
-                        <th class="p-3">Nombre</th>
-                        <th class="p-3">Email</th>
-                        <th class="p-3">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-black-200">
-                    @foreach ($users as $user)
-                        <tr>
-                            <td class="p-3">{{ $user->run }}</td>
-                            <td class="p-3">{{ $user->name }}</td>
-                            <td class="p-3">{{ $user->email }}</td>
-                            <td>
-                                <x-button href="{{ route('users.edit', $user->id) }}" variant="primary"
-                                    class="justify-center max-w-xs gap-2">
-                                    <x-icons.edit class="w-6 h-6" aria-hidden="true" />
-                                </x-button>
+    @livewire('users-table')
+    
 
-                                <form action="{{ route('users.delete', $user->id) }}" method="POST"
-                                    style="display: inline;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <x-button target="_blank" href="" variant="danger"
-                                        class="justify-center max-w-xs gap-2" data-id="{{ $user->id }}">
-                                        <x-icons.delete class="w-6 h-6" aria-hidden="true" />
-                                    </x-button>
-                                </form>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
-    </div>
 
     {{-- MODAL AGREGAR  --}}
     <div class="space-y-6">
@@ -61,7 +25,6 @@
                 @csrf
 
                 <div class="grid gap-6 p-6">
-                    <!-- RUN -->
                     <div class="space-y-2">
                         <x-form.label for="run" :value="__('RUN')" class="text-left" />
 
@@ -75,7 +38,6 @@
                         </x-form.input-with-icon-wrapper>
                     </div>
 
-                    <!-- Name -->
                     <div class="space-y-2">
                         <x-form.label for="name" :value="__('Nombre')" class="text-left" />
 
@@ -89,7 +51,6 @@
                         </x-form.input-with-icon-wrapper>
                     </div>
 
-                    <!-- Email Address -->
                     <div class="space-y-2">
                         <x-form.label for="email" :value="__('Correo')" class="text-left" />
 
@@ -103,7 +64,6 @@
                         </x-form.input-with-icon-wrapper>
                     </div>
 
-                    <!-- Password -->
                     <div class="space-y-2">
                         <x-form.label for="password" :value="__('Contraseña')" class="text-left" />
 
@@ -112,11 +72,64 @@
                                 <x-heroicon-o-lock-closed aria-hidden="true" class="w-5 h-5" />
                             </x-slot>
 
-                            <x-form.input withicon id="password_add" class="block w-1/2" type="password"
-                                name="password" required autocomplete="new-password"
-                                placeholder="{{ __('Contraseña') }}" />
+                            <x-form.input withicon id="password_add" class="block w-1/2" type="password" name="password"
+                                required autocomplete="new-password" placeholder="{{ __('Contraseña') }}" />
                         </x-form.input-with-icon-wrapper>
                     </div>
+
+                    <div class="space-y-2">
+                        <x-form.label for="celular" :value="__('Celular')" class="text-left" />
+
+                        <x-form.input-with-icon-wrapper>
+                            <x-slot name="icon">
+                                <x-heroicon-o-phone aria-hidden="true" class="w-5 h-5" />
+                            </x-slot>
+
+                            <x-form.input withicon id="celular_add" class="block w-1/2" type="text" name="celular"
+                                :value="old('celular')" required placeholder="{{ __('Celular') }}" />
+                        </x-form.input-with-icon-wrapper>
+                    </div>
+
+                    <div class="space-y-2">
+                        <x-form.label for="direccion" :value="__('Dirección')" class="text-left" />
+
+                        <x-form.input-with-icon-wrapper>
+                            <x-slot name="icon">
+                                <x-heroicon-o-home aria-hidden="true" class="w-5 h-5" />
+                            </x-slot>
+
+                            <x-form.input withicon id="direccion_add" class="block w-1/2" type="text"
+                                name="direccion" :value="old('direccion')" required placeholder="{{ __('Dirección') }}" />
+                        </x-form.input-with-icon-wrapper>
+                    </div>
+
+                    <div class="space-y-2">
+                        <x-form.label for="fecha_nacimiento" :value="__('Fecha de Nacimiento')" class="text-left" />
+
+                        <x-form.input-with-icon-wrapper>
+                            <x-slot name="icon">
+                                <x-heroicon-o-calendar aria-hidden="true" class="w-5 h-5" />
+                            </x-slot>
+
+                            <x-form.input withicon id="fecha_nacimiento_add" class="block w-1/2" type="date"
+                                name="fecha_nacimiento" :value="old('fecha_nacimiento')" required />
+                        </x-form.input-with-icon-wrapper>
+                    </div>
+
+                    <div class="space-y-2">
+                        <x-form.label for="anio_ingreso" :value="__('Año de Ingreso')" class="text-left" />
+
+                        <x-form.input-with-icon-wrapper>
+                            <x-slot name="icon">
+                                <x-heroicon-o-clock aria-hidden="true" class="w-5 h-5" />
+                            </x-slot>
+
+                            <x-form.input withicon id="anio_ingreso_add" class="block w-1/2" type="number"
+                                name="anio_ingreso" :value="old('anio_ingreso')" required
+                                placeholder="{{ __('Año de Ingreso') }}" />
+                        </x-form.input-with-icon-wrapper>
+                    </div>
+
 
                     <div>
                         <x-button class="justify-center w-full gap-2">

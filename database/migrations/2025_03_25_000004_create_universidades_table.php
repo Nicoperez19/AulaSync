@@ -7,7 +7,9 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration {
     /**
      * Run the migrations.
-     */
+     */    
+    protected $table = 'universidades'; 
+
     public function up(): void
     {
         Schema::create('universidades', function (Blueprint $table) {
@@ -15,8 +17,8 @@ return new class extends Migration {
             $table->string('nombre_universidad', 100);
             $table->string('direccion_universidad', 255);
             $table->string('telefono_universidad', 20)->nullable();
-            $table->string('id_comuna', 20);
-            $table->foreign('id_comuna')->references('id_comuna')->on('comunas')->onDelete('cascade');
+            $table->foreignId('comunas_id')->constrained();
+            $table->string('imagen_logo')->nullable();
             $table->timestamps();
         });
     }

@@ -9,9 +9,9 @@ class Region extends Model
 {
     use HasFactory;
 
-    protected $table = 'regions';
+    protected $table = 'regiones';
     protected $primaryKey = 'id_region';
-    protected $fillable = ['nombre_region'];
+    protected $fillable = ['nombre_region','code'];
 
     public function provincias()
     {

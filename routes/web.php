@@ -1,6 +1,7 @@
 <?php
 use App\Http\Controllers\PermisionController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\UniversidadController;
 use App\Http\Controllers\UserController;
 
 use Illuminate\Support\Facades\Route;
@@ -53,6 +54,14 @@ Route::group(['middleware' => ['permission:mantenedor de permisos']], function (
     Route::put('/permission/permission_update/{id}', [PermisionController::class, 'update'])->name('permissions.update');
     Route::post('/permission/permission_store', [PermisionController::class, 'store'])->name('permission.add');
 
+});
+
+Route::group(['middleware' => ['permission:mantenedor de universidades']], function () {
+    Route::get('/university/university_index', [UniversidadController::class, 'index'])->name('universitys.index');
+    Route::delete('/university/university_delete/{id}', [UniversidadController::class, 'destroy'])->name('universitys.delete');
+    Route::get('/university/university_edit/{id}', [UniversidadController::class, 'edit'])->name('universitys.edit');
+    Route::put('/university/university_update/{id}', [UniversidadController::class, 'update'])->name('universitys.update');
+    Route::post('/university/university_store', [UniversidadController::class, 'store'])->name('universitys.add');
 });
 
 
