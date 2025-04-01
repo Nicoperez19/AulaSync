@@ -8,11 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class Facultad extends Model
 {
     use HasFactory;
+    protected $table = 'facultades';
 
     protected $primaryKey = 'id_facultad';
 
     protected $fillable = [
         'id_facultad',
+        'logo_facultad',
         'nombre',
         'ubicacion',
         'id_universidad',

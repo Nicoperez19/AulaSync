@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         $this->call(RoleSeeder::class);   
         $this->call(UserSeeder::class);   
         $this->call(AdministracionChileSeeder::class);   
-        $this->call(UniversidadSeeder::class); 
+        $this->call(class: UniversidadSeeder::class); 
+        $this->call(class: FacultadSeeder::class); 
     }
 }

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('id_facultad',20)->primary();
             $table->string('nombre', 100);
             $table->string('ubicacion', 255);
+            $table->string('logo_facultad')->nullable();
             $table->string('id_universidad');
             $table->foreign('id_universidad')->references('id_universidad')->on('universidades')->onDelete('cascade');
             $table->timestamps();

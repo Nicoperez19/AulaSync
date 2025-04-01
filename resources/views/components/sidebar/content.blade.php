@@ -21,8 +21,8 @@
             <x-slot name="icon">
                 <x-icons.university class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
             </x-slot>
-            <x-sidebar.sublink title="Universidad" href="{{ route('universitys.index') }}" :active="request()->routeIs('universitys.index')" />
-            <x-sidebar.sublink title="Facultad" href="" :active="request()->routeIs('users.index')" />
+            <x-sidebar.sublink title="Universidad" href="{{ route('universities.index') }}" :active="request()->routeIs('universitys.index')" />
+            <x-sidebar.sublink title="Facultad" href="{{ route('faculties.index') }}" :active="request()->routeIs('faculties.index')" />
             <x-sidebar.sublink title="Áreas Académicas" href="" :active="request()->routeIs('users.index')" />
         </x-sidebar.dropdown>
     @endrole

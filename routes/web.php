@@ -1,4 +1,5 @@
 <?php
+use App\Http\Controllers\FacultadController;
 use App\Http\Controllers\PermisionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UniversidadController;
@@ -57,12 +58,21 @@ Route::group(['middleware' => ['permission:mantenedor de permisos']], function (
 });
 
 Route::group(['middleware' => ['permission:mantenedor de universidades']], function () {
-    Route::get('/university/university_index', [UniversidadController::class, 'index'])->name('universitys.index');
-    Route::delete('/university/university_delete/{id}', [UniversidadController::class, 'destroy'])->name('universitys.delete');
-    Route::get('/university/university_edit/{id}', [UniversidadController::class, 'edit'])->name('universitys.edit');
-    Route::put('/university/university_update/{id}', [UniversidadController::class, 'update'])->name('universitys.update');
-    Route::post('/university/university_store', [UniversidadController::class, 'store'])->name('universitys.add');
+    Route::get('/universities', [UniversidadController::class, 'index'])->name('universities.index');
+    Route::post('/universities', [UniversidadController::class, 'store'])->name('universities.add');
+    Route::get('/universities/{id}/edit', [UniversidadController::class, 'edit'])->name('universities.edit');
+    Route::put('/universities/{id}', [UniversidadController::class, 'update'])->name('universities.update');
+    Route::delete('/universities/{id}', [UniversidadController::class, 'destroy'])->name('universities.delete');
 });
+
+Route::group(['middleware' => ['permission:mantenedor de facultades']], function () {
+    Route::get('/faculties', [FacultadController::class, 'index'])->name('faculties.index');
+    Route::post('/faculties', [FacultadController::class, 'store'])->name('faculties.add');
+    Route::get('/faculties/{id}/edit', [FacultadController::class, 'edit'])->name('faculties.edit');
+    Route::put('/faculties/{id}', [FacultadController::class, 'update'])->name('faculties.update');
+    Route::delete('/faculties/{id}', [FacultadController::class, 'destroy'])->name('faculties.delete');
+});
+
 
 
 Route::middleware('auth')->group(function () {

@@ -14,16 +14,17 @@ class Universidad extends Model
     protected $primaryKey = 'id_universidad';
 
     protected $fillable = [
+        'id_universidad',
         'nombre_universidad',
         'direccion_universidad',
         'telefono_universidad',
-        'id_comuna',
+        'comunas_id',
         'imagen_logo',
     ];
 
     public function comuna()
     {
-        return $this->belongsTo(Comuna::class, 'comunas_id'); // Cambiar 'id_comuna' por 'comunas_id'
+        return $this->belongsTo(Comuna::class, 'comunas_id');
     }
     public function facultades()
     {
