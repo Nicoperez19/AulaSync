@@ -81,7 +81,7 @@ class FacultadController extends Controller
             'logo_facultad' => $imagenPath,
         ]);
 
-        return redirect()->route('layouts.faculty.facultad_index')->with('success', 'Facultad actualizada exitosamente.');
+        return redirect()->route('faculties.index')->with('success', 'Facultad eliminada exitosamente.');
     }
 
     public function destroy($id)
@@ -94,6 +94,6 @@ class FacultadController extends Controller
 
         $facultad->delete();
 
-        return redirect()->route('layouts.faculty.facultad_index')->with('success', 'Facultad eliminada exitosamente.');
+        return redirect()->route('faculties.index')->with('success', 'Facultad eliminada exitosamente.');
     }
 }

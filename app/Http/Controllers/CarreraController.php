@@ -3,62 +3,78 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Carrera;
+use App\Models\Facultad;
 
 class CarreraController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        try {
+            $carreras = Carrera::with('facultad')->get();
+            $facultades = Facultad::all();
+            return view('layouts.career.carrera_index', compact('carreras', 'facultades'));
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar las carreras.'])->withInput();
+        }
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        try {
+            $validatedData = $request->validate([
+                'id_carrera' => 'required|string|max:255',
+                'nombre' => 'required|string|max:255',
+                'id_facultad' => 'required|exists:facultades,id_facultad',
+            ]);
+
+            Carrera::create($validatedData);
+
+            return redirect()->route('careers.index')->with('success', 'Carrera creada exitosamente.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => 'Hubo un problema al crear la carrera. Por favor, intente nuevamente.'])->withInput();
+        }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function edit($id)
     {
-        //
+        try {
+            $carreras = Carrera::findOrFail($id);
+            $facultades = Facultad::all();
+            return view('layouts.career.carrera_edit', compact('carreras', 'facultades'));
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar los datos de la carrera.'])->withInput();
+        }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function update(Request $request, $id)
     {
-        //
+        try {
+            $validatedData = $request->validate([
+                'nombre' => 'required|string|max:255',
+                'id_facultad' => 'required|exists:facultades,id_facultad',
+            ]);
+
+            $carrera = Carrera::findOrFail($id);
+            $carrera->update($validatedData);
+
+            return redirect()->route('careers.index')->with('success', 'Carrera actualizada exitosamente.');
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => 'Hubo un problema al actualizar la carrera.'])->withInput();
+        }
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function destroy($id)
     {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        try {
+            $carrera = Carrera::findOrFail($id);
+            $carrera->delete();
+    
+            return redirect()->route('careers.index')->with('success', 'Carrera eliminada exitosamente.');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'Carrera no encontrada.'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error al eliminar la carrera: ' . $e->getMessage()], 500);
+        }
     }
 }

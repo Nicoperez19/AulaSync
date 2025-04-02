@@ -1,5 +1,6 @@
 <?php
 use App\Http\Controllers\FacultadController;
+use App\Http\Controllers\CarreraController;
 use App\Http\Controllers\PermisionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UniversidadController;
@@ -72,6 +73,15 @@ Route::group(['middleware' => ['permission:mantenedor de facultades']], function
     Route::put('/faculties/{id}', [FacultadController::class, 'update'])->name('faculties.update');
     Route::delete('/faculties/{id}', [FacultadController::class, 'destroy'])->name('faculties.delete');
 });
+
+Route::group(['middleware' => ['permission:mantenedor de carreras']], function () {
+    Route::get('/careers', [CarreraController::class, 'index'])->name('careers.index');
+    Route::post('/careers', [CarreraController::class, 'store'])->name('careers.add');
+    Route::get('/careers/{id}/edit', [CarreraController::class, 'edit'])->name('careers.edit');
+    Route::put('/careers/{id}', [CarreraController::class, 'update'])->name('careers.update');
+    Route::delete('/careers/{id}', [CarreraController::class, 'destroy'])->name('careers.delete');
+});
+
 
 
 

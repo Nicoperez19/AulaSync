@@ -6,16 +6,15 @@
             'dark:text-white' => config('app.dark_mode'),
         ])">
             <tr>
-                <th class="p-3 border border-black dark:border-white whitespace-nowrap">ID Facultad</th>
+                <th class="p-3 border border-black dark:border-white whitespace-nowrap">ID Carrera</th>
                 <th class="p-3 border border-black dark:border-white whitespace-nowrap">Nombre</th>
-                <th class="p-3 border border-black dark:border-white whitespace-nowrap">Ubicación</th>
+                <th class="p-3 border border-black dark:border-white whitespace-nowrap">Facultad</th>
                 <th class="p-3 border border-black dark:border-white whitespace-nowrap">Universidad</th>
-                <th class="p-3 border border-black dark:border-white whitespace-nowrap">Logo</th>
                 <th class="p-3 border border-black dark:border-white whitespace-nowrap">Acciones</th>
             </tr>
         </thead>
         <tbody>
-            @foreach ($facultades as $index => $facultad)
+            @foreach ($carreras as $index => $carrera)
                 <tr class="@class([
                     'text-black',
                     'bg-gray-200' => $index % 2 === 0 && !config('app.dark_mode'),
@@ -23,31 +22,27 @@
                     'bg-gray-100' => $index % 2 !== 0 && !config('app.dark_mode'),
                     'bg-gray-700' => $index % 2 !== 0 && config('app.dark_mode'),
                 ])">
-                    <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="ID Facultad">
-                        {{ $facultad->id_facultad }}
+                    <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="ID Carrera">
+                        {{ $carrera->id_carrera }}
                     </td>
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Nombre">
-                        {{ $facultad->nombre }}
+                        {{ $carrera->nombre }}
                     </td>
-                    <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Ubicación">
-                        {{ $facultad->ubicacion }}
+                    <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Facultad">
+                        {{ $carrera->facultad->nombre }}
                     </td>
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Universidad">
-                        {{ $facultad->universidad->nombre_universidad }}
-                    </td>
-                    <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Logo">
-                        <img src="{{ asset('storage/' . $facultad->logo_facultad) }}" alt="Logo de la facultad"
-                            class="object-cover w-12 h-12 rounded">
+                        {{ $carrera->facultad->universidad->nombre_universidad }}
                     </td>
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap">
                         <div class="flex justify-end space-x-2">
-                            <x-button href="{{ route('faculties.edit', $facultad->id_facultad) }}"
+                            <x-button href="{{ route('careers.edit', $carrera->id_carrera) }}"
                                 class="px-4 py-2 text-white bg-blue-500 rounded dark:bg-blue-700">
                                 Editar
                             </x-button>
-                            <form method="POST" action="{{ route('faculties.delete', $facultad->id_facultad) }}">
+                            <form method="POST" action="{{ route('careers.delete', $carrera->id_carrera) }}">
                                 @csrf
-                                @method('DELETE')
+                                @method('DELETE') 
                                 <x-button variant="danger"
                                     class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700">
                                     Eliminar

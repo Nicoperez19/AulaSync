@@ -22,6 +22,7 @@ class RoleSeeder extends Seeder
         $permission4 = Permission::create(['name' => 'mantenedor de universidades']);
         $permission5 = Permission::create(['name' => 'mantenedor de facultades']);
         $permission6 = Permission::create(['name' => 'mantenedor de areas academicas']);
+        $permission7 = Permission::create(['name' => 'mantenedor de carreras']);
 
 
         $role1->givePermissionTo($permission1);
@@ -30,6 +31,7 @@ class RoleSeeder extends Seeder
         $role1->givePermissionTo($permission4);
         $role1->givePermissionTo($permission5);
         $role1->givePermissionTo($permission6);
+        $role1->givePermissionTo($permission7);
 
 
     }
