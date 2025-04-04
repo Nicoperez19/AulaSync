@@ -23,12 +23,12 @@ class FacultiesTable extends Component
 
     public function render()
     {
-        $facultades = Facultad::where('nombre', 'like', '%' . $this->search . '%')
-            ->orWhere('ubicacion', 'like', '%' . $this->search . '%')
+        $facultades = Facultad::where('nombre_facultad', 'like', '%' . $this->search . '%')
+            ->orWhere('ubicacion_facultad', 'like', '%' . $this->search . '%')
             ->orWhereHas('universidad', function ($query) {
                 $query->where('nombre_universidad', 'like', '%' . $this->search . '%');
             })
-            ->orderBy('nombre', 'asc')
+            ->orderBy('nombre_facultad', 'asc')
             ->paginate($this->perPage);
 
         return view('livewire.faculties-table', compact('facultades'));

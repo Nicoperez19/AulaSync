@@ -1,4 +1,5 @@
 <?php
+use App\Http\Controllers\AreaAcademicaController;
 use App\Http\Controllers\FacultadController;
 use App\Http\Controllers\CarreraController;
 use App\Http\Controllers\PermisionController;
@@ -36,8 +37,6 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::delete('/user/user_delete/{id}', [UserController::class, 'destroy'])->name('users.delete');
     Route::get('/user/user_edit/{id}', [UserController::class, 'edit'])->name('users.edit');
     Route::put('/user/user_update/{id}', [UserController::class, 'update'])->name('users.update');
-
-
 });
 
 Route::group(['middleware' => ['permission:mantenedor de roles']], function () {
@@ -46,7 +45,6 @@ Route::group(['middleware' => ['permission:mantenedor de roles']], function () {
     Route::get('/rol/rol_edit/{id}', [RoleController::class, 'edit'])->name('roles.edit');
     Route::put('/rol/rol_update/{id}', [RoleController::class, 'update'])->name('roles.update');
     Route::post('/rol/rol_store', [RoleController::class, 'store'])->name('roles.add');
-
 });
 
 Route::group(['middleware' => ['permission:mantenedor de permisos']], function () {
@@ -55,7 +53,6 @@ Route::group(['middleware' => ['permission:mantenedor de permisos']], function (
     Route::get('/permission/permission_edit/{id}', [PermisionController::class, 'edit'])->name('permissions.edit');
     Route::put('/permission/permission_update/{id}', [PermisionController::class, 'update'])->name('permissions.update');
     Route::post('/permission/permission_store', [PermisionController::class, 'store'])->name('permission.add');
-
 });
 
 Route::group(['middleware' => ['permission:mantenedor de universidades']], function () {
@@ -80,6 +77,15 @@ Route::group(['middleware' => ['permission:mantenedor de carreras']], function (
     Route::get('/careers/{id}/edit', [CarreraController::class, 'edit'])->name('careers.edit');
     Route::put('/careers/{id}', [CarreraController::class, 'update'])->name('careers.update');
     Route::delete('/careers/{id}', [CarreraController::class, 'destroy'])->name('careers.delete');
+});
+
+
+Route::group(['middleware' => ['permission:mantenedor de areas academicas']], function () {
+    Route::get('/academic_areas', [AreaAcademicaController::class, 'index'])->name('academic_areas.index');
+    Route::post('/academic_areas', [AreaAcademicaController::class, 'store'])->name('academic_areas.add');
+    Route::get('/academic_areas/{id}/edit', [AreaAcademicaController::class, 'edit'])->name('academic_areas.edit');
+    Route::put('/academic_areas/{id}', [AreaAcademicaController::class, 'update'])->name('academic_areas.update');
+    Route::delete('/academic_areas/{id}', [AreaAcademicaController::class, 'destroy'])->name('academic_areas.delete');
 });
 
 

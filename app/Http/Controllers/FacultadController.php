@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Facultad;
 use App\Models\Universidad;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
 
 class FacultadController extends Controller
 {
-
     public function index()
     {
         $facultades = Facultad::with('universidad')->get();
@@ -17,33 +15,37 @@ class FacultadController extends Controller
         return view('layouts.faculty.facultad_index', compact('facultades', 'universidades'));
     }
 
-
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
-            'id_facultad' => 'required|string|max:255',
-            'nombre' => 'required|string|max:255',
-            'ubicacion' => 'required|string|max:255',
-            'id_universidad' => 'required|exists:universidades,id_universidad',
-            'logo_facultad' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
-        ]);
+        try {
+            $validatedData = $request->validate([
+                'id_facultad' => 'required|string|max:255',
+                'nombre_facultad' => 'required|string|max:255',
+                'ubicacion_facultad' => 'required|string|max:255',
+                'id_universidad' => 'required|exists:universidades,id_universidad',
+                'logo_facultad' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+            ]);
 
-        $imagenPath = null;
-        if ($request->hasFile('logo_facultad')) {
-            $file = $request->file('logo_facultad');
-            $nombreArchivo = str_replace(' ', '_', strtolower($validatedData['nombre'])) . '.' . $file->getClientOriginalExtension();
-            $imagenPath = $file->storeAs('imagenes/logo_facultad', $nombreArchivo, 'public');
+            $imagenNombre = null;
+
+            if ($request->hasFile('logo_facultad')) {
+                $file = $request->file('logo_facultad');
+                $imagenNombre = str_replace(' ', '_', strtolower($validatedData['nombre_facultad'])) . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('images/logo_facultad'), $imagenNombre);
+            }
+
+            Facultad::create([
+                'id_facultad' => $validatedData['id_facultad'],
+                'nombre_facultad' => $validatedData['nombre_facultad'],
+                'ubicacion_facultad' => $validatedData['ubicacion_facultad'],
+                'id_universidad' => $validatedData['id_universidad'],
+                'logo_facultad' => $imagenNombre,
+            ]);
+
+            return redirect()->route('faculties.index')->with('success', 'Facultad creada exitosamente.');
+        } catch (\Exception $e) {
+            return redirect()->route('faculties.index')->with('error', 'Ocurrió un error al crear la facultad. Intenta de nuevo.');
         }
-
-        Facultad::create([
-            'id_facultad' => $validatedData['id_facultad'],
-            'nombre' => $validatedData['nombre'],
-            'ubicacion' => $validatedData['ubicacion'],
-            'id_universidad' => $validatedData['id_universidad'],
-            'logo_facultad' => $imagenPath,
-        ]);
-
-        return redirect()->route('layouts.faculty.facultad_index')->with('success', 'Facultad creada exitosamente.');
     }
 
     public function edit($id)
@@ -55,45 +57,54 @@ class FacultadController extends Controller
 
     public function update(Request $request, $id)
     {
-        $validatedData = $request->validate([
-            'nombre' => 'required|string|max:255',
-            'ubicacion' => 'required|string|max:255',
-            'id_universidad' => 'required|exists:universidades,id_universidad',
-            'logo_facultad' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
-        ]);
+        try {
+            $validatedData = $request->validate([
+                'nombre_facultad' => 'required|string|max:255',
+                'ubicacion_facultad' => 'required|string|max:255',
+                'id_universidad' => 'required|exists:universidades,id_universidad',
+                'logo_facultad' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+            ]);
 
-        $facultad = Facultad::findOrFail($id);
-        $imagenPath = $facultad->logo_facultad;
+            $facultad = Facultad::findOrFail($id);
+            $imagenNombre = $facultad->logo_facultad;
 
-        if ($request->hasFile('logo_facultad')) {
-            if ($facultad->logo_facultad && Storage::disk('public')->exists($facultad->logo_facultad)) {
-                Storage::disk('public')->delete($facultad->logo_facultad);
+            if ($request->hasFile('logo_facultad')) {
+                if ($facultad->logo_facultad && file_exists(public_path('images/logo_facultad/' . $facultad->logo_facultad))) {
+                    unlink(public_path('images/logo_facultad/' . $facultad->logo_facultad));
+                }
+
+                $file = $request->file('logo_facultad');
+                $imagenNombre = str_replace(' ', '_', strtolower($validatedData['nombre_facultad'])) . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('images/logo_facultad'), $imagenNombre);
             }
-            $file = $request->file('logo_facultad');
-            $nombreArchivo = str_replace(' ', '_', strtolower($validatedData['nombre'])) . '.' . $file->getClientOriginalExtension();
-            $imagenPath = $file->storeAs('imagenes/logo_facultad', $nombreArchivo, 'public');
+
+            $facultad->update([
+                'nombre_facultad' => $validatedData['nombre_facultad'],
+                'ubicacion_facultad' => $validatedData['ubicacion_facultad'],
+                'id_universidad' => $validatedData['id_universidad'],
+                'logo_facultad' => $imagenNombre,
+            ]);
+
+            return redirect()->route('faculties.index')->with('success', 'Facultad actualizada exitosamente.');
+        } catch (\Exception $e) {
+            return redirect()->route('faculties.index')->with('error', 'Ocurrió un error al actualizar la facultad. Intenta de nuevo.');
         }
-
-        $facultad->update([
-            'nombre' => $validatedData['nombre'],
-            'ubicacion' => $validatedData['ubicacion'],
-            'id_universidad' => $validatedData['id_universidad'],
-            'logo_facultad' => $imagenPath,
-        ]);
-
-        return redirect()->route('faculties.index')->with('success', 'Facultad eliminada exitosamente.');
     }
 
     public function destroy($id)
     {
-        $facultad = Facultad::findOrFail($id);
+        try {
+            $facultad = Facultad::findOrFail($id);
 
-        if ($facultad->logo_facultad && Storage::disk('public')->exists($facultad->logo_facultad)) {
-            Storage::disk('public')->delete($facultad->logo_facultad);
+            if ($facultad->logo_facultad && file_exists(public_path('images/logo_facultad/' . $facultad->logo_facultad))) {
+                unlink(public_path('images/logo_facultad/' . $facultad->logo_facultad));
+            }
+
+            $facultad->delete();
+
+            return redirect()->route('faculties.index')->with('success', 'Facultad eliminada exitosamente.');
+        } catch (\Exception $e) {
+            return redirect()->route('faculties.index')->with('error', 'Ocurrió un error al eliminar la facultad. Intenta de nuevo.');
         }
-
-        $facultad->delete();
-
-        return redirect()->route('faculties.index')->with('success', 'Facultad eliminada exitosamente.');
     }
 }

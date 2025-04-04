@@ -4,9 +4,9 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\Carrera;
+use App\Models\AreaAcademica;
 
-class CareersTable extends Component
+class AcademicAreaTable extends Component
 {
     use WithPagination;
 
@@ -23,16 +23,16 @@ class CareersTable extends Component
 
     public function render()
     {
-        $carreras = Carrera::where('nombre', 'like', '%' . $this->search . '%')
+        $areasAcademicas = AreaAcademica::where('nombre_area_academica', 'like', '%' . $this->search . '%')
             ->orWhereHas('facultad', function ($query) {
                 $query->where('nombre_facultad', 'like', '%' . $this->search . '%');
             })
             ->orWhereHas('facultad.universidad', function ($query) {
                 $query->where('nombre_universidad', 'like', '%' . $this->search . '%');
             })
-            ->orderBy('nombre', 'asc')
+            ->orderBy('nombre_area_academica', 'asc')
             ->paginate($this->perPage);
-
-        return view('livewire.careers-table', compact('carreras'));
+    
+        return view('livewire.academic-area-table', compact('areasAcademicas'));
     }
 }

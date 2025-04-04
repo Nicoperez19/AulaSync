@@ -28,9 +28,8 @@
                             <x-slot name="icon">
                                 <x-heroicon-o-user aria-hidden="true" class="w-5 h-5" />
                             </x-slot>
-                            <x-form.input id="id_universidad" class="block w-full" type="text"
-                                name="id_universidad" :value="old('id_universidad')" required autofocus
-                                placeholder="{{ __('ID Universidad') }}" />
+                            <x-form.input id="id_universidad" class="block w-full" type="text" name="id_universidad"
+                                :value="old('id_universidad')" required autofocus placeholder="{{ __('ID Universidad') }}" />
                         </x-form.input-with-icon-wrapper>
                     </div>
 

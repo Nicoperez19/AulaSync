@@ -8,8 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 class AreaAcademica extends Model
 {
     use HasFactory;
+    protected $table = 'area_academicas';
     protected $primaryKey = 'id_area_academica';
 
+    public $incrementing = false; 
+    protected $keyType = 'string'; 
     protected $fillable = [
         'id_area_academica',
         'nombre_area_academica',

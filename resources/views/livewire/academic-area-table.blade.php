@@ -6,15 +6,15 @@
             'dark:text-white' => config('app.dark_mode'),
         ])">
             <tr>
-                <th class="p-3 border border-black dark:border-white whitespace-nowrap">ID Carrera</th>
+                <th class="p-3 border border-black dark:border-white whitespace-nowrap">ID Área Académica</th>
                 <th class="p-3 border border-black dark:border-white whitespace-nowrap">Nombre</th>
+                <th class="p-3 border border-black dark:border-white whitespace-nowrap">Tipo</th>
                 <th class="p-3 border border-black dark:border-white whitespace-nowrap">Facultad</th>
-                <th class="p-3 border border-black dark:border-white whitespace-nowrap">Universidad</th>
                 <th class="p-3 border border-black dark:border-white whitespace-nowrap">Acciones</th>
             </tr>
         </thead>
         <tbody>
-            @foreach ($carreras as $index => $carrera)
+            @foreach ($areasAcademicas as $index => $areaAcademica)
                 <tr class="@class([
                     'text-black',
                     'bg-gray-200' => $index % 2 === 0 && !config('app.dark_mode'),
@@ -22,27 +22,27 @@
                     'bg-gray-100' => $index % 2 !== 0 && !config('app.dark_mode'),
                     'bg-gray-700' => $index % 2 !== 0 && config('app.dark_mode'),
                 ])">
-                    <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="ID Carrera">
-                        {{ $carrera->id_carrera }}
+                    <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="ID Área Académica">
+                        {{ $areaAcademica->id_area_academica }}
                     </td>
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Nombre">
-                        {{ $carrera->nombre }}
+                        {{ $areaAcademica->nombre_area_academica }}
+                    </td>
+                    <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Tipo">
+                        {{ ucfirst($areaAcademica->tipo_area_academica) }}
                     </td>
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Facultad">
-                        {{ $carrera->facultad->nombre_facultad }}
-                    </td>
-                    <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Universidad">
-                        {{ $carrera->facultad->universidad->nombre_universidad }}
+                        {{ $areaAcademica->facultad->nombre_facultad }}
                     </td>
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap">
                         <div class="flex justify-end space-x-2">
-                            <x-button href="{{ route('careers.edit', $carrera->id_carrera) }}"
+                            <x-button href="{{ route('academic_areas.edit', $areaAcademica->id_area_academica) }}"
                                 class="px-4 py-2 text-white bg-blue-500 rounded dark:bg-blue-700">
                                 Editar
                             </x-button>
-                            <form method="POST" action="{{ route('careers.delete', $carrera->id_carrera) }}">
+                            <form method="POST" action="{{ route('academic_areas.delete', $areaAcademica->id_area_academica) }}">
                                 @csrf
-                                @method('DELETE') 
+                                @method('DELETE')
                                 <x-button variant="danger"
                                     class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700">
                                     Eliminar

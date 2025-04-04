@@ -9,8 +9,8 @@ class Universidad extends Model
 {
     use HasFactory;
     protected $table = 'universidades'; 
-    public $incrementing = false; // No se usará el auto-incremento
-    protected $keyType = 'string'; // El tipo de la clave primaria es string (no entero)
+    public $incrementing = false; 
+    protected $keyType = 'string'; 
     protected $primaryKey = 'id_universidad';
 
     protected $fillable = [

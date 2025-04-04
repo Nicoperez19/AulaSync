@@ -39,9 +39,9 @@ class CarreraController extends Controller
     public function edit($id)
     {
         try {
-            $carreras = Carrera::findOrFail($id);
+            $carrera = Carrera::findOrFail($id);
             $facultades = Facultad::all();
-            return view('layouts.career.carrera_edit', compact('carreras', 'facultades'));
+            return view('layouts.career.carrera_edit', compact('carrera', 'facultades'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar los datos de la carrera.'])->withInput();
         }

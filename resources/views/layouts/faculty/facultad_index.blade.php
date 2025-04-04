@@ -36,25 +36,25 @@
                     </div>
 
                     <div class="space-y-2">
-                        <x-form.label for="nombre" :value="__('Nombre Facultad')" class="text-left" />
+                        <x-form.label for="nombre_facultad" :value="__('Nombre Facultad')" class="text-left" />
                         <x-form.input-with-icon-wrapper>
                             <x-slot name="icon">
                                 <x-heroicon-o-academic-cap aria-hidden="true" class="w-5 h-5" />
                             </x-slot>
-                            <x-form.input id="nombre" class="block w-full" type="text"
-                                name="nombre" :value="old('nombre')" required
+                            <x-form.input id="nombre_facultad" class="block w-full" type="text"
+                                name="nombre_facultad" :value="old('nombre_facultad')" required
                                 placeholder="{{ __('Nombre Facultad') }}" />
                         </x-form.input-with-icon-wrapper>
                     </div>
 
                     <div class="space-y-2">
-                        <x-form.label for="ubicacion" :value="__('Ubicación Facultad')" class="text-left" />
+                        <x-form.label for="ubicacion_facultad" :value="__('Ubicación Facultad')" class="text-left" />
                         <x-form.input-with-icon-wrapper>
                             <x-slot name="icon">
                                 <x-heroicon-o-home aria-hidden="true" class="w-5 h-5" />
                             </x-slot>
-                            <x-form.input id="ubicacion" class="block w-full" type="text"
-                                name="ubicacion" :value="old('ubicacion')" required
+                            <x-form.input id="ubicacion_facultad" class="block w-full" type="text"
+                                name="ubicacion_facultad" :value="old('ubicacion_facultad')" required
                                 placeholder="{{ __('Ubicación Facultad') }}" />
                         </x-form.input-with-icon-wrapper>
                     </div>

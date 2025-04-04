@@ -27,17 +27,17 @@
                         {{ $facultad->id_facultad }}
                     </td>
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Nombre">
-                        {{ $facultad->nombre }}
+                        {{ $facultad->nombre_facultad }}
                     </td>
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Ubicación">
-                        {{ $facultad->ubicacion }}
+                        {{ $facultad->ubicacion_facultad }}
                     </td>
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Universidad">
                         {{ $facultad->universidad->nombre_universidad }}
                     </td>
-                    <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Logo">
-                        <img src="{{ asset('storage/' . $facultad->logo_facultad) }}" alt="Logo de la facultad"
-                            class="object-cover w-12 h-12 rounded">
+                    <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Imagen">
+                        <img src="{{ asset('images/logo_facultad/' . $facultad->logo_facultad) }}" alt="Logo"
+                            class="object-cover w-16 rounded h-15">
                     </td>
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap">
                         <div class="flex justify-end space-x-2">
