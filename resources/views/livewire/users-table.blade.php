@@ -1,5 +1,5 @@
 <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md dark:border-gray-700">
-    <table class="w-full text-center border-collapse table-auto min-w-max">
+    <table class="w-full text-center border-collapse table-auto min-w-max text-sm">
         <thead class="hidden lg:table-header-group @class([
             'text-black border-b border-white',
             'bg-gray-50 dark:bg-black',
@@ -25,27 +25,13 @@
                     'bg-gray-100' => $index % 2 !== 0 && !config('app.dark_mode'),
                     'bg-gray-700' => $index % 2 !== 0 && config('app.dark_mode'),
                 ])">
-                    <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="RUN">
-                        {{ $user->run }}
-                    </td>
-                    <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Nombre">
-                        {{ $user->name }}
-                    </td>
-                    <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Correo">
-                        {{ $user->email }}
-                    </td>
-                    <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Celular">
-                        {{ $user->celular }}
-                    </td>
-                    <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Dirección">
-                        {{ $user->direccion }}
-                    </td>
-                    <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Fecha Nacimiento">
-                        {{ $user->fecha_nacimiento }}
-                    </td>
-                    <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Año Ingreso">
-                        {{ $user->anio_ingreso }}
-                    </td>
+                    <td class="p-3 border border-black dark:border-white whitespace-nowrap">{{ $user->run }}</td>
+                    <td class="p-3 border border-black dark:border-white whitespace-nowrap">{{ $user->name }}</td>
+                    <td class="p-3 border border-black dark:border-white whitespace-nowrap">{{ $user->email }}</td>
+                    <td class="p-3 border border-black dark:border-white whitespace-nowrap">{{ $user->celular }}</td>
+                    <td class="p-3 border border-black dark:border-white whitespace-nowrap">{{ $user->direccion }}</td>
+                    <td class="p-3 border border-black dark:border-white whitespace-nowrap">{{ $user->fecha_nacimiento }}</td>
+                    <td class="p-3 border border-black dark:border-white whitespace-nowrap">{{ $user->anio_ingreso }}</td>
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap">
                         <div class="flex justify-end space-x-2">
                             <x-button href="{{ route('users.edit', $user->id) }}" class="px-4 py-2 text-white bg-blue-500 rounded dark:bg-blue-700">

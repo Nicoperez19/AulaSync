@@ -9,7 +9,9 @@ class Piso extends Model
 {
     use HasFactory;
     protected $primaryKey = 'id_piso';
-
+    protected $table = 'pisos'; 
+    public $incrementing = false; 
+    protected $keyType = 'string'; 
     protected $fillable = [
         'id_piso',
         'numero_piso',
