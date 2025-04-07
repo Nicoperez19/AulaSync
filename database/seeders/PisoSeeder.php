@@ -27,13 +27,13 @@ class PisoSeeder extends Seeder
 
         Piso::create([
             'id' => 3,
-            'numero_piso' => 1,
+            'numero_piso' => 2,
             'id_facultad' => 3, // Facultad de Derecho (U001)
         ]);
 
         Piso::create([
             'id' => 4,
-            'numero_piso' => 1,
+            'numero_piso' => 3,
             'id_facultad' => 4, // Facultad de Medicina (U001)
         ]);
 
@@ -64,7 +64,7 @@ class PisoSeeder extends Seeder
 
         Piso::create([
             'id' => 9,
-            'numero_piso' => 1,
+            'numero_piso' => 2,
             'id_facultad' => 9, // Facultad de Educación (U002)
         ]);
 
@@ -76,13 +76,13 @@ class PisoSeeder extends Seeder
 
         Piso::create([
             'id' => 11,
-            'numero_piso' => 1,
+            'numero_piso' => 2,
             'id_facultad' => 11, // Facultad de Turismo (U002)
         ]);
 
         Piso::create([
             'id' => 12,
-            'numero_piso' => 1,
+            'numero_piso' => 3,
             'id_facultad' => 12, // Facultad de Agronomía (U002)
         ]);
 

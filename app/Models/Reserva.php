@@ -12,13 +12,14 @@ class Reserva extends Model
     protected $table = 'reservas'; 
 
     protected $primaryKey = 'id_reserva'; 
-
+    public $incrementing = false; 
+    protected $keyType = 'string';
     protected $fillable = [
         'id_reserva', 
         'hora', 
         'fecha_reserva', 
         'id_espacio', 
-        'id' 
+        'id' //usuario
     ]; 
 
     public function espacio()
@@ -28,6 +29,7 @@ class Reserva extends Model
 
     public function usuario()
     {
-        return $this->belongsTo(User::class, 'id', 'id'); 
+        return $this->belongsTo(User::class, 'id', 'id');
     }
+    
 }

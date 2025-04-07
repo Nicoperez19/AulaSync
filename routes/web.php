@@ -3,7 +3,7 @@ use App\Http\Controllers\AreaAcademicaController;
 use App\Http\Controllers\EspacioController;
 use App\Http\Controllers\FacultadController;
 use App\Http\Controllers\CarreraController;
-use App\Http\Controllers\GestionEspacioPisoController;
+use App\Http\Controllers\ReservasController;
 use App\Http\Controllers\PermisionController;
 use App\Http\Controllers\PisoController;
 use App\Http\Controllers\RoleController;
@@ -99,23 +99,24 @@ Route::group(['middleware' => ['permission:mantenedor de pisos']], function () {
 
 Route::group(['middleware' => ['permission:mantenedor de espacios']], function () {
     Route::get('espacios', [EspacioController::class, 'index'])->name('espacios.index');
-
-
     Route::get('/pisos/{facultadId}', [PisoController::class, 'getPisosByFacultad']);
-
-    // Ruta para almacenar un nuevo espacio
     Route::post('espacios', [EspacioController::class, 'store'])->name('espacios.store');
-
-    // Ruta para editar un espacio existente
     Route::get('espacios/{id_espacio}/edit', [EspacioController::class, 'edit'])->name('espacios.edit');
-
-    // Ruta para actualizar un espacio
     Route::put('espacios/{id_espacio}', [EspacioController::class, 'update'])->name('espacios.update');
-
-    // Ruta para eliminar un espacio
     Route::delete('espacios/{id_espacio}', [EspacioController::class, 'destroy'])->name('espacios.destroy');
-
+    Route::get('/pisos/{facultadId}', [EspacioController::class, 'getPisosByFacultad']);
 });
+
+
+Route::group(['middleware' => ['permission:mantenedor de reservas']], function () {
+    Route::get('/reservas', [ReservasController::class, 'index'])->name('reservas.index');
+    Route::get('/reservas/create', [ReservasController::class, 'create'])->name('reservas.add');
+    Route::post('/reservas', [ReservasController::class, 'store'])->name('reservas.store');
+    Route::get('/reservas/{id_reserva}/edit', [ReservasController::class, 'edit'])->name('reservas.edit');
+    Route::put('/reservas/{id_reserva}', [ReservasController::class, 'update'])->name('reservas.update');
+    Route::delete('/reservas/{id_reserva}', [ReservasController::class, 'destroy'])->name('reservas.delete');
+});
+
 
 
 

@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 
 class EspacioController extends Controller
 {
+    // Mostrar los espacios y filtrar por facultad y piso si es necesario
     public function index(Request $request)
     {
         $facultades = Facultad::all(); // Obtener todas las facultades
@@ -31,11 +32,10 @@ class EspacioController extends Controller
         return view('layouts.spaces.spaces_index', compact('espacios', 'pisos', 'facultades'));
     }
 
-
+    // Crear un nuevo espacio
     public function store(Request $request)
     {
         try {
-            // Validación de los datos
             $request->validate([
                 'id' => 'required|exists:pisos,id',  // Verifica que el id del piso exista en la tabla pisos
                 'tipo_espacio' => 'required|in:Aula,Laboratorio,Biblioteca,Sala de Reuniones,Oficinas',
@@ -44,23 +44,19 @@ class EspacioController extends Controller
             ]);
 
             Espacio::create([
-                'id' => $request->id,  // Asignamos correctamente el id del piso
+                'id' => $request->id,
                 'tipo_espacio' => $request->tipo_espacio,
                 'estado' => $request->estado,
                 'puestos_disponibles' => $request->puestos_disponibles,
             ]);
 
-            // Redirigir con mensaje de éxito
             return redirect()->route('espacios.index')->with('success', 'Espacio creado exitosamente.');
         } catch (\Exception $e) {
-            // Redirigir con mensaje de error si hay alguna excepción
             return redirect()->route('espacios.index')->with('error', 'Error al crear el espacio: ' . $e->getMessage());
         }
     }
 
-
-
-
+    // Mostrar el formulario para editar un espacio
     public function edit(string $id_espacio)
     {
         $espacio = Espacio::where('id_espacio', $id_espacio)->firstOrFail();
@@ -68,6 +64,7 @@ class EspacioController extends Controller
         return view('layouts.spaces.edit', compact('espacio', 'pisos'));
     }
 
+    // Actualizar el espacio
     public function update(Request $request, string $id_espacio)
     {
         try {
@@ -94,6 +91,7 @@ class EspacioController extends Controller
 
     public function destroy(string $id_espacio)
     {
+        // dd($id_espacio); // Verifica que el valor recibido es válido
         try {
             $espacio = Espacio::where('id_espacio', $id_espacio)->firstOrFail();
             $espacio->delete();
@@ -104,12 +102,16 @@ class EspacioController extends Controller
         }
     }
 
+
+    // Obtener pisos por facultad (para uso en filtrados dinámicos)
     public function getPisosByFacultad($facultadId)
     {
-        // Obtener los pisos que pertenecen a la facultad seleccionada
         $pisos = Piso::where('id_facultad', $facultadId)->get();
 
-        // Devolver los pisos en formato JSON
+        if ($pisos->isEmpty()) {
+            return response()->json(['message' => 'No se encontraron pisos para esta facultad.'], 404);
+        }
+
         return response()->json(['pisos' => $pisos]);
     }
 }

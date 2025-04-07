@@ -9,7 +9,8 @@ class Espacio extends Model
 {
     use HasFactory;
     protected $primaryKey = 'id_espacio';
-
+    public $incrementing = false; 
+    protected $keyType = 'string';
     protected $fillable = [
         'id_espacio',
         'id',
@@ -22,16 +23,5 @@ class Espacio extends Model
     {
         return $this->belongsTo(Piso::class, 'id');
     }
-
-    public function facultad()
-    {
-        return $this->belongsTo(Facultad::class, 'id_facultad');
-    }
-
-    public function universidad()
-    {
-        return $this->belongsToThrough(Universidad::class, Facultad::class);
-    }
-
 
 }

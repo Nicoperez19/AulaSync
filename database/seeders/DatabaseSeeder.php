@@ -23,6 +23,8 @@ class DatabaseSeeder extends Seeder
         $this->call(class: CarreraSeeder::class); 
         $this->call(class: AreaAcademicaSeeder::class); 
         $this->call(class: PisoSeeder::class); 
+        $this->call(class: EspacioSeeder::class); 
+        $this->call(class: ReservasSeeder::class); 
 
     }
 }

@@ -26,7 +26,7 @@
                         <x-form.label for="id_facultad" :value="__('Facultad')" class="text-left" />
                         <select name="id_facultad" id="id_facultad"
                             class="block w-full text-black border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                            required>
+                            required onchange="cargarPisos()">
                             <option value="" disabled selected>{{ __('Seleccionar Facultad') }}</option>
                             @foreach ($facultades as $facultad)
                                 <option value="{{ $facultad->id }}"
@@ -42,10 +42,6 @@
                             class="block w-full text-black border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             required>
                             <option value="" disabled selected>{{ __('Seleccionar Piso') }}</option>
-                            @foreach ($pisos as $piso)
-                                <option value="{{ $piso->id }}" {{ old('id') == $piso->id ? 'selected' : '' }}>
-                                    {{ $piso->nombre_piso }} - {{ $piso->facultad->nombre_facultad }}</option>
-                            @endforeach
                         </select>
                     </div>
 
@@ -106,4 +102,34 @@
             </form>
         </x-modal>
     </div>
+
+    <script>
+        document.getElementById("id_facultad").addEventListener("change", function() {
+            let facultadId = this.value;
+            console.log("Facultad seleccionada: ", facultadId); // Verificar el valor de la facultad seleccionada
+            cargarPisos(facultadId);
+        });
+
+        function cargarPisos(facultadId) {
+            console.log("Cargando pisos para la facultad ID:", facultadId); // Verificar si se ejecuta correctamente
+            fetch(`/api/pisos/${facultadId}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Respuesta de pisos: ", data); // Verificar la respuesta de la API
+                    let pisosSelect = document.getElementById("id");
+                    pisosSelect.innerHTML = '<option value="" disabled selected>{{ __('Seleccionar Piso') }}</option>';
+                    data.pisos.forEach(piso => {
+                        let option = document.createElement("option");
+                        option.value = piso.id;
+                        option.textContent = `${piso.nombre_piso} - ${piso.facultad.nombre_facultad}`;
+                        pisosSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error al cargar los pisos:', error);
+                    alert('Hubo un problema al cargar los pisos. Intenta de nuevo.');
+                });
+        }
+    </script>
+
 </x-app-layout>
