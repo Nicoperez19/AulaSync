@@ -17,7 +17,7 @@
             <x-sidebar.sublink title="Roles" href="{{ route('roles.index') }}" :active="request()->routeIs('roles.index')" />
             <x-sidebar.sublink title="Permisos" href="{{ route('permissions.index') }}" :active="request()->routeIs('permissions.index')" />
         </x-sidebar.dropdown>
-        <x-sidebar.dropdown title="Universidad" :active="Str::startsWith(request()->route()->uri(), 'universidades')">
+        <x-sidebar.dropdown title="Mantenedores/Universida" :active="Str::startsWith(request()->route()->uri(), 'universidades')">
             <x-slot name="icon">
                 <x-icons.university class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
             </x-slot>
@@ -25,7 +25,10 @@
             <x-sidebar.sublink title="Facultad" href="{{ route('faculties.index') }}" :active="request()->routeIs('faculties.index')" />
             <x-sidebar.sublink title="Áreas Académicas" href="{{ route('academic_areas.index') }}" :active="request()->routeIs('academic_areas.index')" />
             <x-sidebar.sublink title="Carreras" href="{{ route('careers.index') }}" :active="request()->routeIs('users.index')" />
-            <x-sidebar.sublink title="Gestión Pisos/Espacios" href="{{ route('floors_spaces.index') }}" :active="request()->routeIs('floors_spaces.index')" /> 
+            <x-sidebar.sublink title="Pisos" href="{{ route('floors_index') }}" :active="request()->routeIs('floors_index')" />
+            {{-- <x-sidebar.sublink title="Espacios" href="{{ route('floors_spaces.index') }}" :active="request()->routeIs('floors_spaces.index')" />
+            <x-sidebar.sublink title="Pisos" href="{{ route('floors_spaces.index') }}" :active="request()->routeIs('floors_spaces.index')" /> --}}
+
 
         </x-sidebar.dropdown>
     @endrole

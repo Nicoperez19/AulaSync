@@ -12,7 +12,7 @@ class Espacio extends Model
 
     protected $fillable = [
         'id_espacio',
-        'id_piso',
+        'id',
         'tipo_espacio',
         'estado',
         'puestos_disponibles',
@@ -20,7 +20,7 @@ class Espacio extends Model
 
     public function piso()
     {
-        return $this->belongsTo(Piso::class, 'piso_id');
+        return $this->belongsTo(Piso::class, 'id');
     }
 
     public function facultad()
@@ -33,5 +33,5 @@ class Espacio extends Model
         return $this->belongsToThrough(Universidad::class, Facultad::class);
     }
 
-   
+
 }

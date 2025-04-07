@@ -8,12 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 class Piso extends Model
 {
     use HasFactory;
-    protected $primaryKey = 'id_piso';
     protected $table = 'pisos'; 
-    public $incrementing = false; 
-    protected $keyType = 'string'; 
+    protected $primaryKey = 'id';  // Cambiamos el nombre del primaryKey
+    public $incrementing = true;  // Esto es por defecto en Laravel cuando usas 'id' autoincremental
+    protected $keyType = 'int';   // El tipo es 'int' porque el campo id es autoincremental
+
     protected $fillable = [
-        'id_piso',
         'numero_piso',
         'id_facultad',
     ];

@@ -7,7 +7,7 @@
         </div>
     </x-slot>
 
-    <div class="bg-gray-100 p-6 rounded-lg shadow-lg">
+    <div class="p-6 bg-gray-100 rounded-lg shadow-lg">
         <div class="flex justify-end mb-4">
             <x-button target="_blank" variant="primary" class="justify-end max-w-xs gap-2"
                 x-on:click.prevent="$dispatch('open-modal', 'add-user')">
@@ -17,7 +17,6 @@
 
         @livewire('users-table')
 
-        {{-- MODAL AGREGAR --}}
         <div class="space-y-6">
             <x-modal name="add-user" :show="$errors->any()" focusable>
                 <form method="POST" action="{{ route('users.add') }}">

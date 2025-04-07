@@ -1,53 +1,69 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use App\Models\Espacio;
 use App\Models\Piso;
 use App\Models\Facultad;
 use App\Models\Universidad;
-
 use Illuminate\Http\Request;
 
 class PisoController extends Controller
 {
-
     public function index(Request $request)
     {
         $universidadId = $request->input('universidad');
-        $facultadId = $request->input('facultad');
-        $pisoId = $request->input('piso');
-
-        $universidades = Universidad::all();
         $facultades = Facultad::when($universidadId, function ($query, $universidadId) {
-            $query->where('universidad_id', $universidadId);
-        })->get();
+            return $query->where('id_universidad', $universidadId);
+        })->withCount('pisos')->get();
 
-        $pisos = Piso::when($facultadId, function ($query, $facultadId) {
-            $query->where('facultad_id', $facultadId);
-        })->get();
+        return view('layouts.floors.floors_index', [
+            'universidades' => Universidad::all(),
+            'facultades' => $facultades,
+        ]);
+    }
 
-        $espaciosFiltrados = Piso::with('espacios', 'facultad', 'facultad.universidad')
-            ->when($pisoId, function ($query, $pisoId) {
-                $query->where('id', $pisoId);
-            })
-            ->when($facultadId, function ($query, $facultadId) {
-                $query->where('facultad_id', $facultadId);
-            })
-            ->when($universidadId, function ($query, $universidadId) {
-                $query->whereHas('facultad.universidad', function ($subQuery) use ($universidadId) {
-                    $subQuery->where('id', $universidadId);
-                });
-            })
-            ->get()
-            ->flatMap(function ($piso) {
-                return $piso->espacios->map(function ($espacio) use ($piso) {
-                    $espacio->piso = $piso;
-                    $espacio->facultad = $piso->facultad;
-                    $espacio->universidad = $piso->facultad->universidad;
-                    return $espacio;
-                });
-            });
+    public function agregarPiso(Request $request, $facultadId)
+    {
+        try {
+            $facultad = Facultad::findOrFail($facultadId);
 
-            return view('layouts.floors-spaces.floors-spaces_index', compact('espaciosFiltrados', 'universidades', 'facultades', 'pisos'));    }
+            $ultimoPiso = Piso::where('id_facultad', $facultad->id_facultad)
+                ->orderBy('numero_piso', 'desc')
+                ->first();
+
+            $nuevoNumeroPiso = $ultimoPiso ? $ultimoPiso->numero_piso + 1 : 1;
+
+            $piso = new Piso();
+            $piso->numero_piso = $nuevoNumeroPiso;
+            $piso->id_facultad = $facultad->id_facultad;
+            $piso->save();
+
+            return redirect()->route('floors_spaces.index', ['facultad' => $facultadId])
+                ->with('success', 'Piso agregado exitosamente.');
+        } catch (\Exception $e) {
+            return redirect()->route('floors_spaces.index', ['facultad' => $facultadId])
+                ->with('error', 'Error al agregar el piso: ' . $e->getMessage());
+        }
+    }
+
+    public function eliminarPiso(Request $request, $facultadId)
+    {
+        try {
+            $facultad = Facultad::findOrFail($facultadId);
+
+            $ultimoPiso = Piso::where('id_facultad', $facultadId)->latest('numero_piso')->first();
+
+            if ($ultimoPiso) {
+                $ultimoPiso->delete();
+                return redirect()->route('floors_spaces.index', ['facultad' => $facultadId])
+                    ->with('success', 'Último piso eliminado exitosamente.');
+            }
+
+            return redirect()->route('floors_spaces.index', ['facultad' => $facultadId])
+                ->with('error', 'No hay pisos para eliminar en esta facultad.');
+
+        } catch (\Exception $e) {
+            return redirect()->route('floors_spaces.index', ['facultad' => $facultadId])
+                ->with('error', 'Error al eliminar el piso: ' . $e->getMessage());
+        }
+    }
 }

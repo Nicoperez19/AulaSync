@@ -14,83 +14,83 @@ class PisoSeeder extends Seeder
     {
         // Facultades de la Universidad U001
         Piso::create([
-            'id_piso' => 'P001-1',
+            'id' => 1,
             'numero_piso' => 1,
             'id_facultad' => 1, // Facultad de Ciencias (U001)
         ]);
 
         Piso::create([
-            'id_piso' => 'P002-2',
+            'id' => 2,
             'numero_piso' => 1,
             'id_facultad' => 2, // Facultad de Ingeniería (U001)
         ]);
 
         Piso::create([
-            'id_piso' => 'P003-3',
+            'id' => 3,
             'numero_piso' => 1,
             'id_facultad' => 3, // Facultad de Derecho (U001)
         ]);
 
         Piso::create([
-            'id_piso' => 'P004-4',
+            'id' => 4,
             'numero_piso' => 1,
             'id_facultad' => 4, // Facultad de Medicina (U001)
         ]);
 
         Piso::create([
-            'id_piso' => 'P005-5',
+            'id' => 5,
             'numero_piso' => 1,
             'id_facultad' => 5, // Facultad de Psicología (U001)
         ]);
 
         Piso::create([
-            'id_piso' => 'P006-6',
+            'id' => 6,
             'numero_piso' => 1,
             'id_facultad' => 6, // Facultad de Arquitectura (U001)
         ]);
 
         // Facultades de la Universidad U002
         Piso::create([
-            'id_piso' => 'P007-7',
+            'id' => 7,
             'numero_piso' => 1,
             'id_facultad' => 7, // Facultad de Economía (U002)
         ]);
 
         Piso::create([
-            'id_piso' => 'P008-8',
+            'id' => 8,
             'numero_piso' => 1,
             'id_facultad' => 8, // Facultad de Artes (U002)
         ]);
 
         Piso::create([
-            'id_piso' => 'P009-9',
+            'id' => 9,
             'numero_piso' => 1,
             'id_facultad' => 9, // Facultad de Educación (U002)
         ]);
 
         Piso::create([
-            'id_piso' => 'P010-10',
+            'id' => 10,
             'numero_piso' => 1,
             'id_facultad' => 10, // Facultad de Humanidades (U002)
         ]);
 
         Piso::create([
-            'id_piso' => 'P011-11',
+            'id' => 11,
             'numero_piso' => 1,
             'id_facultad' => 11, // Facultad de Turismo (U002)
         ]);
 
         Piso::create([
-            'id_piso' => 'P012-12',
+            'id' => 12,
             'numero_piso' => 1,
             'id_facultad' => 12, // Facultad de Agronomía (U002)
         ]);
 
         // Opcional: Añadir múltiples pisos para cada facultad si es necesario
-        for ($i = 2; $i <= 3; $i++) { // Agrega pisos 2 y 3 a cada facultad
+        for ($i = 13; $i <= 15; $i++) { // Agrega pisos con IDs incrementales
             Piso::create([
-                'id_piso' => "P013-{$i}",
-                'numero_piso' => $i,
+                'id' => $i,
+                'numero_piso' => $i - 12,
                 'id_facultad' => 1, // Ejemplo: para Facultad de Ciencias
             ]);
         }

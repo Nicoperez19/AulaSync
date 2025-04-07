@@ -35,7 +35,7 @@ class Facultad extends Model
         return $this->hasMany(Carrera::class, 'id_facultad');
     }
 
-    public function obtenerPisos()
+    public function pisos()
     {
         return $this->hasMany(Piso::class, 'id_facultad');
     }
