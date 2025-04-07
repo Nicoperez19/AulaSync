@@ -14,8 +14,8 @@ class FacultadSeeder extends Seeder
     {
         // Primer registro real
         Facultad::create([
-            'id_facultad' => 1, 
-            'logo_facultad' => 'facultad_ingenieria.png', 
+            'id_facultad' => 1,
+            'logo_facultad' => 'facultad_ingenieria.png',
             'nombre_facultad' => 'Facultad de Ciencias',
             'ubicacion_facultad' => 'Edificio A, Campus Central',
             'id_universidad' => 'U001',
@@ -61,5 +61,56 @@ class FacultadSeeder extends Seeder
             'ubicacion_facultad' => 'Edificio F, Campus Central',
             'id_universidad' => 'U001',
         ]);
+
+    
+        // Facultades adicionales para la universidad U002
+        Facultad::create([
+            'id_facultad' => 7,
+            'logo_facultad' => 'facultad_economia.png',
+            'nombre_facultad' => 'Facultad de Economía',
+            'ubicacion_facultad' => 'Edificio G, Campus Central',
+            'id_universidad' => 'U002',
+        ]);
+
+        Facultad::create([
+            'id_facultad' => 8,
+            'logo_facultad' => 'facultad_artes.png',
+            'nombre_facultad' => 'Facultad de Artes',
+            'ubicacion_facultad' => 'Edificio H, Campus Norte',
+            'id_universidad' => 'U002',
+        ]);
+
+        Facultad::create([
+            'id_facultad' => 9,
+            'logo_facultad' => 'facultad_educacion.png',
+            'nombre_facultad' => 'Facultad de Educación',
+            'ubicacion_facultad' => 'Edificio I, Campus Sur',
+            'id_universidad' => 'U002',
+        ]);
+
+        Facultad::create([
+            'id_facultad' => 10,
+            'logo_facultad' => 'facultad_humanidades.png',
+            'nombre_facultad' => 'Facultad de Humanidades',
+            'ubicacion_facultad' => 'Edificio J, Campus Este',
+            'id_universidad' => 'U002',
+        ]);
+
+        Facultad::create([
+            'id_facultad' => 11,
+            'logo_facultad' => 'facultad_turismo.png',
+            'nombre_facultad' => 'Facultad de Turismo',
+            'ubicacion_facultad' => 'Edificio K, Campus Oeste',
+            'id_universidad' => 'U002',
+        ]);
+
+        Facultad::create([
+            'id_facultad' => 12,
+            'logo_facultad' => 'facultad_agronomia.png',
+            'nombre_facultad' => 'Facultad de Agronomía',
+            'ubicacion_facultad' => 'Edificio L, Campus Central',
+            'id_universidad' => 'U002',
+        ]);
     }
+
 }

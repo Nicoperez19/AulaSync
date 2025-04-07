@@ -1,5 +1,3 @@
-import './bootstrap'
-
 import Alpine from 'alpinejs'
 import collapse from '@alpinejs/collapse'
 import PerfectScrollbar from 'perfect-scrollbar'
@@ -27,7 +25,7 @@ document.addEventListener('alpine:init', () => {
                         this.scrollingUp = false
                     }
                 }
-                lastScrollTop = st <= 0 ? 0 : st // For Mobile or negative scrolling
+                lastScrollTop = st <= 0 ? 0 : st 
             })
         }
 

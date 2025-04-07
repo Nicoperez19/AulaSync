@@ -20,7 +20,17 @@ class Espacio extends Model
 
     public function piso()
     {
-        return $this->belongsTo(Piso::class, 'id_piso');
+        return $this->belongsTo(Piso::class, 'piso_id');
+    }
+
+    public function facultad()
+    {
+        return $this->belongsTo(Facultad::class, 'facultad_id');
+    }
+
+    public function universidad()
+    {
+        return $this->belongsToThrough(Universidad::class, Facultad::class);
     }
 
    
