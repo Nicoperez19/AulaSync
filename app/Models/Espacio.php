@@ -25,7 +25,7 @@ class Espacio extends Model
 
     public function facultad()
     {
-        return $this->belongsTo(Facultad::class, 'facultad_id');
+        return $this->belongsTo(Facultad::class, 'id_facultad');
     }
 
     public function universidad()

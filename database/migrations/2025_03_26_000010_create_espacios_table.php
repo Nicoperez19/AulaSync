@@ -12,9 +12,8 @@ return new class extends Migration {
     {
         Schema::create('espacios', function (Blueprint $table) {
             $table->string('id_espacio')->primary();
-            $table->unsignedBigInteger('id'); // Tipo compatible con la columna id en pisos
+            $table->unsignedBigInteger('id'); 
             $table->foreign('id')->references('id')->on('pisos')->onDelete('cascade');
-        
             $table->enum('tipo_espacio', ['Aula', 'Laboratorio', 'Biblioteca', 'Sala de Reuniones', 'Oficinas']);
             $table->enum('estado', ['Disponible', 'Ocupado', 'Reservado']);
             $table->integer('puestos_disponibles')->nullable();

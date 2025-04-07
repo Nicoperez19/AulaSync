@@ -18,7 +18,7 @@ class Reserva extends Model
         'hora', 
         'fecha_reserva', 
         'id_espacio', 
-        'id' //id del usuario, que quedo con ese nombre.
+        'id' 
     ]; 
 
     public function espacio()
