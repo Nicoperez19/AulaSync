@@ -90,10 +90,10 @@ Route::group(['middleware' => ['permission:mantenedor de areas academicas']], fu
     Route::delete('/academic_areas/{id}', [AreaAcademicaController::class, 'destroy'])->name('academic_areas.delete');
 });
 
-Route::group(['middleware' => ['permission:mantenedor pisos']], function () {
-    Route::get('/floors', [PisoController::class, 'index'])->name('floors.index');
-    Route::post('/facultad/{facultadId}/agregar-piso', [PisoController::class, 'agregarPiso'])->name('floors_spaces.agregarPiso');
-    Route::delete('/facultad/{facultadId}/eliminar-piso', [PisoController::class, 'eliminarPiso'])->name('floors_spaces.eliminarPiso');
+Route::group(['middleware' => ['permission:mantenedor de pisos']], function () {
+    Route::get('/floors', [PisoController::class, 'index'])->name('floors_index');
+    Route::post('/facultad/{facultadId}/agregar-piso', [PisoController::class, 'agregarPiso'])->name('floors.agregarPiso');
+    Route::delete('/facultad/{facultadId}/eliminar-piso', [PisoController::class, 'eliminarPiso'])->name('floors.eliminarPiso');
 });
 
 
@@ -101,7 +101,6 @@ Route::group(['middleware' => ['permission:mantenedor pisos']], function () {
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 

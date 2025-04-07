@@ -37,10 +37,10 @@ class PisoController extends Controller
             $piso->id_facultad = $facultad->id_facultad;
             $piso->save();
 
-            return redirect()->route('floors_spaces.index', ['facultad' => $facultadId])
+            return redirect()->route('floors.index', ['facultad' => $facultadId])
                 ->with('success', 'Piso agregado exitosamente.');
         } catch (\Exception $e) {
-            return redirect()->route('floors_spaces.index', ['facultad' => $facultadId])
+            return redirect()->route('floors.index', ['facultad' => $facultadId])
                 ->with('error', 'Error al agregar el piso: ' . $e->getMessage());
         }
     }
@@ -54,15 +54,15 @@ class PisoController extends Controller
 
             if ($ultimoPiso) {
                 $ultimoPiso->delete();
-                return redirect()->route('floors_spaces.index', ['facultad' => $facultadId])
+                return redirect()->route('floor.index', ['facultad' => $facultadId])
                     ->with('success', 'Último piso eliminado exitosamente.');
             }
 
-            return redirect()->route('floors_spaces.index', ['facultad' => $facultadId])
+            return redirect()->route('floors.index', ['facultad' => $facultadId])
                 ->with('error', 'No hay pisos para eliminar en esta facultad.');
 
         } catch (\Exception $e) {
-            return redirect()->route('floors_spaces.index', ['facultad' => $facultadId])
+            return redirect()->route('floors.index', ['facultad' => $facultadId])
                 ->with('error', 'Error al eliminar el piso: ' . $e->getMessage());
         }
     }

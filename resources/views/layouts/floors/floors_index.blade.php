@@ -11,7 +11,7 @@
         <div class="w-full space-y-6">
             <h3 class="text-lg font-semibold">{{ __('Listado de Facultades') }}</h3>
             <div class="p-4 bg-white rounded shadow">
-                <form method="GET" action="{{ route('floors_spaces.index') }}" class="space-y-4">
+                <form method="GET" action="{{ route('floors_index') }}" class="space-y-4">
                     <div>
                         <label for="universidad" class="block text-sm font-medium text-gray-700">Universidad</label>
                         <select id="universidad" name="universidad"
@@ -28,7 +28,7 @@
                     </div>
 
                     <div class="flex justify-end gap-2 pt-4">
-                        <a href="{{ route('floors_spaces.index') }}"
+                        <a href="{{ route('floors_index') }}"
                            class="px-4 py-2 text-gray-700 bg-gray-300 rounded hover:bg-gray-400">
                             Limpiar
                         </a>
@@ -55,7 +55,7 @@
                                     <td class="px-4 py-2 text-center border">
                                         <div class="flex justify-center gap-2">
                                             <form
-                                                action="{{ route('floors_spaces.agregarPiso', ['facultadId' => $facultad->id_facultad]) }}"
+                                                action="{{ route('floors.agregarPiso', ['facultadId' => $facultad->id_facultad]) }}"
                                                 method="POST" class="inline-block">
                                                 @csrf
                                                 <button type="submit"
@@ -65,7 +65,7 @@
                                                 </button>
                                             </form>
                                             <form
-                                                action="{{ route('floors_spaces.eliminarPiso', ['facultadId' => $facultad->id_facultad]) }}"
+                                                action="{{ route('floors.eliminarPiso', ['facultadId' => $facultad->id_facultad]) }}"
                                                 method="POST" class="inline-block">
                                                 @csrf
                                                 @method('DELETE')
