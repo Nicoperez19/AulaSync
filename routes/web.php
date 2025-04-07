@@ -1,5 +1,6 @@
 <?php
 use App\Http\Controllers\AreaAcademicaController;
+use App\Http\Controllers\EspacioController;
 use App\Http\Controllers\FacultadController;
 use App\Http\Controllers\CarreraController;
 use App\Http\Controllers\GestionEspacioPisoController;
@@ -94,6 +95,26 @@ Route::group(['middleware' => ['permission:mantenedor de pisos']], function () {
     Route::get('/floors', [PisoController::class, 'index'])->name('floors_index');
     Route::post('/facultad/{facultadId}/agregar-piso', [PisoController::class, 'agregarPiso'])->name('floors.agregarPiso');
     Route::delete('/facultad/{facultadId}/eliminar-piso', [PisoController::class, 'eliminarPiso'])->name('floors.eliminarPiso');
+});
+
+Route::group(['middleware' => ['permission:mantenedor de espacios']], function () {
+    Route::get('espacios', [EspacioController::class, 'index'])->name('espacios.index');
+
+
+    Route::get('/pisos/{facultadId}', [PisoController::class, 'getPisosByFacultad']);
+
+    // Ruta para almacenar un nuevo espacio
+    Route::post('espacios', [EspacioController::class, 'store'])->name('espacios.store');
+
+    // Ruta para editar un espacio existente
+    Route::get('espacios/{id_espacio}/edit', [EspacioController::class, 'edit'])->name('espacios.edit');
+
+    // Ruta para actualizar un espacio
+    Route::put('espacios/{id_espacio}', [EspacioController::class, 'update'])->name('espacios.update');
+
+    // Ruta para eliminar un espacio
+    Route::delete('espacios/{id_espacio}', [EspacioController::class, 'destroy'])->name('espacios.destroy');
+
 });
 
 
