@@ -21,7 +21,15 @@ class UniversidadSeeder extends Seeder
             'imagen_logo' => 'u_chile.png', 
         ]);
 
-        for ($i = 2; $i <= 10; $i++) {
+        Universidad::create([
+            'id_universidad' => 'U002',
+            'nombre_universidad' => 'Universidad Católica de la Santisima Concepcion',
+            'direccion_universidad' => 'Av. Libertador Bernardo O’Higgins 1058, Santiago',
+            'telefono_universidad' => '+56 2 2978 2000',
+            'comunas_id' => 38, // Concepcion
+            'imagen_logo' => 'u_chile.png', 
+        ]);
+        for ($i = 3; $i <= 10; $i++) {
             Universidad::create([
                 'id_universidad' => 'U00' . $i,
                 'nombre_universidad' => 'Universidad Genérica ' . $i,

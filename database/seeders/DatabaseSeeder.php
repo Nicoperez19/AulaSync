@@ -22,5 +22,7 @@ class DatabaseSeeder extends Seeder
         $this->call(class: FacultadSeeder::class);
         $this->call(class: CarreraSeeder::class); 
         $this->call(class: AreaAcademicaSeeder::class); 
+        $this->call(class: PisoSeeder::class); 
+
     }
 }

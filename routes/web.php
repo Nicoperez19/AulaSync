@@ -2,7 +2,9 @@
 use App\Http\Controllers\AreaAcademicaController;
 use App\Http\Controllers\FacultadController;
 use App\Http\Controllers\CarreraController;
+use App\Http\Controllers\GestionEspacioPisoController;
 use App\Http\Controllers\PermisionController;
+use App\Http\Controllers\PisoController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UniversidadController;
 use App\Http\Controllers\UserController;
@@ -88,6 +90,20 @@ Route::group(['middleware' => ['permission:mantenedor de areas academicas']], fu
     Route::delete('/academic_areas/{id}', [AreaAcademicaController::class, 'destroy'])->name('academic_areas.delete');
 });
 
+Route::group(['middleware' => ['permission:mantenedor de gestiones de pisos y espacios']], function () {
+    Route::get('/floor_spaces', [GestionEspacioPisoController::class, 'index'])->name('floors_spaces.index');
+    Route::get('/pisos', [PisoController::class, 'indexPisos'])->name('pisos.index'); 
+    Route::get('/pisos/create', [PisoController::class, 'createPiso'])->name('pisos.create'); 
+    Route::post('/pisos', [PisoController::class, 'storePiso'])->name('pisos.store'); 
+    Route::get('/pisos/{piso}/edit', [PisoController::class, 'editPiso'])->name('pisos.edit'); 
+    Route::put('/pisos/{piso}', [PisoController::class, 'updatePiso'])->name('pisos.update'); 
+    Route::delete('/pisos/{piso}', [PisoController::class, 'destroyPiso'])->name('pisos.destroy'); 
+
+    // Route::post('/floor_spaces', [PisoEspacioController::class, 'store'])->name('floor_spaces.add');
+    // Route::get('/floor_spaces/{id}/edit', [PisoEspacioController::class, 'edit'])->name('floor_spaces.edit');
+    // Route::put('/floor_spaces/{id}', [PisoEspacioController::class, 'update'])->name('floor_spaces.update');
+    // Route::delete('/floor_spaces/{id}', [PisoEspacioController::class, 'destroy'])->name('floor_spaces.delete');
+});
 
 
 

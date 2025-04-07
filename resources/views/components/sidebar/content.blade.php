@@ -25,7 +25,7 @@
             <x-sidebar.sublink title="Facultad" href="{{ route('faculties.index') }}" :active="request()->routeIs('faculties.index')" />
             <x-sidebar.sublink title="Áreas Académicas" href="{{ route('academic_areas.index') }}" :active="request()->routeIs('academic_areas.index')" />
             <x-sidebar.sublink title="Carreras" href="{{ route('careers.index') }}" :active="request()->routeIs('users.index')" />
-            <x-sidebar.sublink title="Gestión Pisos/Espacios" href="" :active="request()->routeIs('')" />
+            <x-sidebar.sublink title="Gestión Pisos/Espacios" href="{{ route('floors_spaces.index') }}" :active="request()->routeIs('floors_spaces.index')" /> 
 
         </x-sidebar.dropdown>
     @endrole
