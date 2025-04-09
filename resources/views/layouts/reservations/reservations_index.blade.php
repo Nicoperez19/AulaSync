@@ -15,17 +15,10 @@
 
     @livewire('reservations-table')
 
-    {{-- Modal para agregar reserva --}}
     <x-modal name="add-reserva" :show="$errors->any()" focusable>
         <form method="POST" action="{{ route('reservas.add') }}">
             @csrf
             <div class="p-6 space-y-6">
-                <!-- ID de la Reserva -->
-                <div class="space-y-2">
-                    <x-form.label for="id_reserva" :value="__('ID de la Reserva')" class="text-left" />
-                    <x-form.input id="id_reserva" class="block w-full" type="text" name="id_reserva" required autofocus placeholder="{{ __('ID de la reserva') }}" />
-                </div>
-
                 <!-- Hora -->
                 <div class="space-y-2">
                     <x-form.label for="hora" :value="__('Hora')" class="text-left" />
@@ -35,19 +28,22 @@
                 <!-- Fecha de la Reserva -->
                 <div class="space-y-2">
                     <x-form.label for="fecha_reserva" :value="__('Fecha de la Reserva')" class="text-left" />
-                    <x-form.input id="fecha_reserva" class="block w-full" type="date" name="fecha_reserva" required />
+                    <x-form.input id="fecha_reserva" class="block w-full" type="date" name="fecha_reserva"
+                        required />
                 </div>
 
                 <!-- Espacio -->
                 <div class="space-y-2">
                     <x-form.label for="id_espacio" :value="__('ID del Espacio')" class="text-left" />
-                    <x-form.input id="id_espacio" class="block w-full" type="text" name="id_espacio" required placeholder="{{ __('ID del espacio') }}" />
+                    <x-form.input id="id_espacio" class="block w-full" type="text" name="id_espacio" required
+                        placeholder="{{ __('ID del espacio') }}" />
                 </div>
 
                 <!-- Usuario -->
                 <div class="space-y-2">
                     <x-form.label for="id" :value="__('ID del Usuario')" class="text-left" />
-                    <x-form.input id="id" class="block w-full" type="number" name="id" required placeholder="{{ __('ID del usuario') }}" />
+                    <x-form.input id="id" class="block w-full" type="number" name="id" required
+                        placeholder="{{ __('ID del usuario') }}" />
                 </div>
 
                 <div class="flex justify-end">

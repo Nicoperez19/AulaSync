@@ -103,33 +103,6 @@
         </x-modal>
     </div>
 
-    <script>
-        document.getElementById("id_facultad").addEventListener("change", function() {
-            let facultadId = this.value;
-            console.log("Facultad seleccionada: ", facultadId); // Verificar el valor de la facultad seleccionada
-            cargarPisos(facultadId);
-        });
-
-        function cargarPisos(facultadId) {
-            console.log("Cargando pisos para la facultad ID:", facultadId); // Verificar si se ejecuta correctamente
-            fetch(`/api/pisos/${facultadId}`)
-                .then(response => response.json())
-                .then(data => {
-                    console.log("Respuesta de pisos: ", data); // Verificar la respuesta de la API
-                    let pisosSelect = document.getElementById("id");
-                    pisosSelect.innerHTML = '<option value="" disabled selected>{{ __('Seleccionar Piso') }}</option>';
-                    data.pisos.forEach(piso => {
-                        let option = document.createElement("option");
-                        option.value = piso.id;
-                        option.textContent = `${piso.nombre_piso} - ${piso.facultad.nombre_facultad}`;
-                        pisosSelect.appendChild(option);
-                    });
-                })
-                .catch(error => {
-                    console.error('Error al cargar los pisos:', error);
-                    alert('Hubo un problema al cargar los pisos. Intenta de nuevo.');
-                });
-        }
-    </script>
+    
 
 </x-app-layout>

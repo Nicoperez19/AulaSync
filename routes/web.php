@@ -3,12 +3,15 @@ use App\Http\Controllers\AreaAcademicaController;
 use App\Http\Controllers\EspacioController;
 use App\Http\Controllers\FacultadController;
 use App\Http\Controllers\CarreraController;
+use App\Http\Controllers\MapasController;
 use App\Http\Controllers\ReservasController;
 use App\Http\Controllers\PermisionController;
 use App\Http\Controllers\PisoController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UniversidadController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\AsignaturaController;
+
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
@@ -34,7 +37,7 @@ Route::get('dashboard', function () {
     return view('layouts/dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');//el ultimo es el nombre de la ruta simplemente.
 
-Route::middleware(['auth', 'role:admin'])->group(function () {
+Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::get('/user/user_index', [UserController::class, 'index'])->name('users.index');
     Route::post('/user/user_store', [UserController::class, 'store'])->name('users.add');
     Route::delete('/user/user_delete/{id}', [UserController::class, 'destroy'])->name('users.delete');
@@ -104,8 +107,9 @@ Route::group(['middleware' => ['permission:mantenedor de espacios']], function (
     Route::get('espacios/{id_espacio}/edit', [EspacioController::class, 'edit'])->name('espacios.edit');
     Route::put('espacios/{id_espacio}', [EspacioController::class, 'update'])->name('espacios.update');
     Route::delete('espacios/{id_espacio}', [EspacioController::class, 'destroy'])->name('espacios.destroy');
-    Route::get('/pisos/{facultadId}', [EspacioController::class, 'getPisosByFacultad']);
-});
+    Route::get('/facultades-por-universidad/{id}', [EspacioController::class, 'getFacultadesByUniversidad']);
+    Route::get('/pisos-por-facultad/{id}', [EspacioController::class, 'getPisosByFacultad']);}
+);
 
 
 Route::group(['middleware' => ['permission:mantenedor de reservas']], function () {
@@ -117,6 +121,19 @@ Route::group(['middleware' => ['permission:mantenedor de reservas']], function (
     Route::delete('/reservas/{id_reserva}', [ReservasController::class, 'destroy'])->name('reservas.delete');
 });
 
+Route::group(['middleware' => ['permission:mantenedor de asignaturas']], function () {
+    Route::get('/asignaturas', [AsignaturaController::class, 'index'])->name('asignaturas.index');
+    Route::post('/asignaturas', [AsignaturaController::class, 'store'])->name('asignaturas.store');
+    Route::get('/{id_asignatura}/edit', [AsignaturaController::class, 'edit'])->name('asignaturas.edit');
+    Route::put('/{id_asignatura}', [AsignaturaController::class, 'update'])->name('asignaturas.update');
+    Route::delete('/{id_asignatura}', [AsignaturaController::class, 'destroy'])->name('asignaturas.destroy');
+
+});
+
+Route::group(['middleware' => ['permission:mantenedor de mapas']], function () {
+    Route::get('/mapas', [MapasController::class, 'index'])->name('mapas.index');
+
+});
 
 
 

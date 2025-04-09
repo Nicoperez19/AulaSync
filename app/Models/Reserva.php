@@ -9,27 +9,28 @@ class Reserva extends Model
 {
     use HasFactory;
 
-    protected $table = 'reservas'; 
+    protected $table = 'reservas';
 
-    protected $primaryKey = 'id_reserva'; 
-    public $incrementing = false; 
+    protected $primaryKey = 'id_reserva';
+    public $incrementing = false;
     protected $keyType = 'string';
     protected $fillable = [
-        'id_reserva', 
-        'hora', 
-        'fecha_reserva', 
-        'id_espacio', 
+        'id_reserva',
+        'hora',
+        'fecha_reserva',
+        'id_espacio',
         'id' //usuario
-    ]; 
+    ];
 
     public function espacio()
     {
-        return $this->belongsTo(Espacio::class, 'id_espacio', 'id_espacio'); 
+        return $this->belongsTo(Espacio::class, 'id_espacio', 'id_espacio');
     }
 
-    public function usuario()
+    public function user()
     {
-        return $this->belongsTo(User::class, 'id', 'id');
+        return $this->belongsTo(User::class, 'id');
     }
-    
+
+
 }

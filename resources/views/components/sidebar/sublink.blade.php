@@ -4,7 +4,7 @@
 ])
 
 @php
-    $classes = 'transition-colors hover:text-white dark:hover:text-white';
+    $classes = 'transition-colors hover:text-white dark:hover:text-white whitespace-normal';
     $active ? ($classes .= ' text-white') : ($classes .= ' text-white');
 @endphp
 

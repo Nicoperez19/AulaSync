@@ -17,19 +17,23 @@
 <body class="font-sans antialiased">
     <div x-data="mainState" :class="{ dark: isDarkMode }" x-on:resize.window="handleWindowResize" x-cloak>
         <div class="min-h-screen text-gray-900 bg-gray-100 dark:bg-dark-eval-0 dark:text-gray-200">
-            <x-navbar />
-            <x-sidebar.sidebar />
-            <div class="flex flex-col min-h-screen" style="transition-property: margin; transition-duration: 150ms;">
-                <header :style="{ 'margin-left': isSidebarOpen || isSidebarHovered ? '16rem' : '4rem' }">
-                    <div class="p-4 sm:p-6">
-                        {{ $header }}
-                    </div>
-                </header>
-                <main class="flex-1 px-4 sm:px-6"
-                    :style="{ 'margin-left': isSidebarOpen || isSidebarHovered ? '16rem' : '4rem' }"
-                    style="overflow-x: auto;">
-                    {{ $slot }}
-                </main>
+            <div class="fixed top-0 left-0 z-50 w-full">
+                <x-navbar />
+            </div> <x-sidebar.sidebar />
+            <div class="flex flex-col min-h-screen pt-16"
+                style="transition-property: margin; transition-duration: 150ms;">
+
+                <div class="container" style="margin-top: 6rem; min-height: 100vh;">
+                    <header :style="{ 'margin-left': isSidebarOpen || isSidebarHovered ? '16rem' : '4rem' }">
+                        <div class="p-4 sm:p-6">
+                            {{ $header }}
+                        </div>
+                    </header>
+                    <main class="flex-1 px-4 sm:px-6" style="margin-top: 1rem; overflow-x: auto;"
+                        :style="{ 'margin-left': isSidebarOpen || isSidebarHovered ? '16rem' : '4rem' }">
+                        {{ $slot }}
+                    </main>
+                </div>
                 <x-footer />
             </div>
         </div>

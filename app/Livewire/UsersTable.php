@@ -21,7 +21,7 @@ class UsersTable extends Component
             return User::where('name', 'like', '%' . $this->search . '%')
                 ->orWhere('email', 'like', '%' . $this->search . '%')
                 ->orWhere('run', 'like', '%' . $this->search . '%')
-                ->select('id', 'name', 'email', 'run','celular', 'direccion','fecha_nacimiento','anio_ingreso')
+                ->select('id', 'name', 'email', 'run', 'celular', 'direccion', 'fecha_nacimiento', 'anio_ingreso')
                 ->paginate(8);
         });
 

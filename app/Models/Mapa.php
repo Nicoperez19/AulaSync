@@ -11,7 +11,6 @@ class Mapa extends Model
     protected $table = 'mapas';
     protected $primaryKey = 'id_mapa';
     protected $fillable = [
-        'id_mapa',
         'nombre_mapa',
         'ruta_mapa',
         'id_espacio',

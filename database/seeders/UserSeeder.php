@@ -20,7 +20,7 @@ class UserSeeder extends Seeder
             'direccion' => 'Calle Falsa 123',
             'fecha_nacimiento' => '1985-05-20',
             'anio_ingreso' => 2010,
-        ])->assignRole('admin');
+        ])->assignRole('Administrador');
 
         User::create([
             'run' => '19812524-5',

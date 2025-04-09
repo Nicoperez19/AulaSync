@@ -25,7 +25,7 @@
 
     <!-- Modal para agregar un nuevo mapa -->
     <x-modal name="add-mapa" :show="$errors->any()" focusable>
-        <form method="POST" action="{{ route('mapas.store') }}" enctype="multipart/form-data">
+        {{-- <form method="POST" action="{{ route('mapas.store') }}" enctype="multipart/form-data">
             @csrf
             <div class="p-6 space-y-6">
                 <div class="space-y-2">
@@ -54,7 +54,7 @@
                     </x-button>
                 </div>
             </div>
-        </form>
+        </form> --}}
     </x-modal>
 
     <script>

@@ -36,9 +36,9 @@
                         {{ $reserva->id_espacio }}
                     </td>
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Usuario">
-                        {{ $reserva->user ? $reserva->user->name : 'Usuario no asignado' }}
+                        {{ optional($reserva->user)->name ?? 'Usuario no asignado' }}
                     </td>
-                    
+
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap">
                         <div class="flex justify-end space-x-2">
                             <x-button href="{{ route('reservas.edit', $reserva->id_reserva) }}"

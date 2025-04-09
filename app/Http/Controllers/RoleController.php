@@ -44,7 +44,7 @@ class RoleController extends Controller
                 'name' => $validatedData['name'],
             ]);
 
-            $role->permissions()->sync($validatedData['permissions']); 
+            $role->permissions()->sync($validatedData['permissions']);
             return redirect()->route('roles.index')->with('success', 'Rol creado y permisos asignados correctamente.');
 
         } catch (\Exception $e) {
@@ -99,17 +99,17 @@ class RoleController extends Controller
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
-    { {
-            try {
-                $roles = Role::findOrFail($id);
-                $roles->delete();
-                return redirect()->route('roles.index')->with('success', 'Rol eliminado exitosamente.');
+    {
+        try {
+            $roles = Role::findOrFail($id);
+            $roles->delete();
+            return redirect()->route('roles.index')->with('success', 'Rol eliminado exitosamente.');
 
-            } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-                return response()->json(['success' => false, 'message' => 'Rol no encontrado.'], 404);
-            } catch (\Exception $e) {
-                return response()->json(['success' => false, 'message' => 'Error al borrar el rol: ' . $e->getMessage()], 500);
-            }
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json(['success' => false, 'message' => 'Rol no encontrado.'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error al borrar el rol: ' . $e->getMessage()], 500);
         }
+
     }
 }

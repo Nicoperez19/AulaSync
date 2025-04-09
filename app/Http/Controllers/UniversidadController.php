@@ -31,7 +31,7 @@ class UniversidadController extends Controller
         if ($request->hasFile('imagen_logo')) {
             $file = $request->file('imagen_logo');
             $imagenNombre = str_replace(' ', '_', strtolower($validatedData['nombre_universidad'])) . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('images/logo_universidad'), $imagenNombre); 
+            $file->move(public_path('images/logo_universidad'), $imagenNombre);
         }
 
         Universidad::create([
@@ -39,7 +39,7 @@ class UniversidadController extends Controller
             'nombre_universidad' => $validatedData['nombre_universidad'],
             'direccion_universidad' => $validatedData['direccion_universidad'],
             'telefono_universidad' => $validatedData['telefono_universidad'],
-            'imagen_logo' => $imagenNombre, 
+            'imagen_logo' => $imagenNombre,
             'comunas_id' => $validatedData['comunas_id'],
         ]);
 
@@ -71,11 +71,11 @@ class UniversidadController extends Controller
 
             if ($request->hasFile('imagen_logo')) {
                 if ($imagenNombre && file_exists(public_path('images/logo_universidad/' . $imagenNombre))) {
-                    unlink(public_path('images/logo_universidad/' . $imagenNombre)); 
+                    unlink(public_path('images/logo_universidad/' . $imagenNombre));
                 }
                 $file = $request->file('imagen_logo');
                 $imagenNombre = str_replace(' ', '_', strtolower($validatedData['nombre_universidad'])) . '.' . $file->getClientOriginalExtension();
-                $file->move(public_path('images/logo_universidad'), $imagenNombre); 
+                $file->move(public_path('images/logo_universidad'), $imagenNombre);
             }
 
             $universidad->update([
@@ -83,7 +83,7 @@ class UniversidadController extends Controller
                 'nombre_universidad' => $validatedData['nombre_universidad'],
                 'direccion_universidad' => $validatedData['direccion_universidad'],
                 'telefono_universidad' => $validatedData['telefono_universidad'],
-                'imagen_logo' => $imagenNombre, 
+                'imagen_logo' => $imagenNombre,
                 'comunas_id' => $validatedData['comunas_id'],
             ]);
 

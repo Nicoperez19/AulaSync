@@ -56,4 +56,11 @@ class User extends Authenticatable
     {
         return $this->belongsTo(AreaAcademica::class, 'id_area_academica');
     }
+
+    public function asignaturas()
+    {
+        return $this->hasMany(Asignatura::class, 'id'); 
+    }
+
+    
 }
