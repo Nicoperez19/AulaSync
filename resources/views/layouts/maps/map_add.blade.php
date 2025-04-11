@@ -2,19 +2,14 @@
     <x-slot name="header">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <h2 class="text-xl font-semibold leading-tight" style="font-style: oblique;">
-                {{ __('Gestión de Mapas') }}
+                {{ __('Agregar de Mapa') }}
             </h2>
         </div>
     </x-slot>
 
-    <div class="flex justify-end mb-4">
-        <x-button href="{{ route('mapas.add') }}" class="px-4 py-2 text-white bg-blue-500 rounded dark:bg-blue-700">
-            Editar
-        </x-button>
+    <div class="py-6">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            @livewire('map-editor')
+        </div>
     </div>
-
-    @livewire('mapas-table')
-
-
- 
 </x-app-layout>

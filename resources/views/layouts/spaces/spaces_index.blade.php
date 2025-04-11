@@ -22,23 +22,27 @@
                 @csrf
 
                 <div class="grid gap-6 p-6">
+
+                    <div class="space-y-2">
+                        <x-form.label for="id_universidad" :value="__('Universidad')" class="text-left" />
+                        <select id="selectedUniversidad" name="id_universidad" class="w-full border rounded p-2">
+                            <option value="">Seleccione</option>
+                            @foreach ($universidades as $uni)
+                                <option value="{{ $uni->id_universidad }}">{{ $uni->nombre_universidad }}</option>
+                            @endforeach
+                        </select>
+                    </div>
                     <div class="space-y-2">
                         <x-form.label for="id_facultad" :value="__('Facultad')" class="text-left" />
-                        <select name="id_facultad" id="id_facultad"
-                            class="block w-full text-black border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                            required onchange="cargarPisos()">
-                            <option value="" disabled selected>{{ __('Seleccionar Facultad') }}</option>
-                            @foreach ($facultades as $facultad)
-                                <option value="{{ $facultad->id }}"
-                                    {{ old('id_facultad') == $facultad->id ? 'selected' : '' }}>
-                                    {{ $facultad->nombre_facultad }}</option>
-                            @endforeach
+                        <select id="selectedFacultad" name="selectedFacultad" class="w-full border rounded p-2"
+                            disabled>
+                            <option value="">Seleccione</option>
                         </select>
                     </div>
 
                     <div class="space-y-2">
                         <x-form.label for="id" :value="__('Piso')" class="text-left text-black" />
-                        <select name="id" id="id"
+                        <select name="id" id="selectedPiso"
                             class="block w-full text-black border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             required>
                             <option value="" disabled selected>{{ __('Seleccionar Piso') }}</option>
@@ -103,6 +107,65 @@
         </x-modal>
     </div>
 
-    
+    <script>
+        document.getElementById("selectedUniversidad").addEventListener("change", function() {
+            const universidadId = this.value;
+            if (universidadId) {
+                fetch(`/facultades/${universidadId}`) // Cambiado aquí
+                    .then(response => response.json())
+                    .then(data => {
+                        const selectFacultad = document.getElementById("selectedFacultad");
+                        selectFacultad.innerHTML = "<option value=''>Seleccione</option>";
+                        data.forEach(facultad => {
+                            const option = document.createElement("option");
+                            option.value = facultad.id_facultad;
+                            option.textContent = facultad.nombre_facultad;
+                            selectFacultad.appendChild(option);
+                        });
+                        selectFacultad.disabled = false;
+                    });
+            }
+        });
+
+        // Cargar pisos
+        document.getElementById("selectedFacultad").addEventListener("change", function() {
+            const facultadId = this.value;
+            if (facultadId) {
+                fetch(`/pisos/${facultadId}`) // Cambiado aquí
+                    .then(response => response.json())
+                    .then(data => {
+                        const selectPiso = document.getElementById("selectedPiso");
+                        selectPiso.innerHTML = "<option value=''>Seleccione</option>";
+                        data.forEach(piso => {
+                            const option = document.createElement("option");
+                            option.value = piso.id;
+                            option.textContent = piso.numero_piso;
+                            selectPiso.appendChild(option);
+                        });
+                        selectPiso.disabled = false;
+                    });
+            }
+        });
+
+        // Cargar espacios (si es necesario)
+        document.getElementById("selectedPiso").addEventListener("change", function() {
+            const pisoId = this.value;
+            if (pisoId) {
+                fetch(`/espacios/${pisoId}`) // Cambiado aquí
+                    .then(response => response.json())
+                    .then(data => {
+                        const selectEspacio = document.getElementById("selectedEspacio");
+                        selectEspacio.innerHTML = "<option value=''>Seleccione</option>";
+                        data.forEach(espacio => {
+                            const option = document.createElement("option");
+                            option.value = espacio.id_espacio;
+                            option.textContent = espacio.tipo_espacio;
+                            selectEspacio.appendChild(option);
+                        });
+                        selectEspacio.disabled = false;
+                    });
+            }
+        });
+    </script>
 
 </x-app-layout>

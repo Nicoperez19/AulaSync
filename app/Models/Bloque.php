@@ -13,6 +13,8 @@ class Bloque extends Model
     protected $fillable = [
         'id_bloque',
         'color_bloque',
+        'pos_x',
+        'pos_y',
         'id_mapa',
     ];
     public function mapa()

@@ -3,66 +3,71 @@
 namespace App\Http\Controllers;
 
 use App\Models\Mapa;
-
+use App\Models\Universidad;
+use App\Models\Facultad;
+use App\Models\Piso;
+use App\Models\Espacio;
 use Illuminate\Http\Request;
 
 class MapasController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Mostrar el formulario para agregar un nuevo mapa.
      */
-    public function index()
+    public function add()
     {
-        $mapas = Mapa::with('espacio')->get();
-        return view('layouts/maps/map_index', compact('mapas'));
-    }
-    
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+        // Cargar todas las universidades
+        $universidades = Universidad::all();
+        return view('layouts.maps.map_add', compact('universidades'));
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Guardar los datos del mapa (incluyendo bloques y relaciones).
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'selectedUniversidad' => 'required',
+            'selectedFacultad' => 'required',
+            'selectedPiso' => 'required',
+            'selectedEspacio' => 'required',
+            'mapName' => 'required|string|max:255',
+            'canvasData' => 'required', // Asegúrate de que canvasData esté presente
+        ]);
+
+        // Crear el mapa en la base de datos
+        $mapa = Mapa::create([
+            'nombre_mapa' => $request->mapName,
+            'canvas_data' => json_encode($request->canvasData),
+            'id_espacio' => $request->selectedEspacio,
+        ]);
+
+        session()->flash('message', '¡Mapa guardado con éxito!');
+
+        return redirect()->route('mapas.add');
     }
 
     /**
-     * Display the specified resource.
+     * Obtener las facultades de una universidad.
      */
-    public function show(string $id)
+    public function getFacultades($universidadId)
     {
-        //
+        return Facultad::where('id_universidad', $universidadId)->get();
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Obtener los pisos de una facultad.
      */
-    public function edit(string $id)
+    public function getPisos($facultadId)
     {
-        //
+        return Piso::where('id_facultad', $facultadId)->get();
     }
 
     /**
-     * Update the specified resource in storage.
+     * Obtener los espacios de un piso.
      */
-    public function update(Request $request, string $id)
+    public function getEspacios($pisoId)
     {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        return Espacio::where('id', $pisoId)->get();
     }
 }

@@ -21,7 +21,7 @@ class Espacio extends Model
 
     public function piso()
     {
-        return $this->belongsTo(Piso::class, 'id');
+        return $this->belongsTo(Piso::class, 'id');  // Corregir el campo de clave foránea
     }
 
 }

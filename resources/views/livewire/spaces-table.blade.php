@@ -1,10 +1,9 @@
 <div class="w-full min-h-screen p-4 bg-gray-100 dark:bg-gray-900">
-    <div
-        class="relative overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-md dark:bg-gray-800 dark:border-gray-700">
+    <div class="relative overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-md dark:bg-gray-800 dark:border-gray-700">
         <table class="w-full text-center border-collapse table-auto min-w-max">
-            <thead
-                class="hidden text-black border-b border-white lg:table-header-group bg-gray-50 dark:bg-black dark:text-white">
+            <thead class="hidden text-black border-b border-white lg:table-header-group bg-gray-50 dark:bg-black dark:text-white">
                 <tr>
+                    <th class="p-3 border border-black dark:border-white whitespace-nowrap">Universidad</th>
                     <th class="p-3 border border-black dark:border-white whitespace-nowrap">Facultad</th>
                     <th class="p-3 border border-black dark:border-white whitespace-nowrap">Piso</th>
                     <th class="p-3 border border-black dark:border-white whitespace-nowrap">Tipo</th>
@@ -23,10 +22,13 @@
                         'bg-gray-700' => $index % 2 !== 0 && config('app.dark_mode'),
                     ])">
                         <td class="p-3 border border-black dark:border-white whitespace-nowrap">
+                            {{ $espacio->piso->facultad->universidad->nombre_universidad ?? 'Sin Universidad' }}
+                        </td>
+                        <td class="p-3 border border-black dark:border-white whitespace-nowrap">
                             {{ $espacio->piso->facultad->nombre_facultad ?? 'Sin Facultad' }}
                         </td>
                         <td class="p-3 border border-black dark:border-white whitespace-nowrap">
-                            {{ $espacio->piso->numero_piso ?? 'Sin piso' }}
+                            {{ $espacio->piso->numero_piso ?? 'Sin Piso' }}
                         </td>
                         <td class="p-3 border border-black dark:border-white whitespace-nowrap">
                             {{ $espacio->tipo_espacio }}
@@ -52,7 +54,6 @@
                                         Eliminar
                                     </x-button>
                                 </form>
-
                             </div>
                         </td>
                     </tr>
