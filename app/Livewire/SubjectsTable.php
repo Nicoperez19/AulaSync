@@ -4,7 +4,7 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use Livewire\WithPagination;
-use App\Models\Asignatura; // Assuming Asignatura is the model for the subjects
+use App\Models\Asignatura; 
 
 class SubjectsTable extends Component
 {
@@ -24,7 +24,6 @@ class SubjectsTable extends Component
 
     public function render()
     {
-        // Fetch subjects with search functionality and pagination
         $asignaturas = Asignatura::where('nombre', 'like', '%' . $this->search . '%')
             ->orWhere('id_asignatura', 'like', '%' . $this->search . '%')
             ->orWhere('area_conocimiento', 'like', '%' . $this->search . '%')

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Carrera;
 use App\Models\Asignatura;
+use Spatie\Permission\Models\Role;
 
 
 
@@ -17,8 +18,10 @@ class AsignaturaController extends Controller
      */
     public function index()
     {
-        $asignaturas = Asignatura::with('profesor', 'carrera')->paginate(10); // Asegúrate de cargar la relación 'usuario'
-        $usuarios = User::all();
+        $asignaturas = Asignatura::with('profesor', 'carrera')->paginate(10);
+        $usuarios = User::whereHas('roles', function ($query) {
+            $query->where('name', 'Profesor');
+        })->get();        
         $carreras = Carrera::all();
 
         return view('layouts.subjects.subject_index', compact('asignaturas', 'usuarios', 'carreras'));

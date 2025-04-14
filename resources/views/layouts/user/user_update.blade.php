@@ -6,8 +6,8 @@
             </h2>
         </div>
     </x-slot>
-    <div class="bg-gray-100 p-6 rounded-lg shadow-lg">
 
+    <div class="p-6 bg-gray-100 rounded-lg shadow-lg">
         <form method="POST" action="{{ route('users.update', $user->id) }}">
             @csrf
             @method('PUT')
@@ -21,20 +21,19 @@
                             <x-slot name="icon">
                                 <x-heroicon-o-user class="w-5 h-5" />
                             </x-slot>
-                            <x-form.input withicon id="run_update" class="block w-full" type="text" name="run"
-                                value="{{ old('run', $user->run) }}" required autofocus
-                                placeholder="{{ __('RUN') }}" />
+                            <x-form.input withicon id="run" class="block w-full" type="text" name="run"
+                                value="{{ old('run', $user->run) }}" autofocus placeholder="{{ __('RUN') }}" />
                         </x-form.input-with-icon-wrapper>
                     </div>
 
                     <div>
-                        <x-form.label for="nombre" :value="__('Nombre')" />
+                        <x-form.label for="name" :value="__('Nombre')" />
                         <x-form.input-with-icon-wrapper>
                             <x-slot name="icon">
                                 <x-heroicon-o-user class="w-5 h-5" />
                             </x-slot>
-                            <x-form.input withicon id="nombre_update" class="block w-full" type="text" name="nombre"
-                                value="{{ old('nombre', $user->name) }}" required placeholder="{{ __('Nombre') }}" />
+                            <x-form.input withicon id="name" class="block w-full" type="text" name="name"
+                                value="{{ old('name', $user->name) }}" placeholder="{{ __('Nombre') }}" />
                         </x-form.input-with-icon-wrapper>
                     </div>
                 </div>
@@ -42,13 +41,13 @@
                 <!-- Correo y Celular -->
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                        <x-form.label for="correo" :value="__('Correo')" />
+                        <x-form.label for="email" :value="__('Correo')" />
                         <x-form.input-with-icon-wrapper>
                             <x-slot name="icon">
                                 <x-heroicon-o-mail class="w-5 h-5" />
                             </x-slot>
-                            <x-form.input withicon id="correo_update" class="block w-full" type="email" name="correo"
-                                value="{{ old('correo', $user->email) }}" required placeholder="{{ __('Correo') }}" />
+                            <x-form.input withicon id="email" class="block w-full" type="email" name="email"
+                                value="{{ old('email', $user->email) }}" placeholder="{{ __('Correo') }}" />
                         </x-form.input-with-icon-wrapper>
                     </div>
 
@@ -58,9 +57,8 @@
                             <x-slot name="icon">
                                 <x-heroicon-o-phone class="w-5 h-5" />
                             </x-slot>
-                            <x-form.input withicon id="celular_update" class="block w-full" type="text"
-                                name="celular" value="{{ old('celular', $user->celular) }}" required
-                                placeholder="{{ __('Celular') }}" />
+                            <x-form.input withicon id="celular" class="block w-full" type="text" name="celular"
+                                value="{{ old('celular', $user->celular) }}" placeholder="{{ __('Celular') }}" />
                         </x-form.input-with-icon-wrapper>
                     </div>
                 </div>
@@ -73,8 +71,8 @@
                             <x-slot name="icon">
                                 <x-heroicon-o-location-marker class="w-5 h-5" />
                             </x-slot>
-                            <x-form.input withicon id="direccion_update" class="block w-full" type="text"
-                                name="direccion" value="{{ old('direccion', $user->direccion) }}" required
+                            <x-form.input withicon id="direccion" class="block w-full" type="text" name="direccion"
+                                value="{{ old('direccion', $user->direccion) }}"
                                 placeholder="{{ __('Dirección') }}" />
                         </x-form.input-with-icon-wrapper>
                     </div>
@@ -85,9 +83,9 @@
                             <x-slot name="icon">
                                 <x-heroicon-o-calendar class="w-5 h-5" />
                             </x-slot>
-                            <x-form.input withicon id="fecha_nacimiento_update" class="block w-full" type="date"
-                                name="fecha_nacimiento" value="{{ old('fecha_nacimiento', $user->fecha_nacimiento) }}"
-                                required />
+                            <x-form.input withicon id="fecha_nacimiento" class="block w-full" type="date"
+                                name="fecha_nacimiento"
+                                value="{{ old('fecha_nacimiento', $user->fecha_nacimiento) }}" />
                         </x-form.input-with-icon-wrapper>
                     </div>
                 </div>
@@ -100,20 +98,19 @@
                             <x-slot name="icon">
                                 <x-heroicon-o-academic-cap class="w-5 h-5" />
                             </x-slot>
-                            <x-form.input withicon id="anio_ingreso_update" class="block w-full" type="number"
-                                name="anio_ingreso" value="{{ old('anio_ingreso', $user->anio_ingreso) }}" required
+                            <x-form.input withicon id="anio_ingreso" class="block w-full" type="number"
+                                name="anio_ingreso" value="{{ old('anio_ingreso', $user->anio_ingreso) }}"
                                 min="1900" max="{{ date('Y') }}" />
                         </x-form.input-with-icon-wrapper>
                     </div>
 
                     <div>
-                        <x-form.label for="contrasena" :value="__('Contraseña Nueva')" />
+                        <x-form.label for="password" :value="__('Contraseña Nueva')" />
                         <x-form.input-with-icon-wrapper>
                             <x-slot name="icon">
                                 <x-heroicon-o-lock-closed class="w-5 h-5" />
                             </x-slot>
-                            <x-form.input withicon id="contrasena" class="block w-full" type="password"
-                                {{-- value="{{ old('password', $user->password) }}" name="contrasena" --}}
+                            <x-form.input withicon id="password" name="password" class="block w-full" type="password"
                                 placeholder="{{ __('Dejar en blanco si no desea cambiarla') }}" />
                         </x-form.input-with-icon-wrapper>
                     </div>

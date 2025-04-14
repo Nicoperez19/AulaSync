@@ -33,7 +33,7 @@ class Asignatura extends Model
 
     public function profesor()
     {
-        return $this->belongsTo(User::class, 'id');  // Relación con el campo 'id' de 'users'
+        return $this->belongsTo(User::class, 'id');  
     }
     
 }

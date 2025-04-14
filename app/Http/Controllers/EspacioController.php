@@ -30,10 +30,10 @@ class EspacioController extends Controller
                 'estado' => 'required|in:Disponible,Ocupado,Reservado',
                 'puestos_disponibles' => 'nullable|integer|min:0',
             ]);
-    
+
             // Generar un id único para el espacio
             $id_espacio = strtoupper(uniqid('ESP-', true));  // Este es un ejemplo, puedes personalizarlo
-    
+
             // Crear el espacio
             Espacio::create([
                 'id_espacio' => $id_espacio,  // Usamos el id generado
@@ -42,29 +42,29 @@ class EspacioController extends Controller
                 'estado' => $request->estado,
                 'puestos_disponibles' => $request->puestos_disponibles,
             ]);
-    
+
             return redirect()->route('layouts.spaces.spaces_index')->with('success', 'Espacio creado exitosamente.');
         } catch (\Exception $e) {
             return redirect()->route('layouts.spaces.spaces_index')->with('error', 'Error al crear el espacio: ' . $e->getMessage());
         }
     }
-    
+
 
     public function edit(string $id_espacio)
-{
-    $espacio = Espacio::where('id_espacio', $id_espacio)->firstOrFail();
-    
-    // Fetch all universities
-    $universidades = Universidad::all();
+    {
+        $espacio = Espacio::where('id_espacio', $id_espacio)->firstOrFail();
 
-    // Fetch faculties based on the university of the space
-    $facultades = Facultad::where('id_universidad', $espacio->piso->facultad->universidad->id)->get();
+        // Fetch all universities
+        $universidades = Universidad::all();
 
-    // Fetch all pisos
-    $pisos = Piso::all();
-    
-    return view('layouts.spaces.spaces_edit', compact('espacio', 'pisos', 'universidades', 'facultades'));
-}
+        // Fetch faculties based on the university of the space
+        $facultades = Facultad::where('id_universidad', $espacio->piso->facultad->universidad->id)->get();
+
+        // Fetch all pisos
+        $pisos = Piso::all();
+
+        return view('layouts.spaces.spaces_edit', compact('espacio', 'pisos', 'universidades', 'facultades'));
+    }
 
     public function update(Request $request, string $id_espacio)
     {

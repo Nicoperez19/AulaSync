@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
@@ -32,24 +31,26 @@ class UserController extends Controller
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
                 'password' => ['required', Rules\Password::defaults()],
-                'roles' => 'required|array', // Validación de roles
+                'roles' => 'required|array',
             ]);
 
             $user = User::create([
                 'run' => $validatedData['run'],
                 'name' => $validatedData['name'],
                 'email' => $validatedData['email'],
-                'password' => Hash::make($validatedData['password']),
+                'password' => bcrypt($validatedData['password']),
+
             ]);
 
-            // Asignar roles y permisos
-            $user->syncRoles($validatedData['roles']); // Sincronizar roles
+            $role = Role::findByName('Usuario');  // Asegúrate de que este rol exista en la base de datos
+            $user->assignRole($role);
 
             event(new Registered($user));
 
-            return redirect()->route('users.index')->with('success', 'Usuario creado exitosamente.');
+            return redirect()->route('users.indexx')->with('success', 'Usuario creado exitosamente.');
 
         } catch (\Exception $e) {
+
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al crear el usuario. Por favor, intente nuevamente.'])->withInput();
         }
     }
@@ -66,44 +67,67 @@ class UserController extends Controller
         return view('layouts.user.user_update', compact('user', 'roles', 'permissions'));
     }
 
-    public function update(Request $request, $id, Role $role)
+    public function update(Request $request, $id)
     {
         try {
+
             $user = User::findOrFail($id);
 
-            // Validación de datos
-            $validatedData = $request->validate([
-                'run' => 'required|string|regex:/^\d{7,8}-[0-9K]$/|unique:users,run,' . $user->id,
-                'name' => ['required', 'string', 'max:255'],
-                'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email,' . $user->id],
-                'password' => ['nullable', Rules\Password::defaults()],
-                'roles' => 'required|array',
-                'permissions' => 'nullable|array', 
-            ]);
+            $rules = [
+                'name' => 'nullable|string|max:255',
+                'celular' => 'nullable|string|max:20',
+                'direccion' => 'nullable|string|max:255',
+                'fecha_nacimiento' => 'nullable|date',
+                'anio_ingreso' => 'nullable|integer|min:1900|max:' . date('Y'),
+                'password' => 'nullable|string|min:8',
+                'roles' => 'nullable|array|exists:roles,id',
+                'permissions' => 'nullable|array|exists:permissions,id',
+            ];
 
-            // Actualizar datos básicos del usuario
-            $user->update([
-                'run' => $validatedData['run'],
-                'name' => $validatedData['name'],
-                'email' => $validatedData['email'],
-            ]);
-
-            // Si se proporciona una nueva contraseña, la actualiza
-            if ($request->filled('password')) {
-                $user->update([
-                    'password' => Hash::make($validatedData['password']),
-                ]);
+            if ($request->run && $request->run != $user->run) {
+                $rules['run'] = 'required|string|regex:/^\d{7,8}-[0-9K]$/|unique:users,run';
             }
 
-            $user->roles()->sync($request->roles);
-            $user->permissions()->sync($request->permissions);  
+            if ($request->email && $request->email != $user->email) {
+                $rules['email'] = 'required|string|email|max:255|unique:users,email';
+            }
+
+            $validatedData = $request->validate($rules);
+
+
+            $roles = Role::whereIn('id', $validatedData['roles'])->pluck('name')->toArray();
+
+            $user->fill([
+                'run' => $validatedData['run'] ?? $user->run,
+                'name' => $validatedData['name'] ?? $user->name,
+                'email' => $validatedData['email'] ?? $user->email,
+                'celular' => $validatedData['celular'] ?? $user->celular,
+                'direccion' => $validatedData['direccion'] ?? $user->direccion,
+                'fecha_nacimiento' => $validatedData['fecha_nacimiento'] ?? $user->fecha_nacimiento,
+                'anio_ingreso' => $validatedData['anio_ingreso'] ?? $user->anio_ingreso,
+            ]);
+
+            if (!empty($validatedData['password'])) {
+                $user->password = bcrypt($validatedData['password']);
+            }
+
+            $user->syncRoles($roles);
+            $user->syncPermissions($validatedData['permissions'] ?? []);
+
+            $user->save();
+
 
             return redirect()->route('users.index')->with('success', 'Usuario actualizado exitosamente.');
-
         } catch (\Exception $e) {
+
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al actualizar el usuario.'])->withInput();
         }
     }
+
+
+
+
+
 
 
     public function destroy($id)

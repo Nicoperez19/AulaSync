@@ -45,7 +45,7 @@
                         {{ $asignatura->periodo }}
                     </td>
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Docente Responsable">
-                        {{ optional($asignatura->usuario)->name ?? 'No asignado' }}
+                        {{ optional($asignatura->profesor)->name ?? 'No asignado' }}
                     </td>
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Carrera">
                         {{ optional($asignatura->carrera)->nombre ?? 'No asignada' }}

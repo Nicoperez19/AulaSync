@@ -15,12 +15,12 @@ class AsignaturasSeeder extends Seeder
         DB::table('asignaturas')->insert([
             [
                 'id_asignatura' => 'ASG001',
-                'nombre' => 'Matematáticas Avanzadas',
+                'nombre' => 'Matemáticas Avanzadas',
                 'horas_directas' => 40,
                 'horas_indirectas' => 60,
                 'area_conocimiento' => 'Ciencias Exactas',
                 'periodo' => 'Primer Semestre',
-                'id' => 2, // id de usuario Nicolás Pérez
+                'id' => 3, // nuevo id
                 'id_carrera' => '1', // Ingeniería Civil
             ],
             [
@@ -30,7 +30,7 @@ class AsignaturasSeeder extends Seeder
                 'horas_indirectas' => 55,
                 'area_conocimiento' => 'Ciencias Exactas',
                 'periodo' => 'Segundo Semestre',
-                'id' => 3, // id de usuario Juan Pérez
+                'id' => 4, // nuevo id
                 'id_carrera' => '2', // Arquitectura
             ],
             [
@@ -40,7 +40,7 @@ class AsignaturasSeeder extends Seeder
                 'horas_indirectas' => 70,
                 'area_conocimiento' => 'Ciencias Médicas',
                 'periodo' => 'Primer Semestre',
-                'id' => 4, // id de usuario Ana López
+                'id' => 5, // nuevo id
                 'id_carrera' => '3', // Medicina
             ],
             [
@@ -50,7 +50,7 @@ class AsignaturasSeeder extends Seeder
                 'horas_indirectas' => 50,
                 'area_conocimiento' => 'Ciencias Sociales',
                 'periodo' => 'Segundo Semestre',
-                'id' => 5, // id de usuario Carlos Soto
+                'id' => 6, // nuevo id
                 'id_carrera' => '10', // Educación
             ],
             [
@@ -60,7 +60,7 @@ class AsignaturasSeeder extends Seeder
                 'horas_indirectas' => 80,
                 'area_conocimiento' => 'Ingeniería Civil',
                 'periodo' => 'Primer Semestre',
-                'id' => 6, // id de usuario María González
+                'id' => 7, // nuevo id
                 'id_carrera' => '1', // Ingeniería Civil
             ],
             [
@@ -70,7 +70,7 @@ class AsignaturasSeeder extends Seeder
                 'horas_indirectas' => 65,
                 'area_conocimiento' => 'Arquitectura',
                 'periodo' => 'Segundo Semestre',
-                'id' => 7, // id de usuario Felipe Álvarez
+                'id' => 3, // nuevo id
                 'id_carrera' => '2', // Arquitectura
             ],
             [
@@ -80,7 +80,7 @@ class AsignaturasSeeder extends Seeder
                 'horas_indirectas' => 45,
                 'area_conocimiento' => 'Medicina',
                 'periodo' => 'Primer Semestre',
-                'id' => 8, // id de usuario Sofía Herrera
+                'id' => 4, // nuevo id
                 'id_carrera' => '3', // Medicina
             ],
             [
@@ -90,7 +90,7 @@ class AsignaturasSeeder extends Seeder
                 'horas_indirectas' => 60,
                 'area_conocimiento' => 'Educación',
                 'periodo' => 'Segundo Semestre',
-                'id' => 9, // id de usuario Pedro Jiménez
+                'id' => 5, // nuevo id
                 'id_carrera' => '10', // Educación
             ],
             [
@@ -100,9 +100,9 @@ class AsignaturasSeeder extends Seeder
                 'horas_indirectas' => 60,
                 'area_conocimiento' => 'Ciencias Exactas',
                 'periodo' => 'Primer Semestre',
-                'id' => 10, // id de usuario Laura Martínez
+                'id' => 6, // nuevo id
                 'id_carrera' => '1', // Ingeniería Civil
-            ]
+            ],
         ]);
     }
 }

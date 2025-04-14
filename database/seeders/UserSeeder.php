@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
             'run' => '12345678-9',
             'name' => 'Admin',
             'email' => 'admin@ucsc.cl',
-            'password' => bcrypt('password'), 
+            'password' => bcrypt('password'),
             'celular' => '987654321',
             'direccion' => 'Calle Falsa 123',
             'fecha_nacimiento' => '1985-05-20',
@@ -26,7 +26,7 @@ class UserSeeder extends Seeder
             'run' => '19812524-5',
             'name' => 'Nicolas Perez',
             'email' => 'nperez@ucsc.cl',
-            'password' => bcrypt('password'), 
+            'password' => bcrypt('password'),
             'celular' => '912345678',
             'direccion' => 'Avenida Siempreviva 742',
             'fecha_nacimiento' => '1992-08-15',
@@ -53,6 +53,65 @@ class UserSeeder extends Seeder
             ['run' => '88990011-2', 'name' => 'Cristina Morales', 'email' => 'cristinam@ucsc.cl', 'celular' => '944778899', 'direccion' => 'Calle del Sol 333', 'fecha_nacimiento' => '1997-04-20', 'anio_ingreso' => 2020, 'password' => bcrypt('password')],
             ['run' => '99001122-3', 'name' => 'Enrique Soto', 'email' => 'enriques@ucsc.cl', 'celular' => '955889900', 'direccion' => 'Calle Girasol 444', 'fecha_nacimiento' => '1998-05-25', 'anio_ingreso' => 2021, 'password' => bcrypt('password')]
         ];
+
+
+        $profesores = [
+            [
+                'run' => '12345678-9',
+                'name' => 'Carlos López',
+                'email' => 'clopez@ucsc.cl',
+                'password' => bcrypt('password'),
+                'celular' => '911111111',
+                'direccion' => 'Calle Los Almendros 123',
+                'fecha_nacimiento' => '1985-06-24',
+                'anio_ingreso' => 2010,
+            ],
+            [
+                'run' => '98765432-1',
+                'name' => 'Maria Torres',
+                'email' => 'mtorres@ucsc.cl',
+                'password' => bcrypt('password'),
+                'celular' => '922222222',
+                'direccion' => 'Avenida Las Rosas 456',
+                'fecha_nacimiento' => '1990-03-15',
+                'anio_ingreso' => 2012,
+            ],
+            [
+                'run' => '19283746-5',
+                'name' => 'Luis Gutierrez',
+                'email' => 'lgutierrez@ucsc.cl',
+                'password' => bcrypt('password'),
+                'celular' => '933333333',
+                'direccion' => 'Pasaje Los Pinos 789',
+                'fecha_nacimiento' => '1988-11-05',
+                'anio_ingreso' => 2008,
+            ],
+            [
+                'run' => '56473829-0',
+                'name' => 'Ana González',
+                'email' => 'agonzalez@ucsc.cl',
+                'password' => bcrypt('password'),
+                'celular' => '944444444',
+                'direccion' => 'Calle Las Palmas 321',
+                'fecha_nacimiento' => '1992-04-20',
+                'anio_ingreso' => 2015,
+            ],
+            [
+                'run' => '28374659-2',
+                'name' => 'Juan Perez',
+                'email' => 'jperez@ucsc.cl',
+                'password' => bcrypt('password'),
+                'celular' => '955555555',
+                'direccion' => 'Avenida Siempreviva 742',
+                'fecha_nacimiento' => '1980-08-15',
+                'anio_ingreso' => 2005,
+            ],
+        ];
+
+        foreach ($profesores as $profesor) {
+            $user = User::create($profesor);
+            $user->assignRole('Profesor');
+        }
 
         foreach ($users as $userData) {
             User::create($userData)->assignRole('Usuario');
