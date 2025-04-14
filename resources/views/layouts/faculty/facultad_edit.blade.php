@@ -7,7 +7,7 @@
         </div>
     </x-slot>
 
-    <form action="{{ route('faculties.update', $facultad->id_facultad) }}" method="POST" enctype="multipart/form-data">
+    <form id="edit-faculty-form" action="{{ route('faculties.update', $facultad->id_facultad) }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
 
@@ -70,7 +70,46 @@
             </div>
         </div>
     </form>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+    <script>
+        // Confirmar antes de enviar
+        document.getElementById('edit-faculty-form').addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevenir envío inmediato
+    
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "Vas a modificar los datos de esta facultad.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, guardar cambios',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    e.target.submit(); // Enviar si confirma
+                }
+            });
+        });
+    
+        // Vista previa del logo
+        function previewImage(event) {
+            var file = event.target.files[0];
+            var reader = new FileReader();
+    
+            reader.onload = function(e) {
+                var preview = document.getElementById('logoPreview');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+    
+            if (file) {
+                reader.readAsDataURL(file);
+            }
+        }
+    </script>
+    
     <script>
         function previewImage(event) {
             var file = event.target.files[0];

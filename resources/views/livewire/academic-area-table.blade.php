@@ -40,7 +40,7 @@
                                 class="px-4 py-2 text-white bg-blue-500 rounded dark:bg-blue-700">
                                 Editar
                             </x-button>
-                            <form method="POST" action="{{ route('academic_areas.delete', $areaAcademica->id_area_academica) }}">
+                            <form id="delete-area-form-{{ $areaAcademica->id_area_academica }}" method="POST" action="{{ route('academic_areas.delete', $areaAcademica->id_area_academica) }}">
                                 @csrf
                                 @method('DELETE')
                                 <x-button variant="danger"
@@ -54,4 +54,33 @@
             @endforeach
         </tbody>
     </table>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        // Iteramos sobre todas las áreas académicas para agregar un evento de confirmación
+        @foreach ($areasAcademicas as $areaAcademica)
+            // Obtenemos el formulario correspondiente por su ID único
+            document.getElementById('delete-area-form-{{ $areaAcademica->id_area_academica }}').addEventListener('submit', function(e) {
+                e.preventDefault(); // Evita el envío inmediato del formulario
+
+                // Mostramos el cuadro de confirmación usando SweetAlert2
+                Swal.fire({
+                    title: '¿Estás seguro?',
+                    text: 'Esta acción eliminará el área académica.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        this.submit(); // Si se confirma, enviamos el formulario
+                    }
+                });
+            });
+        @endforeach
+    </script>
+
 </div>

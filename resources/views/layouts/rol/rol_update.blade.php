@@ -54,16 +54,14 @@
             </div>
         </form>
     </div>
-    <!-- 1. Carga SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <!-- 2. Tu script personalizado -->
     <script>
         const form = document.getElementById('edit-role-form');
 
         if (form) {
             form.addEventListener('submit', function(e) {
-                e.preventDefault(); // Evita el envío inmediato
+                e.preventDefault(); 
 
                 Swal.fire({
                     title: '¿Seguro de editar?',

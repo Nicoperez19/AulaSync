@@ -4,7 +4,7 @@
             <h2 class="text-xl font-semibold leading-tight" style="font-style: oblique;">
                 {{ __('Universidad / Universidad') }}
             </h2>
-        </div>
+        </div>  
     </x-slot>
 
     <div class="flex justify-end mb-4">
@@ -18,7 +18,7 @@
 
     <div class="space-y-1">
         <x-modal name="add-university" :show="$errors->any()" focusable>
-            <form method="POST" action="{{ route('universities.store') }}" enctype="multipart/form-data">
+            <form id="add-university-form" method="POST" action="{{ route('universities.store') }}" enctype="multipart/form-data">
                 @csrf
 
                 <div class="grid gap-6 p-6">
@@ -91,7 +91,7 @@
                     </div>
 
                     <div>
-                        <x-button class="justify-center w-full gap-2">
+                        <x-button class="justify-center w-full gap-2" id="submit-btn">
                             <x-heroicon-o-user-add class="w-6 h-6" aria-hidden="true" />
                             <span>{{ __('Agregar Universidad') }}</span>
                         </x-button>
@@ -100,4 +100,25 @@
             </form>
         </x-modal>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    @if (session('success'))
+        Swal.fire({
+            title: '¡Éxito!',
+            text: @json(session('success')),
+            icon: 'success',
+            confirmButtonText: 'Aceptar'
+        });
+    @endif
+
+    @if (session('error'))
+        Swal.fire({
+            title: '¡Error!',
+            text: @json(session('error')),
+            icon: 'error',
+            confirmButtonText: 'Aceptar'
+        });
+    @endif
+</script>
 </x-app-layout>

@@ -19,7 +19,7 @@
 
     <div class="space-y-1">
         <x-modal name="add-faculty" :show="$errors->any()" focusable>
-            <form method="POST" action="{{ route('faculties.add') }}" enctype="multipart/form-data">
+            <form id="add-faculty-form" method="POST" action="{{ route('faculties.add') }}" enctype="multipart/form-data">
                 @csrf
 
                 <div class="grid gap-6 p-6">
@@ -90,4 +90,26 @@
             </form>
         </x-modal>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        @if (session('success'))
+            Swal.fire({
+                title: '¡Éxito!',
+                text: '{{ session('success') }}',
+                icon: 'success',
+                confirmButtonText: 'Aceptar'
+            });
+        @endif
+
+        @if (session('error'))
+            Swal.fire({
+                title: '¡Error!',
+                text: '{{ session('error') }}',
+                icon: 'error',
+                confirmButtonText: 'Aceptar'
+            });
+        @endif
+    </script>
+
 </x-app-layout>

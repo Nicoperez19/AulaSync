@@ -45,14 +45,18 @@
                                 class="px-4 py-2 text-white bg-blue-500 rounded dark:bg-blue-700">
                                 Editar
                             </x-button>
-                            <form method="POST" action="{{ route('universities.delete', $universidad->id_universidad) }}" enctype="multipart/form-data">
+                            <form method="POST"
+                                action="{{ route('universities.delete', $universidad->id_universidad) }}"
+                                enctype="multipart/form-data">
 
                                 @csrf
                                 @method('DELETE')
-                                <x-button variant="danger"
+                                <button type="button" onclick="confirmDelete(this)"
                                     class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700">
                                     Eliminar
-                                </x-button>
+                                </button>
+
+
                             </form>
                         </div>
                     </td>
@@ -60,4 +64,56 @@
             @endforeach
         </tbody>
     </table>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    function confirmDelete(button) {
+        Swal.fire({
+            title: "¿Estás seguro?",
+            text: "¡Esta acción no se puede deshacer!",
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar"
+        }).then((result) => {
+            if (result.isConfirmed) {
+                button.closest('form').submit();
+            }
+        });
+    }
+
+    // Verifica si hay mensajes de sesión
+    const successMessage = @json(session('success'));
+    if (successMessage) {
+        Swal.fire({
+            title: "¡Éxito!",
+            text: successMessage,
+            icon: "success",
+            confirmButtonText: "Aceptar"
+        });
+    }
+
+    const errorMessage = @json(session('error'));
+    if (errorMessage) {
+        Swal.fire({
+            title: "¡Error!",
+            text: errorMessage,
+            icon: "error",
+            confirmButtonText: "Aceptar"
+        });
+    }
+
+    const userNotFoundMessage = @json(session('university_not_found'));
+    if (userNotFoundMessage) {
+        Swal.fire({
+            title: "¡Error!",
+            text: userNotFoundMessage,
+            icon: "error",
+            confirmButtonText: "Aceptar"
+        });
+    }
+</script>
+
 </div>

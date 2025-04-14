@@ -7,7 +7,7 @@
         </div>
     </x-slot>
 
-    <form action="{{ route('academic_areas.update', $areaAcademica->id_area_academica) }}" method="POST" enctype="multipart/form-data">
+    <form id="edit-academic-area-form" action="{{ route('academic_areas.update', $areaAcademica->id_area_academica) }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
 
@@ -61,5 +61,31 @@
             </div>
         </div>
     </form>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        const form = document.getElementById('edit-academic-area-form');
+
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault(); 
+
+                Swal.fire({
+                    title: '¿Seguro de editar?',
+                    text: "Estás a punto de guardar los cambios.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, editar',
+                    cancelButtonText: 'Cancelar',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit(); // Envía el formulario si se confirma
+                    }
+                });
+            });
+        }
+    </script>
 
 </x-app-layout>

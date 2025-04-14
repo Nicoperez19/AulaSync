@@ -7,7 +7,7 @@
         </div>
     </x-slot>
 
-    <form action="{{ route('universities.update', $universidad->id_universidad) }}" method="POST" enctype="multipart/form-data">
+    <form id="edit-university-form" action="{{ route('universities.update', $universidad->id_universidad) }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
     
@@ -73,8 +73,28 @@
         </div>
     </form>
     
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
+
+document.getElementById('edit-university-form').addEventListener('submit', function (e) {
+        e.preventDefault(); // Prevenir envío inmediato
+
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: "Vas a modificar los datos de esta universidad.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Sí, guardar cambios',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                e.target.submit(); // Enviar el formulario si el usuario confirma
+            }
+        });
+    });
         function previewImage(event) {
             var file = event.target.files[0];
             var reader = new FileReader();

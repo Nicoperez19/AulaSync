@@ -48,10 +48,10 @@
                             <form method="POST" action="{{ route('faculties.delete', $facultad->id_facultad) }}">
                                 @csrf
                                 @method('DELETE')
-                                <x-button variant="danger"
+                                <button type="button" onclick="confirmDelete(this)"
                                     class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700">
                                     Eliminar
-                                </x-button>
+                                </button>
                             </form>
                         </div>
                     </td>
@@ -59,4 +59,49 @@
             @endforeach
         </tbody>
     </table>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        function confirmDelete(button) {
+            Swal.fire({
+                title: "¿Estás seguro?",
+                text: "¡Esta acción eliminará la facultad permanentemente!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: "Sí, eliminar",
+                cancelButtonText: "Cancelar"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    button.closest('form').submit();
+                }
+            });
+        }
+
+        // Mensajes flash (éxito, error, etc.)
+        document.addEventListener('DOMContentLoaded', () => {
+            const success = @json(session('success'));
+            const error = @json(session('error'));
+
+            if (success) {
+                Swal.fire({
+                    title: "¡Éxito!",
+                    text: success,
+                    icon: "success",
+                    confirmButtonText: "Aceptar"
+                });
+            }
+
+            if (error) {
+                Swal.fire({
+                    title: "¡Error!",
+                    text: error,
+                    icon: "error",
+                    confirmButtonText: "Aceptar"
+                });
+            }
+        });
+    </script>
+
 </div>
