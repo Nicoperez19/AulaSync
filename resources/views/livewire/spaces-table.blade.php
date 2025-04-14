@@ -46,7 +46,7 @@
                                     Editar
                                 </x-button>
                                 <form action="{{ route('spaces.delete', $espacio->id_espacio) }}" method="POST"
-                                    style="display: inline;">
+                                    style="display: inline;" onclick="confirmDelete(this)" >
                                     @csrf
                                     @method('DELETE')
                                     <x-button variant="danger"
@@ -61,4 +61,47 @@
             </tbody>
         </table>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        function confirmDelete(button) {
+            Swal.fire({
+                title: "¿Estás seguro?",
+                text: "¡Esta acción no se puede deshacer!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Sí, eliminar",
+                cancelButtonText: "Cancelar",
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    button.closest('form').submit();
+                }
+            });
+        }
+    
+        // Mensajes de sesión con SweetAlert2
+        const successMessage = @json(session('success'));
+        if (successMessage) {
+            Swal.fire({
+                title: "¡Éxito!",
+                text: successMessage,
+                icon: "success",
+                confirmButtonText: "Aceptar"
+            });
+        }
+    
+        const errorMessage = @json(session('error'));
+        if (errorMessage) {
+            Swal.fire({
+                title: "¡Error!",
+                text: errorMessage,
+                icon: "error",
+                confirmButtonText: "Aceptar"
+            });
+        }
+    
+    </script>
+    
 </div>

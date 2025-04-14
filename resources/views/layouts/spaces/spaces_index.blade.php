@@ -34,15 +34,15 @@
                     </div>
                     <div class="space-y-2">
                         <x-form.label for="id_facultad" :value="__('Facultad')" class="text-left" />
-                        <select id="selectedFacultad" name="facultad" class="w-full p-2 border rounded"
+                        <select id="selectedFacultad" name="id_facultad" class="w-full p-2 border rounded"
                             disabled>
                             <option value="">Seleccione</option>
                         </select>
                     </div>
 
                     <div class="space-y-2">
-                        <x-form.label for="id" :value="__('Piso')" class="text-left text-black" />
-                        <select name="id" id="selectedPiso"
+                        <x-form.label for="piso_id" :value="__('Piso')" class="text-left text-black" />
+                        <select name="piso_id" id="selectedPiso"
                             class="block w-full text-black border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                             required>
                             <option value="" disabled selected>{{ __('Seleccionar Piso') }}</option>
@@ -106,27 +106,7 @@
             </form>
         </x-modal>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <script>
-        @if (session('success'))
-            Swal.fire({
-                title: '¡Éxito!',
-                text: '{{ session('success') }}',
-                icon: 'success',
-                confirmButtonText: 'Aceptar'
-            });
-        @endif
-
-        @if (session('error'))
-            Swal.fire({
-                title: '¡Error!',
-                text: '{{ session('error') }}',
-                icon: 'error',
-                confirmButtonText: 'Aceptar'
-            });
-        @endif
-    </script>
     <script>
         document.getElementById("selectedUniversidad").addEventListener("change", function() {
             const universidadId = this.value;

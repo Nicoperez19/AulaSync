@@ -14,7 +14,7 @@ class EspacioSeeder extends Seeder
     {
         Espacio::create([
             'id_espacio' => 'A1',
-            'id' => 1, // Referencia a piso con id 1
+            'piso_id' => 1, // Referencia a piso con id 1
             'tipo_espacio' => 'Aula',
             'estado' => 'Disponible',
             'puestos_disponibles' => 20,
@@ -22,7 +22,7 @@ class EspacioSeeder extends Seeder
 
         Espacio::create([
             'id_espacio' => 'L1',
-            'id' => 2, // Referencia a piso con id 2
+            'piso_id' => 2, // Referencia a piso con id 2
             'tipo_espacio' => 'Laboratorio',
             'estado' => 'Ocupado',
             'puestos_disponibles' => 15,
@@ -30,7 +30,7 @@ class EspacioSeeder extends Seeder
 
         Espacio::create([
             'id_espacio' => 'B1',
-            'id' => 3, // Referencia a piso con id 3
+            'piso_id' => 3, // Referencia a piso con id 3
             'tipo_espacio' => 'Biblioteca',
             'estado' => 'Reservado',
             'puestos_disponibles' => null,
@@ -38,7 +38,7 @@ class EspacioSeeder extends Seeder
 
         Espacio::create([
             'id_espacio' => 'SR1',
-            'id' => 4, // Referencia a piso con id 4
+            'piso_id' => 4, // Referencia a piso con id 4
             'tipo_espacio' => 'Sala de Reuniones',
             'estado' => 'Disponible',
             'puestos_disponibles' => 10,
@@ -46,7 +46,7 @@ class EspacioSeeder extends Seeder
 
         Espacio::create([
             'id_espacio' => 'O1',
-            'id' => 5, // Referencia a piso con id 5
+            'piso_id' => 5, // Referencia a piso con id 5
             'tipo_espacio' => 'Oficinas',
             'estado' => 'Disponible',
             'puestos_disponibles' => 5,

@@ -11,9 +11,10 @@ class Espacio extends Model
     protected $primaryKey = 'id_espacio';
     public $incrementing = false; 
     protected $keyType = 'string';
+ 
     protected $fillable = [
         'id_espacio',
-        'id',
+        'piso_id',
         'tipo_espacio',
         'estado',
         'puestos_disponibles',
@@ -21,7 +22,7 @@ class Espacio extends Model
 
     public function piso()
     {
-        return $this->belongsTo(Piso::class, 'id');  // Corregir el campo de clave foránea
+        return $this->belongsTo(Piso::class, 'piso_id'); 
     }
     public function reservas()
     {

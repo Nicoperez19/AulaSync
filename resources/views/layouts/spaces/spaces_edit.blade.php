@@ -7,7 +7,7 @@
         </div>
     </x-slot>
 
-    <form action="{{ route('spaces.update', $espacio->id_espacio) }}" method="POST">
+    <form id="edit-space-form" action="{{ route('spaces.update', $espacio->id_espacio) }}" method="POST">
         @csrf
         @method('PUT')
 
@@ -16,9 +16,8 @@
 
                 <div>
                     <x-form.label for="universidad" :value="__('Universidad')" />
-                    <select name="id_universidad" id="id_universidad" class="block w-full" required >
+                    <select name="id_universidad" id="id_universidad" class="block w-full" required>
                         @foreach ($universidades as $uni)
-                          
                             <option value="{{ $uni->id_universidad }}"
                                 {{ $espacio->piso->facultad->id_universidad == $uni->id_universidad ? 'selected' : '' }}>
                                 {{ $uni->nombre_universidad }}
@@ -88,76 +87,98 @@
             </div>
         </div>
     </form>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-  <script>
-   document.addEventListener('DOMContentLoaded', () => {
-    const universidadSelect = document.getElementById('id_universidad');
-    const facultadSelect = document.getElementById('id_facultad');
-    const pisoSelect = document.getElementById('piso_id');
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('edit-space-form');
 
-    // Función para cargar facultades
-    async function cargarFacultades(universidadId, facultadIdSeleccionada = null) {
-        const res = await fetch(`/api/facultades/${universidadId}`);
-        const data = await res.json();
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
 
-        facultadSelect.innerHTML = '';
-        data.forEach(fac => {
-            const option = document.createElement('option');
-            option.value = fac.id_facultad;
-            option.textContent = fac.nombre_facultad;
-            if (facultadIdSeleccionada && fac.id_facultad == facultadIdSeleccionada) {
-                option.selected = true;
+                    Swal.fire({
+                        title: '¿Seguro de editar?',
+                        text: "Estás a punto de guardar los cambios.",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, editar',
+                        cancelButtonText: 'Cancelar',
+                        reverseButtons: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
             }
-            facultadSelect.appendChild(option);
         });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const universidadSelect = document.getElementById('id_universidad');
+            const facultadSelect = document.getElementById('id_facultad');
+            const pisoSelect = document.getElementById('piso_id');
 
-        // Si hay una facultad seleccionada, cargar pisos
-        if (facultadIdSeleccionada) {
-            await cargarPisos(facultadIdSeleccionada, pisoSelect.dataset.selected);
-        } else if (facultadSelect.value) {
-            facultadSelect.dispatchEvent(new Event('change'));
-        }
-    }
+            // Función para cargar facultades
+            async function cargarFacultades(universidadId, facultadIdSeleccionada = null) {
+                const res = await fetch(`/api/facultades/${universidadId}`);
+                const data = await res.json();
 
-    // Función para cargar pisos
-    async function cargarPisos(facultadId, pisoIdSeleccionado = null) {
-        const res = await fetch(`/api/pisos/${facultadId}`);
-        const data = await res.json();
+                facultadSelect.innerHTML = '';
+                data.forEach(fac => {
+                    const option = document.createElement('option');
+                    option.value = fac.id_facultad;
+                    option.textContent = fac.nombre_facultad;
+                    if (facultadIdSeleccionada && fac.id_facultad == facultadIdSeleccionada) {
+                        option.selected = true;
+                    }
+                    facultadSelect.appendChild(option);
+                });
 
-        pisoSelect.innerHTML = '';
-        data.forEach(piso => {
-            const option = document.createElement('option');
-            option.value = piso.id;
-            option.textContent = piso.nombre ?? 'Piso ' + piso.numero_piso;
-            if (pisoIdSeleccionado && piso.id == pisoIdSeleccionado) {
-                option.selected = true;
+                // Si hay una facultad seleccionada, cargar pisos
+                if (facultadIdSeleccionada) {
+                    await cargarPisos(facultadIdSeleccionada, pisoSelect.dataset.selected);
+                } else if (facultadSelect.value) {
+                    facultadSelect.dispatchEvent(new Event('change'));
+                }
             }
-            pisoSelect.appendChild(option);
+
+            // Función para cargar pisos
+            async function cargarPisos(facultadId, pisoIdSeleccionado = null) {
+                const res = await fetch(`/api/pisos/${facultadId}`);
+                const data = await res.json();
+
+                pisoSelect.innerHTML = '';
+                data.forEach(piso => {
+                    const option = document.createElement('option');
+                    option.value = piso.id;
+                    option.textContent = piso.nombre ?? 'Piso ' + piso.numero_piso;
+                    if (pisoIdSeleccionado && piso.id == pisoIdSeleccionado) {
+                        option.selected = true;
+                    }
+                    pisoSelect.appendChild(option);
+                });
+            }
+
+            // Evento change para universidad
+            universidadSelect.addEventListener('change', async () => {
+                await cargarFacultades(universidadSelect.value);
+            });
+
+            facultadSelect.addEventListener('change', async () => {
+                await cargarPisos(facultadSelect.value);
+            });
+
+            const universidadIdActual = universidadSelect.value;
+            const facultadIdActual = facultadSelect.value;
+            const pisoIdActual = pisoSelect.value;
+
+            pisoSelect.dataset.selected = pisoIdActual;
+
+            if (universidadIdActual) {
+                await cargarFacultades(universidadIdActual, facultadIdActual);
+            }
         });
-    }
-
-    // Evento change para universidad
-    universidadSelect.addEventListener('change', async () => {
-        await cargarFacultades(universidadSelect.value);
-    });
-
-    // Evento change para facultad
-    facultadSelect.addEventListener('change', async () => {
-        await cargarPisos(facultadSelect.value);
-    });
-
-    // Inicializar con los valores actuales
-    const universidadIdActual = universidadSelect.value;
-    const facultadIdActual = facultadSelect.value;
-    const pisoIdActual = pisoSelect.value;
-
-    // Guardar el piso seleccionado en un data attribute
-    pisoSelect.dataset.selected = pisoIdActual;
-
-    // Cargar facultades y pisos manteniendo la selección actual
-    if (universidadIdActual) {
-        await cargarFacultades(universidadIdActual, facultadIdActual);
-    }
-});
-  </script>
+    </script>
 </x-app-layout>

@@ -100,18 +100,17 @@ Route::group(['middleware' => ['permission:mantenedor de pisos']], function () {
     Route::delete('/facultad/{facultadId}/eliminar-piso', [PisoController::class, 'eliminarPiso'])->name('floors.eliminarPiso');
 });
 
-Route::group(
-    ['middleware' => ['permission:mantenedor de espacios']],
-    function () {
-        Route::get('spaces', [EspacioController::class, 'index'])->name('spaces_index');
-        Route::get('spaces/{id_espacio}/edit', [EspacioController::class, 'edit'])->name('spaces.edit');
-        Route::post('/spaces', [EspacioController::class, 'store'])->name(name: 'spaces.store');
-        Route::put('spaces/{id_espacio}', [EspacioController::class, 'update'])->name('spaces.update');
-        Route::delete('/spaces/{id}', [EspacioController::class, 'destroy'])->name('spaces.delete');
-        Route::get('/facultades/{id}', [EspacioController::class, 'getFacultades']);
-        Route::get('/pisos/{id}', [EspacioController::class, 'getPisos']);
-    }
-);
+Route::group(['middleware' => ['permission:mantenedor de espacios']], function () {
+    Route::get('spaces', [EspacioController::class, 'index'])->name('spaces_index');
+    Route::get('spaces/{id_espacio}/edit', [EspacioController::class, 'edit'])->name('spaces.edit');
+    Route::post('/spaces', [EspacioController::class, 'store'])->name(name: 'spaces.store');
+    Route::put('spaces/{id_espacio}', [EspacioController::class, 'update'])->name('spaces.update');
+    Route::delete('/spaces/{id}', [EspacioController::class, 'destroy'])->name('spaces.delete');
+    Route::get('/facultades/{id}', [EspacioController::class, 'getFacultades']);
+    Route::get('/pisos/{id}', [EspacioController::class, 'getPisos']);
+
+
+});
 
 
 Route::group(['middleware' => ['permission:mantenedor de reservas']], function () {

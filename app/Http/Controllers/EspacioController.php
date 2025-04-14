@@ -14,36 +14,42 @@ class EspacioController extends Controller
     public function index(Request $request)
     {
         $universidades = Universidad::all();
-        $espacios = Espacio::with('piso.facultad.universidad');
-
+        $espacios = Espacio::with('piso.facultad.universidad')->get();
+    
         return view('layouts.spaces.spaces_index', compact('espacios', 'universidades'));
     }
 
 
     public function store(Request $request)
     {
+        \Log::info('Datos recibidos:', $request->all());
+    
         try {
-
-            $request->validate([
+            $validated = $request->validate([
+                'id_universidad' => 'required|exists:universidades,id_universidad',
+                'id_facultad' => 'required|exists:facultades,id_facultad',
                 'piso_id' => 'required|exists:pisos,id',
                 'tipo_espacio' => 'required|in:Aula,Laboratorio,Biblioteca,Sala de Reuniones,Oficinas',
                 'estado' => 'required|in:Disponible,Ocupado,Reservado',
-                'puestos_disponibles' => 'nullable|integer|min:0',
+                'puestos_disponibles' => 'required|integer|min:1',
             ]);
-
-            $id_espacio = strtoupper(uniqid('ESP-', true));
-
-            Espacio::create([
-                'id_espacio' => $id_espacio,
-                'piso_id' => $request->piso_id,
-                'tipo_espacio' => $request->tipo_espacio,
-                'estado' => $request->estado,
-                'puestos_disponibles' => $request->puestos_disponibles,
+    
+            $espacio = Espacio::create([
+                'id_espacio' => 'ESP-'.uniqid(),
+                'piso_id' => $validated['piso_id'], // Asegúrate de incluir esto
+                'tipo_espacio' => $validated['tipo_espacio'],
+                'estado' => $validated['estado'],
+                'puestos_disponibles' => $validated['puestos_disponibles'],
             ]);
-
-            return redirect()->route('spaces_index')->with('success', 'Espacio creado exitosamente.');
+    
+            return redirect()->route('spaces_index')
+                   ->with('success', 'Espacio creado exitosamente.');
+            
         } catch (\Exception $e) {
-            return redirect()->route('spaces_index')->with('error', 'Error al crear el espacio: ' . $e->getMessage());
+            \Log::error('Error completo:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return redirect()->back()
+                   ->withInput()
+                   ->with('error', 'Error al crear el espacio: '.$e->getMessage());
         }
     }
 
@@ -110,7 +116,7 @@ class EspacioController extends Controller
     }
     public function getEspacios($pisoId)
     {
-        return Espacio::where('id', $pisoId)->get();
+        return Espacio::where('piso_id', $pisoId)->get();
     }
 
 }

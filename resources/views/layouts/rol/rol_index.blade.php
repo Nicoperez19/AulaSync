@@ -63,6 +63,15 @@
                 confirmButtonText: 'Aceptar'
             });
         @endif
+
+        @if (session('error'))
+            Swal.fire({
+                title: '¡Error!',
+                text: '{{ session('error') }}',
+                icon: 'error',
+                confirmButtonText: 'Aceptar'
+            });
+        @endif
     </script>
 
 </x-app-layout>
