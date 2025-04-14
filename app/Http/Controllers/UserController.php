@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Validation\Rules;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -27,33 +28,41 @@ class UserController extends Controller
     {
         try {
             $validatedData = $request->validate([
-                'run' => 'required|string|unique:users|regex:/^\d{7,8}-[0-9K]$/',
+                'run' => 'required|string|unique:users|regex:/^\d{7,8}[0-9K]$/',
                 'name' => ['required', 'string', 'max:255'],
                 'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
                 'password' => ['required', Rules\Password::defaults()],
-                'roles' => 'required|array',
+                'celular' => 'required|regex:/^9\d{8}$/',
+                'direccion' => 'required|string|max:255',
+                'fecha_nacimiento' => 'required|date',
+                'anio_ingreso' => 'required|integer|min:1900|max:' . date('Y'),
             ]);
-
+    
             $user = User::create([
                 'run' => $validatedData['run'],
                 'name' => $validatedData['name'],
                 'email' => $validatedData['email'],
                 'password' => bcrypt($validatedData['password']),
-
+                'celular' => $validatedData['celular'],
+                'direccion' => $validatedData['direccion'],
+                'fecha_nacimiento' => $validatedData['fecha_nacimiento'],
+                'anio_ingreso' => $validatedData['anio_ingreso'],
             ]);
-
-            $role = Role::findByName('Usuario');  // Asegúrate de que este rol exista en la base de datos
+    
+            // Asignar rol si es necesario
+            $role = Role::findByName('Usuario');
             $user->assignRole($role);
-
+    
             event(new Registered($user));
-
-            return redirect()->route('users.indexx')->with('success', 'Usuario creado exitosamente.');
-
+    
+            return redirect()->route('users.index')->with('success', 'Usuario creado exitosamente.');
+    
         } catch (\Exception $e) {
-
-            return redirect()->back()->withErrors(['error' => 'Hubo un problema al crear el usuario. Por favor, intente nuevamente.'])->withInput();
+            Log::error('Error al crear usuario: ' . $e->getMessage());
+            return redirect()->back()->withErrors(['error' => 'Hubo un problema al crear el usuario.'])->withInput();
         }
     }
+    
 
     public function show(string $id)
     {
@@ -75,7 +84,7 @@ class UserController extends Controller
 
             $rules = [
                 'name' => 'nullable|string|max:255',
-                'celular' => 'nullable|string|max:20',
+                'celular' => 'nullable|regex:/^9\d{8}$/',
                 'direccion' => 'nullable|string|max:255',
                 'fecha_nacimiento' => 'nullable|date',
                 'anio_ingreso' => 'nullable|integer|min:1900|max:' . date('Y'),
@@ -85,7 +94,7 @@ class UserController extends Controller
             ];
 
             if ($request->run && $request->run != $user->run) {
-                $rules['run'] = 'required|string|regex:/^\d{7,8}-[0-9K]$/|unique:users,run';
+                $rules['run'] = 'required|string|regex:/^\d{7,8}[0-9K]$/|unique:users,run';
             }
 
             if ($request->email && $request->email != $user->email) {

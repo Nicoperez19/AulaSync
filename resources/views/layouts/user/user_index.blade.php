@@ -62,8 +62,9 @@
                                 <x-slot name="icon">
                                     <x-heroicon-o-lock-closed aria-hidden="true" class="w-5 h-5" />
                                 </x-slot>
-                                <x-form.input withicon id="password_add" class="block w-1/2" type="password" name="password"
-                                    required autocomplete="new-password" placeholder="{{ __('Contraseña') }}" />
+                                <x-form.input withicon id="password_add" class="block w-1/2" type="password"
+                                    name="password" required autocomplete="new-password"
+                                    placeholder="{{ __('Contraseña') }}" />
                             </x-form.input-with-icon-wrapper>
                         </div>
 
@@ -73,8 +74,8 @@
                                 <x-slot name="icon">
                                     <x-heroicon-o-phone aria-hidden="true" class="w-5 h-5" />
                                 </x-slot>
-                                <x-form.input withicon id="celular_add" class="block w-1/2" type="text" name="celular"
-                                    :value="old('celular')" required placeholder="{{ __('Celular') }}" />
+                                <x-form.input withicon id="celular_add" class="block w-1/2" type="text"
+                                    name="celular" :value="old('celular')" required placeholder="{{ __('Celular') }}" />
                             </x-form.input-with-icon-wrapper>
                         </div>
 
@@ -123,4 +124,24 @@
             </x-modal>
         </div>
     </div>
+
+    <script>
+        @if (session('success'))
+            Swal.fire({
+                title: '¡Éxito!',
+                text: '{{ session('success') }}',
+                icon: 'success',
+                confirmButtonText: 'Aceptar'
+            });
+        @endif
+
+        @if (session('error'))
+            Swal.fire({
+                title: '¡Error!',
+                text: '{{ session('error') }}',
+                icon: 'error',
+                confirmButtonText: 'Aceptar'
+            });
+        @endif
+    </script>
 </x-app-layout>

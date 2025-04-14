@@ -19,6 +19,7 @@
             display: none;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert/dist/sweetalert.min.js"></script>
 
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -40,6 +41,7 @@
     </div>
     @livewireScripts
     @livewireStyles
+
 </body>
 
 </html>
