@@ -28,9 +28,8 @@
                             <x-slot name="icon">
                                 <x-heroicon-o-user aria-hidden="true" class="w-5 h-5" />
                             </x-slot>
-                            <x-form.input id="id_carrera" class="block w-full" type="text"
-                                name="id_carrera" :value="old('id_carrera')" required autofocus
-                                placeholder="{{ __('ID Carrera') }}" />
+                            <x-form.input id="id_carrera" class="block w-full" type="text" name="id_carrera"
+                                :value="old('id_carrera')" required autofocus placeholder="{{ __('ID Carrera') }}" />
                         </x-form.input-with-icon-wrapper>
                     </div>
 
@@ -40,25 +39,26 @@
                             <x-slot name="icon">
                                 <x-heroicon-o-academic-cap aria-hidden="true" class="w-5 h-5" />
                             </x-slot>
-                            <x-form.input id="nombre" class="block w-full" type="text"
-                                name="nombre" :value="old('nombre')" required
-                                placeholder="{{ __('Nombre Carrera') }}" />
+                            <x-form.input id="nombre" class="block w-full" type="text" name="nombre"
+                                :value="old('nombre')" required placeholder="{{ __('Nombre Carrera') }}" />
                         </x-form.input-with-icon-wrapper>
                     </div>
 
                     <div class="space-y-2">
-                        <x-form.label for="id_facultad" :value="__('Facultad')" class="text-left" />
-                        <select name="id_facultad" id="id_facultad"
-                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                            required>
-                            <option value="" disabled selected>Seleccionar Facultad</option>
-                            @foreach ($facultades as $facultad)
-                                <option value="{{ $facultad->id_facultad }}"
-                                    {{ old('id_facultad') == $facultad->id_facultad ? 'selected' : '' }}>
-                                    {{ $facultad->nombre_facultad }}
-                                </option>
+                        <x-form.label for="id_universidad" :value="__('Universidad')" class="text-left" />
+                        <select id="selectedUniversidad" name="id_universidad" class="w-full p-2 border rounded">
+                            <option value="">Seleccione</option>
+                            @foreach ($universidades as $uni)
+                                <option value="{{ $uni->id_universidad }}">{{ $uni->nombre_universidad }}</option>
                             @endforeach
                         </select>
+                    </div>
+                    <div class="space-y-2">
+                        <x-form.label for="id_facultad" :value="__('Facultad')" class="text-left" />
+                        <select id="selectedFacultad" name="id_facultad" class="w-full p-2 border rounded" disabled>
+                            <option value="">Seleccione</option>
+                        </select>
+
                     </div>
 
                     <div>
@@ -71,4 +71,32 @@
             </form>
         </x-modal>
     </div>
+
+    <script>
+        const universidades = @json($universidades);
+        const facultades = @json($facultades);
+
+        document.getElementById('selectedUniversidad').addEventListener('change', function() {
+            const universidadId = this.value;
+            const facultadSelect = document.getElementById('selectedFacultad');
+
+            // Limpiar opciones actuales
+            facultadSelect.innerHTML = '<option value="">Seleccione</option>';
+
+            if (universidadId) {
+                const facultadesFiltradas = facultades.filter(f => f.id_universidad == universidadId);
+
+                facultadesFiltradas.forEach(fac => {
+                    const option = document.createElement('option');
+                    option.value = fac.id_facultad;
+                    option.text = fac.nombre_facultad;
+                    facultadSelect.appendChild(option);
+                });
+
+                facultadSelect.disabled = false;
+            } else {
+                facultadSelect.disabled = true;
+            }
+        });
+    </script>
 </x-app-layout>

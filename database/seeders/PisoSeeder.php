@@ -86,7 +86,6 @@ class PisoSeeder extends Seeder
             'id_facultad' => 12, // Facultad de Agronomía (U002)
         ]);
 
-        // Opcional: Añadir múltiples pisos para cada facultad si es necesario
         for ($i = 13; $i <= 15; $i++) { // Agrega pisos con IDs incrementales
             Piso::create([
                 'id' => $i,

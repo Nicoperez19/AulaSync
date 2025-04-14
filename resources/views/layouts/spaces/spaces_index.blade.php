@@ -18,14 +18,14 @@
 
     <div class="space-y-1">
         <x-modal name="add-espacio" :show="$errors->any()" focusable>
-            <form method="POST" action="{{ route('espacios.store') }}">
+            <form method="POST" action="{{ route('spaces.store') }}">
                 @csrf
 
                 <div class="grid gap-6 p-6">
 
                     <div class="space-y-2">
                         <x-form.label for="id_universidad" :value="__('Universidad')" class="text-left" />
-                        <select id="selectedUniversidad" name="id_universidad" class="w-full border rounded p-2">
+                        <select id="selectedUniversidad" name="id_universidad" class="w-full p-2 border rounded">
                             <option value="">Seleccione</option>
                             @foreach ($universidades as $uni)
                                 <option value="{{ $uni->id_universidad }}">{{ $uni->nombre_universidad }}</option>
@@ -34,7 +34,7 @@
                     </div>
                     <div class="space-y-2">
                         <x-form.label for="id_facultad" :value="__('Facultad')" class="text-left" />
-                        <select id="selectedFacultad" name="selectedFacultad" class="w-full border rounded p-2"
+                        <select id="selectedFacultad" name="facultad" class="w-full p-2 border rounded"
                             disabled>
                             <option value="">Seleccione</option>
                         </select>
@@ -127,7 +127,6 @@
             }
         });
 
-        // Cargar pisos
         document.getElementById("selectedFacultad").addEventListener("change", function() {
             const facultadId = this.value;
             if (facultadId) {

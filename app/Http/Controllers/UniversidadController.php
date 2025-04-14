@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Comuna;
 use App\Models\Universidad;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class UniversidadController extends Controller
 {
@@ -17,35 +18,53 @@ class UniversidadController extends Controller
 
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
-            'id_universidad' => 'required|string|max:255',
-            'nombre_universidad' => 'required|string|max:255',
-            'direccion_universidad' => 'required|string|max:255',
-            'telefono_universidad' => 'required|regex:/^[0-9+]+$/|max:15',
-            'imagen_logo' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
-            'comunas_id' => 'required|exists:comunas,id',
-        ]);
-
-        $imagenNombre = null;
-
-        if ($request->hasFile('imagen_logo')) {
-            $file = $request->file('imagen_logo');
-            $imagenNombre = str_replace(' ', '_', strtolower($validatedData['nombre_universidad'])) . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('images/logo_universidad'), $imagenNombre);
+        try {
+            Log::info('Intentando validar datos de universidad:', $request->all());
+    
+            $validatedData = $request->validate([
+                'id_universidad' => 'required|string|max:255',
+                'nombre_universidad' => 'required|string|max:255',
+                'direccion_universidad' => 'required|string|max:255',
+                'telefono_universidad' => 'required|regex:/^[0-9+]+$/|max:15',
+                'imagen_logo' => 'nullable|image|mimes:jpg,jpeg,png,gif|max:2048',
+                'comunas_id' => 'required|exists:comunas,id',
+            ]);
+    
+            Log::info('Datos validados correctamente:', $validatedData);
+    
+            $imagenNombre = null;
+    
+            if ($request->hasFile('imagen_logo')) {
+                $file = $request->file('imagen_logo');
+                $imagenNombre = str_replace(' ', '_', strtolower($validatedData['nombre_universidad'])) . '.' . $file->getClientOriginalExtension();
+                $file->move(public_path('images/logo_universidad'), $imagenNombre);
+                Log::info("Imagen subida: " . $imagenNombre);
+            }
+    
+            Universidad::create([
+                'id_universidad' => $validatedData['id_universidad'],
+                'nombre_universidad' => $validatedData['nombre_universidad'],
+                'direccion_universidad' => $validatedData['direccion_universidad'],
+                'telefono_universidad' => $validatedData['telefono_universidad'],
+                'imagen_logo' => $imagenNombre,
+                'comunas_id' => $validatedData['comunas_id'],
+            ]);
+    
+            Log::info('Universidad creada correctamente.');
+    
+            return redirect()->route('universities.index')->with('success', 'Universidad creada exitosamente.');
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            Log::error('Error de validación:', $ve->errors());
+            return redirect()->back()->withErrors($ve->validator)->withInput();
+        } catch (\Exception $e) {
+            Log::error('Error general al crear universidad:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()->with('error', 'Ocurrió un error al crear la universidad. Revisa los logs.');
         }
-
-        Universidad::create([
-            'id_universidad' => $validatedData['id_universidad'],
-            'nombre_universidad' => $validatedData['nombre_universidad'],
-            'direccion_universidad' => $validatedData['direccion_universidad'],
-            'telefono_universidad' => $validatedData['telefono_universidad'],
-            'imagen_logo' => $imagenNombre,
-            'comunas_id' => $validatedData['comunas_id'],
-        ]);
-
-        return redirect()->route('universities.index')->with('success', 'Universidad creada exitosamente.');
     }
-
+    
     public function edit($id)
     {
         $universidad = Universidad::findOrFail($id);
@@ -97,10 +116,6 @@ class UniversidadController extends Controller
     public function destroy($id)
     {
         $universidad = Universidad::findOrFail($id);
-
-        if ($universidad->imagen_logo && file_exists(public_path('images/logo_universidad/' . $universidad->imagen_logo))) {
-            unlink(public_path('images/logo_universidad/' . $universidad->imagen_logo));
-        }
 
         $universidad->delete();
 

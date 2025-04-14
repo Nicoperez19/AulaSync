@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Facultad;
 use App\Models\Universidad;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class FacultadController extends Controller
 {
@@ -44,6 +45,7 @@ class FacultadController extends Controller
 
             return redirect()->route('faculties.index')->with('success', 'Facultad creada exitosamente.');
         } catch (\Exception $e) {
+            Log::error('Error al crear facultad: ' . $e->getMessage(), ['exception' => $e]);
             return redirect()->route('faculties.index')->with('error', 'Ocurrió un error al crear la facultad. Intenta de nuevo.');
         }
     }
@@ -87,6 +89,7 @@ class FacultadController extends Controller
 
             return redirect()->route('faculties.index')->with('success', 'Facultad actualizada exitosamente.');
         } catch (\Exception $e) {
+            Log::error('Error al actualizar facultad: ' . $e->getMessage(), ['exception' => $e]);
             return redirect()->route('faculties.index')->with('error', 'Ocurrió un error al actualizar la facultad. Intenta de nuevo.');
         }
     }
@@ -104,6 +107,7 @@ class FacultadController extends Controller
 
             return redirect()->route('faculties.index')->with('success', 'Facultad eliminada exitosamente.');
         } catch (\Exception $e) {
+            Log::error('Error al eliminar facultad: ' . $e->getMessage(), ['exception' => $e]);
             return redirect()->route('faculties.index')->with('error', 'Ocurrió un error al eliminar la facultad. Intenta de nuevo.');
         }
     }

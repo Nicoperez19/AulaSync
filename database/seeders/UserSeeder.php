@@ -13,7 +13,7 @@ class UserSeeder extends Seeder
     {
         User::create([
             'run' => '12345678-9',
-            'name' => 'Admin',
+            'name' => 'Administrador',
             'email' => 'admin@ucsc.cl',
             'password' => bcrypt('password'),
             'celular' => '987654321',
@@ -31,7 +31,7 @@ class UserSeeder extends Seeder
             'direccion' => 'Avenida Siempreviva 742',
             'fecha_nacimiento' => '1992-08-15',
             'anio_ingreso' => 2015,
-        ])->assignRole('Usuario');
+        ])->assignRole('Auxiliar');
 
         $users = [
             ['run' => '22334455-6', 'name' => 'Juan Perez', 'email' => 'juanp@ucsc.cl', 'celular' => '912233445', 'direccion' => 'Calle Real 101', 'fecha_nacimiento' => '1990-02-25', 'anio_ingreso' => 2012, 'password' => bcrypt('password')],

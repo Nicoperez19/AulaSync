@@ -41,11 +41,11 @@
                         </td>
                         <td class="p-3 border border-black dark:border-white whitespace-nowrap">
                             <div class="flex justify-end space-x-2">
-                                <x-button href="{{ route('espacios.edit', $espacio->id_espacio) }}"
+                                <x-button href="{{ route('spaces.edit', $espacio->id_espacio) }}"
                                     class="px-4 py-2 text-white bg-blue-500 rounded dark:bg-blue-700">
                                     Editar
                                 </x-button>
-                                <form action="{{ route('espacios.destroy', $espacio->id_espacio) }}" method="POST"
+                                <form action="{{ route('spaces.delete', $espacio->id_espacio) }}" method="POST"
                                     style="display: inline;">
                                     @csrf
                                     @method('DELETE')

@@ -23,5 +23,9 @@ class Espacio extends Model
     {
         return $this->belongsTo(Piso::class, 'id');  // Corregir el campo de clave foránea
     }
-
+    public function reservas()
+    {
+        return $this->hasMany(Reserva::class, 'id_espacio');
+    }
+    
 }

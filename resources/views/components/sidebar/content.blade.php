@@ -27,12 +27,17 @@
             <x-sidebar.sublink title="Áreas Académicas" href="{{ route('academic_areas.index') }}" :active="request()->routeIs('academic_areas.index')" />
             <x-sidebar.sublink title="Carreras" href="{{ route('careers.index') }}" :active="request()->routeIs('users.index')" />
             <x-sidebar.sublink title="Pisos" href="{{ route('floors_index') }}" :active="request()->routeIs('floors_index')" />
-            <x-sidebar.sublink title="Espacios" href="{{ route('espacios.index') }}" :active="request()->routeIs('espacios.index')" />
+            <x-sidebar.sublink title="Espacios" href="{{ route('spaces_index') }}" :active="request()->routeIs('espacios.index')" />
             <x-sidebar.sublink title="Reservas" href="{{ route('reservas.index') }}" :active="request()->routeIs('reservas.index')" />
             <x-sidebar.sublink title="Asignaturas" href="{{ route('asignaturas.index') }}" :active="request()->routeIs('asignaturas.index')" />
             <x-sidebar.sublink title="Mapa" href="{{ route('mapas.index') }}" :active="request()->routeIs('mapas.index')" />
 
         </x-sidebar.dropdown>
+    @endrole
+    @role('Auxiliar')
+        {{-- <x-sidebar.dropdown title="Verificar" :active="Str::startsWith(request()->route()->uri(), 'users')">
+    
+        </x-sidebar.dropdown> --}}
     @endrole
 
     {{-- <x-sidebar.dropdown title="Buttons" :active="Str::startsWith(request()->route()->uri(), 'buttons')">

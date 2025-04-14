@@ -18,7 +18,7 @@
 
     <div class="space-y-1">
         <x-modal name="add-university" :show="$errors->any()" focusable>
-            <form method="POST" action="{{ route('universities.add') }}" enctype="multipart/form-data">
+            <form method="POST" action="{{ route('universities.store') }}" enctype="multipart/form-data">
                 @csrf
 
                 <div class="grid gap-6 p-6">

@@ -5,15 +5,17 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Carrera;
 use App\Models\Facultad;
+use App\Models\Universidad;
 
 class CarreraController extends Controller
 {
     public function index()
     {
         try {
+            $universidades = Universidad::all();
             $carreras = Carrera::with('facultad')->get();
             $facultades = Facultad::all();
-            return view('layouts.career.carrera_index', compact('carreras', 'facultades'));
+            return view('layouts.career.carrera_index', compact('carreras', 'facultades','universidades'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar las carreras.'])->withInput();
         }
