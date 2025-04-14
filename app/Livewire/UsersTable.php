@@ -11,23 +11,40 @@ class UsersTable extends Component
     use WithPagination;
 
     public $search = '';
-    public function mount()
+    public $sortField = 'name';
+    public $sortDirection = 'asc';
+    
+    protected $queryString = ['search' => ['except' => '']];
+
+    public function updatingSearch()
     {
+        $this->resetPage();
+    }
+
+    public function sortBy($field)
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortDirection = 'asc';
+        }
+        
+        $this->sortField = $field;
     }
 
     public function render()
     {
-        $users = cache()->remember('users_search_' . md5($this->search), 60, function () {
-            return User::where('name', 'like', '%' . $this->search . '%')
-                ->orWhere('email', 'like', '%' . $this->search . '%')
-                ->orWhere('run', 'like', '%' . $this->search . '%')
-                ->select('id', 'name', 'email', 'run', 'celular', 'direccion', 'fecha_nacimiento', 'anio_ingreso')
-                ->paginate(8);
-        });
+        $users = User::query()
+            ->when($this->search, function($query) {
+                $query->where(function($q) {
+                    $q->where('name', 'like', "%{$this->search}%")
+                      ->orWhere('email', 'like', "%{$this->search}%")
+                      ->orWhere('run', 'like', "%{$this->search}%");
+                });
+            })
+            ->orderBy($this->sortField, $this->sortDirection)
+            ->paginate(10);
 
-        return view('livewire.users-table', compact('users'));
+        return view('livewire.users-table', ['users' => $users]);
     }
-
-
-
 }

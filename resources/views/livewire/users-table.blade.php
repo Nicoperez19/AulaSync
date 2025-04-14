@@ -1,5 +1,5 @@
 <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md dark:border-gray-700">
-    <table class="w-full text-center border-collapse table-auto min-w-max text-sm">
+    <table class="w-full text-sm text-center border-collapse table-auto min-w-max">
         <thead class="hidden lg:table-header-group @class([
             'text-black border-b border-white',
             'bg-gray-50 dark:bg-black',
@@ -40,9 +40,9 @@
                             <form action="{{ route('users.delete', $user->id) }}" method="POST" style="display: inline;">
                                 @csrf
                                 @method('DELETE')
-                                <x-button href="#" variant="danger" class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700">
+                                <button type="submit" class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700">
                                     Eliminar
-                                </x-button>
+                                </button>
                             </form>
                         </div>
                     </td>
