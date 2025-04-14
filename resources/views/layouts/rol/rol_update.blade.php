@@ -8,7 +8,8 @@
     </x-slot>
 
     <div class="flex justify-center">
-        <form method="POST" action="{{ route('roles.update', $role->id) }}" class="w-full max-w-lg p-6 bg-white rounded-lg shadow-md">
+        <form method="POST" id="edit-role-form" action="{{ route('roles.update', $role->id) }}"
+            class="w-full max-w-lg p-6 bg-white rounded-lg shadow-md">
             @csrf
             @method('PUT')
 
@@ -53,4 +54,33 @@
             </div>
         </form>
     </div>
+    <!-- 1. Carga SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- 2. Tu script personalizado -->
+    <script>
+        const form = document.getElementById('edit-role-form');
+
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault(); // Evita el envío inmediato
+
+                Swal.fire({
+                    title: '¿Seguro de editar?',
+                    text: "Estás a punto de guardar los cambios.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, editar',
+                    cancelButtonText: 'Cancelar',
+                    reverseButtons: true
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit(); // Envía el formulario si se confirma
+                    }
+                });
+            });
+        }
+    </script>
+
+
 </x-app-layout>

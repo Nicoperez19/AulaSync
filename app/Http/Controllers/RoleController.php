@@ -35,20 +35,19 @@ class RoleController extends Controller
     {
         try {
             $validatedData = $request->validate([
-                'name' => 'required|string|max:255|unique:roles,name', // El nombre del rol es obligatorio y único
-                'permissions' => 'required|array', // Los permisos deben ser un array
-                'permissions.*' => 'exists:permissions,id', // Validar que cada id de permiso existe en la base de datos
+                'name' => 'required|string|max:255|unique:roles,name',
+                'permissions' => 'required|array',
+                'permissions.*' => 'exists:permissions,id',
             ]);
 
-            $role = Role::create([
-                'name' => $validatedData['name'],
-            ]);
-
+            $role = Role::create(['name' => $validatedData['name']]);
             $role->permissions()->sync($validatedData['permissions']);
-            return redirect()->route('roles.index')->with('success', 'Rol creado y permisos asignados correctamente.');
 
+            // Redirige con éxito
+            return redirect()->route('roles.index')->with('success', 'Rol creado y permisos asignados correctamente.');
         } catch (\Exception $e) {
-            return redirect()->back()->withErrors(['error' => 'Hubo un problema al crear el rol. Por favor, intente nuevamente.'])->withInput();
+            // Redirige con error
+            return redirect()->route('roles.index')->with('error', 'Hubo un problema al crear el rol: ' . $e->getMessage());
         }
     }
 
@@ -77,21 +76,26 @@ class RoleController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $request->validate([
-            'name_rol' => 'required|string|max:255|unique:roles,name,' . $id,
-            'permissions' => 'array',
-        ]);
+        try {
+            $request->validate([
+                'name_rol' => 'required|string|max:255|unique:roles,name,' . $id,
+                'permissions' => 'array',
+            ]);
 
-        $role = Role::findOrFail($id);
-        $role->name = $request->name_rol;
-        $role->save();
+            $role = Role::findOrFail($id);
+            $role->name = $request->name_rol;
+            $role->save();
 
-        // Convertir IDs a nombres de permisos antes de asignarlos
-        $permissions = Permission::whereIn('id', $request->permissions ?? [])->pluck('name')->toArray();
+            // Sincronizamos los permisos seleccionados
+            $permissions = Permission::whereIn('id', $request->permissions ?? [])->pluck('name')->toArray();
+            $role->syncPermissions($permissions);
 
-        $role->syncPermissions($permissions);
-
-        return redirect()->route('roles.index')->with('success', 'Rol actualizado correctamente.');
+            // Redirige con éxito
+            return redirect()->route('roles.index')->with('success', 'Rol actualizado correctamente.');
+        } catch (\Exception $e) {
+            // Redirige con error
+            return redirect()->route('roles.index')->with('error', 'Error al actualizar el rol: ' . $e->getMessage());
+        }
     }
 
 
@@ -101,15 +105,14 @@ class RoleController extends Controller
     public function destroy(string $id)
     {
         try {
-            $roles = Role::findOrFail($id);
-            $roles->delete();
+            $role = Role::findOrFail($id);
+            $role->delete();
+
+            // Redirige con éxito
             return redirect()->route('roles.index')->with('success', 'Rol eliminado exitosamente.');
-
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => 'Rol no encontrado.'], 404);
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al borrar el rol: ' . $e->getMessage()], 500);
+            // Redirige con error
+            return redirect()->route('roles.index')->with('error', 'Error al borrar el rol: ' . $e->getMessage());
         }
-
     }
 }
