@@ -7,67 +7,93 @@ use App\Models\Universidad;
 use App\Models\Facultad;
 use App\Models\Piso;
 use App\Models\Espacio;
+use App\Models\Bloque;
 use Illuminate\Http\Request;
 
 class MapasController extends Controller
 {
-    /**
-     * Mostrar el formulario para agregar un nuevo mapa.
-     */
-    public function add()
+    public function index()
     {
-        // Cargar todas las universidades
         $universidades = Universidad::all();
+        return view('layouts.maps.map_index', compact('universidades'));
+    }
+    public function create()
+    {
+        $universidades = Universidad::all(); // Si necesitas pasar info
         return view('layouts.maps.map_add', compact('universidades'));
     }
 
-    /**
-     * Guardar los datos del mapa (incluyendo bloques y relaciones).
-     */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'selectedUniversidad' => 'required',
-            'selectedFacultad' => 'required',
-            'selectedPiso' => 'required',
-            'selectedEspacio' => 'required',
-            'mapName' => 'required|string|max:255',
-            'canvasData' => 'required', // Asegúrate de que canvasData esté presente
-        ]);
 
-        // Crear el mapa en la base de datos
-        $mapa = Mapa::create([
-            'nombre_mapa' => $request->mapName,
-            'canvas_data' => json_encode($request->canvasData),
-            'id_espacio' => $request->selectedEspacio,
-        ]);
-
-        session()->flash('message', '¡Mapa guardado con éxito!');
-
-        return redirect()->route('mapas.add');
-    }
-
-    /**
-     * Obtener las facultades de una universidad.
-     */
     public function getFacultades($universidadId)
     {
-        return Facultad::where('id_universidad', $universidadId)->get();
+        $facultades = Facultad::where('id_universidad', $universidadId)->get();
+        return response()->json($facultades);
     }
 
-    /**
-     * Obtener los pisos de una facultad.
-     */
     public function getPisos($facultadId)
     {
-        return Piso::where('id_facultad', $facultadId)->get();
+        $pisos = Piso::where('id_facultad', $facultadId)->get();
+        return response()->json($pisos);
     }
 
-    /**
-     * Obtener los espacios de un piso.
-     */
     public function getEspacios($pisoId)
     {
-        return Espacio::where('id', $pisoId)->get();
+        $espacios = Espacio::where('id_piso', $pisoId)->get();
+        return response()->json($espacios);
     }
+
+    public function saveMap(Request $request)
+    {
+        $request->validate([
+            'piso_id' => 'required|exists:pisos,id_piso',
+            'bloques' => 'required|array'
+        ]);
+
+        Bloque::where('id_mapa', $request->piso_id)->delete();
+
+        // Guardar nuevos bloques
+        foreach ($request->bloques as $bloque) {
+            Bloque::create([
+                'id_mapa' => $request->piso_id,
+                'pos_x' => $bloque['x'],
+                'pos_y' => $bloque['y'],
+                'ancho' => $bloque['width'],
+                'alto' => $bloque['height'],
+                'color_bloque' => $bloque['color'],
+                'id_espacio' => $bloque['espacioId']
+            ]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    public function loadMap($pisoId)
+    {
+        $bloques = Bloque::where('id_mapa', $pisoId)->get();
+        return response()->json($bloques);
+    }
+
+    public function store(Request $request)
+{
+    $request->validate([
+        'id_mapa' => 'required|string|unique:mapas,id_mapa',
+        'nombre_mapa' => 'required|string|max:255',
+        'id_espacio' => 'required|exists:espacios,id_espacio',
+        'archivo_mapa' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
+    ]);
+
+    // Guardar archivo
+    $ruta = $request->file('archivo_mapa')->store("mapas/{$request->id_espacio}", 'public');
+
+    // Crear registro en DB
+    Mapa::create([
+        'id_mapa' => $request->id_mapa,
+        'nombre_mapa' => $request->nombre_mapa,
+        'ruta_mapa' => $ruta,
+        'id_espacio' => $request->id_espacio,
+    ]);
+
+    return redirect()->route('mapas.index')->with('success', 'Mapa guardado correctamente.');
+}
+
 }

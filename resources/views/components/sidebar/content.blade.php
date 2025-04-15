@@ -7,8 +7,6 @@
         </x-slot>
     </x-sidebar.link>
 
-
-
     @role('Administrador')
         <x-sidebar.dropdown title="Usuarios" :active="Str::startsWith(request()->route()->uri(), 'users')">
             <x-slot name="icon">
@@ -30,8 +28,7 @@
             <x-sidebar.sublink title="Espacios" href="{{ route('spaces_index') }}" :active="request()->routeIs('espacios.index')" />
             <x-sidebar.sublink title="Reservas" href="{{ route('reservas.index') }}" :active="request()->routeIs('reservas.index')" />
             <x-sidebar.sublink title="Asignaturas" href="{{ route('asignaturas.index') }}" :active="request()->routeIs('asignaturas.index')" />
-            <x-sidebar.sublink title="Mapa" href="{{ route('mapas.index') }}" :active="request()->routeIs('mapas.index')" />
-
+            <x-sidebar.sublink title="Mapa" href="{{ route('maps.index') }}" :active="request()->routeIs('maps.index')" />
         </x-sidebar.dropdown>
     @endrole
     @role('Auxiliar')

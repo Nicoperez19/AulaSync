@@ -17,11 +17,11 @@
 
     switch ($variant) {
         case 'primary':
-            $variantClasses = 'bg-dark-royal-blue-500 text-white hover:bg-steel-blue-600 focus:ring-purple-500';
+            $variantClasses = 'bg-light-cloud-blue text-white hover:bg-steel-blue-600 focus:ring-purple-500';
             break;
         case 'secondary':
             $variantClasses =
-                'bg-blue-dark text-white hover:bg-white focus:ring-purple-500 dark:text-white dark:bg-dark-eval-1 dark:hover:bg-dark-eval-2 dark:hover:text-gray-200';
+                'bg-light-cloud-blue text-white hover:bg-white focus:ring-purple-500 dark:text-white dark:bg-dark-eval-1 dark:hover:bg-dark-eval-2 dark:hover:text-gray-200';
             break;
         case 'success':
             $variantClasses = 'bg-green-500 text-white hover:bg-green-600 focus:ring-green-500';

@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create('mapas', function (Blueprint $table) {
             $table->string('id_mapa',20)->primary();
             $table->string('nombre_mapa');
-            $table->string('ruta_mapa');  
+            $table->string('ruta_mapa');  //ruta de la imagen del mapa
             $table->string('id_espacio'); 
             $table->foreign('id_espacio')->references('id_espacio')->on('espacios')->onDelete('cascade');
             $table->timestamps();

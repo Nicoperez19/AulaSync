@@ -8,9 +8,12 @@
 
     <title>{{ config('app.name', 'AulaSync') }}</title>
     @livewireStyles
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,200;0,300;0,400;0,600;0,700;0,800;0,900;1,200;1,300;1,400;1,600;1,700;1,800;1,900&display=swap"
-        rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@200..900&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@200..900&display=swap" rel="stylesheet"></noscript>
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
 </head>
@@ -24,13 +27,13 @@
             <div class="flex flex-col min-h-screen pt-16"
                 style="transition-property: margin; transition-duration: 150ms;">
 
-                <div class="container" style="margin-top: 6rem; min-height: 100vh;">
+                <div class="container mt-24 min-h-screen">
                     <header :style="{ 'margin-left': isSidebarOpen || isSidebarHovered ? '16rem' : '4rem' }">
                         <div class="p-4 sm:p-6">
                             {{ $header }}
                         </div>
                     </header>
-                    <main class="flex-1 px-4 sm:px-6" style="margin-top: 1rem; overflow-x: auto;"
+                    <main class="flex-1 px-4 sm:px-6 mt-4 overflow-x-auto"
                         :style="{ 'margin-left': isSidebarOpen || isSidebarHovered ? '16rem' : '4rem' }">
                         {{ $slot }}
                     </main>
@@ -40,7 +43,7 @@
         </div>
     </div>
     @livewireScripts
-    
+
 </body>
 
 </html>
