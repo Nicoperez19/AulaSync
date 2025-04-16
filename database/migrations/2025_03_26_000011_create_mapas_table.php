@@ -11,11 +11,12 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('mapas', function (Blueprint $table) {
-            $table->string('id_mapa',20)->primary();
+            $table->string('id_mapa',200)->primary();
             $table->string('nombre_mapa');
             $table->string('ruta_mapa');  //ruta de la imagen del mapa
-            $table->string('id_espacio'); 
-            $table->foreign('id_espacio')->references('id_espacio')->on('espacios')->onDelete('cascade');
+            $table->string('ruta_canvas'); // ruta para canva
+            $table->unsignedBigInteger('piso_id'); 
+            $table->foreign('piso_id')->references('id')->on('pisos')->onDelete('cascade');
             $table->timestamps();
         });
     }

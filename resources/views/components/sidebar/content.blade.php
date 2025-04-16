@@ -16,7 +16,7 @@
             <x-sidebar.sublink title="Roles" href="{{ route('roles.index') }}" :active="request()->routeIs('roles.index')" />
             <x-sidebar.sublink title="Permisos" href="{{ route('permissions.index') }}" :active="request()->routeIs('permissions.index')" />
         </x-sidebar.dropdown>
-        <x-sidebar.dropdown title="Mantenedores/Universida" :active="Str::startsWith(request()->route()->uri(), 'universidades')">
+        <x-sidebar.dropdown title="Mantenedores/Universidad" :active="Str::startsWith(request()->route()->uri(), 'universidades')">
             <x-slot name="icon">
                 <x-icons.university class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
             </x-slot>
@@ -28,13 +28,16 @@
             <x-sidebar.sublink title="Espacios" href="{{ route('spaces_index') }}" :active="request()->routeIs('espacios.index')" />
             <x-sidebar.sublink title="Reservas" href="{{ route('reservas.index') }}" :active="request()->routeIs('reservas.index')" />
             <x-sidebar.sublink title="Asignaturas" href="{{ route('asignaturas.index') }}" :active="request()->routeIs('asignaturas.index')" />
-            <x-sidebar.sublink title="Mapa" href="{{ route('maps.index') }}" :active="request()->routeIs('maps.index')" />
+            <x-sidebar.sublink title="Mapa" href="{{ route('mapas.index') }}" :active="request()->routeIs('maps.index')" />
         </x-sidebar.dropdown>
     @endrole
     @role('Auxiliar')
-        {{-- <x-sidebar.dropdown title="Verificar" :active="Str::startsWith(request()->route()->uri(), 'users')">
-    
-        </x-sidebar.dropdown> --}}
+        <x-sidebar.dropdown title="Visualizador" :active="Str::startsWith(request()->route()->uri(), 'universidades')">
+            <x-slot name="icon">
+                <x-icons.university class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
+            </x-slot>
+          <x-sidebar.sublink title="Mapa" href="{{ route('mapas.index') }}" :active="request()->routeIs('maps.index')" />
+        </x-sidebar.dropdown>
     @endrole
 
     {{-- <x-sidebar.dropdown title="Buttons" :active="Str::startsWith(request()->route()->uri(), 'buttons')">

@@ -12,7 +12,7 @@ class MapasTable extends Component
 
     public function mount()
     {
-        $this->mapas = Mapa::with('espacio')->get();
+        $this->mapas = Mapa::with('piso')->get();
     }
 
     public function render()
