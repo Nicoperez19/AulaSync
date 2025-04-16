@@ -1,14 +1,13 @@
 <?php
-
 namespace App\Http\Controllers;
 
-use App\Models\Mapa;
 use App\Models\Universidad;
 use App\Models\Facultad;
 use App\Models\Piso;
-use App\Models\Espacio;
-use App\Models\Bloque;
+use App\Models\Mapa;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class MapasController extends Controller
 {
@@ -17,83 +16,63 @@ class MapasController extends Controller
         $universidades = Universidad::all();
         return view('layouts.maps.map_index', compact('universidades'));
     }
-    public function create()
+
+    public function add()
     {
-        $universidades = Universidad::all(); // Si necesitas pasar info
+        $universidades = Universidad::all();
         return view('layouts.maps.map_add', compact('universidades'));
     }
 
-
     public function getFacultades($universidadId)
     {
-        $facultades = Facultad::where('id_universidad', $universidadId)->get();
-        return response()->json($facultades);
+        return response()->json(
+            Facultad::where('id_universidad', $universidadId)->get()
+        );
     }
 
     public function getPisos($facultadId)
     {
-        $pisos = Piso::where('id_facultad', $facultadId)->get();
-        return response()->json($pisos);
-    }
-
-    public function getEspacios($pisoId)
-    {
-        $espacios = Espacio::where('id_piso', $pisoId)->get();
-        return response()->json($espacios);
-    }
-
-    public function saveMap(Request $request)
-    {
-        $request->validate([
-            'piso_id' => 'required|exists:pisos,id_piso',
-            'bloques' => 'required|array'
-        ]);
-
-        Bloque::where('id_mapa', $request->piso_id)->delete();
-
-        // Guardar nuevos bloques
-        foreach ($request->bloques as $bloque) {
-            Bloque::create([
-                'id_mapa' => $request->piso_id,
-                'pos_x' => $bloque['x'],
-                'pos_y' => $bloque['y'],
-                'ancho' => $bloque['width'],
-                'alto' => $bloque['height'],
-                'color_bloque' => $bloque['color'],
-                'id_espacio' => $bloque['espacioId']
-            ]);
-        }
-
-        return response()->json(['success' => true]);
-    }
-
-    public function loadMap($pisoId)
-    {
-        $bloques = Bloque::where('id_mapa', $pisoId)->get();
-        return response()->json($bloques);
+        return response()->json(
+            Piso::where('id_facultad', $facultadId)->get()
+        );
     }
 
     public function store(Request $request)
-{
-    $request->validate([
-        'id_mapa' => 'required|string|unique:mapas,id_mapa',
-        'nombre_mapa' => 'required|string|max:255',
-        'id_espacio' => 'required|exists:espacios,id_espacio',
-        'archivo_mapa' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
-    ]);
+    {
+        // Validar los campos del formulario
+        $request->validate([
+            'id_universidad' => 'required',
+            'id_facultad' => 'required',
+            'piso_id' => 'required',
+            'nombre_mapa' => 'required',
+            'imagen' => 'required|image|max:2048', // Validar que sea una imagen y con tamaño máximo
+        ]);
 
-    // Guardar archivo
-    $ruta = $request->file('archivo_mapa')->store("mapas/{$request->id_espacio}", 'public');
+        // Si el campo de imagen tiene un archivo
+        if ($request->hasFile('imagen')) {
+            // Obtener el archivo de imagen
+            $image = $request->file('imagen');
+            // Generar un nombre único para la imagen
+            $imageName = time() . '.' . $image->getClientOriginalExtension();
+            // Definir la ruta donde se guardará la imagen
+            $storagePath = 'images/mapas/' . $imageName;
+            // Guardar la imagen en la carpeta "public/images/mapas"
+            $image->storeAs('public/images/mapas', $imageName);
 
-    // Crear registro en DB
-    Mapa::create([
-        'id_mapa' => $request->id_mapa,
-        'nombre_mapa' => $request->nombre_mapa,
-        'ruta_mapa' => $ruta,
-        'id_espacio' => $request->id_espacio,
-    ]);
+            // Crear el mapa en la base de datos con la ruta de la imagen
+            $mapa = new Mapas();
+            $mapa->id_universidad = $request->id_universidad;
+            $mapa->id_facultad = $request->id_facultad;
+            $mapa->piso_id = $request->piso_id;
+            $mapa->nombre_mapa = $request->nombre_mapa;
+            $mapa->ruta_mapa = $storagePath;
+            $mapa->save();
 
-    return redirect()->route('mapas.index')->with('success', 'Mapa guardado correctamente.');
-}
+            // Redirigir al índice de mapas con un mensaje de éxito
+            return redirect()->route('mapas.index')->with('success', 'Mapa cargado exitosamente.');
+        }
 
+        // Si no se encuentra una imagen, redirigir con un mensaje de error
+        return back()->with('error', 'Por favor, cargue una imagen.');
+    }
 }

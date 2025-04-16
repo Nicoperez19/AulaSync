@@ -132,13 +132,12 @@ Route::group(['middleware' => ['permission:mantenedor de asignaturas']], functio
 
 Route::group(['middleware' => ['permission:mantenedor de mapas']], function () {
     Route::get('/mapas', [MapasController::class, 'index'])->name('maps.index');
-    Route::get('/mapas/add', [MapasController::class, 'create'])->name('mapas.add');
-
+    Route::get('/mapas/add', [MapasController::class, 'add'])->name('mapas.add');
     Route::get('/mapas/facultades/{universidad}', [MapasController::class, 'getFacultades']);
     Route::get('/mapas/pisos/{facultad}', [MapasController::class, 'getPisos']);
     Route::get('/mapas/espacios/{piso}', [MapasController::class, 'getEspacios']);
-    Route::post('/mapas/guardar', [MapasController::class, 'saveMap']);
-    Route::get('/mapas/cargar/{piso}', [MapasController::class, 'loadMap']);
+    Route::post('/mapas/store', [MapasController::class, 'store'])->name('mapas.store');
+
 });
 
 

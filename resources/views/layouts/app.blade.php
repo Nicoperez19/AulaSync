@@ -24,10 +24,10 @@
             <div class="fixed top-0 left-0 z-50 w-full">
                 <x-navbar />
             </div> <x-sidebar.sidebar />
-            <div class="flex flex-col min-h-screen pt-16"
+            <div class="flex flex-col min-h-screen pt-16 bg-cloud-light dark:bg-dark-eval-2"
                 style="transition-property: margin; transition-duration: 150ms;">
 
-                <div class="container mt-24 min-h-screen">
+                <div class="container min-h-screen " style="margin-top:4.5rem;">
                     <header :style="{ 'margin-left': isSidebarOpen || isSidebarHovered ? '16rem' : '4rem' }">
                         <div class="p-4 sm:p-6">
                             {{ $header }}
