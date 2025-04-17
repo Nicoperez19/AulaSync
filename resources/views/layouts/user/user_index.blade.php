@@ -8,12 +8,16 @@
     </x-slot>
 
     <div class="p-6 bg-gray-100 rounded-lg shadow-lg">
-        <div class="flex justify-end mb-4">
-            <x-button target="_blank" variant="primary" class="justify-end max-w-xs gap-2"
-                x-on:click.prevent="$dispatch('open-modal', 'add-user')">
-                <x-icons.add class="w-6 h-6" aria-hidden="true" />
-            </x-button>
-        </div>
+        @auth
+            @if (auth()->user()->hasRole('Administrador'))
+                <div class="flex justify-end mb-4">
+                    <x-button target="_blank" variant="primary" class="justify-end max-w-xs gap-2"
+                        x-on:click.prevent="$dispatch('open-modal', 'add-user')">
+                        <x-icons.add class="w-6 h-6" aria-hidden="true" />
+                    </x-button>
+                </div>
+            @endif
+        @endauth
 
         @livewire('users-table')
 

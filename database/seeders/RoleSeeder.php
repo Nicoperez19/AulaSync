@@ -19,7 +19,8 @@ class RoleSeeder extends Seeder
         $role4 = Role::create(['name' => 'Jefe Carrera']);
         $role5 = Role::create(['name' => 'Auxiliar']);
 
-        $permission1 = Permission::create(['name' => 'dashboard']);
+        $permission = Permission::create(['name' => 'dashboard']);
+        $permission1 = Permission::create(['name' => 'mantenedor de usuarios']);
         $permission2 = Permission::create(['name' => 'mantenedor de roles']);
         $permission3 = Permission::create(['name' => 'mantenedor de permisos']);
         $permission4 = Permission::create(['name' => 'mantenedor de universidades']);
@@ -31,10 +32,9 @@ class RoleSeeder extends Seeder
         $permission10 = Permission::create(['name' => 'mantenedor de reservas']);
         $permission11 = Permission::create(['name' => 'mantenedor de asignaturas']);
         $permission12 = Permission::create(['name' => 'mantenedor de mapas']);
-        $permission21 = Permission::create(['name' => 'visor de mapas']);
-        $permission22 = Permission::create(['name' => 'visor de usuarios']);
 
-      
+        
+        $role1->givePermissionTo($permission);
         $role1->givePermissionTo($permission1);
         $role1->givePermissionTo($permission2);
         $role1->givePermissionTo($permission3);
@@ -47,12 +47,8 @@ class RoleSeeder extends Seeder
         $role1->givePermissionTo($permission10);
         $role1->givePermissionTo($permission11);
         $role1->givePermissionTo($permission12);
-        $role1->givePermissionTo($permission21);
-        $role1->givePermissionTo($permission22);
 
-        $role5->givePermissionTo($permission21);
-        $role5->givePermissionTo($permission22);
-
-    
+        $role5->givePermissionTo($permission1);
+        $role5->givePermissionTo($permission12);
     }
 }
