@@ -7,7 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ config('app.name', 'AulaSync') }}</title>
-   
+    @livewireStyles
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     
@@ -15,7 +15,7 @@
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@200..900&display=swap" rel="stylesheet"></noscript>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    @livewireStyles
+
 </head>
 
 <body class="font-sans antialiased">

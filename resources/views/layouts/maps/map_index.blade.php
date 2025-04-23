@@ -8,7 +8,7 @@
     </x-slot>
 
     {{-- Mostrar botón de agregar solo si es admin --}}
-    @if (auth()->user()->hasRole('admin'))
+    @if (auth()->user()->hasRole('Administrador'))
         <div class="flex justify-end mb-4">
             <x-button x-on:click.prevent="window.location.href='{{ route('mapas.add') }}'" variant="primary"
                 class="max-w-xs gap-2">

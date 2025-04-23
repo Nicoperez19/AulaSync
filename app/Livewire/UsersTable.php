@@ -13,8 +13,9 @@ class UsersTable extends Component
     public $search = '';
     public $sortField = 'name';
     public $sortDirection = 'asc';
+    
+    protected $queryString = ['search' => ['except' => '']];
 
-    // Resetear paginación al escribir
     public function updatingSearch()
     {
         $this->resetPage();
@@ -25,26 +26,25 @@ class UsersTable extends Component
         if ($this->sortField === $field) {
             $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
-            $this->sortField = $field;
             $this->sortDirection = 'asc';
         }
+        
+        $this->sortField = $field;
     }
 
     public function render()
     {
         $users = User::query()
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('run', 'like', '%' . $this->search . '%')
-                      ->orWhere('name', 'like', '%' . $this->search . '%')
-                      ->orWhere('email', 'like', '%' . $this->search . '%');
+            ->when($this->search, function($query) {
+                $query->where(function($q) {
+                    $q->where('name', 'like', "%{$this->search}%")
+                      ->orWhere('email', 'like', "%{$this->search}%")
+                      ->orWhere('run', 'like', "%{$this->search}%");
                 });
             })
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate(10);
 
-        return view('livewire.users-table', [
-            'users' => $users,
-        ]);
+        return view('livewire.users-table', ['users' => $users]);
     }
 }

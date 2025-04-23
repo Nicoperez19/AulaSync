@@ -37,7 +37,7 @@ Route::get('dashboard', function () {
     return view('layouts/dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');//el ultimo es el nombre de la ruta simplemente.
 
-Route::group(['middleware' => ['permission:mantenedor de usuarios']], function () {
+Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::get('/user/user_index', [UserController::class, 'index'])->name('users.index');
     Route::post('/user/user_store', [UserController::class, 'store'])->name('users.add');
     Route::delete('/user/user_delete/{id}', [UserController::class, 'destroy'])->name('users.delete');
@@ -138,7 +138,10 @@ Route::group(['middleware' => ['permission:mantenedor de mapas']], function () {
     Route::get('/mapas/espacios/{piso}', [MapasController::class, 'getEspacios']);
     Route::post('/mapas/store', [MapasController::class, 'store'])->name('mapas.store');
     Route::get('/mapas/contar-espacios/{pisoId}', [MapasController::class, 'contarEspacios']);
+
+
 });
+
 
 
 Route::middleware('auth')->group(function () {
