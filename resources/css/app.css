@@ -1,8 +1,5 @@
-@import "tailwindcss";
-@import "tailwindcss/components";
-@import "perfect-scrollbar/css/perfect-scrollbar.css";
-@import "tailwindcss/utilities";
-@import "tailwindcss/base";
+@import "tailwindcss/preflight"; /* Reemplaza @tailwind base */
+@tailwind utilities; /* Usa utilities en lugar de components */
 
 
 .dark .ps__rail-y,

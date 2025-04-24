@@ -21,29 +21,32 @@
 <body class="font-sans antialiased">
     <div x-data="mainState" :class="{ dark: isDarkMode }" x-on:resize.window="handleWindowResize" x-cloak>
         <div class="min-h-screen text-gray-900 bg-gray-100 dark:bg-dark-eval-0 dark:text-gray-200">
+         
             <div class="fixed top-0 left-0 z-50 w-full">
                 <x-navbar />
-            </div> <x-sidebar.sidebar />
+            </div>
+
+            <x-sidebar.sidebar />
+
             <div class="flex flex-col min-h-screen pt-16 bg-cloud-light dark:bg-dark-eval-2"
+                :style="{ 'margin-left': isSidebarOpen || isSidebarHovered ? '16rem' : '4rem' }"
                 style="transition-property: margin; transition-duration: 150ms;">
 
-                <div class="container min-h-screen " style="margin-top:4.5rem;">
-                    <header :style="{ 'margin-left': isSidebarOpen || isSidebarHovered ? '16rem' : '4rem' }">
-                        <div class="p-4 sm:p-6">
-                            {{ $header }}
-                        </div>
-                    </header>
-                    <main class="flex-1 px-4 sm:px-6 mt-4 overflow-x-auto"
-                        :style="{ 'margin-left': isSidebarOpen || isSidebarHovered ? '16rem' : '4rem' }">
-                        {{ $slot }}
-                    </main>
-                </div>
+                <header>
+                    <div class="p-4 sm:p-6">
+                        {{ $header }}
+                    </div>
+                </header>
+
+                <main class="flex-1 px-4 sm:px-6 mt-4 overflow-x-auto">
+                    {{ $slot }}
+                </main>
                 <x-footer />
             </div>
         </div>
     </div>
     @livewireScripts
-
 </body>
+
 
 </html>
