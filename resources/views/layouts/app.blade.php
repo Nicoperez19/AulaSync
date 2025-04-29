@@ -33,12 +33,12 @@
                 style="transition-property: margin; transition-duration: 150ms;">
 
                 <header>
-                    <div class="p-4 sm:p-6">
+                    <div class="mt-4 p-4 sm:p-6">
                         {{ $header }}
                     </div>
                 </header>
 
-                <main class="flex-1 px-4 sm:px-6 mt-4 overflow-x-auto">
+                <main class="flex-1 px-4 sm:px-6 overflow-x-auto">
                     {{ $slot }}
                 </main>
                 <x-footer />

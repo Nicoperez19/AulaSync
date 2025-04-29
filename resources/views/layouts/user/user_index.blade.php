@@ -7,7 +7,7 @@
         </div>
     </x-slot>
 
-    <div class="p-6 bg-gray-100 rounded-lg shadow-lg">
+    <div class="p-6 bg-white rounded-lg shadow-lg">
         <div class="flex justify-end mb-4">
             <x-button target="_blank" variant="primary" class="max-w-xs gap-2"
                 x-on:click="$dispatch('open-modal', 'add-user')">
@@ -17,7 +17,6 @@
 
         @livewire('users-table')
 
-        <!-- Modal Agregar Usuario -->
         <x-modal name="add-user" :show="$errors->any()" focusable>
             <form method="POST" action="{{ route('users.add') }}">
                 @csrf
@@ -50,25 +49,42 @@
         </x-modal>
     </div>
 
-    @push('scripts')
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <script>
-            function confirmDelete(userId) {
-                Swal.fire({
-                    title: '¿Estás seguro?',
-                    text: "¡No podrás revertir esta acción!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Sí, eliminar',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        document.getElementById('delete-form-' + userId).submit();
-                    }
-                });
-            }
-        </script>
-    @endpush
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        function confirmDelete(userId) {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "¡No podrás revertir esta acción!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('delete-form-' + userId).submit();
+                }
+            });
+        }
+
+        @if (session('success'))
+            Swal.fire({
+                title: '¡Éxito!',
+                text: '{{ session('success') }}',
+                icon: 'success',
+                confirmButtonText: 'Aceptar'
+            });
+        @endif
+
+        @if (session('error'))
+            Swal.fire({
+                title: '¡Error!',
+                text: '{{ session('error') }}',
+                icon: 'error',
+                confirmButtonText: 'Aceptar'
+            });
+        @endif
+    </script>
+
 </x-app-layout>

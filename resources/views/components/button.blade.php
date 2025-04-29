@@ -48,7 +48,7 @@
             $sizeClasses = $iconOnly ? 'p-1.5' : 'px-2.5 py-1.5 text-sm';
             break;
         case 'base':
-            $sizeClasses = $iconOnly ? 'p-0' : 'px-4 py-2 text-base';
+            $sizeClasses = $iconOnly ? 'p-0' : 'px-4 py-1 text-base';
             break;
         case 'lg':
         default:

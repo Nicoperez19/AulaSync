@@ -1,4 +1,4 @@
-<div x-data="{ page: @entangle('page') }">
+<div>
     <div class="mt-4">
         {{ $users->links('vendor.pagination.tailwind') }}
     </div>
@@ -34,7 +34,7 @@
                             <div class="flex justify-end space-x-2">
                                 <x-button variant="primary" href="{{ route('users.edit', $user->id) }}"
                                     class="px-4 py-2 text-white bg-blue-500 rounded dark:bg-blue-700">
-                                    <x-icons.edit class="w-6 h-6" aria-hidden="true" />
+                                    <x-icons.edit class="w-5 h-5" aria-hidden="true" />
 
                                 </x-button>
                                 <form id="delete-form-{{ $user->id }}"
@@ -44,7 +44,7 @@
                                     <x-button variant="danger" type="button"
                                         onclick="confirmDelete('{{ $user->id }}')"
                                         class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700">
-                                        <x-icons.delete class="w-6 h-6" aria-hidden="true" />
+                                        <x-icons.delete class="w-5 h-5" aria-hidden="true" />
                                     </x-button>
                                 </form>
                             </div>
@@ -58,41 +58,3 @@
         {{ $users->links('vendor.pagination.tailwind') }}
     </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script>
-    function confirmDelete(userId) {
-        Swal.fire({
-            title: '¿Estás seguro?',
-            text: "¡No podrás revertir esta acción!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Sí, eliminar',
-            cancelButtonText: 'Cancelar'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                document.getElementById('delete-form-' + userId).submit();
-            }
-        });
-    }
-
-    // Mostrar mensajes de sesión
-    @if (session('success'))
-        Swal.fire({
-            title: '¡Éxito!',
-            text: '{{ session('success') }}',
-            icon: 'success',
-            confirmButtonText: 'Aceptar'
-        });
-    @endif
-
-    @if (session('error'))
-        Swal.fire({
-            title: '¡Error!',
-            text: '{{ session('error') }}',
-            icon: 'error',
-            confirmButtonText: 'Aceptar'
-        });
-    @endif
-</script>

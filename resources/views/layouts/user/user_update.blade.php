@@ -13,7 +13,6 @@
             @method('PUT')
 
             <div class="grid gap-4 p-4">
-                <!-- RUN y Nombre -->
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                         <x-form.label for="run" :value="__('RUN')" />

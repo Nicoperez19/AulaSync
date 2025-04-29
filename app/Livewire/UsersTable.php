@@ -12,12 +12,8 @@ class UsersTable extends Component
 
     public function render()
     {
-        $users = User::select('id', 'run', 'name', 'email', 'celular', 'direccion', 'fecha_nacimiento', 'anio_ingreso')
-                     ->orderBy('name')
-                     ->paginate(10);
+        $users = User::paginate(10);
 
-        return view('livewire.users-table', [
-            'users' => $users
-        ]);
+        return view('livewire.users-table', ['users' => $users]);
     }
 }

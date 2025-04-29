@@ -10,7 +10,6 @@
     x-on:mouseenter="handleSidebarHover(true)"
     x-on:mouseleave="handleSidebarHover(false)"
 >
-    <x-sidebar.header />
     <x-sidebar.content />
     <x-sidebar.footer />
 </aside>

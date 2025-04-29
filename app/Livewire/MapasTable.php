@@ -29,6 +29,6 @@ class MapasTable extends Component
     public function verMapa($ruta)
     {
         $rutaPublica = asset($ruta);
-        $this->dispatchBrowserEvent('mostrar-mapa', ['ruta' => $rutaPublica]);
+        $this->dispatch('mostrar-mapa', ['ruta' => $rutaPublica]);
     }
 }
