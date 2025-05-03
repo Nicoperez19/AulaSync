@@ -16,6 +16,13 @@ return new class extends Migration
             $table->string('nombre');  
             $table->string('id_espacio'); 
             $table->foreign('id_espacio')->references('id_espacio')->on('espacios')->onDelete('cascade');
+
+            $table->string('id_modulo');
+            $table->foreign('id_modulo')->references('id_modulo')->on('modulos')->onDelete('cascade');
+           
+            $table->unsignedBigInteger('id');
+            $table->foreign('id')->references('id')->on('seccions')->onDelete('cascade');
+            
             $table->timestamps();
         });
     }

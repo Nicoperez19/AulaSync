@@ -16,8 +16,8 @@ return new class extends Migration {
             $table->time('hora_inicio');
             $table->time('hora_termino');
             $table->date('fecha');
+            
             $table->string('id_asignatura');
-          
             $table->foreign('id_asignatura')->references('id_asignatura')->on('asignaturas')->onDelete('cascade');
            
             $table->timestamps();

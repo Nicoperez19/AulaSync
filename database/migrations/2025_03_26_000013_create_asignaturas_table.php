@@ -23,7 +23,6 @@ return new class extends Migration
             $table->unsignedBigInteger('id');
             $table->string('id_carrera', 20);
 
-            // Claves foráneas
             $table->foreign('id')->references('id')->on('users')->onDelete('cascade');
             $table->foreign('id_carrera')->references('id_carrera')->on('carreras')->onDelete('cascade');
             $table->timestamps();
