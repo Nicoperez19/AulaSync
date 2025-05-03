@@ -11,12 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('carreras', function (Blueprint $table) {
-            $table->string('id_carrera',20)->primary();
-            $table->string('nombre', 100);
-            $table->string('id_area_academica',20);
-            $table->foreign('id_area_academica')->references('id_area_academica')->on('area_academicas')->onDelete('cascade');
-
+        Schema::create('seccions', function (Blueprint $table) {
+            $table->id();
             $table->timestamps();
         });
     }
@@ -26,6 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('carreras');
+        Schema::dropIfExists('seccions');
     }
 };

@@ -11,12 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('carreras', function (Blueprint $table) {
-            $table->string('id_carrera',20)->primary();
-            $table->string('nombre', 100);
-            $table->string('id_area_academica',20);
-            $table->foreign('id_area_academica')->references('id_area_academica')->on('area_academicas')->onDelete('cascade');
-
+        Schema::create('campuses', function (Blueprint $table) {
+            $table->string('id_campus', 20)->primary();
+            $table->string('nombre_campus', 100);
+            $table->string('id_sede', 20); 
+            $table->foreign('id_sede')->references('id_sede')->on('sedes')->onDelete('cascade');
             $table->timestamps();
         });
     }
@@ -26,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('carreras');
+        Schema::dropIfExists('campuses');
     }
 };
