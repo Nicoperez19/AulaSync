@@ -15,6 +15,7 @@
         "spatie/laravel-permission": "^6.16"
     },
     "require-dev": {
+        "beyondcode/laravel-er-diagram-generator": "^4.0",
         "kamona/kui-laravel-breeze": "^0.5.1",
         "laravel/breeze": "^1.29",
         "laravel/pint": "^1.0",

@@ -23,9 +23,6 @@ class Asignatura extends Model
         'id', //usuario
         'id_carrera',
     ];
-    //profesor consulta 
-
-    //cantidad_estudiantes consulta
     public function carrera()
     {
         return $this->belongsTo(Carrera::class, 'id_carrera');
@@ -36,4 +33,8 @@ class Asignatura extends Model
         return $this->belongsTo(User::class, 'id');  
     }
     
+    public function secciones()
+    {
+        return $this->hasMany(Seccion::class, 'id_asignatura', 'id_asignatura');
+    }
 }
