@@ -17,70 +17,75 @@ class UserController extends Controller
     public function index()
     {
         $users = User::all();
-        return view('layouts.user.user_index', compact('users'));
+        $years = range(2010, date('Y'));
+        return view('layouts.user.user_index', compact('users', 'years'));
     }
 
     public function create()
     {
+        $years = range(2010, date('Y'));
+        return view('layouts.user.user_update', compact('years'));
     }
 
     public function store(Request $request)
     {
         try {
             $validatedData = $request->validate([
-                'run' => 'required|string|unique:users|regex:/^\d{7,8}[0-9K]$/',
+                'run' => ['required', 'integer', 'regex:/^\d{7,8}$/'],
                 'name' => ['required', 'string', 'max:255'],
-                'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:' . User::class],
-                'password' => ['required', Rules\Password::defaults()],
-                'celular' => 'required|regex:/^9\d{8}$/',
-                'direccion' => 'required|string|max:255',
-                'fecha_nacimiento' => 'required|date',
-                'anio_ingreso' => 'required|integer|min:1900|max:' . date('Y'),
+                'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
+                'celular' => 'nullable|regex:/^9\d{8}$/',
+                'direccion' => 'nullable|string|max:255',
+                'fecha_nacimiento' => 'nullable|date',
+                'anio_ingreso' => 'nullable|integer|min:1900|max:' . date('Y'),
             ]);
-    
+
             $user = User::create([
                 'run' => $validatedData['run'],
                 'name' => $validatedData['name'],
                 'email' => $validatedData['email'],
-                'password' => bcrypt($validatedData['password']),
-                'celular' => $validatedData['celular'],
-                'direccion' => $validatedData['direccion'],
-                'fecha_nacimiento' => $validatedData['fecha_nacimiento'],
-                'anio_ingreso' => $validatedData['anio_ingreso'],
+                'password' => bcrypt($validatedData['run']),
+                'celular' => $validatedData['celular'] ?? null,
+                'direccion' => $validatedData['direccion'] ?? null,
+                'fecha_nacimiento' => $validatedData['fecha_nacimiento'] ?? null,
+                'anio_ingreso' => $validatedData['anio_ingreso'] ?? null,
             ]);
-    
-            // Asignar rol si es necesario
+
             $role = Role::findByName('Usuario');
             $user->assignRole($role);
-    
+
             event(new Registered($user));
-    
+
             return redirect()->route('users.index')->with('success', 'Usuario creado exitosamente.');
-    
+
         } catch (\Exception $e) {
             Log::error('Error al crear usuario: ' . $e->getMessage());
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al crear el usuario.'])->withInput();
         }
     }
-    
 
     public function show(string $id)
     {
     }
-
-    public function edit($id)
-    {
-        $user = User::findOrFail($id);
-        $roles = Role::all();
-        $permissions = Permission::all();
-        return view('layouts.user.user_update', compact('user', 'roles', 'permissions'));
-    }
-
-    public function update(Request $request, $id)
+    public function edit($run)
     {
         try {
+            $user = User::where('run', $run)->firstOrFail();
+            $years = range(1900, date('Y'));
+            $roles = Role::all();
+            $permissions = Permission::all();
+            return view('layouts.user.user_update', compact('user', 'roles', 'permissions'));
+        } catch (\Exception $e) {
+            Log::error('Error al cargar la vista de edición de usuario: ' . $e->getMessage());
+            return redirect()->route('users.index')->withErrors(['error' => 'Hubo un problema al cargar los datos del usuario.']);
+        }
+    }
 
-            $user = User::findOrFail($id);
+
+    public function update(Request $request, $run)
+    {
+        try {
+            $user = User::where('run', $run)->firstOrFail();
 
             $rules = [
                 'name' => 'nullable|string|max:255',
@@ -94,7 +99,7 @@ class UserController extends Controller
             ];
 
             if ($request->run && $request->run != $user->run) {
-                $rules['run'] = 'required|string|regex:/^\d{7,8}[0-9K]$/|unique:users,run';
+                $rules['run'] = 'required|string|regex:/^\d{7,8}$/|unique:users,run';
             }
 
             if ($request->email && $request->email != $user->email) {
@@ -103,8 +108,8 @@ class UserController extends Controller
 
             $validatedData = $request->validate($rules);
 
-
             $roles = Role::whereIn('id', $validatedData['roles'])->pluck('name')->toArray();
+            $permissions = Permission::whereIn('id', $validatedData['permissions'])->pluck('name')->toArray();
 
             $user->fill([
                 'run' => $validatedData['run'] ?? $user->run,
@@ -121,29 +126,30 @@ class UserController extends Controller
             }
 
             $user->syncRoles($roles);
-            $user->syncPermissions($validatedData['permissions'] ?? []);
+            $user->syncPermissions($permissions);
 
             $user->save();
 
-
             return redirect()->route('users.index')->with('success', 'Usuario actualizado exitosamente.');
-        } catch (\Exception $e) {
 
+        } catch (\Exception $e) {
+            Log::error('Error al actualizar usuario: ' . $e->getMessage());
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al actualizar el usuario.'])->withInput();
         }
     }
 
-
-    public function destroy($id)
+    public function destroy($run)
     {
         try {
-            $user = User::findOrFail($id);
+            $user = User::findOrFail($run);
             $user->delete();
             return redirect()->route('users.index')->with('success', 'Usuario eliminado exitosamente.');
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            Log::error('Usuario no encontrado: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Usuario no encontrado.'], 404);
         } catch (\Exception $e) {
+            Log::error('Error al borrar el usuario: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Error al borrar el usuario: ' . $e->getMessage()], 500);
         }
     }

@@ -2590,6 +2590,16 @@ select {
     --tw-ring-color: rgb(168 85 247 / var(--tw-ring-opacity, 1))
 }
 
+.focus\:ring-light-cloud-blue:focus {
+    --tw-ring-opacity: 1;
+    --tw-ring-color: rgb(32 68 140 / var(--tw-ring-opacity, 1))
+}
+
+.focus\:ring-light-cloud:focus {
+    --tw-ring-opacity: 1;
+    --tw-ring-color: rgb(237 240 250 / var(--tw-ring-opacity, 1))
+}
+
 .focus\:ring-red-500:focus {
     --tw-ring-opacity: 1;
     --tw-ring-color: rgb(239 68 68 / var(--tw-ring-opacity, 1))

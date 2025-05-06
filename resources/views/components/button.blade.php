@@ -17,7 +17,7 @@
 
     switch ($variant) {
         case 'primary':
-            $variantClasses = 'bg-light-cloud-blue text-white hover:bg-steel-blue-600 focus:ring-purple-500';
+            $variantClasses = 'bg-light-cloud-blue text-white hover:bg-steel-blue-600 focus:ring-light-cloud';
             break;
         case 'secondary':
             $variantClasses =

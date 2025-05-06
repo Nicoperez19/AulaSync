@@ -21,25 +21,91 @@
             <form method="POST" action="{{ route('users.add') }}">
                 @csrf
                 <div class="grid gap-6 p-6">
-                    @foreach ([
-                        'run' => __('RUN'),
-                        'name' => __('Nombre'),
-                        'email' => __('Correo'),
-                        'celular' => __('Celular'),
-                        'direccion' => __('Dirección'),
-                        'fecha_nacimiento' => __('Fecha de Nacimiento'),
-                        'anio_ingreso' => __('Año de Ingreso')
-                    ] as $field => $label)
-                        <div class="space-y-2">
-                            <x-form.label for="{{ $field }}_add" :value="$label" class="text-left" />
-                            <x-form.input id="{{ $field }}_add" class="block w-full sm:w-1/2" 
-                                type="{{ $field === 'fecha_nacimiento' ? 'date' : ($field === 'anio_ingreso' ? 'number' : 'text') }}"
-                                name="{{ $field }}" :value="old($field)" required placeholder="{{ $label }}" />
-                        </div>
-                    @endforeach
 
+                    <!-- Campo RUN -->
+                    <div class="space-y-2">
+                        <x-form.label for="run_add" :value="__('RUN')" class="text-left" />
+                        <x-form.input id="run_add" class="block w-full sm:w-1/2"
+                            type="text" name="run"
+                            value="{{ old('run', '') }}" placeholder="RUN" required />
+                        @error('run')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <!-- Campo Nombre -->
+                    <div class="space-y-2">
+                        <x-form.label for="name_add" :value="__('Nombre')" class="text-left" />
+                        <x-form.input id="name_add" class="block w-full sm:w-1/2"
+                            type="text" name="name"
+                            value="{{ old('name', '') }}" placeholder="Nombre" required />
+                        @error('name')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <!-- Campo Correo -->
+                    <div class="space-y-2">
+                        <x-form.label for="email_add" :value="__('Correo')" class="text-left" />
+                        <x-form.input id="email_add" class="block w-full sm:w-1/2"
+                            type="email" name="email"
+                            value="{{ old('email', '') }}" placeholder="Correo" required />
+                        @error('email')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <!-- Campo Celular -->
+                    <div class="space-y-2">
+                        <x-form.label for="celular_add" :value="__('Celular')" class="text-left" />
+                        <x-form.input id="celular_add" class="block w-full sm:w-1/2"
+                            type="text" name="celular"
+                            value="{{ old('celular', '') }}" placeholder="Celular" />
+                        @error('celular')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <!-- Campo Dirección -->
+                    <div class="space-y-2">
+                        <x-form.label for="direccion_add" :value="__('Dirección')" class="text-left" />
+                        <x-form.input id="direccion_add" class="block w-full sm:w-1/2"
+                            type="text" name="direccion"
+                            value="{{ old('direccion', '') }}" placeholder="Dirección" />
+                        @error('direccion')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <!-- Campo Fecha de Nacimiento -->
+                    <div class="space-y-2">
+                        <x-form.label for="fecha_nacimiento_add" :value="__('Fecha de Nacimiento')" class="text-left" />
+                        <x-form.input id="fecha_nacimiento_add" class="block w-full sm:w-1/2"
+                            type="date" name="fecha_nacimiento"
+                            value="{{ old('fecha_nacimiento', '') }}" />
+                        @error('fecha_nacimiento')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    {{-- Año de Ingreso como select --}}
+                    <div class="space-y-2">
+                        <x-form.label for="anio_ingreso_add" :value="__('Año de Ingreso')" class="text-left" />
+                        <select id="anio_ingreso_add" name="anio_ingreso" class="block w-full sm:w-1/2" required>
+                            <option value="" disabled selected>Seleccione un año</option>
+                            @foreach ($years as $year)
+                                <option value="{{ $year }}"
+                                    {{ old('anio_ingreso') == $year ? 'selected' : '' }}>{{ $year }}</option>
+                            @endforeach
+                        </select>
+                        @error('anio_ingreso')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <!-- Botón de Enviar -->
                     <div>
-                        <x-button class="justify-center w-full gap-2">
+                        <x-button variant="primary" class="justify-center max-w-xs gap-2">
                             <x-heroicon-o-user-add class="w-6 h-6" aria-hidden="true" />
                             <span>{{ __('Agregar') }}</span>
                         </x-button>
@@ -47,11 +113,12 @@
                 </div>
             </form>
         </x-modal>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        function confirmDelete(userId) {
+        function confirmDelete(userRun) {
             Swal.fire({
                 title: '¿Estás seguro?',
                 text: "¡No podrás revertir esta acción!",
@@ -63,7 +130,7 @@
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    document.getElementById('delete-form-' + userId).submit();
+                    document.getElementById('delete-form-' + userRun).submit();
                 }
             });
         }

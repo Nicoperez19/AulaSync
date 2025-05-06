@@ -8,7 +8,7 @@
     </x-slot>
 
     <div class="p-6 bg-gray-100 rounded-lg shadow-lg">
-        <form method="POST" action="{{ route('users.update', $user->id) }}">
+        <form method="POST" action="{{ route('users.update', $user->run) }}">
             @csrf
             @method('PUT')
 
@@ -91,17 +91,23 @@
 
                 <!-- Año de Ingreso y Contraseña -->
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                        <x-form.label for="anio_ingreso" :value="__('Año de Ingreso')" />
-                        <x-form.input-with-icon-wrapper>
-                            <x-slot name="icon">
-                                <x-heroicon-o-academic-cap class="w-5 h-5" />
-                            </x-slot>
-                            <x-form.input withicon id="anio_ingreso" class="block w-full" type="number"
-                                name="anio_ingreso" value="{{ old('anio_ingreso', $user->anio_ingreso) }}"
-                                min="1900" max="{{ date('Y') }}" />
-                        </x-form.input-with-icon-wrapper>
+                    <div class="space-y-2">
+                        <x-form.label for="anio_ingreso_add" :value="__('Año de Ingreso')" class="text-left" />
+                        <select id="anio_ingreso" name="anio_ingreso" class="block w-full sm:w-1/2" required>
+                            <option value="" disabled selected>Seleccione un año</option>
+                            @foreach ($years as $year)
+                                <option value="{{ $year }}"
+                                    {{ old('anio_ingreso', $user->anio_ingreso) == $year ? 'selected' : '' }}>
+                                    {{ $year }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                        @error('anio_ingreso')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
                     </div>
+
 
                     <div>
                         <x-form.label for="password" :value="__('Contraseña Nueva')" />

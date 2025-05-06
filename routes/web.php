@@ -40,9 +40,9 @@ Route::get('dashboard', function () {
 Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::get('/user/user_index', [UserController::class, 'index'])->name('users.index');
     Route::post('/user/user_store', [UserController::class, 'store'])->name('users.add');
-    Route::delete('/user/user_delete/{id}', [UserController::class, 'destroy'])->name('users.delete');
-    Route::get('/user/user_edit/{id}', [UserController::class, 'edit'])->name('users.edit');
-    Route::put('/user/user_update/{id}', [UserController::class, 'update'])->name('users.update');
+    Route::delete('/user/user_delete/{run}', [UserController::class, 'destroy'])->name('users.delete');
+    Route::get('/user/user_edit/{run}', [UserController::class, 'edit'])->name('users.edit');
+    Route::put('user/user_update/{run}', [UserController::class, 'update'])->name('users.update');
 });
 
 Route::group(['middleware' => ['permission:mantenedor de roles']], function () {

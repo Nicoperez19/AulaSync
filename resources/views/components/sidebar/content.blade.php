@@ -8,35 +8,39 @@
     </x-sidebar.link>
 
     @role('Administrador')
-        <x-sidebar.dropdown title="Usuarios" :active="Str::startsWith(request()->route()->uri(), 'users')">
-            <x-slot name="icon">
-                <x-icons.user class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
-            </x-slot>
-            <x-sidebar.sublink title="Usuarios" href="{{ route('users.index') }}" :active="request()->routeIs('users.index')" />
-            <x-sidebar.sublink title="Roles" href="{{ route('roles.index') }}" :active="request()->routeIs('roles.index')" />
-            <x-sidebar.sublink title="Permisos" href="{{ route('permissions.index') }}" :active="request()->routeIs('permissions.index')" />
-        </x-sidebar.dropdown>
-        <x-sidebar.dropdown title="Mantenedores/Universidad" :active="Str::startsWith(request()->route()->uri(), 'universidades')">
-            <x-slot name="icon">
-                <x-icons.university class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
-            </x-slot>
-            <x-sidebar.sublink title="Universidad" href="{{ route('universities.index') }}" :active="request()->routeIs('universitys.index')" />
-            <x-sidebar.sublink title="Facultad" href="{{ route('faculties.index') }}" :active="request()->routeIs('faculties.index')" />
-            <x-sidebar.sublink title="Áreas Académicas" href="{{ route('academic_areas.index') }}" :active="request()->routeIs('academic_areas.index')" />
-            <x-sidebar.sublink title="Carreras" href="{{ route('careers.index') }}" :active="request()->routeIs('users.index')" />
-            <x-sidebar.sublink title="Pisos" href="{{ route('floors_index') }}" :active="request()->routeIs('floors_index')" />
-            <x-sidebar.sublink title="Espacios" href="{{ route('spaces_index') }}" :active="request()->routeIs('espacios.index')" />
-            <x-sidebar.sublink title="Reservas" href="{{ route('reservas.index') }}" :active="request()->routeIs('reservas.index')" />
-            <x-sidebar.sublink title="Asignaturas" href="{{ route('asignaturas.index') }}" :active="request()->routeIs('asignaturas.index')" />
-            <x-sidebar.sublink title="Mapa" href="{{ route('mapas.index') }}" :active="request()->routeIs('maps.index')" />
-        </x-sidebar.dropdown>
+    <x-sidebar.dropdown title="Mantenedores" :active="Str::startsWith(request()->route()->uri(), 'users')">
+        <x-slot name="icon">
+            <x-icons.config class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
+        </x-slot>
+    
+        {{-- Gestión de Accesos --}}
+        <x-sidebar.sublink title="Usuarios" href="{{ route('users.index') }}" :active="request()->routeIs('users.index')" />
+        <x-sidebar.sublink title="Roles" href="{{ route('roles.index') }}" :active="request()->routeIs('roles.index')" />
+        <x-sidebar.sublink title="Permisos" href="{{ route('permissions.index') }}" :active="request()->routeIs('permissions.index')" />
+    
+        {{-- Estructura Académica --}}
+        <x-sidebar.sublink title="Universidad" href="{{ route('universities.index') }}" :active="request()->routeIs('universitys.index')" />
+        <x-sidebar.sublink title="Facultad" href="{{ route('faculties.index') }}" :active="request()->routeIs('faculties.index')" />
+        <x-sidebar.sublink title="Áreas Académicas" href="{{ route('academic_areas.index') }}" :active="request()->routeIs('academic_areas.index')" />
+        <x-sidebar.sublink title="Carreras" href="{{ route('careers.index') }}" :active="request()->routeIs('careers.index')" />
+        <x-sidebar.sublink title="Asignaturas" href="{{ route('asignaturas.index') }}" :active="request()->routeIs('asignaturas.index')" />
+    
+        {{-- Infraestructura --}}
+        <x-sidebar.sublink title="Pisos" href="{{ route('floors_index') }}" :active="request()->routeIs('floors_index')" />
+        <x-sidebar.sublink title="Espacios" href="{{ route('spaces_index') }}" :active="request()->routeIs('espacios.index')" />
+        <x-sidebar.sublink title="Mapa" href="{{ route('mapas.index') }}" :active="request()->routeIs('maps.index')" />
+    
+        {{-- Operaciones --}}
+        <x-sidebar.sublink title="Reservas" href="{{ route('reservas.index') }}" :active="request()->routeIs('reservas.index')" />
+    </x-sidebar.dropdown>
+    
     @endrole
     @role('Auxiliar')
         <x-sidebar.dropdown title="Visualizador" :active="Str::startsWith(request()->route()->uri(), 'universidades')">
             <x-slot name="icon">
                 <x-icons.university class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
             </x-slot>
-          <x-sidebar.sublink title="Mapa" href="{{ route('mapas.index') }}" :active="request()->routeIs('maps.index')" />
+            <x-sidebar.sublink title="Mapa" href="{{ route('mapas.index') }}" :active="request()->routeIs('maps.index')" />
         </x-sidebar.dropdown>
     @endrole
 

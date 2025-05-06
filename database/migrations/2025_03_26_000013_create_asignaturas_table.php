@@ -20,9 +20,9 @@ return new class extends Migration
             $table->string('area_conocimiento', 100);
             $table->string('periodo', 20);
 
-            $table->unsignedBigInteger('id');
+            $table->unsignedBigInteger('run');
             $table->string('id_carrera', 20);
-            $table->foreign('id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('run')->references('run')->on('users')->onDelete('cascade');
             $table->foreign('id_carrera')->references('id_carrera')->on('carreras')->onDelete('cascade');
             $table->timestamps();
         });

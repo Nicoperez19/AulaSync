@@ -20,7 +20,7 @@ class Asignatura extends Model
         'horas_indirectas',
         'area_conocimiento',
         'periodo',
-        'id', //usuario
+        'run', //usuario
         'id_carrera',
     ];
     public function carrera()
@@ -30,7 +30,7 @@ class Asignatura extends Model
 
     public function profesor()
     {
-        return $this->belongsTo(User::class, 'id');  
+        return $this->belongsTo(User::class, 'run');  
     }
     
     public function secciones()

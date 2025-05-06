@@ -12,8 +12,10 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
+    protected $primaryKey = 'run';
+    public $incrementing = false;
+    protected $keyType = 'int';
     protected $fillable = [
-        'run',
         'password',
         'name',
         'email',
@@ -59,7 +61,7 @@ class User extends Authenticatable
 
     public function asignaturas()
     {
-        return $this->hasMany(Asignatura::class, 'id'); 
+        return $this->hasMany(Asignatura::class, 'run'); 
     }
 
     
