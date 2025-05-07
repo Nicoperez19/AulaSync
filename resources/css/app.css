@@ -2448,6 +2448,11 @@ select {
     color: rgb(255 255 255 / var(--tw-text-opacity, 1))
 }
 
+.hover\:text-light-cloud-blue:hover {
+    --tw-text-opacity: 1;
+    color: rgb(32 68 140 / var(--tw-text-opacity, 1))
+}
+
 .hover\:underline:hover {
     text-decoration-line: underline
 }
