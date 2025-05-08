@@ -17,6 +17,9 @@
     </noscript>
     @livewireStyles 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="https://cdn.jsdelivr.net/npm/livewire-v2.11.0/livewire.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/alpinejs@2.8.2/dist/alpine.min.js" defer></script>
+
 </head>
 
 <body>

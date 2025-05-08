@@ -31,9 +31,17 @@
 
             <x-sidebar.sidebar />
 
-            <div class="flex flex-col min-h-screen pt-16 bg-cloud-light dark:bg-dark-eval-2"
-                :style="{ 'margin-left': isSidebarOpen || isSidebarHovered ? '16rem' : '4rem' }"
-                style="transition-property: margin; transition-duration: 150ms;">
+            <div class="flex flex-col min-h-screen pt-16 bg-cloud-light dark:bg-dark-eval-2 transition-[margin] duration-150"
+                :class="{
+                    'ml-64': isSidebarOpen || isSidebarHovered,
+                    'ml-16': !(isSidebarOpen || isSidebarHovered),
+                    'ml-0': true 
+                }"
+                :style="{
+                    'margin-left': (isSidebarOpen || isSidebarHovered) && window.innerWidth >= 768 ? '16rem' : (window
+                        .innerWidth >= 768 ? '4rem' : '0rem')
+                }">
+
 
                 <header>
                     <div class="mt-4 p-4 sm:p-6">

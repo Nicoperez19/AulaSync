@@ -9,39 +9,40 @@
     </x-sidebar.link>
 
     <!-- Monitoreo de Espacios -->
-    <x-sidebar.link title="Monitoreo de Espacios" href="" :isActive="request()->routeIs('spaces.monitoring')">
+    <x-sidebar.link title="Monitoreo de Espacios" href="" :isActive="request()->routeIs('')">
         <x-slot name="icon">
             <x-icons.location class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         </x-slot>
     </x-sidebar.link>
 
     <!-- Horarios -->
-    <x-sidebar.link title="Horarios de Uso" href="" :isActive="request()->routeIs('spaces.schedules')">
+    <x-sidebar.link title="Horarios de Uso" href="" :isActive="request()->routeIs('')">
         <x-slot name="icon">
             <x-icons.clock class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         </x-slot>
     </x-sidebar.link>
 
     <!-- Gestión de Reservas -->
-    <x-sidebar.link title="Reservas" href="" :isActive="request()->routeIs('reservas.index')">
+    <x-sidebar.link title="Reservas" href="" :isActive="request()->routeIs('')">
         <x-slot name="icon">
             <x-icons.calendar class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         </x-slot>
     </x-sidebar.link>
 
+    <!-- Mapa -->
+    <x-sidebar.link title="Mapa de Espacios" href="" :isActive="request()->routeIs('')">
+        <x-slot name="icon">
+            <x-icons.map class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
+        </x-slot>
+    </x-sidebar.link>
     <!-- Reportería -->
-    <x-sidebar.link title="Reportes" href="" :isActive="request()->routeIs('reporting.index')">
+    <x-sidebar.link title="Reportes" href="" :isActive="request()->routeIs('')">
         <x-slot name="icon">
             <x-icons.chart-bar class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         </x-slot>
     </x-sidebar.link>
 
-    <!-- Mapa -->
-    <x-sidebar.link title="Mapa de Espacios" href="" :isActive="request()->routeIs('mapas.index')">
-        <x-slot name="icon">
-            <x-icons.map class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
-        </x-slot>
-    </x-sidebar.link>
+
 
     @role('Administrador')
         <x-sidebar.dropdown title="Mantenedores" :active="Str::startsWith(request()->route()->uri(), 'users')">

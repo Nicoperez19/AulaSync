@@ -9,13 +9,23 @@
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
         <div class="flex justify-end mb-4">
-            <x-button target="_blank" variant="primary" class="max-w-xs gap-2"
-                x-on:click="$dispatch('open-modal', 'add-user')">
-                <x-icons.add class="w-6 h-6" aria-hidden="true" />
-            </x-button>
+            
         </div>
 
-        @livewire('users-table')
+        <div class="mt-4 flex items-center justify-between">
+            <!-- Buscador pequeño a la izquierda -->
+            <div class="w-2/3">
+                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Buscar por RUN o Nombre"
+                    class="px-4 py-2 border rounded dark:bg-gray-700 dark:text-white w-full">
+            </div>
+            <x-button target="_blank" variant="primary" class="max-w-xs gap-2"
+            x-on:click="$dispatch('open-modal', 'add-user')">
+            <x-icons.add class="w-6 h-6" aria-hidden="true" />
+        </x-button>
+           
+        </div>
+
+        <livewire:users-table />
 
         <x-modal name="add-user" :show="$errors->any()" focusable>
             <form method="POST" action="{{ route('users.add') }}">
