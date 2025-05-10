@@ -12,48 +12,52 @@ Alpine.plugin(focus)
 Alpine.plugin(mask)
 
 // Estado principal de la aplicación
-document.addEventListener('alpine:init', () => {
-    Alpine.data('mainState', () => ({
-        init() {
-            this.handleWindowResize()
-            window.addEventListener('scroll', this.handleScroll.bind(this))
-        },
+Alpine.data('mainState', () => ({
+    isDarkMode: localStorage.getItem('dark') === 'true' || 
+                (!localStorage.getItem('dark') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+    isSidebarOpen: false,
+    isSidebarHovered: false,
+    scrollingDown: false,
+    scrollingUp: false,
+    lastScrollTop: 0,
 
-        isDarkMode: localStorage.getItem('dark') === 'true' || 
-                    (!localStorage.getItem('dark') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+    init() {
+        this.handleWindowResize()
+        window.addEventListener('scroll', this.handleScroll.bind(this))
+        window.addEventListener('resize', this.handleWindowResize.bind(this))
+    },
 
-        isSidebarOpen: window.innerWidth > 1024,
-        isSidebarHovered: false,
-        scrollingDown: false,
-        scrollingUp: false,
-        lastScrollTop: 0,
+    toggleTheme() {
+        this.isDarkMode = !this.isDarkMode
+        localStorage.setItem('dark', this.isDarkMode)
+    },
 
-        toggleTheme() {
-            this.isDarkMode = !this.isDarkMode
-            localStorage.setItem('dark', this.isDarkMode)
-        },
+    toggleSidebar() {
+        this.isSidebarOpen = !this.isSidebarOpen
+    },
 
-        handleSidebarHover(value) {
-            if (window.innerWidth < 1024) return
-            this.isSidebarHovered = value
-        },
+    handleSidebarHover(value) {
+        if (window.innerWidth < 1024) return
+        this.isSidebarHovered = value
+    },
 
-        handleWindowResize() {
-            this.isSidebarOpen = window.innerWidth > 1024
-        },
-
-        handleScroll() {
-            const st = window.pageYOffset || document.documentElement.scrollTop
-            this.scrollingDown = st > this.lastScrollTop
-            this.scrollingUp = st < this.lastScrollTop
-            if (st === 0) {
-                this.scrollingDown = false
-                this.scrollingUp = false
-            }
-            this.lastScrollTop = st <= 0 ? 0 : st
+    handleWindowResize() {
+        if (window.innerWidth < 1024) {
+            this.isSidebarOpen = false
         }
-    }))
-})
+    },
+
+    handleScroll() {
+        const st = window.pageYOffset || document.documentElement.scrollTop
+        this.scrollingDown = st > this.lastScrollTop
+        this.scrollingUp = st < this.lastScrollTop
+        if (st === 0) {
+            this.scrollingDown = false
+            this.scrollingUp = false
+        }
+        this.lastScrollTop = st <= 0 ? 0 : st
+    }
+}))
 
 // Inicializar Alpine
 Alpine.start()
@@ -62,10 +66,12 @@ Alpine.start()
 document.addEventListener('DOMContentLoaded', () => {
     const containers = document.querySelectorAll('.ps')
     containers.forEach(container => {
-        new PerfectScrollbar(container, {
-            suppressScrollX: true,
-            wheelPropagation: false
-        })
+        if (typeof PerfectScrollbar !== 'undefined') {
+            new PerfectScrollbar(container, {
+                suppressScrollX: true,
+                wheelPropagation: false
+            })
+        }
     })
 })
 
