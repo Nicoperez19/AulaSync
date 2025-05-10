@@ -35,13 +35,69 @@
         @apply mt-1 text-sm text-red-600 dark:text-red-400;
     }
 
+    /* Estilos para scroll personalizado */
+    .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background-color: rgba(156, 163, 175, 0.5);
+        border-radius: 20px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(156, 163, 175, 0.7);
+    }
+
+    /* Estilos para ocultar scrollbar pero mantener funcionalidad */
+    .scrollbar-hide {
+        -ms-overflow-style: none;  /* IE and Edge */
+        scrollbar-width: none;  /* Firefox */
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+        display: none;  /* Chrome, Safari and Opera */
+    }
+
     /* Optimizaciones de scroll */
     .ps {
-        @apply overflow-hidden;
+        @apply overflow-hidden relative;
         overflow-anchor: none;
         -ms-overflow-style: none;
-        touch-action: auto;
-        -ms-touch-action: auto;
+    }
+
+    .ps__rail-y {
+        @apply bg-transparent opacity-0 transition-opacity duration-200;
+        width: 9px !important;
+        right: 0 !important;
+    }
+
+    .ps:hover > .ps__rail-y,
+    .ps--focus > .ps__rail-y,
+    .ps--scrolling-y > .ps__rail-y {
+        @apply opacity-100;
+    }
+
+    .ps__thumb-y {
+        @apply bg-gray-400 dark:bg-gray-600 rounded-full;
+        width: 6px !important;
+        right: 2px !important;
+    }
+
+    .ps__rail-y:hover > .ps__thumb-y,
+    .ps__rail-y:focus > .ps__thumb-y,
+    .ps__rail-y.ps--clicking .ps__thumb-y {
+        @apply bg-gray-500 dark:bg-gray-500;
+        width: 8px !important;
     }
 
     .dark .ps__rail-y,
