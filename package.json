@@ -7,20 +7,23 @@
     },
     "devDependencies": {
         "@alpinejs/collapse": "^3.13.8",
+        "@alpinejs/focus": "^3.13.8",
+        "@alpinejs/mask": "^3.13.8",
         "@tailwindcss/forms": "^0.5.7",
-        "alpinejs": "^3.14.9",
-        "autoprefixer": "^10.4.21",
+        "@tailwindcss/typography": "^0.5.10",
+        "alpinejs": "^3.13.5",
+        "autoprefixer": "^10.4.17",
         "axios": "^1.6.7",
-        "esbuild": "^0.25.3",
+        "esbuild": "^0.20.1",
         "perfect-scrollbar": "^1.5.6",
-        "postcss": "^8.5.3",
-        "postcss-import": "^15.1.0",
-        "tailwindcss": "^4.1.4"
+        "postcss": "^8.4.35",
+        "postcss-import": "^16.0.1",
+        "postcss-nesting": "^12.0.2",
+        "tailwindcss": "^3.4.1"
     },
     "dependencies": {
-        "@tailwindcss/vite": "^4.1.4",
-        "laravel-vite-plugin": "^1.2.0",
-        "sweetalert": "^2.1.2",
-        "vite": "^6.3.3"
+        "laravel-vite-plugin": "^1.0.0",
+        "sweetalert2": "^11.10.5",
+        "vite": "^5.0.12"
     }
 }

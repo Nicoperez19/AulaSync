@@ -18,11 +18,12 @@ export default defineConfig({
         chunkSizeWarningLimit: 500,
     },
     optimizeDeps: {
-        include: ['@tailwindcss/forms'],
-    },
-    server: {
-        watch: {
-            usePolling: true,
-        },
-    },
+        include: [
+            '@tailwindcss/forms',
+            'alpinejs',
+            '@alpinejs/collapse',
+            '@alpinejs/focus',
+            '@alpinejs/mask'
+        ]
+    }
 });

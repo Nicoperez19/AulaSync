@@ -7,30 +7,43 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>{{ config('app.name', 'AulaSync') }}</title>
+    
+    <!-- Estilos de Livewire -->
     @livewireStyles
+
+    <!-- Fuentes -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@200..900&display=swap" as="style"
         onload="this.onload=null;this.rel='stylesheet'">
     <noscript>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200..900&display=swap" rel="stylesheet">
     </noscript>
 
+    <!-- Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+    <!-- Estilos adicionales -->
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
 </head>
 
 <body class="font-sans antialiased">
-    <div x-data="mainState" :class="{ dark: isDarkMode }" x-on:resize.window="handleWindowResize" x-cloak>
+    <div x-data="mainState" 
+         :class="{ dark: isDarkMode }" 
+         x-on:resize.window="handleWindowResize" 
+         x-cloak>
         <div class="min-h-screen text-gray-900 bg-gray-100 dark:bg-dark-eval-0 dark:text-gray-200">
-
+            <!-- Navbar -->
             <div class="fixed top-0 left-0 z-50 w-full">
                 <x-navbar />
             </div>
 
+            <!-- Sidebar -->
             <x-sidebar.sidebar />
 
+            <!-- Contenido principal -->
             <div class="flex flex-col min-h-screen pt-16 bg-cloud-light dark:bg-dark-eval-2 transition-[margin] duration-150"
                 :class="{
                     'ml-64': isSidebarOpen || isSidebarHovered,
@@ -38,24 +51,27 @@
                     'ml-0': true 
                 }"
                 :style="{
-                    'margin-left': (isSidebarOpen || isSidebarHovered) && window.innerWidth >= 768 ? '16rem' : (window
-                        .innerWidth >= 768 ? '4rem' : '0rem')
+                    'margin-left': (isSidebarOpen || isSidebarHovered) && window.innerWidth >= 768 ? '16rem' : (window.innerWidth >= 768 ? '4rem' : '0rem')
                 }">
-
-
+                <!-- Header -->
                 <header>
                     <div class="mt-4 p-4 sm:p-6">
                         {{ $header }}
                     </div>
                 </header>
 
+                <!-- Main content -->
                 <main class="flex-1 px-4 sm:px-6 overflow-x-auto">
                     {{ $slot }}
                 </main>
+
+                <!-- Footer -->
                 <x-footer />
             </div>
         </div>
     </div>
+
+    <!-- Scripts -->
     @livewireScripts
 </body>
 
