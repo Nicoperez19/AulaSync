@@ -11,6 +11,8 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
 class UserController extends Controller
 {
@@ -30,37 +32,79 @@ class UserController extends Controller
     public function store(Request $request)
     {
         try {
-            $validatedData = $request->validate([
-                'run' => ['required', 'integer', 'regex:/^\d{7,8}$/'],
-                'name' => ['required', 'string', 'max:255'],
-                'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:users,email'],
-                'celular' => 'nullable|regex:/^9\d{8}$/',
-                'direccion' => 'nullable|string|max:255',
-                'fecha_nacimiento' => 'nullable|date',
-                'anio_ingreso' => 'nullable|integer|min:1900|max:' . date('Y'),
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users',
+                'run' => 'required|integer|digits_between:7,8|unique:users',
+                'celular' => 'nullable|string|regex:/^9\d{8}$/',
+                'password' => 'required|string|min:8',
+                'roles' => 'required|array',
+                'roles.*' => 'exists:roles,id',
+                'permissions' => 'nullable|array',
+                'permissions.*' => 'exists:permissions,id',
+                'year_of_entry' => 'nullable|integer|min:2010|max:' . date('Y'),
+                'year_of_graduation' => 'nullable|integer|min:2010|max:' . (date('Y') + 5),
+                'career' => 'nullable|string|max:255',
+                'current_semester' => 'nullable|integer|min:1|max:20',
+                'is_active' => 'boolean'
             ]);
+
+            // Verificar si el RUN ya existe
+            if (User::where('run', $validated['run'])->exists()) {
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El RUN ya está registrado en el sistema.'
+                    ], 422);
+                }
+                return back()->withErrors(['run' => 'El RUN ya está registrado en el sistema.']);
+            }
 
             $user = User::create([
-                'run' => $validatedData['run'],
-                'name' => $validatedData['name'],
-                'email' => $validatedData['email'],
-                'password' => bcrypt($validatedData['run']),
-                'celular' => $validatedData['celular'] ?? null,
-                'direccion' => $validatedData['direccion'] ?? null,
-                'fecha_nacimiento' => $validatedData['fecha_nacimiento'] ?? null,
-                'anio_ingreso' => $validatedData['anio_ingreso'] ?? null,
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'run' => $validated['run'],
+                'celular' => $validated['celular'] ?? null,
+                'password' => Hash::make($validated['password']),
+                'year_of_entry' => $validated['year_of_entry'] ?? null,
+                'year_of_graduation' => $validated['year_of_graduation'] ?? null,
+                'career' => $validated['career'] ?? null,
+                'current_semester' => $validated['current_semester'] ?? null,
+                'is_active' => $validated['is_active'] ?? true
             ]);
 
-            $role = Role::findByName('Usuario');
-            $user->assignRole($role);
+            $user->roles()->sync($validated['roles']);
+            if (!empty($validated['permissions'])) {
+                $user->permissions()->sync($validated['permissions']);
+            }
 
-            event(new Registered($user));
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Usuario creado exitosamente.'
+                ]);
+            }
 
-            return redirect()->route('users.index')->with('success', 'Usuario creado exitosamente.');
-
+            return redirect()->route('users.index')
+                ->with('success', 'Usuario creado exitosamente.');
+        } catch (ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $e->errors(),
+                    'message' => 'Error de validación.'
+                ], 422);
+            }
+            throw $e;
         } catch (\Exception $e) {
-            Log::error('Error al crear usuario: ' . $e->getMessage());
-            return redirect()->back()->withErrors(['error' => 'Hubo un problema al crear el usuario.'])->withInput();
+            \Log::error('Error al crear usuario: ' . $e->getMessage());
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al crear el usuario: ' . $e->getMessage()
+                ], 500);
+            }
+            return back()->withErrors(['error' => 'Error al crear el usuario.']);
         }
     }
 
@@ -71,86 +115,101 @@ class UserController extends Controller
     {
         try {
             $user = User::where('run', $run)->firstOrFail();
-            $years = range(1900, date('Y'));
+            $years = range(2010, date('Y'));
             $roles = Role::all();
             $permissions = Permission::all();
-            return view('layouts.user.user_update', compact('user', 'roles', 'permissions'));
+            return view('layouts.user.user_update', compact('user', 'years', 'roles', 'permissions'));
         } catch (\Exception $e) {
             Log::error('Error al cargar la vista de edición de usuario: ' . $e->getMessage());
             return redirect()->route('users.index')->withErrors(['error' => 'Hubo un problema al cargar los datos del usuario.']);
         }
     }
 
-
-    public function update(Request $request, $run)
+    public function update(Request $request, User $user)
     {
         try {
-            $user = User::where('run', $run)->firstOrFail();
+            // Convertir el RUN a entero antes de la validación
+            if ($request->has('run')) {
+                $request->merge(['run' => (int) $request->run]);
+            }
 
-            $rules = [
-                'name' => 'nullable|string|max:255',
-                'celular' => 'nullable|regex:/^9\d{8}$/',
-                'direccion' => 'nullable|string|max:255',
-                'fecha_nacimiento' => 'nullable|date',
-                'anio_ingreso' => 'nullable|integer|min:1900|max:' . date('Y'),
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+                'run' => 'required|integer|digits_between:7,8|unique:users,run,' . $user->id,
+                'celular' => 'nullable|string|regex:/^9\d{8}$/',
                 'password' => 'nullable|string|min:8',
-                'roles' => 'nullable|array|exists:roles,id',
-                'permissions' => 'nullable|array|exists:permissions,id',
-            ];
-
-            if ($request->run && $request->run != $user->run) {
-                $rules['run'] = 'required|string|regex:/^\d{7,8}$/|unique:users,run';
-            }
-
-            if ($request->email && $request->email != $user->email) {
-                $rules['email'] = 'required|string|email|max:255|unique:users,email';
-            }
-
-            $validatedData = $request->validate($rules);
-
-            $roles = Role::whereIn('id', $validatedData['roles'])->pluck('name')->toArray();
-            $permissions = Permission::whereIn('id', $validatedData['permissions'])->pluck('name')->toArray();
-
-            $user->fill([
-                'run' => $validatedData['run'] ?? $user->run,
-                'name' => $validatedData['name'] ?? $user->name,
-                'email' => $validatedData['email'] ?? $user->email,
-                'celular' => $validatedData['celular'] ?? $user->celular,
-                'direccion' => $validatedData['direccion'] ?? $user->direccion,
-                'fecha_nacimiento' => $validatedData['fecha_nacimiento'] ?? $user->fecha_nacimiento,
-                'anio_ingreso' => $validatedData['anio_ingreso'] ?? $user->anio_ingreso,
+                'roles' => 'required|array',
+                'roles.*' => 'exists:roles,id',
+                'permissions' => 'nullable|array',
+                'permissions.*' => 'exists:permissions,id',
+                'year_of_entry' => 'nullable|integer|min:2010|max:' . date('Y'),
+                'year_of_graduation' => 'nullable|integer|min:2010|max:' . (date('Y') + 5),
+                'career' => 'nullable|string|max:255',
+                'current_semester' => 'nullable|integer|min:1|max:20',
+                'is_active' => 'boolean'
             ]);
 
-            if (!empty($validatedData['password'])) {
-                $user->password = bcrypt($validatedData['password']);
+            $user->update([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'run' => $validated['run'],
+                'celular' => $validated['celular'] ?? null,
+                'year_of_entry' => $validated['year_of_entry'] ?? null,
+                'year_of_graduation' => $validated['year_of_graduation'] ?? null,
+                'career' => $validated['career'] ?? null,
+                'current_semester' => $validated['current_semester'] ?? null,
+                'is_active' => $validated['is_active'] ?? true
+            ]);
+
+            if (!empty($validated['password'])) {
+                $user->update(['password' => Hash::make($validated['password'])]);
             }
 
-            $user->syncRoles($roles);
-            $user->syncPermissions($permissions);
+            $user->roles()->sync($validated['roles']);
+            if (!empty($validated['permissions'])) {
+                $user->permissions()->sync($validated['permissions']);
+            }
 
-            $user->save();
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Usuario actualizado exitosamente.'
+                ]);
+            }
 
-            return redirect()->route('users.index')->with('success', 'Usuario actualizado exitosamente.');
-
+            return redirect()->route('users.index')
+                ->with('success', 'Usuario actualizado exitosamente.');
+        } catch (ValidationException $e) {
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $e->errors(),
+                    'message' => 'Error de validación.'
+                ], 422);
+            }
+            throw $e;
         } catch (\Exception $e) {
-            Log::error('Error al actualizar usuario: ' . $e->getMessage());
-            return redirect()->back()->withErrors(['error' => 'Hubo un problema al actualizar el usuario.'])->withInput();
+            \Log::error('Error al actualizar usuario: ' . $e->getMessage());
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al actualizar el usuario: ' . $e->getMessage()
+                ], 500);
+            }
+            return back()->withErrors(['error' => 'Error al actualizar el usuario.']);
         }
     }
 
-    public function destroy($run)
+    public function destroy(User $user)
     {
         try {
-            $user = User::findOrFail($run);
             $user->delete();
-            return redirect()->route('users.index')->with('success', 'Usuario eliminado exitosamente.');
-
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            Log::error('Usuario no encontrado: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Usuario no encontrado.'], 404);
+            return redirect()->route('users.index')
+                ->with('success', 'Usuario eliminado exitosamente.');
         } catch (\Exception $e) {
-            Log::error('Error al borrar el usuario: ' . $e->getMessage());
-            return response()->json(['success' => false, 'message' => 'Error al borrar el usuario: ' . $e->getMessage()], 500);
+            \Log::error('Error al eliminar usuario: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Error al eliminar el usuario.']);
         }
     }
 }

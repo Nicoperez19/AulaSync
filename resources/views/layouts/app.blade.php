@@ -73,6 +73,9 @@
 
     <!-- Scripts -->
     @livewireScripts
+
+    <!-- SweetAlert Component -->
+    <x-sweet-alert />
 </body>
 
 

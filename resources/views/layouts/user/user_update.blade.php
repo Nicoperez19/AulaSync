@@ -170,4 +170,84 @@
         </form>
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('edit-user-form');
+            const submitButton = form.querySelector('button[type="submit"]');
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Validación básica
+                const run = form.querySelector('input[name="run"]').value;
+                const celular = form.querySelector('input[name="celular"]').value;
+                
+                if (!/^\d{7,8}$/.test(run)) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'El RUN debe ser un número de 7 u 8 dígitos',
+                        icon: 'error'
+                    });
+                    return;
+                }
+                
+                if (celular && !/^9\d{8}$/.test(celular)) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'El celular debe comenzar con 9 y tener 9 dígitos',
+                        icon: 'error'
+                    });
+                    return;
+                }
+
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+                try {
+                    const formData = new FormData(form);
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        Swal.fire({
+                            title: '¡Éxito!',
+                            text: data.message,
+                            icon: 'success'
+                        }).then(() => {
+                            window.location.href = '{{ route("users.index") }}';
+                        });
+                    } else {
+                        let errorMessage = 'Ha ocurrido un error';
+                        if (data.errors) {
+                            errorMessage = Object.values(data.errors).flat().join('\n');
+                        } else if (data.message) {
+                            errorMessage = data.message;
+                        }
+                        Swal.fire({
+                            title: 'Error',
+                            text: errorMessage,
+                            icon: 'error'
+                        });
+                    }
+                } catch (error) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Ha ocurrido un error al procesar la solicitud',
+                        icon: 'error'
+                    });
+                } finally {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = 'Guardar';
+                }
+            });
+        });
+    </script>
+
 </x-app-layout>

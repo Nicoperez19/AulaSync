@@ -1,3 +1,28 @@
+<style>
+    .sort-icon {
+        display: none;
+        margin-left: 5px;
+        transition: transform 0.2s;
+    }
+    .asc .sort-icon,
+    .desc .sort-icon {
+        display: inline-block;
+    }
+    .asc .sort-icon {
+        transform: rotate(180deg);
+    }
+    .desc .sort-icon {
+        transform: rotate(0deg);
+    }
+    th {
+        cursor: pointer;
+        user-select: none;
+    }
+    th:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+</style>
+
 <div>
    
     <div class="mt-4 mb-4">
@@ -8,13 +33,13 @@
         <table id="user-table" class="w-full text-sm text-center border-collapse table-auto min-w-max">
             <thead class="text-white bg-light-cloud-blue dark:bg-black dark:text-white">
                 <tr>
-                    <th class="p-3" onclick="sortTable(0)">RUN</th>
-                    <th class="p-3" onclick="sortTable(1)">Nombre</th>
-                    <th class="p-3" onclick="sortTable(2)">Correo</th>
-                    <th class="p-3" onclick="sortTable(3)">Celular</th>
-                    <th class="p-3" onclick="sortTable(4)">Dirección</th>
-                    <th class="p-3" onclick="sortTable(5)">Fecha Nacimiento</th>
-                    <th class="p-3" onclick="sortTable(6)">Año Ingreso</th>
+                    <th class="p-3" onclick="sortTable(0)">RUN <span class="sort-icon">▼</span></th>
+                    <th class="p-3" onclick="sortTable(1)">Nombre <span class="sort-icon">▼</span></th>
+                    <th class="p-3" onclick="sortTable(2)">Correo <span class="sort-icon">▼</span></th>
+                    <th class="p-3" onclick="sortTable(3)">Celular <span class="sort-icon">▼</span></th>
+                    <th class="p-3" onclick="sortTable(4)">Dirección <span class="sort-icon">▼</span></th>
+                    <th class="p-3" onclick="sortTable(5)">Fecha Nacimiento <span class="sort-icon">▼</span></th>
+                    <th class="p-3" onclick="sortTable(6)">Año Ingreso <span class="sort-icon">▼</span></th>
                     <th class="p-3">Acciones</th>
                 </tr>
             </thead>
@@ -39,7 +64,7 @@
                                     method="POST">
                                     @csrf
                                     @method('DELETE')
-                                    <x-button variant="danger" type="button" onclick="confirmDelete('{{ $user->run }}')"
+                                    <x-button variant="danger" type="button" onclick="deleteUser('{{ $user->run }}')"
                                         class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700">
                                         <x-icons.delete class="w-5 h-5" aria-hidden="true" />
                                     </x-button>
@@ -62,6 +87,11 @@
         var rows = Array.from(table.rows).slice(1); 
         var isAscending = table.rows[0].cells[columnIndex].classList.contains("asc");
         
+        // Remover clases de ordenamiento de todas las columnas
+        Array.from(table.rows[0].cells).forEach(cell => {
+            cell.classList.remove("asc", "desc");
+        });
+        
         rows.sort((rowA, rowB) => {
             var cellA = rowA.cells[columnIndex].textContent.trim();
             var cellB = rowB.cells[columnIndex].textContent.trim();
@@ -82,8 +112,8 @@
 
         rows.forEach(row => table.appendChild(row));
 
-        table.rows[0].cells[columnIndex].classList.toggle("asc", !isAscending);
-        table.rows[0].cells[columnIndex].classList.toggle("desc", isAscending);
+        // Agregar clase de ordenamiento solo a la columna actual
+        table.rows[0].cells[columnIndex].classList.add(isAscending ? "desc" : "asc");
     }
     function searchTable() {
         var input = document.getElementById("searchInput").value.toLowerCase();

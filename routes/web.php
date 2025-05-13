@@ -11,6 +11,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\UniversidadController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AsignaturaController;
+use App\Http\Controllers\DataLoadController;
 
 
 use Illuminate\Support\Facades\Route;
@@ -161,5 +162,12 @@ Route::get('/buttons/icon', function () {
 Route::get('/buttons/text-icon', function () {
     return view('buttons-showcase.text-icon');
 })->middleware(['auth'])->name('buttons.text-icon');
+
+Route::middleware(['auth'])->group(function () {
+    // Rutas para carga masiva de datos
+    Route::get('/data', [DataLoadController::class, 'index'])->name('data.index');
+    Route::post('/data', [DataLoadController::class, 'store'])->name('data.store');
+    Route::delete('/data/{dataLoad}', [DataLoadController::class, 'destroy'])->name('data.destroy');
+});
 
 require __DIR__ . '/auth.php';

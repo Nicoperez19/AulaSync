@@ -66,7 +66,7 @@
 
                 {{-- @if (Route::has('register'))
                     <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ __('Don’t have an account?') }}
+                        {{ __('Don't have an account?') }}
                         <a href="{{ route('register') }}" class="text-blue-500 hover:underline">
                             {{ __('Register') }}
                         </a>
