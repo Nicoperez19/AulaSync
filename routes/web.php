@@ -139,11 +139,14 @@ Route::group(['middleware' => ['permission:mantenedor de mapas']], function () {
     Route::get('/mapas/espacios/{piso}', [MapasController::class, 'getEspacios']);
     Route::post('/mapas/store', [MapasController::class, 'store'])->name('mapas.store');
     Route::get('/mapas/contar-espacios/{pisoId}', [MapasController::class, 'contarEspacios']);
-
-
 });
 
-
+Route::group(['middleware' => ['permission:mantenedor de carga de datos']], function () {
+    Route::get('/data', [DataLoadController::class, 'index'])->name('data.index');
+    Route::get('/data/{dataLoad}', [DataLoadController::class, 'show'])->name('data.show');
+    Route::post('/data_loads/upload', [DataLoadController::class, 'upload'])->name('data.upload');
+    Route::delete('/data/{dataLoad}', [DataLoadController::class, 'destroy'])->name('data.destroy');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -162,12 +165,5 @@ Route::get('/buttons/icon', function () {
 Route::get('/buttons/text-icon', function () {
     return view('buttons-showcase.text-icon');
 })->middleware(['auth'])->name('buttons.text-icon');
-
-Route::middleware(['auth'])->group(function () {
-    // Rutas para carga masiva de datos
-    Route::get('/data', [DataLoadController::class, 'index'])->name('data.index');
-    Route::post('/data', [DataLoadController::class, 'store'])->name('data.store');
-    Route::delete('/data/{dataLoad}', [DataLoadController::class, 'destroy'])->name('data.destroy');
-});
 
 require __DIR__ . '/auth.php';

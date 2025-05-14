@@ -8,101 +8,81 @@
     </x-slot>
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
-        <div class="flex justify-end mb-4">
-            
-        </div>
-
-        <div class="mt-4 flex items-center justify-between">
+        <div class="flex items-center justify-between mt-4">
             <!-- Buscador pequeño a la izquierda -->
             <div class="w-2/3">
                 <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Buscar por RUN o Nombre"
-                    class="px-4 py-2 border rounded dark:bg-gray-700 dark:text-white w-full">
+                    class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white">
             </div>
             <x-button target="_blank" variant="primary" class="max-w-xs gap-2"
-            x-on:click="$dispatch('open-modal', 'add-user')">
-            <x-icons.add class="w-6 h-6" aria-hidden="true" />
-        </x-button>
-           
+                x-on:click="$dispatch('open-modal', 'add-user')">
+                <x-icons.add class="w-6 h-6" aria-hidden="true" />
+            </x-button>
+
         </div>
 
         <livewire:users-table />
 
         <x-modal name="add-user" :show="$errors->any()" focusable>
-            <form id="add-user-form" method="POST" action="{{ route('users.add') }}" class="needs-validation" novalidate>
+            <form id="add-user-form" method="POST" action="{{ route('users.add') }}" class="needs-validation"
+                novalidate>
                 @csrf
                 <div class="grid gap-6 p-6">
                     <!-- Campo RUN -->
                     <div class="space-y-2">
                         <x-form.label for="run_add" :value="__('RUN')" class="text-left" />
-                        <x-form.input id="run_add" class="block w-full"
-                            type="text" name="run"
-                            value="{{ old('run', '') }}" 
-                            placeholder="RUN" 
-                            maxlength="8"
-                            pattern="[0-9]*"
-                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                            required />
+                        <x-form.input id="run_add" class="block w-full" type="text" name="run"
+                            value="{{ old('run', '') }}" placeholder="RUN" maxlength="8" pattern="[0-9]*"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '')" required />
                         <div id="run-error" class="mt-1 text-xs text-red-500"></div>
                     </div>
 
                     <!-- Campo Nombre -->
                     <div class="space-y-2">
                         <x-form.label for="name_add" :value="__('Nombre')" class="text-left" />
-                        <x-form.input id="name_add" class="block w-full"
-                            type="text" name="name"
-                            value="{{ old('name', '') }}" 
-                            placeholder="Nombre" 
-                            required />
+                        <x-form.input id="name_add" class="block w-full" type="text" name="name"
+                            value="{{ old('name', '') }}" placeholder="Nombre" required />
                         <div id="name-error" class="mt-1 text-xs text-red-500"></div>
                     </div>
 
                     <!-- Campo Correo -->
                     <div class="space-y-2">
                         <x-form.label for="email_add" :value="__('Correo')" class="text-left" />
-                        <x-form.input id="email_add" class="block w-full"
-                            type="email" name="email"
-                            value="{{ old('email', '') }}" 
-                            placeholder="Correo" 
-                            required />
+                        <x-form.input id="email_add" class="block w-full" type="email" name="email"
+                            value="{{ old('email', '') }}" placeholder="Correo" required />
                         <div id="email-error" class="mt-1 text-xs text-red-500"></div>
                     </div>
 
                     <!-- Campo Celular -->
                     <div class="space-y-2">
                         <x-form.label for="celular_add" :value="__('Celular')" class="text-left" />
-                        <x-form.input id="celular_add" class="block w-full"
-                            type="text" name="celular"
-                            value="{{ old('celular', '') }}" 
-                            placeholder="Celular (opcional)"
-                            maxlength="9"
-                            pattern="9[0-9]{8}"
-                            oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
+                        <x-form.input id="celular_add" class="block w-full" type="text" name="celular"
+                            value="{{ old('celular', '') }}" placeholder="Celular (opcional)" maxlength="9"
+                            pattern="9[0-9]{8}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
                         <div id="celular-error" class="mt-1 text-xs text-red-500"></div>
                     </div>
 
                     <!-- Campo Dirección -->
                     <div class="space-y-2">
                         <x-form.label for="direccion_add" :value="__('Dirección')" class="text-left" />
-                        <x-form.input id="direccion_add" class="block w-full"
-                            type="text" name="direccion"
-                            value="{{ old('direccion', '') }}" 
-                            placeholder="Dirección (opcional)" />
+                        <x-form.input id="direccion_add" class="block w-full" type="text" name="direccion"
+                            value="{{ old('direccion', '') }}" placeholder="Dirección (opcional)" />
                         <div id="direccion-error" class="mt-1 text-xs text-red-500"></div>
                     </div>
 
                     <!-- Campo Fecha de Nacimiento -->
                     <div class="space-y-2">
                         <x-form.label for="fecha_nacimiento_add" :value="__('Fecha de Nacimiento')" class="text-left" />
-                        <x-form.input id="fecha_nacimiento_add" class="block w-full"
-                            type="date" name="fecha_nacimiento"
-                            value="{{ old('fecha_nacimiento', '') }}" />
+                        <x-form.input id="fecha_nacimiento_add" class="block w-full" type="date"
+                            name="fecha_nacimiento" value="{{ old('fecha_nacimiento', '') }}" />
                         <div id="fecha_nacimiento-error" class="mt-1 text-xs text-red-500"></div>
                     </div>
 
                     <!-- Año de Ingreso como select -->
                     <div class="space-y-2">
                         <x-form.label for="anio_ingreso_add" :value="__('Año de Ingreso')" class="text-left" />
-                        <select id="anio_ingreso_add" name="anio_ingreso" class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        <select id="anio_ingreso_add" name="anio_ingreso"
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             <option value="">Seleccione un año (opcional)</option>
                             @foreach ($years as $year)
                                 <option value="{{ $year }}"
@@ -134,15 +114,15 @@
             function validateForm() {
                 let isValid = true;
                 const requiredFields = ['run', 'name', 'email'];
-                
+
                 // Limpiar mensajes de error anteriores
                 document.querySelectorAll('.text-red-500').forEach(el => el.textContent = '');
-                
+
                 // Validar campos requeridos
                 requiredFields.forEach(field => {
                     const input = form.querySelector(`[name="${field}"]`);
                     const errorElement = document.getElementById(`${field}-error`);
-                    
+
                     if (!input.value.trim()) {
                         errorElement.textContent = 'Este campo es obligatorio';
                         isValid = false;
@@ -166,7 +146,8 @@
                 // Validar celular solo si se ingresa
                 const celular = form.querySelector('input[name="celular"]').value;
                 if (celular && !/^9\d{8}$/.test(celular)) {
-                    document.getElementById('celular-error').textContent = 'El celular debe comenzar con 9 y tener 9 dígitos';
+                    document.getElementById('celular-error').textContent =
+                        'El celular debe comenzar con 9 y tener 9 dígitos';
                     isValid = false;
                 }
 
@@ -175,7 +156,7 @@
 
             form.addEventListener('submit', async function(e) {
                 e.preventDefault();
-                
+
                 if (!validateForm()) {
                     return;
                 }
@@ -221,7 +202,8 @@
                             Object.keys(data.errors).forEach(field => {
                                 // Tomar solo el primer error para cada campo
                                 const firstError = data.errors[field][0];
-                                for (const [key, translation] of Object.entries(errorTranslations)) {
+                                for (const [key, translation] of Object.entries(
+                                        errorTranslations)) {
                                     if (firstError.includes(key)) {
                                         translatedErrors[field] = translation;
                                         break;
@@ -245,7 +227,7 @@
                         } else if (data.message) {
                             errorMessage = data.message;
                         }
-                        
+
                         Swal.fire({
                             title: 'Error',
                             text: errorMessage,
@@ -291,7 +273,7 @@
             for (let i = 1; i < tr.length; i++) {
                 const td = tr[i].getElementsByTagName('td');
                 let found = false;
-                
+
                 for (let j = 0; j < td.length; j++) {
                     const cell = td[j];
                     if (cell) {
@@ -302,11 +284,10 @@
                         }
                     }
                 }
-                
+
                 tr[i].style.display = found ? '' : 'none';
             }
         }
     </script>
 
 </x-app-layout>
-

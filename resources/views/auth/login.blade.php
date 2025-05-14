@@ -10,17 +10,26 @@
             @csrf
 
             <div class="grid gap-6">
-                <!-- Email Address -->
+                <!-- RUN -->
                 <div class="space-y-2">
-                    <x-form.label for="email" :value="__('Correo')" />
+                    <x-form.label for="run" :value="__('RUN')" />
 
                     <x-form.input-with-icon-wrapper>
                         <x-slot name="icon">
-                            <x-heroicon-o-mail aria-hidden="true" class="w-5 h-5" />
+                            <x-heroicon-o-identification aria-hidden="true" class="w-5 h-5" />
                         </x-slot>
 
-                        <x-form.input withicon id="email" class="block w-full" type="email" name="email"
-                            :value="old('email')" placeholder="{{ __('Correo') }}" required autofocus />
+                        <x-form.input withicon id="run" class="block w-full" type="text" name="run"
+                            :value="old('run')" placeholder="{{ __('Ej: 12345678') }}" required autofocus
+                            x-data
+                            x-on:input="
+                                let value = $event.target.value.replace(/[^0-9]/g, '');
+                                if (value.length > 8) {
+                                    value = value.slice(0, 8);
+                                }
+                                $event.target.value = value;
+                            "
+                            maxlength="8" />
                     </x-form.input-with-icon-wrapper>
                 </div>
 

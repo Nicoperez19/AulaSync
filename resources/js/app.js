@@ -59,8 +59,10 @@ Alpine.data('mainState', () => ({
     }
 }))
 
-// Inicializar Alpine
-Alpine.start()
+// Inicializar Alpine solo si no está ya inicializado
+if (!window.Alpine.isStarted) {
+    Alpine.start()
+}
 
 // Configuración de Perfect Scrollbar
 document.addEventListener('DOMContentLoaded', () => {

@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+class CreateDataLoadsTable extends Migration
 {
     /**
      * Run the migrations.
@@ -13,6 +13,15 @@ return new class extends Migration
     {
         Schema::create('data_loads', function (Blueprint $table) {
             $table->id();
+            $table->string('nombre_archivo');
+            $table->string('ruta_archivo');
+            $table->string('tipo_carga');
+            $table->integer('registros_cargados')->default(0);
+            $table->enum('estado', ['pendiente', 'procesando', 'completado', 'error'])->default('pendiente');
+            $table->text('error_mensaje')->nullable();
+            $table->unsignedBigInteger('user_run');
+            $table->foreign('user_run')->references('run')->on('users')->onDelete('cascade');
+    
             $table->timestamps();
         });
     }

@@ -13,74 +13,60 @@ class DataLoadController extends Controller
 {
     public function index()
     {
-        return view('layouts.data.data');
+        $dataLoads = DataLoad::latest()->paginate(10);
+        return view('layouts.data.data_index', compact('dataLoads'));
     }
 
-    public function store(Request $request)
+    public function show(DataLoad $dataLoad)
     {
+        return view('layouts.data.data_show', compact('dataLoad'));
+    }
+
+    public function upload(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240' // 10MB max
+        ]);
+
         try {
-            $request->validate([
-                'archivo' => 'required|file|mimes:xlsx,xls|max:10240', // Solo permite Excel, máximo 10MB
-                'tipo_carga' => 'required|string'
-            ]);
-
-            $archivo = $request->file('archivo');
-            $nombreOriginal = $archivo->getClientOriginalName();
+            $file = $request->file('file');
+            $fileName = $file->getClientOriginalName();
+            $fileExtension = $file->getClientOriginalExtension();
             
-            // Generar un nombre único para el archivo
-            $extension = $archivo->getClientOriginalExtension();
-            $nombreUnico = Str::uuid() . '.' . $extension;
+            $uniqueFileName = date('Y-m-d_His') . '_' . Auth::user()->run . '_' . Str::random(10) . '.' . $fileExtension;
             
-            // Guardar el archivo en storage/app/excel_uploads
-            $rutaArchivo = $archivo->storeAs('excel_uploads', $nombreUnico, 'local');
+            $path = $file->storeAs('datos_subidos', $uniqueFileName, 'public');
             
-            if (!$rutaArchivo) {
-                throw new \Exception('Error al guardar el archivo');
-            }
-
-            // Crear el registro en la base de datos
             $dataLoad = DataLoad::create([
-                'nombre_archivo' => $nombreOriginal,
-                'ruta_archivo' => $rutaArchivo,
-                'tipo_carga' => $request->tipo_carga,
+                'nombre_archivo' => $fileName,
+                'ruta_archivo' => $path,
+                'tipo_carga' => $fileExtension,
+                'registros_cargados' => 0,
                 'estado' => 'pendiente',
-                'user_id' => Auth::id()
+                'user_run' => Auth::user()->run
             ]);
-
-            if ($request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Archivo recibido correctamente. Iniciando procesamiento...'
-                ]);
-            }
-
-            return redirect()->route('data.index')
-                ->with('success', 'Archivo recibido correctamente. Iniciando procesamiento...');
-        } catch (\Exception $e) {
-            Log::error('Error al procesar archivo: ' . $e->getMessage());
             
-            if ($request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Error al procesar el archivo: ' . $e->getMessage()
-                ], 500);
-            }
-
-            return back()->withErrors(['error' => 'Error al procesar el archivo.']);
+            return response()->json([
+                'message' => 'Archivo cargado exitosamente',
+                'data' => $dataLoad
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error al cargar el archivo: ' . $e->getMessage()
+            ], 500);
         }
     }
 
     public function destroy(DataLoad $dataLoad)
     {
         try {
-            // Eliminar el archivo físico
             if (Storage::exists($dataLoad->ruta_archivo)) {
                 Storage::delete($dataLoad->ruta_archivo);
             }
-            
-            // Eliminar el registro de la base de datos
+
             $dataLoad->delete();
-            
+
             return redirect()->route('data.index')
                 ->with('success', 'Registro de carga eliminado exitosamente.');
         } catch (\Exception $e) {

@@ -4,27 +4,32 @@
         margin-left: 5px;
         transition: transform 0.2s;
     }
+
     .asc .sort-icon,
     .desc .sort-icon {
         display: inline-block;
     }
+
     .asc .sort-icon {
         transform: rotate(180deg);
     }
+
     .desc .sort-icon {
         transform: rotate(0deg);
     }
+
     th {
         cursor: pointer;
         user-select: none;
     }
+
     th:hover {
         background-color: rgba(255, 255, 255, 0.1);
     }
 </style>
 
 <div>
-   
+
     <div class="mt-4 mb-4">
         {{ $users->links('vendor.pagination.tailwind') }}
     </div>
@@ -60,11 +65,12 @@
                                     <x-icons.edit class="w-5 h-5 mr-1" aria-hidden="true" />
                                 </x-button>
 
-                                <form id="delete-form-{{ $user->run }}" action="{{ route('users.delete', $user->run) }}"
-                                    method="POST">
+                                <form id="delete-form-{{ $user->run }}"
+                                    action="{{ route('users.delete', $user->run) }}" method="POST">
                                     @csrf
                                     @method('DELETE')
-                                    <x-button variant="danger" type="button" onclick="deleteUser('{{ $user->run }}')"
+                                    <x-button variant="danger" type="button"
+                                        onclick="deleteUser('{{ $user->run }}')"
                                         class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700">
                                         <x-icons.delete class="w-5 h-5" aria-hidden="true" />
                                     </x-button>
@@ -84,14 +90,14 @@
 <script>
     function sortTable(columnIndex) {
         var table = document.getElementById("user-table");
-        var rows = Array.from(table.rows).slice(1); 
+        var rows = Array.from(table.rows).slice(1);
         var isAscending = table.rows[0].cells[columnIndex].classList.contains("asc");
-        
+
         // Remover clases de ordenamiento de todas las columnas
         Array.from(table.rows[0].cells).forEach(cell => {
             cell.classList.remove("asc", "desc");
         });
-        
+
         rows.sort((rowA, rowB) => {
             var cellA = rowA.cells[columnIndex].textContent.trim();
             var cellB = rowB.cells[columnIndex].textContent.trim();
@@ -115,16 +121,17 @@
         // Agregar clase de ordenamiento solo a la columna actual
         table.rows[0].cells[columnIndex].classList.add(isAscending ? "desc" : "asc");
     }
+
     function searchTable() {
         var input = document.getElementById("searchInput").value.toLowerCase();
         var table = document.getElementById("user-table");
         var rows = table.getElementsByTagName("tr");
 
-        for (var i = 1; i < rows.length; i++) { 
+        for (var i = 1; i < rows.length; i++) {
             var cells = rows[i].getElementsByTagName("td");
             var run = cells[0].textContent.toLowerCase();
             var name = cells[1].textContent.toLowerCase();
-            
+
             if (run.includes(input) || name.includes(input)) {
                 rows[i].style.display = "";
             } else {

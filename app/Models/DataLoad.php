@@ -15,16 +15,18 @@ class DataLoad extends Model
         'tipo_carga',
         'registros_cargados',
         'estado',
-        'observaciones',
-        'user_id'
+        'user_run',
     ];
 
     protected $casts = [
         'registros_cargados' => 'integer',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime'
     ];
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_run', 'run');
     }
+    
 }

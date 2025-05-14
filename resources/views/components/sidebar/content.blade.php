@@ -65,6 +65,9 @@
 
             {{-- Operaciones --}}
             <x-sidebar.sublink title="Reservas" href="{{ route('reservas.index') }}" :isActive="request()->routeIs('reservas.index')" />
+
+            {{-- Carga Masiva --}}
+            <x-sidebar.sublink title="Carga Masiva" href="{{ route('data.index') }}" :isActive="request()->routeIs('data.index')" />
         </x-sidebar.dropdown>
     @endrole
 
