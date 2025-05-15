@@ -17,13 +17,14 @@ class User extends Authenticatable
     protected $keyType = 'string';
     protected $fillable = [
         'run',
-        'password',
         'name',
         'email',
+        'password',
         'celular',
         'direccion',
         'fecha_nacimiento',
         'anio_ingreso',
+        'tipo_profesor',
         'id_universidad',
         'id_facultad',
         'id_carrera',
@@ -39,6 +40,7 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'run' => 'string',
+        'fecha_nacimiento' => 'date',
     ];
 
     /**
