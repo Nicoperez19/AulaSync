@@ -1,7 +1,7 @@
 <main class="flex flex-col items-center flex-1 px-4 pt-6 sm:justify-center">
-    <div>
+    <div class="mb-8">
         <a href="/">
-            <x-application-logo class="w-20 h-20" />
+            <x-application-logo class="w-64 h-64" />
         </a>
     </div>
 

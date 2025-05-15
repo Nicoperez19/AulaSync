@@ -7,8 +7,24 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/js/app.js',
+                'resources/js/data-upload.js'
             ],
             refresh: true,
         }),
     ],
+    build: {
+        outDir: 'public/build',
+        manifest: true,
+        sourcemap: false,
+        chunkSizeWarningLimit: 500,
+    },
+    optimizeDeps: {
+        include: [
+            '@tailwindcss/forms',
+            'alpinejs',
+            '@alpinejs/collapse',
+            '@alpinejs/focus',
+            '@alpinejs/mask'
+        ]
+    }
 });

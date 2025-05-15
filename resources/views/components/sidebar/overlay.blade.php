@@ -7,5 +7,5 @@
     x-transition:leave-end="opacity-0"
     x-show="isSidebarOpen"
     x-on:click="isSidebarOpen = false"
-    class="fixed inset-0 z-20 bg-black/50 lg:hidden"
+    class="fixed inset-0 z-10 bg-black/50 lg:hidden"
  ></div>
