@@ -5,7 +5,7 @@
 ])
 
 @php
-    $isActiveClasses =  $isActive ? 'text-white bg-purple-500 shadow-lg hover:bg-purple-600' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-dark-eval-2';
+    $isActiveClasses =  $isActive ? 'text-black bg-white shadow-lg hover:bg-white' : 'text-black-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:text-gray-300 dark:hover:bg-dark-eval-2';
 
     $classes = 'flex-shrink-0 flex items-center gap-2 p-2 transition-colors rounded-md overflow-hidden ' . $isActiveClasses;
 
@@ -30,7 +30,7 @@
         <span
             x-show="isSidebarOpen || isSidebarHovered"
             aria-hidden="true"
-            class="relative block ml-auto w-6 h-6"
+            class="relative block w-6 h-6 ml-auto"
         >
             <span
                 :class="open ? '-rotate-45' : 'rotate-45'"

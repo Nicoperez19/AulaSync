@@ -70,7 +70,8 @@ return [
     |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => 'America/Santiago',
+
 
     /*
     |--------------------------------------------------------------------------
@@ -184,5 +185,8 @@ return [
     'aliases' => Facade::defaultAliases()->merge([
         // 'Example' => App\Facades\Example::class,
     ])->toArray(),
+
+    'dark_mode' => env('APP_DARK_MODE', false),
+
 
 ];
