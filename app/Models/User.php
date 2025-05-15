@@ -12,30 +12,46 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
+    protected $primaryKey = 'run';
+    public $incrementing = false;
+    protected $keyType = 'string';
     protected $fillable = [
         'run',
-        'password',
         'name',
         'email',
+        'password',
         'celular',
         'direccion',
         'fecha_nacimiento',
         'anio_ingreso',
+        'tipo_profesor',
         'id_universidad',
         'id_facultad',
         'id_carrera',
-        'id_area_academica',  
+        'id_area_academica',
     ];
 
     protected $hidden = [
-        'contrasena',
+        'password',
         'remember_token',
     ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'contrasena' => 'hashed',
+        'password' => 'hashed',
+        'run' => 'string',
+        'fecha_nacimiento' => 'date',
     ];
+
+    /**
+     * Get the name of the unique identifier for the user.
+     *
+     * @return string
+     */
+    public function getAuthIdentifierName()
+    {
+        return 'run';
+    }
 
     public function universidad()
     {
@@ -59,8 +75,13 @@ class User extends Authenticatable
 
     public function asignaturas()
     {
-        return $this->hasMany(Asignatura::class, 'id'); 
+        return $this->hasMany(Asignatura::class, 'run');
     }
 
-    
+    public function dataLoads()
+    {
+        return $this->hasMany(DataLoad::class, 'user_run', 'run');
+    }
+
+
 }

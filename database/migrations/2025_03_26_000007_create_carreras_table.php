@@ -14,8 +14,9 @@ return new class extends Migration
         Schema::create('carreras', function (Blueprint $table) {
             $table->string('id_carrera',20)->primary();
             $table->string('nombre', 100);
-            $table->string('id_facultad'); 
-            $table->foreign('id_facultad')->references('id_facultad')->on('facultades')->onDelete('cascade');
+            $table->string('id_area_academica',20);
+            $table->foreign('id_area_academica')->references('id_area_academica')->on('area_academicas')->onDelete('cascade');
+
             $table->timestamps();
         });
     }

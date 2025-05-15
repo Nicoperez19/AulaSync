@@ -1,11 +1,15 @@
 @props([
     'title' => '',
-    'active' => false,
+    'isActive' => false,
 ])
 
 @php
-    $classes = 'transition-colors hover:text-white dark:hover:text-white whitespace-normal';
-    $active ? ($classes .= ' text-white') : ($classes .= ' text-white');
+    $classes = 'transition-colors hover:text-light-cloud-blue dark:hover:text-white whitespace-normal';
+
+    if ($isActive) {
+        $classes .= ' text-black bg-white rounded-md py-2 px-2';
+    } else {
+        $classes .= ' text-white py-2 px-2';    }
 @endphp
 
 <li

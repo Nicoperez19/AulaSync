@@ -19,7 +19,7 @@ class Reserva extends Model
         'hora',
         'fecha_reserva',
         'id_espacio',
-        'id' //usuario
+        'run' //usuario
     ];
 
     public function espacio()
@@ -29,7 +29,7 @@ class Reserva extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'id');
+        return $this->belongsTo(User::class, 'run');
     }
 
 

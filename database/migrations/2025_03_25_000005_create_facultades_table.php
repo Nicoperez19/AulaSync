@@ -4,20 +4,24 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         Schema::create('facultades', function (Blueprint $table) {
-            $table->string('id_facultad',20)->primary();
+            $table->string('id_facultad', 20)->primary();
             $table->string('nombre_facultad', 100);
             $table->string('ubicacion_facultad', 255);
             $table->string('logo_facultad')->nullable();
-            $table->string('id_universidad');
-            $table->foreign('id_universidad')->references('id_universidad')->on('universidades')->onDelete('cascade');
+
+            $table->string('id_sede', 20);
+            $table->foreign('id_sede')->references('id_sede')->on('sedes')->onDelete('cascade');
+
+            $table->string('id_campus', 20)->nullable();
+            $table->foreign('id_campus')->references('id_campus')->on('campuses')->nullOnDelete();
+
             $table->timestamps();
         });
     }

@@ -16,18 +16,11 @@ class Universidad extends Model
     protected $fillable = [
         'id_universidad',
         'nombre_universidad',
-        'direccion_universidad',
-        'telefono_universidad',
-        'comunas_id',
         'imagen_logo',
     ];
 
-    public function comuna()
+    public function sedes()
     {
-        return $this->belongsTo(Comuna::class, 'comunas_id');
-    }
-    public function facultades()
-    {
-        return $this->hasMany(Facultad::class, 'id_universidad');
+        return $this->hasMany(Sede::class, 'id_universidad', 'id_universidad');
     }
 }

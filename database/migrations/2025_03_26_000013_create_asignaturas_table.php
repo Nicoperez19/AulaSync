@@ -13,18 +13,16 @@ return new class extends Migration
     {
         Schema::create('asignaturas', function (Blueprint $table) {
             $table->string('id_asignatura',20)->primary();
-            $table->string('nombre', 100);
+            $table->string('nombre_asignatura', 100);
          
             $table->integer('horas_directas');
             $table->integer('horas_indirectas');
             $table->string('area_conocimiento', 100);
             $table->string('periodo', 20);
 
-            $table->unsignedBigInteger('id');
+            $table->unsignedBigInteger('run');
             $table->string('id_carrera', 20);
-
-            // Claves foráneas
-            $table->foreign('id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('run')->references('run')->on('users')->onDelete('cascade');
             $table->foreign('id_carrera')->references('id_carrera')->on('carreras')->onDelete('cascade');
             $table->timestamps();
         });

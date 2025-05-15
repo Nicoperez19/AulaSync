@@ -16,10 +16,10 @@ return new class extends Migration
             $table->time('hora');
             $table->date('fecha_reserva');
             $table->string('id_espacio');
-            $table->unsignedBigInteger('id'); 
+            $table->unsignedBigInteger('run'); 
             
             $table->foreign('id_espacio')->references('id_espacio')->on('espacios')->onDelete('cascade');
-            $table->foreign('id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('run')->references('run')->on('users')->onDelete('cascade');
 
             $table->timestamps();
         });

@@ -120,7 +120,6 @@
             const facultadSelect = document.getElementById('id_facultad');
             const pisoSelect = document.getElementById('piso_id');
 
-            // Función para cargar facultades
             async function cargarFacultades(universidadId, facultadIdSeleccionada = null) {
                 const res = await fetch(`/api/facultades/${universidadId}`);
                 const data = await res.json();

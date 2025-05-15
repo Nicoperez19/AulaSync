@@ -15,10 +15,11 @@ class Carrera extends Model
         'id_carrera',
         'nombre',
         'id_facultad',
+        'id_area_academica'
     ];
 
-    public function facultad()
+    public function areaAcademica()
     {
-        return $this->belongsTo(Facultad::class, 'id_facultad');
+        return $this->belongsTo(AreaAcademica::class, 'id_area_academica');
     }
 }
