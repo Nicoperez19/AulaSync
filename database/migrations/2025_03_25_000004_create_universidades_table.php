@@ -15,9 +15,6 @@ return new class extends Migration {
         Schema::create('universidades', function (Blueprint $table) {
             $table->string('id_universidad', 20)->primary();
             $table->string('nombre_universidad', 100);
-            $table->string('direccion_universidad', 255);
-            $table->string('telefono_universidad', 20)->nullable();
-            $table->foreignId('comunas_id')->constrained();
             $table->string('imagen_logo')->nullable();
             $table->timestamps();
         });

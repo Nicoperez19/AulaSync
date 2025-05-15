@@ -1,29 +1,45 @@
-<table class="min-w-full bg-white border rounded shadow">
-    <thead>
-        <tr class="text-left bg-gray-100">
-            <th class="px-4 py-2">Nombre</th>
-            <th class="px-4 py-2">Espacio</th>
-            <th class="px-4 py-2">Ver</th>
-            <th class="px-4 py-2">Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach ($mapas as $mapa)
-            <tr class="border-t">
-                <td class="px-4 py-2">{{ $mapa->nombre_mapa }}</td>
-                <td class="px-4 py-2">{{ $mapa->espacio->nombre_espacio ?? 'Sin espacio' }}</td>
-                <td class="px-4 py-2">
-                    <x-button wire:click="verMapa('{{ $mapa->ruta_mapa }}')" variant="ghost" class="text-blue-500">
-                        Ver
-                    </x-button>
-                </td>
-                <td class="flex gap-2 px-4 py-2">
-                    <a href="{{ route('mapas.edit', $mapa->id_mapa) }}" class="px-3 py-1 text-white bg-yellow-400 rounded">Editar</a>
-                    <x-button wire:click="eliminar({{ $mapa->id_mapa }})" variant="destructive">
-                        Eliminar
-                    </x-button>
-                </td>
+<div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md dark:border-gray-700">
+    <table class="w-full text-center border-collapse table-auto min-w-max">
+        <thead>
+            <tr class="bg-gray-100 text-left">
+                <th class="px-4 py-2">Nombre</th>
+                <th class="px-4 py-2">Ver</th>
             </tr>
-        @endforeach
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach ($mapas as $mapa)
+                <tr class="border-t">
+                    <td class="px-4 py-2">{{ $mapa->nombre_mapa }}</td>
+                    <td class="px-4 py-2">
+                        <x-button variant="ghost" class="text-blue-500"
+                            x-on:click.prevent="$dispatch('open-modal', 'ver-mapa-{{ $mapa->id_mapa }}')">
+                            Ver
+                        </x-button>
+                    </td>
+                </tr>
+
+                {{-- Modal por cada mapa --}}
+                <x-modal  name="ver-mapa-{{ $mapa->id_mapa }}" :show="false" focusable>
+                    <div class="p-6 w-full max-w-7xl mx-auto"> {{-- max-w-7xl aumenta el ancho --}}
+                        <h2 class="text-2xl font-semibold text-center mb-4">
+                            {{ $mapa->nombre_mapa }}
+                        </h2>
+                
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 class="font-medium text-center">Imagen del Mapa</h3>
+                                <img src="{{ asset($mapa->ruta_mapa) }}" alt="Mapa Original"
+                                    class="w-full h-auto max-h-[500px] object-contain rounded-lg border shadow-md mt-2">
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-center">Imagen del Canvas</h3>
+                                <img src="{{ asset($mapa->ruta_canvas) }}" alt="Canvas"
+                                    class="w-full h-auto max-h-[500px] object-contain rounded-lg border shadow-md mt-2">
+                            </div>
+                        </div>
+                    </div>
+                </x-modal>
+            @endforeach
+        </tbody>
+    </table>
+</div>

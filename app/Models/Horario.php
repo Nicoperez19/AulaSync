@@ -10,7 +10,7 @@ class Horario extends Model
     use HasFactory;
     protected $table = 'horarios';
     protected $primaryKey = 'id_horario';
-    protected $fillable = ['id_horario', 'nombre', 'id_espacio'];
+    protected $fillable = ['id_horario', 'nombre', 'id_espacio', 'id_modulo', 'id'];
 
     public function modulos()
     {
@@ -20,5 +20,11 @@ class Horario extends Model
     public function espacio()
     {
         return $this->belongsTo(Espacio::class, 'id_espacio', 'id_espacio');
+    }
+
+    
+    public function seccion()
+    {
+        return $this->belongsTo(Seccion::class, 'id', 'id');
     }
 }

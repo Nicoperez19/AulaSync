@@ -12,7 +12,7 @@ class MapasTable extends Component
 
     public function mount()
     {
-        $this->mapas = Mapa::with('espacio')->get();
+        $this->mapas = Mapa::with('piso')->get();
     }
 
     public function render()
@@ -29,6 +29,6 @@ class MapasTable extends Component
     public function verMapa($ruta)
     {
         $rutaPublica = asset($ruta);
-        $this->dispatchBrowserEvent('mostrar-mapa', ['ruta' => $rutaPublica]);
+        $this->dispatch('mostrar-mapa', ['ruta' => $rutaPublica]);
     }
 }

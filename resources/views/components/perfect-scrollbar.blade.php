@@ -1,33 +1,35 @@
-@props(['as' => 'div'])
+@props(['class' => ''])
 
-<!-- The most horrobile way -->
-<{{ $as }}
-    x-data="perfectScroll"
-    {{ $attributes->merge(['class' => 'relative max-h-full']) }}
-    x-on:mousemove="update"
->
-    {{ $slot }}
-</{{ $as }}>
-
-<script>
-    const perfectScroll = () => {
-        let ps
-
-        const update = () => {
-            if (ps) {
-                ps.update()
+<div {{ $attributes->merge(['class' => 'ps ' . $class]) }}
+    x-data
+    x-init="
+        if (typeof PerfectScrollbar !== 'undefined') {
+            const ps = new PerfectScrollbar($el, {
+                wheelSpeed: 1,
+                wheelPropagation: false,
+                minScrollbarLength: 20,
+                suppressScrollX: true
+            });
+            
+            // Actualizar el scrollbar cuando el contenido cambie
+            const observer = new MutationObserver(() => {
+                ps.update();
+            });
+            
+            observer.observe($el, {
+                childList: true,
+                subtree: true
+            });
+            
+            // Limpiar cuando el componente se destruya
+            $cleanup = () => {
+                if (ps) {
+                    ps.destroy();
+                }
+                observer.disconnect();
             }
         }
-
-        return {
-            init(){
-                ps = new PerfectScrollbar(this.$el, {
-                    wheelSpeed: 2,
-                    wheelPropagation: false,
-                    minScrollbarLength: 20
-                });
-            },
-            update
-        }
-    }
-</script>
+    "
+>
+    {{ $slot }}
+</div>

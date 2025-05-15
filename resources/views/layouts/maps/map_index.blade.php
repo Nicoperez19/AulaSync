@@ -7,14 +7,15 @@
         </div>
     </x-slot>
 
-    <div class="flex justify-end mb-4">
-        <x-button href="{{ route('mapas.add') }}" class="px-4 py-2 text-white bg-blue-500 rounded dark:bg-blue-700">
-            Editar
-        </x-button>
-    </div>
+    {{-- Mostrar botón de agregar solo si es admin --}}
+    @if (auth()->user()->hasRole('Administrador'))
+        <div class="flex justify-end mb-4">
+            <x-button x-on:click.prevent="window.location.href='{{ route('mapas.add') }}'" variant="primary"
+                class="max-w-xs gap-2">
+                <x-icons.add class="w-6 h-6" aria-hidden="true" />
+            </x-button>
+        </div>
+    @endif
 
     @livewire('mapas-table')
-
-
- 
 </x-app-layout>

@@ -8,12 +8,11 @@
     </x-slot>
 
     <div class="p-6 bg-gray-100 rounded-lg shadow-lg">
-        <form method="POST" action="{{ route('users.update', $user->id) }}">
+        <form method="POST" action="{{ route('users.update', $user->run) }}">
             @csrf
             @method('PUT')
 
             <div class="grid gap-4 p-4">
-                <!-- RUN y Nombre -->
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                         <x-form.label for="run" :value="__('RUN')" />
@@ -92,17 +91,23 @@
 
                 <!-- Año de Ingreso y Contraseña -->
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div>
-                        <x-form.label for="anio_ingreso" :value="__('Año de Ingreso')" />
-                        <x-form.input-with-icon-wrapper>
-                            <x-slot name="icon">
-                                <x-heroicon-o-academic-cap class="w-5 h-5" />
-                            </x-slot>
-                            <x-form.input withicon id="anio_ingreso" class="block w-full" type="number"
-                                name="anio_ingreso" value="{{ old('anio_ingreso', $user->anio_ingreso) }}"
-                                min="1900" max="{{ date('Y') }}" />
-                        </x-form.input-with-icon-wrapper>
+                    <div class="space-y-2">
+                        <x-form.label for="anio_ingreso_add" :value="__('Año de Ingreso')" class="text-left" />
+                        <select id="anio_ingreso" name="anio_ingreso" class="block w-full sm:w-1/2" required>
+                            <option value="" disabled selected>Seleccione un año</option>
+                            @foreach ($years as $year)
+                                <option value="{{ $year }}"
+                                    {{ old('anio_ingreso', $user->anio_ingreso) == $year ? 'selected' : '' }}>
+                                    {{ $year }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                        @error('anio_ingreso')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
                     </div>
+
 
                     <div>
                         <x-form.label for="password" :value="__('Contraseña Nueva')" />
@@ -164,5 +169,85 @@
             </div>
         </form>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('edit-user-form');
+            const submitButton = form.querySelector('button[type="submit"]');
+
+            form.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                // Validación básica
+                const run = form.querySelector('input[name="run"]').value;
+                const celular = form.querySelector('input[name="celular"]').value;
+                
+                if (!/^\d{7,8}$/.test(run)) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'El RUN debe ser un número de 7 u 8 dígitos',
+                        icon: 'error'
+                    });
+                    return;
+                }
+                
+                if (celular && !/^9\d{8}$/.test(celular)) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'El celular debe comenzar con 9 y tener 9 dígitos',
+                        icon: 'error'
+                    });
+                    return;
+                }
+
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+                try {
+                    const formData = new FormData(form);
+                    const response = await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        Swal.fire({
+                            title: '¡Éxito!',
+                            text: data.message,
+                            icon: 'success'
+                        }).then(() => {
+                            window.location.href = '{{ route("users.index") }}';
+                        });
+                    } else {
+                        let errorMessage = 'Ha ocurrido un error';
+                        if (data.errors) {
+                            errorMessage = Object.values(data.errors).flat().join('\n');
+                        } else if (data.message) {
+                            errorMessage = data.message;
+                        }
+                        Swal.fire({
+                            title: 'Error',
+                            text: errorMessage,
+                            icon: 'error'
+                        });
+                    }
+                } catch (error) {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Ha ocurrido un error al procesar la solicitud',
+                        icon: 'error'
+                    });
+                } finally {
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = 'Guardar';
+                }
+            });
+        });
+    </script>
 
 </x-app-layout>

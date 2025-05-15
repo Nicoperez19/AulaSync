@@ -1,74 +1,112 @@
 import Alpine from 'alpinejs'
 import collapse from '@alpinejs/collapse'
+import focus from '@alpinejs/focus'
+import mask from '@alpinejs/mask'
 import PerfectScrollbar from 'perfect-scrollbar'
+import 'perfect-scrollbar/css/perfect-scrollbar.css'
 
-window.PerfectScrollbar = PerfectScrollbar
+// Configuración de Alpine
+window.Alpine = Alpine
+Alpine.plugin(collapse)
+Alpine.plugin(focus)
+Alpine.plugin(mask)
 
-document.addEventListener('alpine:init', () => {
-    Alpine.data('mainState', () => {
-        let lastScrollTop = 0
-        const init = function () {
-            window.addEventListener('scroll', () => {
-                let st =
-                    window.pageYOffset || document.documentElement.scrollTop
-                if (st > lastScrollTop) {
-                    // downscroll
-                    this.scrollingDown = true
-                    this.scrollingUp = false
-                } else {
-                    // upscroll
-                    this.scrollingDown = false
-                    this.scrollingUp = true
-                    if (st == 0) {
-                        //  reset
-                        this.scrollingDown = false
-                        this.scrollingUp = false
-                    }
-                }
-                lastScrollTop = st <= 0 ? 0 : st 
+// Estado principal de la aplicación
+Alpine.data('mainState', () => ({
+    isDarkMode: localStorage.getItem('dark') === 'true' || 
+                (!localStorage.getItem('dark') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+    isSidebarOpen: false,
+    isSidebarHovered: false,
+    scrollingDown: false,
+    scrollingUp: false,
+    lastScrollTop: 0,
+
+    init() {
+        this.handleWindowResize()
+        window.addEventListener('scroll', this.handleScroll.bind(this))
+        window.addEventListener('resize', this.handleWindowResize.bind(this))
+    },
+
+    toggleTheme() {
+        this.isDarkMode = !this.isDarkMode
+        localStorage.setItem('dark', this.isDarkMode)
+    },
+
+    toggleSidebar() {
+        this.isSidebarOpen = !this.isSidebarOpen
+    },
+
+    handleSidebarHover(value) {
+        if (window.innerWidth < 1024) return
+        this.isSidebarHovered = value
+    },
+
+    handleWindowResize() {
+        if (window.innerWidth < 1024) {
+            this.isSidebarOpen = false
+        }
+    },
+
+    handleScroll() {
+        const st = window.pageYOffset || document.documentElement.scrollTop
+        this.scrollingDown = st > this.lastScrollTop
+        this.scrollingUp = st < this.lastScrollTop
+        if (st === 0) {
+            this.scrollingDown = false
+            this.scrollingUp = false
+        }
+        this.lastScrollTop = st <= 0 ? 0 : st
+    }
+}))
+
+// Inicializar Alpine solo si no está ya inicializado
+if (!window.Alpine.isStarted) {
+    Alpine.start()
+}
+
+// Configuración de Perfect Scrollbar
+document.addEventListener('DOMContentLoaded', () => {
+    const containers = document.querySelectorAll('.ps')
+    containers.forEach(container => {
+        if (typeof PerfectScrollbar !== 'undefined') {
+            new PerfectScrollbar(container, {
+                suppressScrollX: true,
+                wheelPropagation: false
             })
-        }
-
-        const getTheme = () => {
-            if (window.localStorage.getItem('dark')) {
-                return JSON.parse(window.localStorage.getItem('dark'))
-            }
-            return (
-                !!window.matchMedia &&
-                window.matchMedia('(prefers-color-scheme: dark)').matches
-            )
-        }
-        const setTheme = (value) => {
-            window.localStorage.setItem('dark', value)
-        }
-        return {
-            init,
-            isDarkMode: getTheme(),
-            toggleTheme() {
-                this.isDarkMode = !this.isDarkMode
-                setTheme(this.isDarkMode)
-            },
-            isSidebarOpen: window.innerWidth > 1024,
-            isSidebarHovered: false,
-            handleSidebarHover(value) {
-                if (window.innerWidth < 1024) {
-                    return
-                }
-                this.isSidebarHovered = value
-            },
-            handleWindowResize() {
-                if (window.innerWidth <= 1024) {
-                    this.isSidebarOpen = false
-                } else {
-                    this.isSidebarOpen = true
-                }
-            },
-            scrollingDown: false,
-            scrollingUp: false,
         }
     })
 })
 
-Alpine.plugin(collapse)
+// Optimización de carga de imágenes
+document.addEventListener('DOMContentLoaded', () => {
+    const images = document.querySelectorAll('img[loading="lazy"]')
+    if ('loading' in HTMLImageElement.prototype) {
+        images.forEach(img => {
+            img.src = img.dataset.src
+        })
+    } else {
+        const script = document.createElement('script')
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.3.2/lazysizes.min.js'
+        document.body.appendChild(script)
+    }
+})
 
-Alpine.start()
+// Optimización de eventos
+const debounce = (func, wait) => {
+    let timeout
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout)
+            func(...args)
+        }
+        clearTimeout(timeout)
+        timeout = setTimeout(later, wait)
+    }
+}
+
+// Aplicar debounce a eventos de búsqueda
+document.querySelectorAll('input[type="search"]').forEach(input => {
+    input.addEventListener('input', debounce((e) => {
+        // Tu lógica de búsqueda aquí
+    }, 300))
+})

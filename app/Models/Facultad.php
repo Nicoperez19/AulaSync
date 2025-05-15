@@ -14,27 +14,25 @@ class Facultad extends Model
 
     protected $fillable = [
         'id_facultad',
-        'logo_facultad',
         'nombre_facultad',
         'ubicacion_facultad',
-        'id_universidad',
+        'logo_facultad',
+        'id_sede',
+        'id_campus',
     ];
 
-    public function universidad()
-    {
-        return $this->belongsTo(Universidad::class, 'id_universidad');
+    public function sede() {
+        return $this->belongsTo(Sede::class, 'id_sede');
+    }
+    
+    public function campus() {
+        return $this->belongsTo(Campus::class, 'id_campus');
     }
 
     public function areaAcademicas()
     {
         return $this->hasMany(AreaAcademica::class, 'id_facultad');
     }
-
-    public function carreras()
-    {
-        return $this->hasMany(Carrera::class, 'id_facultad');
-    }
-
     public function pisos()
     {
         return $this->hasMany(Piso::class, 'id_facultad');
