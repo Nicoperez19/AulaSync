@@ -13,7 +13,7 @@ class Espacio extends Model
     protected $keyType = 'string';
  
     protected $fillable = [
-        'id_espacio',
+        'nombre_espacio',
         'piso_id',
         'tipo_espacio',
         'estado',

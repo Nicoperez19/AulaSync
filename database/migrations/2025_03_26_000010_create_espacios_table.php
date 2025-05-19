@@ -11,9 +11,10 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('espacios', function (Blueprint $table) {
-            $table->string('id_espacio')->primary();  // PK personalizada
-            $table->foreignId('piso_id')->constrained('pisos')->onDelete('cascade'); // FK correcta
-            $table->enum('tipo_espacio', ['Aula', 'Laboratorio', 'Biblioteca', 'Sala de Reuniones', 'Oficinas']);
+            $table->string('id_espacio')->primary();
+            $table->string('nombre_espacio');
+            $table->foreignId('piso_id')->constrained('pisos')->onDelete('cascade');
+            $table->enum('tipo_espacio', ['Aula', 'Laboratorio', 'Biblioteca', 'Sala de Reuniones', 'Oficinas', 'Taller', 'Auditorio', 'Sala de Estudio']);
             $table->enum('estado', ['Disponible', 'Ocupado', 'Reservado']);
             $table->integer('puestos_disponibles')->nullable();
             $table->timestamps();

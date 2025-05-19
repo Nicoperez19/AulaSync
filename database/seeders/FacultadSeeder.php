@@ -12,14 +12,14 @@ class FacultadSeeder extends Seeder
      */
     public function run(): void
     {
-         $facultades = [
+        $facultades = [
             [
                 'id_facultad' => 'IT_TH',
                 'nombre_facultad' => 'Instituto Tecnológico',
                 'id_sede' => 'TH',
                 'id_campus' => null,
             ],
-             [
+            [
                 'id_facultad' => 'FACEA',
                 'nombre_facultad' => 'Facultad de Ciencias Económicas y Administrativas',
                 'id_sede' => 'CCP',

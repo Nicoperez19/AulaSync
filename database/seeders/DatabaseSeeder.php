@@ -23,17 +23,13 @@ class DatabaseSeeder extends Seeder
         $this->call(class: CampusSeeder::class);
         $this->call(class: FacultadSeeder::class);
         $this->call(class: AreaAcademicaSeeder::class);
-        $this->call(class: CarreraSeeder::class); 
+        $this->call(class: PisoSeeder::class); 
+        $this->call(class: EspacioSeeder::class); 
 
         
         
         
         $this->call(class: ModulosSeeder::class);
 
-        // $this->call(class: CarreraSeeder::class); 
-        // $this->call(class: PisoSeeder::class); 
-        // $this->call(class: EspacioSeeder::class); 
-        // $this->call(class: ReservasSeeder::class); 
-        // $this->call(class: AsignaturasSeeder::class); 
     }
 }

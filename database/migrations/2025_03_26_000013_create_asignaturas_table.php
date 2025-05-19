@@ -13,13 +13,13 @@ return new class extends Migration
     {
         Schema::create('asignaturas', function (Blueprint $table) {
             $table->string('id_asignatura',20)->primary();
-             $table->string('codigo_asignatura', 100);
+            $table->string('codigo_asignatura', 100);
             $table->string('nombre_asignatura', 100);
          
-            $table->integer('horas_directas');
-            $table->integer('horas_indirectas');
-            $table->string('area_conocimiento', 100);
-            $table->string('periodo', 20);
+            $table->integer('horas_directas')->nullable();
+            $table->integer('horas_indirectas')->nullable();
+            $table->string('area_conocimiento', 100)->nullable();
+            $table->string('periodo', 20)->nullable();
 
             $table->unsignedBigInteger('run');
             $table->string('id_carrera', 20);
