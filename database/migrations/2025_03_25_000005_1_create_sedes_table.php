@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -16,7 +15,7 @@ return new class extends Migration
             $table->string('nombre_sede', 100);
             $table->string('id_universidad');
             $table->foreign('id_universidad')->references('id_universidad')->on('universidades')->onDelete('cascade');
-            $table->foreignId('comunas_id')->constrained();
+            $table->foreignId('comuna_id')->constrained('comunas');
             $table->timestamps();
         });
     }

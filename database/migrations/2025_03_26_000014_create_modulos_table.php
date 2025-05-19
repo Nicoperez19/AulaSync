@@ -11,7 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('modulos', function (Blueprint $table) {
-            $table->string('id_modulo',20)->primary();
+            $table->id('id_modulo'); 
             $table->time('hora_inicio');
             $table->time('hora_termino');
             $table->timestamps();

@@ -14,8 +14,9 @@ class Asignatura extends Model
     protected $table = 'asignaturas';
 
     protected $fillable = [
-        'id_asignatura',//codigo
-        'nombre_asignatura',
+        'id_asignatura',//id_curso
+        'codigo_asignatura',//cod_ramo
+        'nombre_asignatura',//ramo_nombre
         'horas_directas',
         'horas_indirectas',
         'area_conocimiento',

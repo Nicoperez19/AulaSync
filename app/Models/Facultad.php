@@ -15,8 +15,6 @@ class Facultad extends Model
     protected $fillable = [
         'id_facultad',
         'nombre_facultad',
-        'ubicacion_facultad',
-        'logo_facultad',
         'id_sede',
         'id_campus',
     ];
