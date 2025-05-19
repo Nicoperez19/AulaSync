@@ -82,6 +82,14 @@
                             </div>
                         </div>
 
+                        <!-- Spinner de carga -->
+                        <div id="loading-spinner" class="hidden mt-4">
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                                <p class="mt-2 text-sm font-medium text-gray-600 dark:text-gray-400">Procesando archivo...</p>
+                            </div>
+                        </div>
+
                         <!-- Mensajes -->
                         <div id="error-message" class="hidden mt-2 text-sm text-red-600"></div>
                         <div id="success-message" class="hidden mt-2 text-sm text-green-600"></div>
@@ -173,6 +181,7 @@
                 const form = document.getElementById('upload-form');
                 const fileInput = document.getElementById('file-upload');
                 const file = fileInput.files[0];
+                const loadingSpinner = document.getElementById('loading-spinner');
 
                 if (!file) {
                     showError('Por favor, seleccione un archivo primero.');
@@ -186,6 +195,7 @@
 
                 hideMessages();
                 progressDiv.classList.remove('hidden');
+                loadingSpinner.classList.remove('hidden');
                 updateProgress(0);
 
                 const formData = new FormData();
@@ -203,6 +213,7 @@
                 });
 
                 xhr.onload = function () {
+                    loadingSpinner.classList.add('hidden');
                     if (xhr.status === 200) {
                         try {
                             const response = JSON.parse(xhr.responseText);
@@ -229,9 +240,9 @@
                     }
                 };
 
-                // Error en la conexión
-                xhr.onerror = function () {
-                    showError('Error en la conexión al servidor');
+                xhr.onerror = function() {
+                    loadingSpinner.classList.add('hidden');
+                    showError('Error de conexión al subir el archivo');
                 };
 
                 xhr.send(formData);

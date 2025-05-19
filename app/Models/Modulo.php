@@ -14,10 +14,10 @@ class Modulo extends Model
     protected $primaryKey = 'id_modulo';
 
     protected $fillable = [
+        'dia',
         'hora_inicio',
         'hora_termino',
     ];
 
 
-  
 }

@@ -11,19 +11,14 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('horarios', function (Blueprint $table) {
-            $table->string('id_horario', 20)->primary();
+            $table->id('id_horario');
             $table->string('nombre');
-            $table->string('id_espacio');
-            $table->foreign('id_espacio')->references('id_espacio')->on('espacios')->onDelete('cascade');
-
-            $table->unsignedBigInteger('id_modulo');
-            $table->foreign('id_modulo')->references('id_modulo')->on('modulos')->onDelete('cascade');
-
-            $table->unsignedBigInteger('id');
-            $table->foreign('id')->references('id')->on('seccions')->onDelete('cascade');
-
+            $table->string('periodo')->nullable();
+            $table->string('id_carrera')->nullable(); // Si el horario es por carrera
+            $table->foreign('id_carrera')->references('id_carrera')->on('carreras')->onDelete('set null');
             $table->timestamps();
         });
+
     }
 
     /**
