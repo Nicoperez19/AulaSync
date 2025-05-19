@@ -9,7 +9,6 @@
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
         <div class="flex items-center justify-between mt-4 mb-[2rem]">
-            <!-- Buscador pequeño a la izquierda -->
             <div class="w-2/3">
                 <input type="text" id="searchInput" onkeyup="searchTable()" placeholder=""
                     class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white">
@@ -18,7 +17,6 @@
                 x-on:click="$dispatch('open-modal', 'add-data')">
                 <x-icons.add class="w-6 h-6" aria-hidden="true" />
             </x-button>
-
         </div>
 
         <livewire:data-load-table />
@@ -64,21 +62,9 @@
                                     <p class="text-xs text-gray-500 dark:text-gray-400">
                                         Excel o CSV hasta 10MB
                                     </p>
-                                    <!-- Nombre del archivo seleccionado -->
-                                    <div id="selected-file-name" class="mt-2 text-sm font-medium text-gray-700 dark:text-gray-300"></div>
+                                    <div id="selected-file-name"
+                                        class="mt-2 text-sm font-medium text-gray-700 dark:text-gray-300"></div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- Barra de progreso -->
-                        <div id="upload-progress" class="hidden mt-4">
-                            <div class="relative pt-1">
-                                <div class="flex h-2 overflow-hidden text-xs bg-blue-200 rounded">
-                                    <div id="progress-bar"
-                                        class="flex flex-col justify-center text-center text-white transition-all duration-500 bg-blue-500 shadow-none whitespace-nowrap"
-                                        style="width: 0%"></div>
-                                </div>
-                                <div id="progress-text" class="mt-1 text-sm text-center text-gray-600 dark:text-gray-400">0%</div>
                             </div>
                         </div>
 
@@ -86,7 +72,8 @@
                         <div id="loading-spinner" class="hidden mt-4">
                             <div class="flex flex-col items-center justify-center">
                                 <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-                                <p class="mt-2 text-sm font-medium text-gray-600 dark:text-gray-400">Procesando archivo...</p>
+                                <p class="mt-2 text-sm font-medium text-gray-600 dark:text-gray-400">Procesando
+                                    archivo...</p>
                             </div>
                         </div>
 
@@ -103,9 +90,6 @@
                         <x-button variant="primary" type="button" id="load-button" class="hidden">
                             Cargar
                         </x-button>
-                        <x-button variant="primary" type="button" id="upload-button" class="hidden">
-                            Guardar
-                        </x-button>
                     </div>
                 </div>
             </form>
@@ -116,12 +100,11 @@
                 const loadButton = document.getElementById('load-button');
                 const selectedFileName = document.getElementById('selected-file-name');
                 const file = input.files[0];
-                
+
                 if (file) {
-                    // Validar el tipo de archivo
                     const validTypes = ['.xlsx', '.xls', '.csv'];
                     const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-                    
+
                     if (!validTypes.includes(fileExtension)) {
                         showError('Por favor, seleccione un archivo Excel (.xlsx, .xls) o CSV válido.');
                         input.value = '';
@@ -129,8 +112,7 @@
                         selectedFileName.textContent = '';
                         return;
                     }
-                    
-                    // Validar el tamaño del archivo (10MB)
+
                     if (file.size > 10 * 1024 * 1024) {
                         showError('El archivo es demasiado grande. El tamaño máximo permitido es 10MB.');
                         input.value = '';
@@ -138,11 +120,8 @@
                         selectedFileName.textContent = '';
                         return;
                     }
-                    
-                    // Mostrar el nombre del archivo seleccionado
+
                     selectedFileName.textContent = `Archivo seleccionado: ${file.name}`;
-                    
-                    // Mostrar el botón de cargar
                     loadButton.classList.remove('hidden');
                     hideMessages();
                 } else {
@@ -163,21 +142,7 @@
                 document.getElementById('uploaded-file-name').classList.add('hidden');
             }
 
-            function updateProgress(percent) {
-                const progressBar = document.getElementById('progress-bar');
-                const progressText = document.getElementById('progress-text');
-                progressBar.style.width = percent + '%';
-                progressText.textContent = percent + '%';
-            }
-
-            document.getElementById('load-button').addEventListener('click', function () {
-                document.getElementById('upload-button').classList.remove('hidden');
-                document.getElementById('upload-progress').classList.remove('hidden');
-                this.classList.add('hidden');
-                updateProgress(0);
-            });
-
-            document.getElementById('upload-button').addEventListener('click', function () {
+            document.getElementById('load-button').addEventListener('click', function() {
                 const form = document.getElementById('upload-form');
                 const fileInput = document.getElementById('file-upload');
                 const file = fileInput.files[0];
@@ -188,15 +153,8 @@
                     return;
                 }
 
-                const errorDiv = document.getElementById('error-message');
-                const successDiv = document.getElementById('success-message');
-                const uploadedFileDiv = document.getElementById('uploaded-file-name');
-                const progressDiv = document.getElementById('upload-progress');
-
                 hideMessages();
-                progressDiv.classList.remove('hidden');
                 loadingSpinner.classList.remove('hidden');
-                updateProgress(0);
 
                 const formData = new FormData();
                 formData.append('file', file);
@@ -205,28 +163,26 @@
                 xhr.open('POST', form.action, true);
                 xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
 
-                xhr.upload.addEventListener('progress', function (e) {
-                    if (e.lengthComputable) {
-                        const percent = Math.round((e.loaded / e.total) * 100);
-                        updateProgress(percent);
-                    }
-                });
-
-                xhr.onload = function () {
+                xhr.onload = function() {
                     loadingSpinner.classList.add('hidden');
+
                     if (xhr.status === 200) {
                         try {
                             const response = JSON.parse(xhr.responseText);
-                            successDiv.innerText = response.message;
-                            successDiv.classList.remove('hidden');
-                            uploadedFileDiv.innerText = "Archivo: " + response.data.nombre_archivo;
-                            uploadedFileDiv.classList.remove('hidden');
-                            updateProgress(100);
 
-                            // Esperar un momento antes de recargar
+                            // ✅ SweetAlert al cargar correctamente
+                            Swal.fire({
+                                title: '¡Éxito!',
+                                text: 'El archivo se cargó correctamente.',
+                                icon: 'success',
+                                timer: 5000,
+                                showConfirmButton: false,
+                                timerProgressBar: true,
+                            });
+
                             setTimeout(() => {
                                 window.location.reload();
-                            }, 2000);
+                            }, 5000);
                         } catch (e) {
                             showError('Error al procesar la respuesta del servidor');
                         }
@@ -240,6 +196,7 @@
                     }
                 };
 
+
                 xhr.onerror = function() {
                     loadingSpinner.classList.add('hidden');
                     showError('Error de conexión al subir el archivo');
@@ -249,5 +206,4 @@
             });
         </script>
     </div>
-
 </x-app-layout>

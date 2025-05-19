@@ -12,7 +12,7 @@
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
         "livewire/livewire": "^3.6",
-        "maatwebsite/excel": "^3.1",
+        "maatwebsite/excel": "3.1.48",
         "spatie/laravel-permission": "^6.16"
     },
     "require-dev": {
