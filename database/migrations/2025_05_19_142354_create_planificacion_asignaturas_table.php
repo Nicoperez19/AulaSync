@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create('planificacion_asignaturas', function (Blueprint $table) {
             $table->id();
             $table->string('id_asignatura');
-            $table->unsignedBigInteger('id_horario');
+            $table->string('id_horario');
             $table->string('id_modulo');
             $table->string('id_espacio');
 

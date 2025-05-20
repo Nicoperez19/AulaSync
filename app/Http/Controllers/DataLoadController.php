@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Models\Asignatura;
 use App\Models\Carrera;
 use App\Models\Seccion;
+use App\Models\Horario;
+use App\Models\Planificacion_Asignatura;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -62,13 +64,13 @@ class DataLoadController extends Controller
 
             Log::info('Registro de carga creado', ['id' => $dataLoad->id]);
 
-            // Leer el archivo Excel directamente
             $rows = Excel::toArray([], $file)[0];
             Log::info('Archivo Excel leído', ['total_filas' => count($rows)]);
             
             $role = Role::findByName('Profesor');
             $processedUsersCount = 0;
             $processedAsignaturasCount = 0;
+            $processedHorariosCount = 0;
             $errors = [];
             $skippedRows = 0;
 
@@ -79,7 +81,6 @@ class DataLoadController extends Controller
                 }
 
                 try {
-                    // Verificar sede (columna H)
                     $sede = $row[7];
                     Log::info('Procesando fila', [
                         'numero_fila' => $index + 1,
@@ -91,7 +92,6 @@ class DataLoadController extends Controller
                         continue;
                     }
 
-                    // Verificar carrera (columna R)
                     $idCarrera = $row[17];
                     Log::info('Procesando registro de Talcahuano', [
                         'numero_fila' => $index + 1,
@@ -165,6 +165,110 @@ class DataLoadController extends Controller
                     }
                     $processedAsignaturasCount++;
 
+                    // Procesar horario
+                    $semestre = $row[5]; // Columna F
+                    $horarioProfesor = $row[20]; // Columna U
+
+                    try {
+                        // Generar ID único para el horario
+                        $idHorario = 'HOR_' . $run . '_' . str_replace('-', '', $semestre);
+
+                        // Verificar si ya existe un horario para este profesor y semestre
+                        $existingHorario = Horario::where('id_horario', $idHorario)->first();
+
+                        if ($existingHorario) {
+                            $horario = $existingHorario;
+                            Log::info('Usando horario existente', [
+                                'id_horario' => $horario->id_horario,
+                                'nombre' => $horario->nombre,
+                                'periodo' => $semestre,
+                                'run' => $run
+                            ]);
+                        } else {
+                            // Crear nuevo horario
+                            $horario = new Horario();
+                            $horario->id_horario = $idHorario; // Asignar ID personalizado
+                            $horario->nombre = "Horario de " . $name;
+                            $horario->periodo = $semestre;
+                            $horario->run = $run;
+                            
+                            if (!$horario->save()) {
+                                throw new \Exception("Error al guardar el horario");
+                            }
+
+                            // Verificar que el horario se creó correctamente
+                            if (!$horario->id_horario) {
+                                throw new \Exception("El horario no se creó correctamente");
+                            }
+
+                            Log::info('Nuevo horario creado', [
+                                'id_horario' => $horario->id_horario,
+                                'nombre' => $horario->nombre,
+                                'periodo' => $semestre,
+                                'run' => $run
+                            ]);
+                        }
+
+                        // Procesar horarios del profesor solo si tenemos un horario válido
+                        if ($horario && $horario->id_horario && !empty($horarioProfesor)) {
+                            $horarios = explode(' - ', $horarioProfesor);
+                            foreach ($horarios as $horarioStr) {
+                                // Extraer información del horario
+                                preg_match('/([A-Za-z]+)\.(\d+)\/G:(\d+)\s*\(([^)]+)\)/', $horarioStr, $matches);
+                                
+                                if (count($matches) === 5) {
+                                    $dia = $matches[1];
+                                    $modulo = $matches[2];
+                                    $grupo = $matches[3];
+                                    $espacio = $matches[4];
+
+                                    // Verificar si ya existe esta planificación
+                                    $existingPlanificacion = Planificacion_Asignatura::where('id_asignatura', $idAsignatura)
+                                        ->where('id_horario', $horario->id_horario)
+                                        ->where('id_modulo', $dia . '.' . $modulo)
+                                        ->where('id_espacio', $espacio)
+                                        ->first();
+
+                                    if (!$existingPlanificacion) {
+                                        // Crear planificación
+                                        $planificacion = new Planificacion_Asignatura();
+                                        $planificacion->id_asignatura = $idAsignatura;
+                                        $planificacion->id_horario = $horario->id_horario;
+                                        $planificacion->id_modulo = $dia . '.' . $modulo;
+                                        $planificacion->id_espacio = $espacio;
+                                        
+                                        if (!$planificacion->save()) {
+                                            throw new \Exception("Error al guardar la planificación");
+                                        }
+
+                                        Log::info('Nueva planificación creada', [
+                                            'id_asignatura' => $idAsignatura,
+                                            'id_horario' => $horario->id_horario,
+                                            'id_modulo' => $dia . '.' . $modulo,
+                                            'id_espacio' => $espacio
+                                        ]);
+                                        $processedHorariosCount++;
+                                    } else {
+                                        Log::info('Planificación ya existe', [
+                                            'id_asignatura' => $idAsignatura,
+                                            'id_horario' => $horario->id_horario,
+                                            'id_modulo' => $dia . '.' . $modulo,
+                                            'id_espacio' => $espacio
+                                        ]);
+                                    }
+                                }
+                            }
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('Error al procesar horario: ' . $e->getMessage(), [
+                            'fila' => $index + 1,
+                            'run' => $run,
+                            'semestre' => $semestre
+                        ]);
+                        $errors[] = "Fila " . ($index + 1) . ": Error al procesar horario - " . $e->getMessage();
+                        continue;
+                    }
+
                 } catch (\Exception $e) {
                     $errorMsg = "Fila " . ($index + 1) . ": " . $e->getMessage();
                     Log::error($errorMsg);
@@ -174,10 +278,11 @@ class DataLoadController extends Controller
 
             $dataLoad->update([
                 'estado' => 'completado',
-                'registros_cargados' => $processedUsersCount + $processedAsignaturasCount
+                'registros_cargados' => $processedUsersCount + $processedAsignaturasCount + $processedHorariosCount
             ]);
 
-            $message = 'Archivo procesado exitosamente. Se procesaron ' . $processedUsersCount . ' usuarios y ' . $processedAsignaturasCount . ' asignaturas.';
+            $message = 'Archivo procesado exitosamente. Se procesaron ' . $processedUsersCount . ' usuarios, ' . 
+                      $processedAsignaturasCount . ' asignaturas y ' . $processedHorariosCount . ' horarios.';
             if (!empty($errors)) {
                 $message .= ' Se encontraron ' . count($errors) . ' errores: ' . implode(', ', $errors);
             }
@@ -188,6 +293,7 @@ class DataLoadController extends Controller
                     'nombre_archivo' => $dataLoad,
                     'usuarios_procesados' => $processedUsersCount,
                     'asignaturas_procesadas' => $processedAsignaturasCount,
+                    'horarios_procesados' => $processedHorariosCount,
                     'filas_omitidas' => $skippedRows,
                     'errores' => $errors
                 ],

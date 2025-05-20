@@ -71,7 +71,7 @@
                         <!-- Spinner de carga -->
                         <div id="loading-spinner" class="hidden mt-4">
                             <div class="flex flex-col items-center justify-center">
-                                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                                <div class="w-12 h-12 border-b-2 border-blue-500 rounded-full animate-spin"></div>
                                 <p class="mt-2 text-sm font-medium text-gray-600 dark:text-gray-400">Procesando
                                     archivo...</p>
                             </div>
@@ -121,6 +121,7 @@
                         return;
                     }
 
+                    selectedFileName.className = 'mt-2 text-sm font-medium text-green-600';
                     selectedFileName.textContent = `Archivo seleccionado: ${file.name}`;
                     loadButton.classList.remove('hidden');
                     hideMessages();
@@ -176,13 +177,14 @@
                                 text: 'El archivo se cargó correctamente.',
                                 icon: 'success',
                                 timer: 5000,
-                                showConfirmButton: false,
+                                showConfirmButton: true,
+                                allowOutsideClick: true,
                                 timerProgressBar: true,
                             });
 
                             setTimeout(() => {
                                 window.location.reload();
-                            }, 5000);
+                            }, 2000);
                         } catch (e) {
                             showError('Error al procesar la respuesta del servidor');
                         }

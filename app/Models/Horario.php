@@ -11,10 +11,11 @@ class Horario extends Model
 
     protected $table = 'horarios';
     protected $primaryKey = 'id_horario';
-    public $incrementing = true;
-    protected $keyType = 'int';
+    public $incrementing = false;
+    protected $keyType = 'string';
 
     protected $fillable = [
+        'id_horario',
         'nombre',
         'periodo',
         'run',

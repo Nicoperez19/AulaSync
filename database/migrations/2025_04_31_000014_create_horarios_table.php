@@ -11,7 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('horarios', function (Blueprint $table) {
-            $table->bigIncrements('id_horario');
+            $table->string('id_horario')->primary();
             $table->string('nombre');
             $table->string('periodo'); // Ej: "2025-1"
 

@@ -20,6 +20,13 @@ class Planificacion_Asignatura extends Model
         'id_espacio',
     ];
 
+    protected $casts = [
+        'id_horario' => 'string',
+        'id_asignatura' => 'string',
+        'id_modulo' => 'string',
+        'id_espacio' => 'string'
+    ];
+
     public function asignatura()
     {
         return $this->belongsTo(Asignatura::class, 'id_asignatura', 'id_asignatura');
