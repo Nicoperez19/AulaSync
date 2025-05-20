@@ -80,8 +80,11 @@
                         const hora = `${moduloInfo.hora_inicio} - ${moduloInfo.hora_termino}`;
 
                         const tdHora = document.createElement('td');
-                        tdHora.className = 'py-3 px-4 border-b text-center text-sm text-gray-600';
-                        tdHora.textContent = hora;
+                        tdHora.className = 'py-3 px-4 border-b text-center text-sm text-gray-600 leading-tight';
+                        tdHora.innerHTML = `<div class="flex flex-col items-center justify-center">
+                        <span class="font-semibold text-gray-800">Módulo ${modulo}</span>
+    <span class="text-xs">${hora}</span>
+</div>`;
                         tr.appendChild(tdHora);
 
                         diasUnicos.forEach(dia => {
