@@ -15,9 +15,17 @@ class HorariosController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $profesores = User::role('Profesor')->get();
+        $query = User::role('Profesor');
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('run', 'like', '%' . $search . '%');
+            });
+        }
+        $profesores = $query->orderBy('name')->paginate(27);
         $horarios = Horario::with(['docente', 'planificaciones.asignatura', 'planificaciones.espacio'])->get();
         $horarios = $horarios->groupBy('run');
         return view('layouts.schedules.schedules_index', compact('profesores', 'horarios'));

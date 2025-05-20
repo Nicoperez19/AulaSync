@@ -8,8 +8,12 @@
     </x-slot>
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
-        <div class="mb-6">
-            <h3 class="text-lg font-semibold mb-4">Lista de Profesores</h3>
+        <div class="w-1/3 mb-4">
+            <input type="text" name="search" id="search-profesor" value="{{ request('search') }}"
+                placeholder="Nombre o RUN" class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white">
+        </div>
+
+        <div id="profesores-lista">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 @foreach ($profesores as $profesor)
                     <div class="profesor-card bg-gray-50 p-4 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer"
@@ -18,6 +22,9 @@
                         <p class="text-sm text-gray-600">RUN: {{ $profesor->run }}</p>
                     </div>
                 @endforeach
+            </div>
+            <div class="mt-4">
+                {{ $profesores->appends(request()->query())->links() }}
             </div>
         </div>
 
@@ -29,7 +36,7 @@
                     <h3 class="text-lg font-semibold" id="modalTitle">Horario del Profesor</h3>
                     <button onclick="cerrarModal()" class="text-red-600 font-bold text-xl">&times;</button>
                 </div>
-                <div class="overflow-y-auto max-h-[70vh]"> <!-- Haciendo el contenido desplazable -->
+                <div class="overflow-y-auto max-h-[70vh]">
                     <table class="min-w-full bg-white border border-gray-200">
                         <thead class="sticky top-0 bg-white z-10 shadow">
                             <tr class="bg-gray-100">
@@ -52,6 +59,31 @@
 
     {{-- Scripts --}}
     <script>
+        document.getElementById('search-profesor').addEventListener('input', function() {
+            const search = this.value;
+            const url = `{{ route('horarios.index') }}?search=${encodeURIComponent(search)}`;
+            fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Extraer solo el contenido de la lista de profesores
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newList = doc.getElementById('profesores-lista');
+                    document.getElementById('profesores-lista').innerHTML = newList.innerHTML;
+                    // Volver a activar los eventos de click en las tarjetas
+                    document.querySelectorAll('.profesor-card').forEach(card => {
+                        card.addEventListener('click', () => {
+                            const run = card.dataset.run;
+                            mostrarHorario(run);
+                        });
+                    });
+                });
+        });
+
         document.querySelectorAll('.profesor-card').forEach(card => {
             card.addEventListener('click', () => {
                 const run = card.dataset.run;
@@ -90,13 +122,11 @@
                         diasUnicos.forEach(dia => {
                             const td = document.createElement('td');
                             td.className = 'py-3 px-4 border-b text-center align-middle';
-                            // Filtrar las planificaciones que correspondan al módulo y día específico
                             const planificaciones = data.horario.planificaciones.filter(plan => {
                                 const [planDia, planModulo] = plan.id_modulo.split('.');
                                 return planDia === dia && planModulo === modulo;
                             });
 
-                            // Si existen planificaciones para este módulo y día
                             if (planificaciones.length > 0) {
                                 const clasesHTML = planificaciones.map(plan => `
 <div class="bg-blue-100 p-2 rounded-lg min-h-[90px] w-[120px] mx-auto flex flex-col items-center justify-center text-center break-words">

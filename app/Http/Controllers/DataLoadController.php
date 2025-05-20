@@ -44,12 +44,12 @@ class DataLoadController extends Controller
             $file = $request->file('file');
             $fileName = $file->getClientOriginalName();
             $fileExtension = $file->getClientOriginalExtension();
-            
+
             Log::info('Archivo recibido', [
                 'nombre' => $fileName,
                 'extension' => $fileExtension
             ]);
-            
+
             $uniqueFileName = date('Y-m-d_His') . '_' . Auth::user()->run . '_' . Str::random(10) . '.' . $fileExtension;
             $path = $file->storeAs('datos_subidos', $uniqueFileName, 'public');
 
@@ -66,7 +66,7 @@ class DataLoadController extends Controller
 
             $rows = Excel::toArray([], $file)[0];
             Log::info('Archivo Excel leído', ['total_filas' => count($rows)]);
-            
+
             $role = Role::findByName('Profesor');
             $processedUsersCount = 0;
             $processedAsignaturasCount = 0;
@@ -105,7 +105,7 @@ class DataLoadController extends Controller
 
                     $run = $row[11];
                     $name = $row[12];
-                    
+
                     $existingUser = User::where('run', $run)->first();
                     if ($existingUser) {
                         $existingUser->update([
@@ -169,7 +169,7 @@ class DataLoadController extends Controller
                     try {
                         $idHorario = 'HOR_' . $run;
 
-                        
+
                         $existingHorario = Horario::where('id_horario', $idHorario)->first();
 
                         if ($existingHorario) {
@@ -182,11 +182,11 @@ class DataLoadController extends Controller
                             ]);
                         } else {
                             $horario = new Horario();
-                            $horario->id_horario = $idHorario; 
+                            $horario->id_horario = $idHorario;
                             $horario->nombre = "Horario de " . $name;
                             $horario->periodo = $semestre;
                             $horario->run = $run;
-                            
+
                             if (!$horario->save()) {
                                 throw new \Exception("Error al guardar el horario");
                             }
@@ -207,12 +207,13 @@ class DataLoadController extends Controller
                             $horarioProfesorNormalizado = preg_replace('/(?<!-)\s*([a-z]{2}:\s*)/i', ' - $1', $horarioProfesor);
 
                             // Divide por guiones
-                            $horarios = explode(' - ', $horarioProfesorNormalizado);                            foreach ($horarios as $horarioStr) {
+                            $horarios = explode(' - ', $horarioProfesorNormalizado);
+                            foreach ($horarios as $horarioStr) {
                                 if (preg_match('/^[a-záéíóúñ]{2,}:$/u', trim($horarioStr))) {
                                     continue;
                                 }
                                 preg_match('/([A-Za-z]+)\.(\d+)\/G:(\d+)\s*\(([^)]+)\)/', $horarioStr, $matches);
-                                
+
                                 if (count($matches) === 5) {
                                     $dia = $matches[1];
                                     $modulo = $matches[2];
@@ -231,7 +232,7 @@ class DataLoadController extends Controller
                                         $planificacion->id_horario = $horario->id_horario;
                                         $planificacion->id_modulo = $dia . '.' . $modulo;
                                         $planificacion->id_espacio = $espacio;
-                                        
+
                                         if (!$planificacion->save()) {
                                             throw new \Exception("Error al guardar la planificación");
                                         }
@@ -276,8 +277,8 @@ class DataLoadController extends Controller
                 'registros_cargados' => $processedUsersCount + $processedAsignaturasCount + $processedHorariosCount
             ]);
 
-            $message = 'Archivo procesado exitosamente. Se procesaron ' . $processedUsersCount . ' usuarios, ' . 
-                      $processedAsignaturasCount . ' asignaturas y ' . $processedHorariosCount . ' horarios.';
+            $message = 'Archivo procesado exitosamente. Se procesaron ' . $processedUsersCount . ' usuarios, ' .
+                $processedAsignaturasCount . ' asignaturas y ' . $processedHorariosCount . ' horarios.';
             if (!empty($errors)) {
                 $message .= ' Se encontraron ' . count($errors) . ' errores: ' . implode(', ', $errors);
             }
