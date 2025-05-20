@@ -31,7 +31,7 @@ class UserSeeder extends Seeder
             'direccion' => 'Avenida Siempreviva 742',
             'fecha_nacimiento' => '1992-08-15',
             'anio_ingreso' => 2015,
-        ])->assignRole('Auxiliar');
+        ])->assignRole('Profesor');
 
         // $users = [
         //     ['run' => '22334455', 'name' => 'Juan Perez', 'email' => 'juanp@ucsc.cl', 'celular' => '912233445', 'direccion' => 'Calle Real 101', 'fecha_nacimiento' => '1990-02-25', 'anio_ingreso' => 2012, 'password' => bcrypt('password')],

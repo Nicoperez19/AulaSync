@@ -3,6 +3,7 @@ use App\Http\Controllers\AreaAcademicaController;
 use App\Http\Controllers\EspacioController;
 use App\Http\Controllers\FacultadController;
 use App\Http\Controllers\CarreraController;
+use App\Http\Controllers\HorariosController;
 use App\Http\Controllers\MapasController;
 use App\Http\Controllers\ReservasController;
 use App\Http\Controllers\PermisionController;
@@ -36,7 +37,8 @@ Route::get('/', function () {
 
 Route::get('dashboard', function () {
     return view('layouts/dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');//el ultimo es el nombre de la ruta simplemente.
+})->middleware(['auth', 'verified'])->name('dashboard');
+
 
 Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::get('/user/user_index', [UserController::class, 'index'])->name('users.index');
@@ -44,6 +46,8 @@ Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::delete('/user/user_delete/{run}', [UserController::class, 'destroy'])->name('users.delete');
     Route::get('/user/user_edit/{run}', [UserController::class, 'edit'])->name('users.edit');
     Route::put('user/user_update/{run}', [UserController::class, 'update'])->name('users.update');
+    Route::get('/horarios/horarios_index', [HorariosController::class, 'index'])->name('horarios.index');
+    Route::get('/horarios/{run}', [HorariosController::class, 'getHorarioProfesor'])->name('horarios.get');
 });
 
 Route::group(['middleware' => ['permission:mantenedor de roles']], function () {
@@ -152,7 +156,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 });
-
 
 Route::get('/buttons/text', function () {
     return view('buttons-showcase.text');

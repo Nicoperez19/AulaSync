@@ -103,7 +103,6 @@ class DataLoadController extends Controller
                         continue;
                     }
 
-                    // Procesar usuario
                     $run = $row[11];
                     $name = $row[12];
                     
@@ -127,7 +126,6 @@ class DataLoadController extends Controller
                     }
                     $processedUsersCount++;
 
-                    // Procesar asignatura
                     $idAsignatura = $row[0];
                     $codigoAsignatura = $row[1];
                     $nombreAsignatura = $row[2];
@@ -148,7 +146,6 @@ class DataLoadController extends Controller
                         Log::info('Asignatura ya existe', ['id_asignatura' => $idAsignatura]);
                     }
 
-                    // Procesar sección
                     $existingSeccion = Seccion::where('id_asignatura', $idAsignatura)
                         ->where('numero', $numeroSeccion)
                         ->first();
@@ -165,15 +162,13 @@ class DataLoadController extends Controller
                     }
                     $processedAsignaturasCount++;
 
-                    // Procesar horario
                     $semestre = $row[5]; // Columna F
                     $horarioProfesor = $row[20]; // Columna U
 
                     try {
-                        // Generar ID único para el horario
-                        $idHorario = 'HOR_' . $run . '_' . str_replace('-', '', $semestre);
+                        $idHorario = 'HOR_' . $run;
 
-                        // Verificar si ya existe un horario para este profesor y semestre
+                        
                         $existingHorario = Horario::where('id_horario', $idHorario)->first();
 
                         if ($existingHorario) {
@@ -185,9 +180,8 @@ class DataLoadController extends Controller
                                 'run' => $run
                             ]);
                         } else {
-                            // Crear nuevo horario
                             $horario = new Horario();
-                            $horario->id_horario = $idHorario; // Asignar ID personalizado
+                            $horario->id_horario = $idHorario; 
                             $horario->nombre = "Horario de " . $name;
                             $horario->periodo = $semestre;
                             $horario->run = $run;
@@ -196,7 +190,6 @@ class DataLoadController extends Controller
                                 throw new \Exception("Error al guardar el horario");
                             }
 
-                            // Verificar que el horario se creó correctamente
                             if (!$horario->id_horario) {
                                 throw new \Exception("El horario no se creó correctamente");
                             }
@@ -209,11 +202,9 @@ class DataLoadController extends Controller
                             ]);
                         }
 
-                        // Procesar horarios del profesor solo si tenemos un horario válido
                         if ($horario && $horario->id_horario && !empty($horarioProfesor)) {
                             $horarios = explode(' - ', $horarioProfesor);
                             foreach ($horarios as $horarioStr) {
-                                // Extraer información del horario
                                 preg_match('/([A-Za-z]+)\.(\d+)\/G:(\d+)\s*\(([^)]+)\)/', $horarioStr, $matches);
                                 
                                 if (count($matches) === 5) {
@@ -222,7 +213,6 @@ class DataLoadController extends Controller
                                     $grupo = $matches[3];
                                     $espacio = $matches[4];
 
-                                    // Verificar si ya existe esta planificación
                                     $existingPlanificacion = Planificacion_Asignatura::where('id_asignatura', $idAsignatura)
                                         ->where('id_horario', $horario->id_horario)
                                         ->where('id_modulo', $dia . '.' . $modulo)
@@ -230,7 +220,6 @@ class DataLoadController extends Controller
                                         ->first();
 
                                     if (!$existingPlanificacion) {
-                                        // Crear planificación
                                         $planificacion = new Planificacion_Asignatura();
                                         $planificacion->id_asignatura = $idAsignatura;
                                         $planificacion->id_horario = $horario->id_horario;

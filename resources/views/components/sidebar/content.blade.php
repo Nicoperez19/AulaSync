@@ -40,6 +40,13 @@
         </x-slot>
     </x-sidebar.link>
 
+      <!-- Horarios Profesores -->
+    <x-sidebar.link title="Horarios_Profesores" href="{{ route('horarios.index') }}" :isActive="request()->routeIs('horarios.index')">
+        <x-slot name="icon">
+            <x-icons.dashboard class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
+        </x-slot>
+    </x-sidebar.link>
+
     @role('Administrador')
         <x-sidebar.dropdown title="Mantenedores" :active="Str::startsWith(request()->route()->uri(), 'users')">
             <x-slot name="icon">
