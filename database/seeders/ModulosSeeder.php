@@ -3,18 +3,20 @@
 namespace Database\Seeders;
 
 use App\Models\Modulo;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-
 
 class ModulosSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $dias = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+        $dias = [
+            'LU' => 'lunes',
+            'MA' => 'martes',
+            'MI' => 'miércoles',
+            'JU' => 'jueves',
+            'VI' => 'viernes',
+            'SA' => 'sábado',
+        ];
 
         $modulosBase = [
             ['hora_inicio' => '08:10', 'hora_termino' => '09:00'],
@@ -34,17 +36,18 @@ class ModulosSeeder extends Seeder
             ['hora_inicio' => '22:10', 'hora_termino' => '23:00'],
         ];
 
-        $id = 1;
-        foreach ($dias as $dia) {
+        foreach ($dias as $codigoDia => $nombreDia) {
             foreach ($modulosBase as $index => $modulo) {
+                $numeroModulo = $index + 1;
+                $idModulo = $codigoDia . '.' . $numeroModulo;
+
                 Modulo::create([
-                    'id_modulo' => $id++,
-                    'dia' => $dia,
-                    'hora_inicio' => $modulo['hora_inicio'],
-                    'hora_termino' => $modulo['hora_termino'],
+                    'id_modulo'     => $idModulo,
+                    'dia'           => $nombreDia,
+                    'hora_inicio'   => $modulo['hora_inicio'],
+                    'hora_termino'  => $modulo['hora_termino'],
                 ]);
             }
         }
     }
-
 }

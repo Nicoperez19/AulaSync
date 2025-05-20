@@ -11,7 +11,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('modulos', function (Blueprint $table) {
-            $table->id('id_modulo'); 
+            $table->string('id_modulo')->primary(); 
             $table->string(column: 'dia');
             $table->time('hora_inicio');
             $table->time('hora_termino');

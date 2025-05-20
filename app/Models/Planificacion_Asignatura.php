@@ -9,7 +9,7 @@ class Planificacion_Asignatura extends Model
 {
     use HasFactory;
 
-    protected $table = 'planificacion__asignaturas'; 
+    protected $table = 'planificacion_asignaturas'; 
 
     protected $primaryKey = 'id'; 
 

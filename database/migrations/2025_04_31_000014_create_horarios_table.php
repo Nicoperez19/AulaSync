@@ -12,11 +12,12 @@ return new class extends Migration {
     {
         Schema::create('horarios', function (Blueprint $table) {
             $table->bigIncrements('id_horario');
-            $table->string('nombre'); 
+            $table->string('nombre');
             $table->string('periodo'); // Ej: "2025-1"
-            $table->unsignedBigInteger('id_carrera')->nullable();
-            $table->foreign('id_carrera')->references('id_carrera')->on('carreras')->onDelete('set null');
-            $table->string('seccion')->nullable();
+
+            $table->unsignedBigInteger('run');
+            $table->foreign('run')->references('run')->on('users')->onDelete('cascade');
+
             $table->timestamps();
         });
 
