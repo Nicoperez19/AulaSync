@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('modulos', function (Blueprint $table) {
             $table->id('id_modulo'); 
-            $table->string('dia');
+            $table->string(column: 'dia');
             $table->time('hora_inicio');
             $table->time('hora_termino');
             $table->timestamps();

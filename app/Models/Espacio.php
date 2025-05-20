@@ -29,4 +29,8 @@ class Espacio extends Model
         return $this->hasMany(Reserva::class, 'id_espacio');
     }
     
+     public function planificaciones()
+    {
+        return $this->hasMany(Planificacion_Asignatura::class, 'id_espacio', 'id_espacio');
+    }
 }

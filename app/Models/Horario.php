@@ -11,7 +11,7 @@ class Horario extends Model
 
     protected $table = 'horarios';
     protected $primaryKey = 'id_horario';
-    public $incrementing = false; 
+    public $incrementing = false;
 
     protected $fillable = [
         'id_horario',
@@ -35,4 +35,9 @@ class Horario extends Model
     {
         return $this->belongsTo(Seccion::class, 'id_seccion', 'id');
     }
+    public function planificaciones()
+    {
+        return $this->hasMany(Planificacion_Asignatura::class, 'id_horario', 'id_horario');
+    }
+
 }

@@ -38,4 +38,9 @@ class Asignatura extends Model
     {
         return $this->hasMany(Seccion::class, 'id_asignatura', 'id_asignatura');
     }
+
+     public function planificaciones()
+    {
+        return $this->hasMany(Planificacion_Asignatura::class, 'id_asignatura', 'id_asignatura');
+    }
 }

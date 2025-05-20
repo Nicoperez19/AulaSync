@@ -19,5 +19,8 @@ class Modulo extends Model
         'hora_termino',
     ];
 
-
+    public function planificaciones()
+    {
+        return $this->hasMany(Planificacion_Asignatura::class, 'id_modulo', 'id_modulo');
+    }
 }
