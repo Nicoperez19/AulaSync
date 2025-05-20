@@ -11,7 +11,7 @@
         <div class="mb-6">
             <h3 class="text-lg font-semibold mb-4">Lista de Profesores</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                @foreach($profesores as $profesor)
+                @foreach ($profesores as $profesor)
                     <div class="profesor-card bg-gray-50 p-4 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer"
                         data-run="{{ $profesor->run }}">
                         <h4 class="font-medium text-gray-900">{{ $profesor->name }}</h4>
@@ -24,14 +24,14 @@
         {{-- Modal --}}
         <div id="horarioModal"
             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-            <div class="bg-white rounded-lg shadow-lg max-w-7xl w-full p-6">
+            <div class="bg-white rounded-lg shadow-lg max-w-7xl w-full p-4 md:p-4">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-semibold" id="modalTitle">Horario del Profesor</h3>
                     <button onclick="cerrarModal()" class="text-red-600 font-bold text-xl">&times;</button>
                 </div>
                 <div class="overflow-y-auto max-h-[70vh]"> <!-- Haciendo el contenido desplazable -->
                     <table class="min-w-full bg-white border border-gray-200">
-                        <thead>
+                        <thead class="sticky top-0 bg-white z-10 shadow">
                             <tr class="bg-gray-100">
                                 <th class="py-3 px-4 border-b text-center font-semibold">Hora</th>
                                 <th class="py-3 px-4 border-b text-center font-semibold">Lunes</th>
@@ -43,7 +43,6 @@
                             </tr>
                         </thead>
                         <tbody id="horarioBody">
-                            <!-- contenido dinámico -->
                         </tbody>
                     </table>
                 </div>
@@ -68,32 +67,26 @@
                     const horarioBody = document.getElementById('horarioBody');
                     horarioBody.innerHTML = '';
 
-                    // Obtener módulos únicos ordenados por hora
-                    const modulosUnicos = [...new Set(data.modulos.map(m => m.id_modulo.split('.')[1]))].sort((a, b) => parseInt(a) - parseInt(b));
+                    const modulosUnicos = [...new Set(data.modulos.map(m => m.id_modulo.split('.')[1]))].sort((a, b) =>
+                        parseInt(a) - parseInt(b));
 
-                    // Días de la semana (incluyendo Sábado)
                     const diasUnicos = ['LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
 
-                    // Crear filas por módulo
                     modulosUnicos.forEach(modulo => {
                         const tr = document.createElement('tr');
                         tr.className = 'hover:bg-gray-50';
 
-                        // Encontrar la hora correspondiente al módulo
                         const moduloInfo = data.modulos.find(m => m.id_modulo.split('.')[1] === modulo);
                         const hora = `${moduloInfo.hora_inicio} - ${moduloInfo.hora_termino}`;
 
-                        // Columna hora
                         const tdHora = document.createElement('td');
                         tdHora.className = 'py-3 px-4 border-b text-center text-sm text-gray-600';
                         tdHora.textContent = hora;
                         tr.appendChild(tdHora);
 
-                        // Columnas por día (LU, MA, MI, JU, VI, SA)
                         diasUnicos.forEach(dia => {
                             const td = document.createElement('td');
-                            td.className = 'py-3 px-4 border-b';
-
+                            td.className = 'py-3 px-4 border-b text-center align-middle';
                             // Filtrar las planificaciones que correspondan al módulo y día específico
                             const planificaciones = data.horario.planificaciones.filter(plan => {
                                 const [planDia, planModulo] = plan.id_modulo.split('.');
@@ -103,10 +96,20 @@
                             // Si existen planificaciones para este módulo y día
                             if (planificaciones.length > 0) {
                                 const clasesHTML = planificaciones.map(plan => `
-                                <div class="bg-blue-100 p-2 rounded-lg h-full flex flex-col justify-between text-center">
-                                    <p class="font-medium text-blue-900 text-sm">${plan.asignatura.nombre_asignatura}</p>
-                                    <p class="text-xs text-blue-700">${plan.espacio.id_espacio} - ${plan.espacio.nombre_espacio}</p>
-                                </div>`).join('');
+<div class="bg-blue-100 p-2 rounded-lg min-h-[90px] w-[120px] mx-auto flex flex-col items-center justify-center text-center break-words">
+    <p class="font-medium text-blue-900 text-sm break-words">
+        ${plan.asignatura.codigo_asignatura}
+    </p>
+    <p class="text-xs text-blue-700 break-words">
+        Sala: ${plan.espacio.id_espacio}
+    </p>
+    <p class="font-medium text-blue-900 text-sm break-words">
+        ${plan.asignatura.nombre_asignatura}
+    </p>
+</div>
+`).join('');
+
+
 
                                 td.innerHTML = clasesHTML;
                             } else {
