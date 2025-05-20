@@ -128,7 +128,8 @@ class DataLoadController extends Controller
 
                     $idAsignatura = $row[0];
                     $codigoAsignatura = $row[1];
-                    $nombreAsignatura = $row[2];
+                    $nombreAsignatura = preg_replace('/^[a-z]{2}:\s*/i', '', $row[2]);
+
                     $numeroSeccion = $row[3];
 
                     $existingAsignatura = Asignatura::where('id_asignatura', $idAsignatura)->first();
@@ -203,16 +204,21 @@ class DataLoadController extends Controller
                         }
 
                         if ($horario && $horario->id_horario && !empty($horarioProfesor)) {
-                            $horarios = explode(' - ', $horarioProfesor);
-                            foreach ($horarios as $horarioStr) {
+                            $horarioProfesorNormalizado = preg_replace('/(?<!-)\s*([a-z]{2}:\s*)/i', ' - $1', $horarioProfesor);
+
+                            // Divide por guiones
+                            $horarios = explode(' - ', $horarioProfesorNormalizado);                            foreach ($horarios as $horarioStr) {
+                                if (preg_match('/^[a-záéíóúñ]{2,}:$/u', trim($horarioStr))) {
+                                    continue;
+                                }
                                 preg_match('/([A-Za-z]+)\.(\d+)\/G:(\d+)\s*\(([^)]+)\)/', $horarioStr, $matches);
                                 
                                 if (count($matches) === 5) {
                                     $dia = $matches[1];
                                     $modulo = $matches[2];
                                     $grupo = $matches[3];
-                                    $espacio = $matches[4];
-
+                                    $grupo = $matches[3];
+                                    $espacio = preg_replace('/^[a-z]{2}:\s*/i', '', $matches[4]);
                                     $existingPlanificacion = Planificacion_Asignatura::where('id_asignatura', $idAsignatura)
                                         ->where('id_horario', $horario->id_horario)
                                         ->where('id_modulo', $dia . '.' . $modulo)
