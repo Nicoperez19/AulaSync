@@ -9,11 +9,10 @@ class Facultad extends Model
 {
     use HasFactory;
     protected $table = 'facultades';
-
     protected $primaryKey = 'id_facultad';
-
+    public $incrementing = false;
+    protected $keyType = 'string';
     protected $fillable = [
-        'id_facultad',
         'nombre_facultad',
         'id_universidad',
         'id_sede',

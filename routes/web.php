@@ -13,6 +13,7 @@ use App\Http\Controllers\UniversidadController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AsignaturaController;
 use App\Http\Controllers\DataLoadController;
+use App\Http\Controllers\PlanoDigitalController;
 
 
 use Illuminate\Support\Facades\Route;
@@ -108,13 +109,13 @@ Route::group(['middleware' => ['permission:mantenedor de pisos']], function () {
 Route::group(['middleware' => ['permission:mantenedor de mapas']], function () {
     Route::get('/mapas', [MapasController::class, 'index'])->name('mapas.index');
     Route::get('/mapas/add', [MapasController::class, 'add'])->name('mapas.add');
-    Route::get('/', [MapasController::class, 'index'])->name('mapas.index');
-    Route::get('/add', [MapasController::class, 'add'])->name('mapas.add');
+    Route::post('/mapas/store', [MapasController::class, 'store'])->name('mapas.store');
     Route::get('/sedes/{universidadId}', [MapasController::class, 'getSedes']);
     Route::get('/facultades-por-sede/{sedeId}', [MapasController::class, 'getFacultadesPorSede']);
     Route::get('/pisos/{facultadId}', [MapasController::class, 'getPisos']);
-    Route::post('/mapas/store', [MapasController::class, 'store'])->name('mapas.store');
 });
+
+
 
 Route::group(['middleware' => ['permission:mantenedor de espacios']], function () {
     Route::get('spaces', [EspacioController::class, 'index'])->name('spaces_index');
