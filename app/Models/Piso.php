@@ -22,4 +22,13 @@ class Piso extends Model
     {
         return $this->belongsTo(Facultad::class, 'id_facultad');
     }
+       public function mapas()
+    {
+        return $this->hasMany(Mapa::class);
+    }
+
+    public function espacios()
+    {
+        return $this->hasMany(Espacio::class);
+    }
 }

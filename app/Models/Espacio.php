@@ -9,9 +9,9 @@ class Espacio extends Model
 {
     use HasFactory;
     protected $primaryKey = 'id_espacio';
-    public $incrementing = false; 
+    public $incrementing = false;
     protected $keyType = 'string';
- 
+
     protected $fillable = [
         'nombre_espacio',
         'piso_id',
@@ -22,14 +22,14 @@ class Espacio extends Model
 
     public function piso()
     {
-        return $this->belongsTo(Piso::class, 'piso_id'); 
+        return $this->belongsTo(Piso::class, 'piso_id');
     }
     public function reservas()
     {
         return $this->hasMany(Reserva::class, 'id_espacio');
     }
-    
-     public function planificaciones()
+
+    public function planificaciones()
     {
         return $this->hasMany(Planificacion_Asignatura::class, 'id_espacio', 'id_espacio');
     }

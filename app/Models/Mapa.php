@@ -10,13 +10,15 @@ class Mapa extends Model
     use HasFactory;
 
     protected $fillable = [
-        'nombre',
-        'ruta_imagen',
-        'id_espacio'
+        'id_mapa',
+        'nombre_mapa',
+        'ruta_mapa',
+        'ruta_canvas',
+        'piso_id'
     ];
 
-    public function espacio()
+    public function piso()
     {
-        return $this->belongsTo(Espacio::class, 'id_espacio', 'id_espacio');
+        return $this->belongsTo(Piso::class, 'piso_id');
     }
 }

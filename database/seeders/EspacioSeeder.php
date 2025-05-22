@@ -23,6 +23,14 @@ class EspacioSeeder extends Seeder
                 'puestos_disponibles' => 80,
             ],
             [
+                'id_espacio' => 'TH-LA8',
+                'nombre_espacio' => 'Taller de Construcción',
+                'piso_id' => 1,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 30,
+            ],
+            [
                 'id_espacio' => 'TH-LA9',
                 'nombre_espacio' => 'Taller de Soldadura',
                 'piso_id' => 1,

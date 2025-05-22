@@ -12,7 +12,7 @@
                     <td class="px-4 py-2">{{ $mapa->nombre_mapa }}</td>
                     <td class="px-4 py-2">
                         <x-button variant="ghost" class="text-blue-500"
-                            x-on:click.prevent="$dispatch('open-modal', 'ver-mapa-{{ $mapa->id_mapa }}')">
+                            wire:click="verMapa('{{ $mapa->id_mapa }}')">
                             Ver
                         </x-button>
                     </td>

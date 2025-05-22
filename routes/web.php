@@ -113,6 +113,7 @@ Route::group(['middleware' => ['permission:mantenedor de mapas']], function () {
     Route::get('/sedes/{universidadId}', [MapasController::class, 'getSedes']);
     Route::get('/facultades-por-sede/{sedeId}', [MapasController::class, 'getFacultadesPorSede']);
     Route::get('/pisos/{facultadId}', [MapasController::class, 'getPisos']);
+    Route::get('/espacios-por-piso/{pisoId}', [MapasController::class, 'getEspaciosPorPiso']);
 });
 
 

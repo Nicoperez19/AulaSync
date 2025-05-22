@@ -26,9 +26,20 @@ class MapasTable extends Component
         $this->mount(); // refrescar la lista
     }
 
-    public function verMapa($ruta)
+    public function verMapa($id)
     {
-        $rutaPublica = asset($ruta);
-        $this->dispatch('mostrar-mapa', ['ruta' => $rutaPublica]);
+        $mapa = Mapa::with('bloques')->findOrFail($id);
+        $bloques = $mapa->bloques->map(function($bloque) {
+            return [
+                'id_espacio' => $bloque->id_espacio,
+                'posicion_x' => $bloque->posicion_x,
+                'posicion_y' => $bloque->posicion_y
+            ];
+        });
+
+        $this->dispatch('mostrar-mapa', [
+            'ruta' => asset($mapa->ruta_mapa),
+            'bloques' => $bloques
+        ]);
     }
 }
