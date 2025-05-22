@@ -9,9 +9,9 @@ class Piso extends Model
 {
     use HasFactory;
     protected $table = 'pisos'; 
-    protected $primaryKey = 'id';  // Cambiamos el nombre del primaryKey
-    public $incrementing = true;  // Esto es por defecto en Laravel cuando usas 'id' autoincremental
-    protected $keyType = 'int';   // El tipo es 'int' porque el campo id es autoincremental
+    protected $primaryKey = 'id';  
+    public $incrementing = true;  
+    protected $keyType = 'int';   
 
     protected $fillable = [
         'numero_piso',

@@ -14,6 +14,9 @@ return new class extends Migration {
             $table->string('id_facultad', 20)->primary();
             $table->string('nombre_facultad', 100);
 
+            $table->string('id_universidad', 20);
+            $table->foreign('id_universidad')->references('id_universidad')->on('universidades')->onDelete('cascade');
+
             $table->string('id_sede', 20);
             $table->foreign('id_sede')->references('id_sede')->on('sedes')->onDelete('cascade');
 

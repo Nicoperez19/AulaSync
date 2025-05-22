@@ -15,16 +15,24 @@ class Facultad extends Model
     protected $fillable = [
         'id_facultad',
         'nombre_facultad',
+        'id_universidad',
         'id_sede',
         'id_campus',
     ];
 
-    public function sede() {
+    public function sede()
+    {
         return $this->belongsTo(Sede::class, 'id_sede');
     }
-    
-    public function campus() {
+
+    public function campus()
+    {
         return $this->belongsTo(Campus::class, 'id_campus');
+    }
+
+    public function universidad()
+    {
+        return $this->belongsTo(Universidad::class, 'id_universidad');
     }
 
     public function areaAcademicas()

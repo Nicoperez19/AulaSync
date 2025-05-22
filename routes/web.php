@@ -105,14 +105,23 @@ Route::group(['middleware' => ['permission:mantenedor de pisos']], function () {
     Route::delete('/facultad/{facultadId}/eliminar-piso', [PisoController::class, 'eliminarPiso'])->name('floors.eliminarPiso');
 });
 
+Route::group(['middleware' => ['permission:mantenedor de mapas']], function () {
+    Route::get('/mapas', [MapasController::class, 'index'])->name('mapas.index');
+    Route::get('/mapas/add', [MapasController::class, 'add'])->name('mapas.add');
+    Route::get('/', [MapasController::class, 'index'])->name('mapas.index');
+    Route::get('/add', [MapasController::class, 'add'])->name('mapas.add');
+    Route::get('/sedes/{universidadId}', [MapasController::class, 'getSedes']);
+    Route::get('/facultades-por-sede/{sedeId}', [MapasController::class, 'getFacultadesPorSede']);
+    Route::get('/pisos/{facultadId}', [MapasController::class, 'getPisos']);
+    Route::post('/mapas/store', [MapasController::class, 'store'])->name('mapas.store');
+});
+
 Route::group(['middleware' => ['permission:mantenedor de espacios']], function () {
     Route::get('spaces', [EspacioController::class, 'index'])->name('spaces_index');
     Route::get('spaces/{id_espacio}/edit', [EspacioController::class, 'edit'])->name('spaces.edit');
     Route::post('/spaces', [EspacioController::class, 'store'])->name(name: 'spaces.store');
     Route::put('spaces/{id_espacio}', [EspacioController::class, 'update'])->name('spaces.update');
     Route::delete('/spaces/{id}', [EspacioController::class, 'destroy'])->name('spaces.delete');
-    Route::get('/facultades/{id}', [EspacioController::class, 'getFacultades']);
-    Route::get('/pisos/{id}', [EspacioController::class, 'getPisos']);
 });
 
 
@@ -133,16 +142,6 @@ Route::group(['middleware' => ['permission:mantenedor de asignaturas']], functio
     Route::put('/{id_asignatura}', [AsignaturaController::class, 'update'])->name('asignaturas.update');
     Route::delete('/{id_asignatura}', [AsignaturaController::class, 'destroy'])->name('asignaturas.destroy');
 
-});
-
-Route::group(['middleware' => ['permission:mantenedor de mapas']], function () {
-    Route::get('/mapas', [MapasController::class, 'index'])->name('mapas.index');
-    Route::get('/mapas/add', [MapasController::class, 'add'])->name('mapas.add');
-    Route::get('/mapas/facultades/{universidad}', [MapasController::class, 'getFacultades']);
-    Route::get('/mapas/pisos/{facultad}', [MapasController::class, 'getPisos']);
-    Route::get('/mapas/espacios/{piso}', [MapasController::class, 'getEspacios']);
-    Route::post('/mapas/store', [MapasController::class, 'store'])->name('mapas.store');
-    Route::get('/mapas/contar-espacios/{pisoId}', [MapasController::class, 'contarEspacios']);
 });
 
 Route::group(['middleware' => ['permission:mantenedor de carga de datos']], function () {

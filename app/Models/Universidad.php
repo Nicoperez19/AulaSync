@@ -23,4 +23,9 @@ class Universidad extends Model
     {
         return $this->hasMany(Sede::class, 'id_universidad', 'id_universidad');
     }
+
+    public function facultades()
+    {
+        return $this->hasMany(Facultad::class, 'id_universidad', 'id_universidad');
+    }
 }
