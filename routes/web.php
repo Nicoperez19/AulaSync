@@ -106,7 +106,7 @@ Route::group(['middleware' => ['permission:mantenedor de pisos']], function () {
     Route::delete('/facultad/{facultadId}/eliminar-piso', [PisoController::class, 'eliminarPiso'])->name('floors.eliminarPiso');
 });
 
-Route::group(['middleware' => ['permission:mantenedor de mapas']], function () {
+Route::group(['middleware' => ['auth', 'permission:mantenedor de mapas']], function () {
     Route::get('/mapas', [MapasController::class, 'index'])->name('mapas.index');
     Route::get('/mapas/add', [MapasController::class, 'add'])->name('mapas.add');
     Route::post('/mapas/store', [MapasController::class, 'store'])->name('mapas.store');
@@ -114,6 +114,7 @@ Route::group(['middleware' => ['permission:mantenedor de mapas']], function () {
     Route::get('/facultades-por-sede/{sedeId}', [MapasController::class, 'getFacultadesPorSede']);
     Route::get('/pisos/{facultadId}', [MapasController::class, 'getPisos']);
     Route::get('/espacios-por-piso/{pisoId}', [MapasController::class, 'getEspaciosPorPiso']);
+    Route::get('/mapa/{mapa}/bloques', [App\Http\Controllers\MapaController::class, 'getBloques'])->name('mapa.bloques');
 });
 
 
@@ -169,5 +170,12 @@ Route::get('/buttons/icon', function () {
 Route::get('/buttons/text-icon', function () {
     return view('buttons-showcase.text-icon');
 })->middleware(['auth'])->name('buttons.text-icon');
+
+Route::group(['middleware' => ['auth']], function () {
+    Route::get('/plano-digital', [PlanoDigitalController::class, 'index'])->name('plano.index');
+    Route::get('/plano-digital/{id}', [PlanoDigitalController::class, 'show'])->name('plano.show');
+    Route::get('/plano/{id}/bloques', [PlanoDigitalController::class, 'bloques'])->name('plano.bloques');
+
+});
 
 require __DIR__ . '/auth.php';

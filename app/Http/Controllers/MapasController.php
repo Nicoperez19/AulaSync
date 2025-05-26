@@ -15,6 +15,11 @@ use Illuminate\Support\Facades\Log;
 
 class MapasController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+    }
+
     public function index()
     {
         $mapas = Mapa::with(['piso.espacios'])->latest()->get();
@@ -66,9 +71,9 @@ class MapasController extends Controller
             $fileName = "{$nombreMapaSlug}_" . date('Y-m-d_His') . "." . $extension;
             $path = $file->storeAs('mapas_subidos', $fileName, 'public');
 
-            // Crear el mapa
+            // Crear el mapa usando el nombre completo como id_mapa
             $mapa = Mapa::create([
-                'id_mapa' => Str::uuid(),
+                'id_mapa' => $request->nombre_mapa,
                 'nombre_mapa' => $request->nombre_mapa,
                 'ruta_mapa' => $path,
                 'ruta_canvas' => $path, // Por ahora usamos la misma imagen para el canvas

@@ -31,15 +31,16 @@ class Asignatura extends Model
 
     public function profesor()
     {
-        return $this->belongsTo(User::class, 'run');  
+        return $this->belongsTo(User::class, 'run');
     }
-    
+
+
     public function secciones()
     {
         return $this->hasMany(Seccion::class, 'id_asignatura', 'id_asignatura');
     }
 
-     public function planificaciones()
+    public function planificaciones()
     {
         return $this->hasMany(Planificacion_Asignatura::class, 'id_asignatura', 'id_asignatura');
     }

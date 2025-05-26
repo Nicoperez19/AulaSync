@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('bloques', function (Blueprint $table) {
-            $table->string('id_bloque',100)->primary();
+            $table->string('id_bloque',200)->primary();
             $table->string('id_espacio');
             $table->foreign('id_espacio')->references('id_espacio')->on('espacios')->onDelete('cascade');
             $table->integer('posicion_x');

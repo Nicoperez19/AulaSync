@@ -7,7 +7,7 @@
     </x-sidebar.link>
 
     <!-- Monitoreo de Espacios -->
-    <x-sidebar.link title="Monitoreo de Espacios" href="" :isActive="request()->routeIs('')">
+    <x-sidebar.link title="Monitoreo de Espacios" href="{{ route('plano.index') }}" :isActive="request()->routeIs('plano.*')">
         <x-slot name="icon">
             <x-icons.location class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         </x-slot>
