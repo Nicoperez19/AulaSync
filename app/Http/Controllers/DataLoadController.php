@@ -105,11 +105,12 @@ class DataLoadController extends Controller
 
                     $run = $row[11];
                     $name = $row[12];
-
+                    $email = $row[13];
                     $existingUser = User::where('run', $run)->first();
                     if ($existingUser) {
                         $existingUser->update([
                             'name' => $name,
+                            'email' => $email,
                             'id_carrera' => $idCarrera
                         ]);
                         Log::info('Usuario actualizado', ['run' => $run]);
@@ -118,6 +119,7 @@ class DataLoadController extends Controller
                             'run' => $run,
                             'password' => Hash::make($run),
                             'name' => $name,
+                            'email' => $email,
                             'tipo_profesor' => 'Profesor',
                             'id_carrera' => $idCarrera
                         ]);

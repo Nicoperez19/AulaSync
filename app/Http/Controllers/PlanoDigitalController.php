@@ -15,29 +15,42 @@ class PlanoDigitalController extends Controller
 {
     public function index()
     {
-        $mapas = Mapa::with(['piso.facultad.sede.universidad'])->get();
-        return view('layouts.plano_digital.index', compact('mapas'));
+        $sedes = \App\Models\Sede::with(['universidad', 'facultades.pisos.mapas'])->get();
+        return view('layouts.plano_digital.index', compact('sedes'));
     }
 
     public function show($id)
     {
-        $mapa = $this->obtenerMapa($id);
-        $horaActual = Carbon::now();
-        $estadoActual = $this->obtenerEstadoActual($horaActual);
-
+        $mapa = Mapa::with(['piso.facultad.sede'])->findOrFail($id);
+        $estadoActual = $this->obtenerEstadoActual(Carbon::now());
         $bloques = $this->prepararBloques($mapa, $estadoActual);
+        
+        // Obtener todos los pisos de la misma sede
+        $pisos = Mapa::with(['piso'])
+            ->whereHas('piso.facultad.sede', function($query) use ($mapa) {
+                $query->where('id_sede', $mapa->piso->facultad->sede->id_sede);
+            })
+            ->join('pisos', 'mapas.piso_id', '=', 'pisos.id')
+            ->orderBy('pisos.numero_piso')
+            ->select('mapas.*')
+            ->get();
 
-        return view('layouts.plano_digital.show', compact('mapa', 'bloques'));
+        return view('layouts.plano_digital.show', compact('mapa', 'bloques', 'pisos'));
     }
 
     public function bloques($id)
     {
-        $mapa = $this->obtenerMapa($id);
-        $estadoActual = $this->obtenerEstadoActual(Carbon::now());
-        $bloques = $this->prepararBloques($mapa, $estadoActual);
-
-        return response()->json($bloques);
+        try {
+            $mapa = $this->obtenerMapa($id);
+            $estadoActual = $this->obtenerEstadoActual(Carbon::now());
+            $bloques = $this->prepararBloques($mapa, $estadoActual);
+            return response()->json($bloques);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener bloques: ' . $e->getMessage());
+            return response()->json(['error' => 'Error al obtener los bloques'], 500);
+        }
     }
+
     private function obtenerMapa($id)
     {
         return Mapa::with(['bloques.espacio', 'piso.facultad.sede.universidad'])
@@ -171,7 +184,6 @@ class PlanoDigitalController extends Controller
             ->get();
     }
 
-
     private function determinarEstado(bool $estaOcupado, bool $estaReservado, bool $tieneClaseProxima): string
     {
         if ($estaOcupado)
@@ -184,19 +196,16 @@ class PlanoDigitalController extends Controller
     private function prepararDetallesBloque($espacio, $planificacion, $reserva, $planificacionProxima): array
     {
         $detalles = [
-            'tipo_espacio' => $espacio->tipo_espacio,
-            'puestos_disponibles' => $espacio->puestos_disponibles,
+            'tipo_espacio' => $espacio->tipo_espacio ?? 'No especificado',
+            'puestos_disponibles' => $espacio->puestos_disponibles ?? 0,
             'planificacion' => null,
             'reserva' => null,
             'planificacion_proxima' => null
         ];
-        \Log::info('DEBUG Profesor:', [
-            'asignatura_id' => $planificacion?->asignatura?->id_asignatura,
-            'profesor' => $planificacion?->asignatura?->profesor,
-        ]);
-        if ($planificacion) {
+
+        if ($planificacion && $planificacion->asignatura) {
             $detalles['planificacion'] = [
-                'asignatura' => $planificacion->asignatura->nombre_asignatura,
+                'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'No especificada',
                 'profesor' => ucwords($planificacion->asignatura->profesor->name ?? 'No asignado'),
                 'modulos' => $planificacion->asignatura->planificaciones()
                     ->where('id_espacio', $espacio->id_espacio)
@@ -204,31 +213,30 @@ class PlanoDigitalController extends Controller
                     ->get()
                     ->map(function ($plan) {
                         return [
-                            'dia' => $plan->modulo->dia,
-                            'hora_inicio' => $plan->modulo->hora_inicio,
-                            'hora_termino' => $plan->modulo->hora_termino
+                            'dia' => $plan->modulo->dia ?? 'No especificado',
+                            'hora_inicio' => $plan->modulo->hora_inicio ?? '00:00:00',
+                            'hora_termino' => $plan->modulo->hora_termino ?? '00:00:00'
                         ];
                     })->toArray()
             ];
         }
 
-        if ($planificacionProxima) {
+        if ($planificacionProxima && $planificacionProxima->asignatura) {
             $detalles['planificacion_proxima'] = [
-                'asignatura' => $planificacionProxima->asignatura->nombre_asignatura,
-                'profesor' => $planificacionProxima->asignatura->profesor->nombre ?? 'No asignado',
-                'hora_inicio' => $planificacionProxima->modulo->hora_inicio,
-                'hora_termino' => $planificacionProxima->modulo->hora_termino
+                'asignatura' => $planificacionProxima->asignatura->nombre_asignatura ?? 'No especificada',
+                'profesor' => ucwords($planificacionProxima->asignatura->profesor->name ?? 'No asignado'),
+                'hora_inicio' => $planificacionProxima->modulo->hora_inicio ?? '00:00:00',
+                'hora_termino' => $planificacionProxima->modulo->hora_termino ?? '00:00:00'
             ];
         }
 
         if ($reserva) {
             $detalles['reserva'] = [
-                'fecha_reserva' => $reserva->fecha_reserva,
-                'hora' => $reserva->hora
+                'fecha_reserva' => $reserva->fecha_reserva ?? 'No especificada',
+                'hora' => $reserva->hora ?? '00:00:00'
             ];
         }
 
         return $detalles;
     }
-
 }

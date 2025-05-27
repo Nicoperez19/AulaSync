@@ -21,29 +21,61 @@
         </div>
     </x-slot>
 
-    <div class="p-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
-        <div class="flex justify-end mb-4">
-            <button onclick="actualizarEstados(true)"
-                class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                <span id="boton-texto">Actualizar Estados</span>
-                <span id="boton-loading" class="hidden">
-                    <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
-                        viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                            stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor"
-                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                        </path>
-                    </svg>
-                </span>
-            </button>
+    <div class="p-6 space-y-6">
+        <!-- Card para la navegación de pisos -->
+        <div class="p-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
+            <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Navegación de Pisos</h3>
+            <!-- Pills navigation -->
+            <ul class="flex flex-col flex-wrap mb-5 list-none ps-0 md:flex-row" id="pills-tab" role="tablist">
+                @foreach($pisos as $piso)
+                    <li role="presentation" class="mb-2">
+                        <a href="{{ route('plano.show', $piso->id_mapa) }}" 
+                           class="block px-7 py-3 text-xs font-medium uppercase leading-tight rounded-lg transition-all duration-700 ease-in-out
+                                  {{ $piso->id_mapa === $mapa->id_mapa 
+                                     ? 'bg-light-cloud-blue text-white shadow-md' 
+                                     : 'bg-white text-gray-700 hover:bg-light-cloud-blue hover:text-white dark:bg-gray-700 dark:text-white/50 dark:hover:bg-light-cloud-blue dark:hover:text-white' }} 
+                                  md:me-4"
+                           role="tab"
+                           aria-selected="{{ $piso->id_mapa === $mapa->id_mapa ? 'true' : 'false' }}">
+                            Piso {{ $piso->piso->numero_piso }}
+                        </a>
+                    </li>
+                @endforeach
+            </ul>
         </div>
-        <div class="relative" style="padding-top: 75%;">
-            <!-- Canvas para la imagen base -->
-            <canvas id="mapCanvas" class="absolute top-0 left-0 w-full h-full bg-white dark:bg-gray-800"></canvas>
 
-            <!-- Canvas para los indicadores -->
-            <canvas id="indicatorsCanvas" class="absolute top-0 left-0 w-full h-full pointer-events-auto"></canvas>
+        <!-- Card para el canvas y controles -->
+        <div class="p-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Plano del Piso {{ $mapa->piso->numero_piso }}</h3>
+                <button onclick="actualizarEstados(true)"
+                    class="px-4 py-2 text-sm font-medium text-white bg-light-cloud-blue rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue transition-all duration-300">
+                    <span id="boton-texto">Actualizar Estados</span>
+                    <span id="boton-loading" class="hidden">
+                        <svg class="w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none"
+                            viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
+                    </span>
+                </button>
+            </div>
+
+            <!-- Pills content -->
+            <div class="mb-6">
+                <div class="transition-opacity duration-150 ease-linear opacity-100">
+                    <div class="relative" style="padding-top: 75%;">
+                        <!-- Canvas para la imagen base -->
+                        <canvas id="mapCanvas" class="absolute top-0 left-0 w-full h-full bg-white dark:bg-gray-800"></canvas>
+
+                        <!-- Canvas para los indicadores -->
+                        <canvas id="indicatorsCanvas" class="absolute top-0 left-0 w-full h-full pointer-events-auto"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -62,7 +94,7 @@
                         style="left: {{ $bloque['x'] }}px; top: {{ $bloque['y'] }}px;"
                         data-bloque='@json($bloque)' 
                         @if(isset($bloque['detalles'])) onclick="mostrarDetallesBloque(this)" @endif>
-                        <div class="w-16 h-16 rounded-lg flex items-center justify-center text-white font-bold"
+                        <div class="flex items-center justify-center w-16 h-16 font-bold text-white rounded-lg"
                             style="background-color: {{ $bloque['estado'] }}">
                             {{ $bloque['nombre'] }}
                         </div>
@@ -74,7 +106,7 @@
 
     <x-modal name="detalles-bloque" :show="false" maxWidth="2xl">
         <x-slot name="header">
-            <h1 id="modal-titulo" class="text-lg font-semibold text-white dark:text-white font-sans"></h1>
+            <h1 id="modal-titulo" class="font-sans text-lg font-semibold text-white dark:text-white"></h1>
         </x-slot>
         <div class="p-4">
             <div class="space-y-4">
@@ -88,21 +120,21 @@
                 </div>
 
                 <div id="modal-planificacion" class="hidden">
-                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Clase Actual:</p>
+                    <p class="mb-2 text-sm font-medium text-gray-900 dark:text-gray-100">Clase Actual:</p>
                     <p id="modal-asignatura" class="text-sm text-gray-900 dark:text-gray-100"></p>
                     <p id="modal-profesor" class="text-sm text-gray-900 dark:text-gray-100"></p>
                     <ul id="modal-modulos" class="mt-2 space-y-1"></ul>
                 </div>
 
                 <div id="modal-clase-proxima" class="hidden">
-                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Próxima Clase:</p>
+                    <p class="mb-2 text-sm font-medium text-gray-900 dark:text-gray-100">Próxima Clase:</p>
                     <p id="modal-asignatura-proxima" class="text-sm text-gray-900 dark:text-gray-100"></p>
                     <p id="modal-profesor-proximo" class="text-sm text-gray-900 dark:text-gray-100"></p>
                     <p id="modal-horario-proximo" class="text-sm text-gray-900 dark:text-gray-100"></p>
                 </div>
 
                 <div id="modal-reserva" class="hidden">
-                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">Reserva:</p>
+                    <p class="mb-2 text-sm font-medium text-gray-900 dark:text-gray-100">Reserva:</p>
                     <p id="modal-fecha-reserva" class="text-sm text-gray-900 dark:text-gray-100"></p>
                     <p id="modal-hora-reserva" class="text-sm text-gray-900 dark:text-gray-100"></p>
                 </div>

@@ -46,7 +46,7 @@ export default {
         'dark-eval-3': '#2C3142',
       },
       fontFamily: {
-        sans: ['var(--default-font-family)', 'Inter', 'sans-serif'],
+        sans: ['Roboto', 'sans-serif'],
       },
       spacing: {
         128: '32rem',

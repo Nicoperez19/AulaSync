@@ -14,11 +14,7 @@
     <!-- Fuentes -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@200..900&display=swap" as="style"
-        onload="this.onload=null;this.rel='stylesheet'">
-    <noscript>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200..900&display=swap" rel="stylesheet">
-    </noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
 
     <!-- Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -43,7 +39,7 @@
             <x-sidebar.sidebar />
 
             <!-- Contenido principal -->
-            <div class="flex flex-col min-h-screen pt-16 bg-cloud-light dark:bg-dark-eval-2 transition-[margin] duration-150"
+            <div class="flex flex-col min-h-screen pt-16 bg-cloud-light dark:bg-dark-eval-2 transition-[margin] duration-300"
                 :class="{
                     'ml-64': isSidebarOpen || isSidebarHovered,
                     'ml-16': !(isSidebarOpen || isSidebarHovered),
@@ -81,8 +77,9 @@
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('mainState', () => ({
-                isDarkMode: localStorage.getItem('dark') === 'true' || 
-                            (!localStorage.getItem('dark') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+                isDarkMode: localStorage.getItem('dark') === 'true' ||
+                    (!localStorage.getItem('dark') && window.matchMedia('(prefers-color-scheme: dark)')
+                        .matches),
                 isSidebarOpen: false,
                 isSidebarHovered: false,
                 scrollingDown: false,

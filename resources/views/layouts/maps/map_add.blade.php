@@ -43,14 +43,14 @@
         </div>
 
         <!-- Contenedor principal con diseño de dos columnas -->
-        <div class="flex flex-col md:flex-row gap-6">
+        <div class="flex flex-col gap-6 md:flex-row">
             <!-- Columna izquierda - Lista de espacios -->
             <div class="w-full md:w-1/4">
-                <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow h-full">
-                    <h3 class="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Espacios Disponibles</h3>
+                <div class="h-full p-4 bg-white rounded-lg shadow dark:bg-gray-800">
+                    <h3 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Espacios Disponibles</h3>
                     <div id="espaciosList" class="space-y-2 max-h-[500px] overflow-y-auto">
                         <!-- Los espacios se cargarán aquí -->
-                        <div class="text-center py-10 text-gray-500 dark:text-gray-400" id="emptySpacesMessage">
+                        <div class="py-10 text-center text-gray-500 dark:text-gray-400" id="emptySpacesMessage">
                             Seleccione un piso para cargar los espacios
                         </div>
                     </div>
@@ -60,7 +60,7 @@
             <!-- Columna derecha - Canvas y controles -->
             <div class="w-full md:w-3/4">
                 <!-- Nombre del mapa (solo visible cuando hay piso seleccionado) -->
-                <div id="nombreMapaContainer" class="mb-4 hidden">
+                <div id="nombreMapaContainer" class="hidden mb-4">
                     <x-form.label for="nombre_mapa" :value="__('Nombre del Mapa')" />
                     <input type="text" name="nombre_mapa" id="nombre_mapa" class="block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" readonly>
                 </div>
@@ -81,9 +81,9 @@
                 </div>
 
                 <!-- Botones de acción -->
-                <div class="mt-4 flex justify-end gap-4">
+                <div class="flex justify-end gap-4 mt-4">
                     <button id="clearIndicatorsBtn" type="button" class="px-4 py-2 text-white bg-red-600 rounded hover:bg-red-700">Limpiar Todo</button>
-                    <button id="saveMapBtn" type="button" class="px-4 py-2 text-white bg-green-600 rounded hover:bg-green-700 hidden">Guardar Mapa</button>
+                    <button id="saveMapBtn" type="button" class="hidden px-4 py-2 text-white bg-green-600 rounded hover:bg-green-700">Guardar Mapa</button>
                 </div>
             </div>
         </div>
@@ -203,7 +203,7 @@
                 elements.indicatorsCtx.strokeRect(x - size/2, y - size/2, size, size);
                 
                 // Dibujar texto
-                elements.indicatorsCtx.font = `bold ${size/2}px Arial`;
+                elements.indicatorsCtx.font = `bold ${size/3}px Arial`;
                 elements.indicatorsCtx.fillStyle = config.indicatorTextColor;
                 elements.indicatorsCtx.textAlign = 'center';
                 elements.indicatorsCtx.textBaseline = 'middle';
@@ -399,7 +399,7 @@
                             espacioItem.className = 'p-2 bg-gray-50 dark:bg-gray-700 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center gap-3';
                             espacioItem.setAttribute('data-espacio-id', espacio.id_espacio);
                             espacioItem.innerHTML = `
-                                <div class="w-12 h-12 bg-blue-600 p-4 flex-shrink-0 flex items-center justify-center text-white font-bold">${espacio.id_espacio}</div>
+                                <div class="flex items-center justify-center flex-shrink-0 w-12 h-12 p-4 font-bold text-white bg-blue-600">${espacio.id_espacio}</div>
                                 <div class="text-sm font-medium truncate">${espacio.nombre_espacio}</div>
                             `;
 
