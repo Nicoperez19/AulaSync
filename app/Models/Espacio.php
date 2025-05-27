@@ -33,4 +33,14 @@ class Espacio extends Model
     {
         return $this->hasMany(Planificacion_Asignatura::class, 'id_espacio', 'id_espacio');
     }
+
+    public function llave()
+    {
+        return $this->hasOne(Llave::class, 'id_espacio', 'id_espacio');
+    }
+
+    public function usos()
+    {
+        return $this->hasMany(UsoEspacio::class, 'id_espacio', 'id_espacio');
+    }
 }

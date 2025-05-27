@@ -2,105 +2,90 @@
     <x-slot name="header">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <h2 class="text-xl font-semibold leading-tight">
-                {{ $mapa->nombre_mapa }}
+                {{ "{$mapa->piso->facultad->nombre_facultad}, {$mapa->piso->facultad->sede->nombre_sede}" }}
             </h2>
-            <div class="flex items-center gap-4">
-                <div class="flex items-center gap-2">
-                    <div class="w-4 h-4 bg-green-500 rounded"></div>
-                    <span class="text-sm">Disponible</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-4 h-4 bg-red-500 rounded"></div>
-                    <span class="text-sm">En uso</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-4 h-4 bg-blue-500 rounded"></div>
-                    <span class="text-sm">Próximo a Usar</span>
-                </div>
-            </div>
         </div>
     </x-slot>
 
     <div class="p-6 space-y-6">
-        <!-- Card para la navegación de pisos -->
-        <div class="p-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
-            <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Navegación de Pisos</h3>
-            <!-- Pills navigation -->
-            <ul class="flex flex-col flex-wrap mb-5 list-none ps-0 md:flex-row" id="pills-tab" role="tablist">
-                @foreach($pisos as $piso)
-                    <li role="presentation" class="mb-2">
-                        <a href="{{ route('plano.show', $piso->id_mapa) }}" 
-                           class="block px-7 py-3 text-xs font-medium uppercase leading-tight rounded-lg transition-all duration-700 ease-in-out
-                                  {{ $piso->id_mapa === $mapa->id_mapa 
-                                     ? 'bg-light-cloud-blue text-white shadow-md' 
-                                     : 'bg-white text-gray-700 hover:bg-light-cloud-blue hover:text-white dark:bg-gray-700 dark:text-white/50 dark:hover:bg-light-cloud-blue dark:hover:text-white' }} 
-                                  md:me-4"
-                           role="tab"
-                           aria-selected="{{ $piso->id_mapa === $mapa->id_mapa ? 'true' : 'false' }}">
-                            Piso {{ $piso->piso->numero_piso }}
-                        </a>
-                    </li>
-                @endforeach
-            </ul>
-        </div>
 
-        <!-- Card para el canvas y controles -->
-        <div class="p-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Plano del Piso {{ $mapa->piso->numero_piso }}</h3>
-                <button onclick="actualizarEstados(true)"
-                    class="px-4 py-2 text-sm font-medium text-white bg-light-cloud-blue rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue transition-all duration-300">
-                    <span id="boton-texto">Actualizar Estados</span>
-                    <span id="boton-loading" class="hidden">
-                        <svg class="w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none"
-                            viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
-                                stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                            </path>
-                        </svg>
-                    </span>
-                </button>
-            </div>
+        <!-- Card: Navegación de Pisos y Plano -->
+        <div class="w-full">
+            <div class="bg-white rounded-t-xl shadow-md">
+                <ul class="flex border-b border-gray-300 dark:border-gray-700" id="pills-tab" role="tablist">
+                    @foreach ($pisos as $piso)
+                        <li role="presentation">
+                            <a href="{{ route('plano.show', $piso->id_mapa) }}"
+                                class="px-10 py-4 text-lg font-semibold transition-all duration-300 rounded-t-xl border border-b-0
+                                {{ $piso->id_mapa === $mapa->id_mapa
+                                    ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
+                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}"
+                                role="tab"
+                                aria-selected="{{ $piso->id_mapa === $mapa->id_mapa ? 'true' : 'false' }}">
+                                Piso {{ $piso->piso->numero_piso }}
+                            </a>
+                        </li>
+                    @endforeach
+                </ul>
+                <!-- Card para el canvas y controles -->
+                <div class="p-6 bg-white rounded-b-xl shadow-md dark:bg-gray-800">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Plano del Piso
+                            {{ $mapa->piso->numero_piso }}</h3>
+                        <button onclick="actualizarEstados(true)"
+                            class="px-4 py-2 text-sm font-medium text-white bg-light-cloud-blue rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue transition-all duration-300">
+                            <span id="boton-texto">Actualizar Estados</span>
+                            <span id="boton-loading" class="hidden">
+                                <svg class="w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg"
+                                    fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10"
+                                        stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                    </path>
+                                </svg>
+                            </span>
+                        </button>
+                    </div>
 
-            <!-- Pills content -->
-            <div class="mb-6">
-                <div class="transition-opacity duration-150 ease-linear opacity-100">
-                    <div class="relative" style="padding-top: 75%;">
-                        <!-- Canvas para la imagen base -->
-                        <canvas id="mapCanvas" class="absolute top-0 left-0 w-full h-full bg-white dark:bg-gray-800"></canvas>
+                    <!-- Pills content -->
+                    <div class="mb-6">
+                        <div class="transition-opacity duration-150 ease-linear opacity-100">
+                            <div class="relative" style="padding-top: 75%;">
+                                <!-- Canvas para la imagen base -->
+                                <canvas id="mapCanvas"
+                                    class="absolute top-0 left-0 w-full h-full bg-white dark:bg-gray-800"></canvas>
 
-                        <!-- Canvas para los indicadores -->
-                        <canvas id="indicatorsCanvas" class="absolute top-0 left-0 w-full h-full pointer-events-auto"></canvas>
+                                <!-- Canvas para los indicadores -->
+                                <canvas id="indicatorsCanvas"
+                                    class="absolute top-0 left-0 w-full h-full pointer-events-auto"></canvas>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <div class="relative">
-        <div id="mapa-container" class="relative">
-            @foreach ($bloques as $bloque)
-                @if(isset($bloque['id']) && 
-                    $bloque['id'] !== '' && 
-                    isset($bloque['detalles']) && 
-                    isset($bloque['detalles']['tipo_espacio']) && 
-                    $bloque['detalles']['tipo_espacio'] !== '' &&
-                    !($bloque['detalles']['planificacion'] === null && 
-                      $bloque['detalles']['reserva'] === null && 
-                      $bloque['detalles']['planificacion_proxima'] === null))
-                    <div class="bloque absolute {{ isset($bloque['detalles']) ? 'cursor-pointer' : '' }}"
-                        style="left: {{ $bloque['x'] }}px; top: {{ $bloque['y'] }}px;"
-                        data-bloque='@json($bloque)' 
-                        @if(isset($bloque['detalles'])) onclick="mostrarDetallesBloque(this)" @endif>
-                        <div class="flex items-center justify-center w-16 h-16 font-bold text-white rounded-lg"
-                            style="background-color: {{ $bloque['estado'] }}">
-                            {{ $bloque['nombre'] }}
-                        </div>
+            <!-- Leyenda abajo como pequeño card -->
+            <div class="mt-6 p-4 bg-white rounded-lg shadow-md dark:bg-gray-800 w-full max-w-md mx-auto">
+                <h3 class="text-base font-semibold text-center mb-2">Leyenda</h3>
+                <div class="flex flex-col gap-2 text-sm items-start">
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 rounded-sm bg-red-500"></div>
+                        <span>Espacio ocupado</span>
                     </div>
-                @endif
-            @endforeach
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 rounded-sm bg-blue-500"></div>
+                        <span>Próximo a utilizar</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 rounded-sm bg-green-500"></div>
+                        <span>Disponible</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-4 h-4 rounded-sm" style="background-color: #8B5E3C;"></div>
+                        <span>Disponible (uso previsto)</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -120,7 +105,6 @@
                 </div>
 
                 <div id="modal-planificacion" class="hidden">
-                    <p class="mb-2 text-sm font-medium text-gray-900 dark:text-gray-100">Clase Actual:</p>
                     <p id="modal-asignatura" class="text-sm text-gray-900 dark:text-gray-100"></p>
                     <p id="modal-profesor" class="text-sm text-gray-900 dark:text-gray-100"></p>
                     <ul id="modal-modulos" class="mt-2 space-y-1"></ul>
@@ -192,7 +176,7 @@
             // Función para actualizar estados
             window.actualizarEstados = function(esManual = false) {
                 console.log('Iniciando actualización de estados...');
-                
+
                 // Mostrar indicador de carga solo si es una actualización manual
                 if (esManual) {
                     const botonTexto = document.getElementById('boton-texto');
@@ -221,11 +205,12 @@
                             // Actualizar los estados de los bloques
                             state.indicators = bloquesData;
                             state.originalCoordinates = bloquesData;
-                            
+
                             // Forzar el redibujado de los indicadores
-                            elements.indicatorsCtx.clearRect(0, 0, elements.indicatorsCanvas.width, elements.indicatorsCanvas.height);
+                            elements.indicatorsCtx.clearRect(0, 0, elements.indicatorsCanvas.width, elements
+                                .indicatorsCanvas.height);
                             drawIndicators();
-                            
+
                             console.log('Estados actualizados y redibujados');
                             mostrarNotificacion('Estados actualizados correctamente', 'success');
                         } else {
@@ -444,6 +429,11 @@
 
         // Modificar la función mostrarDetallesBloque para usar el sistema de eventos de Alpine.js
         window.mostrarDetallesBloque = function(bloque) {
+            // Si el bloque es un elemento HTML, obtener los datos del atributo data-bloque
+            if (typeof bloque === 'object' && bloque.dataset) {
+                bloque = JSON.parse(bloque.dataset.bloque);
+            }
+
             const detalles = bloque.detalles;
 
             // Actualizar información básica

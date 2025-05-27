@@ -7,6 +7,7 @@ use App\Models\Bloque;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Modulo;
 use App\Models\Reserva;
+use App\Models\Sede;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +16,7 @@ class PlanoDigitalController extends Controller
 {
     public function index()
     {
-        $sedes = \App\Models\Sede::with(['universidad', 'facultades.pisos.mapas'])->get();
+        $sedes = Sede::with(['universidad', 'facultades.pisos.mapas'])->get();
         return view('layouts.plano_digital.index', compact('sedes'));
     }
 

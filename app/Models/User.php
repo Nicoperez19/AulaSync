@@ -83,5 +83,10 @@ class User extends Authenticatable
         return $this->hasMany(DataLoad::class, 'user_run', 'run');
     }
 
+    public function usosEspacios()
+    {
+        return $this->hasMany(UsoEspacio::class, 'run', 'run');
+    }
+
 
 }
