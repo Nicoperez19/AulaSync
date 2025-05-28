@@ -14,7 +14,6 @@ class Llave extends Model
     protected $fillable = [
         'codigo_qr',
         'id_espacio',
-        'estado',
     ];
     public function espacio()
     {

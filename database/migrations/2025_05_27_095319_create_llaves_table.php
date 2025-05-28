@@ -15,7 +15,6 @@ return new class extends Migration {
             $table->string('codigo_qr')->unique();        
             $table->string('id_espacio');                 
             $table->foreign('id_espacio')->references('id_espacio')->on('espacios')->onDelete('cascade');
-            $table->enum('estado', ['Disponible', 'En uso'])->default('Disponible');
             $table->timestamps();
         });
     }

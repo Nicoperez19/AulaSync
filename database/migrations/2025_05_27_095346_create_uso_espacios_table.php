@@ -19,10 +19,11 @@ return new class extends Migration {
 
             $table->string('id_espacio');
             $table->foreign('id_espacio')->references('id_espacio')->on('espacios')->onDelete('cascade');
-            
-            $table->timestamp('inicio_uso')->default(DB::raw('CURRENT_TIMESTAMP'));
-            $table->timestamp('fin_uso')->nullable();
-            $table->enum('estado', ['Activa', 'Finalizada'])->default('Activa');
+
+            $table->timestamp('entregado_en')->nullable();
+            $table->timestamp('devuelto_en')->nullable();
+
+            $table->text('observaciones')->nullable();
             $table->timestamps();
         });
     }

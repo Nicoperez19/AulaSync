@@ -14,7 +14,7 @@
     </x-sidebar.link>
 
     <!-- Horarios -->
-    <x-sidebar.link title="Horarios por Espacios" href="" :isActive="request()->routeIs('')">
+    <x-sidebar.link title="Horarios por Espacios" href="{{ route('horarios_espacios.index') }}" :isActive="request()->routeIs('')">
         <x-slot name="icon">
             <x-icons.clock class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         </x-slot>
@@ -41,7 +41,7 @@
     </x-sidebar.link>
 
     <!-- Horarios Profesores -->
-    <x-sidebar.link title="Horarios_Profesores" href="{{ route('horarios.index') }}" :isActive="request()->routeIs('horarios.index')">
+    <x-sidebar.link title="Horarios Profesores" href="{{ route('horarios.index') }}" :isActive="request()->routeIs('horarios.index')">
         <x-slot name="icon">
             <x-icons.dashboard class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         </x-slot>

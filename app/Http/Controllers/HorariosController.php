@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Horario;
 use App\Models\User;
 use App\Models\Planificacion_Asignatura;
+use App\Models\Sede;
 use App\Models\Asignatura;
 use App\Models\Modulo;
 use Illuminate\Http\Request;
@@ -20,9 +21,9 @@ class HorariosController extends Controller
         $query = User::role('Profesor');
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', '%' . $search . '%')
-                  ->orWhere('run', 'like', '%' . $search . '%');
+                    ->orWhere('run', 'like', '%' . $search . '%');
             });
         }
         $profesores = $query->orderBy('name')->paginate(27);
@@ -31,6 +32,12 @@ class HorariosController extends Controller
         return view('layouts.schedules.schedules_index', compact('profesores', 'horarios'));
     }
 
+    public function mostrarHorarios(Request $request)
+    {
+        $sedes = Sede::with(['universidad', 'facultades.pisos.mapas'])->get();
+        return view('layouts.spacetime.spacetime_index', compact('sedes'));
+
+    }
     /**
      * Show the form for creating a new resource.
      */
@@ -90,15 +97,12 @@ class HorariosController extends Controller
                 return response()->json(['error' => 'Horario no encontrado'], 404);
             }
 
-            // Obtener todas las asignaturas que imparte el profesor
             $asignaturas = Asignatura::where('run', $run)
                 ->with(['planificaciones.espacio', 'planificaciones.modulo'])
                 ->get();
 
-            // Obtener todos los módulos
             $modulos = Modulo::orderBy('hora_inicio')->get();
 
-            // Log para depuración
             Log::info('Datos del horario:', [
                 'horario' => $horario->toArray(),
                 'asignaturas' => $asignaturas->toArray(),
@@ -117,5 +121,51 @@ class HorariosController extends Controller
             ]);
             return response()->json(['error' => 'Error al obtener el horario'], 500);
         }
+    }
+    public function getHorariosEspacios(Request $request)
+    {
+        try {
+            $id_espacio = $request->input('id_espacio');
+
+            $query = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo', 'espacio']);
+
+            if ($id_espacio) {
+                $query->where('id_espacio', $id_espacio);
+            }
+
+            $planificaciones = $query->get();
+
+            // Agrupar por espacio
+            $horariosPorEspacio = $planificaciones->groupBy('id_espacio')->map(function ($items) {
+                return $items->map(function ($plan) {
+                    return [
+                        'asignatura' => $plan->asignatura->nombre_asignatura ?? '',
+                        'profesor' => $plan->asignatura->profesor->name ?? '',
+                        'dia' => $plan->modulo->dia ?? '',
+                        'hora_inicio' => $plan->modulo->hora_inicio ?? '',
+                        'hora_termino' => $plan->modulo->hora_termino ?? '',
+                        'espacio' => $plan->espacio->nombre_espacio ?? '',
+                    ];
+                });
+            });
+
+            return response()->json([
+                'horarios' => $horariosPorEspacio
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error al obtener horarios de espacios:', [
+                'error' => $e->getMessage()
+            ]);
+            return response()->json(['error' => 'Error al obtener los horarios de los espacios'], 500);
+        }
+    }
+
+    public function showEspacios()
+    {
+        // Obtener todos los pisos con sus espacios, ordenados por número de piso
+        $pisos = \App\Models\Piso::with(['espacios' => function($q) {
+            $q->orderBy('nombre_espacio');
+        }])->orderBy('numero_piso')->get();
+        return view('layouts.spacetime.spacetime_show', compact('pisos'));
     }
 }

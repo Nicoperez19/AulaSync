@@ -49,6 +49,10 @@ Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::put('user/user_update/{run}', [UserController::class, 'update'])->name('users.update');
     Route::get('/horarios/horarios_index', [HorariosController::class, 'index'])->name('horarios.index');
     Route::get('/horarios/{run}', [HorariosController::class, 'getHorarioProfesor'])->name('horarios.get');
+    Route::get('/spacetime/spacetime_index', [HorariosController::class, 'mostrarHorarios'])->name('horarios_espacios.index');
+    Route::get('/horarios-espacios', [HorariosController::class, 'getHorariosEspacios'])->name('horarios.espacios.get');
+    Route::get('/espacios', action: [HorariosController::class, 'showEspacios'])->name('espacios.show');
+
 });
 
 Route::group(['middleware' => ['permission:mantenedor de roles']], function () {
@@ -114,7 +118,7 @@ Route::group(['middleware' => ['auth', 'permission:mantenedor de mapas']], funct
     Route::get('/facultades-por-sede/{sedeId}', [MapasController::class, 'getFacultadesPorSede']);
     Route::get('/pisos/{facultadId}', [MapasController::class, 'getPisos']);
     Route::get('/espacios-por-piso/{pisoId}', [MapasController::class, 'getEspaciosPorPiso']);
-    Route::get('/mapa/{mapa}/bloques', [App\Http\Controllers\MapaController::class, 'getBloques'])->name('mapa.bloques');
+    Route::get('/mapa/{mapa}/bloques', [MapasController::class, 'getBloques'])->name('mapa.bloques');
 });
 
 
@@ -175,7 +179,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/plano-digital', [PlanoDigitalController::class, 'index'])->name('plano.index');
     Route::get('/plano-digital/{id}', [PlanoDigitalController::class, 'show'])->name('plano.show');
     Route::get('/plano/{id}/bloques', [PlanoDigitalController::class, 'bloques'])->name('plano.bloques');
-
 });
+
 
 require __DIR__ . '/auth.php';

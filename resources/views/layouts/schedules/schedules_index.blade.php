@@ -14,9 +14,9 @@
         </div>
 
         <div id="profesores-lista">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 @foreach ($profesores as $profesor)
-                    <div class="profesor-card bg-gray-50 p-4 rounded-lg shadow hover:shadow-md transition-shadow cursor-pointer"
+                    <div class="p-4 transition-shadow rounded-lg shadow cursor-pointer profesor-card bg-gray-50 hover:shadow-md"
                         data-run="{{ $profesor->run }}">
                         <h4 class="font-medium text-gray-900">{{ $profesor->name }}</h4>
                         <p class="text-sm text-gray-600">RUN: {{ $profesor->run }}</p>
@@ -30,23 +30,23 @@
 
         {{-- Modal --}}
         <div id="horarioModal"
-            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-            <div class="bg-white rounded-lg shadow-lg max-w-7xl w-full p-4 md:p-4">
-                <div class="flex justify-between items-center mb-4">
+            class="fixed inset-0 z-50 flex items-center justify-center hidden bg-black bg-opacity-50">
+            <div class="w-full p-4 bg-white rounded-lg shadow-lg max-w-7xl md:p-4">
+                <div class="flex items-center justify-between mb-4">
                     <h3 class="text-lg font-semibold" id="modalTitle">Horario del Profesor</h3>
-                    <button onclick="cerrarModal()" class="text-red-600 font-bold text-xl">&times;</button>
+                    <button onclick="cerrarModal()" class="text-xl font-bold text-red-600">&times;</button>
                 </div>
                 <div class="overflow-y-auto max-h-[70vh]">
                     <table class="min-w-full bg-white border border-gray-200">
-                        <thead class="sticky top-0 bg-white z-10 shadow">
+                        <thead class="sticky top-0 z-10 bg-white shadow">
                             <tr class="bg-gray-100">
-                                <th class="py-3 px-4 border-b text-center font-semibold">Hora</th>
-                                <th class="py-3 px-4 border-b text-center font-semibold">Lunes</th>
-                                <th class="py-3 px-4 border-b text-center font-semibold">Martes</th>
-                                <th class="py-3 px-4 border-b text-center font-semibold">Miércoles</th>
-                                <th class="py-3 px-4 border-b text-center font-semibold">Jueves</th>
-                                <th class="py-3 px-4 border-b text-center font-semibold">Viernes</th>
-                                <th class="py-3 px-4 border-b text-center font-semibold">Sábado</th>
+                                <th class="px-4 py-3 font-semibold text-center border-b">Hora</th>
+                                <th class="px-4 py-3 font-semibold text-center border-b">Lunes</th>
+                                <th class="px-4 py-3 font-semibold text-center border-b">Martes</th>
+                                <th class="px-4 py-3 font-semibold text-center border-b">Miércoles</th>
+                                <th class="px-4 py-3 font-semibold text-center border-b">Jueves</th>
+                                <th class="px-4 py-3 font-semibold text-center border-b">Viernes</th>
+                                <th class="px-4 py-3 font-semibold text-center border-b">Sábado</th>
                             </tr>
                         </thead>
                         <tbody id="horarioBody">
@@ -130,13 +130,13 @@
                             if (planificaciones.length > 0) {
                                 const clasesHTML = planificaciones.map(plan => `
 <div class="bg-blue-100 p-2 rounded-lg min-h-[90px] w-[120px] mx-auto flex flex-col items-center justify-center text-center break-words">
-    <p class="font-medium text-blue-900 text-sm break-words">
+    <p class="text-sm font-medium text-blue-900 break-words">
         ${plan.asignatura.codigo_asignatura}
     </p>
     <p class="text-xs text-blue-700 break-words">
         Sala: ${plan.espacio.id_espacio}
     </p>
-    <p class="font-medium text-blue-900 text-sm break-words">
+    <p class="text-sm font-medium text-blue-900 break-words">
         ${plan.asignatura.nombre_asignatura}
     </p>
 </div>
@@ -148,7 +148,7 @@
                             } else {
                                 td.innerHTML = `
                                 <div class="h-full min-h-[60px] flex items-center justify-center">
-                                    <span class="text-gray-400 text-sm">-</span>
+                                    <span class="text-sm text-gray-400">-</span>
                                 </div>`;
                             }
 

@@ -11,7 +11,7 @@
 
         <!-- Card: Navegación de Pisos y Plano -->
         <div class="w-full">
-            <div class="bg-white rounded-t-xl shadow-md">
+            <div class="bg-white shadow-md dark:bg-dark-eval-0 rounded-t-xl">
                 <ul class="flex border-b border-gray-300 dark:border-gray-700" id="pills-tab" role="tablist">
                     @foreach ($pisos as $piso)
                         <li role="presentation">
@@ -28,12 +28,12 @@
                     @endforeach
                 </ul>
                 <!-- Card para el canvas y controles -->
-                <div class="p-6 bg-white rounded-b-xl shadow-md dark:bg-gray-800">
+                <div class="p-6 bg-white shadow-md rounded-b-xl dark:bg-gray-800">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Plano del Piso
                             {{ $mapa->piso->numero_piso }}</h3>
                         <button onclick="actualizarEstados(true)"
-                            class="px-4 py-2 text-sm font-medium text-white bg-light-cloud-blue rounded-md hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue transition-all duration-300">
+                            class="px-4 py-2 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
                             <span id="boton-texto">Actualizar Estados</span>
                             <span id="boton-loading" class="hidden">
                                 <svg class="w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg"
@@ -65,19 +65,19 @@
                 </div>
             </div>
             <!-- Leyenda abajo como pequeño card -->
-            <div class="mt-6 p-4 bg-white rounded-lg shadow-md dark:bg-gray-800 w-full max-w-md mx-auto">
-                <h3 class="text-base font-semibold text-center mb-2">Leyenda</h3>
-                <div class="flex flex-col gap-2 text-sm items-start">
+            <div class="w-full max-w-md p-4 mx-auto mt-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
+                <h3 class="mb-2 text-base font-semibold text-center">Leyenda</h3>
+                <div class="flex flex-col items-start gap-2 text-sm">
                     <div class="flex items-center gap-2">
-                        <div class="w-4 h-4 rounded-sm bg-red-500"></div>
+                        <div class="w-4 h-4 bg-red-500 rounded-sm"></div>
                         <span>Espacio ocupado</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <div class="w-4 h-4 rounded-sm bg-blue-500"></div>
+                        <div class="w-4 h-4 bg-blue-500 rounded-sm"></div>
                         <span>Próximo a utilizar</span>
                     </div>
                     <div class="flex items-center gap-2">
-                        <div class="w-4 h-4 rounded-sm bg-green-500"></div>
+                        <div class="w-4 h-4 bg-green-500 rounded-sm"></div>
                         <span>Disponible</span>
                     </div>
                     <div class="flex items-center gap-2">
@@ -451,7 +451,12 @@
 
                 const modulosList = document.getElementById('modal-modulos');
                 modulosList.innerHTML = '';
-                detalles.planificacion.modulos.forEach(modulo => {
+                // Obtener el día actual en español
+                const dias = ['lunes','martes','miércoles','jueves','viernes','sábado'];
+                const hoy = dias[new Date().getDay()];
+                // Filtrar módulos solo del día actual
+                const modulosHoy = detalles.planificacion.modulos.filter(modulo => modulo.dia && modulo.dia.toLowerCase() === hoy);
+                modulosHoy.forEach(modulo => {
                     const li = document.createElement('li');
                     li.className = 'text-sm text-gray-900 dark:text-gray-100';
                     const horaInicio = modulo.hora_inicio.substring(0, 5);
