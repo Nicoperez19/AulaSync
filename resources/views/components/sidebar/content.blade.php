@@ -26,13 +26,7 @@
             <x-icons.calendar class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         </x-slot>
     </x-sidebar.link>
-
-    <!-- Mapa -->
-    <x-sidebar.link title="Mapa de Espacios" href="" :isActive="request()->routeIs('')">
-        <x-slot name="icon">
-            <x-icons.map class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
-        </x-slot>
-    </x-sidebar.link>
+    
     <!-- Reportería -->
     <x-sidebar.link title="Reportes" href="" :isActive="request()->routeIs('')">
         <x-slot name="icon">

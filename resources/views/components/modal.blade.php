@@ -1,9 +1,4 @@
-@props([
-    'name',
-    'show' => false,
-    'maxWidth' => '2xl',
-    'title' => null
-])
+@props(['name', 'show' => false, 'maxWidth' => '2xl', 'title' => null])
 
 @php
     $maxWidthClass =
@@ -19,9 +14,9 @@
 <div x-data="modalComponent({ show: @js($show), focusable: {{ $attributes->has('focusable') ? 'true' : 'false' }} })" x-init="init()" x-show="show"
     @open-modal.window="handleOpen($event, '{{ $name }}')" @close.stop="show = false"
     @keydown.escape.window="show = false" @keydown.tab.prevent="navigateFocus($event)"
-    class="fixed inset-0 overflow-y-auto px-4 py-6 sm:px-0 z-50" style="display: none;">
+    class="fixed inset-0 z-50 px-4 py-6 overflow-y-auto sm:px-0" style="display: none;">
     <!-- Background overlay -->
-    <div x-show="show" class="fixed inset-0 bg-gray-500 dark:bg-gray-900 opacity-75 transition-opacity"
+    <div x-show="show" class="fixed inset-0 transition-opacity bg-gray-500 opacity-75 dark:bg-gray-900"
         @click="show = false" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"></div>
@@ -35,7 +30,7 @@
         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
 
-        <div class="bg-light-cloud-blue dark:bg-dark-eval-1 p-2 text-white text-center text-lg font-semibold">
+        <div class="p-2 text-lg font-semibold text-center text-white bg-light-cloud-blue dark:bg-dark-eval-1">
             {{ $title ?? ($header ?? '') }}
         </div>
 

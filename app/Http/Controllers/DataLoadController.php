@@ -17,9 +17,17 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Services\QRService;
 
 class DataLoadController extends Controller
 {
+    protected $qrService;
+
+    public function __construct(QRService $qrService)
+    {
+        $this->qrService = $qrService;
+    }
+
     public function index()
     {
         $dataLoads = DataLoad::latest()->paginate(10);
@@ -107,13 +115,22 @@ class DataLoadController extends Controller
                     $name = $row[12];
                     $email = $row[13];
                     $existingUser = User::where('run', $run)->first();
+                    
                     if ($existingUser) {
                         $existingUser->update([
                             'name' => $name,
                             'email' => $email,
                             'id_carrera' => $idCarrera
                         ]);
-                        Log::info('Usuario actualizado', ['run' => $run]);
+                        try {
+                            // Generar nuevo QR para usuario existente
+                            $qrPath = $this->qrService->generateQRForUser($run);
+                            $existingUser->update(['qr_run' => $qrPath]);
+                            Log::info('Usuario actualizado con nuevo QR', ['run' => $run]);
+                        } catch (\Exception $e) {
+                            Log::error('Error al generar QR para usuario existente: ' . $e->getMessage(), ['run' => $run]);
+                            $errors[] = "Fila " . ($index + 1) . ": Error al generar QR - " . $e->getMessage();
+                        }
                     } else {
                         $user = User::create([
                             'run' => $run,
@@ -124,7 +141,15 @@ class DataLoadController extends Controller
                             'id_carrera' => $idCarrera
                         ]);
                         $user->assignRole($role);
-                        Log::info('Nuevo usuario creado', ['run' => $run]);
+                        try {
+                            // Generar QR para nuevo usuario
+                            $qrPath = $this->qrService->generateQRForUser($run);
+                            $user->update(['qr_run' => $qrPath]);
+                            Log::info('Nuevo usuario creado con QR', ['run' => $run]);
+                        } catch (\Exception $e) {
+                            Log::error('Error al generar QR para nuevo usuario: ' . $e->getMessage(), ['run' => $run]);
+                            $errors[] = "Fila " . ($index + 1) . ": Error al generar QR - " . $e->getMessage();
+                        }
                     }
                     $processedUsersCount++;
 
@@ -170,7 +195,6 @@ class DataLoadController extends Controller
 
                     try {
                         $idHorario = 'HOR_' . $run;
-
 
                         $existingHorario = Horario::where('id_horario', $idHorario)->first();
 
@@ -219,7 +243,6 @@ class DataLoadController extends Controller
                                 if (count($matches) === 5) {
                                     $dia = $matches[1];
                                     $modulo = $matches[2];
-                                    $grupo = $matches[3];
                                     $grupo = $matches[3];
                                     $espacio = preg_replace('/^[a-z]{2}:\s*/i', '', $matches[4]);
                                     $existingPlanificacion = Planificacion_Asignatura::where('id_asignatura', $idAsignatura)

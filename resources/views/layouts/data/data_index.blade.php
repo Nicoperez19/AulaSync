@@ -22,13 +22,16 @@
         <livewire:data-load-table />
 
         <x-modal name="add-data" :show="$errors->any()" focusable>
+            @slot('title')
+                <h2 class="text-lg font-medium text-white dark:text-gray-100">
+                    Cargar Archivo de Datos
+                </h2>
+            @endslot
             <form id="upload-form" action="{{ route('data.upload') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="grid gap-6 p-6">
                     <div class="space-y-4">
-                        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
-                            Cargar Archivo de Datos
-                        </h2>
+
 
                         <div class="p-4 mb-4 rounded-lg bg-gray-50 dark:bg-gray-800">
                             <p class="text-sm text-gray-600 dark:text-gray-400">

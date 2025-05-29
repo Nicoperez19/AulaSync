@@ -7,6 +7,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use App\Services\QRService;
 
 class User extends Authenticatable
 {
@@ -17,6 +18,7 @@ class User extends Authenticatable
     protected $keyType = 'string';
     protected $fillable = [
         'run',
+        'qr_run',
         'name',
         'email',
         'password',
@@ -88,5 +90,15 @@ class User extends Authenticatable
         return $this->hasMany(UsoEspacio::class, 'run', 'run');
     }
 
-
+    /**
+     * Genera el código QR para el usuario y lo guarda en la base de datos
+     */
+    public function generateQR()
+    {
+        $qrService = new QRService();
+        $qrFileName = $qrService->generateQRForUser($this->run);
+        $this->qr_run = $qrFileName;
+        $this->save();
+        return $this;
+    }
 }
