@@ -32,7 +32,7 @@ class QRService
             }
 
             // Crear el directorio si no existe
-            $directory = 'public/qr_usuarios';
+            $directory = 'public/qr/qr_usuarios';
             if (!Storage::exists($directory)) {
                 Storage::makeDirectory($directory);
             }
@@ -75,4 +75,60 @@ class QRService
             throw $e;
         }
     }
-} 
+
+    public function generateQRForEspacio($idEspacio)
+    {
+        try {
+            if (!extension_loaded('gd')) {
+                throw new \Exception('La extensión GD no está habilitada en PHP');
+            }
+
+            if (!function_exists('imagecreatetruecolor')) {
+                throw new \Exception('La función imagecreatetruecolor no está disponible');
+            }
+
+            // Crear directorio si no existe
+            $directory = 'public/qr/qr_espacios';
+            if (!Storage::exists($directory)) {
+                Storage::makeDirectory($directory);
+            }
+
+            // Nombre del archivo
+            $fileName = "qr_{$idEspacio}.png";
+            $filePath = "{$directory}/{$fileName}";
+
+            // Crear el código QR
+            $qrCode = QrCode::create($idEspacio)
+                ->setEncoding(new Encoding('UTF-8'))
+                ->setErrorCorrectionLevel(ErrorCorrectionLevel::High)
+                ->setSize(300)
+                ->setMargin(10)
+                ->setRoundBlockSizeMode(RoundBlockSizeMode::Margin)
+                ->setForegroundColor(new Color(0, 0, 0))
+                ->setBackgroundColor(new Color(255, 255, 255));
+
+            $writer = new PngWriter();
+            $result = $writer->write($qrCode);
+
+            // Guardar el QR
+            Storage::put($filePath, $result->getString());
+
+            return $filePath;
+        } catch (\Exception $e) {
+            \Log::error('Error al generar QR de espacio: ' . $e->getMessage(), [
+                'id_espacio' => $idEspacio,
+                'php_version' => PHP_VERSION,
+                'gd_enabled' => extension_loaded('gd'),
+                'gd_functions' => [
+                    'imagecreatetruecolor' => function_exists('imagecreatetruecolor'),
+                    'imagepng' => function_exists('imagepng'),
+                    'imagecolorallocate' => function_exists('imagecolorallocate')
+                ],
+                'memory_limit' => ini_get('memory_limit'),
+                'max_execution_time' => ini_get('max_execution_time')
+            ]);
+            throw $e;
+        }
+    }
+
+}

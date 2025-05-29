@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Services\QRService;
 
 class Espacio extends Model
 {
@@ -18,6 +19,7 @@ class Espacio extends Model
         'tipo_espacio',
         'estado',
         'puestos_disponibles',
+        'qr_espacio'
     ];
 
     public function piso()
@@ -33,14 +35,13 @@ class Espacio extends Model
     {
         return $this->hasMany(Planificacion_Asignatura::class, 'id_espacio', 'id_espacio');
     }
-
-    public function llave()
+    public function generateQR()
     {
-        return $this->hasOne(Llave::class, 'id_espacio', 'id_espacio');
+        $qrService = new QRService();
+        $qrFileName = $qrService->generateQRForEspacio($this->id_espacio); // o cualquier valor que desees codificar
+        $this->qr_espacio = $qrFileName;
+        $this->save();
+        return $this;
     }
 
-    public function usos()
-    {
-        return $this->hasMany(UsoEspacio::class, 'id_espacio', 'id_espacio');
-    }
 }

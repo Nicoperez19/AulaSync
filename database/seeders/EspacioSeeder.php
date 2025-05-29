@@ -250,8 +250,9 @@ class EspacioSeeder extends Seeder
             ],
 
         ];
-        foreach ($espacios as $espacio) {
-            Espacio::create($espacio);
+        foreach ($espacios as $data) {
+            $espacio = Espacio::create($data);
+            $espacio->generateQR(); 
         }
     }
 }
