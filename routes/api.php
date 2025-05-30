@@ -17,3 +17,57 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// Ruta para verificar si un profesor tiene asignado un espacio
+Route::get('/verificar-espacio/{profesorId}/{espacioId}', function ($profesorId, $espacioId, Request $request) {
+    try {
+        $dia = $request->query('dia');
+        $hora = $request->query('hora');
+
+        // Verificar si el profesor tiene clases en este espacio en la hora actual
+        $planificacion = \App\Models\Planificacion_Asignatura::with(['asignatura', 'modulo'])
+            ->where('id_espacio', $espacioId)
+            ->whereHas('asignatura', function ($query) use ($profesorId) {
+                $query->where('run', $profesorId);
+            })
+            ->whereHas('modulo', function ($query) use ($dia, $hora) {
+                $query->where('dia', $dia)
+                    ->where('hora_inicio', '<=', $hora)
+                    ->where('hora_termino', '>=', $hora);
+            })
+            ->first();
+
+        if ($planificacion) {
+            return response()->json([
+                'esValido' => true,
+                'mensaje' => 'El profesor tiene clase asignada en este espacio',
+                'detalles' => [
+                    'asignatura' => $planificacion->asignatura->nombre_asignatura,
+                    'horario' => [
+                        'inicio' => $planificacion->modulo->hora_inicio,
+                        'termino' => $planificacion->modulo->hora_termino
+                    ]
+                ]
+            ]);
+        }
+
+        return response()->json([
+            'esValido' => false,
+            'mensaje' => 'El profesor no tiene clases asignadas en este espacio en el horario actual'
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('Error al verificar espacio:', [
+            'error' => $e->getMessage(),
+            'profesorId' => $profesorId,
+            'espacioId' => $espacioId,
+            'dia' => $dia,
+            'hora' => $hora
+        ]);
+
+        return response()->json([
+            'esValido' => false,
+            'mensaje' => 'Error al verificar el espacio: ' . $e->getMessage()
+        ], 500);
+    }
+});

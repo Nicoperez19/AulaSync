@@ -14,6 +14,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AsignaturaController;
 use App\Http\Controllers\DataLoadController;
 use App\Http\Controllers\PlanoDigitalController;
+use App\Http\Controllers\ProfesorController;
 
 
 use Illuminate\Support\Facades\Route;
@@ -180,6 +181,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/plano-digital/{id}', [PlanoDigitalController::class, 'show'])->name('plano.show');
     Route::get('/plano/{id}/bloques', [PlanoDigitalController::class, 'bloques'])->name('plano.bloques');
     Route::get('/plano/{id}/modulo-actual', [PlanoDigitalController::class, 'getModuloActual'])->name('plano.modulo-actual');
+    Route::get('/api/profesor/{run}', [ProfesorController::class, 'getProfesor'])->name('profesor.get');
 });
 
 
