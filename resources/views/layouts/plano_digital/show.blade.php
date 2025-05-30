@@ -89,6 +89,30 @@
         </div>
     </div>
 
+    <!-- Modal fijo de hora y módulo actual -->
+    <div id="modal-hora-actual" class="fixed bottom-4 right-4 bg-light-cloud-blue rounded-lg shadow-lg p-4 w-64 z-50 border border-blue-600">
+        <div class="flex flex-col space-y-3">
+            <div class="flex items-center justify-between border-b border-blue-400 pb-2">
+                <div class="flex items-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 class="text-sm font-semibold text-white">Hora Actual</h3>
+                </div>
+                <span id="hora-actual" class="text-lg font-bold text-white"></span>
+            </div>
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <h3 class="text-sm font-semibold text-white">Módulo Actual</h3>
+                </div>
+                <span id="modulo-actual" class="text-sm font-medium text-white">-</span>
+            </div>
+        </div>
+    </div>
+
     <x-modal name="detalles-bloque" :show="false" maxWidth="2xl">
         <x-slot name="header">
             <h1 id="modal-titulo" class="font-sans text-lg font-semibold text-white dark:text-white"></h1>
@@ -425,6 +449,39 @@
                 initCanvases();
                 drawIndicators();
             });
+
+            // Función para actualizar la hora y módulo actual
+            function actualizarHoraYModulo() {
+                const ahora = new Date();
+                const horaActual = ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                document.getElementById('hora-actual').textContent = horaActual;
+
+                // Obtener el día actual en español
+                const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+                const diaActual = dias[ahora.getDay()];
+                const horaActualStr = ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+                // Hacer la petición al servidor para obtener el módulo actual
+                fetch(`/plano/${mapaId}/modulo-actual?hora=${horaActualStr}&dia=${diaActual}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.modulo) {
+                            const horaInicio = data.modulo.hora_inicio.substring(0, 5);
+                            const horaTermino = data.modulo.hora_termino.substring(0, 5);
+                            document.getElementById('modulo-actual').textContent = `${horaInicio} - ${horaTermino}`;
+                        } else {
+                            document.getElementById('modulo-actual').textContent = 'Sin módulo';
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error al obtener el módulo actual:', error);
+                        document.getElementById('modulo-actual').textContent = 'Error';
+                    });
+            }
+
+            // Actualizar cada segundo
+            setInterval(actualizarHoraYModulo, 1000);
+            actualizarHoraYModulo(); // Actualizar inmediatamente al cargar
         });
 
         // Modificar la función mostrarDetallesBloque para usar el sistema de eventos de Alpine.js

@@ -240,4 +240,24 @@ class PlanoDigitalController extends Controller
 
         return $detalles;
     }
+
+    public function getModuloActual(Request $request, $id)
+    {
+        try {
+            $horaActual = $request->input('hora');
+            $diaActual = $request->input('dia');
+
+            $modulo = Modulo::where('dia', $diaActual)
+                ->where('hora_inicio', '<=', $horaActual)
+                ->where('hora_termino', '>=', $horaActual)
+                ->first();
+
+            return response()->json([
+                'modulo' => $modulo
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error al obtener módulo actual: ' . $e->getMessage());
+            return response()->json(['error' => 'Error al obtener el módulo actual'], 500);
+        }
+    }
 }
