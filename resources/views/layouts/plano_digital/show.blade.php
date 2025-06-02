@@ -164,145 +164,66 @@
         </div>
     </x-modal>
 
-    <!-- Modal de solicitud de espacio -->
+    <!-- Modal de solicitud de espacio (REHECHO) -->
     <x-modal name="solicitar-espacio" :show="false" maxWidth="2xl">
         <x-slot name="header">
             <h1 class="font-sans text-lg font-semibold text-white dark:text-white">Solicitar Espacio</h1>
         </x-slot>
-        <div class="p-4">
-            <div class="space-y-4">
-                <!-- Sección de escaneo de profesor -->
-                <div id="profesor-scan-section"
-                    class="flex flex-col items-center justify-center p-4 bg-gray-100 rounded-lg dark:bg-gray-700">
-                    <div id="qr-reader" class="w-full max-w-md">
-                        <div id="qr-placeholder"
-                            class="flex flex-col items-center justify-center p-8 text-center bg-white rounded-lg shadow-lg dark:bg-gray-800">
-                            <div class="mb-4">
-                                <svg class="w-16 h-16 text-light-cloud-blue" xmlns="http://www.w3.org/2000/svg"
-                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v4m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
-                                </svg>
-                            </div>
-                            <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escaneo de Profesor
-                            </h3>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">Presione el botón para iniciar el
-                                escaneo del profesor</p>
-                            <button id="btn-iniciar-profesor" onclick="initQRScanner()"
-                                class="px-4 py-2 mt-4 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
-                                Iniciar Escaneo de Profesor
-                            </button>
-                        </div>
-                    </div>
+        <div class="p-6 space-y-6">
+            <!-- Paso 1: Escaneo de profesor -->
+            <div id="profesor-scan-section" class="flex flex-col items-center justify-center">
+                <div id="qr-reader" class="w-full max-w-xs mb-4"></div>
+                <div id="qr-placeholder" class="flex flex-col items-center justify-center w-full">
+                    <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escanear QR del Profesor</h3>
+                    <p id="qr-cargando-msg" class="text-sm text-gray-600 dark:text-gray-400">Cargando escáner...</p>
+                    <p id="qr-error-msg" class="text-sm text-red-600 dark:text-red-400 mt-2 hidden"></p>
+                    <button id="btn-reintentar" onclick="reiniciarEscaneo()" class="hidden px-4 py-2 mt-4 text-sm font-medium text-white bg-blue-500 rounded hover:bg-blue-600">Volver a Escanear</button>
                 </div>
-
-                <!-- Información del profesor -->
-                <div id="profesor-info" class="hidden p-4 bg-white rounded-lg shadow dark:bg-gray-800">
-                    <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Información del Profesor</h3>
-                    <div class="space-y-2">
-                        <p class="text-sm text-gray-600 dark:text-gray-400">Nombre: <span id="profesor-nombre"
-                                class="font-medium text-gray-900 dark:text-white"></span></p>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">Correo: <span id="profesor-correo"
-                                class="font-medium text-gray-900 dark:text-white"></span></p>
-                    </div>
+            </div>
+            <!-- Paso 2: Información del profesor -->
+            <div id="profesor-info" class="hidden p-4 bg-blue-50 rounded shadow">
+                <h3 class="mb-2 text-lg font-semibold text-blue-900">Información del Profesor</h3>
+                <div class="space-y-2">
+                    <p class="text-sm text-blue-800">Nombre: <span id="profesor-nombre" class="font-medium"></span></p>
+                    <p class="text-sm text-blue-800">Correo: <span id="profesor-correo" class="font-medium"></span></p>
                 </div>
-
-                <!-- Sección de escaneo de espacio -->
-                <div id="espacio-scan-section"
-                    class="flex flex-col items-center justify-center hidden p-4 bg-gray-100 rounded-lg dark:bg-gray-700">
-                    <div id="qr-reader-espacio" class="w-full max-w-md">
-                        <div id="espacio-placeholder"
-                            class="flex flex-col items-center justify-center p-8 text-center bg-white rounded-lg shadow-lg dark:bg-gray-800">
-                            <div class="mb-4">
-                                <svg class="w-16 h-16 text-light-cloud-blue" xmlns="http://www.w3.org/2000/svg"
-                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                </svg>
-                            </div>
-                            <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escaneo de Espacio
-                            </h3>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">Presione el botón para iniciar el
-                                escaneo del espacio</p>
-                            <button id="btn-iniciar-espacio" onclick="initEspacioScanner()"
-                                class="px-4 py-2 mt-4 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
-                                Iniciar Escaneo de Espacio
-                            </button>
-                        </div>
-                    </div>
+            </div>
+            <!-- Paso 3: Escaneo de espacio -->
+            <div id="espacio-scan-section" class="hidden flex flex-col items-center justify-center">
+                <div id="qr-reader-espacio" class="w-full max-w-xs mb-4"></div>
+                <div id="espacio-placeholder" class="flex flex-col items-center justify-center w-full">
+                    <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escanear QR del Espacio</h3>
+                    <button id="btn-iniciar-espacio" onclick="initEspacioScanner()" class="px-4 py-2 mt-4 text-sm font-medium text-white bg-blue-500 rounded hover:bg-blue-600">Iniciar Escaneo de Espacio</button>
                 </div>
-
-                <!-- Información del espacio y verificación -->
-                <div id="espacio-info" class="hidden p-4 bg-white rounded-lg shadow dark:bg-gray-800">
-                    <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Información del Espacio</h3>
-                    <div class="space-y-2">
-                        <p class="text-sm text-gray-600 dark:text-gray-400">Nombre: <span id="espacio-nombre"
-                                class="font-medium text-gray-900 dark:text-white"></span></p>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">Tipo: <span id="espacio-tipo"
-                                class="font-medium text-gray-900 dark:text-white"></span></p>
-                    </div>
-                    <div id="verificacion-espacio" class="p-4 mt-4 rounded-lg">
-                        <div class="flex items-center justify-center space-x-2">
-                            <svg class="w-6 h-6 text-gray-400 animate-spin" xmlns="http://www.w3.org/2000/svg"
-                                fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10"
-                                    stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor"
-                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                </path>
-                            </svg>
-                            <span class="text-sm text-gray-600">Verificando disponibilidad...</span>
-                        </div>
-                    </div>
+            </div>
+            <!-- Paso 4: Información del espacio -->
+            <div id="espacio-info" class="hidden p-4 bg-green-50 rounded shadow">
+                <h3 class="mb-2 text-lg font-semibold text-green-900">Información del Espacio</h3>
+                <div class="space-y-2">
+                    <p class="text-sm text-green-800">Nombre: <span id="espacio-nombre" class="font-medium"></span></p>
+                    <p class="text-sm text-green-800">Tipo: <span id="espacio-tipo" class="font-medium"></span></p>
                 </div>
-
-                <!-- Sección de selección de duración -->
-                <div id="duracion-section" class="hidden p-4 bg-white rounded-lg shadow dark:bg-gray-800">
-                    <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Seleccione la duración de la
-                        reserva</h3>
-                    <div class="grid grid-cols-3 gap-4">
-                        <button onclick="seleccionarDuracion(30)"
-                            class="p-3 text-sm font-medium text-gray-700 transition-all duration-300 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
-                            30 minutos
-                        </button>
-                        <button onclick="seleccionarDuracion(60)"
-                            class="p-3 text-sm font-medium text-gray-700 transition-all duration-300 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
-                            1 hora
-                        </button>
-                        <button onclick="seleccionarDuracion(90)"
-                            class="p-3 text-sm font-medium text-gray-700 transition-all duration-300 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
-                            1.5 horas
-                        </button>
-                        <button onclick="seleccionarDuracion(120)"
-                            class="p-3 text-sm font-medium text-gray-700 transition-all duration-300 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
-                            2 horas
-                        </button>
-                        <button onclick="seleccionarDuracion(180)"
-                            class="p-3 text-sm font-medium text-gray-700 transition-all duration-300 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
-                            3 horas
-                        </button>
-                        <button onclick="seleccionarDuracion(240)"
-                            class="p-3 text-sm font-medium text-gray-700 transition-all duration-300 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
-                            4 horas
-                        </button>
-                    </div>
+                <div id="verificacion-espacio" class="p-4 mt-4 rounded-lg bg-white flex items-center justify-center">
+                    <svg class="w-6 h-6 text-gray-400 animate-spin mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                    <span class="text-sm text-gray-600">Verificando disponibilidad...</span>
                 </div>
-
-                <!-- Sección de confirmación -->
-                <div id="confirmacion-section" class="hidden p-4 bg-white rounded-lg shadow dark:bg-gray-800">
-                    <div class="text-center">
-                        <div id="confirmacion-icono" class="mx-auto mb-4">
-                            <!-- El ícono se llenará dinámicamente -->
-                        </div>
-                        <h3 id="confirmacion-titulo" class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">
-                        </h3>
-                        <p id="confirmacion-mensaje" class="text-sm text-gray-600 dark:text-gray-400"></p>
-                        <div id="confirmacion-detalles"
-                            class="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                            <!-- Los detalles se llenarán dinámicamente -->
-                        </div>
-                    </div>
+            </div>
+            <!-- Paso 5: Selección de duración -->
+            <div id="duracion-section" class="hidden p-4 bg-yellow-50 rounded shadow">
+                <h3 class="mb-4 text-lg font-semibold text-yellow-900">Seleccione la duración de la reserva</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="seleccionarDuracion(30)" class="p-3 text-sm font-medium text-yellow-800 bg-white border border-yellow-300 rounded hover:bg-yellow-100">30 minutos</button>
+                    <button onclick="seleccionarDuracion(60)" class="p-3 text-sm font-medium text-yellow-800 bg-white border border-yellow-300 rounded hover:bg-yellow-100">1 hora</button>
+                    <button onclick="seleccionarDuracion(90)" class="p-3 text-sm font-medium text-yellow-800 bg-white border border-yellow-300 rounded hover:bg-yellow-100">1.5 horas</button>
+                    <button onclick="seleccionarDuracion(120)" class="p-3 text-sm font-medium text-yellow-800 bg-white border border-yellow-300 rounded hover:bg-yellow-100">2 horas</button>
                 </div>
+            </div>
+            <!-- Paso 6: Confirmación -->
+            <div id="confirmacion-section" class="hidden p-4 bg-white rounded shadow text-center">
+                <div id="confirmacion-icono" class="mx-auto mb-4"></div>
+                <h3 id="confirmacion-titulo" class="mb-2 text-lg font-semibold"></h3>
+                <p id="confirmacion-mensaje" class="text-sm mb-2"></p>
+                <div id="confirmacion-detalles" class="mt-2 space-y-1 text-sm"></div>
             </div>
         </div>
     </x-modal>
@@ -350,66 +271,72 @@
         async function initQRScanner() {
             if (html5QrcodeScanner === null) {
                 try {
-                    const btnIniciar = document.getElementById('btn-iniciar-profesor');
-                    btnIniciar.disabled = true;
-                    btnIniciar.innerHTML = `
-                        <svg class="inline w-4 h-4 mr-2 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        Iniciando cámara...
-                    `;
-
+                    document.getElementById('qr-cargando-msg').textContent = 'Cargando escáner, por favor espere...';
+                    document.getElementById('qr-cargando-msg').classList.remove('hidden');
+                    document.getElementById('qr-error-msg').classList.add('hidden');
                     const hasPermission = await requestCameraPermission();
                     if (!hasPermission) {
-                        alert('Se requieren permisos de cámara para escanear códigos QR');
+                        document.getElementById('qr-cargando-msg').textContent = '';
+                        document.getElementById('qr-error-msg').textContent = 'Se requieren permisos de cámara para escanear códigos QR';
+                        document.getElementById('qr-error-msg').classList.remove('hidden');
                         return;
                     }
-
                     currentCameraId = await getFirstCamera();
                     if (!currentCameraId) {
-                        alert('No se encontró ninguna cámara disponible');
+                        document.getElementById('qr-cargando-msg').textContent = '';
+                        document.getElementById('qr-error-msg').textContent = 'No se encontró ninguna cámara disponible';
+                        document.getElementById('qr-error-msg').classList.remove('hidden');
                         return;
                     }
-
                     const config = {
                         fps: 10,
-                        qrbox: {
-                            width: 250,
-                            height: 250
-                        },
+                        qrbox: { width: 250, height: 250 },
                         aspectRatio: 1.0,
                         formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
                         rememberLastUsedCamera: true,
                         showTorchButtonIfSupported: true
                     };
-
                     html5QrcodeScanner = new Html5Qrcode("qr-reader");
                     document.getElementById('qr-placeholder').style.display = 'none';
-
                     await html5QrcodeScanner.start(
                         currentCameraId,
                         config,
                         onScanSuccess,
                         (error) => {
-                            // Solo mostrar errores críticos, ignorar errores de detección
-                            if (error.includes("QR code parse error")) {
-                                return;
-                            }
+                            if (error.includes("QR code parse error")) return;
                             console.warn(`Error en el escaneo: ${error}`);
                         }
                     );
                 } catch (err) {
                     console.error('Error al iniciar el escáner:', err);
-                    alert(
-                        'Error al iniciar la cámara. Por favor, verifica los permisos y que la cámara no esté siendo usada por otra aplicación.'
-                        );
+                    document.getElementById('qr-cargando-msg').textContent = '';
+                    document.getElementById('qr-error-msg').textContent = 'Error al iniciar la cámara. Por favor, verifica los permisos y que la cámara no esté siendo usada por otra aplicación.';
+                    document.getElementById('qr-error-msg').classList.remove('hidden');
                     document.getElementById('qr-placeholder').style.display = 'flex';
-                    const btnIniciar = document.getElementById('btn-iniciar-profesor');
-                    btnIniciar.disabled = false;
-                    btnIniciar.textContent = 'Iniciar Escaneo de Profesor';
                 }
             }
+        }
+
+        function reiniciarEscaneo() {
+            document.getElementById('qr-error-msg').classList.add('hidden');
+            document.getElementById('btn-reintentar').classList.add('hidden');
+            document.getElementById('qr-cargando-msg').textContent = 'Cargando escáner, por favor espere...';
+            document.getElementById('qr-cargando-msg').classList.remove('hidden');
+            initQRScanner();
+        }
+
+        function mostrarErrorEscaneo(mensaje) {
+            const errorMsg = document.getElementById('qr-error-msg');
+            const cargandoMsg = document.getElementById('qr-cargando-msg');
+            const btnReintentar = document.getElementById('btn-reintentar');
+            const qrPlaceholder = document.getElementById('qr-placeholder');
+            if (errorMsg) {
+                errorMsg.textContent = mensaje;
+                errorMsg.classList.remove('hidden');
+            }
+            if (cargandoMsg) cargandoMsg.textContent = '';
+            if (btnReintentar) btnReintentar.classList.remove('hidden');
+            if (qrPlaceholder) qrPlaceholder.style.display = 'flex';
         }
 
         function onScanSuccess(decodedText, decodedResult) {
@@ -417,26 +344,40 @@
                 html5QrcodeScanner.stop();
                 html5QrcodeScanner = null;
             }
-
             fetch(`/api/user/${decodedText}`)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.message || 'Error al buscar el profesor');
+                        });
+                    }
+                    return response.json();
+                })
                 .then(data => {
-                    if (data.success && data.user.roles.includes('profesor')) {
+                    console.log('Respuesta del backend:', data);
+                    if (data.success && data.user) {
                         userId = data.user.id;
-                        document.getElementById('profesor-nombre').textContent = data.user.name;
-                        document.getElementById('profesor-correo').textContent = data.user.email;
-                        document.getElementById('profesor-info').classList.remove('hidden');
-                        document.getElementById('profesor-scan-section').classList.add('hidden');
-                        document.getElementById('espacio-scan-section').classList.remove('hidden');
+                        const nombre = document.getElementById('profesor-nombre');
+                        const correo = document.getElementById('profesor-correo');
+                        const info = document.getElementById('profesor-info');
+                        const scanSection = document.getElementById('profesor-scan-section');
+                        const espacioScan = document.getElementById('espacio-scan-section');
+                        const errorMsg = document.getElementById('qr-error-msg');
+                        const btnReintentar = document.getElementById('btn-reintentar');
+                        if (nombre) nombre.textContent = data.user.name || '';
+                        if (correo) correo.textContent = data.user.email || '';
+                        if (info) info.classList.remove('hidden');
+                        if (scanSection) scanSection.classList.add('hidden');
+                        if (espacioScan) espacioScan.classList.remove('hidden');
+                        if (errorMsg) errorMsg.classList.add('hidden');
+                        if (btnReintentar) btnReintentar.classList.add('hidden');
                     } else {
-                        alert('El usuario escaneado no es un profesor');
-                        setTimeout(initQRScanner, 2000);
+                        mostrarErrorEscaneo('La persona no se encuentra registrada, contáctese con soporte.');
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error al obtener información del usuario');
-                    setTimeout(initQRScanner, 2000);
+                    mostrarErrorEscaneo(error.message || 'Error al obtener información del profesor');
                 });
         }
 
@@ -1140,6 +1081,13 @@
                 state.mouseX = -1;
                 state.mouseY = -1;
                 drawIndicators();
+            });
+
+            // Escuchar el evento de apertura del modal para iniciar el escáner
+            window.addEventListener('open-modal', function(event) {
+                if (event.detail === 'solicitar-espacio') {
+                    setTimeout(initQRScanner, 300); // Pequeño delay para asegurar que el modal esté visible
+                }
             });
         });
 

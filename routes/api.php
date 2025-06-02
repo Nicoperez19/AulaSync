@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ReservaController;
+use App\Models\User;
 
 /*
 |--------------------------------------------------------------------------
@@ -77,3 +78,37 @@ Route::get('/verificar-espacio/{profesorId}/{espacioId}', function ($profesorId,
 Route::get('/verificar-espacio/{userId}/{espacioId}', [ReservaController::class, 'verificarEspacio']);
 Route::post('/registrar-ingreso-clase', [ReservaController::class, 'registrarIngresoClase']);
 Route::post('/registrar-reserva-espontanea', [ReservaController::class, 'registrarReservaEspontanea']);
+
+Route::get('/user/{run}', function ($run) {
+    try {
+        // Limpiar el run recibido (quitar guion y dígito verificador si existen)
+        $runLimpio = preg_replace('/[^0-9]/', '', $run);
+
+        // Buscar por run exacto o por run sin dígito verificador
+        $user = User::where('run', $run)
+            ->orWhere('run', $runLimpio)
+            ->first();
+
+        if ($user) {
+            return response()->json([
+                'success' => true,
+                'user' => [
+                    'id' => $user->run,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'roles' => $user->roles->pluck('name'),
+                ]
+            ]);
+        } else {
+            return response()->json([
+                'success' => false, 
+                'message' => 'El profesor no se encuentra registrado, contáctese con soporte.'
+            ], 404);
+        }
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al buscar el profesor, intente nuevamente.'
+        ], 500);
+    }
+});
