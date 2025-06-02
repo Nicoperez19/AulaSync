@@ -16,7 +16,7 @@
 
                     <x-form.input-with-icon-wrapper>
                         <x-slot name="icon">
-                            <x-heroicon-o-identification aria-hidden="true" class="w-5 h-5" />
+                            <x-icons.identification aria-hidden="true" class="w-5 h-5 bg-light-cloud-blue" />
                         </x-slot>
 
                         <x-form.input withicon id="run" class="block w-full" type="text" name="run"
