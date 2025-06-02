@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\ReservaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -71,3 +72,8 @@ Route::get('/verificar-espacio/{profesorId}/{espacioId}', function ($profesorId,
         ], 500);
     }
 });
+
+// Rutas para reservas
+Route::get('/verificar-espacio/{userId}/{espacioId}', [ReservaController::class, 'verificarEspacio']);
+Route::post('/registrar-ingreso-clase', [ReservaController::class, 'registrarIngresoClase']);
+Route::post('/registrar-reserva-espontanea', [ReservaController::class, 'registrarReservaEspontanea']);

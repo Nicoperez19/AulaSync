@@ -166,29 +166,54 @@
                 <!-- Sección de escaneo de profesor -->
                 <div id="profesor-scan-section" class="flex flex-col items-center justify-center p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
                     <div id="qr-reader" class="w-full max-w-md">
-                        <!-- Vista previa mientras carga -->
                         <div id="qr-placeholder" class="flex flex-col items-center justify-center p-8 text-center bg-white dark:bg-gray-800 rounded-lg shadow-lg">
                             <div class="mb-4">
                                 <svg class="w-16 h-16 text-light-cloud-blue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v4m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                                 </svg>
                             </div>
-                            <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escaneo de Código QR</h3>
+                            <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escaneo de Profesor</h3>
                             <p class="text-sm text-gray-600 dark:text-gray-400">Presione el botón para iniciar el escaneo del profesor</p>
                             <button id="btn-iniciar-profesor" onclick="initQRScanner()" class="mt-4 px-4 py-2 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
                                 Iniciar Escaneo de Profesor
                             </button>
                         </div>
                     </div>
-                    <div id="qr-reader-results" class="mt-4 text-center"></div>
                 </div>
 
-                <!-- Información del profesor y verificación de espacio -->
+                <!-- Información del profesor -->
                 <div id="profesor-info" class="hidden p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
                     <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Información del Profesor</h3>
                     <div class="space-y-2">
                         <p class="text-sm text-gray-600 dark:text-gray-400">Nombre: <span id="profesor-nombre" class="font-medium text-gray-900 dark:text-white"></span></p>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Correo: <span id="profesor-correo" class="font-medium text-gray-900 dark:text-white"></span></p>
+                    </div>
+                </div>
+
+                <!-- Sección de escaneo de espacio -->
+                <div id="espacio-scan-section" class="hidden flex flex-col items-center justify-center p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                    <div id="qr-reader-espacio" class="w-full max-w-md">
+                        <div id="espacio-placeholder" class="flex flex-col items-center justify-center p-8 text-center bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+                            <div class="mb-4">
+                                <svg class="w-16 h-16 text-light-cloud-blue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                            </div>
+                            <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escaneo de Espacio</h3>
+                            <p class="text-sm text-gray-600 dark:text-gray-400">Presione el botón para iniciar el escaneo del espacio</p>
+                            <button id="btn-iniciar-espacio" onclick="initEspacioScanner()" class="mt-4 px-4 py-2 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
+                                Iniciar Escaneo de Espacio
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información del espacio y verificación -->
+                <div id="espacio-info" class="hidden p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                    <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Información del Espacio</h3>
+                    <div class="space-y-2">
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Nombre: <span id="espacio-nombre" class="font-medium text-gray-900 dark:text-white"></span></p>
+                        <p class="text-sm text-gray-600 dark:text-gray-400">Tipo: <span id="espacio-tipo" class="font-medium text-gray-900 dark:text-white"></span></p>
                     </div>
                     <div id="verificacion-espacio" class="mt-4 p-4 rounded-lg">
                         <div class="flex items-center justify-center space-x-2">
@@ -196,25 +221,46 @@
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            <span class="text-sm text-gray-600">Verificando espacio...</span>
+                            <span class="text-sm text-gray-600">Verificando disponibilidad...</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Sección de escaneo de llaves -->
-                <div id="llaves-scan-section" class="hidden flex flex-col items-center justify-center p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
-                    <div id="qr-reader-llaves" class="w-full max-w-md">
-                        <div id="llaves-placeholder" class="flex flex-col items-center justify-center p-8 text-center bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-                            <div class="mb-4">
-                                <svg class="w-16 h-16 text-light-cloud-blue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                                </svg>
-                            </div>
-                            <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escaneo de Llaves</h3>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">Presione el botón para iniciar el escaneo de las llaves</p>
-                            <button id="btn-iniciar-llaves" onclick="initLlavesScanner()" class="mt-4 px-4 py-2 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
-                                Iniciar Escaneo de Llaves
-                            </button>
+                <!-- Sección de selección de duración -->
+                <div id="duracion-section" class="hidden p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                    <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Seleccione la duración de la reserva</h3>
+                    <div class="grid grid-cols-3 gap-4">
+                        <button onclick="seleccionarDuracion(30)" class="p-3 text-sm font-medium text-gray-700 transition-all duration-300 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
+                            30 minutos
+                        </button>
+                        <button onclick="seleccionarDuracion(60)" class="p-3 text-sm font-medium text-gray-700 transition-all duration-300 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
+                            1 hora
+                        </button>
+                        <button onclick="seleccionarDuracion(90)" class="p-3 text-sm font-medium text-gray-700 transition-all duration-300 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
+                            1.5 horas
+                        </button>
+                        <button onclick="seleccionarDuracion(120)" class="p-3 text-sm font-medium text-gray-700 transition-all duration-300 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
+                            2 horas
+                        </button>
+                        <button onclick="seleccionarDuracion(180)" class="p-3 text-sm font-medium text-gray-700 transition-all duration-300 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
+                            3 horas
+                        </button>
+                        <button onclick="seleccionarDuracion(240)" class="p-3 text-sm font-medium text-gray-700 transition-all duration-300 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
+                            4 horas
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sección de confirmación -->
+                <div id="confirmacion-section" class="hidden p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                    <div class="text-center">
+                        <div id="confirmacion-icono" class="mx-auto mb-4">
+                            <!-- El ícono se llenará dinámicamente -->
+                        </div>
+                        <h3 id="confirmacion-titulo" class="mb-2 text-lg font-semibold text-gray-900 dark:text-white"></h3>
+                        <p id="confirmacion-mensaje" class="text-sm text-gray-600 dark:text-gray-400"></p>
+                        <div id="confirmacion-detalles" class="mt-4 space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                            <!-- Los detalles se llenarán dinámicamente -->
                         </div>
                     </div>
                 </div>
@@ -227,6 +273,12 @@
         // Variables globales para el QR scanner
         let html5QrcodeScanner = null;
         let currentCameraId = null;
+
+        // Variables globales para el estado de la solicitud
+        let userId = null;
+        let espacioId = null;
+        let tieneClaseProgramada = false;
+        let duracionSeleccionada = null;
 
         // Funciones del QR scanner en el ámbito global
         async function requestCameraPermission() {
@@ -253,6 +305,7 @@
             }
         }
 
+        // Función para inicializar el escáner de profesor
         async function initQRScanner() {
             if (html5QrcodeScanner === null) {
                 try {
@@ -280,8 +333,11 @@
 
                     const config = {
                         fps: 10,
-                        qrbox: 250,
-                        aspectRatio: 1.0
+                        qrbox: { width: 250, height: 250 },
+                        aspectRatio: 1.0,
+                        formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ],
+                        rememberLastUsedCamera: true,
+                        showTorchButtonIfSupported: true
                     };
 
                     html5QrcodeScanner = new Html5Qrcode("qr-reader");
@@ -292,6 +348,10 @@
                         config,
                         onScanSuccess,
                         (error) => {
+                            // Solo mostrar errores críticos, ignorar errores de detección
+                            if (error.includes("QR code parse error")) {
+                                return;
+                            }
                             console.warn(`Error en el escaneo: ${error}`);
                         }
                     );
@@ -312,121 +372,32 @@
                 html5QrcodeScanner = null;
             }
             
-            // Obtener información del profesor
-            fetch(`/api/profesor/${decodedText}`)
+            fetch(`/api/user/${decodedText}`)
                 .then(response => response.json())
                 .then(data => {
-                    if (data.success) {
-                        document.getElementById('profesor-nombre').textContent = data.profesor.name;
-                        document.getElementById('profesor-correo').textContent = data.profesor.email;
+                    if (data.success && data.user.roles.includes('profesor')) {
+                        userId = data.user.id;
+                        document.getElementById('profesor-nombre').textContent = data.user.name;
+                        document.getElementById('profesor-correo').textContent = data.user.email;
                         document.getElementById('profesor-info').classList.remove('hidden');
                         document.getElementById('profesor-scan-section').classList.add('hidden');
-
-                        // Guardar el ID del profesor para la verificación posterior
-                        window.profesorId = data.profesor.id;
-                        
-                        // Mostrar mensaje para escanear el código del espacio
-                        const verificacionDiv = document.getElementById('verificacion-espacio');
-                        verificacionDiv.innerHTML = `
-                            <div class="flex flex-col items-center justify-center space-y-2">
-                                <svg class="w-8 h-8 text-light-cloud-blue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                                </svg>
-                                <span class="text-sm font-medium text-gray-700">Por favor, escanee el código del espacio</span>
-                            </div>
-                        `;
-                        
-                        // Mostrar la sección de escaneo de espacio
-                        document.getElementById('llaves-scan-section').classList.remove('hidden');
+                        document.getElementById('espacio-scan-section').classList.remove('hidden');
                     } else {
-                        alert('No se encontró información del profesor');
+                        alert('El usuario escaneado no es un profesor');
                         setTimeout(initQRScanner, 2000);
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error al obtener información del profesor');
+                    alert('Error al obtener información del usuario');
                     setTimeout(initQRScanner, 2000);
                 });
         }
 
-        function onLlavesScanSuccess(decodedText, decodedResult) {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.stop();
-                html5QrcodeScanner = null;
-            }
-            
-            // Verificar si el profesor tiene asignado este espacio
-            const espacioId = decodedText;
-            const profesorId = window.profesorId;
-            
-            // Obtener el día y hora actual
-            const ahora = new Date();
-            const dias = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-            const diaActual = dias[ahora.getDay()];
-            const horaActual = ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-
-            // Mostrar mensaje de carga
-            const verificacionDiv = document.getElementById('verificacion-espacio');
-            verificacionDiv.innerHTML = `
-                <div class="flex items-center justify-center space-x-2">
-                    <svg class="w-6 h-6 text-gray-400 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span class="text-sm text-gray-600">Verificando espacio...</span>
-                </div>
-            `;
-
-            // Hacer la petición para verificar el espacio
-            fetch(`/api/verificar-espacio/${profesorId}/${espacioId}?dia=${diaActual}&hora=${horaActual}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`Error del servidor: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.esValido) {
-                        verificacionDiv.innerHTML = `
-                            <div class="flex flex-col items-center justify-center space-y-2 text-green-600">
-                                <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span class="text-sm font-medium">Este espacio está asignado a su horario actual</span>
-                            </div>
-                        `;
-                    } else {
-                        verificacionDiv.innerHTML = `
-                            <div class="flex flex-col items-center justify-center space-y-2 text-red-600">
-                                <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                                <span class="text-sm font-medium">Este espacio no está asignado a su horario actual</span>
-                                <p class="text-xs text-gray-500">Por favor, verifique su horario asignado</p>
-                            </div>
-                        `;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    verificacionDiv.innerHTML = `
-                        <div class="flex flex-col items-center justify-center space-y-2 text-red-600">
-                            <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                            <span class="text-sm font-medium">Error al verificar el espacio</span>
-                            <p class="text-xs text-gray-500">${error.message}</p>
-                        </div>
-                    `;
-                });
-        }
-
-        // Función para inicializar el escáner de llaves
-        async function initLlavesScanner() {
+        // Función para inicializar el escáner de espacio
+        async function initEspacioScanner() {
             try {
-                // Ocultar el botón y mostrar mensaje de carga
-                const btnIniciar = document.getElementById('btn-iniciar-llaves');
+                const btnIniciar = document.getElementById('btn-iniciar-espacio');
                 btnIniciar.disabled = true;
                 btnIniciar.innerHTML = `
                     <svg class="inline w-4 h-4 mr-2 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -436,14 +407,12 @@
                     Iniciando cámara...
                 `;
 
-                // Verificar permisos antes de iniciar
                 const hasPermission = await requestCameraPermission();
                 if (!hasPermission) {
                     alert('Se requieren permisos de cámara para escanear códigos QR');
                     return;
                 }
 
-                // Obtener la primera cámara disponible
                 currentCameraId = await getFirstCamera();
                 if (!currentCameraId) {
                     alert('No se encontró ninguna cámara disponible');
@@ -452,33 +421,220 @@
 
                 const config = {
                     fps: 10,
-                    qrbox: 250,
-                    aspectRatio: 1.0
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0,
+                    formatsToSupport: [ Html5QrcodeSupportedFormats.QR_CODE ],
+                    rememberLastUsedCamera: true,
+                    showTorchButtonIfSupported: true
                 };
 
-                // Ocultar el placeholder
-                document.getElementById('llaves-placeholder').style.display = 'none';
-
-                // Iniciar el escáner
-                html5QrcodeScanner = new Html5Qrcode("qr-reader-llaves");
+                document.getElementById('espacio-placeholder').style.display = 'none';
+                html5QrcodeScanner = new Html5Qrcode("qr-reader-espacio");
                 await html5QrcodeScanner.start(
                     currentCameraId,
                     config,
-                    onLlavesScanSuccess,
+                    onEspacioScanSuccess,
                     (error) => {
-                        console.warn(`Error en el escaneo de llaves: ${error}`);
+                        // Solo mostrar errores críticos, ignorar errores de detección
+                        if (error.includes("QR code parse error")) {
+                            return;
+                        }
+                        console.warn(`Error en el escaneo de espacio: ${error}`);
                     }
                 );
             } catch (err) {
-                console.error('Error al iniciar el escáner de llaves:', err);
+                console.error('Error al iniciar el escáner de espacio:', err);
                 alert('Error al iniciar la cámara. Por favor, verifica los permisos y que la cámara no esté siendo usada por otra aplicación.');
-                // Mostrar el placeholder nuevamente si hay un error
-                document.getElementById('llaves-placeholder').style.display = 'flex';
-                // Restaurar el botón
-                const btnIniciar = document.getElementById('btn-iniciar-llaves');
+                document.getElementById('espacio-placeholder').style.display = 'flex';
+                const btnIniciar = document.getElementById('btn-iniciar-espacio');
                 btnIniciar.disabled = false;
-                btnIniciar.textContent = 'Iniciar Escaneo de Llaves';
+                btnIniciar.textContent = 'Iniciar Escaneo de Espacio';
             }
+        }
+
+        // Función para manejar el escaneo exitoso del espacio
+        function onEspacioScanSuccess(decodedText, decodedResult) {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop();
+                html5QrcodeScanner = null;
+            }
+
+            espacioId = decodedText;
+            
+            // Obtener información del espacio y verificar disponibilidad
+            fetch(`/api/espacio/${espacioId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('espacio-nombre').textContent = data.espacio.nombre;
+                        document.getElementById('espacio-tipo').textContent = data.espacio.tipo;
+                        document.getElementById('espacio-info').classList.remove('hidden');
+                        document.getElementById('espacio-scan-section').classList.add('hidden');
+                        
+                        // Verificar el estado del espacio y la programación del profesor
+                        fetch(`/api/verificar-espacio/${userId}/${espacioId}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.estado === 'disponible') {
+                                    if (data.tieneClaseProgramada) {
+                                        // Si tiene clase programada, registrar ingreso
+                                        registrarIngresoClase();
+                                    } else {
+                                        // Si no tiene clase programada, mostrar opciones de duración
+                                        mostrarOpcionesDuracion();
+                                    }
+                                } else {
+                                    // Si el espacio está ocupado, mostrar mensaje
+                                    mostrarMensajeOcupado(data);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                mostrarError('Error al verificar el espacio');
+                            });
+                    } else {
+                        alert('No se encontró información del espacio');
+                        setTimeout(initEspacioScanner, 2000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al obtener información del espacio');
+                    setTimeout(initEspacioScanner, 2000);
+                });
+        }
+
+        // Función para registrar ingreso a clase programada
+        function registrarIngresoClase() {
+            fetch('/api/registrar-ingreso-clase', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    espacio_id: espacioId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarConfirmacionExito(data);
+                } else {
+                    mostrarError(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarError('Error al registrar el ingreso');
+            });
+        }
+
+        // Función para mostrar opciones de duración
+        function mostrarOpcionesDuracion() {
+            document.getElementById('espacio-scan-section').classList.add('hidden');
+            document.getElementById('duracion-section').classList.remove('hidden');
+        }
+
+        // Función para seleccionar duración
+        function seleccionarDuracion(minutos) {
+            duracionSeleccionada = minutos;
+            registrarReservaEspontanea();
+        }
+
+        // Función para registrar reserva espontánea
+        function registrarReservaEspontanea() {
+            fetch('/api/registrar-reserva-espontanea', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    espacio_id: espacioId,
+                    duracion: duracionSeleccionada
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarConfirmacionExito(data);
+                } else {
+                    mostrarError(data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarError('Error al registrar la reserva');
+            });
+        }
+
+        // Función para mostrar mensaje de espacio ocupado
+        function mostrarMensajeOcupado(data) {
+            const confirmacionSection = document.getElementById('confirmacion-section');
+            const icono = document.getElementById('confirmacion-icono');
+            const titulo = document.getElementById('confirmacion-titulo');
+            const mensaje = document.getElementById('confirmacion-mensaje');
+            const detalles = document.getElementById('confirmacion-detalles');
+
+            icono.innerHTML = `
+                <svg class="w-16 h-16 mx-auto text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            `;
+            titulo.textContent = 'Espacio Ocupado';
+            mensaje.textContent = `Este espacio está actualmente ocupado por el profesor ${data.profesor_nombre} hasta las ${data.hora_termino}`;
+            detalles.innerHTML = `
+                <p>Profesor: ${data.profesor_nombre}</p>
+                <p>Hora de término: ${data.hora_termino}</p>
+            `;
+
+            document.getElementById('espacio-scan-section').classList.add('hidden');
+            confirmacionSection.classList.remove('hidden');
+        }
+
+        // Función para mostrar confirmación de éxito
+        function mostrarConfirmacionExito(data) {
+            const confirmacionSection = document.getElementById('confirmacion-section');
+            const icono = document.getElementById('confirmacion-icono');
+            const titulo = document.getElementById('confirmacion-titulo');
+            const mensaje = document.getElementById('confirmacion-mensaje');
+            const detalles = document.getElementById('confirmacion-detalles');
+
+            icono.innerHTML = `
+                <svg class="w-16 h-16 mx-auto text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+            `;
+            titulo.textContent = 'Reserva Exitosa';
+            mensaje.textContent = data.mensaje;
+            detalles.innerHTML = `
+                <p>Espacio: ${data.espacio_nombre}</p>
+                <p>Hora de término: ${data.hora_termino}</p>
+            `;
+
+            document.getElementById('duracion-section').classList.add('hidden');
+            confirmacionSection.classList.remove('hidden');
+        }
+
+        // Función para mostrar error
+        function mostrarError(errorMensaje) {
+            const confirmacionSection = document.getElementById('confirmacion-section');
+            const icono = document.getElementById('confirmacion-icono');
+            const titulo = document.getElementById('confirmacion-titulo');
+            const mensaje = document.getElementById('confirmacion-mensaje');
+
+            icono.innerHTML = `
+                <svg class="w-16 h-16 mx-auto text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            `;
+            titulo.textContent = 'Error';
+            mensaje.textContent = errorMensaje;
+
+            confirmacionSection.classList.remove('hidden');
         }
 
         // Inicialización del canvas y otras funcionalidades
@@ -488,7 +644,9 @@
                 originalImageSize: null,
                 indicators: @json($bloques),
                 originalCoordinates: @json($bloques),
-                isImageLoaded: false
+                isImageLoaded: false,
+                mouseX: 0,
+                mouseY: 0
             };
 
             const elements = {
@@ -615,6 +773,19 @@
                 const width = config.indicatorWidth;
                 const height = config.indicatorHeight;
 
+                // Verificar si el mouse está sobre este indicador
+                const mouseX = state.mouseX;
+                const mouseY = state.mouseY;
+                const isHovered = mouseX >= position.x - width / 2 &&
+                                mouseX <= position.x + width / 2 &&
+                                mouseY >= position.y - height / 2 &&
+                                mouseY <= position.y + height / 2;
+
+                // Ajustar el tamaño si está en hover
+                const hoverScale = 1.2;
+                const finalWidth = isHovered ? width * hoverScale : width;
+                const finalHeight = isHovered ? height * hoverScale : height;
+
                 let color;
                 switch (estado) {
                     case 'red': color = '#EF4444'; break;
@@ -623,17 +794,32 @@
                     default: color = '#10B981';
                 }
 
+                // Agregar sombra si está en hover
+                if (isHovered) {
+                    elements.indicatorsCtx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+                    elements.indicatorsCtx.shadowBlur = 10;
+                    elements.indicatorsCtx.shadowOffsetX = 0;
+                    elements.indicatorsCtx.shadowOffsetY = 0;
+                } else {
+                    elements.indicatorsCtx.shadowColor = 'transparent';
+                    elements.indicatorsCtx.shadowBlur = 0;
+                }
+
                 elements.indicatorsCtx.fillStyle = color;
-                elements.indicatorsCtx.fillRect(position.x - width / 2, position.y - height / 2, width, height);
+                elements.indicatorsCtx.fillRect(position.x - finalWidth / 2, position.y - finalHeight / 2, finalWidth, finalHeight);
                 elements.indicatorsCtx.lineWidth = 2;
                 elements.indicatorsCtx.strokeStyle = config.indicatorBorder;
-                elements.indicatorsCtx.strokeRect(position.x - width / 2, position.y - height / 2, width, height);
+                elements.indicatorsCtx.strokeRect(position.x - finalWidth / 2, position.y - finalHeight / 2, finalWidth, finalHeight);
 
                 elements.indicatorsCtx.font = `bold ${config.fontSize}px Arial`;
                 elements.indicatorsCtx.fillStyle = config.indicatorTextColor;
                 elements.indicatorsCtx.textAlign = 'center';
                 elements.indicatorsCtx.textBaseline = 'middle';
                 elements.indicatorsCtx.fillText(id, position.x, position.y);
+
+                // Restaurar el estilo de sombra
+                elements.indicatorsCtx.shadowColor = 'transparent';
+                elements.indicatorsCtx.shadowBlur = 0;
             }
 
             function calculatePosition(indicator) {
@@ -743,19 +929,34 @@
                         html5QrcodeScanner = null;
                         document.getElementById('profesor-info').classList.add('hidden');
                         document.getElementById('profesor-scan-section').classList.remove('hidden');
-                        document.getElementById('llaves-scan-section').classList.add('hidden');
+                        document.getElementById('espacio-scan-section').classList.add('hidden');
                         document.getElementById('qr-placeholder').style.display = 'flex';
-                        document.getElementById('llaves-placeholder').style.display = 'flex';
+                        document.getElementById('espacio-placeholder').style.display = 'flex';
                         const btnIniciarProfesor = document.getElementById('btn-iniciar-profesor');
                         btnIniciarProfesor.disabled = false;
                         btnIniciarProfesor.textContent = 'Iniciar Escaneo de Profesor';
-                        const btnIniciarLlaves = document.getElementById('btn-iniciar-llaves');
-                        btnIniciarLlaves.disabled = false;
-                        btnIniciarLlaves.textContent = 'Iniciar Escaneo de Llaves';
+                        const btnIniciarEspacio = document.getElementById('btn-iniciar-espacio');
+                        btnIniciarEspacio.disabled = false;
+                        btnIniciarEspacio.textContent = 'Iniciar Escaneo de Espacio';
                     } catch (err) {
                         console.error('Error al detener el escáner:', err);
                     }
                 }
+            });
+
+            // Agregar el evento mousemove al canvas de indicadores
+            elements.indicatorsCanvas.addEventListener('mousemove', function(event) {
+                const rect = elements.indicatorsCanvas.getBoundingClientRect();
+                state.mouseX = event.clientX - rect.left;
+                state.mouseY = event.clientY - rect.top;
+                drawIndicators(); // Redibujar los indicadores para actualizar el estado de hover
+            });
+
+            // Agregar el evento mouseleave para limpiar el estado de hover
+            elements.indicatorsCanvas.addEventListener('mouseleave', function() {
+                state.mouseX = -1;
+                state.mouseY = -1;
+                drawIndicators();
             });
         });
 
@@ -817,5 +1018,82 @@
                 detail: 'detalles-bloque'
             }));
         };
+
+        function cambiarPiso(mapaId) {
+            // Mostrar indicador de carga
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            loadingOverlay.innerHTML = `
+                <div class="bg-white p-4 rounded-lg shadow-lg">
+                    <svg class="w-8 h-8 text-light-cloud-blue animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+            `;
+            document.body.appendChild(loadingOverlay);
+
+            // Obtener los datos del nuevo plano
+            fetch(`/plano/${mapaId}/data`)
+                .then(response => response.json())
+                .then(data => {
+                    // Actualizar el número de piso
+                    document.getElementById('numero-piso-actual').textContent = data.mapa.piso.numero;
+
+                    // Actualizar los estados de los bloques
+                    state.indicators = data.bloques;
+                    state.originalCoordinates = data.bloques;
+
+                    // Limpiar los canvases antes de cargar la nueva imagen
+                    elements.mapCtx.clearRect(0, 0, elements.mapCanvas.width, elements.mapCanvas.height);
+                    elements.indicatorsCtx.clearRect(0, 0, elements.indicatorsCanvas.width, elements.indicatorsCanvas.height);
+
+                    // Actualizar la imagen del mapa
+                    const img = new Image();
+                    img.crossOrigin = "anonymous"; // Permitir carga de imágenes de diferentes orígenes
+                    img.onload = function() {
+                        state.mapImage = img;
+                        state.originalImageSize = {
+                            width: img.naturalWidth,
+                            height: img.naturalHeight
+                        };
+                        state.isImageLoaded = true;
+                        
+                        // Reinicializar los canvases con las nuevas dimensiones
+                        initCanvases();
+                        
+                        // Dibujar la nueva imagen y los indicadores
+                        drawCanvas();
+                        drawIndicators();
+                    };
+                    img.onerror = function() {
+                        console.error('Error al cargar la imagen:', data.mapa.ruta_mapa);
+                        mostrarNotificacion('Error al cargar la imagen del plano', 'error');
+                    };
+                    img.src = data.mapa.ruta_mapa;
+
+                    // Actualizar las clases activas en las pestañas
+                    document.querySelectorAll('#pills-tab a').forEach(a => {
+                        if (a.getAttribute('href').includes(mapaId)) {
+                            a.classList.add('bg-light-cloud-blue', 'text-white', 'border-light-cloud-blue');
+                            a.classList.remove('bg-white', 'text-gray-700', 'border-gray-300');
+                        } else {
+                            a.classList.remove('bg-light-cloud-blue', 'text-white', 'border-light-cloud-blue');
+                            a.classList.add('bg-white', 'text-gray-700', 'border-gray-300');
+                        }
+                    });
+
+                    // Actualizar la URL sin recargar la página
+                    window.history.pushState({}, '', `/plano/${mapaId}`);
+                })
+                .catch(error => {
+                    console.error('Error al cargar el plano:', error);
+                    mostrarNotificacion('Error al cargar el plano', 'error');
+                })
+                .finally(() => {
+                    // Eliminar el indicador de carga
+                    loadingOverlay.remove();
+                });
+        }
     </script>
 </x-app-layout>

@@ -181,6 +181,7 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/plano-digital/{id}', [PlanoDigitalController::class, 'show'])->name('plano.show');
     Route::get('/plano/{id}/bloques', [PlanoDigitalController::class, 'bloques'])->name('plano.bloques');
     Route::get('/plano/{id}/modulo-actual', [PlanoDigitalController::class, 'getModuloActual'])->name('plano.modulo-actual');
+    Route::get('/plano/{id}/data', [PlanoDigitalController::class, 'getPlanoData'])->name('plano.data');
     Route::get('/api/profesor/{run}', [ProfesorController::class, 'getProfesor'])->name('profesor.get');
 });
 

@@ -260,4 +260,25 @@ class PlanoDigitalController extends Controller
             return response()->json(['error' => 'Error al obtener el módulo actual'], 500);
         }
     }
+
+    public function getPlanoData($id)
+    {
+        $mapa = Mapa::with(['piso.facultad.sede'])->findOrFail($id);
+        $estadoActual = $this->obtenerEstadoActual(Carbon::now());
+        $bloques = $this->prepararBloques($mapa, $estadoActual);
+        
+        return response()->json([
+            'mapa' => [
+                'id' => $mapa->id_mapa,
+                'nombre' => $mapa->nombre_mapa,
+                'ruta_mapa' => asset('storage/' . $mapa->ruta_mapa),
+                'piso' => [
+                    'numero' => $mapa->piso->numero_piso,
+                    'facultad' => $mapa->piso->facultad->nombre_facultad,
+                    'sede' => $mapa->piso->facultad->sede->nombre_sede
+                ]
+            ],
+            'bloques' => $bloques
+        ]);
+    }
 }
