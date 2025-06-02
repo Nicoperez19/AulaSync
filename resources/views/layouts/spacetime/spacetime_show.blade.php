@@ -7,7 +7,7 @@
         </div>
     </x-slot>
 
-    <div class="p-6 space-y-6" x-data="{ selectedPiso: {{ $pisos->first()->id ?? 1 }} }">
+    <div class="p-6 space-y-6" x-data="{ selectedPiso: '{{ $pisos->first()->id ?? 1 }}' }">
         <!-- Nav Pills de Pisos -->
         <div class="w-full">
             <div class="bg-white shadow-md dark:bg-dark-eval-0 rounded-t-xl">
@@ -15,9 +15,9 @@
                     @foreach ($pisos as $piso)
                         <li role="presentation">
                             <button type="button"
-                                @click="selectedPiso = {{ $piso->id }}"
+                                @click="selectedPiso = '{{ $piso->id }}'"
                                 class="px-10 py-4 text-lg font-semibold transition-all duration-300 border border-b-0 rounded-t-xl focus:outline-none"
-                                :class="selectedPiso == {{ $piso->id }} 
+                                :class="selectedPiso == '{{ $piso->id }}' 
                                     ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
                                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue'">
                                 Piso {{ $piso->numero_piso }}
@@ -28,7 +28,7 @@
                 <!-- Cards de espacios por piso -->
                 <div class="p-6 bg-white shadow-md rounded-b-xl dark:bg-gray-800">
                     @foreach ($pisos as $piso)
-                        <div x-show="selectedPiso == {{ $piso->id }}"
+                        <div x-show="selectedPiso == '{{ $piso->id }}'"
                              x-transition:enter="transition ease-out duration-300"
                              x-transition:enter-start="opacity-0 scale-95"
                              x-transition:enter-end="opacity-100 scale-100"

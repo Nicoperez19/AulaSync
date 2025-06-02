@@ -31,7 +31,7 @@
     <div x-data="mainState" :class="{ dark: isDarkMode }" x-on:resize.window="handleWindowResize" x-cloak>
         <div class="min-h-screen text-gray-900 bg-gray-100 dark:bg-dark-eval-0 dark:text-gray-200">
             <!-- Navbar -->
-            <div class="fixed top-0 left-0 z-50 w-full">
+            <div class="fixed top-0 left-0 z-[100] w-full">
                 <x-navbar />
             </div>
 
@@ -39,16 +39,7 @@
             <x-sidebar.sidebar />
 
             <!-- Contenido principal -->
-            <div class="flex flex-col min-h-screen pt-16 bg-cloud-light dark:bg-dark-eval-2 transition-[margin] duration-300"
-                :class="{
-                    'ml-64': isSidebarOpen || isSidebarHovered,
-                    'ml-16': !(isSidebarOpen || isSidebarHovered),
-                    'ml-0': true
-                }"
-                :style="{
-                    'margin-left': (isSidebarOpen || isSidebarHovered) && window.innerWidth >= 768 ? '16rem' : (window
-                        .innerWidth >= 768 ? '4rem' : '0rem')
-                }">
+            <div class="flex flex-col min-h-screen pt-16 bg-cloud-light dark:bg-dark-eval-2 transition-all duration-300">
                 <!-- Header -->
                 <header>
                     <div class="p-4 mt-4 sm:p-6">
@@ -57,7 +48,11 @@
                 </header>
 
                 <!-- Main content -->
-                <main class="flex-1 px-4 overflow-x-auto sm:px-6">
+                <main class="flex-1 px-4 overflow-x-auto sm:px-6 transition-all duration-300"
+                    :class="{
+                        'opacity-50 pointer-events-none': isSidebarOpen || isSidebarHovered,
+                        'opacity-100': !(isSidebarOpen || isSidebarHovered)
+                    }">
                     {{ $slot }}
                 </main>
 

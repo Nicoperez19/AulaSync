@@ -96,11 +96,11 @@
     </div>
 
     <!-- Modal fijo de hora y módulo actual -->
-    <div id="modal-hora-actual" class="fixed bottom-4 right-4 bg-light-cloud-blue rounded-lg shadow-lg p-4 w-64 z-50 border border-blue-600">
+    <div id="modal-hora-actual" class="fixed z-50 w-64 p-4 border border-blue-600 rounded-lg shadow-lg bottom-4 right-4 bg-light-cloud-blue">
         <div class="flex flex-col space-y-3">
-            <div class="flex items-center justify-between border-b border-blue-400 pb-2">
+            <div class="flex items-center justify-between pb-2 border-b border-blue-400">
                 <div class="flex items-center space-x-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <h3 class="text-sm font-semibold text-white">Hora Actual</h3>
@@ -109,12 +109,13 @@
             </div>
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                     </svg>
-                    <h3 class="text-sm font-semibold text-white">Módulo Actual</h3>
+                    <h3 class="text-sm font-semibold text-white">Módulo: <span id="modulo-actual" class="text-sm font-medium text-white">-</span> </h3>
+
                 </div>
-                <span id="modulo-actual" class="text-sm font-medium text-white">-</span>
+               
             </div>
         </div>
     </div>
@@ -164,9 +165,9 @@
         <div class="p-4">
             <div class="space-y-4">
                 <!-- Sección de escaneo de profesor -->
-                <div id="profesor-scan-section" class="flex flex-col items-center justify-center p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <div id="profesor-scan-section" class="flex flex-col items-center justify-center p-4 bg-gray-100 rounded-lg dark:bg-gray-700">
                     <div id="qr-reader" class="w-full max-w-md">
-                        <div id="qr-placeholder" class="flex flex-col items-center justify-center p-8 text-center bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+                        <div id="qr-placeholder" class="flex flex-col items-center justify-center p-8 text-center bg-white rounded-lg shadow-lg dark:bg-gray-800">
                             <div class="mb-4">
                                 <svg class="w-16 h-16 text-light-cloud-blue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v4m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
@@ -174,7 +175,7 @@
                             </div>
                             <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escaneo de Profesor</h3>
                             <p class="text-sm text-gray-600 dark:text-gray-400">Presione el botón para iniciar el escaneo del profesor</p>
-                            <button id="btn-iniciar-profesor" onclick="initQRScanner()" class="mt-4 px-4 py-2 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
+                            <button id="btn-iniciar-profesor" onclick="initQRScanner()" class="px-4 py-2 mt-4 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
                                 Iniciar Escaneo de Profesor
                             </button>
                         </div>
@@ -182,7 +183,7 @@
                 </div>
 
                 <!-- Información del profesor -->
-                <div id="profesor-info" class="hidden p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                <div id="profesor-info" class="hidden p-4 bg-white rounded-lg shadow dark:bg-gray-800">
                     <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Información del Profesor</h3>
                     <div class="space-y-2">
                         <p class="text-sm text-gray-600 dark:text-gray-400">Nombre: <span id="profesor-nombre" class="font-medium text-gray-900 dark:text-white"></span></p>
@@ -191,9 +192,9 @@
                 </div>
 
                 <!-- Sección de escaneo de espacio -->
-                <div id="espacio-scan-section" class="hidden flex flex-col items-center justify-center p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                <div id="espacio-scan-section" class="flex flex-col items-center justify-center hidden p-4 bg-gray-100 rounded-lg dark:bg-gray-700">
                     <div id="qr-reader-espacio" class="w-full max-w-md">
-                        <div id="espacio-placeholder" class="flex flex-col items-center justify-center p-8 text-center bg-white dark:bg-gray-800 rounded-lg shadow-lg">
+                        <div id="espacio-placeholder" class="flex flex-col items-center justify-center p-8 text-center bg-white rounded-lg shadow-lg dark:bg-gray-800">
                             <div class="mb-4">
                                 <svg class="w-16 h-16 text-light-cloud-blue" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
@@ -201,7 +202,7 @@
                             </div>
                             <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escaneo de Espacio</h3>
                             <p class="text-sm text-gray-600 dark:text-gray-400">Presione el botón para iniciar el escaneo del espacio</p>
-                            <button id="btn-iniciar-espacio" onclick="initEspacioScanner()" class="mt-4 px-4 py-2 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
+                            <button id="btn-iniciar-espacio" onclick="initEspacioScanner()" class="px-4 py-2 mt-4 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
                                 Iniciar Escaneo de Espacio
                             </button>
                         </div>
@@ -209,13 +210,13 @@
                 </div>
 
                 <!-- Información del espacio y verificación -->
-                <div id="espacio-info" class="hidden p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                <div id="espacio-info" class="hidden p-4 bg-white rounded-lg shadow dark:bg-gray-800">
                     <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Información del Espacio</h3>
                     <div class="space-y-2">
                         <p class="text-sm text-gray-600 dark:text-gray-400">Nombre: <span id="espacio-nombre" class="font-medium text-gray-900 dark:text-white"></span></p>
                         <p class="text-sm text-gray-600 dark:text-gray-400">Tipo: <span id="espacio-tipo" class="font-medium text-gray-900 dark:text-white"></span></p>
                     </div>
-                    <div id="verificacion-espacio" class="mt-4 p-4 rounded-lg">
+                    <div id="verificacion-espacio" class="p-4 mt-4 rounded-lg">
                         <div class="flex items-center justify-center space-x-2">
                             <svg class="w-6 h-6 text-gray-400 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -227,7 +228,7 @@
                 </div>
 
                 <!-- Sección de selección de duración -->
-                <div id="duracion-section" class="hidden p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                <div id="duracion-section" class="hidden p-4 bg-white rounded-lg shadow dark:bg-gray-800">
                     <h3 class="mb-4 text-lg font-semibold text-gray-900 dark:text-white">Seleccione la duración de la reserva</h3>
                     <div class="grid grid-cols-3 gap-4">
                         <button onclick="seleccionarDuracion(30)" class="p-3 text-sm font-medium text-gray-700 transition-all duration-300 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
@@ -252,7 +253,7 @@
                 </div>
 
                 <!-- Sección de confirmación -->
-                <div id="confirmacion-section" class="hidden p-4 bg-white dark:bg-gray-800 rounded-lg shadow">
+                <div id="confirmacion-section" class="hidden p-4 bg-white rounded-lg shadow dark:bg-gray-800">
                     <div class="text-center">
                         <div id="confirmacion-icono" class="mx-auto mb-4">
                             <!-- El ícono se llenará dinámicamente -->
@@ -773,7 +774,6 @@
                 const width = config.indicatorWidth;
                 const height = config.indicatorHeight;
 
-                // Verificar si el mouse está sobre este indicador
                 const mouseX = state.mouseX;
                 const mouseY = state.mouseY;
                 const isHovered = mouseX >= position.x - width / 2 &&
@@ -781,7 +781,6 @@
                                 mouseY >= position.y - height / 2 &&
                                 mouseY <= position.y + height / 2;
 
-                // Ajustar el tamaño si está en hover
                 const hoverScale = 1.2;
                 const finalWidth = isHovered ? width * hoverScale : width;
                 const finalHeight = isHovered ? height * hoverScale : height;
@@ -794,7 +793,6 @@
                     default: color = '#10B981';
                 }
 
-                // Agregar sombra si está en hover
                 if (isHovered) {
                     elements.indicatorsCtx.shadowColor = 'rgba(0, 0, 0, 0.3)';
                     elements.indicatorsCtx.shadowBlur = 10;
@@ -817,7 +815,6 @@
                 elements.indicatorsCtx.textBaseline = 'middle';
                 elements.indicatorsCtx.fillText(id, position.x, position.y);
 
-                // Restaurar el estilo de sombra
                 elements.indicatorsCtx.shadowColor = 'transparent';
                 elements.indicatorsCtx.shadowBlur = 0;
             }
@@ -902,13 +899,44 @@
                 const diaActual = dias[ahora.getDay()];
                 const horaActualStr = ahora.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
+                function determinarModulo(hora) {
+                    const [horas, minutos] = hora.split(':').map(Number);
+                    const tiempoEnMinutos = horas * 60 + minutos;
+
+                    const rangosModulos = [
+                        { inicio: 8 * 60 + 10, fin: 9 * 60, numero: 1 },      // 08:10 - 09:00
+                        { inicio: 9 * 60 + 10, fin: 10 * 60, numero: 2 },     // 09:10 - 10:00
+                        { inicio: 10 * 60 + 10, fin: 11 * 60, numero: 3 },    // 10:10 - 11:00
+                        { inicio: 11 * 60 + 10, fin: 12 * 60, numero: 4 },    // 11:10 - 12:00
+                        { inicio: 12 * 60 + 10, fin: 13 * 60, numero: 5 },    // 12:10 - 13:00
+                        { inicio: 14 * 60 + 10, fin: 15 * 60, numero: 6 },    // 14:10 - 15:00
+                        { inicio: 15 * 60 + 10, fin: 16 * 60, numero: 7 },    // 15:10 - 16:00
+                        { inicio: 16 * 60 + 10, fin: 17 * 60, numero: 8 },    // 16:10 - 17:00
+                        { inicio: 17 * 60 + 10, fin: 18 * 60, numero: 9 },    // 17:10 - 18:00
+                        { inicio: 18 * 60 + 10, fin: 19 * 60, numero: 10 },   // 18:10 - 19:00
+                        { inicio: 19 * 60 + 10, fin: 20 * 60, numero: 11 },   // 19:10 - 20:00
+                        { inicio: 20 * 60 + 10, fin: 21 * 60, numero: 12 },   // 20:10 - 21:00
+                        { inicio: 21 * 60 + 10, fin: 22 * 60, numero: 13 },   // 21:10 - 22:00
+                        { inicio: 22 * 60 + 10, fin: 23 * 60, numero: 14 },   // 22:10 - 23:00
+                        { inicio: 23 * 60 + 10, fin: 24 * 60, numero: 15 }    // 23:10 - 24:00
+                    ];
+
+                    for (const rango of rangosModulos) {
+                        if (tiempoEnMinutos >= rango.inicio && tiempoEnMinutos <= rango.fin) {
+                            return rango.numero;
+                        }
+                    }
+                    return null;
+                }
+
                 fetch(`/plano/${mapaId}/modulo-actual?hora=${horaActualStr}&dia=${diaActual}`)
                     .then(response => response.json())
                     .then(data => {
                         if (data.modulo) {
                             const horaInicio = data.modulo.hora_inicio.substring(0, 5);
                             const horaTermino = data.modulo.hora_termino.substring(0, 5);
-                            document.getElementById('modulo-actual').textContent = `${horaInicio} - ${horaTermino}`;
+                            const numeroModulo = determinarModulo(horaInicio);
+                            document.getElementById('modulo-actual').textContent = `${numeroModulo}       /      ${horaInicio} - ${horaTermino}`;
                         } else {
                             document.getElementById('modulo-actual').textContent = 'Sin módulo';
                         }
@@ -1024,7 +1052,7 @@
             const loadingOverlay = document.createElement('div');
             loadingOverlay.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
             loadingOverlay.innerHTML = `
-                <div class="bg-white p-4 rounded-lg shadow-lg">
+                <div class="p-4 bg-white rounded-lg shadow-lg">
                     <svg class="w-8 h-8 text-light-cloud-blue animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
