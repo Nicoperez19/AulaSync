@@ -99,23 +99,36 @@ class PlanoDigitalController extends Controller
         $reservasActivas = $this->obtenerReservasActivas($mapa, $estadoActual);
         $planificacionesProximas = $this->obtenerPlanificacionesProximas($mapa, $estadoActual);
 
-        return $mapa->bloques->map(function ($bloque) use ($planificacionesActivas, $reservasActivas, $planificacionesProximas) {
+        return $mapa->bloques->map(function ($bloque) use ($planificacionesActivas, $reservasActivas, $planificacionesProximas, $estadoActual) {
             $idEspacio = $bloque->id_espacio;
-            $estaOcupado = $planificacionesActivas->contains('id_espacio', $idEspacio);
-            $estaReservado = $reservasActivas->contains('id_espacio', $idEspacio);
-            $tieneClaseProxima = $planificacionesProximas->contains('id_espacio', $idEspacio);
+            $espacio = $bloque->espacio;
+            
+            // Determinar si el espacio está ocupado basado en su estado
+            $estaOcupado = $espacio->estado === 'Ocupado';
+
+            // Verificar si hay una reserva activa para este espacio
+            $reservaActiva = $reservasActivas->firstWhere('id_espacio', $idEspacio);
+            if ($reservaActiva) {
+                // Si la reserva tiene hora_salida y es menor que la hora actual, el espacio no está ocupado
+                if ($reservaActiva->hora_salida && $reservaActiva->hora_salida < $estadoActual['hora']) {
+                    $estaOcupado = false;
+                }
+            }
 
             return [
                 'id' => $idEspacio,
                 'nombre' => $bloque->espacio->nombre_espacio,
                 'x' => $bloque->posicion_x,
                 'y' => $bloque->posicion_y,
-                'estado' => $this->determinarEstado($estaOcupado, $estaReservado, $tieneClaseProxima),
-                'detalles' => $this->prepararDetallesBloque(
-                    $bloque->espacio,
-                    $estaOcupado ? $planificacionesActivas->firstWhere('id_espacio', $idEspacio) : null,
-                    $estaReservado ? $reservasActivas->firstWhere('id_espacio', $idEspacio) : null,
-                    $tieneClaseProxima ? $planificacionesProximas->firstWhere('id_espacio', $idEspacio) : null
+                'estado' => $this->determinarEstado($estaOcupado, false, false),
+                'detalles' => array_merge(
+                    $this->prepararDetallesBloque(
+                        $bloque->espacio,
+                        $estaOcupado ? $planificacionesActivas->firstWhere('id_espacio', $idEspacio) : null,
+                        $estaOcupado ? $reservasActivas->firstWhere('id_espacio', $idEspacio) : null,
+                        $planificacionesProximas->firstWhere('id_espacio', $idEspacio)
+                    ),
+                    ['estado' => $espacio->estado]
                 )
             ];
         })->toArray();
@@ -140,10 +153,16 @@ class PlanoDigitalController extends Controller
         $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
         $periodo = $anioActual . '-' . $semestre;
 
+        // Obtener la hora actual
+        $horaActual = Carbon::now()->format('H:i:s');
+
         return Planificacion_Asignatura::with(['horario', 'asignatura.profesor', 'modulo', 'espacio'])
             ->where('id_modulo', $moduloActual->id_modulo)
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
+            })
+            ->whereHas('modulo', function ($query) use ($horaActual) {
+                $query->where('hora_termino', '>=', $horaActual); // Solo módulos que no han terminado
             })
             ->whereHas('espacio', function ($query) use ($mapa) {
                 $query->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'));
@@ -153,8 +172,11 @@ class PlanoDigitalController extends Controller
 
     private function obtenerReservasActivas(Mapa $mapa, array $estadoActual)
     {
+        $horaActual = Carbon::now()->format('H:i:s');
+        
         return Reserva::where('fecha_reserva', $estadoActual['fecha'])
-            ->where('hora', $estadoActual['hora'])
+            ->where('hora', '<=', $estadoActual['hora'])
+            ->where('estado', 'activa') // Solo reservas activas
             ->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'))
             ->get();
     }
@@ -187,10 +209,12 @@ class PlanoDigitalController extends Controller
 
     private function determinarEstado(bool $estaOcupado, bool $estaReservado, bool $tieneClaseProxima): string
     {
-        if ($estaOcupado)
+        // Si el espacio está ocupado, mostrar en rojo
+        if ($estaOcupado) {
             return 'red';
-        if ($tieneClaseProxima)
-            return 'blue';
+        }
+        
+        // Si el espacio está disponible, mostrar en verde
         return 'green';
     }
 

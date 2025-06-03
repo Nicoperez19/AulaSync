@@ -81,12 +81,28 @@ class DataLoadController extends Controller
             $processedHorariosCount = 0;
             $errors = [];
             $skippedRows = 0;
+            $totalRows = count($rows) - 1; // Restamos 1 por la fila de encabezados
+            $currentRow = 0;
+
+            // Actualizar estado inicial
+            $dataLoad->update([
+                'estado' => 'procesando',
+                'registros_cargados' => 0
+            ]);
 
             foreach ($rows as $index => $row) {
                 if ($index === 0) {
                     Log::info('Saltando encabezados del archivo');
                     continue;
                 }
+
+                $currentRow++;
+                // Actualizar el progreso cada fila
+                $progress = ($currentRow / $totalRows) * 100;
+                $dataLoad->update([
+                    'estado' => 'procesando',
+                    'registros_cargados' => round($progress)
+                ]);
 
                 try {
                     $sede = $row[7];
@@ -352,5 +368,13 @@ class DataLoadController extends Controller
             Log::error('Error al eliminar registro de carga: ' . $e->getMessage());
             return back()->withErrors(['error' => 'Error al eliminar el registro de carga.']);
         }
+    }
+
+    public function getProgress(DataLoad $dataLoad)
+    {
+        return response()->json([
+            'estado' => $dataLoad->estado,
+            'progreso' => $dataLoad->registros_cargados
+        ]);
     }
 }

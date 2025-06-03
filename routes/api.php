@@ -77,6 +77,7 @@ Route::get('/verificar-espacio/{profesorId}/{espacioId}', function ($profesorId,
 // Rutas para reservas
 Route::get('/verificar-espacio/{userId}/{espacioId}', [ReservaController::class, 'verificarEspacio']);
 Route::post('/registrar-ingreso-clase', [ReservaController::class, 'registrarIngresoClase']);
+Route::post('/registrar-salida-clase', [ReservaController::class, 'registrarSalidaClase']);
 Route::post('/registrar-reserva-espontanea', [ReservaController::class, 'registrarReservaEspontanea']);
 
 Route::get('/user/{run}', function ($run) {

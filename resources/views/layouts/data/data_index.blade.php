@@ -76,6 +76,25 @@
                                 <div class="w-12 h-12 border-b-2 border-blue-500 rounded-full animate-spin"></div>
                                 <p class="mt-2 text-sm font-medium text-gray-600 dark:text-gray-400">Procesando
                                     archivo...</p>
+                                <div class="w-full max-w-md mt-4">
+                                    <div class="relative pt-1">
+                                        <div class="flex mb-2 items-center justify-between">
+                                            <div>
+                                                <span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-600 bg-blue-200">
+                                                    Progreso
+                                                </span>
+                                            </div>
+                                            <div class="text-right">
+                                                <span class="text-xs font-semibold inline-block text-blue-600" id="progress-percentage">
+                                                    0%
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="overflow-hidden h-2 mb-4 text-xs flex rounded bg-blue-200">
+                                            <div id="progress-bar" style="width:0%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500 transition-all duration-500"></div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -167,26 +186,56 @@
                 xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
 
                 xhr.onload = function() {
-                    loadingSpinner.classList.add('hidden');
+                    loadingSpinner.classList.remove('hidden');
 
                     if (xhr.status === 200) {
                         try {
                             const response = JSON.parse(xhr.responseText);
+                            const dataLoad = response.data.nombre_archivo;
 
-                            // ✅ SweetAlert al cargar correctamente
-                            Swal.fire({
-                                title: '¡Éxito!',
-                                text: 'El archivo se cargó correctamente.',
-                                icon: 'success',
-                                timer: 5000,
-                                showConfirmButton: true,
-                                allowOutsideClick: true,
-                                timerProgressBar: true,
-                            });
+                            // Iniciar consulta periódica del progreso
+                            const progressInterval = setInterval(() => {
+                                fetch(`/data/progress/${dataLoad.id}`)
+                                    .then(res => res.json())
+                                    .then(data => {
+                                        if (data.estado === 'completado' || data.estado === 'error') {
+                                            clearInterval(progressInterval);
+                                            if (data.estado === 'completado') {
+                                                // ✅ SweetAlert al cargar correctamente
+                                                Swal.fire({
+                                                    title: '¡Éxito!',
+                                                    text: 'El archivo se cargó correctamente.',
+                                                    icon: 'success',
+                                                    timer: 5000,
+                                                    showConfirmButton: true,
+                                                    allowOutsideClick: true,
+                                                    timerProgressBar: true,
+                                                });
 
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 2000);
+                                                setTimeout(() => {
+                                                    window.location.reload();
+                                                }, 2000);
+                                            }
+                                        } else {
+                                            // Actualizar la barra de progreso con una animación suave
+                                            const progressBar = document.getElementById('progress-bar');
+                                            const progressPercentage = document.getElementById('progress-percentage');
+                                            const currentWidth = parseFloat(progressBar.style.width) || 0;
+                                            const targetWidth = data.progreso;
+                                            
+                                            // Animar el cambio de progreso
+                                            if (currentWidth < targetWidth) {
+                                                progressBar.style.width = targetWidth + '%';
+                                                progressPercentage.textContent = Math.round(targetWidth) + '%';
+                                            }
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error('Error al consultar el progreso:', error);
+                                        clearInterval(progressInterval);
+                                    });
+                            }, 500); // Consultar cada medio segundo
+
                         } catch (e) {
                             showError('Error al procesar la respuesta del servidor');
                         }
@@ -199,7 +248,6 @@
                         }
                     }
                 };
-
 
                 xhr.onerror = function() {
                     loadingSpinner.classList.add('hidden');

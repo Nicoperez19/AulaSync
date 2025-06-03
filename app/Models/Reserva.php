@@ -19,7 +19,10 @@ class Reserva extends Model
         'hora',
         'fecha_reserva',
         'id_espacio',
-        'run' //usuario
+        'run',
+        'tipo_reserva',
+        'estado',
+        'hora_salida'
     ];
 
     public function espacio()

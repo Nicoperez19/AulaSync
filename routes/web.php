@@ -157,6 +157,7 @@ Route::group(['middleware' => ['permission:mantenedor de carga de datos']], func
     Route::get('/data/{dataLoad}', [DataLoadController::class, 'show'])->name('data.show');
     Route::post('/data_loads/upload', [DataLoadController::class, 'upload'])->name('data.upload');
     Route::delete('/data/{dataLoad}', [DataLoadController::class, 'destroy'])->name('data.destroy');
+    Route::get('/data/progress/{dataLoad}', [DataLoadController::class, 'getProgress'])->name('data.progress');
 });
 
 Route::middleware('auth')->group(function () {
