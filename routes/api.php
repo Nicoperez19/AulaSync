@@ -112,3 +112,60 @@ Route::get('/user/{run}', function ($run) {
         ], 500);
     }
 });
+
+Route::get('/verificar-clase-usuario', function (\Illuminate\Http\Request $request) {
+    $run = $request->query('run');
+    $espacioId = $request->query('espacio');
+    $dia = $request->query('dia');
+    $hora = $request->query('hora');
+
+    $clase = \DB::table('planificacion_asignaturas as pa')
+        ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
+        ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
+        ->join('espacios as e', 'pa.id_espacio', '=', 'e.id_espacio')
+        ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
+        ->join('users as u', 'h.run', '=', 'u.run')
+        ->where(function($q) use ($espacioId) {
+            $q->where('pa.id_espacio', $espacioId)
+              ->orWhere('e.nombre_espacio', $espacioId);
+        })
+        ->where('h.run', $run)
+        ->where('m.dia', $dia)
+        ->where('m.hora_inicio', '<=', $hora)
+        ->where('m.hora_termino', '>=', $hora)
+        ->select('a.nombre_asignatura', 'm.dia', 'm.hora_inicio', 'm.hora_termino')
+        ->first();
+
+    if ($clase) {
+        return response()->json([
+            'success' => true,
+            'tiene_clase' => true,
+            'mensaje' => 'Usted tiene una clase programada en este espacio.',
+            'clase' => $clase
+        ]);
+    } else {
+        return response()->json([
+            'success' => true,
+            'tiene_clase' => false,
+            'mensaje' => 'No tiene clases asociadas en este espacio en este horario.'
+        ]);
+    }
+});
+
+Route::get('/espacio/{id}', function ($id) {
+    $espacio = \DB::table('espacios')
+        ->where('id_espacio', $id)
+        ->orWhere('nombre_espacio', $id)
+        ->first();
+    if ($espacio) {
+        return response()->json([
+            'success' => true,
+            'espacio' => $espacio
+        ]);
+    } else {
+        return response()->json([
+            'success' => false,
+            'message' => 'Espacio no encontrado'
+        ], 404);
+    }
+});

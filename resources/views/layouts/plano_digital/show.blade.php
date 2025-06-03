@@ -452,6 +452,7 @@
             }
 
             espacioId = decodedText;
+            console.log('ID del espacio enviado a la API:', espacioId);
 
             // Obtener información del espacio y verificar disponibilidad
             fetch(`/api/espacio/${espacioId}`)
@@ -463,26 +464,18 @@
                         document.getElementById('espacio-info').classList.remove('hidden');
                         document.getElementById('espacio-scan-section').classList.add('hidden');
 
-                        // Verificar el estado del espacio y la programación del profesor
-                        fetch(`/api/verificar-espacio/${userId}/${espacioId}`)
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.estado === 'disponible') {
-                                    if (data.tieneClaseProgramada) {
-                                        // Si tiene clase programada, registrar ingreso
-                                        registrarIngresoClase();
-                                    } else {
-                                        // Si no tiene clase programada, mostrar opciones de duración
-                                        mostrarOpcionesDuracion();
-                                    }
-                                } else {
-                                    // Si el espacio está ocupado, mostrar mensaje
-                                    mostrarMensajeOcupado(data);
+                        // Verificar si el usuario tiene clase programada en este espacio y horario
+                        const ahora = new Date();
+                        const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+                        const diaActual = dias[ahora.getDay()];
+                        const horaActual = ahora.toTimeString().substring(0,5); // formato HH:MM
+                        fetch(`/api/verificar-clase-usuario?run=${userId}&espacio=${espacioId}&dia=${diaActual}&hora=${horaActual}`)
+                            .then(resp => resp.json())
+                            .then(res => {
+                                const verificacionDiv = document.getElementById('verificacion-espacio');
+                                if (verificacionDiv) {
+                                    verificacionDiv.innerHTML = `<span class="text-base font-semibold ${res.tiene_clase ? 'text-green-600' : 'text-red-600'}">${res.mensaje}</span>`;
                                 }
-                            })
-                            .catch(error => {
-                                console.error('Error:', error);
-                                mostrarError('Error al verificar el espacio');
                             });
                     } else {
                         alert('No se encontró información del espacio');
