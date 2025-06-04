@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ReservaController;
 use App\Models\User;
 use App\Http\Controllers\EspacioController;
+use Illuminate\Support\Facades\DB;
 
 /*
 |--------------------------------------------------------------------------
@@ -175,4 +176,59 @@ Route::get('/espacio/{id}', function ($id) {
 // Endpoint para consultar módulos disponibles para reserva en un espacio
 Route::get('/espacio/{espacio}/modulos-disponibles', [EspacioController::class, 'modulosDisponibles']);
 
+// Ruta para verificar si un espacio está ocupado en un módulo específico
+Route::get('/verificar-planificacion/{id_espacio}/{id_modulo}', function ($id_espacio, $id_modulo) {
+    try {
+        // Extraer el día y número de módulo del id_modulo (ejemplo: "MI.5")
+        list($dia, $numeroModulo) = explode('.', $id_modulo);
+        
+        // Verificar si existe planificación para este espacio y módulo
+        $tienePlanificacion = DB::table('planificacion_asignaturas')
+            ->where('id_espacio', $id_espacio)
+            ->where('id_modulo', $id_modulo)
+            ->exists();
+
+        return response()->json([
+            'ocupado' => $tienePlanificacion
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Error al verificar planificación: ' . $e->getMessage());
+        return response()->json([
+            'error' => 'Error al verificar la planificación',
+            'ocupado' => false
+        ], 500);
+    }
+});
+
 Route::get('/reserva-activa/{id}', [App\Http\Controllers\ReservaController::class, 'getReservaActiva']);
+
+// Ruta para verificar la planificación de múltiples espacios
+Route::get('/verificar-planificacion-multiple', function (Request $request) {
+    try {
+        $id_modulo = $request->query('id_modulo');
+        $espacios = explode(',', $request->query('espacios'));
+        
+        if (!$id_modulo || empty($espacios)) {
+            return response()->json([
+                'error' => 'Se requieren id_modulo y espacios'
+            ], 400);
+        }
+
+        // Verificar planificación para todos los espacios
+        $planificaciones = DB::table('planificacion_asignaturas')
+            ->whereIn('id_espacio', $espacios)
+            ->where('id_modulo', $id_modulo)
+            ->pluck('id_espacio')
+            ->toArray();
+
+        return response()->json([
+            'espacios_ocupados' => $planificaciones
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Error al verificar planificación múltiple: ' . $e->getMessage());
+        return response()->json([
+            'error' => 'Error al verificar la planificación',
+            'espacios_ocupados' => []
+        ], 500);
+    }
+});
