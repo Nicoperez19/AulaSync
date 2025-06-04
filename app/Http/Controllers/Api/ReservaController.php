@@ -65,76 +65,71 @@ class ReservaController extends Controller
     public function registrarIngresoClase(Request $request)
     {
         try {
+            // Validar datos de entrada
             $request->validate([
                 'run' => 'required|exists:users,run',
                 'espacio_id' => 'required|exists:espacios,id_espacio'
             ]);
-
-            // Verificar si el usuario es profesor usando Spatie
-            $user = User::where('run', $request->run)
-                ->whereHas('roles', function($query) {
-                    $query->where('name', 'profesor');
-                })
-                ->first();
-
-            if (!$user) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'El usuario no es un profesor válido'
-                ], 400);
-            }
 
             // Obtener la hora actual
             $horaActual = Carbon::now();
             $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
             $horaActualStr = $horaActual->format('H:i:s');
 
-            // Verificar si tiene clase programada
-            $tieneClase = DB::table('planificacion_asignaturas')
-                ->join('horarios', 'planificacion_asignaturas.id_horario', '=', 'horarios.id_horario')
-                ->join('modulos', 'planificacion_asignaturas.id_modulo', '=', 'modulos.id_modulo')
-                ->where('planificacion_asignaturas.id_espacio', $request->espacio_id)
-                ->where('horarios.run', $user->run)
-                ->where('modulos.dia', $diaActual)
-                ->where('modulos.hora_inicio', '<=', $horaActualStr)
-                ->where('modulos.hora_termino', '>=', $horaActualStr)
-                ->exists();
-
-            if (!$tieneClase) {
+            // Verificar si el espacio está ocupado
+            $espacio = Espacio::findOrFail($request->espacio_id);
+            if ($espacio->estado === 'Ocupado') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'No tiene una clase programada en este espacio en este horario'
+                    'message' => 'El espacio se encuentra ocupado'
                 ], 400);
             }
 
-            // Actualizar estado del espacio
-            $espacio = Espacio::findOrFail($request->espacio_id);
-            $espacio->estado = 'Ocupado';
-            $espacio->save();
+            // Verificar si tiene clase programada
+            $tieneClase = DB::table('planificacion_asignaturas as pa')
+                ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
+                ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
+                ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
+                ->where('pa.id_espacio', $request->espacio_id)
+                ->where('h.run', $request->run)
+                ->where('m.dia', $diaActual)
+                ->where(function($query) use ($horaActualStr) {
+                    $query->where('m.hora_inicio', '<=', $horaActualStr)
+                          ->where('m.hora_termino', '>=', $horaActualStr);
+                })
+                ->select('a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino')
+                ->first();
 
-            // Registrar el ingreso
-            $lastReserva = Reserva::orderBy('id_reserva', 'desc')->first();
-            if ($lastReserva) {
-                $lastIdNumber = intval(substr($lastReserva->id_reserva, 1));
-                $newIdNumber = str_pad($lastIdNumber + 1, 3, '0', STR_PAD_LEFT);
-            } else {
-                $newIdNumber = '001';
+            // Si no tiene clase programada, permitir uso libre
+            if (!$tieneClase) {
+                $tieneClase = (object)[
+                    'nombre_asignatura' => 'Uso libre',
+                    'hora_inicio' => $horaActualStr,
+                    'hora_termino' => Carbon::parse($horaActualStr)->addMinutes(50)->format('H:i:s')
+                ];
             }
-            $newId = 'R' . $newIdNumber;
 
             DB::beginTransaction();
             try {
+                // Generar ID de reserva
+                $lastReserva = Reserva::orderBy('id_reserva', 'desc')->first();
+                $newIdNumber = $lastReserva ? 
+                    str_pad(intval(substr($lastReserva->id_reserva, 1)) + 1, 3, '0', STR_PAD_LEFT) : 
+                    '001';
+                $newId = 'R' . $newIdNumber;
+
+                // Crear la reserva
                 $reserva = new Reserva();
                 $reserva->id_reserva = $newId;
                 $reserva->run = $request->run;
                 $reserva->id_espacio = $request->espacio_id;
                 $reserva->fecha_reserva = $horaActual->format('Y-m-d');
                 $reserva->hora = $horaActualStr;
-                $reserva->tipo_reserva = 'clase';
+                $reserva->tipo_reserva = $tieneClase->nombre_asignatura === 'Uso libre' ? 'espontanea' : 'clase';
                 $reserva->estado = 'activa';
                 $reserva->save();
 
-                // Asegurar que el estado del espacio se guarde
+                // Actualizar estado del espacio
                 $espacio->estado = 'Ocupado';
                 $espacio->save();
 
@@ -144,14 +139,17 @@ class ReservaController extends Controller
                     'success' => true,
                     'message' => 'Ingreso registrado correctamente',
                     'espacio_nombre' => $espacio->nombre_espacio,
-                    'hora_termino' => $horaActual->addMinutes(50)->format('H:i')
+                    'hora_termino' => $tieneClase->hora_termino,
+                    'asignatura' => $tieneClase->nombre_asignatura
                 ]);
+
             } catch (\Exception $e) {
                 DB::rollback();
                 throw $e;
             }
 
         } catch (\Exception $e) {
+            \Log::error('Error en registrarIngresoClase: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error al registrar el ingreso: ' . $e->getMessage()
@@ -289,6 +287,22 @@ class ReservaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al registrar la reserva: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function getEspacioEstado($id)
+    {
+        try {
+            $espacio = Espacio::findOrFail($id);
+            return response()->json([
+                'success' => true,
+                'estado' => $espacio->estado
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener el estado del espacio: ' . $e->getMessage()
             ], 500);
         }
     }
