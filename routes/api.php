@@ -81,6 +81,7 @@ Route::get('/verificar-espacio/{userId}/{espacioId}', [ReservaController::class,
 Route::post('/registrar-ingreso-clase', [ReservaController::class, 'registrarIngresoClase']);
 Route::post('/registrar-salida-clase', [ReservaController::class, 'registrarSalidaClase']);
 Route::post('/registrar-reserva-espontanea', [ReservaController::class, 'registrarReservaEspontanea']);
+Route::post('/registrar-entrada-clase', [ReservaController::class, 'registrarIngresoClase']);
 
 Route::get('/user/{run}', function ($run) {
     try {
@@ -232,3 +233,5 @@ Route::get('/verificar-planificacion-multiple', function (Request $request) {
         ], 500);
     }
 });
+
+Route::get('/espacio/{id}', [ReservaController::class, 'getEspacioEstado']);

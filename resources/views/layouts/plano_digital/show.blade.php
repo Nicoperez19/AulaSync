@@ -503,15 +503,28 @@
                         const finalHeight = isHovered ? height * hoverScale : height;
 
                         let color;
-                        if (espaciosOcupados.includes(indicator.id)) {
-                            color = '#F59E42'; // Naranja para espacios ocupados
-                        } else if (indicator.detalles?.estado === 'Próximo') {
-                            color = '#3B82F6'; // Azul para próximas clases
-                        } else {
-                            color = '#10B981'; // Verde para espacios disponibles
-                        }
+                        // Verificar el estado del espacio
+                        fetch(`/api/espacio/${indicator.id}`)
+                            .then(response => response.json())
+                            .then(espacioData => {
+                                if (espacioData.estado === 'Ocupado') {
+                                    color = '#EF4444'; // Rojo para espacios ocupados
+                                } else if (espaciosOcupados.includes(indicator.id)) {
+                                    color = '#F59E42'; // Naranja para espacios con clase programada
+                                } else if (indicator.detalles?.estado === 'Próximo') {
+                                    color = '#3B82F6'; // Azul para próximas clases
+                                } else {
+                                    color = '#10B981'; // Verde para espacios disponibles
+                                }
 
-                        dibujarIndicador(elements, position, finalWidth, finalHeight, color, indicator.id, isHovered, indicator.detalles, moduloActual);
+                                dibujarIndicador(elements, position, finalWidth, finalHeight, color, indicator.id, isHovered, indicator.detalles, moduloActual);
+                            })
+                            .catch(error => {
+                                console.error('Error al obtener estado del espacio:', error);
+                                // En caso de error, usar el color por defecto
+                                color = '#10B981';
+                                dibujarIndicador(elements, position, finalWidth, finalHeight, color, indicator.id, isHovered, indicator.detalles, moduloActual);
+                            });
                     });
                 })
                 .catch(error => {
@@ -1121,5 +1134,253 @@
         }
 
         console.log(state.indicators);
+
+        // Función para solicitar permisos de cámara
+        async function requestCameraPermission() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                stream.getTracks().forEach(track => track.stop());
+                return true;
+            } catch (err) {
+                console.error('Error al solicitar permisos de cámara:', err);
+                return false;
+            }
+        }
+
+        // Función para obtener la primera cámara disponible
+        async function getFirstCamera() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                return videoDevices[0]?.deviceId || null;
+            } catch (err) {
+                console.error('Error al obtener dispositivos de cámara:', err);
+                return null;
+            }
+        }
+
+        // Función para inicializar el escáner QR
+        async function initQRScanner() {
+            if (html5QrcodeScanner === null) {
+                try {
+                    document.getElementById('qr-cargando-msg').textContent = 'Cargando escáner, por favor espere...';
+                    document.getElementById('qr-cargando-msg').classList.remove('hidden');
+                    document.getElementById('qr-error-msg').classList.add('hidden');
+                    
+                    const hasPermission = await requestCameraPermission();
+                    if (!hasPermission) {
+                        document.getElementById('qr-cargando-msg').textContent = '';
+                        document.getElementById('qr-error-msg').textContent = 'Se requieren permisos de cámara para escanear códigos QR';
+                        document.getElementById('qr-error-msg').classList.remove('hidden');
+                        return;
+                    }
+
+                    currentCameraId = await getFirstCamera();
+                    if (!currentCameraId) {
+                        document.getElementById('qr-cargando-msg').textContent = '';
+                        document.getElementById('qr-error-msg').textContent = 'No se encontró ninguna cámara disponible';
+                        document.getElementById('qr-error-msg').classList.remove('hidden');
+                        return;
+                    }
+
+                    const config = {
+                        fps: 10,
+                        qrbox: { width: 250, height: 250 },
+                        aspectRatio: 1.0,
+                        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+                        rememberLastUsedCamera: true,
+                        showTorchButtonIfSupported: true
+                    };
+
+                    html5QrcodeScanner = new Html5Qrcode("qr-reader");
+                    document.getElementById('qr-placeholder').style.display = 'none';
+                    
+                    await html5QrcodeScanner.start(
+                        currentCameraId,
+                        config,
+                        onProfesorScanSuccess,
+                        (error) => {
+                            if (error.includes("QR code parse error")) return;
+                            console.warn(`Error en el escaneo: ${error}`);
+                        }
+                    );
+                } catch (err) {
+                    console.error('Error al iniciar el escáner:', err);
+                    document.getElementById('qr-cargando-msg').textContent = '';
+                    document.getElementById('qr-error-msg').textContent = 'Error al iniciar la cámara. Por favor, verifica los permisos y que la cámara no esté siendo usada por otra aplicación.';
+                    document.getElementById('qr-error-msg').classList.remove('hidden');
+                    document.getElementById('qr-placeholder').style.display = 'flex';
+                }
+            }
+        }
+
+        // Función para manejar el escaneo exitoso del profesor
+        function onProfesorScanSuccess(decodedText) {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop();
+                html5QrcodeScanner = null;
+            }
+
+            window.profesorRun = decodedText;
+
+            fetch(`/api/user/${decodedText}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.user) {
+                        document.getElementById('profesor-nombre').textContent = data.user.name || '';
+                        document.getElementById('profesor-correo').textContent = data.user.email || '';
+                        document.getElementById('profesor-info').classList.remove('hidden');
+                        document.getElementById('profesor-scan-section').classList.add('hidden');
+                        document.getElementById('espacio-scan-section').classList.remove('hidden');
+                        initEspacioScanner();
+                    } else {
+                        mostrarErrorEscaneo('La persona no se encuentra registrada, contáctese con soporte.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    mostrarErrorEscaneo(error.message || 'Error al obtener información del profesor');
+                });
+        }
+
+        // Función para inicializar el escáner de espacio
+        async function initEspacioScanner() {
+            try {
+                const hasPermission = await requestCameraPermission();
+                if (!hasPermission) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Se requieren permisos de cámara para escanear códigos QR'
+                    });
+                    return;
+                }
+
+                currentCameraId = await getFirstCamera();
+                if (!currentCameraId) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'No se encontró ninguna cámara disponible'
+                    });
+                    return;
+                }
+
+                const config = {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0,
+                    formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+                    rememberLastUsedCamera: true,
+                    showTorchButtonIfSupported: true
+                };
+
+                html5QrcodeScanner = new Html5Qrcode("qr-reader-espacio");
+                await html5QrcodeScanner.start(
+                    currentCameraId,
+                    config,
+                    onEspacioScanSuccess,
+                    (error) => {
+                        if (error.includes("QR code parse error")) return;
+                        console.warn(`Error en el escaneo: ${error}`);
+                    }
+                );
+            } catch (err) {
+                console.error('Error al iniciar el escáner:', err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al iniciar la cámara. Por favor, verifica los permisos y que la cámara no esté siendo usada por otra aplicación.'
+                });
+            }
+        }
+
+        // Función para manejar el escaneo exitoso del espacio
+        function onEspacioScanSuccess(decodedText) {
+            if (html5QrcodeScanner) {
+                html5QrcodeScanner.stop();
+                html5QrcodeScanner = null;
+            }
+
+            if (!window.profesorRun) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se encontró la información del profesor'
+                });
+                return;
+            }
+
+            registrarEntradaClase(window.profesorRun, decodedText);
+        }
+
+        // Función para registrar la entrada a clase
+        function registrarEntradaClase(run, espacioId) {
+            fetch('/api/registrar-entrada-clase', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    run: run,
+                    espacio_id: espacioId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const block = state.indicators.find(b => b.id === espacioId);
+                    if (block) {
+                        block.estado = 'red';
+                        state.originalCoordinates = state.indicators.map(i => ({...i}));
+                        drawIndicators();
+                    }
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Éxito!',
+                        text: data.message,
+                        showConfirmButton: false,
+                        timer: 2000
+                    }).then(() => {
+                        window.dispatchEvent(new CustomEvent('close-modal', { detail: 'solicitar-espacio' }));
+                        location.reload();
+                    });
+                } else {
+                    throw new Error(data.message || 'Error al registrar la entrada');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: error.message || 'Ocurrió un error al registrar la entrada'
+                });
+            });
+        }
+
+        function mostrarErrorEscaneo(mensaje) {
+            const errorMsg = document.getElementById('qr-error-msg');
+            const cargandoMsg = document.getElementById('qr-cargando-msg');
+            const btnReintentar = document.getElementById('btn-reintentar');
+            const qrPlaceholder = document.getElementById('qr-placeholder');
+            
+            if (errorMsg) {
+                errorMsg.textContent = mensaje;
+                errorMsg.classList.remove('hidden');
+            }
+            if (cargandoMsg) cargandoMsg.textContent = '';
+            if (btnReintentar) btnReintentar.classList.remove('hidden');
+            if (qrPlaceholder) qrPlaceholder.style.display = 'flex';
+        }
+
+        function reiniciarEscaneo() {
+            document.getElementById('qr-error-msg').classList.add('hidden');
+            document.getElementById('btn-reintentar').classList.add('hidden');
+            document.getElementById('qr-cargando-msg').textContent = 'Cargando escáner, por favor espere...';
+            document.getElementById('qr-cargando-msg').classList.remove('hidden');
+            initQRScanner();
+        }
     </script>
 </x-app-layout>
