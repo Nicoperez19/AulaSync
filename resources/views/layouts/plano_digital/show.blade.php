@@ -47,8 +47,7 @@
                                     </svg>
                                 </span>
                             </button>
-                            <button
-                                onclick="window.dispatchEvent(new CustomEvent('open-modal', { detail: 'solicitar-espacio' }))"
+                            <button id="btn-solicitar-espacio" type="button"
                                 class="px-4 py-2 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
                                 Solicitar Espacio
                             </button>
@@ -157,15 +156,20 @@
                 </div>
 
                 <div id="modal-reserva" class="hidden">
-                    <p class="mb-2 text-sm font-medium text-gray-900 dark:text-gray-100">Reserva:</p>
-                    <p id="modal-fecha-reserva" class="text-sm text-gray-900 dark:text-gray-100"></p>
-                    <p id="modal-hora-reserva" class="text-sm text-gray-900 dark:text-gray-100"></p>
+                    <p class="mb-2 text-sm font-medium text-gray-900 dark:text-gray-100">Reserva Activa:</p>
+                    <div class="space-y-2">
+                        <p id="modal-fecha-reserva" class="text-sm text-gray-900 dark:text-gray-100"></p>
+                        <p id="modal-hora-reserva" class="text-sm text-gray-900 dark:text-gray-100"></p>
+                        <p id="modal-profesor-reserva" class="text-sm text-gray-900 dark:text-gray-100"></p>
+                        <p id="modal-email-reserva" class="text-sm text-gray-900 dark:text-gray-100"></p>
+                        <p id="modal-tipo-reserva" class="text-sm text-gray-900 dark:text-gray-100"></p>
+                    </div>
                 </div>
             </div>
         </div>
     </x-modal>
 
-    <!-- Modal de solicitud de espacio (REHECHO) -->
+    <!-- Modal de solicitud de espacio  -->
     <x-modal name="solicitar-espacio" :show="false" maxWidth="2xl">
         <x-slot name="header">
             <h1 class="font-sans text-lg font-semibold text-white dark:text-white">Solicitar Espacio</h1>
@@ -201,7 +205,7 @@
             <div id="espacio-info" class="hidden p-4 bg-green-50 rounded shadow">
                 <h3 class="mb-2 text-lg font-semibold text-green-900">Información del Espacio</h3>
                 <div class="space-y-2">
-                    <p class="text-sm text-green-800">Nombre: <span id="espacio-nombre" class="font-medium"></span></p>
+                    <p class="text-sm text-green-800">Nombre: <span id="espacio-nombre" class="font-medium"></span> <span id="espacio-id" class="text-xs text-gray-500"></span></p>
                     <p class="text-sm text-green-800">Tipo: <span id="espacio-tipo" class="font-medium"></span></p>
                 </div>
                 <div id="verificacion-espacio" class="p-4 mt-4 rounded-lg bg-white flex items-center justify-center">
@@ -209,21 +213,15 @@
                     <span class="text-sm text-gray-600">Verificando disponibilidad...</span>
                 </div>
             </div>
-            <!-- Paso 5: Selección de módulo -->
+            <!-- Paso 5: Selección de duración -->
             <div id="duracion-section" class="hidden p-4 bg-yellow-50 rounded shadow">
-                <h3 class="mb-4 text-lg font-semibold text-yellow-900">Seleccione el módulo a reservar</h3>
-                <select id="select-modulo" class="w-full p-3 border border-yellow-300 rounded text-yellow-800 bg-white">
-                    <option value="">Cargando módulos...</option>
-                </select>
-                <div id="modulos-extra-section" class="hidden mt-4">
-                    <label class="block mb-2 text-yellow-900 font-semibold">¿Cuántos módulos consecutivos desea reservar?</label>
-                    <select id="select-cantidad-modulos" class="w-full p-3 border border-yellow-300 rounded text-yellow-800 bg-white">
-                        <option value="">Seleccione cantidad...</option>
-                    </select>
+                <h3 class="mb-4 text-lg font-semibold text-yellow-900">Seleccione la duración de la reserva</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <button onclick="seleccionarDuracion(30)" class="p-3 text-sm font-medium text-yellow-800 bg-white border border-yellow-300 rounded hover:bg-yellow-100">30 minutos</button>
+                    <button onclick="seleccionarDuracion(60)" class="p-3 text-sm font-medium text-yellow-800 bg-white border border-yellow-300 rounded hover:bg-yellow-100">1 hora</button>
+                    <button onclick="seleccionarDuracion(90)" class="p-3 text-sm font-medium text-yellow-800 bg-white border border-yellow-300 rounded hover:bg-yellow-100">1.5 horas</button>
+                    <button onclick="seleccionarDuracion(120)" class="p-3 text-sm font-medium text-yellow-800 bg-white border border-yellow-300 rounded hover:bg-yellow-100">2 horas</button>
                 </div>
-                <button id="btn-confirmar-modulo" class="mt-4 px-4 py-2 bg-yellow-400 text-white rounded font-semibold hover:bg-yellow-500 w-full" disabled>
-                    Confirmar módulo(s)
-                </button>
             </div>
             <!-- Paso 6: Confirmación -->
             <div id="confirmacion-section" class="hidden p-4 bg-white rounded shadow text-center">
@@ -235,40 +233,41 @@
         </div>
     </x-modal>
 
-    <!-- Modal de Registro de Salida -->
-    <div id="modal-salida" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-        <div class="flex items-end justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-            <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" aria-hidden="true"></div>
-            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-            <div class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white rounded-lg shadow-xl dark:bg-gray-800 sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-                <div class="px-4 pt-5 pb-4 bg-white dark:bg-gray-800 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start">
-                        <div class="w-full mt-3 text-center sm:mt-0 sm:text-left">
-                            <h3 class="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100" id="modal-title">
-                                Registrar Salida
-                            </h3>
-                            <div class="mt-4">
-                                <div id="qr-reader-salida" class="w-full max-w-sm mx-auto"></div>
-                                <div id="salida-placeholder" class="flex items-center justify-center w-full h-64 bg-gray-100 dark:bg-gray-700">
-                                    <p class="text-gray-500 dark:text-gray-400">Cámara no disponible</p>
-                                </div>
-                                <p id="salida-cargando-msg" class="mt-2 text-sm text-gray-500 dark:text-gray-400"></p>
-                                <p id="salida-error-msg" class="mt-2 text-sm text-red-600 dark:text-red-400 hidden"></p>
-                                <button id="btn-reintentar-salida" onclick="reiniciarEscaneoSalida()" class="hidden px-4 py-2 mt-4 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700">
-                                    Reintentar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+    <!-- Modal de registro de salida -->
+    <x-modal name="salida-espacio" :show="false" maxWidth="2xl">
+        <x-slot name="header">
+            <h1 class="font-sans text-lg font-semibold text-white dark:text-white">Registrar Salida</h1>
+        </x-slot>
+        <div class="p-6 space-y-6">
+            <!-- Escaneo de profesor -->
+            <div id="profesor-scan-section-salida" class="flex flex-col items-center justify-center">
+                <div id="qr-reader-salida-profesor" class="w-full max-w-xs mb-4"></div>
+                <div id="salida-profesor-placeholder" class="flex flex-col items-center justify-center w-full">
+                    <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escanear QR del Profesor</h3>
+                    <p id="salida-profesor-cargando-msg" class="text-sm text-gray-600 dark:text-gray-400">Cargando escáner...</p>
+                    <p id="salida-profesor-error-msg" class="text-sm text-red-600 dark:text-red-400 mt-2 hidden"></p>
+                    <button id="btn-reintentar-salida-profesor" onclick="reiniciarEscaneoSalidaProfesor()" class="hidden px-4 py-2 mt-4 text-sm font-medium text-white bg-blue-500 rounded hover:bg-blue-600">Volver a Escanear</button>
                 </div>
-                <div class="px-4 py-3 bg-gray-50 dark:bg-gray-700 sm:px-6 sm:flex sm:flex-row-reverse">
-                    <button type="button" onclick="closeModal()" class="inline-flex justify-center w-full px-4 py-2 text-base font-medium text-white bg-gray-600 border border-transparent rounded-md shadow-sm hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 sm:ml-3 sm:w-auto sm:text-sm">
-                        Cerrar
-                    </button>
+            </div>
+
+            <!-- Información del profesor -->
+            <div id="profesor-info-salida" class="hidden p-4 bg-blue-50 rounded shadow">
+                <h3 class="mb-2 text-lg font-semibold text-blue-900">Información del Profesor</h3>
+                <div class="space-y-2">
+                    <p class="text-sm text-blue-800">Nombre: <span id="profesor-nombre-salida" class="font-medium"></span></p>
+                    <p class="text-sm text-blue-800">Correo: <span id="profesor-correo-salida" class="font-medium"></span></p>
+                </div>
+            </div>
+
+            <!-- Escaneo de espacio -->
+            <div id="espacio-scan-section-salida" class="hidden flex flex-col items-center justify-center">
+                <div id="qr-reader-salida-espacio" class="w-full max-w-xs mb-4"></div>
+                <div id="salida-espacio-placeholder" class="flex flex-col items-center justify-center w-full">
+                    <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escanear QR del Espacio</h3>
                 </div>
             </div>
         </div>
-    </div>
+    </x-modal>
 
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
@@ -279,7 +278,9 @@
         // Variables globales para el estado de la solicitud
         let userId = null;
         let espacioId = null;
+        let tieneClaseProgramada = false;
         let duracionSeleccionada = null;
+        let noDisponibleReserva = false;
 
         // Variable global para el estado del mapa
         const state = {
@@ -336,15 +337,13 @@
             const finalHeight = isHovered ? height * hoverScale : height;
 
             let color;
-            // Determinar el color basado en el estado y detalles
+            // Si el espacio está ocupado en la base de datos, pintarlo de rojo
             if (estado === 'red' || (detalles && detalles.estado === 'Ocupado')) {
-                color = '#EF4444'; // Rojo para ocupado
-            } else if (estado === 'blue' || (detalles && detalles.es_proximo)) {
-                color = '#3B82F6'; // Azul para próximo
-            } else if (detalles && detalles.hay_clase_actual) {
-                color = '#EF4444'; // Rojo si hay clase actual
+                color = '#EF4444'; // Rojo
+            } else if (estado === 'blue') {
+                color = '#3B82F6'; // Azul para espacios próximos
             } else {
-                color = '#10B981'; // Verde para disponible
+                color = '#10B981'; // Verde para espacios disponibles
             }
 
             if (isHovered) {
@@ -628,9 +627,37 @@
                 .then(data => {
                     if (data.success) {
                         document.getElementById('espacio-nombre').textContent = data.espacio.nombre;
+                        document.getElementById('espacio-id').textContent = `(${data.espacio.id_espacio})`;
                         document.getElementById('espacio-tipo').textContent = data.espacio.tipo;
                         document.getElementById('espacio-info').classList.remove('hidden');
                         document.getElementById('espacio-scan-section').classList.add('hidden');
+
+                        // Verificar si el espacio está en azul (tiene clase próxima)
+                        const block = state.indicators.find(b => b.id === espacioId);
+                        const verificacionDiv = document.getElementById('verificacion-espacio');
+                        if (block && block.estado === 'blue') {
+                            noDisponibleReserva = true;
+                            // Cerrar el modal de reserva si está abierto
+                            window.dispatchEvent(new CustomEvent('close-modal', { detail: 'solicitar-espacio' }));
+                            // Mostrar SweetAlert con el mensaje especial
+                            Swal.fire({
+                                icon: 'info',
+                                title: 'No disponible',
+                                html: 'El espacio está programado para tener clases en 5 minutos más, por ende no podrá reservar este espacio.',
+                                confirmButtonText: 'Entendido'
+                            }).then(() => {
+                                // Ocultar la información del espacio y mostrar el escaneo
+                                document.getElementById('espacio-info').classList.add('hidden');
+                                document.getElementById('espacio-scan-section').classList.remove('hidden');
+                                // Limpiar el mensaje de verificación
+                                const verificacionDiv = document.getElementById('verificacion-espacio');
+                                if (verificacionDiv) verificacionDiv.innerHTML = '';
+                                initEspacioScanner();
+                            });
+                            return;
+                        } else {
+                            noDisponibleReserva = false;
+                        }
 
                         // Verificar si el usuario tiene clase programada en este espacio y horario
                         const ahora = new Date();
@@ -640,7 +667,6 @@
                         fetch(`/api/verificar-clase-usuario?run=${userId}&espacio=${espacioId}&dia=${diaActual}&hora=${horaActual}`)
                             .then(resp => resp.json())
                             .then(res => {
-                                const verificacionDiv = document.getElementById('verificacion-espacio');
                                 if (verificacionDiv) {
                                     if (res.tiene_clase) {
                                         verificacionDiv.innerHTML = `
@@ -654,7 +680,8 @@
                                         verificacionDiv.innerHTML = `
                                             <div class="flex flex-col items-center space-y-4">
                                                 <span class="text-base font-semibold text-red-600">${res.mensaje}</span>
-                                                <button onclick="mostrarOpcionesModulo()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700">
+                                                <!-- Solo mostrar el botón si el espacio está disponible -->
+                                                <button onclick="mostrarOpcionesDuracion()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700">
                                                     Reservar Espacio
                                                 </button>
                                             </div>`;
@@ -671,6 +698,27 @@
                     alert('Error al obtener información del espacio');
                     setTimeout(initEspacioScanner, 2000);
                 });
+        }
+
+        // Función utilitaria para mostrar SweetAlert de éxito y cerrar el modal de solicitar espacio
+        function mostrarSweetExito(mensaje, callback) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                text: mensaje,
+                showConfirmButton: false,
+                timer: 2000
+            }).then(() => {
+                window.dispatchEvent(new CustomEvent('close-modal', { detail: 'solicitar-espacio' }));
+                // Refuerzo: intenta cerrar el modal manualmente si sigue abierto
+                const modal = document.querySelector('[name="solicitar-espacio"]') || document.getElementById('modal-solicitar-espacio');
+                if (modal) {
+                    modal.classList.add('hidden');
+                }
+                // Recarga la página para asegurar actualización visual completa
+                location.reload();
+                if (callback) callback();
+            });
         }
 
         // Función para registrar ingreso a clase programada
@@ -695,24 +743,8 @@
                         block.estado = 'red';
                         state.originalCoordinates = state.indicators.map(i => ({...i}));
                         drawIndicators();
-                        
-                        // Esperar a que se complete la actualización visual
                         setTimeout(() => {
-                            Swal.fire({
-                                icon: 'success',
-                                title: '¡Éxito!',
-                                text: data.message,
-                                showConfirmButton: false,
-                                timer: 2000
-                            }).then(() => {
-                                // Actualizar los estados después de cerrar el modal
-                                actualizarEstados(true);
-                                // Cerrar el modal
-                                const modal = document.querySelector('[x-data="modal"]');
-                                if (modal) {
-                                    modal.dispatchEvent(new CustomEvent('close'));
-                                }
-                            });
+                            mostrarSweetExito(data.message, () => actualizarEstados(true));
                         }, 500);
                     }
                 } else {
@@ -733,90 +765,28 @@
             });
         }
 
-        // Función para mostrar opciones de módulo
-        function mostrarOpcionesModulo() {
-            document.getElementById('espacio-scan-section').classList.add('hidden');
-            const duracionSection = document.getElementById('duracion-section');
-            duracionSection.classList.remove('hidden');
-
-            const select = document.getElementById('select-modulo');
-            const btnConfirmar = document.getElementById('btn-confirmar-modulo');
-            select.innerHTML = '<option value="">Cargando módulos...</option>';
-            btnConfirmar.disabled = true;
-            document.getElementById('modulos-extra-section').classList.add('hidden');
-
-            // Obtener hora y día actual
-            const ahora = new Date();
-            const horaActual = ahora.toTimeString().substring(0,5); // HH:MM
-            const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-            const diaActual = dias[ahora.getDay()];
-
-            fetch(`/api/espacio/${espacioId}/modulos-disponibles?hora_actual=${horaActual}&dia_actual=${diaActual}`)
-                .then(resp => resp.json())
-                .then(data => {
-                    select.innerHTML = '';
-                    if (data.success && data.modulos.length > 0) {
-                        select.innerHTML = '<option value="">Seleccione un módulo</option>';
-                        data.modulos.forEach(modulo => {
-                            const texto = `Módulo ${modulo.numero} (${modulo.hora_inicio} - ${modulo.hora_termino})`;
-                            const option = document.createElement('option');
-                            option.value = modulo.id_modulo;
-                            option.textContent = texto;
-                            select.appendChild(option);
-                        });
-                        btnConfirmar.disabled = true;
-                        select.onchange = function() {
-                            const id_modulo = select.value;
-                            if (!id_modulo) {
-                                document.getElementById('modulos-extra-section').classList.add('hidden');
-                                btnConfirmar.disabled = true;
-                                return;
-                            }
-                            // Buscar el índice del módulo seleccionado en data.modulos
-                            const index = data.modulos.findIndex(m => m.id_modulo === id_modulo);
-                            if (index === -1) return;
-                            // Calcular cuántos módulos consecutivos hay desde el seleccionado
-                            let consecutivos = 1;
-                            for (let i = index + 1; i < data.modulos.length; i++) {
-                                consecutivos++;
-                            }
-                            // Llenar el select de cantidad de módulos
-                            const selectCantidad = document.getElementById('select-cantidad-modulos');
-                            selectCantidad.innerHTML = '<option value="">Seleccione cantidad...</option>';
-                            for (let i = 1; i <= consecutivos; i++) {
-                                let texto = i === 1 ? `Solo este módulo` : `Este y ${i-1} más (${i} módulos)`;
-                                selectCantidad.innerHTML += `<option value="${i}">${texto}</option>`;
-                            }
-                            document.getElementById('modulos-extra-section').classList.remove('hidden');
-                            btnConfirmar.disabled = false;
-                        };
-                    } else {
-                        // Si no hay módulos disponibles, verificar si es próximo
-                        if (data.es_proximo && data.siguiente_modulo) {
-                            const block = state.indicators.find(b => b.id === espacioId);
-                            if (block) {
-                                block.estado = 'blue';
-                                block.detalles = {
-                                    ...block.detalles,
-                                    es_proximo: true,
-                                    siguiente_modulo: data.siguiente_modulo
-                                };
-                                state.originalCoordinates = state.indicators.map(i => ({...i}));
-                                drawIndicators();
-                            }
-                        }
-                        select.innerHTML = `<option value="">${data.mensaje || 'No hay módulos disponibles'}</option>`;
-                        btnConfirmar.disabled = true;
-                    }
-                })
-                .catch(() => {
-                    select.innerHTML = '<option value="">Error al consultar módulos disponibles</option>';
-                    btnConfirmar.disabled = true;
+        // Función para mostrar opciones de duración
+        function mostrarOpcionesDuracion() {
+            if (noDisponibleReserva) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'No disponible',
+                    text: 'No puedes reservar este espacio porque tiene una clase programada en los próximos 5 minutos.'
                 });
+                return;
+            }
+            document.getElementById('espacio-scan-section').classList.add('hidden');
+            document.getElementById('duracion-section').classList.remove('hidden');
+        }
+
+        // Función para seleccionar duración
+        function seleccionarDuracion(minutos) {
+            duracionSeleccionada = minutos;
+            registrarReservaEspontanea();
         }
 
         // Función para registrar reserva espontánea
-        function registrarReservaEspontanea(modulos) {
+        function registrarReservaEspontanea() {
             fetch('/api/registrar-reserva-espontanea', {
                     method: 'POST',
                     headers: {
@@ -826,7 +796,7 @@
                     body: JSON.stringify({
                         user_id: userId,
                         espacio_id: espacioId,
-                        modulos: modulos // array de id_modulo
+                        duracion: duracionSeleccionada
                     })
                 })
                 .then(response => response.json())
@@ -834,25 +804,17 @@
                     if (data.success) {
                         mostrarConfirmacionExito(data);
                     } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: data.message
-                        });
+                        mostrarError(data.message);
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Error al registrar la reserva'
-                    });
+                    mostrarError('Error al registrar la reserva');
                 });
         }
 
-        // Función para mostrar confirmación de éxito
-        function mostrarConfirmacionExito(data) {
+        // Función para mostrar mensaje de espacio ocupado
+        function mostrarMensajeOcupado(data) {
             const confirmacionSection = document.getElementById('confirmacion-section');
             const icono = document.getElementById('confirmacion-icono');
             const titulo = document.getElementById('confirmacion-titulo');
@@ -860,19 +822,26 @@
             const detalles = document.getElementById('confirmacion-detalles');
 
             icono.innerHTML = `
-                <svg class="w-16 h-16 mx-auto text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                <svg class="w-16 h-16 mx-auto text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
             `;
-            titulo.textContent = 'Reserva Exitosa';
-            mensaje.textContent = data.mensaje;
+            titulo.textContent = 'Espacio Ocupado';
+            mensaje.textContent =
+                `Este espacio está actualmente ocupado por el profesor ${data.profesor_nombre} hasta las ${data.hora_termino}`;
             detalles.innerHTML = `
-                <p>Espacio: ${data.espacio_nombre}</p>
+                <p>Profesor: ${data.profesor_nombre}</p>
                 <p>Hora de término: ${data.hora_termino}</p>
             `;
 
-            document.getElementById('duracion-section').classList.add('hidden');
+            document.getElementById('espacio-scan-section').classList.add('hidden');
             confirmacionSection.classList.remove('hidden');
+        }
+
+        // Función para mostrar confirmación de éxito (reserva espontánea)
+        function mostrarConfirmacionExito(data) {
+            // Solo muestra el SweetAlert y cierra el modal
+            mostrarSweetExito(data.mensaje);
         }
 
         // Función para mostrar error
@@ -940,12 +909,6 @@
                         return response.json();
                     })
                     .then(bloquesData => {
-                        // Lógica para pintar azul si el bloque está próximo a ser utilizado
-                        bloquesData.forEach(bloque => {
-                            if (bloque.detalles && bloque.detalles.es_proximo) {
-                                bloque.estado = 'blue';
-                            }
-                        });
                         const hayCambios = JSON.stringify(state.indicators) !== JSON.stringify(bloquesData);
                         if (hayCambios) {
                             state.indicators = bloquesData;
@@ -1240,15 +1203,18 @@
                     setTimeout(initQRScanner, 300); // Pequeño delay para asegurar que el modal esté visible
                 }
             });
+
+            // Manejar la apertura del modal desde JS
+            const btnSolicitarEspacio = document.getElementById('btn-solicitar-espacio');
+            if (btnSolicitarEspacio) {
+                btnSolicitarEspacio.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.dispatchEvent(new CustomEvent('open-modal', { detail: 'solicitar-espacio' }));
+                });
+            }
         });
 
         window.mostrarDetallesBloque = function(bloque) {
-            // Si el espacio está ocupado, iniciar directamente el proceso de registro de salida
-            if (bloque.estado === 'red' || (bloque.detalles && bloque.detalles.estado === 'Ocupado')) {
-                iniciarRegistroSalida(bloque.id);
-                return;
-            }
-
             const titulo = document.getElementById('modal-titulo');
             const tipoEspacio = document.getElementById('modal-tipo-espacio');
             const puestos = document.getElementById('modal-puestos');
@@ -1273,13 +1239,66 @@
             reserva.classList.add('hidden');
             modulos.innerHTML = '';
 
-            // Mostrar información según el estado
-            if (bloque.clase_proxima) {
-                claseProxima.classList.remove('hidden');
-                asignaturaProxima.textContent = `Asignatura: ${bloque.clase_proxima.asignatura}`;
-                profesorProximo.textContent = `Profesor: ${bloque.clase_proxima.profesor}`;
-                horarioProximo.textContent = `Horario: ${bloque.clase_proxima.hora_inicio} - ${bloque.clase_proxima.hora_termino}`;
-            }
+            // Verificar si hay una reserva activa
+            fetch(`/api/reserva-activa/${bloque.id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.reserva) {
+                        // Si el espacio está ocupado, mostrar los detalles de la reserva
+                        reserva.classList.remove('hidden');
+                        
+                        if (data.reserva.tipo_reserva === 'Ocupación sin reserva') {
+                            // Caso de espacio ocupado sin reserva activa
+                            fechaReserva.textContent = 'Estado: Ocupado';
+                            document.getElementById('modal-profesor-reserva').textContent = `Profesor: ${data.reserva.profesor_nombre || 'Sin información'}`;
+                            document.getElementById('modal-email-reserva').textContent = `Email: ${data.reserva.profesor_email || 'Sin información'}`;
+                        } else {
+                            // Caso de reserva activa normal
+                            fechaReserva.textContent = `Fecha: ${new Date(data.reserva.fecha).toLocaleDateString()}`;
+                            document.getElementById('modal-profesor-reserva').textContent = `Profesor: ${data.reserva.profesor_nombre}`;
+                            document.getElementById('modal-email-reserva').textContent = `Email: ${data.reserva.profesor_email}`;
+                        }
+                        
+                        // Agregar botón para entregar llaves
+                        const btnEntregarLlaves = document.createElement('button');
+                        btnEntregarLlaves.className = 'mt-4 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700';
+                        btnEntregarLlaves.textContent = '¿Desea entregar las llaves?';
+                        btnEntregarLlaves.onclick = function() {
+                            // Cerrar el modal actual
+                            window.dispatchEvent(new CustomEvent('close-modal', { detail: 'detalles-bloque' }));
+                            
+                            // Esperar a que el modal se cierre
+                            setTimeout(() => {
+                                // Abrir el modal de salida
+                                window.dispatchEvent(new CustomEvent('open-modal', { detail: 'salida-espacio' }));
+                                
+                                // Iniciar el escáner después de un breve delay
+                                setTimeout(() => {
+                                    initQRScannerSalidaProfesor();
+                                }, 300);
+                            }, 300);
+                        };
+                        reserva.appendChild(btnEntregarLlaves);
+                    } else {
+                        // Si no hay reserva activa, mostrar información de clase próxima si existe
+                        if (bloque.estado === 'blue' && bloque.detalles?.planificacion_proxima) {
+                            claseProxima.classList.remove('hidden');
+                            asignaturaProxima.textContent = `Asignatura: ${bloque.clase_proxima.asignatura}`;
+                            profesorProximo.textContent = `Profesor: ${bloque.clase_proxima.profesor}`;
+                            horarioProximo.textContent = `Horario: ${bloque.clase_proxima.hora_inicio} - ${bloque.clase_proxima.hora_termino}`;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al obtener reserva activa:', error);
+                    // En caso de error, mostrar información de clase próxima si existe
+                    if (bloque.estado === 'blue' && bloque.detalles?.planificacion_proxima) {
+                        claseProxima.classList.remove('hidden');
+                        asignaturaProxima.textContent = `Asignatura: ${bloque.clase_proxima.asignatura}`;
+                        profesorProximo.textContent = `Profesor: ${bloque.clase_proxima.profesor}`;
+                        horarioProximo.textContent = `Horario: ${bloque.clase_proxima.hora_inicio} - ${bloque.clase_proxima.hora_termino}`;
+                    }
+                });
 
             // Abrir el modal
             window.dispatchEvent(new CustomEvent('open-modal', { detail: 'detalles-bloque' }));
@@ -1354,26 +1373,18 @@
                 html5QrcodeScanner = null;
             }
 
-            // Guardar el RUN del profesor en una variable global
             window.profesorRunSalida = decodedText;
 
             fetch(`/api/user/${decodedText}`)
-                .then(response => {
-                    if (!response.ok) {
-                        return response.json().then(data => {
-                            throw new Error(data.message || 'Error al buscar el profesor');
-                        });
-                    }
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
                     if (data.success && data.user) {
-                        // Mostrar información del profesor
                         document.getElementById('profesor-nombre-salida').textContent = data.user.name || '';
                         document.getElementById('profesor-correo-salida').textContent = data.user.email || '';
                         document.getElementById('profesor-info-salida').classList.remove('hidden');
                         document.getElementById('profesor-scan-section-salida').classList.add('hidden');
                         document.getElementById('espacio-scan-section-salida').classList.remove('hidden');
+                        initEspacioScannerSalida();
                     } else {
                         mostrarErrorEscaneoSalida('La persona no se encuentra registrada, contáctese con soporte.');
                     }
@@ -1384,13 +1395,64 @@
                 });
         }
 
+        // Función para inicializar el escáner de espacio en la salida
+        async function initEspacioScannerSalida() {
+            try {
+                const hasPermission = await requestCameraPermission();
+                if (!hasPermission) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Se requieren permisos de cámara para escanear códigos QR'
+                    });
+                    return;
+                }
+
+                currentCameraId = await getFirstCamera();
+                if (!currentCameraId) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'No se encontró ninguna cámara disponible'
+                    });
+                    return;
+                }
+
+                const config = {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0,
+                    formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+                    rememberLastUsedCamera: true,
+                    showTorchButtonIfSupported: true
+                };
+
+                html5QrcodeScanner = new Html5Qrcode("qr-reader-salida-espacio");
+                await html5QrcodeScanner.start(
+                    currentCameraId,
+                    config,
+                    onSalidaEspacioScanSuccess,
+                    (error) => {
+                        if (error.includes("QR code parse error")) return;
+                        console.warn(`Error en el escaneo: ${error}`);
+                    }
+                );
+            } catch (err) {
+                console.error('Error al iniciar el escáner:', err);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Error al iniciar la cámara. Por favor, verifica los permisos y que la cámara no esté siendo usada por otra aplicación.'
+                });
+            }
+        }
+
         function onSalidaEspacioScanSuccess(decodedText) {
             if (html5QrcodeScanner) {
                 html5QrcodeScanner.stop();
                 html5QrcodeScanner = null;
             }
 
-            // Asegurarnos de que tenemos el RUN del profesor
             if (!window.profesorRunSalida) {
                 Swal.fire({
                     icon: 'error',
@@ -1400,48 +1462,30 @@
                 return;
             }
 
-            console.log('ID del espacio:', decodedText);
             registrarSalidaClase(window.profesorRunSalida, decodedText);
         }
 
         function registrarSalidaClase(run, espacioId) {
-            console.log('Enviando datos:', { run, espacio_id: espacioId });
-
-            const data = {
-                run: run,
-                espacio_id: espacioId
-            };
-
-            console.log('Datos a enviar:', data);
-
             fetch('/api/registrar-salida-clase', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify({
+                    run: run,
+                    espacio_id: espacioId
+                })
             })
-            .then(response => {
-                console.log('Respuesta del servidor:', response);
-                if (!response.ok) {
-                    return response.json().then(data => {
-                        throw new Error(data.message || 'Error al registrar la salida');
-                    });
-                }
-                return response.json();
-            })
+            .then(response => response.json())
             .then(data => {
-                console.log('Datos recibidos:', data);
                 if (data.success) {
-                    // Actualizar el estado visual del espacio
                     const block = state.indicators.find(b => b.id === espacioId);
                     if (block) {
                         block.estado = 'green';
                         state.originalCoordinates = state.indicators.map(i => ({...i}));
                         drawIndicators();
                     }
-                    
                     Swal.fire({
                         icon: 'success',
                         title: '¡Éxito!',
@@ -1449,15 +1493,8 @@
                         showConfirmButton: false,
                         timer: 2000
                     }).then(() => {
-                        // Esperar 1 segundo adicional antes de cerrar todo
-                        setTimeout(() => {
-                            // Limpiar la variable global
-                            window.profesorRunSalida = null;
-                            // Cerrar el modal de salida
-                            window.dispatchEvent(new CustomEvent('close-modal', { detail: 'salida-espacio' }));
-                            // Actualizar los estados
-                            actualizarEstados(true);
-                        }, 1000);
+                        window.dispatchEvent(new CustomEvent('close-modal', { detail: 'detalles-bloque' }));
+                        location.reload();
                     });
                 } else {
                     throw new Error(data.message || 'Error al registrar la salida');
@@ -1471,62 +1508,6 @@
                     text: error.message || 'Ocurrió un error al registrar la salida'
                 });
             });
-        }
-
-        // Función para inicializar el escáner de espacio en la salida
-        async function initEspacioScannerSalida() {
-            try {
-                const btnIniciar = document.getElementById('btn-iniciar-espacio-salida');
-                btnIniciar.disabled = true;
-                btnIniciar.innerHTML = `
-                    <svg class="inline w-4 h-4 mr-2 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Iniciando cámara...
-                `;
-
-                const hasPermission = await requestCameraPermission();
-                if (!hasPermission) {
-                    alert('Se requieren permisos de cámara para escanear códigos QR');
-                    return;
-                }
-
-                currentCameraId = await getFirstCamera();
-                if (!currentCameraId) {
-                    alert('No se encontró ninguna cámara disponible');
-                    return;
-                }
-
-                const config = {
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 },
-                    aspectRatio: 1.0,
-                    formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-                    rememberLastUsedCamera: true,
-                    showTorchButtonIfSupported: true
-                };
-
-                document.getElementById('salida-espacio-placeholder').style.display = 'none';
-                html5QrcodeScanner = new Html5Qrcode("qr-reader-salida-espacio");
-                
-                await html5QrcodeScanner.start(
-                    currentCameraId,
-                    config,
-                    onSalidaEspacioScanSuccess,
-                    (error) => {
-                        if (error.includes("QR code parse error")) return;
-                        console.warn(`Error en el escaneo: ${error}`);
-                    }
-                );
-            } catch (err) {
-                console.error('Error al iniciar el escáner de espacio:', err);
-                alert('Error al iniciar la cámara. Por favor, verifica los permisos y que la cámara no esté siendo usada por otra aplicación.');
-                document.getElementById('salida-espacio-placeholder').style.display = 'flex';
-                const btnIniciar = document.getElementById('btn-iniciar-espacio-salida');
-                btnIniciar.disabled = false;
-                btnIniciar.textContent = 'Iniciar Escaneo de Espacio';
-            }
         }
 
         function mostrarErrorEscaneoSalida(mensaje) {

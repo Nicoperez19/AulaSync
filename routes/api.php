@@ -174,3 +174,5 @@ Route::get('/espacio/{id}', function ($id) {
 
 // Endpoint para consultar módulos disponibles para reserva en un espacio
 Route::get('/espacio/{espacio}/modulos-disponibles', [EspacioController::class, 'modulosDisponibles']);
+
+Route::get('/reserva-activa/{id}', [App\Http\Controllers\ReservaController::class, 'getReservaActiva']);

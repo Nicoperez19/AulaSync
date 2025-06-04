@@ -115,12 +115,15 @@ class PlanoDigitalController extends Controller
                 }
             }
 
+            // Verificar si hay una planificación próxima para este espacio
+            $tieneClaseProxima = $planificacionesProximas->contains('id_espacio', $idEspacio);
+
             return [
                 'id' => $idEspacio,
                 'nombre' => $bloque->espacio->nombre_espacio,
                 'x' => $bloque->posicion_x,
                 'y' => $bloque->posicion_y,
-                'estado' => $this->determinarEstado($estaOcupado, false, false),
+                'estado' => $this->determinarEstado($estaOcupado, false, $tieneClaseProxima),
                 'detalles' => array_merge(
                     $this->prepararDetallesBloque(
                         $bloque->espacio,
@@ -184,7 +187,6 @@ class PlanoDigitalController extends Controller
     private function obtenerPlanificacionesProximas(Mapa $mapa, array $estadoActual)
     {
         $horaActual = Carbon::parse($estadoActual['hora']);
-        $horaLimite = $horaActual->copy()->addMinutes(5);
         $diaActual = $estadoActual['dia'];
 
         $mesActual = date('n');
@@ -192,14 +194,17 @@ class PlanoDigitalController extends Controller
         $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
         $periodo = $anioActual . '-' . $semestre;
 
+        // Calcular la hora límite (5 minutos después de la hora actual)
+        $horaLimite = $horaActual->copy()->addMinutes(5)->format('H:i:s');
+
         return Planificacion_Asignatura::with(['horario', 'asignatura.profesor', 'modulo', 'espacio'])
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
             })
-            ->whereHas('modulo', function ($query) use ($diaActual, $horaActual, $horaLimite) {
+            ->whereHas('modulo', function ($query) use ($horaActual, $horaLimite, $diaActual) {
                 $query->where('dia', $diaActual)
-                    ->where('hora_inicio', '>', $horaActual->format('H:i:s'))   // después de ahora
-                    ->where('hora_inicio', '<=', $horaLimite->format('H:i:s')); // pero en <= 5 minutos
+                    ->where('hora_inicio', '>', $horaActual->format('H:i:s'))
+                    ->where('hora_inicio', '<=', $horaLimite);
             })
             ->whereHas('espacio', function ($query) use ($mapa) {
                 $query->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'));
@@ -212,6 +217,11 @@ class PlanoDigitalController extends Controller
         // Si el espacio está ocupado, mostrar en rojo
         if ($estaOcupado) {
             return 'red';
+        }
+        
+        // Si el espacio tiene una clase próxima (en los próximos 5 minutos), mostrar en azul
+        if ($tieneClaseProxima) {
+            return 'blue';
         }
         
         // Si el espacio está disponible, mostrar en verde
