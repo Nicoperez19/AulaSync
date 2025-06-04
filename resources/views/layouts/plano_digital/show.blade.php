@@ -35,20 +35,12 @@
                         <div class="flex gap-2">
                             <button onclick="actualizarEstados(true)"
                                 class="px-4 py-2 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
-                                <span id="boton-texto">Actualizar Estados</span>
-                                <span id="boton-loading" class="hidden">
-                                    <svg class="w-5 h-5 text-white animate-spin" xmlns="http://www.w3.org/2000/svg"
-                                        fill="none" viewBox="0 0 24 24">
-                                        <circle class="opacity-25" cx="12" cy="12" r="10"
-                                            stroke="currentColor" stroke-width="4"></circle>
-                                        <path class="opacity-75" fill="currentColor"
-                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
-                                        </path>
-                                    </svg>
-                                </span>
+                                <svg xmlns="http://www.w3.org/2000/svg" class="inline w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582M19.418 19A9 9 0 105 5.582" /></svg>
+                                Actualizar Estados
                             </button>
                             <button id="btn-solicitar-espacio" type="button"
                                 class="px-4 py-2 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="inline w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 17v-6m0 0V7m0 4h4m-4 0H8m8 4a4 4 0 11-8 0 4 4 0 018 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12h.01" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l2 2m0 0l-2 2m2-2H7" /></svg>
                                 Solicitar Espacio
                             </button>
                         </div>
@@ -70,28 +62,7 @@
                     </div>
                 </div>
             </div>
-            <!-- Leyenda abajo como pequeño card -->
-            <div class="w-full max-w-md p-4 mx-auto mt-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
-                <h3 class="mb-2 text-base font-semibold text-center">Leyenda</h3>
-                <div class="flex flex-col items-start gap-2 text-sm">
-                    <div class="flex items-center gap-2">
-                        <div class="w-4 h-4 bg-red-500 rounded-sm"></div>
-                        <span>Espacio ocupado</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-4 h-4 bg-blue-500 rounded-sm"></div>
-                        <span>Próximo a utilizar</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-4 h-4 bg-green-500 rounded-sm"></div>
-                        <span>Disponible</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <div class="w-4 h-4 rounded-sm" style="background-color: #8B5E3C;"></div>
-                        <span>Disponible (uso previsto)</span>
-                    </div>
-                </div>
-            </div>
+            
         </div>
     </div>
 
@@ -181,12 +152,12 @@
                 <div id="qr-placeholder" class="flex flex-col items-center justify-center w-full">
                     <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escanear QR del Profesor</h3>
                     <p id="qr-cargando-msg" class="text-sm text-gray-600 dark:text-gray-400">Cargando escáner...</p>
-                    <p id="qr-error-msg" class="text-sm text-red-600 dark:text-red-400 mt-2 hidden"></p>
+                    <p id="qr-error-msg" class="hidden mt-2 text-sm text-red-600 dark:text-red-400"></p>
                     <button id="btn-reintentar" onclick="reiniciarEscaneo()" class="hidden px-4 py-2 mt-4 text-sm font-medium text-white bg-blue-500 rounded hover:bg-blue-600">Volver a Escanear</button>
                 </div>
             </div>
             <!-- Paso 2: Información del profesor -->
-            <div id="profesor-info" class="hidden p-4 bg-blue-50 rounded shadow">
+            <div id="profesor-info" class="hidden p-4 rounded shadow bg-blue-50">
                 <h3 class="mb-2 text-lg font-semibold text-blue-900">Información del Profesor</h3>
                 <div class="space-y-2">
                     <p class="text-sm text-blue-800">Nombre: <span id="profesor-nombre" class="font-medium"></span></p>
@@ -194,7 +165,7 @@
                 </div>
             </div>
             <!-- Paso 3: Escaneo de espacio -->
-            <div id="espacio-scan-section" class="hidden flex flex-col items-center justify-center">
+            <div id="espacio-scan-section" class="flex flex-col items-center justify-center hidden">
                 <div id="qr-reader-espacio" class="w-full max-w-xs mb-4"></div>
                 <div id="espacio-placeholder" class="flex flex-col items-center justify-center w-full">
                     <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escanear QR del Espacio</h3>
@@ -202,19 +173,19 @@
                 </div>
             </div>
             <!-- Paso 4: Información del espacio -->
-            <div id="espacio-info" class="hidden p-4 bg-green-50 rounded shadow">
+            <div id="espacio-info" class="hidden p-4 rounded shadow bg-green-50">
                 <h3 class="mb-2 text-lg font-semibold text-green-900">Información del Espacio</h3>
                 <div class="space-y-2">
                     <p class="text-sm text-green-800">Nombre: <span id="espacio-nombre" class="font-medium"></span> <span id="espacio-id" class="text-xs text-gray-500"></span></p>
                     <p class="text-sm text-green-800">Tipo: <span id="espacio-tipo" class="font-medium"></span></p>
                 </div>
-                <div id="verificacion-espacio" class="p-4 mt-4 rounded-lg bg-white flex items-center justify-center">
-                    <svg class="w-6 h-6 text-gray-400 animate-spin mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <div id="verificacion-espacio" class="flex items-center justify-center p-4 mt-4 bg-white rounded-lg">
+                    <svg class="w-6 h-6 mr-2 text-gray-400 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                     <span class="text-sm text-gray-600">Verificando disponibilidad...</span>
                 </div>
             </div>
             <!-- Paso 5: Selección de duración -->
-            <div id="duracion-section" class="hidden p-4 bg-yellow-50 rounded shadow">
+            <div id="duracion-section" class="hidden p-4 rounded shadow bg-yellow-50">
                 <h3 class="mb-4 text-lg font-semibold text-yellow-900">Seleccione la duración de la reserva</h3>
                 <div class="grid grid-cols-2 gap-4">
                     <button onclick="seleccionarDuracion(30)" class="p-3 text-sm font-medium text-yellow-800 bg-white border border-yellow-300 rounded hover:bg-yellow-100">30 minutos</button>
@@ -224,10 +195,10 @@
                 </div>
             </div>
             <!-- Paso 6: Confirmación -->
-            <div id="confirmacion-section" class="hidden p-4 bg-white rounded shadow text-center">
+            <div id="confirmacion-section" class="hidden p-4 text-center bg-white rounded shadow">
                 <div id="confirmacion-icono" class="mx-auto mb-4"></div>
                 <h3 id="confirmacion-titulo" class="mb-2 text-lg font-semibold"></h3>
-                <p id="confirmacion-mensaje" class="text-sm mb-2"></p>
+                <p id="confirmacion-mensaje" class="mb-2 text-sm"></p>
                 <div id="confirmacion-detalles" class="mt-2 space-y-1 text-sm"></div>
             </div>
         </div>
@@ -245,13 +216,13 @@
                 <div id="salida-profesor-placeholder" class="flex flex-col items-center justify-center w-full">
                     <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escanear QR del Profesor</h3>
                     <p id="salida-profesor-cargando-msg" class="text-sm text-gray-600 dark:text-gray-400">Cargando escáner...</p>
-                    <p id="salida-profesor-error-msg" class="text-sm text-red-600 dark:text-red-400 mt-2 hidden"></p>
+                    <p id="salida-profesor-error-msg" class="hidden mt-2 text-sm text-red-600 dark:text-red-400"></p>
                     <button id="btn-reintentar-salida-profesor" onclick="reiniciarEscaneoSalidaProfesor()" class="hidden px-4 py-2 mt-4 text-sm font-medium text-white bg-blue-500 rounded hover:bg-blue-600">Volver a Escanear</button>
                 </div>
             </div>
 
             <!-- Información del profesor -->
-            <div id="profesor-info-salida" class="hidden p-4 bg-blue-50 rounded shadow">
+            <div id="profesor-info-salida" class="hidden p-4 rounded shadow bg-blue-50">
                 <h3 class="mb-2 text-lg font-semibold text-blue-900">Información del Profesor</h3>
                 <div class="space-y-2">
                     <p class="text-sm text-blue-800">Nombre: <span id="profesor-nombre-salida" class="font-medium"></span></p>
@@ -260,7 +231,7 @@
             </div>
 
             <!-- Escaneo de espacio -->
-            <div id="espacio-scan-section-salida" class="hidden flex flex-col items-center justify-center">
+            <div id="espacio-scan-section-salida" class="flex flex-col items-center justify-center hidden">
                 <div id="qr-reader-salida-espacio" class="w-full max-w-xs mb-4"></div>
                 <div id="salida-espacio-placeholder" class="flex flex-col items-center justify-center w-full">
                     <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escanear QR del Espacio</h3>
@@ -268,6 +239,31 @@
             </div>
         </div>
     </x-modal>
+
+    <!-- Modal fijo de leyenda abajo a la izquierda -->
+    <div id="modal-leyenda"
+         class="fixed z-50 max-w-xs p-4 bg-white border border-gray-200 rounded-lg shadow-lg bottom-4 left-4"
+         style="min-width: 220px;">
+        <h3 class="mb-2 text-base font-semibold text-center">Leyenda</h3>
+        <div class="flex flex-col items-start gap-2 text-sm">
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 bg-red-500 rounded-sm"></div>
+                <span>Ocupado</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 bg-blue-500 rounded-sm"></div>
+                <span>Próximo</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 bg-green-500 rounded-sm"></div>
+                <span>Disponible</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="w-4 h-4 bg-orange-500 rounded-sm"></div>
+                <span>Previsto</span>
+            </div>
+        </div>
+    </div>
 
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
@@ -337,24 +333,41 @@
             const finalHeight = isHovered ? height * hoverScale : height;
 
             let color;
-            // Si el espacio está ocupado en la base de datos, pintarlo de rojo
             if (estado === 'red' || (detalles && detalles.estado === 'Ocupado')) {
                 color = '#EF4444'; // Rojo
             } else if (estado === 'blue') {
-                color = '#3B82F6'; // Azul para espacios próximos
+                // Si el módulo ya comenzó y NO está ocupado, es "Previsto" (naranja)
+                let esPrevisto = false;
+                if (
+                    detalles &&
+                    detalles.hora_inicio_modulo &&
+                    detalles.hora_termino_modulo &&
+                    detalles.estado !== 'Ocupado'
+                ) {
+                    const ahora = new Date();
+                    // Hora de inicio
+                    const [hIni, mIni] = detalles.hora_inicio_modulo.split(":");
+                    const inicioModulo = new Date();
+                    inicioModulo.setHours(parseInt(hIni), parseInt(mIni), 0, 0);
+                    // Hora de término
+                    const [hFin, mFin] = detalles.hora_termino_modulo.split(":");
+                    const finModulo = new Date();
+                    finModulo.setHours(parseInt(hFin), parseInt(mFin), 0, 0);
+
+                    // Si estamos dentro del rango del módulo y no está ocupado
+                    if (ahora >= inicioModulo && ahora < finModulo) {
+                        esPrevisto = true;
+                    }
+                }
+                color = esPrevisto ? '#F59E42' : '#3B82F6'; // Naranja para previsto, azul para próximo
             } else {
                 color = '#10B981'; // Verde para espacios disponibles
             }
 
-            if (isHovered) {
-                elements.indicatorsCtx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-                elements.indicatorsCtx.shadowBlur = 10;
-                elements.indicatorsCtx.shadowOffsetX = 0;
-                elements.indicatorsCtx.shadowOffsetY = 0;
-            } else {
-                elements.indicatorsCtx.shadowColor = 'transparent';
-                elements.indicatorsCtx.shadowBlur = 0;
-            }
+            elements.indicatorsCtx.shadowColor = isHovered ? 'rgba(0, 0, 0, 0.3)' : 'transparent';
+            elements.indicatorsCtx.shadowBlur = isHovered ? 10 : 0;
+            elements.indicatorsCtx.shadowOffsetX = 0;
+            elements.indicatorsCtx.shadowOffsetY = 0;
 
             elements.indicatorsCtx.fillStyle = color;
             elements.indicatorsCtx.fillRect(position.x - finalWidth / 2, position.y - finalHeight / 2,
@@ -1532,5 +1545,7 @@
             document.getElementById('salida-profesor-cargando-msg').classList.remove('hidden');
             initQRScannerSalidaProfesor();
         }
+
+        console.log(state.indicators);
     </script>
 </x-app-layout>
