@@ -220,27 +220,33 @@ class ReservaController extends Controller
     {
         try {
             $request->validate([
-                'user_id' => 'required|exists:users,id',
-                'espacio_id' => 'required|exists:espacios,id',
-                'duracion' => 'required|integer|min:30|max:240'
+                'user_id' => 'required|exists:users,run',
+                'espacio_id' => 'required|exists:espacios,id_espacio',
+                'modulos' => 'required|array|min:1',
+                'modulos.*' => 'required|string'
             ]);
 
             // Verificar que el usuario es profesor
-            $usuario = User::where('id', $request->user_id)
+            $usuario = User::where('run', $request->user_id)
                           ->whereHas('roles', function($query) {
                               $query->where('name', 'profesor');
                           })
                           ->firstOrFail();
 
-            $ahora = Carbon::now();
-            $horaTermino = $ahora->copy()->addMinutes($request->duracion);
+            $fechaReserva = now()->format('Y-m-d');
+            $horaActual = now()->format('H:i:s');
 
-            // Verificar si el espacio está disponible en el rango de tiempo
-            $existeReserva = Reserva::where('espacio_id', $request->espacio_id)
-                ->where('fecha', $ahora->toDateString())
-                ->where(function ($query) use ($ahora, $horaTermino) {
-                    $query->whereBetween('hora_inicio', [$ahora->format('H:i:s'), $horaTermino->format('H:i:s')])
-                        ->orWhereBetween('hora_termino', [$ahora->format('H:i:s'), $horaTermino->format('H:i:s')]);
+            $idsModulos = $request->modulos;
+            $modulos = \App\Models\Modulo::whereIn('id_modulo', $idsModulos)->orderBy('hora_inicio')->get();
+
+            $horaInicio = $modulos->first()->hora_inicio;
+            $horaTermino = $modulos->last()->hora_termino;
+
+            // Verificar si ya existe una reserva para alguno de esos módulos
+            $existeReserva = \App\Models\Reserva::where('id_espacio', $request->espacio_id)
+                ->where('fecha_reserva', $fechaReserva)
+                ->where(function ($query) use ($horaInicio, $horaTermino) {
+                    $query->whereBetween('hora', [$horaInicio, $horaTermino]);
                 })
                 ->exists();
 
@@ -252,20 +258,31 @@ class ReservaController extends Controller
             }
 
             // Crear la reserva
-            $reserva = Reserva::create([
-                'user_id' => $request->user_id,
-                'espacio_id' => $request->espacio_id,
-                'fecha' => $ahora->toDateString(),
-                'hora_inicio' => $ahora->format('H:i:s'),
-                'hora_termino' => $horaTermino->format('H:i:s'),
-                'tipo' => 'espontanea'
+            $lastReserva = \App\Models\Reserva::orderBy('id_reserva', 'desc')->first();
+            if ($lastReserva) {
+                $lastIdNumber = intval(substr($lastReserva->id_reserva, 1));
+                $newIdNumber = str_pad($lastIdNumber + 1, 3, '0', STR_PAD_LEFT);
+            } else {
+                $newIdNumber = '001';
+            }
+            $newId = 'R' . $newIdNumber;
+
+            $reserva = \App\Models\Reserva::create([
+                'id_reserva' => $newId,
+                'hora' => $horaInicio,
+                'fecha_reserva' => $fechaReserva,
+                'id_espacio' => $request->espacio_id,
+                'run' => $request->user_id,
+                'tipo_reserva' => 'espontanea',
+                'estado' => 'activa',
+                'hora_salida' => $horaTermino
             ]);
 
             return response()->json([
                 'success' => true,
                 'mensaje' => 'Reserva espontánea registrada correctamente',
-                'espacio_nombre' => $reserva->espacio->nombre,
-                'hora_termino' => $reserva->hora_termino
+                'espacio_nombre' => $reserva->espacio->nombre_espacio ?? '',
+                'hora_termino' => $reserva->hora_salida
             ]);
 
         } catch (\Exception $e) {

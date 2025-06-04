@@ -209,15 +209,21 @@
                     <span class="text-sm text-gray-600">Verificando disponibilidad...</span>
                 </div>
             </div>
-            <!-- Paso 5: Selección de duración -->
+            <!-- Paso 5: Selección de módulo -->
             <div id="duracion-section" class="hidden p-4 bg-yellow-50 rounded shadow">
-                <h3 class="mb-4 text-lg font-semibold text-yellow-900">Seleccione la duración de la reserva</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <button onclick="seleccionarDuracion(30)" class="p-3 text-sm font-medium text-yellow-800 bg-white border border-yellow-300 rounded hover:bg-yellow-100">30 minutos</button>
-                    <button onclick="seleccionarDuracion(60)" class="p-3 text-sm font-medium text-yellow-800 bg-white border border-yellow-300 rounded hover:bg-yellow-100">1 hora</button>
-                    <button onclick="seleccionarDuracion(90)" class="p-3 text-sm font-medium text-yellow-800 bg-white border border-yellow-300 rounded hover:bg-yellow-100">1.5 horas</button>
-                    <button onclick="seleccionarDuracion(120)" class="p-3 text-sm font-medium text-yellow-800 bg-white border border-yellow-300 rounded hover:bg-yellow-100">2 horas</button>
+                <h3 class="mb-4 text-lg font-semibold text-yellow-900">Seleccione el módulo a reservar</h3>
+                <select id="select-modulo" class="w-full p-3 border border-yellow-300 rounded text-yellow-800 bg-white">
+                    <option value="">Cargando módulos...</option>
+                </select>
+                <div id="modulos-extra-section" class="hidden mt-4">
+                    <label class="block mb-2 text-yellow-900 font-semibold">¿Cuántos módulos consecutivos desea reservar?</label>
+                    <select id="select-cantidad-modulos" class="w-full p-3 border border-yellow-300 rounded text-yellow-800 bg-white">
+                        <option value="">Seleccione cantidad...</option>
+                    </select>
                 </div>
+                <button id="btn-confirmar-modulo" class="mt-4 px-4 py-2 bg-yellow-400 text-white rounded font-semibold hover:bg-yellow-500 w-full" disabled>
+                    Confirmar módulo(s)
+                </button>
             </div>
             <!-- Paso 6: Confirmación -->
             <div id="confirmacion-section" class="hidden p-4 bg-white rounded shadow text-center">
@@ -225,43 +231,6 @@
                 <h3 id="confirmacion-titulo" class="mb-2 text-lg font-semibold"></h3>
                 <p id="confirmacion-mensaje" class="text-sm mb-2"></p>
                 <div id="confirmacion-detalles" class="mt-2 space-y-1 text-sm"></div>
-            </div>
-        </div>
-    </x-modal>
-
-    <!-- Modal de registro de salida -->
-    <x-modal name="salida-espacio" :show="false" maxWidth="2xl">
-        <x-slot name="header">
-            <h1 class="font-sans text-lg font-semibold text-white dark:text-white">Registrar Salida</h1>
-        </x-slot>
-        <div class="p-6 space-y-6">
-            <!-- Paso 1: Escaneo de profesor -->
-            <div id="profesor-scan-section-salida" class="flex flex-col items-center justify-center">
-                <div id="qr-reader-salida-profesor" class="w-full max-w-xs mb-4"></div>
-                <div id="salida-profesor-placeholder" class="flex flex-col items-center justify-center w-full">
-                    <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escanear QR del Profesor</h3>
-                    <p id="salida-profesor-cargando-msg" class="text-sm text-gray-600 dark:text-gray-400">Cargando escáner...</p>
-                    <p id="salida-profesor-error-msg" class="text-sm text-red-600 dark:text-red-400 mt-2 hidden"></p>
-                    <button id="btn-reintentar-salida-profesor" onclick="reiniciarEscaneoSalidaProfesor()" class="hidden px-4 py-2 mt-4 text-sm font-medium text-white bg-blue-500 rounded hover:bg-blue-600">Volver a Escanear</button>
-                </div>
-            </div>
-
-            <!-- Paso 2: Información del profesor -->
-            <div id="profesor-info-salida" class="hidden p-4 bg-blue-50 rounded shadow">
-                <h3 class="mb-2 text-lg font-semibold text-blue-900">Información del Profesor</h3>
-                <div class="space-y-2">
-                    <p class="text-sm text-blue-800">Nombre: <span id="profesor-nombre-salida" class="font-medium"></span></p>
-                    <p class="text-sm text-blue-800">Correo: <span id="profesor-correo-salida" class="font-medium"></span></p>
-                </div>
-            </div>
-
-            <!-- Paso 3: Escaneo de espacio -->
-            <div id="espacio-scan-section-salida" class="hidden flex flex-col items-center justify-center">
-                <div id="qr-reader-salida-espacio" class="w-full max-w-xs mb-4"></div>
-                <div id="salida-espacio-placeholder" class="flex flex-col items-center justify-center w-full">
-                    <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escanear QR del Espacio</h3>
-                    <button id="btn-iniciar-espacio-salida" onclick="initEspacioScannerSalida()" class="px-4 py-2 mt-4 text-sm font-medium text-white bg-blue-500 rounded hover:bg-blue-600">Iniciar Escaneo de Espacio</button>
-                </div>
             </div>
         </div>
     </x-modal>
@@ -310,7 +279,6 @@
         // Variables globales para el estado de la solicitud
         let userId = null;
         let espacioId = null;
-        let tieneClaseProgramada = false;
         let duracionSeleccionada = null;
 
         // Variable global para el estado del mapa
@@ -368,20 +336,15 @@
             const finalHeight = isHovered ? height * hoverScale : height;
 
             let color;
-            // Si el espacio está ocupado en la base de datos, pintarlo de rojo
+            // Determinar el color basado en el estado y detalles
             if (estado === 'red' || (detalles && detalles.estado === 'Ocupado')) {
-                color = '#EF4444'; // Rojo
+                color = '#EF4444'; // Rojo para ocupado
+            } else if (estado === 'blue' || (detalles && detalles.es_proximo)) {
+                color = '#3B82F6'; // Azul para próximo
+            } else if (detalles && detalles.hay_clase_actual) {
+                color = '#EF4444'; // Rojo si hay clase actual
             } else {
-                switch (estado) {
-                    case 'blue':
-                        color = '#3B82F6';
-                        break;
-                    case 'yellow':
-                        color = '#F59E0B';
-                        break;
-                    default:
-                        color = '#10B981';
-                }
+                color = '#10B981'; // Verde para disponible
             }
 
             if (isHovered) {
@@ -691,7 +654,7 @@
                                         verificacionDiv.innerHTML = `
                                             <div class="flex flex-col items-center space-y-4">
                                                 <span class="text-base font-semibold text-red-600">${res.mensaje}</span>
-                                                <button onclick="mostrarOpcionesDuracion()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700">
+                                                <button onclick="mostrarOpcionesModulo()" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700">
                                                     Reservar Espacio
                                                 </button>
                                             </div>`;
@@ -770,20 +733,90 @@
             });
         }
 
-        // Función para mostrar opciones de duración
-        function mostrarOpcionesDuracion() {
+        // Función para mostrar opciones de módulo
+        function mostrarOpcionesModulo() {
             document.getElementById('espacio-scan-section').classList.add('hidden');
-            document.getElementById('duracion-section').classList.remove('hidden');
-        }
+            const duracionSection = document.getElementById('duracion-section');
+            duracionSection.classList.remove('hidden');
 
-        // Función para seleccionar duración
-        function seleccionarDuracion(minutos) {
-            duracionSeleccionada = minutos;
-            registrarReservaEspontanea();
+            const select = document.getElementById('select-modulo');
+            const btnConfirmar = document.getElementById('btn-confirmar-modulo');
+            select.innerHTML = '<option value="">Cargando módulos...</option>';
+            btnConfirmar.disabled = true;
+            document.getElementById('modulos-extra-section').classList.add('hidden');
+
+            // Obtener hora y día actual
+            const ahora = new Date();
+            const horaActual = ahora.toTimeString().substring(0,5); // HH:MM
+            const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+            const diaActual = dias[ahora.getDay()];
+
+            fetch(`/api/espacio/${espacioId}/modulos-disponibles?hora_actual=${horaActual}&dia_actual=${diaActual}`)
+                .then(resp => resp.json())
+                .then(data => {
+                    select.innerHTML = '';
+                    if (data.success && data.modulos.length > 0) {
+                        select.innerHTML = '<option value="">Seleccione un módulo</option>';
+                        data.modulos.forEach(modulo => {
+                            const texto = `Módulo ${modulo.numero} (${modulo.hora_inicio} - ${modulo.hora_termino})`;
+                            const option = document.createElement('option');
+                            option.value = modulo.id_modulo;
+                            option.textContent = texto;
+                            select.appendChild(option);
+                        });
+                        btnConfirmar.disabled = true;
+                        select.onchange = function() {
+                            const id_modulo = select.value;
+                            if (!id_modulo) {
+                                document.getElementById('modulos-extra-section').classList.add('hidden');
+                                btnConfirmar.disabled = true;
+                                return;
+                            }
+                            // Buscar el índice del módulo seleccionado en data.modulos
+                            const index = data.modulos.findIndex(m => m.id_modulo === id_modulo);
+                            if (index === -1) return;
+                            // Calcular cuántos módulos consecutivos hay desde el seleccionado
+                            let consecutivos = 1;
+                            for (let i = index + 1; i < data.modulos.length; i++) {
+                                consecutivos++;
+                            }
+                            // Llenar el select de cantidad de módulos
+                            const selectCantidad = document.getElementById('select-cantidad-modulos');
+                            selectCantidad.innerHTML = '<option value="">Seleccione cantidad...</option>';
+                            for (let i = 1; i <= consecutivos; i++) {
+                                let texto = i === 1 ? `Solo este módulo` : `Este y ${i-1} más (${i} módulos)`;
+                                selectCantidad.innerHTML += `<option value="${i}">${texto}</option>`;
+                            }
+                            document.getElementById('modulos-extra-section').classList.remove('hidden');
+                            btnConfirmar.disabled = false;
+                        };
+                    } else {
+                        // Si no hay módulos disponibles, verificar si es próximo
+                        if (data.es_proximo && data.siguiente_modulo) {
+                            const block = state.indicators.find(b => b.id === espacioId);
+                            if (block) {
+                                block.estado = 'blue';
+                                block.detalles = {
+                                    ...block.detalles,
+                                    es_proximo: true,
+                                    siguiente_modulo: data.siguiente_modulo
+                                };
+                                state.originalCoordinates = state.indicators.map(i => ({...i}));
+                                drawIndicators();
+                            }
+                        }
+                        select.innerHTML = `<option value="">${data.mensaje || 'No hay módulos disponibles'}</option>`;
+                        btnConfirmar.disabled = true;
+                    }
+                })
+                .catch(() => {
+                    select.innerHTML = '<option value="">Error al consultar módulos disponibles</option>';
+                    btnConfirmar.disabled = true;
+                });
         }
 
         // Función para registrar reserva espontánea
-        function registrarReservaEspontanea() {
+        function registrarReservaEspontanea(modulos) {
             fetch('/api/registrar-reserva-espontanea', {
                     method: 'POST',
                     headers: {
@@ -793,7 +826,7 @@
                     body: JSON.stringify({
                         user_id: userId,
                         espacio_id: espacioId,
-                        duracion: duracionSeleccionada
+                        modulos: modulos // array de id_modulo
                     })
                 })
                 .then(response => response.json())
@@ -801,38 +834,21 @@
                     if (data.success) {
                         mostrarConfirmacionExito(data);
                     } else {
-                        mostrarError(data.message);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: data.message
+                        });
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    mostrarError('Error al registrar la reserva');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'Error al registrar la reserva'
+                    });
                 });
-        }
-
-        // Función para mostrar mensaje de espacio ocupado
-        function mostrarMensajeOcupado(data) {
-            const confirmacionSection = document.getElementById('confirmacion-section');
-            const icono = document.getElementById('confirmacion-icono');
-            const titulo = document.getElementById('confirmacion-titulo');
-            const mensaje = document.getElementById('confirmacion-mensaje');
-            const detalles = document.getElementById('confirmacion-detalles');
-
-            icono.innerHTML = `
-                <svg class="w-16 h-16 mx-auto text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-            `;
-            titulo.textContent = 'Espacio Ocupado';
-            mensaje.textContent =
-                `Este espacio está actualmente ocupado por el profesor ${data.profesor_nombre} hasta las ${data.hora_termino}`;
-            detalles.innerHTML = `
-                <p>Profesor: ${data.profesor_nombre}</p>
-                <p>Hora de término: ${data.hora_termino}</p>
-            `;
-
-            document.getElementById('espacio-scan-section').classList.add('hidden');
-            confirmacionSection.classList.remove('hidden');
         }
 
         // Función para mostrar confirmación de éxito
@@ -924,6 +940,12 @@
                         return response.json();
                     })
                     .then(bloquesData => {
+                        // Lógica para pintar azul si el bloque está próximo a ser utilizado
+                        bloquesData.forEach(bloque => {
+                            if (bloque.detalles && bloque.detalles.es_proximo) {
+                                bloque.estado = 'blue';
+                            }
+                        });
                         const hayCambios = JSON.stringify(state.indicators) !== JSON.stringify(bloquesData);
                         if (hayCambios) {
                             state.indicators = bloquesData;

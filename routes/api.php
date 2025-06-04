@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ReservaController;
 use App\Models\User;
+use App\Http\Controllers\EspacioController;
 
 /*
 |--------------------------------------------------------------------------
@@ -170,3 +171,6 @@ Route::get('/espacio/{id}', function ($id) {
         ], 404);
     }
 });
+
+// Endpoint para consultar módulos disponibles para reserva en un espacio
+Route::get('/espacio/{espacio}/modulos-disponibles', [EspacioController::class, 'modulosDisponibles']);
