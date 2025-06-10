@@ -138,15 +138,7 @@ class DataLoadController extends Controller
                             'email' => $email,
                             'id_carrera' => $idCarrera
                         ]);
-                        try {
-                            // Generar nuevo QR para usuario existente
-                            $qrPath = $this->qrService->generateQRForUser($run);
-                            $existingUser->update(['qr_run' => $qrPath]);
-                            Log::info('Usuario actualizado con nuevo QR', ['run' => $run]);
-                        } catch (\Exception $e) {
-                            Log::error('Error al generar QR para usuario existente: ' . $e->getMessage(), ['run' => $run]);
-                            $errors[] = "Fila " . ($index + 1) . ": Error al generar QR - " . $e->getMessage();
-                        }
+                        Log::info('Usuario actualizado', ['run' => $run]);
                     } else {
                         $user = User::create([
                             'run' => $run,
@@ -157,15 +149,7 @@ class DataLoadController extends Controller
                             'id_carrera' => $idCarrera
                         ]);
                         $user->assignRole($role);
-                        try {
-                            // Generar QR para nuevo usuario
-                            $qrPath = $this->qrService->generateQRForUser($run);
-                            $user->update(['qr_run' => $qrPath]);
-                            Log::info('Nuevo usuario creado con QR', ['run' => $run]);
-                        } catch (\Exception $e) {
-                            Log::error('Error al generar QR para nuevo usuario: ' . $e->getMessage(), ['run' => $run]);
-                            $errors[] = "Fila " . ($index + 1) . ": Error al generar QR - " . $e->getMessage();
-                        }
+                        Log::info('Nuevo usuario creado', ['run' => $run]);
                     }
                     $processedUsersCount++;
 
