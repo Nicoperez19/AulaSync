@@ -334,9 +334,7 @@
             elements.indicatorsCanvas.height = height;
 
             drawCanvas();
-            if (state.isImageLoaded) {
-                drawIndicators();
-            }
+            drawIndicators(); // Dibujar indicadores inmediatamente
         }
 
         function drawCanvas() {
@@ -362,13 +360,9 @@
             elements.mapCtx.drawImage(state.mapImage, offsetX, offsetY, drawWidth, drawHeight);
         }
 
-        // Función global para calcular la posición
+        // Función para calcular la posición de los indicadores
         function calculatePosition(indicator) {
             if (!state.isImageLoaded || !state.mapImage) return { x: 0, y: 0 };
-            const elements = {
-                mapCanvas: document.getElementById('mapCanvas'),
-                indicatorsCanvas: document.getElementById('indicatorsCanvas')
-            };
 
             const canvasRatio = elements.mapCanvas.width / elements.mapCanvas.height;
             const imageRatio = state.mapImage.width / state.mapImage.height;
@@ -395,217 +389,278 @@
             return { x, y };
         }
 
-        // Función para dibujar el indicador
+        // Función para dibujar un indicador
         function dibujarIndicador(elements, position, finalWidth, finalHeight, color, id, isHovered, detalles, moduloActual) {
-            // Debug final
-            console.log('Resultado para espacio:', {
-                id,
-                estado: detalles?.estado,
-                color,
-                moduloActual: moduloActual?.numero
-            });
-
+            // Configurar sombras para el efecto hover
             elements.indicatorsCtx.shadowColor = isHovered ? 'rgba(0, 0, 0, 0.3)' : 'transparent';
             elements.indicatorsCtx.shadowBlur = isHovered ? 10 : 0;
             elements.indicatorsCtx.shadowOffsetX = 0;
             elements.indicatorsCtx.shadowOffsetY = 0;
 
+            // Dibujar el rectángulo del indicador
             elements.indicatorsCtx.fillStyle = color;
-            elements.indicatorsCtx.fillRect(position.x - finalWidth / 2, position.y - finalHeight / 2,
-                finalWidth, finalHeight);
+            elements.indicatorsCtx.fillRect(
+                position.x - finalWidth / 2,
+                position.y - finalHeight / 2,
+                finalWidth,
+                finalHeight
+            );
+
+            // Dibujar el borde del indicador
             elements.indicatorsCtx.lineWidth = 2;
             elements.indicatorsCtx.strokeStyle = config.indicatorBorder;
-            elements.indicatorsCtx.strokeRect(position.x - finalWidth / 2, position.y - finalHeight / 2,
-                finalWidth, finalHeight);
+            elements.indicatorsCtx.strokeRect(
+                position.x - finalWidth / 2,
+                position.y - finalHeight / 2,
+                finalWidth,
+                finalHeight
+            );
 
+            // Dibujar el texto del indicador
             elements.indicatorsCtx.font = `bold ${config.fontSize}px Arial`;
             elements.indicatorsCtx.fillStyle = config.indicatorTextColor;
             elements.indicatorsCtx.textAlign = 'center';
             elements.indicatorsCtx.textBaseline = 'middle';
             elements.indicatorsCtx.fillText(id, position.x, position.y);
 
+            // Restablecer las sombras
             elements.indicatorsCtx.shadowColor = 'transparent';
             elements.indicatorsCtx.shadowBlur = 0;
         }
 
-        // Función global para dibujar indicadores
+        // Función para dibujar los indicadores
         function drawIndicators() {
             if (!state.isImageLoaded) return;
             elements.indicatorsCtx.clearRect(0, 0, elements.indicatorsCanvas.width, elements.indicatorsCanvas.height);
 
-            // Obtener el módulo actual
+            state.indicators.forEach(indicator => {
+                const position = calculatePosition(indicator);
+                const color = indicator.estado || '#10B981'; // Color por defecto verde si no hay estado
+                
+                dibujarIndicador(
+                    elements,
+                    position,
+                    config.indicatorWidth,
+                    config.indicatorHeight,
+                    color,
+                    indicator.id,
+                    false,
+                    indicator.detalles || {},
+                    null
+                );
+            });
+        }
+
+        // Definición de horarios por día y módulo
+        const horariosModulos = {
+            lunes: {
+                1: { inicio: '08:10:00', fin: '09:00:00' },
+                2: { inicio: '09:10:00', fin: '10:00:00' },
+                3: { inicio: '10:10:00', fin: '11:00:00' },
+                4: { inicio: '11:10:00', fin: '12:00:00' },
+                5: { inicio: '12:10:00', fin: '13:00:00' },
+                6: { inicio: '13:10:00', fin: '14:00:00' },
+                7: { inicio: '14:10:00', fin: '15:00:00' },
+                8: { inicio: '15:10:00', fin: '16:00:00' },
+                9: { inicio: '16:10:00', fin: '17:00:00' },
+                10: { inicio: '17:10:00', fin: '18:00:00' },
+                11: { inicio: '18:10:00', fin: '19:00:00' },
+                12: { inicio: '19:10:00', fin: '20:00:00' },
+                13: { inicio: '20:10:00', fin: '21:00:00' },
+                14: { inicio: '21:10:00', fin: '22:00:00' },
+                15: { inicio: '22:10:00', fin: '23:00:00' }
+            },
+            martes: {
+                1: { inicio: '08:10:00', fin: '09:00:00' },
+                2: { inicio: '09:10:00', fin: '10:00:00' },
+                3: { inicio: '10:10:00', fin: '11:00:00' },
+                4: { inicio: '11:10:00', fin: '12:00:00' },
+                5: { inicio: '12:10:00', fin: '13:00:00' },
+                6: { inicio: '13:10:00', fin: '14:00:00' },
+                7: { inicio: '14:10:00', fin: '15:00:00' },
+                8: { inicio: '15:10:00', fin: '16:00:00' },
+                9: { inicio: '16:10:00', fin: '17:00:00' },
+                10: { inicio: '17:10:00', fin: '18:00:00' },
+                11: { inicio: '18:10:00', fin: '19:00:00' },
+                12: { inicio: '19:10:00', fin: '20:00:00' },
+                13: { inicio: '20:10:00', fin: '21:00:00' },
+                14: { inicio: '21:10:00', fin: '22:00:00' },
+                15: { inicio: '22:10:00', fin: '23:00:00' }
+            },
+            miercoles: {
+                1: { inicio: '08:10:00', fin: '09:00:00' },
+                2: { inicio: '09:10:00', fin: '10:00:00' },
+                3: { inicio: '10:10:00', fin: '11:00:00' },
+                4: { inicio: '11:10:00', fin: '12:00:00' },
+                5: { inicio: '12:10:00', fin: '13:00:00' },
+                6: { inicio: '13:10:00', fin: '14:00:00' },
+                7: { inicio: '14:10:00', fin: '15:00:00' },
+                8: { inicio: '15:10:00', fin: '16:00:00' },
+                9: { inicio: '16:10:00', fin: '17:00:00' },
+                10: { inicio: '17:10:00', fin: '18:00:00' },
+                11: { inicio: '18:10:00', fin: '19:00:00' },
+                12: { inicio: '19:10:00', fin: '20:00:00' },
+                13: { inicio: '20:10:00', fin: '21:00:00' },
+                14: { inicio: '21:10:00', fin: '22:00:00' },
+                15: { inicio: '22:10:00', fin: '23:00:00' }
+            },
+            jueves: {
+                1: { inicio: '08:10:00', fin: '09:00:00' },
+                2: { inicio: '09:10:00', fin: '10:00:00' },
+                3: { inicio: '10:10:00', fin: '11:00:00' },
+                4: { inicio: '11:10:00', fin: '12:00:00' },
+                5: { inicio: '12:10:00', fin: '13:00:00' },
+                6: { inicio: '13:10:00', fin: '14:00:00' },
+                7: { inicio: '14:10:00', fin: '15:00:00' },
+                8: { inicio: '15:10:00', fin: '16:00:00' },
+                9: { inicio: '16:10:00', fin: '17:00:00' },
+                10: { inicio: '17:10:00', fin: '18:00:00' },
+                11: { inicio: '18:10:00', fin: '19:00:00' },
+                12: { inicio: '19:10:00', fin: '20:00:00' },
+                13: { inicio: '20:10:00', fin: '21:00:00' },
+                14: { inicio: '21:10:00', fin: '22:00:00' },
+                15: { inicio: '22:10:00', fin: '23:00:00' }
+            },
+            viernes: {
+                1: { inicio: '08:10:00', fin: '09:00:00' },
+                2: { inicio: '09:10:00', fin: '10:00:00' },
+                3: { inicio: '10:10:00', fin: '11:00:00' },
+                4: { inicio: '11:10:00', fin: '12:00:00' },
+                5: { inicio: '12:10:00', fin: '13:00:00' },
+                6: { inicio: '13:10:00', fin: '14:00:00' },
+                7: { inicio: '14:10:00', fin: '15:00:00' },
+                8: { inicio: '15:10:00', fin: '16:00:00' },
+                9: { inicio: '16:10:00', fin: '17:00:00' },
+                10: { inicio: '17:10:00', fin: '18:00:00' },
+                11: { inicio: '18:10:00', fin: '19:00:00' },
+                12: { inicio: '19:10:00', fin: '20:00:00' },
+                13: { inicio: '20:10:00', fin: '21:00:00' },
+                14: { inicio: '21:10:00', fin: '22:00:00' },
+                15: { inicio: '22:10:00', fin: '23:00:00' }
+            }
+        };
+
+        // Función para obtener el día actual en español
+        function obtenerDiaActual() {
+            const dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+            return dias[new Date().getDay()];
+        }
+
+        // Función para determinar el módulo actual
+        function determinarModulo(hora) {
+            const diaActual = obtenerDiaActual();
+            const horariosDia = horariosModulos[diaActual];
+            
+            if (!horariosDia) return null;
+
+            for (const [modulo, horario] of Object.entries(horariosDia)) {
+                if (hora >= horario.inicio && hora < horario.fin) {
+                    return parseInt(modulo);
+                }
+            }
+            return null;
+        }
+
+        // Función para actualizar solo la hora
+        function actualizarHora() {
             const ahora = new Date();
             const horaActual = ahora.toLocaleTimeString('es-ES', {
                 hour: '2-digit',
-                minute: '2-digit'
+                minute: '2-digit',
+                second: '2-digit'
             });
-            const horaActualStr = ahora.toLocaleTimeString('es-ES', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-
-            function determinarModulo(hora) {
-                const [horas, minutos] = hora.split(':').map(Number);
-                const tiempoEnMinutos = horas * 60 + minutos;
-
-                const rangosModulos = [{
-                        inicio: 8 * 60 + 10,
-                        fin: 9 * 60,
-                        numero: 1
-                    }, // 08:10 - 09:00
-                    {
-                        inicio: 9 * 60 + 10,
-                        fin: 10 * 60,
-                        numero: 2
-                    }, // 09:10 - 10:00
-                    {
-                        inicio: 10 * 60 + 10,
-                        fin: 11 * 60,
-                        numero: 3
-                    }, // 10:10 - 11:00
-                    {
-                        inicio: 11 * 60 + 10,
-                        fin: 12 * 60,
-                        numero: 4
-                    }, // 11:10 - 12:00
-                    {
-                        inicio: 12 * 60 + 10,
-                        fin: 13 * 60,
-                        numero: 5
-                    }, // 12:10 - 13:00
-                    {
-                        inicio: 13 * 60 + 10,
-                        fin: 14 * 60,
-                        numero: 6
-                    }, // 13:10 - 14:00  <--- AGREGA ESTA LÍNEA
-                    {
-                        inicio: 14 * 60 + 10,
-                        fin: 15 * 60,
-                        numero: 7
-                    }, 
-                    {
-                        inicio: 15 * 60 + 10,
-                        fin: 16 * 60,
-                        numero: 7
-                    },
-                    {
-                        inicio: 16 * 60 + 10,
-                        fin: 17 * 60,
-                        numero: 8
-                    },
-                    {
-                        inicio: 17 * 60 + 10,
-                        fin: 18 * 60,
-                        numero: 9
-                    },
-                    {
-                        inicio: 18 * 60 + 10,
-                        fin: 19 * 60,
-                        numero: 10
-                    },
-                    {
-                        inicio: 19 * 60 + 10,
-                        fin: 20 * 60,
-                        numero: 11
-                    },
-                    {
-                        inicio: 20 * 60 + 10,
-                        fin: 21 * 60,
-                        numero: 12
-                    },
-                    {
-                        inicio: 21 * 60 + 10,
-                        fin: 22 * 60,
-                        numero: 13
-                    },
-                    {
-                        inicio: 22 * 60 + 10,
-                        fin: 23 * 60,
-                        numero: 14
-                    },
-                    {
-                        inicio: 23 * 60 + 10,
-                        fin: 24 * 60,
-                        numero: 15
-                    },
-                ];
-
-                for (const rango of rangosModulos) {
-                    if (tiempoEnMinutos >= rango.inicio && tiempoEnMinutos <= rango.fin) {
-                        return rango.numero;
-                    }
-                }
-                return null;
+            
+            const horaActualElement = document.getElementById('hora-actual');
+            if (horaActualElement) {
+                horaActualElement.textContent = horaActual;
             }
+        }
 
-            fetch(`/plano/${mapaId}/modulo-actual?hora=${horaActualStr}&dia=${diaActual}`)
-                .then(response => response.json())
-                .then(data => {
-                    const moduloElement = document.getElementById('modulo-actual');
-                    if (data.modulo) {
-                        const horaInicio = data.modulo.hora_inicio;
-                        const horaTermino = data.modulo.hora_termino;
-                        const numeroModulo = determinarModulo(horaInicio);
-                        if (numeroModulo) {
-                            document.getElementById('modulo-actual').textContent = numeroModulo;
-                            document.getElementById('modulo-horario').textContent = `${horaInicio} - ${horaTermino}`;
-                        } else {
-                            document.getElementById('modulo-actual').textContent = 'No hay módulos disponibles';
-                            document.getElementById('modulo-horario').textContent = '-';
-                        }
-                    } else {
-                        document.getElementById('modulo-actual').textContent = 'No hay módulos disponibles';
-                        document.getElementById('modulo-horario').textContent = '-';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error al obtener el módulo actual:', error);
-                    document.getElementById('modulo-actual').textContent = 'Error';
-                    document.getElementById('modulo-horario').textContent = '-';
+        // Función para formatear hora a HH:MM
+        function formatearHora(horaCompleta) {
+            return horaCompleta.slice(0,5);
+        }
+
+        // Función para actualizar el módulo y los colores
+        function actualizarModuloYColores() {
+            const ahora = new Date();
+            const horaActual = ahora.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+
+            // Determinar el módulo actual
+            const moduloActual = determinarModulo(horaActual);
+            const moduloActualElement = document.getElementById('modulo-actual');
+            const moduloHorarioElement = document.getElementById('modulo-horario');
+            
+            if (moduloActual && moduloActualElement && moduloHorarioElement) {
+                moduloActualElement.textContent = moduloActual;
+                
+                // Obtener el horario del módulo actual
+                const diaActual = obtenerDiaActual();
+                const horarioModulo = horariosModulos[diaActual][moduloActual];
+                
+                // Mostrar solo horas y minutos
+                const horarioTexto = `${formatearHora(horarioModulo.inicio)} - ${formatearHora(horarioModulo.fin)}`;
+                moduloHorarioElement.textContent = horarioTexto;
+
+                // Actualizar colores de los indicadores y canvas
+                actualizarColoresIndicadores();
+                drawIndicators();
+            } else {
+                if (moduloActualElement) moduloActualElement.textContent = 'No hay módulo programado';
+                if (moduloHorarioElement) moduloHorarioElement.textContent = '-';
+                
+                // Actualizar colores de los indicadores y canvas
+                actualizarColoresIndicadores();
+                drawIndicators();
+            }
+        }
+
+        // Función para actualizar los colores de los indicadores
+        function actualizarColoresIndicadores() {
+            // Aquí va la lógica para actualizar los colores
+            // Por ejemplo, si hay un módulo actual, actualizar los colores según corresponda
+            const ahora = new Date();
+            const horaActual = ahora.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            const moduloActual = determinarModulo(horaActual);
+
+            if (moduloActual) {
+                // Actualizar los colores según el módulo actual
+                // ... tu lógica de colores aquí ...
+            }
+        }
+
+        // Actualizar la hora cada segundo
+        setInterval(actualizarHora, 1000);
+        actualizarHora(); // Actualizar inmediatamente al cargar
+
+        // Actualizar módulo y colores cada minuto
+        setInterval(actualizarModuloYColores, 60000);
+        actualizarModuloYColores(); // Actualizar inmediatamente al cargar
+
+        // Asegurarse de que el modal esté actualizado cuando se abre
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('modal-solicitar-espacio');
+            if (modal) {
+                modal.addEventListener('show.bs.modal', function() {
+                    actualizarHora();
+                    actualizarModuloYColores();
                 });
-        }
+            }
+        });
 
-        // Función para actualizar el estado de los indicadores
-        function actualizarEstadoIndicadores() {
-            drawIndicators();
-        }
-
-        // Configurar la actualización periódica
-        setInterval(actualizarEstadoIndicadores, 60000); // Actualizar cada minuto
-
+        // Inicialización cuando el DOM está listo
         document.addEventListener("DOMContentLoaded", function() {
             // Inicializar elementos
             initElements();
-            initCanvases();
             
-            // Configurar la actualización periódica
-            setInterval(actualizarEstadoIndicadores, 60000); // Actualizar cada minuto
-
-            // Agregar el evento click al canvas de indicadores
-            if (elements.indicatorsCanvas) {
-                elements.indicatorsCanvas.addEventListener('click', function(event) {
-                    const rect = elements.indicatorsCanvas.getBoundingClientRect();
-                    const clickX = event.clientX - rect.left;
-                    const clickY = event.clientY - rect.top;
-                    
-                    // Buscar el indicador clickeado
-                    const clickedIndicator = state.indicators.find(indicator => {
-                        const position = calculatePosition(indicator);
-                        const width = config.indicatorWidth;
-                        const height = config.indicatorHeight;
-                        
-                        return clickX >= position.x - width / 2 &&
-                            clickX <= position.x + width / 2 &&
-                            clickY >= position.y - height / 2 &&
-                            clickY <= position.y + height / 2;
-                    });
-
-                    if (clickedIndicator) {
-                        mostrarDetallesBloque(clickedIndicator);
-                    }
-                });
-            }
-
             const img = new Image();
             img.onload = function() {
                 state.mapImage = img;
@@ -615,192 +670,12 @@
                 };
                 state.isImageLoaded = true;
                 initCanvases();
-                drawCanvas();
-                drawIndicators();
             };
             img.src = "{{ asset('storage/' . $mapa->ruta_mapa) }}";
 
             window.addEventListener('resize', function() {
                 initCanvases();
-                drawIndicators();
             });
-
-            function actualizarHoraYModulo() {
-                const ahora = new Date();
-                const horaActual = ahora.toLocaleTimeString('es-ES', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-                document.getElementById('hora-actual').textContent = horaActual;
-
-                const dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-                const diaActual = dias[ahora.getDay()];
-                const horaActualStr = ahora.toLocaleTimeString('es-ES', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-
-                function determinarModulo(hora) {
-                    const [horas, minutos] = hora.split(':').map(Number);
-                    const tiempoEnMinutos = horas * 60 + minutos;
-
-                    const rangosModulos = [{
-                            inicio: 8 * 60 + 10,
-                            fin: 9 * 60,
-                            numero: 1
-                        }, // 08:10 - 09:00
-                        {
-                            inicio: 9 * 60 + 10,
-                            fin: 10 * 60,
-                            numero: 2
-                        }, // 09:10 - 10:00
-                        {
-                            inicio: 10 * 60 + 10,
-                            fin: 11 * 60,
-                            numero: 3
-                        }, // 10:10 - 11:00
-                        {
-                            inicio: 11 * 60 + 10,
-                            fin: 12 * 60,
-                            numero: 4
-                        }, // 11:10 - 12:00
-                        {
-                            inicio: 12 * 60 + 10,
-                            fin: 13 * 60,
-                            numero: 5
-                        }, // 12:10 - 13:00
-                        {
-                            inicio: 13 * 60 + 10,
-                            fin: 14 * 60,
-                            numero: 6
-                        }, // 13:10 - 14:00  <--- AGREGA ESTA LÍNEA
-                        {
-                            inicio: 14 * 60 + 10,
-                            fin: 15 * 60,
-                            numero: 7
-                        }, 
-                        {
-                            inicio: 15 * 60 + 10,
-                            fin: 16 * 60,
-                            numero: 7
-                        },
-                        {
-                            inicio: 16 * 60 + 10,
-                            fin: 17 * 60,
-                            numero: 8
-                        },
-                        {
-                            inicio: 17 * 60 + 10,
-                            fin: 18 * 60,
-                            numero: 9
-                        },
-                        {
-                            inicio: 18 * 60 + 10,
-                            fin: 19 * 60,
-                            numero: 10
-                        },
-                        {
-                            inicio: 19 * 60 + 10,
-                            fin: 20 * 60,
-                            numero: 11
-                        },
-                        {
-                            inicio: 20 * 60 + 10,
-                            fin: 21 * 60,
-                            numero: 12
-                        },
-                        {
-                            inicio: 21 * 60 + 10,
-                            fin: 22 * 60,
-                            numero: 13
-                        },
-                        {
-                            inicio: 22 * 60 + 10,
-                            fin: 23 * 60,
-                            numero: 14
-                        },
-                        {
-                            inicio: 23 * 60 + 10,
-                            fin: 24 * 60,
-                            numero: 15
-                        },
-                    ];
-
-                    for (const rango of rangosModulos) {
-                        if (tiempoEnMinutos >= rango.inicio && tiempoEnMinutos <= rango.fin) {
-                            return rango.numero;
-                        }
-                    }
-                    return null;
-                }
-
-                fetch(`/plano/${mapaId}/modulo-actual?hora=${horaActualStr}&dia=${diaActual}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        const moduloElement = document.getElementById('modulo-actual');
-                        if (data.modulo) {
-                            const horaInicio = data.modulo.hora_inicio;
-                            const horaTermino = data.modulo.hora_termino;
-                            const numeroModulo = determinarModulo(horaInicio);
-                            if (numeroModulo) {
-                                document.getElementById('modulo-actual').textContent = numeroModulo;
-                                document.getElementById('modulo-horario').textContent = `${horaInicio} - ${horaTermino}`;
-                            } else {
-                                document.getElementById('modulo-actual').textContent = 'No hay módulos disponibles';
-                                document.getElementById('modulo-horario').textContent = '-';
-                            }
-                        } else {
-                            document.getElementById('modulo-actual').textContent = 'No hay módulos disponibles';
-                            document.getElementById('modulo-horario').textContent = '-';
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error al obtener el módulo actual:', error);
-                        document.getElementById('modulo-actual').textContent = 'Error';
-                        document.getElementById('modulo-horario').textContent = '-';
-                    });
-            }
-
-            setInterval(actualizarHoraYModulo, 1000);
-            actualizarHoraYModulo();
-
-            window.addEventListener('close-modal', async function(event) {
-                if (event.detail === 'solicitar-espacio' && html5QrcodeScanner) {
-                    try {
-                        await html5QrcodeScanner.stop();
-                        html5QrcodeScanner = null;
-                        document.getElementById('profesor-info').classList.add('hidden');
-                        document.getElementById('profesor-scan-section').classList.remove('hidden');
-                        document.getElementById('espacio-scan-section').classList.add('hidden');
-                        document.getElementById('qr-placeholder').style.display = 'flex';
-                        document.getElementById('espacio-placeholder').style.display = 'flex';
-                        const btnIniciarProfesor = document.getElementById('btn-iniciar-profesor');
-                        btnIniciarProfesor.disabled = false;
-                        btnIniciarProfesor.textContent = 'Iniciar Escaneo de Profesor';
-                        const btnIniciarEspacio = document.getElementById('btn-iniciar-espacio');
-                        btnIniciarEspacio.disabled = false;
-                        btnIniciarEspacio.textContent = 'Iniciar Escaneo de Espacio';
-                    } catch (err) {
-                        console.error('Error al detener el escáner:', err);
-                    }
-                }
-            });
-
-            // Escuchar el evento de apertura del modal para iniciar el escáner
-            window.addEventListener('open-modal', function(event) {
-                if (event.detail === 'solicitar-espacio') {
-                    setTimeout(initQRScanner, 300); // Pequeño delay para asegurar que el modal esté visible
-                }
-            });
-
-            // Manejar la apertura del modal desde JS
-            const btnSolicitarEspacio = document.getElementById('btn-solicitar-espacio');
-            if (btnSolicitarEspacio) {
-                btnSolicitarEspacio.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    window.dispatchEvent(new CustomEvent('open-modal', { detail: 'solicitar-espacio' }));
-                });
-            }
         });
 
         window.mostrarDetallesBloque = function(bloque) {
@@ -879,7 +754,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error al obtener reserva activa:', error);
                     // En caso de error, mostrar información de clase próxima si existe
                     if (bloque.estado === 'blue' && bloque.detalles?.planificacion_proxima) {
                         claseProxima.classList.remove('hidden');
@@ -992,7 +866,6 @@
                         onSalidaProfesorScanSuccess,
                         (error) => {
                             if (error.includes("QR code parse error")) return;
-                            console.warn(`Error en el escaneo: ${error}`);
                         }
                     );
 
@@ -1048,7 +921,6 @@
                         });
                     }
                 } catch (err) {
-                    console.error('Error al iniciar el escáner:', err);
                     document.getElementById('salida-profesor-cargando-msg').textContent = '';
                     document.getElementById('salida-profesor-error-msg').textContent = 'Error al iniciar la cámara. Por favor, verifica los permisos y que la cámara no esté siendo usada por otra aplicación.';
                     document.getElementById('salida-profesor-error-msg').classList.remove('hidden');
@@ -1088,7 +960,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
                     mostrarErrorEscaneoSalida(error.message || 'Error al obtener información del profesor');
                 });
         }
@@ -1132,11 +1003,9 @@
                     onSalidaEspacioScanSuccess,
                     (error) => {
                         if (error.includes("QR code parse error")) return;
-                        console.warn(`Error en el escaneo: ${error}`);
                     }
                 );
             } catch (err) {
-                console.error('Error al iniciar el escáner:', err);
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -1199,7 +1068,6 @@
                 }
             })
             .catch(error => {
-                console.error('Error:', error);
                 Swal.fire({
                     icon: 'error',
                     title: 'Error',
@@ -1231,8 +1099,6 @@
             initQRScannerSalidaProfesor();
         }
 
-        console.log(state.indicators);
-
         // Función para solicitar permisos de cámara
         async function requestCameraPermission() {
             try {
@@ -1240,7 +1106,6 @@
                 stream.getTracks().forEach(track => track.stop());
                 return true;
             } catch (err) {
-                console.error('Error al solicitar permisos de cámara:', err);
                 return false;
             }
         }
@@ -1252,253 +1117,50 @@
                 const videoDevices = devices.filter(device => device.kind === 'videoinput');
                 return videoDevices[0]?.deviceId || null;
             } catch (err) {
-                console.error('Error al obtener dispositivos de cámara:', err);
                 return null;
             }
         }
 
-        // Función para inicializar el escáner QR
-        const videoElement = document.querySelector('#qr-reader video');
-
-if (videoElement) {
-  videoElement.addEventListener('loadedmetadata', async () => {
-    try {
-      const stream = videoElement.srcObject;
-      if (!stream) return;
-
-      const track = stream.getVideoTracks()[0];
-      const capabilities = track.getCapabilities();
-
-      console.log("Capacidades de la cámara:", capabilities);
-
-      const advancedConstraints = [];
-
-      // 1. Verificar si soporta enfoque automático
-      if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
-        advancedConstraints.push({ focusMode: 'continuous' });
-      }
-
-      // 2. Forzar enfoque cercano si es posible
-      if (capabilities.focusDistance) {
-        advancedConstraints.push({ focusDistance: capabilities.focusDistance.min || 0.01 });
-      }
-
-      // 3. Zoom máximo si soportado
-      if (capabilities.zoom) {
-        advancedConstraints.push({ zoom: capabilities.zoom.max || 4 });
-      }
-
-      // 4. Mejoras visuales si están disponibles
-      if (capabilities.sharpness) advancedConstraints.push({ sharpness: capabilities.sharpness.max || 1 });
-      if (capabilities.contrast) advancedConstraints.push({ contrast: capabilities.contrast.max || 1.2 });
-      if (capabilities.saturation) advancedConstraints.push({ saturation: capabilities.saturation.max || 1.1 });
-
-      // 5. Torch (linterna) si está disponible
-      if (capabilities.torch) {
-        advancedConstraints.push({ torch: true });
-      }
-
-      // Aplicar las constraints avanzadas
-      await track.applyConstraints({ advanced: advancedConstraints });
-
-      // Aplicar resolución y FPS alta (HD)
-      await track.applyConstraints({
-        width: { ideal: 1920 },
-        height: { ideal: 1080 },
-        frameRate: { ideal: 60 }
-      });
-
-      console.log("Constraints aplicadas para enfoque cercano y mejoras de calidad.");
-
-    } catch (error) {
-      console.warn("No se pudieron aplicar constraints avanzados:", error);
-    }
-  });
-}
-
-
-        // Función para manejar el escaneo exitoso del profesor
-        function onProfesorScanSuccess(decodedText) {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.stop();
-                html5QrcodeScanner = null;
-            }
-
-            // Extraer el RUN de la URL
-            let run = '';
-            try {
-                const url = new URL(decodedText);
-                const runParam = url.searchParams.get('RUN');
-                if (runParam) {
-                    run = runParam.split('-')[0]; // Obtener solo la parte antes del guión
-                } else {
-                    throw new Error('No se encontró el parámetro RUN en la URL');
-                }
-            } catch (error) {
-                mostrarErrorEscaneo('El código QR no tiene el formato esperado');
-                return;
-            }
-
-            window.profesorRun = run;
-
-            fetch(`/api/user/${run}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.user) {
-                        document.getElementById('profesor-nombre').textContent = data.user.name || '';
-                        document.getElementById('profesor-correo').textContent = data.user.email || '';
-                        document.getElementById('profesor-info').classList.remove('hidden');
-                        document.getElementById('profesor-scan-section').classList.add('hidden');
-                        document.getElementById('espacio-scan-section').classList.remove('hidden');
-                        initEspacioScanner();
-                    } else {
-                        mostrarErrorEscaneo('La persona no se encuentra registrada, contáctese con soporte.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    mostrarErrorEscaneo(error.message || 'Error al obtener información del profesor');
-                });
+        // Función para obtener el código del día
+        function obtenerCodigoDia(dia) {
+            const codigos = {
+                'lunes': 'LU',
+                'martes': 'MA',
+                'miercoles': 'MI',
+                'jueves': 'JU',
+                'viernes': 'VI'
+            };
+            return codigos[dia] || '';
         }
 
-        // Función para inicializar el escáner de espacio
-        async function initEspacioScanner() {
-            try {
-                const hasPermission = await requestCameraPermission();
-                if (!hasPermission) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'Se requieren permisos de cámara para escanear códigos QR'
-                    });
-                    return;
-                }
-
-                currentCameraId = await getFirstCamera();
-                if (!currentCameraId) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error',
-                        text: 'No se encontró ninguna cámara disponible'
-                    });
-                    return;
-                }
-
-                const config = {
-                    fps: 10,
-                    aspectRatio: 1.0,
-                    formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-                    rememberLastUsedCamera: true,
-                    showTorchButtonIfSupported: true,
-                    autoFocus: true
-                };
-
-                html5QrcodeScanner = new Html5Qrcode("qr-reader-espacio");
-                await html5QrcodeScanner.start(
-                    currentCameraId,
-                    config,
-                    onEspacioScanSuccess,
-                    (error) => {
-                        if (error.includes("QR code parse error")) return;
-                        console.warn(`Error en el escaneo: ${error}`);
-                    }
-                );
-            } catch (err) {
-                console.error('Error al iniciar el escáner:', err);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'Error al iniciar la cámara. Por favor, verifica los permisos y que la cámara no esté siendo usada por otra aplicación.'
-                });
-            }
-        }
-
-        // Función para manejar el escaneo exitoso del espacio
-        function onEspacioScanSuccess(decodedText) {
-            if (html5QrcodeScanner) {
-                html5QrcodeScanner.stop();
-                html5QrcodeScanner = null;
-            }
-
-            if (!window.profesorRun) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: 'No se encontró la información del profesor'
-                });
-                return;
-            }
-
-            registrarEntradaClase(window.profesorRun, decodedText);
-        }
-
-        // Función para registrar la entrada a clase
-        function registrarEntradaClase(run, espacioId) {
-            fetch('/api/registrar-entrada-clase', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({
-                    run: run,
-                    espacio_id: espacioId
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const block = state.indicators.find(b => b.id === espacioId);
-                    if (block) {
-                        block.estado = 'red';
-                        state.originalCoordinates = state.indicators.map(i => ({...i}));
-                        drawIndicators();
-                    }
-                    Swal.fire({
-                        icon: 'success',
-                        title: '¡Éxito!',
-                        text: data.message,
-                        showConfirmButton: false,
-                        timer: 2000
-                    }).then(() => {
-                        window.dispatchEvent(new CustomEvent('close-modal', { detail: 'solicitar-espacio' }));
-                        location.reload();
-                    });
-                } else {
-                    throw new Error(data.message || 'Error al registrar la entrada');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: error.message || 'Ocurrió un error al registrar la entrada'
-                });
-            });
-        }
-
-        function mostrarErrorEscaneo(mensaje) {
-            const errorMsg = document.getElementById('qr-error-msg');
-            const cargandoMsg = document.getElementById('qr-cargando-msg');
-            const btnReintentar = document.getElementById('btn-reintentar');
-            const qrPlaceholder = document.getElementById('qr-placeholder');
+        // Función para buscar módulo por código
+        function buscarModuloPorCodigo(codigo) {
+            // Separar el código en día y módulo (ejemplo: "JU.1")
+            const [codigoDia, numeroModulo] = codigo.split('.');
             
-            if (errorMsg) {
-                errorMsg.textContent = mensaje;
-                errorMsg.classList.remove('hidden');
-            }
-            if (cargandoMsg) cargandoMsg.textContent = '';
-            if (btnReintentar) btnReintentar.classList.remove('hidden');
-            if (qrPlaceholder) qrPlaceholder.style.display = 'flex';
+            // Encontrar el día correspondiente al código
+            const dia = Object.entries(horariosModulos).find(([_, value]) => 
+                obtenerCodigoDia(value) === codigoDia
+            )?.[0];
+
+            if (!dia || !numeroModulo) return null;
+
+            const modulo = horariosModulos[dia][parseInt(numeroModulo)];
+            if (!modulo) return null;
+
+            return {
+                dia,
+                modulo: parseInt(numeroModulo),
+                horario: modulo
+            };
         }
 
-        function reiniciarEscaneo() {
-            document.getElementById('qr-error-msg').classList.add('hidden');
-            document.getElementById('btn-reintentar').classList.add('hidden');
-            document.getElementById('qr-cargando-msg').textContent = 'Cargando escáner, por favor espere...';
-            document.getElementById('qr-cargando-msg').classList.remove('hidden');
-            initQRScanner();
+        // Función para mostrar información del módulo
+        function mostrarInfoModulo(codigo) {
+            const info = buscarModuloPorCodigo(codigo);
+            if (!info) {
+                return;
+            }
         }
     </script>
 </x-app-layout>
