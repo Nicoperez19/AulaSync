@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             
             $table->unsignedBigInteger('run')->primary();
-            $table->string('qr_run')->nullable();
             $table->string('password');
             $table->string('name');
             $table->string('email')->nullable();

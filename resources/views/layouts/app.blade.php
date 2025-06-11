@@ -39,7 +39,7 @@
             <x-sidebar.sidebar />
 
             <!-- Contenido principal -->
-            <div class="flex flex-col min-h-screen pt-16 bg-cloud-light dark:bg-dark-eval-2 transition-all duration-300">
+            <div class="flex flex-col min-h-screen pt-16 bg-cloud-light dark:bg-dark-eval-2 transition-all duration-300 ease-in-out">
                 <!-- Header -->
                 <header>
                     <div class="p-4 mt-4 sm:p-6">
@@ -48,9 +48,9 @@
                 </header>
 
                 <!-- Main content -->
-                <main class="flex-1 px-4 overflow-x-auto sm:px-6 transition-all duration-300"
+                <main class="flex-1 px-4 overflow-x-auto sm:px-6 transition-all duration-300 ease-in-out"
                     :class="{
-                        'opacity-50 pointer-events-none': isSidebarOpen || isSidebarHovered,
+                        'opacity-75 pointer-events-none': isSidebarOpen || isSidebarHovered,
                         'opacity-100': !(isSidebarOpen || isSidebarHovered)
                     }">
                     {{ $slot }}

@@ -109,14 +109,16 @@
                         tr.className = 'hover:bg-gray-50';
 
                         const moduloInfo = data.modulos.find(m => m.id_modulo.split('.')[1] === modulo);
-                        const hora = `${moduloInfo.hora_inicio} - ${moduloInfo.hora_termino}`;
+                        const horaInicio = moduloInfo.hora_inicio.substring(0, 5);
+                        const horaTermino = moduloInfo.hora_termino.substring(0, 5);
+                        const hora = `${horaInicio} - ${horaTermino}`;
 
                         const tdHora = document.createElement('td');
                         tdHora.className = 'py-3 px-4 border-b text-center text-sm text-gray-600 leading-tight';
                         tdHora.innerHTML = `<div class="flex flex-col items-center justify-center">
                         <span class="font-semibold text-gray-800">Módulo ${modulo}</span>
-    <span class="text-xs">${hora}</span>
-</div>`;
+                        <span class="text-xs">${hora}</span>
+                        </div>`;
                         tr.appendChild(tdHora);
 
                         diasUnicos.forEach(dia => {

@@ -278,6 +278,11 @@
         let duracionSeleccionada = null;
         let noDisponibleReserva = false;
 
+        // Variables globales para control de enfoque
+        let qrScanTimeout = null;
+        let qrScanAttempts = 0;
+        let qrScanMaxAttempts = 30; // 3 segundos si fps=10
+
         // Obtener el ID del mapa de la URL
         const mapaId = window.location.pathname.split('/').pop();
 
@@ -430,148 +435,134 @@
 
             // Obtener el módulo actual
             const ahora = new Date();
-            const diaActual = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'][ahora.getDay()];
-            const horaActual = ahora.toTimeString().substring(0, 5);
-            const horaActualNum = parseInt(horaActual.split(':')[0]);
-            const minutoActualNum = parseInt(horaActual.split(':')[1]);
-            const tiempoActualMinutos = horaActualNum * 60 + minutoActualNum;
+            const horaActual = ahora.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            const horaActualStr = ahora.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
 
-            // Definir los rangos de módulos
-            const rangosModulos = [
-                { inicio: 8 * 60 + 10, fin: 9 * 60, numero: 1 },      // 08:10 - 09:00
-                { inicio: 9 * 60 + 10, fin: 10 * 60, numero: 2 },     // 09:10 - 10:00
-                { inicio: 10 * 60 + 10, fin: 11 * 60, numero: 3 },    // 10:10 - 11:00
-                { inicio: 11 * 60 + 10, fin: 12 * 60, numero: 4 },    // 11:10 - 12:00
-                { inicio: 12 * 60 + 10, fin: 13 * 60, numero: 5 },    // 12:10 - 13:00
-                { inicio: 13 * 60 + 10, fin: 14 * 60, numero: 6 },    // 13:10 - 14:00
-                { inicio: 14 * 60 + 10, fin: 15 * 60, numero: 7 },    // 14:10 - 15:00
-                { inicio: 15 * 60 + 10, fin: 16 * 60, numero: 8 },    // 15:10 - 16:00
-                { inicio: 16 * 60 + 10, fin: 17 * 60, numero: 9 },    // 16:10 - 17:00
-                { inicio: 17 * 60 + 10, fin: 18 * 60, numero: 10 },   // 17:10 - 18:00
-                { inicio: 18 * 60 + 10, fin: 19 * 60, numero: 11 },   // 18:10 - 19:00
-                { inicio: 19 * 60 + 10, fin: 20 * 60, numero: 12 },   // 19:10 - 20:00
-                { inicio: 20 * 60 + 10, fin: 21 * 60, numero: 13 }    // 20:10 - 21:00
-            ];
+            function determinarModulo(hora) {
+                const [horas, minutos] = hora.split(':').map(Number);
+                const tiempoEnMinutos = horas * 60 + minutos;
 
-            // Encontrar el módulo actual
-            const moduloActual = rangosModulos.find(rango => 
-                tiempoActualMinutos >= rango.inicio && tiempoActualMinutos <= rango.fin
-            );
+                const rangosModulos = [{
+                        inicio: 8 * 60 + 10,
+                        fin: 9 * 60,
+                        numero: 1
+                    }, // 08:10 - 09:00
+                    {
+                        inicio: 9 * 60 + 10,
+                        fin: 10 * 60,
+                        numero: 2
+                    }, // 09:10 - 10:00
+                    {
+                        inicio: 10 * 60 + 10,
+                        fin: 11 * 60,
+                        numero: 3
+                    }, // 10:10 - 11:00
+                    {
+                        inicio: 11 * 60 + 10,
+                        fin: 12 * 60,
+                        numero: 4
+                    }, // 11:10 - 12:00
+                    {
+                        inicio: 12 * 60 + 10,
+                        fin: 13 * 60,
+                        numero: 5
+                    }, // 12:10 - 13:00
+                    {
+                        inicio: 13 * 60 + 10,
+                        fin: 14 * 60,
+                        numero: 6
+                    }, // 13:10 - 14:00  <--- AGREGA ESTA LÍNEA
+                    {
+                        inicio: 14 * 60 + 10,
+                        fin: 15 * 60,
+                        numero: 7
+                    }, 
+                    {
+                        inicio: 15 * 60 + 10,
+                        fin: 16 * 60,
+                        numero: 7
+                    },
+                    {
+                        inicio: 16 * 60 + 10,
+                        fin: 17 * 60,
+                        numero: 8
+                    },
+                    {
+                        inicio: 17 * 60 + 10,
+                        fin: 18 * 60,
+                        numero: 9
+                    },
+                    {
+                        inicio: 18 * 60 + 10,
+                        fin: 19 * 60,
+                        numero: 10
+                    },
+                    {
+                        inicio: 19 * 60 + 10,
+                        fin: 20 * 60,
+                        numero: 11
+                    },
+                    {
+                        inicio: 20 * 60 + 10,
+                        fin: 21 * 60,
+                        numero: 12
+                    },
+                    {
+                        inicio: 21 * 60 + 10,
+                        fin: 22 * 60,
+                        numero: 13
+                    },
+                    {
+                        inicio: 22 * 60 + 10,
+                        fin: 23 * 60,
+                        numero: 14
+                    },
+                    {
+                        inicio: 23 * 60 + 10,
+                        fin: 24 * 60,
+                        numero: 15
+                    },
+                ];
 
-            if (moduloActual) {
-                // Construir el id_modulo
-                const abreviaturasDias = {
-                    'domingo': 'DO',
-                    'lunes': 'LU',
-                    'martes': 'MA',
-                    'miércoles': 'MI',
-                    'jueves': 'JU',
-                    'viernes': 'VI',
-                    'sábado': 'SA'
-                };
-                const idModulo = `${abreviaturasDias[diaActual]}.${moduloActual.numero}`;
-
-                // Obtener todos los IDs de espacios
-                const espaciosIds = state.indicators.map(indicator => indicator.id);
-
-                // Verificar planificación para todos los espacios
-                fetch(`/api/verificar-planificacion-multiple?id_modulo=${idModulo}&espacios=${espaciosIds.join(',')}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Error en la respuesta del servidor');
+                for (const rango of rangosModulos) {
+                    if (tiempoEnMinutos >= rango.inicio && tiempoEnMinutos <= rango.fin) {
+                        return rango.numero;
                     }
-                    return response.json();
-                })
+                }
+                return null;
+            }
+
+            fetch(`/plano/${mapaId}/modulo-actual?hora=${horaActualStr}&dia=${diaActual}`)
+                .then(response => response.json())
                 .then(data => {
-                    const espaciosOcupados = data.espacios_ocupados || [];
-                    
-                    // Dibujar todos los indicadores
-                    state.indicators.forEach(indicator => {
-                        const position = calculatePosition(indicator);
-                        const width = config.indicatorWidth;
-                        const height = config.indicatorHeight;
-                        
-                        const mouseX = state.mouseX;
-                        const mouseY = state.mouseY;
-                        const isHovered = mouseX >= position.x - width / 2 &&
-                            mouseX <= position.x + width / 2 &&
-                            mouseY >= position.y - height / 2 &&
-                            mouseY <= position.y + height / 2;
-
-                        const hoverScale = 1.2;
-                        const finalWidth = isHovered ? width * hoverScale : width;
-                        const finalHeight = isHovered ? height * hoverScale : height;
-
-                        let color;
-                        // Verificar el estado del espacio
-                        fetch(`/api/espacio/${indicator.id}`)
-                            .then(response => response.json())
-                            .then(espacioData => {
-                                if (espacioData.estado === 'Ocupado') {
-                                    color = '#EF4444'; // Rojo para espacios ocupados
-                                } else if (espaciosOcupados.includes(indicator.id)) {
-                                    color = '#F59E42'; // Naranja para espacios con clase programada
-                                } else if (indicator.detalles?.estado === 'Próximo') {
-                                    color = '#3B82F6'; // Azul para próximas clases
-                                } else {
-                                    color = '#10B981'; // Verde para espacios disponibles
-                                }
-
-                                dibujarIndicador(elements, position, finalWidth, finalHeight, color, indicator.id, isHovered, indicator.detalles, moduloActual);
-                            })
-                            .catch(error => {
-                                console.error('Error al obtener estado del espacio:', error);
-                                // En caso de error, usar el color por defecto
-                                color = '#10B981';
-                                dibujarIndicador(elements, position, finalWidth, finalHeight, color, indicator.id, isHovered, indicator.detalles, moduloActual);
-                            });
-                    });
+                    const moduloElement = document.getElementById('modulo-actual');
+                    if (data.modulo) {
+                        const horaInicio = data.modulo.hora_inicio;
+                        const horaTermino = data.modulo.hora_termino;
+                        const numeroModulo = determinarModulo(horaInicio);
+                        if (numeroModulo) {
+                            document.getElementById('modulo-actual').textContent = numeroModulo;
+                            document.getElementById('modulo-horario').textContent = `${horaInicio} - ${horaTermino}`;
+                        } else {
+                            document.getElementById('modulo-actual').textContent = 'No hay módulos disponibles';
+                            document.getElementById('modulo-horario').textContent = '-';
+                        }
+                    } else {
+                        document.getElementById('modulo-actual').textContent = 'No hay módulos disponibles';
+                        document.getElementById('modulo-horario').textContent = '-';
+                    }
                 })
                 .catch(error => {
-                    console.error('Error al verificar planificación:', error);
-                    // En caso de error, dibujar todos los indicadores como disponibles
-                    state.indicators.forEach(indicator => {
-                        const position = calculatePosition(indicator);
-                        const width = config.indicatorWidth;
-                        const height = config.indicatorHeight;
-                        
-                        const mouseX = state.mouseX;
-                        const mouseY = state.mouseY;
-                        const isHovered = mouseX >= position.x - width / 2 &&
-                            mouseX <= position.x + width / 2 &&
-                            mouseY >= position.y - height / 2 &&
-                            mouseY <= position.y + height / 2;
-
-                        const hoverScale = 1.2;
-                        const finalWidth = isHovered ? width * hoverScale : width;
-                        const finalHeight = isHovered ? height * hoverScale : height;
-
-                        const color = indicator.detalles?.estado === 'Próximo' ? '#3B82F6' : '#10B981';
-                        dibujarIndicador(elements, position, finalWidth, finalHeight, color, indicator.id, isHovered, indicator.detalles, null);
-                    });
+                    console.error('Error al obtener el módulo actual:', error);
+                    document.getElementById('modulo-actual').textContent = 'Error';
+                    document.getElementById('modulo-horario').textContent = '-';
                 });
-            } else {
-                // Si no hay módulo actual, dibujar todos los indicadores como disponibles
-                state.indicators.forEach(indicator => {
-                    const position = calculatePosition(indicator);
-                    const width = config.indicatorWidth;
-                    const height = config.indicatorHeight;
-                    
-                    const mouseX = state.mouseX;
-                    const mouseY = state.mouseY;
-                    const isHovered = mouseX >= position.x - width / 2 &&
-                        mouseX <= position.x + width / 2 &&
-                        mouseY >= position.y - height / 2 &&
-                        mouseY <= position.y + height / 2;
-
-                    const hoverScale = 1.2;
-                    const finalWidth = isHovered ? width * hoverScale : width;
-                    const finalHeight = isHovered ? height * hoverScale : height;
-
-                    const color = indicator.detalles?.estado === 'Próximo' ? '#3B82F6' : '#10B981';
-                    dibujarIndicador(elements, position, finalWidth, finalHeight, color, indicator.id, isHovered, indicator.detalles, null);
-                });
-            }
         }
 
         // Función para actualizar el estado de los indicadores
@@ -638,8 +629,7 @@
                 const ahora = new Date();
                 const horaActual = ahora.toLocaleTimeString('es-ES', {
                     hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
+                    minute: '2-digit'
                 });
                 document.getElementById('hora-actual').textContent = horaActual;
 
@@ -647,8 +637,7 @@
                 const diaActual = dias[ahora.getDay()];
                 const horaActualStr = ahora.toLocaleTimeString('es-ES', {
                     hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
+                    minute: '2-digit'
                 });
 
                 function determinarModulo(hora) {
@@ -750,8 +739,8 @@
                     .then(data => {
                         const moduloElement = document.getElementById('modulo-actual');
                         if (data.modulo) {
-                            const horaInicio = data.modulo.hora_inicio.substring(0, 5);
-                            const horaTermino = data.modulo.hora_termino.substring(0, 5);
+                            const horaInicio = data.modulo.hora_inicio;
+                            const horaTermino = data.modulo.hora_termino;
                             const numeroModulo = determinarModulo(horaInicio);
                             if (numeroModulo) {
                                 document.getElementById('modulo-actual').textContent = numeroModulo;
@@ -938,11 +927,25 @@
 
                     const config = {
                         fps: 10,
-                        qrbox: { width: 250, height: 250 },
                         aspectRatio: 1.0,
                         formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
                         rememberLastUsedCamera: true,
-                        showTorchButtonIfSupported: true
+                        showTorchButtonIfSupported: true,
+                        videoConstraints: {
+                            focusMode: "continuous",
+                            zoom: 8.0,
+                            width: { min: 640, ideal: 1280, max: 1920 },
+                            height: { min: 480, ideal: 720, max: 1080 },
+                            advanced: [{
+                                focusMode: "continuous",
+                                exposureMode: "continuous",
+                                whiteBalanceMode: "continuous",
+                                iso: 800,
+                                exposureTime: 500,
+                                focusDistance: 0.01,
+                                pointsOfInterest: [{ x: 0.5, y: 0.5 }]
+                            }]
+                        }
                     };
 
                     html5QrcodeScanner = new Html5Qrcode("qr-reader-salida-profesor");
@@ -973,9 +976,17 @@
                 html5QrcodeScanner = null;
             }
 
-            window.profesorRunSalida = decodedText;
+            // Extraer el RUN de la URL
+            const runMatch = decodedText.match(/RUN=(\d+)-/);
+            if (!runMatch) {
+                mostrarErrorEscaneoSalida('El código QR no contiene un RUN válido');
+                return;
+            }
+            const run = runMatch[1];
 
-            fetch(`/api/user/${decodedText}`)
+            window.profesorRunSalida = run;
+
+            fetch(`/api/user/${run}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success && data.user) {
@@ -1020,11 +1031,14 @@
 
                 const config = {
                     fps: 10,
-                    qrbox: { width: 250, height: 250 },
                     aspectRatio: 1.0,
                     formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
                     rememberLastUsedCamera: true,
-                    showTorchButtonIfSupported: true
+                    showTorchButtonIfSupported: true,
+                    videoConstraints: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
                 };
 
                 html5QrcodeScanner = new Html5Qrcode("qr-reader-salida-espacio");
@@ -1159,14 +1173,52 @@
             }
         }
 
-        // Función para inicializar el escáner QR
+        // Función para mostrar mensaje de enfoque
+        function mostrarMensajeEnfoque(mostrar) {
+            let msg = document.getElementById('qr-enfoque-msg');
+            if (!msg) {
+                msg = document.createElement('p');
+                msg.id = 'qr-enfoque-msg';
+                msg.className = 'text-sm text-yellow-600 dark:text-yellow-400 mt-2';
+                const placeholder = document.getElementById('qr-placeholder');
+                if (placeholder) placeholder.appendChild(msg);
+            }
+            msg.textContent = mostrar ? 'No se puede enfocar el QR. Aleja un poco el código hasta que la imagen se vea nítida.' : '';
+            msg.style.display = mostrar ? 'block' : 'none';
+
+            let btn = document.getElementById('btn-reenfocar');
+            if (!btn) {
+                btn = document.createElement('button');
+                btn.id = 'btn-reenfocar';
+                btn.className = 'px-4 py-2 mt-2 text-sm font-medium text-white bg-blue-500 rounded hover:bg-blue-600';
+                btn.textContent = 'Reenfocar cámara';
+                btn.onclick = function() {
+                    mostrarMensajeEnfoque(false);
+                    reiniciarEscaneo();
+                };
+                const placeholder = document.getElementById('qr-placeholder');
+                if (placeholder) placeholder.appendChild(btn);
+            }
+            btn.style.display = mostrar ? 'inline-block' : 'none';
+        }
+
+        // Modificar la inicialización del escáner QR para detectar intentos fallidos
         async function initQRScanner() {
             if (html5QrcodeScanner === null) {
                 try {
                     document.getElementById('qr-cargando-msg').textContent = 'Cargando escáner, por favor espere...';
                     document.getElementById('qr-cargando-msg').classList.remove('hidden');
                     document.getElementById('qr-error-msg').classList.add('hidden');
-                    
+                    mostrarMensajeEnfoque(false);
+                    qrScanAttempts = 0;
+                    if (qrScanTimeout) clearInterval(qrScanTimeout);
+                    qrScanTimeout = setInterval(() => {
+                        qrScanAttempts++;
+                        if (qrScanAttempts > qrScanMaxAttempts) {
+                            mostrarMensajeEnfoque(true);
+                        }
+                    }, 100);
+
                     const hasPermission = await requestCameraPermission();
                     if (!hasPermission) {
                         document.getElementById('qr-cargando-msg').textContent = '';
@@ -1185,26 +1237,47 @@
 
                     const config = {
                         fps: 10,
-                        qrbox: { width: 250, height: 250 },
                         aspectRatio: 1.0,
                         formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
                         rememberLastUsedCamera: true,
-                        showTorchButtonIfSupported: true
+                        showTorchButtonIfSupported: true,
+                        videoConstraints: {
+                            focusMode: "continuous",
+                            zoom: 8.0,
+                            width: { min: 640, ideal: 1280, max: 1920 },
+                            height: { min: 480, ideal: 720, max: 1080 },
+                            advanced: [{
+                                focusMode: "continuous",
+                                exposureMode: "continuous",
+                                whiteBalanceMode: "continuous",
+                                iso: 800,
+                                exposureTime: 500,
+                                focusDistance: 0.01,
+                                pointsOfInterest: [{ x: 0.5, y: 0.5 }]
+                            }]
+                        }
                     };
 
                     html5QrcodeScanner = new Html5Qrcode("qr-reader");
                     document.getElementById('qr-placeholder').style.display = 'none';
-                    
+
                     await html5QrcodeScanner.start(
                         currentCameraId,
                         config,
-                        onProfesorScanSuccess,
+                        (decodedText) => {
+                            if (qrScanTimeout) clearInterval(qrScanTimeout);
+                            mostrarMensajeEnfoque(false);
+                            onProfesorScanSuccess(decodedText);
+                        },
                         (error) => {
                             if (error.includes("QR code parse error")) return;
+                            // No reiniciamos el contador aquí, solo si hay éxito
                             console.warn(`Error en el escaneo: ${error}`);
                         }
                     );
                 } catch (err) {
+                    if (qrScanTimeout) clearInterval(qrScanTimeout);
+                    mostrarMensajeEnfoque(false);
                     console.error('Error al iniciar el escáner:', err);
                     document.getElementById('qr-cargando-msg').textContent = '';
                     document.getElementById('qr-error-msg').textContent = 'Error al iniciar la cámara. Por favor, verifica los permisos y que la cámara no esté siendo usada por otra aplicación.';
@@ -1221,9 +1294,15 @@
                 html5QrcodeScanner = null;
             }
 
-            window.profesorRun = decodedText;
+            // Extraer el RUN de la URL
+            const runMatch = decodedText.match(/RUN=(\d+)-/);
+            if (!runMatch) {
+                mostrarErrorEscaneo('El código QR no contiene un RUN válido');
+                return;
+            }
+            const run = runMatch[1];
 
-            fetch(`/api/user/${decodedText}`)
+            fetch(`/api/user/${run}`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success && data.user) {
@@ -1268,11 +1347,14 @@
 
                 const config = {
                     fps: 10,
-                    qrbox: { width: 250, height: 250 },
                     aspectRatio: 1.0,
                     formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
                     rememberLastUsedCamera: true,
-                    showTorchButtonIfSupported: true
+                    showTorchButtonIfSupported: true,
+                    videoConstraints: {
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
                 };
 
                 html5QrcodeScanner = new Html5Qrcode("qr-reader-espacio");

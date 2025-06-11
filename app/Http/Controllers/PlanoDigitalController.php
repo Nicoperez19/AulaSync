@@ -286,6 +286,12 @@ class PlanoDigitalController extends Controller
                 ->where('hora_termino', '>=', $horaActual)
                 ->first();
 
+            if ($modulo) {
+                // Formatear las horas para mostrar solo HH:mm
+                $modulo->hora_inicio = substr($modulo->hora_inicio, 0, 5);
+                $modulo->hora_termino = substr($modulo->hora_termino, 0, 5);
+            }
+
             return response()->json([
                 'modulo' => $modulo
             ]);

@@ -28,6 +28,17 @@ class HorariosController extends Controller
         }
         $profesores = $query->orderBy('name')->paginate(27);
         $horarios = Horario::with(['docente', 'planificaciones.asignatura', 'planificaciones.espacio'])->get();
+        
+        // Formatear las horas de inicio y término de los módulos
+        $horarios->each(function ($horario) {
+            $horario->planificaciones->each(function ($planificacion) {
+                if ($planificacion->modulo) {
+                    $planificacion->modulo->hora_inicio = substr($planificacion->modulo->hora_inicio, 0, 5);
+                    $planificacion->modulo->hora_termino = substr($planificacion->modulo->hora_termino, 0, 5);
+                }
+            });
+        });
+        
         $horarios = $horarios->groupBy('run');
         return view('layouts.schedules.schedules_index', compact('profesores', 'horarios'));
     }

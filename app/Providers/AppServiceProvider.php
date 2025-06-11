@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use App\Services\QRService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -12,9 +11,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->singleton(QRService::class, function ($app) {
-            return new QRService();
-        });
+        //
     }
 
     /**
