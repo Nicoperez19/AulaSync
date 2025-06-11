@@ -1,266 +1,149 @@
-<x-app-layout>
-    <x-slot name="header">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <h2 class="text-xl font-semibold leading-tight">
-                {{ "{$mapa->piso->facultad->nombre_facultad}, {$mapa->piso->facultad->sede->nombre_sede}" }}
-            </h2>
-        </div>
-    </x-slot>
-
-    <div class="p-6 space-y-6">
-
-        <!-- Card: Navegación de Pisos y Plano -->
-        <div class="w-full">
-            <div class="bg-white shadow-md dark:bg-dark-eval-0 rounded-t-xl">
-                <ul class="flex border-b border-gray-300 dark:border-gray-700" id="pills-tab" role="tablist">
-                    @foreach ($pisos as $piso)
-                        <li role="presentation">
-                            <a href="{{ route('plano.show', $piso->id_mapa) }}"
-                                class="px-10 py-4 text-lg font-semibold transition-all duration-300 rounded-t-xl border border-b-0
-                                {{ $piso->id_mapa === $mapa->id_mapa
-                                    ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
-                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}"
-                                role="tab"
-                                aria-selected="{{ $piso->id_mapa === $mapa->id_mapa ? 'true' : 'false' }}">
-                                Piso {{ $piso->piso->numero_piso }}
-                            </a>
-                        </li>
-                    @endforeach
-                </ul>
-                <!-- Card para el canvas y controles -->
-                <div class="p-6 bg-white shadow-md rounded-b-xl dark:bg-gray-800">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Plano del Piso
-                            {{ $mapa->piso->numero_piso }}</h3>
-                        <div class="flex gap-2">
-                            <button onclick="actualizarEstados(true)"
-                                class="px-4 py-2 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="inline w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582M19.418 19A9 9 0 105 5.582" /></svg>
-                                Actualizar Estados
-                            </button>
-                            <button id="btn-solicitar-espacio" type="button"
-                                class="px-4 py-2 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="inline w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 17v-6m0 0V7m0 4h4m-4 0H8m8 4a4 4 0 11-8 0 4 4 0 018 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12h.01" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l2 2m0 0l-2 2m2-2H7" /></svg>
-                                Solicitar Espacio
-                            </button>
+<x-show-layout>
+    <div class="flex">
+        <!-- Sidebar fijo a la izquierda, más compacto y con fondo azul claro -->
+        <aside
+            class="w-48 min-h-screen bg-light-cloud-blue border-r border-gray-200 dark:border-gray-700 flex flex-col justify-between fixed left-0 top-0 z-40 pt-4 pb-4">
+            <!-- Logo de la aplicación -->
+            <div class="flex flex-col items-center gap-4">
+                <a href="/" class="mb-2">
+                    <x-application-logo-navbar class="w-12 h-12" />
+                </a>
+                <!-- Leyenda -->
+                <div class="w-full px-2 bg-white p-4">
+                    <h3 class="mb-1 text-sm font-semibold text-center">Leyenda</h3>
+                    <div class="flex flex-col items-start gap-1 text-xs">
+                        <div class="flex items-center gap-1">
+                            <div class="w-3 h-3 bg-red-500 rounded-sm"></div>
+                            <span>Ocupado</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <div class="w-3 h-3 bg-blue-500 rounded-sm"></div>
+                            <span>Próximo</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <div class="w-3 h-3 bg-green-500 rounded-sm"></div>
+                            <span>Disponible</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <div class="w-3 h-3 bg-orange-500 rounded-sm"></div>
+                            <span>Previsto</span>
                         </div>
                     </div>
+                </div>
+            </div>
+            <!-- Información de hora y módulo actual -->
+            <div class="w-full px-2 mt-4">
+                <div class="p-2 border border-blue-600 rounded-lg shadow bg-light-cloud-blue text-white text-xs">
+                    <div class="flex items-center justify-between pb-1 border-b border-blue-400">
+                        <div class="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span class="font-semibold">Hora</span>
+                        </div>
+                        <span id="hora-actual" class="font-bold"></span>
+                    </div>
+                    <div class="flex items-center justify-between py-1 border-b border-blue-400">
+                        <div class="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            </svg>
+                            <span class="font-semibold">Módulo</span>
+                        </div>
+                        <span id="modulo-actual"></span>
+                    </div>
+                    <div class="flex items-center justify-between pt-1">
+                        <div class="flex items-center gap-1">
+                            <!-- Icono de calendario para Horario -->
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span>Horario</span>
+                        </div>
+                        <span id="modulo-horario" class="font-semibold"></span>
+                    </div>
+                </div>
+            </div>
+        </aside>
 
-                    <!-- Pills content -->
-                    <div class="mb-6">
-                        <div class="transition-opacity duration-150 ease-linear opacity-100">
-                            <div class="relative" style="padding-top: 75%;">
-                                <!-- Canvas para la imagen base -->
-                                <canvas id="mapCanvas"
-                                    class="absolute top-0 left-0 w-full h-full bg-white dark:bg-gray-800"></canvas>
+        <!-- Contenido principal ajustado con margen izquierdo -->
+        <div class="flex-1 ml-48">
+            <div class="p-6 space-y-6">
+                <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <h2 class="text-xl font-semibold leading-tight">
 
-                                <!-- Canvas para los indicadores -->
-                                <canvas id="indicatorsCanvas"
-                                    class="absolute top-0 left-0 w-full h-full pointer-events-auto"></canvas>
+                    </h2>
+                </div>
+                <!-- Card: Navegación de Pisos y Plano -->
+                <div class="w-full">
+                    <div class="bg-white shadow-md dark:bg-dark-eval-0 rounded-t-xl">
+                        <ul class="flex border-b border-gray-300 dark:border-gray-700" id="pills-tab" role="tablist">
+                            @foreach ($pisos as $piso)
+                                <li role="presentation">
+                                    <a href="{{ route('plano.show', $piso->id_mapa) }}"
+                                        class="px-4 py-3 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
+                                        {{ $piso->id_mapa === $mapa->id_mapa
+                                            ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
+                                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}"
+                                        role="tab"
+                                        aria-selected="{{ $piso->id_mapa === $mapa->id_mapa ? 'true' : 'false' }}">
+                                        Piso {{ $piso->piso->numero_piso }}
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                        <!-- Card para el canvas y controles -->
+                        <div class="p-6 bg-white shadow-md rounded-b-xl dark:bg-gray-800">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                                    Plano del Piso
+                                    {{ $mapa->piso->numero_piso }}<br>
+                                    {{ $mapa->piso->facultad->nombre_facultad }},
+                                    Sede {{ $mapa->piso->facultad->sede->nombre_sede }}
+                                </h3>
+                                <div class="flex gap-2">
+                                    <button onclick="actualizarEstados(true)"
+                                        class="px-4 py-2 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="inline w-5 h-5 mr-2" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M4 4v5h.582M19.418 19A9 9 0 105 5.582" />
+                                        </svg>
+                                        Actualizar Estados
+                                    </button>
+                                    <button id="btn-solicitar-espacio" type="button"
+                                        class="px-4 py-2 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="inline w-5 h-5 mr-2" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 17v-6m0 0V7m0 4h4m-4 0H8m8 4a4 4 0 11-8 0 4 4 0 018 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 12h.01" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M17 16l2 2m0 0l-2 2m2-2H7" />
+                                        </svg>
+                                        Solicitar Espacio
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Pills content -->
+                            <div class="mb-6">
+                                <div class="transition-opacity duration-150 ease-linear opacity-100">
+                                    <div class="relative" style="padding-top: 75%;">
+                                        <!-- Canvas para la imagen base -->
+                                        <canvas id="mapCanvas"
+                                            class="absolute top-0 left-0 w-full h-full bg-white dark:bg-gray-800"></canvas>
+
+                                        <!-- Canvas para los indicadores -->
+                                        <canvas id="indicatorsCanvas"
+                                            class="absolute top-0 left-0 w-full h-full pointer-events-auto"></canvas>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-            
-        </div>
-    </div>
-
-    <!-- Modal fijo de hora y módulo actual -->
-    <div id="modal-hora-actual"
-        class="fixed z-50 w-64 p-4 border border-blue-600 rounded-lg shadow-lg bottom-4 right-4 bg-light-cloud-blue">
-        <div class="flex flex-col space-y-3">
-            <div class="flex items-center justify-between pb-2 border-b border-blue-400">
-                <div class="flex items-center space-x-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h3 class="text-sm font-semibold text-white">Hora Actual</h3>
-                </div>
-                <span id="hora-actual" class="text-lg font-bold text-white"></span>
-            </div>
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-white" fill="none"
-                        viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                    </svg>
-                    <h3 class="text-sm font-semibold text-white">
-                        Módulo: <span id="modulo-actual" class="text-sm font-medium text-white">-</span>
-                    </h3>
-                </div>
-                <span id="modulo-horario" class="text-sm font-semibold text-white">-</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de detalles del bloque -->
-    <x-modal name="detalles-bloque" :show="false" maxWidth="2xl">
-        <x-slot name="header">
-            <h1 id="modal-titulo" class="font-sans text-lg font-semibold text-white dark:text-white"></h1>
-        </x-slot>
-        <div class="p-4">
-            <div class="space-y-4">
-                <div>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">Tipo de Espacio:</p>
-                    <p id="modal-tipo-espacio" class="text-sm text-gray-900 dark:text-gray-100"></p>
-                </div>
-                <div>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">Puestos Disponibles:</p>
-                    <p id="modal-puestos" class="text-sm text-gray-900 dark:text-gray-100"></p>
-                </div>
-
-                <div id="modal-planificacion" class="hidden">
-                    <p id="modal-asignatura" class="text-sm text-gray-900 dark:text-gray-100"></p>
-                    <p id="modal-profesor" class="text-sm text-gray-900 dark:text-gray-100"></p>
-                    <ul id="modal-modulos" class="mt-2 space-y-1"></ul>
-                </div>
-
-                <div id="modal-clase-proxima" class="hidden">
-                    <p class="mb-2 text-sm font-medium text-gray-900 dark:text-gray-100">Próxima Clase:</p>
-                    <p id="modal-asignatura-proxima" class="text-sm text-gray-900 dark:text-gray-100"></p>
-                    <p id="modal-profesor-proximo" class="text-sm text-gray-900 dark:text-gray-100"></p>
-                    <p id="modal-horario-proximo" class="text-sm text-gray-900 dark:text-gray-100"></p>
-                </div>
-
-                <div id="modal-reserva" class="hidden">
-                    <p class="mb-2 text-sm font-medium text-gray-900 dark:text-gray-100">Reserva Activa:</p>
-                    <div class="space-y-2">
-                        <p id="modal-fecha-reserva" class="text-sm text-gray-900 dark:text-gray-100"></p>
-                        <p id="modal-hora-reserva" class="text-sm text-gray-900 dark:text-gray-100"></p>
-                        <p id="modal-profesor-reserva" class="text-sm text-gray-900 dark:text-gray-100"></p>
-                        <p id="modal-email-reserva" class="text-sm text-gray-900 dark:text-gray-100"></p>
-                        <p id="modal-tipo-reserva" class="text-sm text-gray-900 dark:text-gray-100"></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </x-modal>
-
-    <!-- Modal de solicitud de espacio  -->
-    <x-modal name="solicitar-espacio" :show="false" maxWidth="2xl">
-        <x-slot name="header">
-            <h1 class="font-sans text-lg font-semibold text-white dark:text-white">Solicitar Espacio</h1>
-        </x-slot>
-        <div class="p-6 space-y-6">
-            <!-- Paso 1: Escaneo de profesor -->
-            <div id="profesor-scan-section" class="flex flex-col items-center justify-center">
-                <div id="qr-reader" class="w-full max-w-xs mb-4"></div>
-                <div id="qr-placeholder" class="flex flex-col items-center justify-center w-full">
-                    <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escanear QR del Profesor</h3>
-                    <p id="qr-cargando-msg" class="text-sm text-gray-600 dark:text-gray-400">Cargando escáner...</p>
-                    <p id="qr-error-msg" class="hidden mt-2 text-sm text-red-600 dark:text-red-400"></p>
-                    <button id="btn-reintentar" onclick="reiniciarEscaneo()" class="hidden px-4 py-2 mt-4 text-sm font-medium text-white bg-blue-500 rounded hover:bg-blue-600">Volver a Escanear</button>
-                </div>
-            </div>
-            <!-- Paso 2: Información del profesor -->
-            <div id="profesor-info" class="hidden p-4 rounded shadow bg-blue-50">
-                <h3 class="mb-2 text-lg font-semibold text-blue-900">Información del Profesor</h3>
-                <div class="space-y-2">
-                    <p class="text-sm text-blue-800">Nombre: <span id="profesor-nombre" class="font-medium"></span></p>
-                    <p class="text-sm text-blue-800">Correo: <span id="profesor-correo" class="font-medium"></span></p>
-                </div>
-            </div>
-            <!-- Paso 3: Escaneo de espacio -->
-            <div id="espacio-scan-section" class="flex flex-col items-center justify-center hidden">
-                <div id="qr-reader-espacio" class="w-full max-w-xs mb-4"></div>
-                <div id="espacio-placeholder" class="flex flex-col items-center justify-center w-full">
-                    <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escanear QR del Espacio</h3>
-                    <button id="btn-iniciar-espacio" onclick="initEspacioScanner()" class="px-4 py-2 mt-4 text-sm font-medium text-white bg-blue-500 rounded hover:bg-blue-600">Iniciar Escaneo de Espacio</button>
-                </div>
-            </div>
-            <!-- Paso 4: Información del espacio -->
-            <div id="espacio-info" class="hidden p-4 rounded shadow bg-green-50">
-                <h3 class="mb-2 text-lg font-semibold text-green-900">Información del Espacio</h3>
-                <div class="space-y-2">
-                    <p class="text-sm text-green-800">Nombre: <span id="espacio-nombre" class="font-medium"></span> <span id="espacio-id" class="text-xs text-gray-500"></span></p>
-                    <p class="text-sm text-green-800">Tipo: <span id="espacio-tipo" class="font-medium"></span></p>
-                </div>
-                <div id="verificacion-espacio" class="flex items-center justify-center p-4 mt-4 bg-white rounded-lg">
-                    <svg class="w-6 h-6 mr-2 text-gray-400 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    <span class="text-sm text-gray-600">Verificando disponibilidad...</span>
-                </div>
-            </div>
-            <!-- Paso 5: Selección de duración -->
-            <div id="duracion-section" class="hidden p-4 rounded shadow bg-yellow-50">
-                <h3 class="mb-4 text-lg font-semibold text-yellow-900">Seleccione la duración de la reserva</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <button onclick="seleccionarDuracion(30)" class="p-3 text-sm font-medium text-yellow-800 bg-white border border-yellow-300 rounded hover:bg-yellow-100">30 minutos</button>
-                    <button onclick="seleccionarDuracion(60)" class="p-3 text-sm font-medium text-yellow-800 bg-white border border-yellow-300 rounded hover:bg-yellow-100">1 hora</button>
-                    <button onclick="seleccionarDuracion(90)" class="p-3 text-sm font-medium text-yellow-800 bg-white border border-yellow-300 rounded hover:bg-yellow-100">1.5 horas</button>
-                    <button onclick="seleccionarDuracion(120)" class="p-3 text-sm font-medium text-yellow-800 bg-white border border-yellow-300 rounded hover:bg-yellow-100">2 horas</button>
-                </div>
-            </div>
-            <!-- Paso 6: Confirmación -->
-            <div id="confirmacion-section" class="hidden p-4 text-center bg-white rounded shadow">
-                <div id="confirmacion-icono" class="mx-auto mb-4"></div>
-                <h3 id="confirmacion-titulo" class="mb-2 text-lg font-semibold"></h3>
-                <p id="confirmacion-mensaje" class="mb-2 text-sm"></p>
-                <div id="confirmacion-detalles" class="mt-2 space-y-1 text-sm"></div>
-            </div>
-        </div>
-    </x-modal>
-
-    <!-- Modal de registro de salida -->
-    <x-modal name="salida-espacio" :show="false" maxWidth="2xl">
-        <x-slot name="header">
-            <h1 class="font-sans text-lg font-semibold text-white dark:text-white">Registrar Salida</h1>
-        </x-slot>
-        <div class="p-6 space-y-6">
-            <!-- Escaneo de profesor -->
-            <div id="profesor-scan-section-salida" class="flex flex-col items-center justify-center">
-                <div id="qr-reader-salida-profesor" class="w-full max-w-xs mb-4"></div>
-                <div id="salida-profesor-placeholder" class="flex flex-col items-center justify-center w-full">
-                    <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escanear QR del Profesor</h3>
-                    <p id="salida-profesor-cargando-msg" class="text-sm text-gray-600 dark:text-gray-400">Cargando escáner...</p>
-                    <p id="salida-profesor-error-msg" class="hidden mt-2 text-sm text-red-600 dark:text-red-400"></p>
-                    <button id="btn-reintentar-salida-profesor" onclick="reiniciarEscaneoSalidaProfesor()" class="hidden px-4 py-2 mt-4 text-sm font-medium text-white bg-blue-500 rounded hover:bg-blue-600">Volver a Escanear</button>
-                </div>
-            </div>
-
-            <!-- Información del profesor -->
-            <div id="profesor-info-salida" class="hidden p-4 rounded shadow bg-blue-50">
-                <h3 class="mb-2 text-lg font-semibold text-blue-900">Información del Profesor</h3>
-                <div class="space-y-2">
-                    <p class="text-sm text-blue-800">Nombre: <span id="profesor-nombre-salida" class="font-medium"></span></p>
-                    <p class="text-sm text-blue-800">Correo: <span id="profesor-correo-salida" class="font-medium"></span></p>
-                </div>
-            </div>
-
-            <!-- Escaneo de espacio -->
-            <div id="espacio-scan-section-salida" class="flex flex-col items-center justify-center hidden">
-                <div id="qr-reader-salida-espacio" class="w-full max-w-xs mb-4"></div>
-                <div id="salida-espacio-placeholder" class="flex flex-col items-center justify-center w-full">
-                    <h3 class="mb-2 text-lg font-semibold text-gray-900 dark:text-white">Escanear QR del Espacio</h3>
-                </div>
-            </div>
-        </div>
-    </x-modal>
-
-    <!-- Modal fijo de leyenda abajo a la izquierda -->
-    <div id="modal-leyenda"
-         class="fixed z-50 max-w-xs p-4 bg-white border border-gray-200 rounded-lg shadow-lg bottom-4 left-4"
-         style="min-width: 220px;">
-        <h3 class="mb-2 text-base font-semibold text-center">Leyenda</h3>
-        <div class="flex flex-col items-start gap-2 text-sm">
-            <div class="flex items-center gap-2">
-                <div class="w-4 h-4 bg-red-500 rounded-sm"></div>
-                <span>Ocupado</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="w-4 h-4 bg-blue-500 rounded-sm"></div>
-                <span>Próximo</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="w-4 h-4 bg-green-500 rounded-sm"></div>
-                <span>Disponible</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <div class="w-4 h-4 bg-orange-500 rounded-sm"></div>
-                <span>Previsto</span>
             </div>
         </div>
     </div>
@@ -436,7 +319,7 @@
             state.indicators.forEach(indicator => {
                 const position = calculatePosition(indicator);
                 const color = indicator.estado || '#10B981'; // Color por defecto verde si no hay estado
-                
+
                 dibujarIndicador(
                     elements,
                     position,
@@ -550,7 +433,7 @@
         function determinarModulo(hora) {
             const diaActual = obtenerDiaActual();
             const horariosDia = horariosModulos[diaActual];
-            
+
             if (!horariosDia) return null;
 
             for (const [modulo, horario] of Object.entries(horariosDia)) {
@@ -569,7 +452,7 @@
                 minute: '2-digit',
                 second: '2-digit'
             });
-            
+
             const horaActualElement = document.getElementById('hora-actual');
             if (horaActualElement) {
                 horaActualElement.textContent = horaActual;
@@ -578,7 +461,7 @@
 
         // Función para formatear hora a HH:MM
         function formatearHora(horaCompleta) {
-            return horaCompleta.slice(0,5);
+            return horaCompleta.slice(0, 5);
         }
 
         // Función para actualizar el módulo y los colores
@@ -594,14 +477,14 @@
             const moduloActual = determinarModulo(horaActual);
             const moduloActualElement = document.getElementById('modulo-actual');
             const moduloHorarioElement = document.getElementById('modulo-horario');
-            
+
             if (moduloActual && moduloActualElement && moduloHorarioElement) {
                 moduloActualElement.textContent = moduloActual;
-                
+
                 // Obtener el horario del módulo actual
                 const diaActual = obtenerDiaActual();
                 const horarioModulo = horariosModulos[diaActual][moduloActual];
-                
+
                 // Mostrar solo horas y minutos
                 const horarioTexto = `${formatearHora(horarioModulo.inicio)} - ${formatearHora(horarioModulo.fin)}`;
                 moduloHorarioElement.textContent = horarioTexto;
@@ -612,7 +495,7 @@
             } else {
                 if (moduloActualElement) moduloActualElement.textContent = 'No hay módulo programado';
                 if (moduloHorarioElement) moduloHorarioElement.textContent = '-';
-                
+
                 // Actualizar colores de los indicadores y canvas
                 actualizarColoresIndicadores();
                 drawIndicators();
@@ -646,10 +529,10 @@
         actualizarModuloYColores(); // Actualizar inmediatamente al cargar
 
         // Asegurarse de que el modal esté actualizado cuando se abre
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const modal = document.getElementById('modal-solicitar-espacio');
             if (modal) {
-                modal.addEventListener('show.bs.modal', function() {
+                modal.addEventListener('show.bs.modal', function () {
                     actualizarHora();
                     actualizarModuloYColores();
                 });
@@ -657,12 +540,12 @@
         });
 
         // Inicialización cuando el DOM está listo
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             // Inicializar elementos
             initElements();
-            
+
             const img = new Image();
-            img.onload = function() {
+            img.onload = function () {
                 state.mapImage = img;
                 state.originalImageSize = {
                     width: img.naturalWidth,
@@ -673,12 +556,12 @@
             };
             img.src = "{{ asset('storage/' . $mapa->ruta_mapa) }}";
 
-            window.addEventListener('resize', function() {
+            window.addEventListener('resize', function () {
                 initCanvases();
             });
         });
 
-        window.mostrarDetallesBloque = function(bloque) {
+        window.mostrarDetallesBloque = function (bloque) {
             const titulo = document.getElementById('modal-titulo');
             const tipoEspacio = document.getElementById('modal-tipo-espacio');
             const puestos = document.getElementById('modal-puestos');
@@ -710,7 +593,7 @@
                     if (data.success && data.reserva) {
                         // Si el espacio está ocupado, mostrar los detalles de la reserva
                         reserva.classList.remove('hidden');
-                        
+
                         if (data.reserva.tipo_reserva === 'Ocupación sin reserva') {
                             // Caso de espacio ocupado sin reserva activa
                             fechaReserva.textContent = 'Estado: Ocupado';
@@ -722,20 +605,20 @@
                             document.getElementById('modal-profesor-reserva').textContent = `Profesor: ${data.reserva.profesor_nombre}`;
                             document.getElementById('modal-email-reserva').textContent = `Email: ${data.reserva.profesor_email}`;
                         }
-                        
+
                         // Agregar botón para entregar llaves
                         const btnEntregarLlaves = document.createElement('button');
                         btnEntregarLlaves.className = 'mt-4 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700';
                         btnEntregarLlaves.textContent = '¿Desea entregar las llaves?';
-                        btnEntregarLlaves.onclick = function() {
+                        btnEntregarLlaves.onclick = function () {
                             // Cerrar el modal actual
                             window.dispatchEvent(new CustomEvent('close-modal', { detail: 'detalles-bloque' }));
-                            
+
                             // Esperar a que el modal se cierre
                             setTimeout(() => {
                                 // Abrir el modal de salida
                                 window.dispatchEvent(new CustomEvent('open-modal', { detail: 'salida-espacio' }));
-                                
+
                                 // Iniciar el escáner después de un breve delay
                                 setTimeout(() => {
                                     initQRScannerSalidaProfesor();
@@ -770,7 +653,7 @@
         function iniciarRegistroSalida(espacioId) {
             // Mostrar el modal de registro de salida
             window.dispatchEvent(new CustomEvent('open-modal', { detail: 'salida-espacio' }));
-            
+
             // Iniciar el escáner de QR del profesor
             initQRScannerSalidaProfesor();
         }
@@ -782,7 +665,7 @@
                     document.getElementById('salida-profesor-cargando-msg').textContent = 'Cargando escáner, por favor espere...';
                     document.getElementById('salida-profesor-cargando-msg').classList.remove('hidden');
                     document.getElementById('salida-profesor-error-msg').classList.add('hidden');
-                    
+
                     const hasPermission = await requestCameraPermission();
                     if (!hasPermission) {
                         document.getElementById('salida-profesor-cargando-msg').textContent = '';
@@ -859,7 +742,7 @@
                     document.head.appendChild(style);
 
                     document.getElementById('salida-profesor-placeholder').style.display = 'none';
-                    
+
                     await html5QrcodeScanner.start(
                         currentCameraId,
                         config,
@@ -876,7 +759,7 @@
                             if (videoElement.srcObject) {
                                 const track = videoElement.srcObject.getVideoTracks()[0];
                                 const capabilities = track.getCapabilities();
-                                
+
                                 if (capabilities.focusMode) {
                                     // Configurar el enfoque automático con prioridad en objetos cercanos
                                     await track.applyConstraints({
@@ -943,25 +826,24 @@
             }
             const run = runMatch[1];
 
-            window.profesorRunSalida = run;
-
-            fetch(`/api/user/${run}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.user) {
-                        document.getElementById('profesor-nombre-salida').textContent = data.user.name || '';
-                        document.getElementById('profesor-correo-salida').textContent = data.user.email || '';
-                        document.getElementById('profesor-info-salida').classList.remove('hidden');
-                        document.getElementById('profesor-scan-section-salida').classList.add('hidden');
-                        document.getElementById('espacio-scan-section-salida').classList.remove('hidden');
-                        initEspacioScannerSalida();
-                    } else {
-                        mostrarErrorEscaneoSalida('La persona no se encuentra registrada, contáctese con soporte.');
-                    }
-                })
-                .catch(error => {
-                    mostrarErrorEscaneoSalida(error.message || 'Error al obtener información del profesor');
-                });
+            window.profesorRunSalida =
+                fetch(`/api/user/${run}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.user) {
+                            document.getElementById('profesor-nombre-salida').textContent = data.user.name || '';
+                            document.getElementById('profesor-correo-salida').textContent = data.user.email || '';
+                            document.getElementById('profesor-info-salida').classList.remove('hidden');
+                            document.getElementById('profesor-scan-section-salida').classList.add('hidden');
+                            document.getElementById('espacio-scan-section-salida').classList.remove('hidden');
+                            initEspacioScannerSalida();
+                        } else {
+                            mostrarErrorEscaneoSalida('La persona no se encuentra registrada, contáctese con soporte.');
+                        }
+                    })
+                    .catch(error => {
+                        mostrarErrorEscaneoSalida(error.message || 'Error al obtener información del profesor');
+                    });
         }
 
         // Función para inicializar el escáner de espacio en la salida
@@ -1044,36 +926,36 @@
                     espacio_id: espacioId
                 })
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const block = state.indicators.find(b => b.id === espacioId);
-                    if (block) {
-                        block.estado = 'green';
-                        state.originalCoordinates = state.indicators.map(i => ({...i}));
-                        drawIndicators();
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const block = state.indicators.find(b => b.id === espacioId);
+                        if (block) {
+                            block.estado = 'green';
+                            state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                            drawIndicators();
+                        }
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Éxito!',
+                            text: data.message,
+                            showConfirmButton: false,
+                            timer: 2000
+                        }).then(() => {
+                            window.dispatchEvent(new CustomEvent('close-modal', { detail: 'detalles-bloque' }));
+                            location.reload();
+                        });
+                    } else {
+                        throw new Error(data.message || 'Error al registrar la salida');
                     }
+                })
+                .catch(error => {
                     Swal.fire({
-                        icon: 'success',
-                        title: '¡Éxito!',
-                        text: data.message,
-                        showConfirmButton: false,
-                        timer: 2000
-                    }).then(() => {
-                        window.dispatchEvent(new CustomEvent('close-modal', { detail: 'detalles-bloque' }));
-                        location.reload();
+                        icon: 'error',
+                        title: 'Error',
+                        text: error.message || 'Ocurrió un error al registrar la salida'
                     });
-                } else {
-                    throw new Error(data.message || 'Error al registrar la salida');
-                }
-            })
-            .catch(error => {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: error.message || 'Ocurrió un error al registrar la salida'
                 });
-            });
         }
 
         function mostrarErrorEscaneoSalida(mensaje) {
@@ -1081,7 +963,7 @@
             const cargandoMsg = document.getElementById('salida-profesor-cargando-msg');
             const btnReintentar = document.getElementById('btn-reintentar-salida-profesor');
             const qrPlaceholder = document.getElementById('salida-profesor-placeholder');
-            
+
             if (errorMsg) {
                 errorMsg.textContent = mensaje;
                 errorMsg.classList.remove('hidden');
@@ -1137,9 +1019,9 @@
         function buscarModuloPorCodigo(codigo) {
             // Separar el código en día y módulo (ejemplo: "JU.1")
             const [codigoDia, numeroModulo] = codigo.split('.');
-            
+
             // Encontrar el día correspondiente al código
-            const dia = Object.entries(horariosModulos).find(([_, value]) => 
+            const dia = Object.entries(horariosModulos).find(([_, value]) =>
                 obtenerCodigoDia(value) === codigoDia
             )?.[0];
 
@@ -1163,4 +1045,4 @@
             }
         }
     </script>
-</x-app-layout>
+</x-show-layout>
