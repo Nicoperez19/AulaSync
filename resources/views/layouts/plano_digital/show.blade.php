@@ -926,29 +926,64 @@
                     }
 
                     const config = {
-                        fps: 10,
+                        fps: 60,
+                        qrbox: { width: 300, height: 300 },
                         aspectRatio: 1.0,
                         formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
                         rememberLastUsedCamera: true,
                         showTorchButtonIfSupported: true,
-                        videoConstraints: {
-                            focusMode: "continuous",
-                            zoom: 8.0,
-                            width: { min: 640, ideal: 1280, max: 1920 },
-                            height: { min: 480, ideal: 720, max: 1080 },
-                            advanced: [{
-                                focusMode: "continuous",
-                                exposureMode: "continuous",
-                                whiteBalanceMode: "continuous",
-                                iso: 800,
-                                exposureTime: 500,
-                                focusDistance: 0.01,
-                                pointsOfInterest: [{ x: 0.5, y: 0.5 }]
-                            }]
+                        autoFocus: true,
+                        disableFlip: false,
+                        showZoomSliderIfSupported: true,
+                        defaultZoomValueIfSupported: 2,
+                        experimentalFeatures: {
+                            useBarCodeDetectorIfSupported: true
                         }
                     };
 
-                    html5QrcodeScanner = new Html5Qrcode("qr-reader-salida-profesor");
+                    html5QrcodeScanner = new Html5Qrcode("qr-reader-salida-profesor", {
+                        verbose: false,
+                        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
+                    });
+
+                    // Configurar el estilo del contenedor del escáner
+                    const scannerContainer = document.getElementById('qr-reader-salida-profesor');
+                    scannerContainer.style.position = 'relative';
+                    scannerContainer.style.width = '100%';
+                    scannerContainer.style.maxWidth = '500px';
+                    scannerContainer.style.margin = '0 auto';
+
+                    // Agregar estilos para la previsualización
+                    const style = document.createElement('style');
+                    style.textContent = `
+                        #qr-reader-salida-profesor video {
+                            width: 100% !important;
+                            height: auto !important;
+                            border-radius: 8px;
+                            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                        }
+                        #qr-reader-salida-profesor__scan_region {
+                            position: relative;
+                        }
+                        #qr-reader-salida-profesor__scan_region::after {
+                            content: '';
+                            position: absolute;
+                            top: 0;
+                            left: 0;
+                            right: 0;
+                            bottom: 0;
+                            border: 2px solid #4CAF50;
+                            border-radius: 8px;
+                            animation: pulse 2s infinite;
+                        }
+                        @keyframes pulse {
+                            0% { opacity: 1; }
+                            50% { opacity: 0.5; }
+                            100% { opacity: 1; }
+                        }
+                    `;
+                    document.head.appendChild(style);
+
                     document.getElementById('salida-profesor-placeholder').style.display = 'none';
                     
                     await html5QrcodeScanner.start(
@@ -960,6 +995,58 @@
                             console.warn(`Error en el escaneo: ${error}`);
                         }
                     );
+
+                    // Configurar el enfoque automático mejorado
+                    const videoElement = scannerContainer.querySelector('video');
+                    if (videoElement) {
+                        videoElement.addEventListener('loadedmetadata', async () => {
+                            if (videoElement.srcObject) {
+                                const track = videoElement.srcObject.getVideoTracks()[0];
+                                const capabilities = track.getCapabilities();
+                                
+                                if (capabilities.focusMode) {
+                                    // Configurar el enfoque automático con prioridad en objetos cercanos
+                                    await track.applyConstraints({
+                                        advanced: [{
+                                            focusMode: 'continuous',
+                                            exposureMode: 'continuous',
+                                            whiteBalanceMode: 'continuous',
+                                            focusDistance: 0.1, // Priorizar objetos cercanos
+                                            pointsOfInterest: [{ x: 0.5, y: 0.5 }], // Enfocar en el centro
+                                            exposureTime: 0, // Exposición automática
+                                            colorTemperature: 0, // Temperatura de color automática
+                                            iso: 0, // ISO automático
+                                            brightness: 0, // Brillo automático
+                                            contrast: 0, // Contraste automático
+                                            saturation: 0, // Saturación automática
+                                            sharpness: 0, // Nitidez automática
+                                            zoom: 2 // Zoom inicial para mejor detección cercana
+                                        }]
+                                    });
+
+                                    // Configurar el detector de proximidad
+                                    const observer = new IntersectionObserver((entries) => {
+                                        entries.forEach(entry => {
+                                            if (entry.isIntersecting) {
+                                                // Cuando el QR está visible, ajustar el enfoque
+                                                track.applyConstraints({
+                                                    advanced: [{
+                                                        focusMode: 'continuous',
+                                                        focusDistance: 0.1
+                                                    }]
+                                                });
+                                            }
+                                        });
+                                    }, {
+                                        threshold: 0.5 // Activar cuando el QR esté al menos 50% visible
+                                    });
+
+                                    // Observar el elemento de video
+                                    observer.observe(videoElement);
+                                }
+                            }
+                        });
+                    }
                 } catch (err) {
                     console.error('Error al iniciar el escáner:', err);
                     document.getElementById('salida-profesor-cargando-msg').textContent = '';
@@ -1035,10 +1122,7 @@
                     formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
                     rememberLastUsedCamera: true,
                     showTorchButtonIfSupported: true,
-                    videoConstraints: {
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    }
+                    autoFocus: true
                 };
 
                 html5QrcodeScanner = new Html5Qrcode("qr-reader-salida-espacio");
@@ -1173,119 +1257,65 @@
             }
         }
 
-        // Función para mostrar mensaje de enfoque
-        function mostrarMensajeEnfoque(mostrar) {
-            let msg = document.getElementById('qr-enfoque-msg');
-            if (!msg) {
-                msg = document.createElement('p');
-                msg.id = 'qr-enfoque-msg';
-                msg.className = 'text-sm text-yellow-600 dark:text-yellow-400 mt-2';
-                const placeholder = document.getElementById('qr-placeholder');
-                if (placeholder) placeholder.appendChild(msg);
-            }
-            msg.textContent = mostrar ? 'No se puede enfocar el QR. Aleja un poco el código hasta que la imagen se vea nítida.' : '';
-            msg.style.display = mostrar ? 'block' : 'none';
+        // Función para inicializar el escáner QR
+        const videoElement = document.querySelector('#qr-reader video');
 
-            let btn = document.getElementById('btn-reenfocar');
-            if (!btn) {
-                btn = document.createElement('button');
-                btn.id = 'btn-reenfocar';
-                btn.className = 'px-4 py-2 mt-2 text-sm font-medium text-white bg-blue-500 rounded hover:bg-blue-600';
-                btn.textContent = 'Reenfocar cámara';
-                btn.onclick = function() {
-                    mostrarMensajeEnfoque(false);
-                    reiniciarEscaneo();
-                };
-                const placeholder = document.getElementById('qr-placeholder');
-                if (placeholder) placeholder.appendChild(btn);
-            }
-            btn.style.display = mostrar ? 'inline-block' : 'none';
-        }
+if (videoElement) {
+  videoElement.addEventListener('loadedmetadata', async () => {
+    try {
+      const stream = videoElement.srcObject;
+      if (!stream) return;
 
-        // Modificar la inicialización del escáner QR para detectar intentos fallidos
-        async function initQRScanner() {
-            if (html5QrcodeScanner === null) {
-                try {
-                    document.getElementById('qr-cargando-msg').textContent = 'Cargando escáner, por favor espere...';
-                    document.getElementById('qr-cargando-msg').classList.remove('hidden');
-                    document.getElementById('qr-error-msg').classList.add('hidden');
-                    mostrarMensajeEnfoque(false);
-                    qrScanAttempts = 0;
-                    if (qrScanTimeout) clearInterval(qrScanTimeout);
-                    qrScanTimeout = setInterval(() => {
-                        qrScanAttempts++;
-                        if (qrScanAttempts > qrScanMaxAttempts) {
-                            mostrarMensajeEnfoque(true);
-                        }
-                    }, 100);
+      const track = stream.getVideoTracks()[0];
+      const capabilities = track.getCapabilities();
 
-                    const hasPermission = await requestCameraPermission();
-                    if (!hasPermission) {
-                        document.getElementById('qr-cargando-msg').textContent = '';
-                        document.getElementById('qr-error-msg').textContent = 'Se requieren permisos de cámara para escanear códigos QR';
-                        document.getElementById('qr-error-msg').classList.remove('hidden');
-                        return;
-                    }
+      console.log("Capacidades de la cámara:", capabilities);
 
-                    currentCameraId = await getFirstCamera();
-                    if (!currentCameraId) {
-                        document.getElementById('qr-cargando-msg').textContent = '';
-                        document.getElementById('qr-error-msg').textContent = 'No se encontró ninguna cámara disponible';
-                        document.getElementById('qr-error-msg').classList.remove('hidden');
-                        return;
-                    }
+      const advancedConstraints = [];
 
-                    const config = {
-                        fps: 10,
-                        aspectRatio: 1.0,
-                        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-                        rememberLastUsedCamera: true,
-                        showTorchButtonIfSupported: true,
-                        videoConstraints: {
-                            focusMode: "continuous",
-                            zoom: 8.0,
-                            width: { min: 640, ideal: 1280, max: 1920 },
-                            height: { min: 480, ideal: 720, max: 1080 },
-                            advanced: [{
-                                focusMode: "continuous",
-                                exposureMode: "continuous",
-                                whiteBalanceMode: "continuous",
-                                iso: 800,
-                                exposureTime: 500,
-                                focusDistance: 0.01,
-                                pointsOfInterest: [{ x: 0.5, y: 0.5 }]
-                            }]
-                        }
-                    };
+      // 1. Verificar si soporta enfoque automático
+      if (capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+        advancedConstraints.push({ focusMode: 'continuous' });
+      }
 
-                    html5QrcodeScanner = new Html5Qrcode("qr-reader");
-                    document.getElementById('qr-placeholder').style.display = 'none';
+      // 2. Forzar enfoque cercano si es posible
+      if (capabilities.focusDistance) {
+        advancedConstraints.push({ focusDistance: capabilities.focusDistance.min || 0.01 });
+      }
 
-                    await html5QrcodeScanner.start(
-                        currentCameraId,
-                        config,
-                        (decodedText) => {
-                            if (qrScanTimeout) clearInterval(qrScanTimeout);
-                            mostrarMensajeEnfoque(false);
-                            onProfesorScanSuccess(decodedText);
-                        },
-                        (error) => {
-                            if (error.includes("QR code parse error")) return;
-                            // No reiniciamos el contador aquí, solo si hay éxito
-                            console.warn(`Error en el escaneo: ${error}`);
-                        }
-                    );
-                } catch (err) {
-                    if (qrScanTimeout) clearInterval(qrScanTimeout);
-                    mostrarMensajeEnfoque(false);
-                    console.error('Error al iniciar el escáner:', err);
-                    document.getElementById('qr-cargando-msg').textContent = '';
-                    document.getElementById('qr-error-msg').textContent = 'Error al iniciar la cámara. Por favor, verifica los permisos y que la cámara no esté siendo usada por otra aplicación.';
-                    document.getElementById('qr-error-msg').classList.remove('hidden');
-                    document.getElementById('qr-placeholder').style.display = 'flex';
-                }
-            }
-        }
+      // 3. Zoom máximo si soportado
+      if (capabilities.zoom) {
+        advancedConstraints.push({ zoom: capabilities.zoom.max || 4 });
+      }
+
+      // 4. Mejoras visuales si están disponibles
+      if (capabilities.sharpness) advancedConstraints.push({ sharpness: capabilities.sharpness.max || 1 });
+      if (capabilities.contrast) advancedConstraints.push({ contrast: capabilities.contrast.max || 1.2 });
+      if (capabilities.saturation) advancedConstraints.push({ saturation: capabilities.saturation.max || 1.1 });
+
+      // 5. Torch (linterna) si está disponible
+      if (capabilities.torch) {
+        advancedConstraints.push({ torch: true });
+      }
+
+      // Aplicar las constraints avanzadas
+      await track.applyConstraints({ advanced: advancedConstraints });
+
+      // Aplicar resolución y FPS alta (HD)
+      await track.applyConstraints({
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+        frameRate: { ideal: 60 }
+      });
+
+      console.log("Constraints aplicadas para enfoque cercano y mejoras de calidad.");
+
+    } catch (error) {
+      console.warn("No se pudieron aplicar constraints avanzados:", error);
+    }
+  });
+}
+
 
         // Función para manejar el escaneo exitoso del profesor
         function onProfesorScanSuccess(decodedText) {
@@ -1295,12 +1325,21 @@
             }
 
             // Extraer el RUN de la URL
-            const runMatch = decodedText.match(/RUN=(\d+)-/);
-            if (!runMatch) {
-                mostrarErrorEscaneo('El código QR no contiene un RUN válido');
+            let run = '';
+            try {
+                const url = new URL(decodedText);
+                const runParam = url.searchParams.get('RUN');
+                if (runParam) {
+                    run = runParam.split('-')[0]; // Obtener solo la parte antes del guión
+                } else {
+                    throw new Error('No se encontró el parámetro RUN en la URL');
+                }
+            } catch (error) {
+                mostrarErrorEscaneo('El código QR no tiene el formato esperado');
                 return;
             }
-            const run = runMatch[1];
+
+            window.profesorRun = run;
 
             fetch(`/api/user/${run}`)
                 .then(response => response.json())
@@ -1351,10 +1390,7 @@
                     formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
                     rememberLastUsedCamera: true,
                     showTorchButtonIfSupported: true,
-                    videoConstraints: {
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    }
+                    autoFocus: true
                 };
 
                 html5QrcodeScanner = new Html5Qrcode("qr-reader-espacio");
