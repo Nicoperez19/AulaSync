@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('password');
             $table->string('name');
             $table->string('email')->nullable();
-            $table->integer('celular')->nullable();
+            $table->string('celular')->nullable();
             $table->string('direccion')->nullable();
             $table->date('fecha_nacimiento')->nullable();
             $table->year('anio_ingreso')->nullable();

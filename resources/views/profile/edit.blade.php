@@ -7,13 +7,13 @@
 
     <div class="space-y-6">
         <div class="p-4 bg-white shadow sm:p-8 sm:rounded-lg dark:bg-gray-800">
-            <div class="max-w-xl">
+            <div class="w-full max-w-4xl mx-auto">
                 @include('profile.partials.update-profile-information-form')
             </div>
         </div>
 
         <div class="p-4 bg-white shadow sm:p-8 sm:rounded-lg dark:bg-gray-800">
-            <div class="max-w-xl">
+            <div class="w-full max-w-4xl mx-auto">
                 @include('profile.partials.update-password-form')
             </div>
         </div>

@@ -15,6 +15,7 @@ use App\Http\Controllers\AsignaturaController;
 use App\Http\Controllers\DataLoadController;
 use App\Http\Controllers\PlanoDigitalController;
 use App\Http\Controllers\ProfesorController;
+use App\Http\Controllers\ReporteriaController;
 
 
 use Illuminate\Support\Facades\Route;
@@ -186,5 +187,16 @@ Route::group(['middleware' => ['auth']], function () {
     Route::get('/api/profesor/{run}', [ProfesorController::class, 'getProfesor'])->name('profesor.get');
 });
 
+Route::prefix('reporteria')->group(function () {
+    Route::get('utilizacion', [ReporteriaController::class, 'utilizacion'])->name('reporteria.utilizacion');
+    Route::get('tipo-espacio', [ReporteriaController::class, 'tipoEspacio'])->name('reporteria.tipo-espacio');
+    Route::get('accesos', [ReporteriaController::class, 'accesos'])->name('reporteria.accesos');
+    Route::get('unidad-academica', [ReporteriaController::class, 'unidadAcademica'])->name('reporteria.unidad-academica');
+    // Rutas para exportar a Excel y PDF
+    Route::get('utilizacion/export/{format}', [ReporteriaController::class, 'exportUtilizacion'])->name('reporteria.utilizacion.export');
+    Route::get('tipo-espacio/export/{format}', [ReporteriaController::class, 'exportTipoEspacio'])->name('reporteria.tipo-espacio.export');
+    Route::get('accesos/export/{format}', [ReporteriaController::class, 'exportAccesos'])->name('reporteria.accesos.export');
+    Route::get('unidad-academica/export/{format}', [ReporteriaController::class, 'exportUnidadAcademica'])->name('reporteria.unidad-academica.export');
+});
 
 require __DIR__ . '/auth.php';

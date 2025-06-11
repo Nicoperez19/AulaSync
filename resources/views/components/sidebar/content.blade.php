@@ -26,13 +26,22 @@
             <x-icons.calendar class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         </x-slot>
     </x-sidebar.link>
-    
+
     <!-- Reportería -->
-    <x-sidebar.link title="Reportes" href="" :isActive="request()->routeIs('')">
+    <x-sidebar.dropdown title="Reportes" :active="Str::startsWith(request()->route()->uri(), 'reporteria')">
         <x-slot name="icon">
             <x-icons.chart-bar class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         </x-slot>
-    </x-sidebar.link>
+
+        <x-sidebar.sublink title="Accesos registrados" href="{{ route('reporteria.accesos') }}" :isActive="request()->routeIs('reporteria.accesos')" />
+        <x-sidebar.sublink title="Análisis por tipo de espacio" href="{{ route('reporteria.tipo-espacio') }}"
+            :isActive="request()->routeIs('reporteria.tipo-espacio')" />
+        <x-sidebar.sublink title="Por unidad académica" href="{{ route('reporteria.unidad-academica') }}"
+            :isActive="request()->routeIs('reporteria.unidad-academica')" />
+        <x-sidebar.sublink title="Utilización de espacios" href="{{ route('reporteria.utilizacion') }}"
+            :isActive="request()->routeIs('reporteria.utilizacion')" />
+    </x-sidebar.dropdown>
+
 
     <!-- Horarios Profesores -->
     <x-sidebar.link title="Horarios Profesores" href="{{ route('horarios.index') }}" :isActive="request()->routeIs('horarios.index')">

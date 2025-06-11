@@ -20,8 +20,7 @@
                         </x-slot>
 
                         <x-form.input withicon id="run" class="block w-full" type="text" name="run"
-                            :value="old('run')" placeholder="{{ __('Ej: 12345678') }}" required autofocus
-                            x-data
+                            :value="old('run')" placeholder="{{ __('Ej: 12345678') }}" required autofocus x-data
                             x-on:input="
                                 let value = $event.target.value.replace(/[^0-9]/g, '');
                                 if (value.length > 8) {

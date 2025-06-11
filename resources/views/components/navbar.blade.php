@@ -11,7 +11,7 @@
 
         <!-- Logo -->
         <a href="{{ route('dashboard') }}" class="flex items-center">
-            <x-application-logo />
+            <x-application-logo-navbar />
         </a>
     </div>
 
