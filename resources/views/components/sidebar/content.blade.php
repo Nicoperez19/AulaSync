@@ -7,16 +7,16 @@
     </x-sidebar.link>
 
     <!-- Monitoreo de Espacios -->
-    <x-sidebar.link title="Monitoreo de Espacios" href="{{ route('plano.index') }}"
-        :isActive="request()->routeIs('plano.*')">
+    <x-sidebar.link title="Monitoreo de Espacios" href="{{ $primerMapa ? route('plano.show', $primerMapa->id_mapa) : route('dashboard') }}"
+        :isActive="request()->routeIs('plano.show')">
         <x-slot name="icon">
             <x-icons.location class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         </x-slot>
     </x-sidebar.link>
 
     <!-- Horarios -->
-    <x-sidebar.link title="Horarios por Espacios" href="{{ route('horarios_espacios.index') }}"
-        :isActive="request()->routeIs('')">
+    <x-sidebar.link title="Horarios por Espacios" href="{{ $sede ? route('espacios.show', $sede->id_sede) : route('dashboard') }}"
+        :isActive="request()->routeIs('espacios.show')">
         <x-slot name="icon">
             <x-icons.clock class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         </x-slot>

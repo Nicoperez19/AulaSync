@@ -36,7 +36,10 @@ class PlanoDigitalController extends Controller
             ->select('mapas.*')
             ->get();
 
-        return view('layouts.plano_digital.show', compact('mapa', 'bloques', 'pisos'));
+        // Obtener la sede actual
+        $sede = $mapa->piso->facultad->sede;
+
+        return view('layouts.plano_digital.show', compact('mapa', 'bloques', 'pisos', 'sede'));
     }
 
     public function bloques($id)

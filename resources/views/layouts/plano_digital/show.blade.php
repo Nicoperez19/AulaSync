@@ -1,110 +1,119 @@
 <x-show-layout>
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar fijo a la izquierda, más compacto y con fondo azul claro -->
-        <aside
-            class="fixed top-0 left-0 z-40 flex flex-col justify-between w-48 h-screen pt-4 pb-4 border-r border-gray-200 bg-light-cloud-blue dark:border-gray-700">
+        <aside class="fixed top-0 left-0 z-40 flex flex-col justify-between w-64 h-screen pt-4 pb-4 border-r border-gray-200 bg-light-cloud-blue dark:border-gray-700">
             <!-- Logo de la aplicación -->
             <div class="flex flex-col items-center gap-4">
                 <a href="{{ route('dashboard')}}" class="mb-2">
                     <x-application-logo-navbar class="w-12 h-12" />
                 </a>
+
                 <!-- Leyenda -->
-                <div class="w-full p-4 px-2 bg-white">
-                    <h3 class="mb-1 text-sm font-semibold text-center">Leyenda</h3>
-                    <div class="flex flex-col items-start gap-1 text-xs">
-                        <div class="flex items-center gap-1">
-                            <div class="w-3 h-3 bg-red-500 rounded-sm"></div>
-                            <span>Ocupado</span>
+                <div class="w-full p-4 px-2 bg-white rounded-lg shadow">
+                    <h3 class="mb-3 text-sm font-semibold text-center flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                            <circle cx="12" cy="10" r="3"></circle>
+                        </svg>
+                        LEYENDA DE ESTADO
+                    </h3>
+                    <div class="flex flex-col items-start gap-2 text-sm">
+                        <div class="flex items-center gap-2 w-full">
+                            <div class="w-4 h-4 bg-red-500 rounded-full"></div>
+                            <span class="flex-1">Ocupado</span>
                         </div>
-                        <div class="flex items-center gap-1">
-                            <div class="w-3 h-3 bg-blue-500 rounded-sm"></div>
-                            <span>Próximo</span>
+                        <div class="flex items-center gap-2 w-full">
+                            <div class="w-4 h-4 bg-yellow-500 rounded-full animate-pulse"></div>
+                            <span class="flex-1">Próximo</span>
                         </div>
-                        <div class="flex items-center gap-1">
-                            <div class="w-3 h-3 bg-green-500 rounded-sm"></div>
-                            <span>Disponible</span>
+                        <div class="flex items-center gap-2 w-full">
+                            <div class="w-4 h-4 bg-green-500 rounded-full"></div>
+                            <span class="flex-1">Disponible</span>
                         </div>
-                        <div class="flex items-center gap-1">
-                            <div class="w-3 h-3 bg-orange-500 rounded-sm"></div>
-                            <span>Previsto</span>
+                        <div class="flex items-center gap-2 w-full">
+                            <div class="w-4 h-4 bg-blue-500 rounded-full"></div>
+                            <span class="flex-1">Previsto</span>
                         </div>
                     </div>
                 </div>
             </div>
+
             <!-- Información de hora y módulo actual -->
             <div class="w-full px-2 mt-4">
-                <div class="p-2 text-xs text-white border border-blue-600 rounded-lg shadow bg-light-cloud-blue">
-                    <div class="flex items-center justify-between pb-1 border-b border-blue-400">
-                        <div class="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <div class="p-4 text-sm text-white border border-blue-600 rounded-lg shadow bg-light-cloud-blue">
+                    <div class="flex items-center justify-between pb-2 border-b border-blue-400">
+                        <div class="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <span class="font-semibold">Hora</span>
+                            <span id="hora-actual" class="text-lg font-mono">--:--:--</span>
                         </div>
-                        <span id="hora-actual">--:--:--</span>
                     </div>
-                    <div class="flex items-center justify-between py-1 border-b border-blue-400">
-                        <div class="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    <div class="py-2 border-b border-blue-400">
+                        <div class="flex items-center gap-2 mb-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
-                            <span class="font-semibold">Módulo</span>
+                            <span class="font-semibold">Módulo:</span>
                         </div>
-                        <span id="modulo-actual">--</span>
+                        <div class="w-full bg-blue-400/20 rounded-full h-2 mb-1">
+                            <div class="bg-blue-400 h-2 rounded-full" style="width: 0%"></div>
+                        </div>
+                        <span id="modulo-actual" class="text-sm">No hay módulo programado</span>
                     </div>
-                    <div class="flex items-center justify-between pt-1">
-                        <div class="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    <div class="pt-2">
+                        <div class="flex items-center gap-2 mb-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span>Horario</span>
+                            <span class="font-semibold">Horario:</span>
                         </div>
-                        <span id="horario-actual">--:-- - --:--</span>
+                        <span id="horario-actual" class="text-sm">--:-- - --:--</span>
                     </div>
                 </div>
             </div>
 
             <!-- Estado del QR -->
             <div class="w-full px-2 mt-4">
-                <div class="p-2 text-xs text-white border border-blue-600 rounded-lg shadow bg-light-cloud-blue">
-                    <div class="flex items-center justify-between pb-1 border-b border-blue-400">
-                        <div class="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <div class="p-4 text-sm text-white border border-blue-600 rounded-lg shadow bg-light-cloud-blue">
+                    <div class="flex items-center justify-between pb-2 border-b border-blue-400">
+                        <div class="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span class="font-semibold">Estado QR</span>
+                            <span class="font-semibold">ESTADO QR:</span>
                         </div>
-                        <span id="qr-status">Esperando</span>
+                        <span id="qr-status" class="text-yellow-400">Esperando</span>
                     </div>
-                    <div class="flex items-center justify-between py-1 border-b border-blue-400">
-                        <div class="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            <span class="font-semibold">RUN Escaneado</span>
+
+                    <!-- QR Placeholder -->
+                    <div class="mt-4 p-4 bg-white/10 rounded-lg text-center">
+                        <div class="qr-placeholder mb-2">
+                            <div class="w-32 h-32 mx-auto bg-white/20 rounded-lg flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
                         </div>
-                        <span id="run-escaneado">--</span>
+                        <p class="text-sm text-white/80">Escanee el código QR</p>
                     </div>
-                    <div class="flex items-center justify-between pt-1">
-                        <div class="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+
+                    <!-- Información del usuario escaneado -->
+                    <div class="mt-4 space-y-2">
+                        <div class="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
-                            <span class="font-semibold">Usuario</span>
+                            <span class="font-semibold">RUN:</span>
+                            <span id="run-escaneado" class="flex-1 text-right">--</span>
                         </div>
-                        <span id="nombre-usuario" class="text-sm">--</span>
+                        <div class="flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span class="font-semibold">Usuario:</span>
+                            <span id="nombre-usuario" class="flex-1 text-right">--</span>
+                        </div>
                     </div>
 
                     <!-- Input para el escáner QR (oculto) -->
@@ -116,7 +125,7 @@
         </aside>
 
         <!-- Contenido principal ajustado con margen izquierdo -->
-        <div class="flex-1 h-screen pt-4 pb-[2rem] ml-48 overflow-hidden">
+        <div class="flex-1 h-screen pt-4 pb-[2rem] ml-64 overflow-hidden">
             <div class="flex flex-col h-full">
 
                 <!-- Card: Navegación de Pisos y Plano -->
