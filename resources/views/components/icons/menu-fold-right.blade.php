@@ -1,7 +1,7 @@
 <svg
     {{ $attributes }}
     viewBox="0 0 24 24"
-    stroke="currentColor"
+    stroke="rgb(255, 255, 255)"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
 >

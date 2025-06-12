@@ -18,6 +18,10 @@ class ProfileUpdateRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
+            'celular' => ['nullable', 'string', 'regex:/^9\d{8}$/'],
+            'direccion' => ['nullable', 'string', 'max:255'],
+            'fecha_nacimiento' => ['nullable', 'date'],
+            'anio_ingreso' => ['nullable', 'integer', 'min:2010', 'max:' . date('Y')],
         ];
     }
 }
