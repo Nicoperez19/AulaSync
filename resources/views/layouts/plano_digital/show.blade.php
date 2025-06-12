@@ -1,15 +1,15 @@
 <x-show-layout>
-    <div class="flex">
+    <div class="flex h-screen overflow-hidden">
         <!-- Sidebar fijo a la izquierda, más compacto y con fondo azul claro -->
         <aside
-            class="w-48 min-h-screen bg-light-cloud-blue border-r border-gray-200 dark:border-gray-700 flex flex-col justify-between fixed left-0 top-0 z-40 pt-4 pb-4">
+            class="fixed top-0 left-0 z-40 flex flex-col justify-between w-48 h-screen pt-4 pb-4 border-r border-gray-200 bg-light-cloud-blue dark:border-gray-700">
             <!-- Logo de la aplicación -->
             <div class="flex flex-col items-center gap-4">
-                <a href="/" class="mb-2">
+                <a href="{{ route('dashboard')}}" class="mb-2">
                     <x-application-logo-navbar class="w-12 h-12" />
                 </a>
                 <!-- Leyenda -->
-                <div class="w-full px-2 bg-white p-4">
+                <div class="w-full p-4 px-2 bg-white">
                     <h3 class="mb-1 text-sm font-semibold text-center">Leyenda</h3>
                     <div class="flex flex-col items-start gap-1 text-xs">
                         <div class="flex items-center gap-1">
@@ -33,50 +33,95 @@
             </div>
             <!-- Información de hora y módulo actual -->
             <div class="w-full px-2 mt-4">
-                <div class="p-2 border border-blue-600 rounded-lg shadow bg-light-cloud-blue text-white text-xs">
+                <div class="p-2 text-xs text-white border border-blue-600 rounded-lg shadow bg-light-cloud-blue">
                     <div class="flex items-center justify-between pb-1 border-b border-blue-400">
                         <div class="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <span class="font-semibold">Hora</span>
                         </div>
-                        <span id="hora-actual" class="font-bold"></span>
+                        <span id="hora-actual">--:--:--</span>
                     </div>
                     <div class="flex items-center justify-between py-1 border-b border-blue-400">
                         <div class="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
                             <span class="font-semibold">Módulo</span>
                         </div>
-                        <span id="modulo-actual"></span>
+                        <span id="modulo-actual">--</span>
                     </div>
                     <div class="flex items-center justify-between pt-1">
                         <div class="flex items-center gap-1">
-                            <!-- Icono de calendario para Horario -->
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
                             <span>Horario</span>
                         </div>
-                        <span id="modulo-horario" class="font-semibold"></span>
+                        <span id="horario-actual">--:-- - --:--</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Estado del QR -->
+            <div class="w-full px-2 mt-4">
+                <div class="p-2 text-xs text-white border border-blue-600 rounded-lg shadow bg-light-cloud-blue">
+                    <div class="flex items-center justify-between pb-1 border-b border-blue-400">
+                        <div class="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <span class="font-semibold">Estado QR</span>
+                        </div>
+                        <span id="qr-status">Esperando</span>
+                    </div>
+                    <div class="flex items-center justify-between py-1 border-b border-blue-400">
+                        <div class="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span class="font-semibold">RUN Escaneado</span>
+                        </div>
+                        <span id="run-escaneado">--</span>
+                    </div>
+                    <div class="flex items-center justify-between pt-1">
+                        <div class="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span class="font-semibold">Usuario</span>
+                        </div>
+                        <span id="nombre-usuario" class="text-sm">--</span>
+                    </div>
+
+                    <!-- Input para el escáner QR (oculto) -->
+                    <div class="mt-4">
+                        <input type="text" id="qr-input" class="absolute w-full px-2 py-1 text-sm border rounded opacity-0 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Escanea un código QR" autofocus>
                     </div>
                 </div>
             </div>
         </aside>
 
         <!-- Contenido principal ajustado con margen izquierdo -->
-        <div class="flex-1 ml-48">
-            <div class="p-6 space-y-6">
-                <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                    <h2 class="text-xl font-semibold leading-tight">
+        <div class="flex-1 h-screen pt-4 pb-[2rem] ml-48 overflow-hidden">
+            <div class="flex flex-col h-full">
 
-                    </h2>
-                </div>
                 <!-- Card: Navegación de Pisos y Plano -->
-                <div class="w-full">
-                    <div class="bg-white shadow-md dark:bg-dark-eval-0 rounded-t-xl">
+                <div class="flex flex-col flex-1 min-h-0">
+                    <div class="flex-1 bg-white shadow-md dark:bg-dark-eval-0">
                         <ul class="flex border-b border-gray-300 dark:border-gray-700" id="pills-tab" role="tablist">
                             @foreach ($pisos as $piso)
                                 <li role="presentation">
@@ -93,53 +138,24 @@
                             @endforeach
                         </ul>
                         <!-- Card para el canvas y controles -->
-                        <div class="p-6 bg-white shadow-md rounded-b-xl dark:bg-gray-800">
-                            <div class="flex items-center justify-between mb-4">
+                        <div class="flex flex-col h-full">
+                            <div class="p-4">
                                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                                    Plano del Piso
-                                    {{ $mapa->piso->numero_piso }}<br>
+                                    Plano del Piso {{ $mapa->piso->numero_piso }},
                                     {{ $mapa->piso->facultad->nombre_facultad }},
                                     Sede {{ $mapa->piso->facultad->sede->nombre_sede }}
                                 </h3>
-                                <div class="flex gap-2">
-                                    <button onclick="actualizarEstados(true)"
-                                        class="px-4 py-2 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="inline w-5 h-5 mr-2" fill="none"
-                                            viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M4 4v5h.582M19.418 19A9 9 0 105 5.582" />
-                                        </svg>
-                                        Actualizar Estados
-                                    </button>
-                                    <button id="btn-solicitar-espacio" type="button"
-                                        class="px-4 py-2 text-sm font-medium text-white transition-all duration-300 rounded-md bg-light-cloud-blue hover:bg-opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-light-cloud-blue">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="inline w-5 h-5 mr-2" fill="none"
-                                            viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M12 17v-6m0 0V7m0 4h4m-4 0H8m8 4a4 4 0 11-8 0 4 4 0 018 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15 12h.01" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M17 16l2 2m0 0l-2 2m2-2H7" />
-                                        </svg>
-                                        Solicitar Espacio
-                                    </button>
-                                </div>
                             </div>
 
-                            <!-- Pills content -->
-                            <div class="mb-6">
-                                <div class="transition-opacity duration-150 ease-linear opacity-100">
-                                    <div class="relative" style="padding-top: 75%;">
+
+                            <div class="relative flex-1 min-h-0">
                                         <!-- Canvas para la imagen base -->
                                         <canvas id="mapCanvas"
-                                            class="absolute top-0 left-0 w-full h-full bg-white dark:bg-gray-800"></canvas>
+                                    class="absolute inset-0 w-full h-full bg-white dark:bg-gray-800"></canvas>
 
                                         <!-- Canvas para los indicadores -->
                                         <canvas id="indicatorsCanvas"
-                                            class="absolute top-0 left-0 w-full h-full pointer-events-auto"></canvas>
-                                    </div>
-                                </div>
+                                    class="absolute inset-0 w-full h-full pointer-events-auto"></canvas>
                             </div>
                         </div>
                     </div>
@@ -148,7 +164,6 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
         // Variables globales para el QR scanner
         let html5QrcodeScanner = null;
@@ -187,7 +202,16 @@
             originalCoordinates: @json($bloques),
             isImageLoaded: false,
             mouseX: 0,
-            mouseY: 0
+            mouseY: 0,
+            currentZoom: 1,
+            isDragging: false,
+            lastX: 0,
+            lastY: 0,
+            offsetX: 0,
+            offsetY: 0,
+            currentTime: new Date(),
+            currentModule: null,
+            currentDay: new Date().getDay()
         };
 
         // Variables globales para los elementos del canvas
@@ -245,7 +269,10 @@
 
         // Función para calcular la posición de los indicadores
         function calculatePosition(indicator) {
-            if (!state.isImageLoaded || !state.mapImage) return { x: 0, y: 0 };
+            if (!state.isImageLoaded || !state.mapImage) return {
+                x: 0,
+                y: 0
+            };
 
             const canvasRatio = elements.mapCanvas.width / elements.mapCanvas.height;
             const imageRatio = state.mapImage.width / state.mapImage.height;
@@ -264,16 +291,23 @@
             }
 
             const originalIndicator = state.originalCoordinates.find(i => i.id === indicator.id);
-            if (!originalIndicator) return { x: 0, y: 0 };
+            if (!originalIndicator) return {
+                x: 0,
+                y: 0
+            };
 
             const x = offsetX + (originalIndicator.x / state.originalImageSize.width) * drawWidth;
             const y = offsetY + (originalIndicator.y / state.originalImageSize.height) * drawHeight;
 
-            return { x, y };
+            return {
+                x,
+                y
+            };
         }
 
         // Función para dibujar un indicador
-        function dibujarIndicador(elements, position, finalWidth, finalHeight, color, id, isHovered, detalles, moduloActual) {
+        function dibujarIndicador(elements, position, finalWidth, finalHeight, color, id, isHovered, detalles,
+            moduloActual) {
             // Configurar sombras para el efecto hover
             elements.indicatorsCtx.shadowColor = isHovered ? 'rgba(0, 0, 0, 0.3)' : 'transparent';
             elements.indicatorsCtx.shadowBlur = isHovered ? 10 : 0;
@@ -337,89 +371,314 @@
         // Definición de horarios por día y módulo
         const horariosModulos = {
             lunes: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+                1: {
+                    inicio: '08:10:00',
+                    fin: '09:00:00'
+                },
+                2: {
+                    inicio: '09:10:00',
+                    fin: '10:00:00'
+                },
+                3: {
+                    inicio: '10:10:00',
+                    fin: '11:00:00'
+                },
+                4: {
+                    inicio: '11:10:00',
+                    fin: '12:00:00'
+                },
+                5: {
+                    inicio: '12:10:00',
+                    fin: '13:00:00'
+                },
+                6: {
+                    inicio: '13:10:00',
+                    fin: '14:00:00'
+                },
+                7: {
+                    inicio: '14:10:00',
+                    fin: '15:00:00'
+                },
+                8: {
+                    inicio: '15:10:00',
+                    fin: '16:00:00'
+                },
+                9: {
+                    inicio: '16:10:00',
+                    fin: '17:00:00'
+                },
+                10: {
+                    inicio: '17:10:00',
+                    fin: '18:00:00'
+                },
+                11: {
+                    inicio: '18:10:00',
+                    fin: '19:00:00'
+                },
+                12: {
+                    inicio: '19:10:00',
+                    fin: '20:00:00'
+                },
+                13: {
+                    inicio: '20:10:00',
+                    fin: '21:00:00'
+                },
+                14: {
+                    inicio: '21:10:00',
+                    fin: '22:00:00'
+                },
+                15: {
+                    inicio: '22:10:00',
+                    fin: '23:00:00'
+                }
             },
             martes: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+                1: {
+                    inicio: '08:10:00',
+                    fin: '09:00:00'
+                },
+                2: {
+                    inicio: '09:10:00',
+                    fin: '10:00:00'
+                },
+                3: {
+                    inicio: '10:10:00',
+                    fin: '11:00:00'
+                },
+                4: {
+                    inicio: '11:10:00',
+                    fin: '12:00:00'
+                },
+                5: {
+                    inicio: '12:10:00',
+                    fin: '13:00:00'
+                },
+                6: {
+                    inicio: '13:10:00',
+                    fin: '14:00:00'
+                },
+                7: {
+                    inicio: '14:10:00',
+                    fin: '15:00:00'
+                },
+                8: {
+                    inicio: '15:10:00',
+                    fin: '16:00:00'
+                },
+                9: {
+                    inicio: '16:10:00',
+                    fin: '17:00:00'
+                },
+                10: {
+                    inicio: '17:10:00',
+                    fin: '18:00:00'
+                },
+                11: {
+                    inicio: '18:10:00',
+                    fin: '19:00:00'
+                },
+                12: {
+                    inicio: '19:10:00',
+                    fin: '20:00:00'
+                },
+                13: {
+                    inicio: '20:10:00',
+                    fin: '21:00:00'
+                },
+                14: {
+                    inicio: '21:10:00',
+                    fin: '22:00:00'
+                },
+                15: {
+                    inicio: '22:10:00',
+                    fin: '23:00:00'
+                }
             },
             miercoles: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+                1: {
+                    inicio: '08:10:00',
+                    fin: '09:00:00'
+                },
+                2: {
+                    inicio: '09:10:00',
+                    fin: '10:00:00'
+                },
+                3: {
+                    inicio: '10:10:00',
+                    fin: '11:00:00'
+                },
+                4: {
+                    inicio: '11:10:00',
+                    fin: '12:00:00'
+                },
+                5: {
+                    inicio: '12:10:00',
+                    fin: '13:00:00'
+                },
+                6: {
+                    inicio: '13:10:00',
+                    fin: '14:00:00'
+                },
+                7: {
+                    inicio: '14:10:00',
+                    fin: '15:00:00'
+                },
+                8: {
+                    inicio: '15:10:00',
+                    fin: '16:00:00'
+                },
+                9: {
+                    inicio: '16:10:00',
+                    fin: '17:00:00'
+                },
+                10: {
+                    inicio: '17:10:00',
+                    fin: '18:00:00'
+                },
+                11: {
+                    inicio: '18:10:00',
+                    fin: '19:00:00'
+                },
+                12: {
+                    inicio: '19:10:00',
+                    fin: '20:00:00'
+                },
+                13: {
+                    inicio: '20:10:00',
+                    fin: '21:00:00'
+                },
+                14: {
+                    inicio: '21:10:00',
+                    fin: '22:00:00'
+                },
+                15: {
+                    inicio: '22:10:00',
+                    fin: '23:00:00'
+                }
             },
             jueves: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+                1: {
+                    inicio: '08:10:00',
+                    fin: '09:00:00'
+                },
+                2: {
+                    inicio: '09:10:00',
+                    fin: '10:00:00'
+                },
+                3: {
+                    inicio: '10:10:00',
+                    fin: '11:00:00'
+                },
+                4: {
+                    inicio: '11:10:00',
+                    fin: '12:00:00'
+                },
+                5: {
+                    inicio: '12:10:00',
+                    fin: '13:00:00'
+                },
+                6: {
+                    inicio: '13:10:00',
+                    fin: '14:00:00'
+                },
+                7: {
+                    inicio: '14:10:00',
+                    fin: '15:00:00'
+                },
+                8: {
+                    inicio: '15:10:00',
+                    fin: '16:00:00'
+                },
+                9: {
+                    inicio: '16:10:00',
+                    fin: '17:00:00'
+                },
+                10: {
+                    inicio: '17:10:00',
+                    fin: '18:00:00'
+                },
+                11: {
+                    inicio: '18:10:00',
+                    fin: '19:00:00'
+                },
+                12: {
+                    inicio: '19:10:00',
+                    fin: '20:00:00'
+                },
+                13: {
+                    inicio: '20:10:00',
+                    fin: '21:00:00'
+                },
+                14: {
+                    inicio: '21:10:00',
+                    fin: '22:00:00'
+                },
+                15: {
+                    inicio: '22:10:00',
+                    fin: '23:00:00'
+                }
             },
             viernes: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+                1: {
+                    inicio: '08:10:00',
+                    fin: '09:00:00'
+                },
+                2: {
+                    inicio: '09:10:00',
+                    fin: '10:00:00'
+                },
+                3: {
+                    inicio: '10:10:00',
+                    fin: '11:00:00'
+                },
+                4: {
+                    inicio: '11:10:00',
+                    fin: '12:00:00'
+                },
+                5: {
+                    inicio: '12:10:00',
+                    fin: '13:00:00'
+                },
+                6: {
+                    inicio: '13:10:00',
+                    fin: '14:00:00'
+                },
+                7: {
+                    inicio: '14:10:00',
+                    fin: '15:00:00'
+                },
+                8: {
+                    inicio: '15:10:00',
+                    fin: '16:00:00'
+                },
+                9: {
+                    inicio: '16:10:00',
+                    fin: '17:00:00'
+                },
+                10: {
+                    inicio: '17:10:00',
+                    fin: '18:00:00'
+                },
+                11: {
+                    inicio: '18:10:00',
+                    fin: '19:00:00'
+                },
+                12: {
+                    inicio: '19:10:00',
+                    fin: '20:00:00'
+                },
+                13: {
+                    inicio: '20:10:00',
+                    fin: '21:00:00'
+                },
+                14: {
+                    inicio: '21:10:00',
+                    fin: '22:00:00'
+                },
+                15: {
+                    inicio: '22:10:00',
+                    fin: '23:00:00'
+                }
             }
         };
 
@@ -476,7 +735,7 @@
             // Determinar el módulo actual
             const moduloActual = determinarModulo(horaActual);
             const moduloActualElement = document.getElementById('modulo-actual');
-            const moduloHorarioElement = document.getElementById('modulo-horario');
+            const moduloHorarioElement = document.getElementById('horario-actual');
 
             if (moduloActual && moduloActualElement && moduloHorarioElement) {
                 moduloActualElement.textContent = moduloActual;
@@ -529,10 +788,10 @@
         actualizarModuloYColores(); // Actualizar inmediatamente al cargar
 
         // Asegurarse de que el modal esté actualizado cuando se abre
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             const modal = document.getElementById('modal-solicitar-espacio');
             if (modal) {
-                modal.addEventListener('show.bs.modal', function () {
+                modal.addEventListener('show.bs.modal', function() {
                     actualizarHora();
                     actualizarModuloYColores();
                 });
@@ -540,28 +799,42 @@
         });
 
         // Inicialización cuando el DOM está listo
-        document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", function() {
+            const inputEscanner = document.getElementById('qr-input');
+            inputEscanner.addEventListener('keydown', manejarInputEscanner);
+            document.addEventListener('click', function() {
+                inputEscanner.focus();
+            });
+            inputEscanner.focus();
+            // Mostrar un mensaje indicando que el escáner está listo
+            const qrStatus = document.getElementById('qr-status');
+            qrStatus.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> Listo para escanear';
+
             // Inicializar elementos
             initElements();
 
             const img = new Image();
-            img.onload = function () {
+            img.onload = function() {
                 state.mapImage = img;
                 state.originalImageSize = {
-                    width: img.naturalWidth,
-                    height: img.naturalHeight
+                    width: img.width,
+                    height: img.height
                 };
                 state.isImageLoaded = true;
                 initCanvases();
+                drawIndicators();
             };
             img.src = "{{ asset('storage/' . $mapa->ruta_mapa) }}";
 
-            window.addEventListener('resize', function () {
+            window.addEventListener('resize', function() {
                 initCanvases();
             });
+
+            // Inicializar el estado del QR
+            actualizarEstadoQR(null);
         });
 
-        window.mostrarDetallesBloque = function (bloque) {
+        window.mostrarDetallesBloque = function(bloque) {
             const titulo = document.getElementById('modal-titulo');
             const tipoEspacio = document.getElementById('modal-tipo-espacio');
             const puestos = document.getElementById('modal-puestos');
@@ -597,27 +870,37 @@
                         if (data.reserva.tipo_reserva === 'Ocupación sin reserva') {
                             // Caso de espacio ocupado sin reserva activa
                             fechaReserva.textContent = 'Estado: Ocupado';
-                            document.getElementById('modal-profesor-reserva').textContent = `Profesor: ${data.reserva.profesor_nombre || 'Sin información'}`;
-                            document.getElementById('modal-email-reserva').textContent = `Email: ${data.reserva.profesor_email || 'Sin información'}`;
+                            document.getElementById('modal-profesor-reserva').textContent =
+                                `Profesor: ${data.reserva.profesor_nombre || 'Sin información'}`;
+                            document.getElementById('modal-email-reserva').textContent =
+                                `Email: ${data.reserva.profesor_email || 'Sin información'}`;
                         } else {
                             // Caso de reserva activa normal
-                            fechaReserva.textContent = `Fecha: ${new Date(data.reserva.fecha).toLocaleDateString()}`;
-                            document.getElementById('modal-profesor-reserva').textContent = `Profesor: ${data.reserva.profesor_nombre}`;
-                            document.getElementById('modal-email-reserva').textContent = `Email: ${data.reserva.profesor_email}`;
+                            fechaReserva.textContent =
+                                `Fecha: ${new Date(data.reserva.fecha).toLocaleDateString()}`;
+                            document.getElementById('modal-profesor-reserva').textContent =
+                                `Profesor: ${data.reserva.profesor_nombre}`;
+                            document.getElementById('modal-email-reserva').textContent =
+                                `Email: ${data.reserva.profesor_email}`;
                         }
 
                         // Agregar botón para entregar llaves
                         const btnEntregarLlaves = document.createElement('button');
-                        btnEntregarLlaves.className = 'mt-4 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700';
+                        btnEntregarLlaves.className =
+                            'mt-4 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700';
                         btnEntregarLlaves.textContent = '¿Desea entregar las llaves?';
-                        btnEntregarLlaves.onclick = function () {
+                        btnEntregarLlaves.onclick = function() {
                             // Cerrar el modal actual
-                            window.dispatchEvent(new CustomEvent('close-modal', { detail: 'detalles-bloque' }));
+                            window.dispatchEvent(new CustomEvent('close-modal', {
+                                detail: 'detalles-bloque'
+                            }));
 
                             // Esperar a que el modal se cierre
                             setTimeout(() => {
                                 // Abrir el modal de salida
-                                window.dispatchEvent(new CustomEvent('open-modal', { detail: 'salida-espacio' }));
+                                window.dispatchEvent(new CustomEvent('open-modal', {
+                                    detail: 'salida-espacio'
+                                }));
 
                                 // Iniciar el escáner después de un breve delay
                                 setTimeout(() => {
@@ -632,7 +915,8 @@
                             claseProxima.classList.remove('hidden');
                             asignaturaProxima.textContent = `Asignatura: ${bloque.clase_proxima.asignatura}`;
                             profesorProximo.textContent = `Profesor: ${bloque.clase_proxima.profesor}`;
-                            horarioProximo.textContent = `Horario: ${bloque.clase_proxima.hora_inicio} - ${bloque.clase_proxima.hora_termino}`;
+                            horarioProximo.textContent =
+                                `Horario: ${bloque.clase_proxima.hora_inicio} - ${bloque.clase_proxima.hora_termino}`;
                         }
                     }
                 })
@@ -642,17 +926,22 @@
                         claseProxima.classList.remove('hidden');
                         asignaturaProxima.textContent = `Asignatura: ${bloque.clase_proxima.asignatura}`;
                         profesorProximo.textContent = `Profesor: ${bloque.clase_proxima.profesor}`;
-                        horarioProximo.textContent = `Horario: ${bloque.clase_proxima.hora_inicio} - ${bloque.clase_proxima.hora_termino}`;
+                        horarioProximo.textContent =
+                            `Horario: ${bloque.clase_proxima.hora_inicio} - ${bloque.clase_proxima.hora_termino}`;
                     }
                 });
 
             // Abrir el modal
-            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'detalles-bloque' }));
+            window.dispatchEvent(new CustomEvent('open-modal', {
+                detail: 'detalles-bloque'
+            }));
         };
 
         function iniciarRegistroSalida(espacioId) {
             // Mostrar el modal de registro de salida
-            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'salida-espacio' }));
+            window.dispatchEvent(new CustomEvent('open-modal', {
+                detail: 'salida-espacio'
+            }));
 
             // Iniciar el escáner de QR del profesor
             initQRScannerSalidaProfesor();
@@ -662,14 +951,16 @@
         async function initQRScannerSalidaProfesor() {
             if (html5QrcodeScanner === null) {
                 try {
-                    document.getElementById('salida-profesor-cargando-msg').textContent = 'Cargando escáner, por favor espere...';
+                    document.getElementById('salida-profesor-cargando-msg').textContent =
+                        'Cargando escáner, por favor espere...';
                     document.getElementById('salida-profesor-cargando-msg').classList.remove('hidden');
                     document.getElementById('salida-profesor-error-msg').classList.add('hidden');
 
                     const hasPermission = await requestCameraPermission();
                     if (!hasPermission) {
                         document.getElementById('salida-profesor-cargando-msg').textContent = '';
-                        document.getElementById('salida-profesor-error-msg').textContent = 'Se requieren permisos de cámara para escanear códigos QR';
+                        document.getElementById('salida-profesor-error-msg').textContent =
+                            'Se requieren permisos de cámara para escanear códigos QR';
                         document.getElementById('salida-profesor-error-msg').classList.remove('hidden');
                         return;
                     }
@@ -677,14 +968,18 @@
                     currentCameraId = await getFirstCamera();
                     if (!currentCameraId) {
                         document.getElementById('salida-profesor-cargando-msg').textContent = '';
-                        document.getElementById('salida-profesor-error-msg').textContent = 'No se encontró ninguna cámara disponible';
+                        document.getElementById('salida-profesor-error-msg').textContent =
+                            'No se encontró ninguna cámara disponible';
                         document.getElementById('salida-profesor-error-msg').classList.remove('hidden');
                         return;
                     }
 
                     const config = {
                         fps: 60,
-                        qrbox: { width: 300, height: 300 },
+                        qrbox: {
+                            width: 300,
+                            height: 300
+                        },
                         aspectRatio: 1.0,
                         formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
                         rememberLastUsedCamera: true,
@@ -768,7 +1063,10 @@
                                             exposureMode: 'continuous',
                                             whiteBalanceMode: 'continuous',
                                             focusDistance: 0.1, // Priorizar objetos cercanos
-                                            pointsOfInterest: [{ x: 0.5, y: 0.5 }], // Enfocar en el centro
+                                            pointsOfInterest: [{
+                                                x: 0.5,
+                                                y: 0.5
+                                            }], // Enfocar en el centro
                                             exposureTime: 0, // Exposición automática
                                             colorTemperature: 0, // Temperatura de color automática
                                             iso: 0, // ISO automático
@@ -805,7 +1103,8 @@
                     }
                 } catch (err) {
                     document.getElementById('salida-profesor-cargando-msg').textContent = '';
-                    document.getElementById('salida-profesor-error-msg').textContent = 'Error al iniciar la cámara. Por favor, verifica los permisos y que la cámara no esté siendo usada por otra aplicación.';
+                    document.getElementById('salida-profesor-error-msg').textContent =
+                        'Error al iniciar la cámara. Por favor, verifica los permisos y que la cámara no esté siendo usada por otra aplicación.';
                     document.getElementById('salida-profesor-error-msg').classList.remove('hidden');
                     document.getElementById('salida-profesor-placeholder').style.display = 'flex';
                 }
@@ -932,7 +1231,9 @@
                         const block = state.indicators.find(b => b.id === espacioId);
                         if (block) {
                             block.estado = 'green';
-                            state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                            state.originalCoordinates = state.indicators.map(i => ({
+                                ...i
+                            }));
                             drawIndicators();
                         }
                         Swal.fire({
@@ -942,7 +1243,9 @@
                             showConfirmButton: false,
                             timer: 2000
                         }).then(() => {
-                            window.dispatchEvent(new CustomEvent('close-modal', { detail: 'detalles-bloque' }));
+                            window.dispatchEvent(new CustomEvent('close-modal', {
+                                detail: 'detalles-bloque'
+                            }));
                             location.reload();
                         });
                     } else {
@@ -984,7 +1287,9 @@
         // Función para solicitar permisos de cámara
         async function requestCameraPermission() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: true
+                });
                 stream.getTracks().forEach(track => track.stop());
                 return true;
             } catch (err) {
@@ -1042,6 +1347,81 @@
             const info = buscarModuloPorCodigo(codigo);
             if (!info) {
                 return;
+            }
+        }
+
+        // Función para actualizar el estado del QR y mostrar nombre
+        async function actualizarEstadoQR(run) {
+            const qrStatus = document.getElementById('qr-status');
+            const runEscaneado = document.getElementById('run-escaneado');
+            const nombreUsuario = document.getElementById('nombre-usuario');
+
+            if (run) {
+                runEscaneado.textContent = run;
+                // Buscar usuario por RUN en la API
+                try {
+                    const response = await fetch(`/api/user/${run}`);
+                    const data = await response.json();
+                    if (data.success && data.user) {
+                        qrStatus.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Usuario encontrado';
+                        nombreUsuario.textContent = data.user.name;
+                    } else {
+                        qrStatus.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg> RUN no encontrado';
+                        nombreUsuario.textContent = '--';
+                    }
+                } catch (e) {
+                    qrStatus.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg> Error de conexión';
+                    nombreUsuario.textContent = '--';
+                }
+            } else {
+                qrStatus.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> Esperando';
+                runEscaneado.textContent = '--';
+                nombreUsuario.textContent = '--';
+            }
+        }
+
+        // Función para manejar el input del escáner
+        let bufferQR = '';
+        let lastScanTime = 0;
+
+        function manejarInputEscanner(event) {
+            const currentTime = new Date().getTime();
+            if (currentTime - lastScanTime > 100) {
+                bufferQR = '';
+            }
+            lastScanTime = currentTime;
+
+            if (event.key.length === 1) {
+                bufferQR += event.key;
+            }
+
+            const match = bufferQR.match(/RUN¿(\d+)'/);
+            if (match) {
+                const run = match[1];
+                document.getElementById('run-escaneado').textContent = run;
+                // Consultar la API para obtener el nombre
+                fetch(`/api/user/${run}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success && data.user) {
+                            document.getElementById('nombre-usuario').textContent = data.user.name;
+                            document.getElementById('qr-status').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Usuario encontrado';
+                        } else {
+                            document.getElementById('nombre-usuario').textContent = '--';
+                            document.getElementById('qr-status').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg> RUN no encontrado';
+                        }
+                    })
+                    .catch(() => {
+                        document.getElementById('nombre-usuario').textContent = '--';
+                        document.getElementById('qr-status').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg> Error de conexión';
+                    });
+                bufferQR = '';
+                event.target.value = '';
+            }
+
+            if (event.key === 'Escape' || bufferQR.length > 30) {
+                bufferQR = '';
+                event.target.value = '';
             }
         }
     </script>
