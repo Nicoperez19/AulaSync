@@ -235,3 +235,34 @@ Route::get('/verificar-planificacion-multiple', function (Request $request) {
 });
 
 Route::get('/espacio/{id}', [ReservaController::class, 'getEspacioEstado']);
+
+// Ruta para obtener pisos de la sede TH y facultad IT_TH
+Route::get('/pisos/th/it', function () {
+    try {
+        $pisos = \App\Models\Piso::with(['facultad.sede'])
+            ->whereHas('facultad', function($query) {
+                $query->where('id_facultad', 'IT_TH');
+            })
+            ->whereHas('facultad.sede', function($query) {
+                $query->where('id_sede', 'TH');
+            })
+            ->orderBy('numero_piso')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'pisos' => $pisos
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Error al obtener pisos:', [
+            'error' => $e->getMessage(),
+            'sede' => 'TH',
+            'facultad' => 'IT_TH'
+        ]);
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al obtener los pisos: ' . $e->getMessage()
+        ], 500);
+    }
+});

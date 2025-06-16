@@ -22,24 +22,76 @@ class PlanoDigitalController extends Controller
 
     public function show($id)
     {
-        $mapa = Mapa::with(['piso.facultad.sede'])->findOrFail($id);
-        $estadoActual = $this->obtenerEstadoActual(Carbon::now());
-        $bloques = $this->prepararBloques($mapa, $estadoActual);
-        
-        // Obtener todos los pisos de la misma sede
-        $pisos = Mapa::with(['piso'])
-            ->whereHas('piso.facultad.sede', function($query) use ($mapa) {
-                $query->where('id_sede', $mapa->piso->facultad->sede->id_sede);
-            })
-            ->join('pisos', 'mapas.piso_id', '=', 'pisos.id')
-            ->orderBy('pisos.numero_piso')
-            ->select('mapas.*')
-            ->get();
+        try {
+            $mapa = Mapa::with(['piso.facultad.sede'])->findOrFail($id);
+            $estadoActual = $this->obtenerEstadoActual(Carbon::now());
+            $bloques = $this->prepararBloques($mapa, $estadoActual);
+            
+            // Obtener todos los pisos de la sede TH y facultad IT_TH
+            $pisos = Mapa::with(['piso' => function($query) {
+                    $query->with(['facultad' => function($query) {
+                        $query->with('sede');
+                    }]);
+                }])
+                ->whereHas('piso.facultad.sede', function($query) {
+                    $query->where('id_sede', 'TH');
+                })
+                ->whereHas('piso.facultad', function($query) {
+                    $query->where('id_facultad', 'IT_TH');
+                })
+                ->join('pisos', 'mapas.piso_id', '=', 'pisos.id')
+                ->orderBy('pisos.numero_piso')
+                ->select('mapas.*', 'pisos.numero_piso')
+                ->get();
 
-        // Obtener la sede actual
-        $sede = $mapa->piso->facultad->sede;
+            \Log::info('Pisos encontrados:', ['count' => $pisos->count(), 'pisos' => $pisos->toArray()]);
 
-        return view('layouts.plano_digital.show', compact('mapa', 'bloques', 'pisos', 'sede'));
+            // Obtener la sede actual
+            $sede = $mapa->piso->facultad->sede;
+
+            // Convertir los pisos a un formato más simple para la vista
+            $pisosFormateados = $pisos->map(function($piso) {
+                return [
+                    'id_mapa' => $piso->id_mapa,
+                    'numero_piso' => $piso->numero_piso,
+                    'nombre_piso' => "Piso {$piso->numero_piso}"
+                ];
+            });
+
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'pisos' => $pisosFormateados,
+                        'mapa' => $mapa,
+                        'bloques' => $bloques,
+                        'sede' => $sede
+                    ]
+                ]);
+            }
+
+            return view('layouts.plano_digital.show', [
+                'mapa' => $mapa,
+                'bloques' => $bloques,
+                'pisos' => $pisos,
+                'sede' => $sede,
+                'pisosJson' => json_encode($pisosFormateados)
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error en PlanoDigitalController@show:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            if (request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Error al cargar los pisos: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->back()->with('error', 'Error al cargar los pisos: ' . $e->getMessage());
+        }
     }
 
     public function bloques($id)
@@ -102,7 +154,7 @@ class PlanoDigitalController extends Controller
         $reservasActivas = $this->obtenerReservasActivas($mapa, $estadoActual);
         $planificacionesProximas = $this->obtenerPlanificacionesProximas($mapa, $estadoActual);
 
-        return $mapa->bloques->map(function ($bloque) use ($planificacionesActivas, $reservasActivas, $planificacionesProximas, $estadoActual) {
+        return $mapa->bloques->map(function ($bloque) use ($planificacionesActivas, $reservasActivas, $planificacionesProximas, $estadoActual, $mapa) {
             $idEspacio = $bloque->id_espacio;
             $espacio = $bloque->espacio;
             
@@ -134,7 +186,10 @@ class PlanoDigitalController extends Controller
                         $estaOcupado ? $reservasActivas->firstWhere('id_espacio', $idEspacio) : null,
                         $planificacionesProximas->firstWhere('id_espacio', $idEspacio)
                     ),
-                    ['estado' => $espacio->estado]
+                    [
+                        'estado' => $espacio->estado,
+                        'facultad' => $mapa->piso->facultad->nombre_facultad
+                    ]
                 )
             ];
         })->toArray();
@@ -197,8 +252,8 @@ class PlanoDigitalController extends Controller
         $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
         $periodo = $anioActual . '-' . $semestre;
 
-        // Calcular la hora límite (5 minutos después de la hora actual)
-        $horaLimite = $horaActual->copy()->addMinutes(5)->format('H:i:s');
+        // Calcular la hora límite (10 minutos después de la hora actual)
+        $horaLimite = $horaActual->copy()->addMinutes(9)->format('H:i:s');
 
         return Planificacion_Asignatura::with(['horario', 'asignatura.profesor', 'modulo', 'espacio'])
             ->whereHas('horario', function ($query) use ($periodo) {
@@ -222,7 +277,7 @@ class PlanoDigitalController extends Controller
             return 'red';
         }
         
-        // Si el espacio tiene una clase próxima (en los próximos 5 minutos), mostrar en azul
+        // Si el espacio tiene una clase próxima (en los próximos 10 minutos), mostrar en azul
         if ($tieneClaseProxima) {
             return 'blue';
         }
@@ -263,8 +318,9 @@ class PlanoDigitalController extends Controller
             $detalles['planificacion_proxima'] = [
                 'asignatura' => $planificacionProxima->asignatura->nombre_asignatura ?? 'No especificada',
                 'profesor' => ucwords($planificacionProxima->asignatura->profesor->name ?? 'No asignado'),
-                'hora_inicio' => $planificacionProxima->modulo->hora_inicio ?? '00:00:00',
-                'hora_termino' => $planificacionProxima->modulo->hora_termino ?? '00:00:00'
+                'hora_inicio' => substr($planificacionProxima->modulo->hora_inicio ?? '00:00', 0, 5),
+                'hora_termino' => substr($planificacionProxima->modulo->hora_termino ?? '00:00', 0, 5),
+                'modulo' => explode('.', $planificacionProxima->modulo->id_modulo ?? '')[1] ?? 'No especificado'
             ];
         }
 

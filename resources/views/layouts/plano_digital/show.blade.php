@@ -1,7 +1,8 @@
 <x-show-layout>
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar fijo a la izquierda, más compacto y con fondo azul claro -->
-        <aside class="fixed top-0 left-0 z-40 flex flex-col justify-between w-64 h-screen pt-4 pb-4 border-r border-gray-200 bg-light-cloud-blue dark:border-gray-700">
+        <aside
+            class="fixed top-0 left-0 z-40 flex flex-col justify-between w-64 h-screen pt-4 pb-4 border-r border-gray-200 bg-light-cloud-blue dark:border-gray-700 text-lg">
             <!-- Logo de la aplicación -->
             <div class="flex flex-col items-center gap-4">
                 <a href="{{ route('dashboard')}}" class="mb-2">
@@ -10,14 +11,15 @@
 
                 <!-- Leyenda -->
                 <div class="w-full p-4 px-2 bg-white rounded-lg shadow">
-                    <h3 class="mb-3 text-sm font-semibold text-center flex items-center justify-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <h3 class="mb-3 font-semibold text-center flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2">
                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                             <circle cx="12" cy="10" r="3"></circle>
                         </svg>
                         LEYENDA DE ESTADO
                     </h3>
-                    <div class="flex flex-col items-start gap-2 text-sm">
+                    <div class="flex flex-col items-start gap-2">
                         <div class="flex items-center gap-2 w-full">
                             <div class="w-4 h-4 bg-red-500 rounded-full"></div>
                             <span class="flex-1">Ocupado</span>
@@ -40,76 +42,78 @@
 
             <!-- Información de hora y módulo actual -->
             <div class="w-full px-2 mt-4">
-                <div class="p-4 text-sm text-white border border-blue-600 rounded-lg shadow bg-light-cloud-blue">
+                <div class="p-4 text-white border border-blue-600 rounded-lg shadow bg-light-cloud-blue">
                     <div class="flex items-center justify-between pb-2 border-b border-blue-400">
                         <div class="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <span id="hora-actual" class="text-lg font-mono">--:--:--</span>
+                            <span id="hora-actual">--:--:--</span>
                         </div>
                     </div>
                     <div class="py-2 border-b border-blue-400">
                         <div class="flex items-center gap-2 mb-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
-                            <span class="font-semibold">Módulo:</span>
+                            <span>Módulo: <span id="modulo-actual">No hay módulo programado</span></span>
                         </div>
-                        <div class="w-full bg-blue-400/20 rounded-full h-2 mb-1">
-                            <div class="bg-blue-400 h-2 rounded-full" style="width: 0%"></div>
-                        </div>
-                        <span id="modulo-actual" class="text-sm">No hay módulo programado</span>
+
                     </div>
                     <div class="pt-2">
                         <div class="flex items-center gap-2 mb-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span class="font-semibold">Horario:</span>
+                            <span>Horario: <span id="horario-actual">--:-- - --:--</span></span>
                         </div>
-                        <span id="horario-actual" class="text-sm">--:-- - --:--</span>
+
                     </div>
                 </div>
             </div>
 
             <!-- Estado del QR -->
-            <div class="w-full px-2 mt-4">
-                <div class="p-4 text-sm text-white border border-blue-600 rounded-lg shadow bg-light-cloud-blue">
-                    <div class="flex items-center justify-between pb-2 border-b border-blue-400">
-                        <div class="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span class="font-semibold">ESTADO QR:</span>
-                        </div>
-                        <span id="qr-status" class="text-yellow-400">Esperando</span>
-                    </div>
-
+            <div class="w-full px-2 ">
+                <div class="p-4 text-white border border-blue-600 rounded-lg shadow bg-light-cloud-blue">
                     <!-- QR Placeholder -->
                     <div class="mt-4 p-4 bg-white/10 rounded-lg text-center">
-                        <div class="qr-placeholder mb-2">
+                        <span id="qr-status" class="text-yellow-400">Esperando</span>
+
+                        <div class="qr-placeholder mb-2 mt-2">
                             <div class="w-32 h-32 mx-auto bg-white/20 rounded-lg flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-white/40" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                             </div>
                         </div>
-                        <p class="text-sm text-white/80">Escanee el código QR</p>
+                        <p class="text-white/80">Escanee el código QR</p>
+
                     </div>
 
                     <!-- Información del usuario escaneado -->
                     <div class="mt-4 space-y-2">
                         <div class="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                             <span class="font-semibold">RUN:</span>
                             <span id="run-escaneado" class="flex-1 text-right">--</span>
                         </div>
                         <div class="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                             <span class="font-semibold">Usuario:</span>
                             <span id="nombre-usuario" class="flex-1 text-right">--</span>
@@ -118,7 +122,9 @@
 
                     <!-- Input para el escáner QR (oculto) -->
                     <div class="mt-4">
-                        <input type="text" id="qr-input" class="absolute w-full px-2 py-1 text-sm border rounded opacity-0 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Escanea un código QR" autofocus>
+                        <input type="text" id="qr-input"
+                            class="absolute w-full px-2 py-1 border rounded opacity-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Escanea un código QR" autofocus>
                     </div>
                 </div>
             </div>
@@ -133,17 +139,16 @@
                     <div class="flex-1 bg-white shadow-md dark:bg-dark-eval-0">
                         <ul class="flex border-b border-gray-300 dark:border-gray-700" id="pills-tab" role="tablist">
                             @foreach ($pisos as $piso)
-                                <li role="presentation">
-                                    <a href="{{ route('plano.show', $piso->id_mapa) }}"
-                                        class="px-4 py-3 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
-                                        {{ $piso->id_mapa === $mapa->id_mapa
-                                            ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
-                                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}"
-                                        role="tab"
-                                        aria-selected="{{ $piso->id_mapa === $mapa->id_mapa ? 'true' : 'false' }}">
-                                        Piso {{ $piso->piso->numero_piso }}
-                                    </a>
-                                </li>
+                                                    <li role="presentation">
+                                                        <a href="{{ route('plano.show', $piso->id_mapa) }}"
+                                                            class="px-4 py-3 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
+                                                                                                                                                                {{ $piso->id_mapa === $mapa->id_mapa
+                                ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}" role="tab"
+                                                            aria-selected="{{ $piso->id_mapa === $mapa->id_mapa ? 'true' : 'false' }}">
+                                                            Piso {{ $piso->piso->numero_piso }}
+                                                        </a>
+                                                    </li>
                             @endforeach
                         </ul>
                         <!-- Card para el canvas y controles -->
@@ -158,13 +163,23 @@
 
 
                             <div class="relative flex-1 min-h-0">
-                                        <!-- Canvas para la imagen base -->
-                                        <canvas id="mapCanvas"
+                                <!-- Canvas para la imagen base -->
+                                <canvas id="mapCanvas"
                                     class="absolute inset-0 w-full h-full bg-white dark:bg-gray-800"></canvas>
 
-                                        <!-- Canvas para los indicadores -->
-                                        <canvas id="indicatorsCanvas"
+                                <!-- Canvas para los indicadores -->
+                                <canvas id="indicatorsCanvas"
                                     class="absolute inset-0 w-full h-full pointer-events-auto"></canvas>
+
+                                <!-- Botón de pantalla completa -->
+                                <button id="fullscreenBtn"
+                                    class="absolute bottom-4 right-4 p-2 bg-light-cloud-blue text-white rounded-lg shadow-lg hover:bg-blue-600 transition-colors duration-200 z-10">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                                    </svg>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -172,6 +187,36 @@
             </div>
         </div>
     </div>
+
+    <!-- Modal para mostrar información del espacio -->
+    <x-modal name="data-space" :show="false" focusable>
+        @slot('title')
+        <h2 id="modalTitulo" class="text-lg font-medium text-white dark:text-gray-100">
+            Cargar Archivo de Datos
+        </h2>
+        @endslot
+        <div class="p-6">
+
+            <h3 class="text-lg font-medium text-gray-900">Información del Espacio</h3>
+            <br>
+            <div class="space-y-4">
+                <div>
+                <h4 class="text-sm font-medium text-gray-700">Estado Actual: <span id="modalEstado" class="inline-block ml-1 text-sm text-gray-900"></span></h4>
+
+
+                </div>
+          
+                <div id="modalPlanificacion" class="hidden">
+                    <h4 class="text-sm font-medium text-gray-700">Planificación Actual</h4>
+                    <p id="modalPlanificacionDetalles" class="mt-1 text-sm text-gray-900"></p>
+                </div>
+                <div id="modalProxima" class="hidden">
+                    <h4 class="text-sm font-medium text-gray-700">Próxima Clase</h4>
+                    <p id="modalProximaDetalles" class="mt-1 text-sm text-gray-900"></p>
+                </div>
+            </div>
+        </div>
+    </x-modal>
 
     <script>
         // Variables globales para el QR scanner
@@ -190,14 +235,19 @@
         let qrScanAttempts = 0;
         let qrScanMaxAttempts = 30; // 3 segundos si fps=10
 
+        // Variables para el control de pantalla completa
+        let isFullscreen = false;
+        let originalSidebarDisplay = '';
+        let originalMainContentMargin = '';
+
         // Obtener el ID del mapa de la URL
         const mapaId = window.location.pathname.split('/').pop();
 
         // Configuración global para los indicadores
         const config = {
-            indicatorSize: 40,
-            indicatorWidth: 60,
-            indicatorHeight: 40,
+            indicatorSize: 30,
+            indicatorWidth: 48,
+            indicatorHeight: 30,
             indicatorBorder: '#FFFFFF',
             indicatorTextColor: '#FFFFFF',
             fontSize: 12
@@ -220,7 +270,8 @@
             offsetY: 0,
             currentTime: new Date(),
             currentModule: null,
-            currentDay: new Date().getDay()
+            currentDay: new Date().getDay(),
+            updateInterval: null // Nueva variable para el intervalo de actualización
         };
 
         // Variables globales para los elementos del canvas
@@ -352,6 +403,22 @@
             // Restablecer las sombras
             elements.indicatorsCtx.shadowColor = 'transparent';
             elements.indicatorsCtx.shadowBlur = 0;
+
+            // Agregar evento de clic al indicador
+            elements.indicatorsCanvas.addEventListener('click', function (event) {
+                const rect = elements.indicatorsCanvas.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+
+                // Verificar si el clic fue dentro del indicador
+                if (x >= position.x - finalWidth / 2 && x <= position.x + finalWidth / 2 &&
+                    y >= position.y - finalHeight / 2 && y <= position.y + finalHeight / 2) {
+                    const indicator = state.indicators.find(i => i.id === id);
+                    if (indicator) {
+                        mostrarModalEspacio(indicator);
+                    }
+                }
+            });
         }
 
         // Función para dibujar los indicadores
@@ -375,6 +442,66 @@
                     null
                 );
             });
+        }
+
+        // Función para mostrar el modal con la información del espacio
+        function mostrarModalEspacio(indicator) {
+            const modalTitulo = document.getElementById('modalTitulo');
+            const modalEstado = document.getElementById('modalEstado');
+            const modalPlanificacion = document.getElementById('modalPlanificacion');
+            const modalPlanificacionDetalles = document.getElementById('modalPlanificacionDetalles');
+            const modalProxima = document.getElementById('modalProxima');
+            const modalProximaDetalles = document.getElementById('modalProximaDetalles');
+
+            // Configurar el título
+            modalTitulo.textContent = `${indicator.nombre} (${indicator.id}) `;
+
+            // Configurar el estado
+            let estadoTexto = '';
+            let estadoColor = '';
+            switch (indicator.estado) {
+                case 'red':
+                    estadoTexto = 'Ocupado';
+                    estadoColor = 'text-red-600';
+                    break;
+                case 'blue':
+                    estadoTexto = 'Próximo a ocuparse';
+                    estadoColor = 'text-blue-600';
+                    break;
+                default:
+                    estadoTexto = 'Disponible';
+                    estadoColor = 'text-green-600';
+            }
+            modalEstado.innerHTML = `<span class="${estadoColor} font-semibold">${estadoTexto}</span>`;
+
+            const detalles = indicator.detalles || {};
+        
+            if (detalles.planificacion) {
+                modalPlanificacion.classList.remove('hidden');
+                modalPlanificacionDetalles.innerHTML = `
+                    <p>Asignatura: ${detalles.planificacion.asignatura || 'No especificada'}</p>
+                    <p>Profesor: ${detalles.planificacion.profesor || 'No especificado'}</p>
+                    <p>Módulo: ${detalles.planificacion.modulo || 'No especificado'}</p>
+                `;
+            } else {
+                modalPlanificacion.classList.add('hidden');
+            }
+
+            // Configurar la próxima clase si existe
+            if (detalles.planificacion_proxima) {
+                modalProxima.classList.remove('hidden');
+                modalProximaDetalles.innerHTML = `
+                    <p>Asignatura: ${detalles.planificacion_proxima.asignatura || 'No especificada'}</p>
+                    <p>Profesor: ${detalles.planificacion_proxima.profesor || 'No especificado'}</p>
+                    <p>Módulo: ${detalles.planificacion_proxima.modulo || 'No especificado'}</p>
+                    <p>Horario: ${detalles.planificacion_proxima.hora_inicio} hrs. - ${detalles.planificacion_proxima.hora_termino} hrs.</p>
+                `;
+            } else {
+                modalProxima.classList.add('hidden');
+            }
+
+            // Mostrar el modal usando Alpine.js
+            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'data-space' }));
         }
 
         // Definición de horarios por día y módulo
@@ -797,10 +924,10 @@
         actualizarModuloYColores(); // Actualizar inmediatamente al cargar
 
         // Asegurarse de que el modal esté actualizado cuando se abre
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const modal = document.getElementById('modal-solicitar-espacio');
             if (modal) {
-                modal.addEventListener('show.bs.modal', function() {
+                modal.addEventListener('show.bs.modal', function () {
                     actualizarHora();
                     actualizarModuloYColores();
                 });
@@ -808,10 +935,10 @@
         });
 
         // Inicialización cuando el DOM está listo
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             const inputEscanner = document.getElementById('qr-input');
             inputEscanner.addEventListener('keydown', manejarInputEscanner);
-            document.addEventListener('click', function() {
+            document.addEventListener('click', function () {
                 inputEscanner.focus();
             });
             inputEscanner.focus();
@@ -823,7 +950,7 @@
             initElements();
 
             const img = new Image();
-            img.onload = function() {
+            img.onload = function () {
                 state.mapImage = img;
                 state.originalImageSize = {
                     width: img.width,
@@ -832,18 +959,28 @@
                 state.isImageLoaded = true;
                 initCanvases();
                 drawIndicators();
+
+                // Actualizar cada minuto
+                state.updateInterval = setInterval(actualizarEstadoMapa, 60000);
             };
             img.src = "{{ asset('storage/' . $mapa->ruta_mapa) }}";
 
-            window.addEventListener('resize', function() {
+            window.addEventListener('resize', function () {
                 initCanvases();
+            });
+
+            // Limpiar el intervalo cuando se desmonte el componente
+            window.addEventListener('beforeunload', function () {
+                if (state.updateInterval) {
+                    clearInterval(state.updateInterval);
+                }
             });
 
             // Inicializar el estado del QR
             actualizarEstadoQR(null);
         });
 
-        window.mostrarDetallesBloque = function(bloque) {
+        window.mostrarDetallesBloque = function (bloque) {
             const titulo = document.getElementById('modal-titulo');
             const tipoEspacio = document.getElementById('modal-tipo-espacio');
             const puestos = document.getElementById('modal-puestos');
@@ -898,7 +1035,7 @@
                         btnEntregarLlaves.className =
                             'mt-4 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700';
                         btnEntregarLlaves.textContent = '¿Desea entregar las llaves?';
-                        btnEntregarLlaves.onclick = function() {
+                        btnEntregarLlaves.onclick = function () {
                             // Cerrar el modal actual
                             window.dispatchEvent(new CustomEvent('close-modal', {
                                 detail: 'detalles-bloque'
@@ -1431,6 +1568,67 @@
             if (event.key === 'Escape' || bufferQR.length > 30) {
                 bufferQR = '';
                 event.target.value = '';
+            }
+        }
+
+        // Función para manejar el modo pantalla completa
+        function toggleFullscreen() {
+            const mainContent = document.querySelector('.flex-1.h-screen');
+            const sidebar = document.querySelector('aside');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+
+            if (!isFullscreen) {
+                // Guardar el estado original
+                originalSidebarDisplay = sidebar.style.display;
+                originalMainContentMargin = mainContent.style.marginLeft;
+
+                // Ocultar sidebar y ajustar contenido principal
+                sidebar.style.display = 'none';
+                mainContent.style.marginLeft = '0';
+                mainContent.style.width = '100%';
+
+                // Cambiar el ícono del botón
+                fullscreenBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                `;
+            } else {
+                // Restaurar el estado original
+                sidebar.style.display = originalSidebarDisplay;
+                mainContent.style.marginLeft = originalMainContentMargin;
+                mainContent.style.width = '';
+
+                // Restaurar el ícono original
+                fullscreenBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                    </svg>
+                `;
+            }
+
+            isFullscreen = !isFullscreen;
+            initCanvases(); // Redibujar los canvas para ajustarse al nuevo tamaño
+        }
+
+        // Agregar el evento click al botón de pantalla completa
+        document.addEventListener('DOMContentLoaded', function () {
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            fullscreenBtn.addEventListener('click', toggleFullscreen);
+        });
+
+        // Función para actualizar el estado del mapa
+        async function actualizarEstadoMapa() {
+            try {
+                const response = await fetch(`/plano/${mapaId}/bloques`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                state.indicators = data;
+                drawIndicators();
+            } catch (error) {
+                console.error('Error al actualizar el estado del mapa:', error);
             }
         }
     </script>

@@ -8,35 +8,23 @@
     </x-slot>
 
     <div class="p-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
-        <!-- Selectores de universidad, sede, facultad y piso -->
-        <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
-            <div>
-                <label for="universidad" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Universidad</label>
-                <select id="universidad" name="universidad" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    <option value="">Seleccione una universidad</option>
-                    @foreach ($universidades as $universidad)
-                        <option value="{{ $universidad->id_universidad }}">{{ $universidad->nombre_universidad }}</option>
-                    @endforeach
-                </select>
-            </div>
-
+        <!-- Selectores de sede, facultad y piso -->
+        <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
             <div>
                 <label for="sede" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sede</label>
-                <select id="sede" name="sede" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" disabled>
-                    <option value="">Seleccione una sede</option>
-                </select>
+                <input type="text" id="sede" name="sede" value="Talcahuano" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white" readonly>
+                <input type="hidden" id="id_sede" value="TH">
             </div>
 
             <div>
                 <label for="facultad" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Facultad</label>
-                <select id="facultad" name="facultad" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" disabled>
-                    <option value="">Seleccione una facultad</option>
-                </select>
+                <input type="text" id="facultad" name="facultad" value="Instituto Tecnológico" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white" readonly>
+                <input type="hidden" id="id_facultad" value="IT_TH">
             </div>
 
             <div>
                 <label for="piso" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Piso</label>
-                <select id="piso" name="piso" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white" disabled>
+                <select id="piso" name="piso" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
                     <option value="">Seleccione un piso</option>
                 </select>
             </div>
@@ -117,9 +105,8 @@
                 mapCtx: document.getElementById('mapCanvas').getContext('2d'),
                 indicatorsCanvas: document.getElementById('indicatorsCanvas'),
                 indicatorsCtx: document.getElementById('indicatorsCanvas').getContext('2d'),
-                universidadSelect: document.getElementById('universidad'),
-                sedeSelect: document.getElementById('sede'),
-                facultadSelect: document.getElementById('facultad'),
+                sedeId: document.getElementById('id_sede'),
+                facultadId: document.getElementById('id_facultad'),
                 pisoSelect: document.getElementById('piso'),
                 nombreMapaInput: document.getElementById('nombre_mapa'),
                 nombreMapaContainer: document.getElementById('nombreMapaContainer'),
@@ -293,103 +280,20 @@
                 elements.saveMapBtn.classList.add('hidden');
             });
 
-            // Eventos para los selectores
-            elements.universidadSelect.addEventListener('change', function() {
-                const universidadId = this.value;
-                elements.sedeSelect.innerHTML = '<option value="">Cargando sedes...</option>';
-                elements.facultadSelect.innerHTML = '<option value="">Seleccione una facultad</option>';
-                elements.pisoSelect.innerHTML = '<option value="">Seleccione un piso</option>';
-                elements.facultadSelect.disabled = true;
-                elements.pisoSelect.disabled = true;
-                elements.nombreMapaContainer.classList.add('hidden');
-
-                if (universidadId) {
-                    fetch(`/sedes/${universidadId}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            elements.sedeSelect.innerHTML = '<option value="">Seleccione una sede</option>';
-                            data.forEach(sede => {
-                                elements.sedeSelect.innerHTML += `<option value="${sede.id_sede}">${sede.nombre_sede}</option>`;
-                            });
-                            elements.sedeSelect.disabled = false;
-                        });
-                }
-            });
-
-            elements.sedeSelect.addEventListener('change', function() {
-                const sedeId = this.value;
-                elements.facultadSelect.innerHTML = '<option value="">Cargando facultades...</option>';
-                elements.pisoSelect.innerHTML = '<option value="">Seleccione un piso</option>';
-                elements.pisoSelect.disabled = true;
-                elements.nombreMapaContainer.classList.add('hidden');
-
-                if (sedeId) {
-                    fetch(`/facultades-por-sede/${sedeId}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            elements.facultadSelect.innerHTML = '<option value="">Seleccione una facultad</option>';
-                            data.forEach(facultad => {
-                                elements.facultadSelect.innerHTML += `<option value="${facultad.id_facultad}">${facultad.nombre_facultad}</option>`;
-                            });
-                            elements.facultadSelect.disabled = false;
-                        });
-                }
-            });
-
-            elements.facultadSelect.addEventListener('change', function() {
-                const facultadId = this.value;
-                elements.pisoSelect.innerHTML = '<option value="">Cargando pisos...</option>';
-                elements.nombreMapaContainer.classList.add('hidden');
-
-                if (facultadId) {
-                    fetch(`/pisos/${facultadId}`)
-                        .then(response => response.json())
-                        .then(data => {
-                            elements.pisoSelect.innerHTML = '<option value="">Seleccione un piso</option>';
-                            data.forEach(piso => {
-                                elements.pisoSelect.innerHTML += `<option value="${piso.id}">Piso ${piso.numero_piso}</option>`;
-                            });
-                            elements.pisoSelect.disabled = false;
-                        });
-                }
-            });
-
-            // Actualizar nombre del mapa automáticamente
-            function updateNombreMapa() {
-                const sedeText = elements.sedeSelect.options[elements.sedeSelect.selectedIndex]?.text || '';
-                const facultadText = elements.facultadSelect.options[elements.facultadSelect.selectedIndex]?.text || '';
-                const pisoText = elements.pisoSelect.options[elements.pisoSelect.selectedIndex]?.text || '';
-
-                if (sedeText && facultadText && pisoText) {
-                    const nombreCompleto = `${pisoText}, ${facultadText} de ${sedeText}`;
-                    elements.nombreMapaInput.value = nombreCompleto;
-                    document.getElementById('nombre_mapa_form').value = nombreCompleto;
-                    elements.nombreMapaContainer.classList.remove('hidden');
-                    console.log('Nombre del mapa actualizado:', nombreCompleto);
-                }
-            }
-
-            // Cargar espacios cuando se selecciona un piso
+            // Evento para cuando se selecciona un piso
             elements.pisoSelect.addEventListener('change', function() {
                 const pisoId = this.value;
-                if (!pisoId) {
-                    elements.espaciosList.innerHTML = '';
-                    elements.emptySpacesMessage.classList.remove('hidden');
-                    return;
-                }
+                elements.nombreMapaContainer.classList.add('hidden');
 
+                if (pisoId) {
+                    // Cargar espacios del piso
                 fetch(`/espacios-por-piso/${pisoId}`)
                     .then(response => response.json())
                     .then(data => {
                         elements.espaciosList.innerHTML = '';
                         elements.emptySpacesMessage.classList.add('hidden');
-                        state.indicators = [];
-                        drawIndicators();
-                        elements.saveMapBtn.classList.add('hidden');
-                        state.selectedSpace = null;
 
                         if (data.length === 0) {
-                            elements.emptySpacesMessage.textContent = 'No hay espacios disponibles para este piso';
                             elements.emptySpacesMessage.classList.remove('hidden');
                             return;
                         }
@@ -426,6 +330,7 @@
                         // Actualizar nombre del mapa
                         updateNombreMapa();
                     });
+                }
             });
 
             // Eventos del canvas de indicadores
@@ -632,9 +537,42 @@
                     });
             }
 
+            // Función para actualizar el nombre del mapa
+            function updateNombreMapa() {
+                const sedeText = document.getElementById('sede').value;
+                const facultadText = document.getElementById('facultad').value;
+                const pisoText = elements.pisoSelect.options[elements.pisoSelect.selectedIndex]?.text || '';
+
+                if (sedeText && facultadText && pisoText) {
+                    const nombreCompleto = `${pisoText}, ${facultadText} de ${sedeText}`;
+                    elements.nombreMapaInput.value = nombreCompleto;
+                    document.getElementById('nombre_mapa_form').value = nombreCompleto;
+                    elements.nombreMapaContainer.classList.remove('hidden');
+                }
+            }
+
             // Inicialización
             initCanvases();
             window.addEventListener('resize', initCanvases);
+
+            // Cargar pisos al iniciar
+            const facultadId = elements.facultadId.value;
+            if (facultadId) {
+                fetch(`/pisos/${facultadId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        elements.pisoSelect.innerHTML = '<option value="">Seleccione un piso</option>';
+                        data.forEach(piso => {
+                            const option = document.createElement('option');
+                            option.value = piso.id;
+                            option.textContent = `Piso ${piso.numero_piso}`;
+                            elements.pisoSelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error al cargar los pisos:', error);
+                    });
+            }
         });
     </script>
 

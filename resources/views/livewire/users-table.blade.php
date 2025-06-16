@@ -41,10 +41,6 @@
                     <th class="p-3" onclick="sortTable(0)">RUN <span class="sort-icon">▼</span></th>
                     <th class="p-3" onclick="sortTable(1)">Nombre <span class="sort-icon">▼</span></th>
                     <th class="p-3" onclick="sortTable(2)">Correo <span class="sort-icon">▼</span></th>
-                    {{-- <th class="p-3" onclick="sortTable(3)">Celular <span class="sort-icon">▼</span></th>
-                    <th class="p-3" onclick="sortTable(4)">Dirección <span class="sort-icon">▼</span></th>
-                    <th class="p-3" onclick="sortTable(5)">Fecha Nacimiento <span class="sort-icon">▼</span></th>
-                    <th class="p-3" onclick="sortTable(6)">Año Ingreso <span class="sort-icon">▼</span></th> --}}
                     <th class="p-3">Acciones</th>
                 </tr>
             </thead>
@@ -54,10 +50,6 @@
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ $user->run }}</td>
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ $user->name }}</td>
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ $user->email }}</td>
-                        {{-- <td class="p-3 dark:border-white whitespace-nowrap">{{ $user->celular }}</td>
-                        <td class="p-3 dark:border-white whitespace-nowrap">{{ $user->direccion }}</td>
-                        <td class="p-3 dark:border-white whitespace-nowrap">{{ $user->fecha_nacimiento }}</td>
-                        <td class="p-3 dark:border-white whitespace-nowrap">{{ $user->anio_ingreso }}</td> --}}
                         <td class="p-3 dark:border-white whitespace-nowrap">
                             <div class="flex justify-center space-x-2">
                                 <x-button variant="primary" href="{{ route('users.edit', $user->run) }}"
@@ -118,7 +110,6 @@
 
         rows.forEach(row => table.appendChild(row));
 
-        // Agregar clase de ordenamiento solo a la columna actual
         table.rows[0].cells[columnIndex].classList.add(isAscending ? "desc" : "asc");
     }
 

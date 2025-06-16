@@ -14,12 +14,11 @@
                 <ul class="flex border-b border-gray-300 dark:border-gray-700" role="tablist">
                     @foreach ($pisos as $piso)
                         <li role="presentation">
-                            <button type="button"
-                                @click="selectedPiso = '{{ $piso->id }}'"
+                            <button type="button" @click="selectedPiso = '{{ $piso->id }}'"
                                 class="px-10 py-4 text-lg font-semibold transition-all duration-300 border border-b-0 rounded-t-xl focus:outline-none"
                                 :class="selectedPiso == '{{ $piso->id }}' 
-                                    ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
-                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue'">
+                                        ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
+                                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue'">
                                 Piso {{ $piso->numero_piso }}
                             </button>
                         </li>
@@ -29,27 +28,24 @@
                 <div class="p-6 bg-white shadow-md rounded-b-xl dark:bg-gray-800">
                     @foreach ($pisos as $piso)
                         <div x-show="selectedPiso == '{{ $piso->id }}'"
-                             x-transition:enter="transition ease-out duration-300"
-                             x-transition:enter-start="opacity-0 scale-95"
-                             x-transition:enter-end="opacity-100 scale-100"
-                             x-transition:leave="transition ease-in duration-200"
-                             x-transition:leave-start="opacity-100 scale-100"
-                             x-transition:leave-end="opacity-0 scale-95">
-                            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            x-transition:enter="transition ease-out duration-300"
+                            x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-200"
+                            x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95">
+                            <div class="grid grid-cols-1 gap-4 md:grid-cols-5 lg:grid-cols-5">
                                 @foreach ($piso->espacios as $espacio)
-                                    <div class="p-4 transition-shadow rounded-lg shadow cursor-pointer espacio-card bg-gray-50 hover:shadow-md"
-                                        data-id="{{ $espacio->id_espacio }}"
-                                        data-nombre="{{ $espacio->nombre_espacio }}"
+                                    <div class="p-4 transition transform hover:scale-105 rounded-xl text-black font-semibold text-center shadow-lg cursor-pointer hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+                                        data-id="{{ $espacio->id_espacio }}" data-nombre="{{ $espacio->nombre_espacio }}"
                                         @click="mostrarHorarioEspacio('{{ $espacio->id_espacio }}', '{{ $espacio->nombre_espacio }}')">
-                                        <h4 class="font-medium text-gray-900"> {{ $espacio->id_espacio }},
-                                            {{ $espacio->nombre_espacio }}</h4>
-                                        <p class="text-sm text-gray-600">Tipo: {{ $espacio->tipo_espacio }}</p>
+                                        <h4 class="text-lg">{{ $espacio->id_espacio }}, {{ $espacio->nombre_espacio }}</h4>
+                                        <p class="text-sm mt-4 italic">Tipo: {{ $espacio->tipo_espacio }}</p>
                                     </div>
                                 @endforeach
                             </div>
                         </div>
                     @endforeach
                 </div>
+
             </div>
         </div>
     </div>

@@ -24,6 +24,11 @@
         <livewire:users-table />
 
         <x-modal name="add-user" :show="$errors->any()" focusable>
+            @slot('title')
+            <h1 class="text-lg font-medium text-white dark:text-gray-100">
+                Agregar Usuario </h1>
+            @endslot
+
             <form id="add-user-form" method="POST" action="{{ route('users.add') }}" class="needs-validation"
                 novalidate>
                 @csrf
@@ -73,8 +78,8 @@
                     <!-- Campo Fecha de Nacimiento -->
                     <div class="space-y-2">
                         <x-form.label for="fecha_nacimiento_add" :value="__('Fecha de Nacimiento')" class="text-left" />
-                        <x-form.input id="fecha_nacimiento_add" class="block w-full" type="date"
-                            name="fecha_nacimiento" value="{{ old('fecha_nacimiento', '') }}" />
+                        <x-form.input id="fecha_nacimiento_add" class="block w-full" type="date" name="fecha_nacimiento"
+                            value="{{ old('fecha_nacimiento', '') }}" />
                         <div id="fecha_nacimiento-error" class="mt-1 text-xs text-red-500"></div>
                     </div>
 
@@ -85,8 +90,8 @@
                             class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                             <option value="">Seleccione un año (opcional)</option>
                             @foreach ($years as $year)
-                                <option value="{{ $year }}"
-                                    {{ old('anio_ingreso') == $year ? 'selected' : '' }}>{{ $year }}</option>
+                                <option value="{{ $year }}" {{ old('anio_ingreso') == $year ? 'selected' : '' }}>{{ $year }}
+                                </option>
                             @endforeach
                         </select>
                         <div id="anio_ingreso-error" class="mt-1 text-xs text-red-500"></div>
@@ -106,7 +111,7 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const form = document.getElementById('add-user-form');
             const submitButton = form.querySelector('button[type="submit"]');
 
@@ -154,7 +159,7 @@
                 return isValid;
             }
 
-            form.addEventListener('submit', async function(e) {
+            form.addEventListener('submit', async function (e) {
                 e.preventDefault();
 
                 if (!validateForm()) {
@@ -203,7 +208,7 @@
                                 // Tomar solo el primer error para cada campo
                                 const firstError = data.errors[field][0];
                                 for (const [key, translation] of Object.entries(
-                                        errorTranslations)) {
+                                    errorTranslations)) {
                                     if (firstError.includes(key)) {
                                         translatedErrors[field] = translation;
                                         break;
