@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ReservaController;
 use App\Models\User;
 use App\Http\Controllers\EspacioController;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /*
 |--------------------------------------------------------------------------
@@ -265,4 +266,9 @@ Route::get('/pisos/th/it', function () {
             'message' => 'Error al obtener los pisos: ' . $e->getMessage()
         ], 500);
     }
+});
+
+Route::post('/log-qr-espacio', function(Request $request) {
+    Log::info('QR ESPACIO ESCANEADO: ' . $request->qr_espacio);
+    return response()->json(['success' => true]);
 });

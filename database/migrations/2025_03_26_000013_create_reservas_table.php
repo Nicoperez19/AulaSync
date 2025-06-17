@@ -20,11 +20,10 @@ return new class extends Migration
             $table->enum('tipo_reserva', ['clase', 'espontanea'])->default('clase');
             $table->enum('estado', ['activa', 'finalizada'])->default('activa');
             $table->time('hora_salida')->nullable();
+            $table->timestamps();
             
             $table->foreign('id_espacio')->references('id_espacio')->on('espacios')->onDelete('cascade');
             $table->foreign('run')->references('run')->on('users')->onDelete('cascade');
-
-            $table->timestamps();
         });
     }
 

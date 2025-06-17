@@ -127,6 +127,9 @@ class ReservaController extends Controller
                 $reserva->hora = $horaActualStr;
                 $reserva->tipo_reserva = $tieneClase->nombre_asignatura === 'Uso libre' ? 'espontanea' : 'clase';
                 $reserva->estado = 'activa';
+                $reserva->hora_salida = null;
+                $reserva->created_at = $horaActual;
+                $reserva->updated_at = $horaActual;
                 $reserva->save();
 
                 // Actualizar estado del espacio
@@ -187,6 +190,7 @@ class ReservaController extends Controller
             // Actualizar la reserva
             $reserva->estado = 'finalizada';
             $reserva->hora_salida = Carbon::now()->format('H:i:s');
+            $reserva->updated_at = Carbon::now();
             $reserva->save();
 
             // Actualizar el estado del espacio

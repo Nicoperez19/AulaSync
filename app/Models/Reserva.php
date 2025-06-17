@@ -22,7 +22,9 @@ class Reserva extends Model
         'run',
         'tipo_reserva',
         'estado',
-        'hora_salida'
+        'hora_salida',
+        'created_at',
+        'updated_at'
     ];
 
     public function espacio()

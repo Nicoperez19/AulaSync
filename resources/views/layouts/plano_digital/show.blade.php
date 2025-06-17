@@ -2,128 +2,139 @@
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar fijo a la izquierda, más compacto y con fondo azul claro -->
         <aside
-            class="fixed top-0 left-0 z-40 flex flex-col justify-between w-64 h-screen pt-4 pb-4 border-r border-gray-200 bg-light-cloud-blue dark:border-gray-700 text-lg">
+            class="fixed top-0 left-0 z-40 flex flex-col justify-between w-56 h-screen pt-2 pb-2 text-base border-r border-gray-200 md:w-48 sm:w-40 bg-light-cloud-blue dark:border-gray-700 md:text-sm sm:text-xs">
             <!-- Logo de la aplicación -->
-            <div class="flex flex-col items-center gap-4">
-                <a href="{{ route('dashboard')}}" class="mb-2">
-                    <x-application-logo-navbar class="w-12 h-12" />
+            <div class="flex flex-col items-center gap-2 md:gap-1">
+                <a href="{{ route('dashboard') }}" class="mb-1">
+                    <x-application-logo-navbar class="w-10 h-10 md:w-8 md:h-8 sm:w-6 sm:h-6" />
                 </a>
 
                 <!-- Leyenda -->
-                <div class="w-full p-4 px-2 bg-white rounded-lg shadow">
-                    <h3 class="mb-3 font-semibold text-center flex items-center justify-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" stroke-width="2">
+                <div class="w-full p-2 px-1 bg-white rounded-md shadow-sm">
+                    <h3 class="flex items-center justify-center gap-1 mb-2 text-sm font-semibold text-center md:text-xs">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 md:w-3 md:h-3" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                             <circle cx="12" cy="10" r="3"></circle>
                         </svg>
                         LEYENDA DE ESTADO
                     </h3>
-                    <div class="flex flex-col items-start gap-2">
-                        <div class="flex items-center gap-2 w-full">
-                            <div class="w-4 h-4 bg-red-500 rounded-full"></div>
-                            <span class="flex-1">Ocupado</span>
+                    <div class="flex flex-col items-start gap-1">
+                        <div class="flex items-center w-full gap-1">
+                            <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                            <span class="flex-1 text-xs">Ocupado</span>
                         </div>
-                        <div class="flex items-center gap-2 w-full">
-                            <div class="w-4 h-4 bg-yellow-500 rounded-full animate-pulse"></div>
-                            <span class="flex-1">Próximo</span>
+                        <div class="flex items-center w-full gap-1">
+                            <div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+                            <span class="flex-1 text-xs">Próximo</span>
                         </div>
-                        <div class="flex items-center gap-2 w-full">
-                            <div class="w-4 h-4 bg-green-500 rounded-full"></div>
-                            <span class="flex-1">Disponible</span>
+                        <div class="flex items-center w-full gap-1">
+                            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                            <span class="flex-1 text-xs">Disponible</span>
                         </div>
-                        <div class="flex items-center gap-2 w-full">
-                            <div class="w-4 h-4 bg-blue-500 rounded-full"></div>
-                            <span class="flex-1">Previsto</span>
+                        <div class="flex items-center w-full gap-1">
+                            <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                            <span class="flex-1 text-xs">Previsto</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Información de hora y módulo actual -->
-            <div class="w-full px-2 mt-4">
-                <div class="p-4 text-white border border-blue-600 rounded-lg shadow bg-light-cloud-blue">
-                    <div class="flex items-center justify-between pb-2 border-b border-blue-400">
-                        <div class="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+            <div class="w-full px-1 mt-2">
+                <div class="p-2 text-white border border-blue-600 rounded-md shadow-sm bg-light-cloud-blue">
+                    <div class="flex items-center justify-between pb-1 border-b border-blue-400">
+                        <div class="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            <span id="hora-actual">--:--:--</span>
+                            <span id="hora-actual" class="text-xs">--:--:--</span>
                         </div>
                     </div>
-                    <div class="py-2 border-b border-blue-400">
-                        <div class="flex items-center gap-2 mb-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                    <div class="py-1 border-b border-blue-400">
+                        <div class="flex items-center gap-1 mb-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                             </svg>
-                            <span>Módulo: <span id="modulo-actual">No hay módulo programado</span></span>
+                            <span class="text-xs">Módulo: <span id="modulo-actual">No hay módulo
+                                    programado</span></span>
                         </div>
-
                     </div>
-                    <div class="pt-2">
-                        <div class="flex items-center gap-2 mb-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                    <div class="pt-1">
+                        <div class="flex items-center gap-1 mb-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            <span>Horario: <span id="horario-actual">--:-- - --:--</span></span>
+                            <span class="text-xs">Horario: <span id="horario-actual">--:-- - --:--</span></span>
                         </div>
-
                     </div>
                 </div>
             </div>
 
             <!-- Estado del QR -->
-            <div class="w-full px-2 ">
-                <div class="p-4 text-white border border-blue-600 rounded-lg shadow bg-light-cloud-blue">
+            <div class="w-full px-1 ">
+                <div class="p-2 text-white border border-blue-600 rounded-md shadow-sm bg-light-cloud-blue">
                     <!-- QR Placeholder -->
-                    <div class="mt-4 p-4 bg-white/10 rounded-lg text-center">
-                        <span id="qr-status" class="text-yellow-400">Esperando</span>
-
-                        <div class="qr-placeholder mb-2 mt-2">
-                            <div class="w-32 h-32 mx-auto bg-white/20 rounded-lg flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-white/40" fill="none"
+                    <div class="p-2 mt-2 text-center rounded-md bg-white/10">
+                        <span id="qr-status" class="text-xs text-yellow-400">Esperando</span>
+                        <div class="mt-1 mb-1 qr-placeholder">
+                            <div class="flex items-center justify-center w-20 h-20 mx-auto rounded-md bg-white/20">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white/40" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                             </div>
                         </div>
-                        <p class="text-white/80">Escanee el código QR</p>
-
+                        <p class="text-xs text-white/80">Escanee el código QR</p>
                     </div>
-
                     <!-- Información del usuario escaneado -->
-                    <div class="mt-4 space-y-2">
-                        <div class="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                    <div class="mt-2 space-y-1">
+                        <div class="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
-                            <span class="font-semibold">RUN:</span>
-                            <span id="run-escaneado" class="flex-1 text-right">--</span>
+                            <span class="text-xs font-semibold">RUN:</span>
+                            <span id="run-escaneado" class="flex-1 text-xs text-right">--</span>
                         </div>
-                        <div class="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                        <div class="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
-                            <span class="font-semibold">Usuario:</span>
-                            <span id="nombre-usuario" class="flex-1 text-right">--</span>
-                        </div>
-                    </div>
+                            <span class="text-xs font-semibold">Usuario:</span>
+                            <span id="nombre-usuario" class="flex-1 text-xs text-right">--</span>
 
+
+                        </div>
+
+                        <div class="flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
+                                viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span class="text-xs font-semibold">Espacio:</span>
+                            <span id="nombre-espacio" class="flex-1 text-xs text-right">--</span>
+
+
+                        </div>
+
+
+                    </div>
                     <!-- Input para el escáner QR (oculto) -->
-                    <div class="mt-4">
+                    <div class="mt-2">
                         <input type="text" id="qr-input"
-                            class="absolute w-full px-2 py-1 border rounded opacity-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            class="absolute w-full px-1 py-1 border rounded opacity-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             placeholder="Escanea un código QR" autofocus>
                     </div>
                 </div>
@@ -139,16 +150,17 @@
                     <div class="flex-1 bg-white shadow-md dark:bg-dark-eval-0">
                         <ul class="flex border-b border-gray-300 dark:border-gray-700" id="pills-tab" role="tablist">
                             @foreach ($pisos as $piso)
-                                                    <li role="presentation">
-                                                        <a href="{{ route('plano.show', $piso->id_mapa) }}"
-                                                            class="px-4 py-3 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
+                                <li role="presentation">
+                                    <a href="{{ route('plano.show', $piso->id_mapa) }}"
+                                        class="px-4 py-3 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
                                                                                                                                                                 {{ $piso->id_mapa === $mapa->id_mapa
-                                ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
-                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}" role="tab"
-                                                            aria-selected="{{ $piso->id_mapa === $mapa->id_mapa ? 'true' : 'false' }}">
-                                                            Piso {{ $piso->piso->numero_piso }}
-                                                        </a>
-                                                    </li>
+                                                                                                                                                                    ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
+                                                                                                                                                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}"
+                                        role="tab"
+                                        aria-selected="{{ $piso->id_mapa === $mapa->id_mapa ? 'true' : 'false' }}">
+                                        Piso {{ $piso->piso->numero_piso }}
+                                    </a>
+                                </li>
                             @endforeach
                         </ul>
                         <!-- Card para el canvas y controles -->
@@ -173,8 +185,8 @@
 
                                 <!-- Botón de pantalla completa -->
                                 <button id="fullscreenBtn"
-                                    class="absolute bottom-4 right-4 p-2 bg-light-cloud-blue text-white rounded-lg shadow-lg hover:bg-blue-600 transition-colors duration-200 z-10">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                                    class="absolute z-10 p-2 text-white transition-colors duration-200 rounded-lg shadow-lg bottom-4 right-4 bg-light-cloud-blue hover:bg-blue-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
                                         viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
@@ -191,21 +203,19 @@
     <!-- Modal para mostrar información del espacio -->
     <x-modal name="data-space" :show="false" focusable>
         @slot('title')
-        <h2 id="modalTitulo" class="text-lg font-medium text-white dark:text-gray-100">
-            Cargar Archivo de Datos
-        </h2>
+            <h2 id="modalTitulo" class="text-lg font-medium text-white dark:text-gray-100">
+                Cargar Archivo de Datos
+            </h2>
         @endslot
         <div class="p-6">
-
             <h3 class="text-lg font-medium text-gray-900">Información del Espacio</h3>
             <br>
             <div class="space-y-4">
                 <div>
-                <h4 class="text-sm font-medium text-gray-700">Estado Actual: <span id="modalEstado" class="inline-block ml-1 text-sm text-gray-900"></span></h4>
-
-
+                    <h4 class="text-sm font-medium text-gray-700">Estado Actual: <span id="modalEstado"
+                            class="inline-block ml-1 text-sm text-gray-900"></span></h4>
                 </div>
-          
+
                 <div id="modalPlanificacion" class="hidden">
                     <h4 class="text-sm font-medium text-gray-700">Planificación Actual</h4>
                     <p id="modalPlanificacionDetalles" class="mt-1 text-sm text-gray-900"></p>
@@ -213,6 +223,27 @@
                 <div id="modalProxima" class="hidden">
                     <h4 class="text-sm font-medium text-gray-700">Próxima Clase</h4>
                     <p id="modalProximaDetalles" class="mt-1 text-sm text-gray-900"></p>
+                </div>
+            </div>
+        </div>
+    </x-modal>
+
+    <!-- Modal para reconocimiento -->
+    <x-modal name="reconocimiento" :show="false" focusable>
+        @slot('title')
+            <h2 class="text-lg font-medium text-white dark:text-gray-100">
+                Reconocimiento
+            </h2>
+        @endslot
+        <div class="p-6">
+            <div class="flex flex-col items-center justify-center space-y-4">
+                <div id="reconocimiento-icono" class="text-6xl">
+                    <!-- El ícono se llenará dinámicamente -->
+                </div>
+                <h3 id="reconocimiento-titulo" class="text-xl font-medium text-gray-900"></h3>
+                <div id="reconocimiento-detalles" class="text-sm text-gray-600 space-y-2">
+                    <p id="reconocimiento-usuario"></p>
+                    <p id="reconocimiento-espacio"></p>
                 </div>
             </div>
         </div>
@@ -405,7 +436,7 @@
             elements.indicatorsCtx.shadowBlur = 0;
 
             // Agregar evento de clic al indicador
-            elements.indicatorsCanvas.addEventListener('click', function (event) {
+            elements.indicatorsCanvas.addEventListener('click', function(event) {
                 const rect = elements.indicatorsCanvas.getBoundingClientRect();
                 const x = event.clientX - rect.left;
                 const y = event.clientY - rect.top;
@@ -475,7 +506,7 @@
             modalEstado.innerHTML = `<span class="${estadoColor} font-semibold">${estadoTexto}</span>`;
 
             const detalles = indicator.detalles || {};
-        
+
             if (detalles.planificacion) {
                 modalPlanificacion.classList.remove('hidden');
                 modalPlanificacionDetalles.innerHTML = `
@@ -501,7 +532,9 @@
             }
 
             // Mostrar el modal usando Alpine.js
-            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'data-space' }));
+            window.dispatchEvent(new CustomEvent('open-modal', {
+                detail: 'data-space'
+            }));
         }
 
         // Definición de horarios por día y módulo
@@ -924,10 +957,10 @@
         actualizarModuloYColores(); // Actualizar inmediatamente al cargar
 
         // Asegurarse de que el modal esté actualizado cuando se abre
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             const modal = document.getElementById('modal-solicitar-espacio');
             if (modal) {
-                modal.addEventListener('show.bs.modal', function () {
+                modal.addEventListener('show.bs.modal', function() {
                     actualizarHora();
                     actualizarModuloYColores();
                 });
@@ -935,22 +968,20 @@
         });
 
         // Inicialización cuando el DOM está listo
-        document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", function() {
             const inputEscanner = document.getElementById('qr-input');
-            inputEscanner.addEventListener('keydown', manejarInputEscanner);
-            document.addEventListener('click', function () {
+            inputEscanner.addEventListener('keydown', handleScan);
+            document.addEventListener('click', function() {
                 inputEscanner.focus();
             });
             inputEscanner.focus();
-            // Mostrar un mensaje indicando que el escáner está listo
-            const qrStatus = document.getElementById('qr-status');
-            qrStatus.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> Listo para escanear';
+            document.getElementById('qr-status').innerHTML = 'Por favor, escanee el código QR del usuario';
 
             // Inicializar elementos
             initElements();
 
             const img = new Image();
-            img.onload = function () {
+            img.onload = function() {
                 state.mapImage = img;
                 state.originalImageSize = {
                     width: img.width,
@@ -965,12 +996,12 @@
             };
             img.src = "{{ asset('storage/' . $mapa->ruta_mapa) }}";
 
-            window.addEventListener('resize', function () {
+            window.addEventListener('resize', function() {
                 initCanvases();
             });
 
             // Limpiar el intervalo cuando se desmonte el componente
-            window.addEventListener('beforeunload', function () {
+            window.addEventListener('beforeunload', function() {
                 if (state.updateInterval) {
                     clearInterval(state.updateInterval);
                 }
@@ -980,7 +1011,7 @@
             actualizarEstadoQR(null);
         });
 
-        window.mostrarDetallesBloque = function (bloque) {
+        window.mostrarDetallesBloque = function(bloque) {
             const titulo = document.getElementById('modal-titulo');
             const tipoEspacio = document.getElementById('modal-tipo-espacio');
             const puestos = document.getElementById('modal-puestos');
@@ -1035,7 +1066,7 @@
                         btnEntregarLlaves.className =
                             'mt-4 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700';
                         btnEntregarLlaves.textContent = '¿Desea entregar las llaves?';
-                        btnEntregarLlaves.onclick = function () {
+                        btnEntregarLlaves.onclick = function() {
                             // Cerrar el modal actual
                             window.dispatchEvent(new CustomEvent('close-modal', {
                                 detail: 'detalles-bloque'
@@ -1258,6 +1289,7 @@
         }
 
         function onSalidaProfesorScanSuccess(decodedText) {
+            console.log('QR Salida Profesor:', decodedText);
             if (html5QrcodeScanner) {
                 html5QrcodeScanner.stop();
                 html5QrcodeScanner = null;
@@ -1273,25 +1305,25 @@
 
             window.profesorRunSalida =
                 fetch(`/api/user/${run}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success && data.user) {
-                            document.getElementById('profesor-nombre-salida').textContent = data.user.name || '';
-                            document.getElementById('profesor-correo-salida').textContent = data.user.email || '';
-                            document.getElementById('profesor-info-salida').classList.remove('hidden');
-                            document.getElementById('profesor-scan-section-salida').classList.add('hidden');
-                            document.getElementById('espacio-scan-section-salida').classList.remove('hidden');
-                            initEspacioScannerSalida();
-                        } else {
-                            mostrarErrorEscaneoSalida('La persona no se encuentra registrada, contáctese con soporte.');
-                        }
-                    })
-                    .catch(error => {
-                        mostrarErrorEscaneoSalida(error.message || 'Error al obtener información del profesor');
-                    });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.user) {
+                        document.getElementById('profesor-nombre-salida').textContent = data.user.name || '';
+                        document.getElementById('profesor-correo-salida').textContent = data.user.email || '';
+                        document.getElementById('profesor-info-salida').classList.remove('hidden');
+                        document.getElementById('profesor-scan-section-salida').classList.add('hidden');
+                        document.getElementById('espacio-scan-section-salida').classList.remove('hidden');
+                        initEspacioScannerSalida();
+                    } else {
+                        mostrarErrorEscaneoSalida('La persona no se encuentra registrada, contáctese con soporte.');
+                    }
+                })
+                .catch(error => {
+                    mostrarErrorEscaneoSalida(error.message || 'Error al obtener información del profesor');
+                });
         }
 
-        // Función para inicializar el escáner de espacio en la salida
+        // Función para inicializar el escáner de QR para el espacio en la salida
         async function initEspacioScannerSalida() {
             try {
                 const hasPermission = await requestCameraPermission();
@@ -1342,6 +1374,7 @@
         }
 
         function onSalidaEspacioScanSuccess(decodedText) {
+            console.log('QR Salida Espacio:', decodedText);
             if (html5QrcodeScanner) {
                 html5QrcodeScanner.stop();
                 html5QrcodeScanner = null;
@@ -1361,16 +1394,16 @@
 
         function registrarSalidaClase(run, espacioId) {
             fetch('/api/registrar-salida-clase', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({
-                    run: run,
-                    espacio_id: espacioId
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        run: run,
+                        espacio_id: espacioId
+                    })
                 })
-            })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -1509,65 +1542,275 @@
                     const response = await fetch(`/api/user/${run}`);
                     const data = await response.json();
                     if (data.success && data.user) {
-                        qrStatus.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Usuario encontrado';
+                        qrStatus.innerHTML =
+                            '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Usuario encontrado. Ahora escanee el espacio';
                         nombreUsuario.textContent = data.user.name;
                     } else {
-                        qrStatus.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg> RUN no encontrado';
+                        qrStatus.innerHTML =
+                            '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg> RUN no encontrado';
                         nombreUsuario.textContent = '--';
                     }
                 } catch (e) {
-                    qrStatus.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg> Error de conexión';
+                    qrStatus.innerHTML =
+                        '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg> Error de conexión';
                     nombreUsuario.textContent = '--';
                 }
             } else {
-                qrStatus.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> Esperando';
+                qrStatus.innerHTML =
+                    '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> Esperando';
                 runEscaneado.textContent = '--';
                 nombreUsuario.textContent = '--';
             }
         }
 
-        // Función para manejar el input del escáner
         let bufferQR = '';
-        let lastScanTime = 0;
+        let esperandoUsuario = true;
+        let usuarioEscaneado = null;
+
+        function handleScan(event) {
+            if (event.key === 'Enter') {
+                if (esperandoUsuario) {
+                    // Extraer el RUN del código QR del SIDIV
+                    const match = bufferQR.match(/RUN¿(\d+)/);
+                    if (match) {
+                        usuarioEscaneado = match[1];
+                        document.getElementById('qr-status').innerHTML = 'Usuario escaneado. Por favor, escanee el espacio.';
+                        document.getElementById('run-escaneado').textContent = usuarioEscaneado;
+                        document.getElementById('nombre-espacio').textContent = '--';
+                        esperandoUsuario = false;
+                    } else {
+                        document.getElementById('qr-status').innerHTML = 'Error: Formato de RUN inválido';
+                        bufferQR = '';
+                        event.target.value = '';
+                        return;
+                    }
+                } else {
+                    // Procesar escaneo de espacio
+                    const espacioProcesado = bufferQR.replace(/'/g, '-');
+                    document.getElementById('qr-status').innerHTML = 'Escaneo completado';
+                    document.getElementById('nombre-espacio').textContent = espacioProcesado;
+
+                    const modal = document.getElementById('modal-reconocimiento');
+                    const modalContent = document.getElementById('modal-content');
+                    modalContent.innerHTML = `
+                        <div class="p-4">
+                            <h3 class="mb-4 text-lg font-semibold">Reconocimiento Completado</h3>
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium text-gray-600">Usuario:</span>
+                                    <span class="text-sm font-semibold">${usuarioEscaneado}</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-sm font-medium text-gray-600">Espacio:</span>
+                                    <span class="text-sm font-semibold">${espacioProcesado}</span>
+                                </div>
+                            </div>
+                            <div class="mt-4 text-right">
+                                <button onclick="document.getElementById('modal-reconocimiento').classList.add('hidden')" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+                                    Cerrar
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    modal.classList.remove('hidden');
+                    esperandoUsuario = true;
+                }
+                bufferQR = '';
+                event.target.value = '';
+            } else if (event.key.length === 1) {
+                bufferQR += event.key;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputEscanner = document.getElementById('qr-input');
+            inputEscanner.addEventListener('keydown', handleScan);
+            document.addEventListener('click', function() {
+                inputEscanner.focus();
+            });
+            inputEscanner.focus();
+            document.getElementById('qr-status').innerHTML = 'Listo para escanear';
+        });
+
+        function mostrarErrorReconocimiento(mensaje) {
+            document.getElementById('nombre-usuario').textContent = '--';
+            document.getElementById('nombre-espacio').textContent = '--';
+            document.getElementById('qr-status').innerHTML =
+                '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">' +
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg> ' + mensaje;
+
+            document.getElementById('reconocimiento-icono').innerHTML = 
+                '<svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">' +
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>';
+            document.getElementById('reconocimiento-titulo').textContent = 'Error de Reconocimiento';
+            document.getElementById('reconocimiento-usuario').textContent = mensaje;
+            document.getElementById('reconocimiento-espacio').textContent = '';
+            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'reconocimiento' }));
+        }
 
         function manejarInputEscanner(event) {
             const currentTime = new Date().getTime();
-            if (currentTime - lastScanTime > 100) {
+            if (currentTime - lastScanTime > 1000) { // 1 segundo
                 bufferQR = '';
             }
             lastScanTime = currentTime;
 
             if (event.key.length === 1) {
                 bufferQR += event.key;
+                console.log('Buffer actual:', bufferQR);
             }
 
-            const match = bufferQR.match(/RUN¿(\d+)'/);
-            if (match) {
-                const run = match[1];
+            // Verificar QR usuario (formato del Registro Civil)
+            const matchUsuario = bufferQR.match(/RUN¿(\d+)'/);
+            if (matchUsuario && !esperandoEspacio) {
+                console.log('QR Usuario completo:', bufferQR);
+                const run = matchUsuario[1];
+                console.log('QR Usuario detectado:', {
+                    codigoCompleto: bufferQR,
+                    run: run
+                });
+
+                // Validar formato del RUN
+                if (!/^\d{7,8}$/.test(run)) {
+                    mostrarErrorReconocimiento('Formato de RUN inválido');
+                    limpiarEstado();
+                    bufferQR = '';
+                    event.target.value = '';
+                    return;
+                }
+
+                qrUsuario = run;
                 document.getElementById('run-escaneado').textContent = run;
-                // Consultar la API para obtener el nombre
+
                 fetch(`/api/user/${run}`)
-                    .then(res => res.json())
+                    .then(res => {
+                        if (!res.ok) {
+                            throw new Error('Error en la respuesta del servidor');
+                        }
+                        return res.json();
+                    })
                     .then(data => {
                         if (data.success && data.user) {
                             document.getElementById('nombre-usuario').textContent = data.user.name;
-                            document.getElementById('qr-status').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Usuario encontrado';
+                            document.getElementById('qr-status').innerHTML =
+                                '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">' +
+                                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Usuario encontrado. Ahora escanee el espacio';
+                            esperandoEspacio = true;
+
+                            // Actualizar el modal con la información del usuario
+                            document.getElementById('reconocimiento-usuario').textContent = `Usuario: ${data.user.name}`;
+                            document.getElementById('reconocimiento-espacio').textContent = 'Esperando escaneo del espacio...';
+                            document.getElementById('reconocimiento-icono').innerHTML = 
+                                '<svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">' +
+                                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
+                            document.getElementById('reconocimiento-titulo').textContent = 'Usuario Reconocido';
+                            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'reconocimiento' }));
                         } else {
-                            document.getElementById('nombre-usuario').textContent = '--';
-                            document.getElementById('qr-status').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg> RUN no encontrado';
+                            mostrarErrorReconocimiento('Usuario no encontrado');
+                            limpiarEstado();
                         }
                     })
-                    .catch(() => {
-                        document.getElementById('nombre-usuario').textContent = '--';
-                        document.getElementById('qr-status').innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg> Error de conexión';
+                    .catch(error => {
+                        mostrarErrorReconocimiento('Error de conexión: ' + error.message);
+                        limpiarEstado();
                     });
+
                 bufferQR = '';
                 event.target.value = '';
+                return;
             }
 
-            if (event.key === 'Escape' || bufferQR.length > 30) {
+            // Verificar QR espacio (formato TH'L01)
+            const matchEspacio = bufferQR.match(/TH'([A-Z0-9]+)/);
+            if (matchEspacio && esperandoEspacio) {
+                console.log('QR Espacio completo:', bufferQR);
+                // Convertir el formato TH'L01 a TH-L01
+                const codigoEspacio = matchEspacio[1];
+                const espacioOriginal = `TH-${codigoEspacio}`;
+                console.log('Espacio procesado:', {
+                    codigoCompleto: bufferQR,
+                    codigoEspacio: codigoEspacio,
+                    espacioOriginal: espacioOriginal
+                });
+                qrEspacio = espacioOriginal;
+
+                fetch(`/api/space/${qrEspacio}`)
+                    .then(res => {
+                        if (!res.ok) {
+                            throw new Error('Error en la respuesta del servidor');
+                        }
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (data.success && data.space) {
+                            document.getElementById('nombre-espacio').textContent = data.space.name || qrEspacio;
+                            document.getElementById('qr-status').innerHTML =
+                                '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">' +
+                                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg> Espacio encontrado. Ahora verificando programación...';
+
+                            // Actualizar el modal con la información del espacio
+                            document.getElementById('reconocimiento-espacio').textContent = `Espacio: ${data.space.name || qrEspacio}`;
+                            document.getElementById('reconocimiento-icono').innerHTML = 
+                                '<svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">' +
+                                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
+                            document.getElementById('reconocimiento-titulo').textContent = 'Reconocimiento Exitoso';
+
+                            return fetch(`/api/verificar-programacion/${qrEspacio}/${qrUsuario}`);
+                        } else {
+                            throw new Error('Espacio no encontrado');
+                        }
+                    })
+                    .then(res => {
+                        if (!res.ok) {
+                            throw new Error('Error al verificar la programación');
+                        }
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            if (data.tieneProgramacion) {
+                                window.sweetAlert({
+                                    title: 'Clase programada',
+                                    text: 'Ud. tiene una clase programada en este espacio, ¿desea solicitar la llave?',
+                                    icon: 'info',
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Solicitar llave',
+                                    cancelButtonText: 'Cancelar',
+                                    callback: function(confirmado) {
+                                        if (confirmado) {
+                                            guardarReserva(qrEspacio, qrUsuario, 'clase');
+                                        }
+                                        limpiarEstado();
+                                    }
+                                });
+                            } else {
+                                window.sweetAlert({
+                                    title: 'Sin clase programada',
+                                    text: 'Ud. no tiene una clase programada, ¿desea utilizar el espacio?',
+                                    icon: 'question',
+                                    showCancelButton: true,
+                                    confirmButtonText: 'Sí, utilizar',
+                                    cancelButtonText: 'Cancelar',
+                                    callback: function(confirmado) {
+                                        if (confirmado) {
+                                            guardarReserva(qrEspacio, qrUsuario, 'espontanea');
+                                        }
+                                        limpiarEstado();
+                                    }
+                                });
+                            }
+                        } else {
+                            throw new Error(data.message || 'Error al verificar la programación');
+                        }
+                    })
+                    .catch(error => {
+                        mostrarErrorReconocimiento(error.message || 'Error al reconocer el espacio');
+                        limpiarEstado();
+                    });
+
                 bufferQR = '';
                 event.target.value = '';
+                return;
             }
         }
 
@@ -1589,7 +1832,7 @@
 
                 // Cambiar el ícono del botón
                 fullscreenBtn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 `;
@@ -1601,7 +1844,7 @@
 
                 // Restaurar el ícono original
                 fullscreenBtn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
                     </svg>
                 `;
@@ -1612,7 +1855,7 @@
         }
 
         // Agregar el evento click al botón de pantalla completa
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             const fullscreenBtn = document.getElementById('fullscreenBtn');
             fullscreenBtn.addEventListener('click', toggleFullscreen);
         });
@@ -1630,6 +1873,47 @@
             } catch (error) {
                 console.error('Error al actualizar el estado del mapa:', error);
             }
+        }
+
+        function guardarReserva(espacioId, usuarioRun, tipoReserva) {
+            fetch('/api/registrar-ingreso-clase', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        run: usuarioRun,
+                        espacio_id: espacioId,
+                        tipo_reserva: tipoReserva
+                    })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        window.sweetAlert({
+                            title: 'Reserva exitosa',
+                            text: data.message || 'La reserva se guardó correctamente.',
+                            icon: 'success'
+                        });
+                        if (typeof actualizarEstadoMapa === 'function') {
+                            actualizarEstadoMapa();
+                        }
+                    } else {
+                        window.sweetAlert({
+                            title: 'Error',
+                            text: data.message || 'No se pudo guardar la reserva.',
+                            icon: 'error'
+                        });
+                    }
+                })
+                .catch(error => {
+                    window.sweetAlert({
+                        title: 'Error',
+                        text: error.message || 'Ocurrió un error al guardar la reserva.',
+                        icon: 'error'
+                    });
+                });
         }
     </script>
 </x-show-layout>
