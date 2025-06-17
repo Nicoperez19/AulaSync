@@ -39,7 +39,7 @@ export default {
           900: '#581c87',
         },
         'cloud-light': '#EDF0FA',
-        'light-cloud-blue': '#20448C',
+        'light-cloud-blue': '#D2091E',
         'dark-eval-0': '#151823',
         'dark-eval-1': '#222738',
         'dark-eval-2': '#2A2F42',

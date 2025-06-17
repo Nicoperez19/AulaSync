@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Http\Controllers\EspacioController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\HorarioController;
 
 /*
 |--------------------------------------------------------------------------
@@ -118,7 +119,7 @@ Route::get('/user/{run}', function ($run) {
     }
 });
 
-Route::get('/verificar-clase-usuario', function (\Illuminate\Http\Request $request) {
+Route::get('/verificar-clase-usuario', function ($request) {
     $run = $request->query('run');
     $espacioId = $request->query('espacio');
     $dia = $request->query('dia');
@@ -268,7 +269,9 @@ Route::get('/pisos/th/it', function () {
     }
 });
 
-Route::post('/log-qr-espacio', function(Request $request) {
-    Log::info('QR ESPACIO ESCANEADO: ' . $request->qr_espacio);
-    return response()->json(['success' => true]);
-});
+Route::get('/verificar-horario/{run}', [HorarioController::class, 'verificarHorario']);
+
+Route::get('/verificar-usuario/{run}', [HorarioController::class, 'verificarUsuario']);
+Route::get('/verificar-espacio/{idEspacio}', [HorarioController::class, 'verificarEspacio']);
+Route::post('/crear-reserva', [HorarioController::class, 'crearReserva']);
+

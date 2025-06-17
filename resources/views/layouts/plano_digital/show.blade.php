@@ -1567,52 +1567,86 @@
         let esperandoUsuario = true;
         let usuarioEscaneado = null;
 
-        function handleScan(event) {
+        async function verificarUsuario(run) {
+            try {
+                const response = await fetch(`/api/verificar-usuario/${run}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                return null;
+            }
+        }
+
+        async function verificarEspacio(idEspacio) {
+            try {
+                const response = await fetch(`/api/verificar-espacio/${idEspacio}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                return null;
+            }
+        }
+
+        async function crearReserva(run, idEspacio) {
+            try {
+                const response = await fetch('/api/crear-reserva', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ run, id_espacio: idEspacio })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                return null;
+            }
+        }
+
+        async function handleScan(event) {
             if (event.key === 'Enter') {
                 if (esperandoUsuario) {
-                    // Extraer el RUN del código QR del SIDIV
                     const match = bufferQR.match(/RUN¿(\d+)/);
                     if (match) {
                         usuarioEscaneado = match[1];
-                        document.getElementById('qr-status').innerHTML = 'Usuario escaneado. Por favor, escanee el espacio.';
-                        document.getElementById('run-escaneado').textContent = usuarioEscaneado;
-                        document.getElementById('nombre-espacio').textContent = '--';
-                        esperandoUsuario = false;
+                        const usuarioInfo = await verificarUsuario(usuarioEscaneado);
+                        
+                        if (usuarioInfo && usuarioInfo.verificado) {
+                            document.getElementById('qr-status').innerHTML = 'Usuario verificado. Escanee el espacio.';
+                            document.getElementById('run-escaneado').textContent = usuarioInfo.usuario.run;
+                            document.getElementById('nombre-usuario').textContent = usuarioInfo.usuario.nombre;
+                            esperandoUsuario = false;
+                        } else {
+                            document.getElementById('qr-status').innerHTML = usuarioInfo?.mensaje || 'Error de verificación';
+                        }
                     } else {
-                        document.getElementById('qr-status').innerHTML = 'Error: Formato de RUN inválido';
-                        bufferQR = '';
-                        event.target.value = '';
-                        return;
+                        document.getElementById('qr-status').innerHTML = 'RUN inválido';
                     }
                 } else {
-                    // Procesar escaneo de espacio
                     const espacioProcesado = bufferQR.replace(/'/g, '-');
-                    document.getElementById('qr-status').innerHTML = 'Escaneo completado';
-                    document.getElementById('nombre-espacio').textContent = espacioProcesado;
-
-                    const modal = document.getElementById('modal-reconocimiento');
-                    const modalContent = document.getElementById('modal-content');
-                    modalContent.innerHTML = `
-                        <div class="p-4">
-                            <h3 class="mb-4 text-lg font-semibold">Reconocimiento Completado</h3>
-                            <div class="space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium text-gray-600">Usuario:</span>
-                                    <span class="text-sm font-semibold">${usuarioEscaneado}</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm font-medium text-gray-600">Espacio:</span>
-                                    <span class="text-sm font-semibold">${espacioProcesado}</span>
-                                </div>
-                            </div>
-                            <div class="mt-4 text-right">
-                                <button onclick="document.getElementById('modal-reconocimiento').classList.add('hidden')" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
-                                    Cerrar
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                    modal.classList.remove('hidden');
+                    const espacioInfo = await verificarEspacio(espacioProcesado);
+                    
+                    if (espacioInfo?.verificado) {
+                        if (espacioInfo.disponible) {
+                            const confirmar = confirm(`¿Desea utilizar el espacio ${espacioInfo.espacio.nombre}?`);
+                            if (confirmar) {
+                                const reserva = await crearReserva(usuarioEscaneado, espacioProcesado);
+                                if (reserva?.success) {
+                                    document.getElementById('qr-status').innerHTML = 'Reserva exitosa';
+                                    document.getElementById('nombre-espacio').textContent = espacioInfo.espacio.nombre;
+                                } else {
+                                    document.getElementById('qr-status').innerHTML = reserva?.mensaje || 'Error en reserva';
+                                }
+                            } else {
+                                document.getElementById('qr-status').innerHTML = 'Reserva cancelada';
+                            }
+                        } else {
+                            document.getElementById('qr-status').innerHTML = 'Espacio ocupado';
+                        }
+                    } else {
+                        document.getElementById('qr-status').innerHTML = espacioInfo?.mensaje || 'Error al verificar espacio';
+                    }
                     esperandoUsuario = true;
                 }
                 bufferQR = '';
@@ -1625,11 +1659,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             const inputEscanner = document.getElementById('qr-input');
             inputEscanner.addEventListener('keydown', handleScan);
-            document.addEventListener('click', function() {
-                inputEscanner.focus();
-            });
+            document.addEventListener('click', () => inputEscanner.focus());
             inputEscanner.focus();
-            document.getElementById('qr-status').innerHTML = 'Listo para escanear';
+            document.getElementById('qr-status').innerHTML = 'Escanee el código QR del usuario';
         });
 
         function mostrarErrorReconocimiento(mensaje) {
