@@ -82,7 +82,14 @@
                 <div class="p-2 text-white border border-blue-600 rounded-md shadow-sm bg-light-cloud-blue">
                     <!-- QR Placeholder -->
                     <div class="p-2 mt-2 text-center rounded-md bg-white/10">
+                        <div class="relative">
                         <span id="qr-status" class="text-xs text-yellow-400">Esperando</span>
+                            <button id="infoButton" class="absolute top-0 right-0 p-1 text-white bg-blue-500 rounded-full hover:bg-blue-600 focus:outline-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </button>
+                        </div>
                         <div class="mt-1 mb-1 qr-placeholder">
                             <div class="flex items-center justify-center w-20 h-20 mx-auto rounded-md bg-white/20">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white/40" fill="none"
@@ -244,6 +251,41 @@
                 <div id="reconocimiento-detalles" class="text-sm text-gray-600 space-y-2">
                     <p id="reconocimiento-usuario"></p>
                     <p id="reconocimiento-espacio"></p>
+                </div>
+            </div>
+        </div>
+    </x-modal>
+
+    <!-- Modal para instrucciones de uso -->
+    <x-modal name="instrucciones-uso" :show="false" focusable>
+        @slot('title')
+            <h2 class="text-lg font-medium text-white dark:text-gray-100">
+                Instrucciones de Uso
+            </h2>
+        @endslot
+        <div class="p-6">
+            <div class="space-y-4">
+                <div class="flex items-start gap-3">
+                    <div class="flex-shrink-0 w-8 h-8 text-blue-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-medium text-gray-900">Proceso de Uso del Espacio</h3>
+                        <div class="mt-2 space-y-3 text-gray-600">
+                            <p>Para registrar el uso del espacio que desea utilizar, siga estos pasos:</p>
+                            <ol class="list-decimal list-inside space-y-2">
+                                <li>Escanee el QR del Carnet/Cédula de identidad</li>
+                                <li>Luego escanee el QR que poseen las llaves de la sala a utilizar</li>
+                            </ol>
+                            <p class="mt-4">Para hacer la devolución:</p>
+                            <ol class="list-decimal list-inside space-y-2">
+                                <li>Escanee nuevamente el Carnet/Cédula de identidad</li>
+                                <li>Vuelva a escanear el QR de las llaves</li>
+                            </ol>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1626,9 +1668,11 @@
                             document.getElementById('nombre-usuario').textContent = usuarioInfo.usuario.nombre;
                             esperandoUsuario = false;
                         } else {
+                            Swal.fire('Error', usuarioInfo?.mensaje || 'Error de verificación', 'error');
                             document.getElementById('qr-status').innerHTML = usuarioInfo?.mensaje || 'Error de verificación';
                         }
                     } else {
+                        Swal.fire('Error', 'RUN inválido', 'error');
                         document.getElementById('qr-status').innerHTML = 'RUN inválido';
                     }
                 } else {
@@ -1637,22 +1681,79 @@
                     
                     if (espacioInfo?.verificado) {
                         if (espacioInfo.disponible) {
-                            const confirmar = confirm(`¿Desea utilizar el espacio ${espacioInfo.espacio.nombre}?`);
-                            if (confirmar) {
-                                const reserva = await crearReserva(usuarioEscaneado, espacioProcesado);
-                                if (reserva?.success) {
-                                    document.getElementById('qr-status').innerHTML = 'Reserva exitosa';
-                                    document.getElementById('nombre-espacio').textContent = espacioInfo.espacio.nombre;
+                            Swal.fire({
+                                title: `¿Desea utilizar el espacio ${espacioInfo.espacio.nombre}?`,
+                                icon: 'question',
+                                showCancelButton: true,
+                                confirmButtonText: 'Sí, utilizar',
+                                cancelButtonText: 'Cancelar'
+                            }).then(async (result) => {
+                                if (result.isConfirmed) {
+                                    const reserva = await crearReserva(usuarioEscaneado, espacioProcesado);
+                                    if (reserva?.success) {
+                                        Swal.fire('¡Reserva exitosa!', '', 'success');
+                                        document.getElementById('qr-status').innerHTML = 'Reserva exitosa';
+                                        document.getElementById('nombre-espacio').textContent = espacioInfo.espacio.nombre;
+                                        // Actualizar el color del indicador a 'Ocupado' (rojo)
+                                        const block = state.indicators.find(b => b.id === espacioProcesado);
+                                        if (block) {
+                                            block.estado = 'red'; // o el valor que uses para 'Ocupado'
+                                            state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                                            drawIndicators();
+                                        }
+                                    } else {
+                                        Swal.fire('Error', reserva?.mensaje || 'Error en reserva', 'error');
+                                        document.getElementById('qr-status').innerHTML = reserva?.mensaje || 'Error en reserva';
+                                    }
                                 } else {
-                                    document.getElementById('qr-status').innerHTML = reserva?.mensaje || 'Error en reserva';
+                                    Swal.fire('Reserva cancelada', '', 'info');
+                                    document.getElementById('qr-status').innerHTML = 'Reserva cancelada';
                                 }
-                            } else {
-                                document.getElementById('qr-status').innerHTML = 'Reserva cancelada';
-                            }
+                            });
                         } else {
-                            document.getElementById('qr-status').innerHTML = 'Espacio ocupado';
+                            Swal.fire({
+                                title: `¿Desea devolver las llaves del espacio ${espacioInfo.espacio.nombre}?`,
+                                icon: 'question',
+                                showCancelButton: true,
+                                confirmButtonText: 'Sí, devolver',
+                                cancelButtonText: 'Cancelar'
+                            }).then(async (result) => {
+                                if (result.isConfirmed) {
+                                    const response = await fetch('/api/devolver-llaves', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                                        },
+                                        body: JSON.stringify({ 
+                                            id_espacio: espacioProcesado,
+                                            run: usuarioEscaneado
+                                        })
+                                    });
+                                    const data = await response.json();
+                                    if (data.success) {
+                                        Swal.fire('Llaves devueltas exitosamente', '', 'success');
+                                        document.getElementById('qr-status').innerHTML = 'Llaves devueltas exitosamente';
+                                        document.getElementById('nombre-espacio').textContent = espacioInfo.espacio.nombre;
+                                        // Actualizar el color del indicador a 'Disponible' (verde)
+                                        const block = state.indicators.find(b => b.id === espacioProcesado);
+                                        if (block) {
+                                            block.estado = 'green'; // o el valor que uses para 'Disponible'
+                                            state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                                            drawIndicators();
+                                        }
+                                    } else {
+                                        Swal.fire('Error', data.mensaje || 'Error al devolver las llaves', 'error');
+                                        document.getElementById('qr-status').innerHTML = data.mensaje || 'Error al devolver las llaves';
+                                    }
+                                } else {
+                                    Swal.fire('Operación cancelada', '', 'info');
+                                    document.getElementById('qr-status').innerHTML = 'Operación cancelada';
+                                }
+                            });
                         }
                     } else {
+                        Swal.fire('Error', espacioInfo?.mensaje || 'Error al verificar espacio', 'error');
                         document.getElementById('qr-status').innerHTML = espacioInfo?.mensaje || 'Error al verificar espacio';
                     }
                     esperandoUsuario = true;
@@ -2007,5 +2108,10 @@
         // Llama una vez al cargar la página
         actualizarColoresEspacios();
         scheduleNextUpdate();
+
+        // Agregar el manejador para el botón de información
+        document.getElementById('infoButton').addEventListener('click', function() {
+            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'instrucciones-uso' }));
+        });
     </script>
 </x-show-layout>

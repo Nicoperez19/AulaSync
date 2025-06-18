@@ -25,7 +25,7 @@
 
 <body>
     <div x-data="mainState" class="font-sans antialiased" :class="{ dark: isDarkMode }" x-cloak>
-        <div class="flex flex-col min-h-screen text-black bg-light-cloud-blue dark:bg-dark-eval-0 dark:text-gray-200">
+        <div class="flex flex-col min-h-screen text-black bg-gray-100 dark:bg-dark-eval-0 dark:text-gray-200">
             {{ $slot }}
         </div>
 

@@ -39,7 +39,7 @@
             <x-sidebar.sidebar />
 
             <!-- Contenido principal -->
-            <div class="flex flex-col min-h-screen pt-16 bg-cloud-light dark:bg-dark-eval-2 transition-all duration-300 ease-in-out">
+            <div class="flex flex-col min-h-screen pt-16 bg-gray-100 dark:bg-dark-eval-2 transition-all duration-300 ease-in-out">
                 <!-- Header -->
                 <header>
                     <div class="p-4 mt-4 sm:p-6">

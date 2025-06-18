@@ -251,29 +251,51 @@
     new Chart(document.getElementById('grafico-barras-ejemplo'), {
         type: 'bar',
         data: {
-            labels: {!! json_encode($usoPorDia['labels']) !!},
+            labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
             datasets: [{
                 label: 'Horas ocupadas',
-                data: {!! json_encode($usoPorDia['data']) !!},
+                data: [4, 5, 3, 6, 2, 1], // ← puedes cambiar estos valores
                 backgroundColor: 'rgba(59, 130, 246, 0.7)'
             }]
         },
-        options: {responsive: false, plugins: {legend: {display: false}}}
+        options: {
+            responsive: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
     });
 
     // Gráfico de barras: Top Salas
-    new Chart(document.getElementById('grafico-top-salas'), {
-        type: 'bar',
-        data: {
-            labels: {!! json_encode($topSalas->pluck('nombre')) !!},
-            datasets: [{
-                label: 'Uso',
-                data: {!! json_encode($topSalas->pluck('uso')) !!},
-                backgroundColor: 'rgba(16, 185, 129, 0.7)'
-            }]
+   new Chart(document.getElementById('grafico-top-salas'), {
+    type: 'bar',
+    data: {
+        labels: {!! json_encode($topSalas->pluck('nombre')) !!},
+        datasets: [{
+            label: 'Uso',
+            data: {!! json_encode($topSalas->pluck('uso')) !!},
+            backgroundColor: 'rgba(16, 185, 129, 0.7)'
+        }]
+    },
+    options: {
+        responsive: false,
+        plugins: {
+            legend: {
+                display: false
+            }
         },
-        options: {responsive: false, plugins: {legend: {display: false}}}
-    });
+        scales: {
+            x: {
+                ticks: {
+                    minRotation: 90,
+                    maxRotation: 90
+                }
+            }
+        }
+    }
+});
 
     // Gráfico de barras: Top Asignaturas
     new Chart(document.getElementById('grafico-top-asignaturas'), {
@@ -476,7 +498,7 @@
     }
 
     // Inicializar estados al cargar la página
-    document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function() {
         reiniciarEstados();
     });
 
@@ -600,9 +622,9 @@
                 esperandoUsuario = true;
             }
             bufferQR = '';
-            event.target.value = '';
+                event.target.value = '';
         } else if (event.key.length === 1) {
             bufferQR += event.key;
         }
     }
-</script>
+    </script>
