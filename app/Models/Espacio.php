@@ -14,27 +14,30 @@ class Espacio extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
+        'id_espacio',
         'nombre_espacio',
         'piso_id',
         'tipo_espacio',
         'estado',
-        'puestos_disponibles',
-        'qr_espacio'
+        'qr_espacio',
+        'puestos_disponibles'
     ];
+
+    public function reservas()
+    {
+        return $this->hasMany(Reserva::class, 'id_espacio', 'id_espacio');
+    }
 
     public function piso()
     {
         return $this->belongsTo(Piso::class, 'piso_id');
-    }
-    public function reservas()
-    {
-        return $this->hasMany(Reserva::class, 'id_espacio');
     }
 
     public function planificaciones()
     {
         return $this->hasMany(Planificacion_Asignatura::class, 'id_espacio', 'id_espacio');
     }
+
     public function generateQR()
     {
         $qrService = new QRService();
@@ -43,5 +46,4 @@ class Espacio extends Model
         $this->save();
         return $this;
     }
-
 }

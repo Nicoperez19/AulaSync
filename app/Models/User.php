@@ -14,7 +14,7 @@ class User extends Authenticatable
 
     protected $primaryKey = 'run';
     public $incrementing = false;
-    protected $keyType = 'string';
+    protected $keyType = 'integer';
     protected $fillable = [
         'run',
         'name',
@@ -39,8 +39,8 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
-        'run' => 'string',
         'fecha_nacimiento' => 'date',
+        'anio_ingreso' => 'integer',
     ];
 
     /**
@@ -55,31 +55,36 @@ class User extends Authenticatable
 
     public function universidad()
     {
-        return $this->belongsTo(Universidad::class, 'id_universidad');
+        return $this->belongsTo(Universidad::class, 'id_universidad', 'id_universidad');
     }
 
     public function facultad()
     {
-        return $this->belongsTo(Facultad::class, 'id_facultad');
+        return $this->belongsTo(Facultad::class, 'id_facultad', 'id_facultad');
     }
 
     public function carrera()
     {
-        return $this->belongsTo(Carrera::class, 'id_carrera');
+        return $this->belongsTo(Carrera::class, 'id_carrera', 'id_carrera');
     }
 
     public function areaAcademica()
     {
-        return $this->belongsTo(AreaAcademica::class, 'id_area_academica');
+        return $this->belongsTo(AreaAcademica::class, 'id_area_academica', 'id_area_academica');
     }
 
     public function asignaturas()
     {
-        return $this->hasMany(Asignatura::class, 'run');
+        return $this->hasMany(Asignatura::class, 'run', 'run');
     }
 
     public function dataLoads()
     {
         return $this->hasMany(DataLoad::class, 'user_run', 'run');
+    }
+
+    public function reservas()
+    {
+        return $this->hasMany(Reserva::class, 'run', 'run');
     }
 }

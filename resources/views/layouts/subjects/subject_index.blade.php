@@ -27,8 +27,8 @@
 
                 <!-- Nombre -->
                 <div class="space-y-2">
-                    <x-form.label for="nombre" value="Nombre" />
-                    <x-form.input id="nombre" name="nombre" type="text" class="w-full" required maxlength="100" />
+                    <x-form.label for="nombre_asignatura" value="Nombre" />
+                    <x-form.input id="nombre_asignatura" name="nombre_asignatura" type="text" class="w-full" required maxlength="100" />
                 </div>
 
                 <!-- Horas Directas -->

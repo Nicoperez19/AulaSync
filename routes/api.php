@@ -8,6 +8,7 @@ use App\Http\Controllers\EspacioController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\HorarioController;
+use App\Http\Controllers\PlanoDigitalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -274,4 +275,6 @@ Route::get('/verificar-horario/{run}', [HorarioController::class, 'verificarHora
 Route::get('/verificar-usuario/{run}', [HorarioController::class, 'verificarUsuario']);
 Route::get('/verificar-espacio/{idEspacio}', [HorarioController::class, 'verificarEspacio']);
 Route::post('/crear-reserva', [HorarioController::class, 'crearReserva']);
+
+Route::get('/espacios/estados', [PlanoDigitalController::class, 'estadosEspacios']);
 

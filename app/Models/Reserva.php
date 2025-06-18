@@ -34,8 +34,11 @@ class Reserva extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'run');
+        return $this->belongsTo(User::class, 'run', 'run');
     }
 
-
+    public function asignatura()
+    {
+        return $this->belongsTo(Asignatura::class, 'id_asignatura', 'id_asignatura');
+    }
 }

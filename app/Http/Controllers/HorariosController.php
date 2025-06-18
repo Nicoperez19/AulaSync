@@ -138,7 +138,7 @@ class HorariosController extends Controller
         try {
             $id_espacio = $request->input('id_espacio');
 
-            $query = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo', 'espacio']);
+            $query = Planificacion_Asignatura::with(['asignatura.user', 'modulo', 'espacio']);
 
             if ($id_espacio) {
                 $query->where('id_espacio', $id_espacio);
@@ -151,7 +151,9 @@ class HorariosController extends Controller
                 return $items->map(function ($plan) {
                     return [
                         'asignatura' => $plan->asignatura->nombre_asignatura ?? '',
-                        'profesor' => $plan->asignatura->profesor->name ?? '',
+                        'user' => $plan->asignatura->user ? [
+                            'name' => $plan->asignatura->user->name
+                        ] : null,
                         'dia' => $plan->modulo->dia ?? '',
                         'hora_inicio' => $plan->modulo->hora_inicio ?? '',
                         'hora_termino' => $plan->modulo->hora_termino ?? '',

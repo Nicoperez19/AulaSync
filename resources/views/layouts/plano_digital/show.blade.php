@@ -174,7 +174,7 @@
                             </div>
 
 
-                            <div class="relative flex-1 min-h-0">
+                            <div class="relative flex-1 min-h-0 h-[calc(100vh-180px)] w-[calc(100%+1rem)] -mx-2">
                                 <!-- Canvas para la imagen base -->
                                 <canvas id="mapCanvas"
                                     class="absolute inset-0 w-full h-full bg-white dark:bg-gray-800"></canvas>
@@ -491,17 +491,25 @@
             let estadoTexto = '';
             let estadoColor = '';
             switch (indicator.estado) {
-                case 'red':
+                case '#FF0000':
                     estadoTexto = 'Ocupado';
                     estadoColor = 'text-red-600';
                     break;
-                case 'blue':
+                case '#2563eb':
                     estadoTexto = 'Próximo a ocuparse';
                     estadoColor = 'text-blue-600';
                     break;
-                default:
+                case '#FFA500':
+                    estadoTexto = 'Reservado';
+                    estadoColor = 'text-yellow-500';
+                    break;
+                case '#059669':
                     estadoTexto = 'Disponible';
                     estadoColor = 'text-green-600';
+                    break;
+                default:
+                    estadoTexto = 'Sin estado';
+                    estadoColor = 'text-gray-600';
             }
             modalEstado.innerHTML = `<span class="${estadoColor} font-semibold">${estadoTexto}</span>`;
 
@@ -1947,5 +1955,57 @@
                     });
                 });
         }
+
+        function getNextUpdateDelay() {
+            const startHour = 7;
+            const startMinute = 50;
+            const now = new Date();
+            const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, startMinute, 0, 0);
+
+            if (now < start) {
+                return start - now;
+            }
+            const minutesSinceStart = ((now.getHours() * 60 + now.getMinutes()) - (startHour * 60 + startMinute));
+            const minutesToNext = 5 - (minutesSinceStart % 5);
+            const nextUpdate = new Date(now.getTime() + minutesToNext * 60 * 1000);
+            nextUpdate.setSeconds(0, 0);
+            return nextUpdate - now;
+        }
+
+        function actualizarColoresEspacios() {
+            fetch('/api/espacios/estados')
+                .then(response => response.json())
+                .then(data => {
+                    data.espacios.forEach(espacio => {
+                        const id = espacio.id;
+                        const estado = espacio.estado;
+                        const elemento = document.getElementById('espacio-' + id);
+                        if (!elemento) return;
+
+                        // Lógica de color según estado
+                        if (estado === "Ocupado") {
+                            elemento.style.fill = "#FF0000"; // Rojo
+                        } else if (estado === "Disponible") {
+                            elemento.style.fill = "#059669"; // Verde sidebar
+                        } else if (estado === "Reservado") {
+                            elemento.style.fill = "#FFA500"; // Naranja
+                        } else {
+                            elemento.style.fill = "#CCCCCC"; // Gris por defecto
+                        }
+                    });
+                });
+        }
+
+        function scheduleNextUpdate() {
+            const delay = getNextUpdateDelay();
+            setTimeout(function() {
+                actualizarColoresEspacios();
+                scheduleNextUpdate();
+            }, delay);
+        }
+
+        // Llama una vez al cargar la página
+        actualizarColoresEspacios();
+        scheduleNextUpdate();
     </script>
 </x-show-layout>

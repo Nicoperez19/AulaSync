@@ -24,10 +24,10 @@ class SubjectsTable extends Component
 
     public function render()
     {
-        $asignaturas = Asignatura::where('nombre', 'like', '%' . $this->search . '%')
+        $asignaturas = Asignatura::where('nombre_asignatura', 'like', '%' . $this->search . '%')
             ->orWhere('id_asignatura', 'like', '%' . $this->search . '%')
             ->orWhere('area_conocimiento', 'like', '%' . $this->search . '%')
-            ->orderBy('nombre', 'asc')
+            ->orderBy('nombre_asignatura', 'asc')
             ->paginate($this->perPage);
 
         return view('livewire.subjects-table', compact('asignaturas'));

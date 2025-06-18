@@ -158,15 +158,30 @@ class PlanoDigitalController extends Controller
             $idEspacio = $bloque->id_espacio;
             $espacio = $bloque->espacio;
             
-            // Determinar si el espacio está ocupado basado en su estado
-            $estaOcupado = $espacio->estado === 'Ocupado';
+            // Inicializar estados
+            $estaOcupado = false;
+            $estaReservado = false;
+            $deberiaEstarOcupado = false;
 
             // Verificar si hay una reserva activa para este espacio
             $reservaActiva = $reservasActivas->firstWhere('id_espacio', $idEspacio);
             if ($reservaActiva) {
-                // Si la reserva tiene hora_salida y es menor que la hora actual, el espacio no está ocupado
+                // Si la reserva tiene hora_salida y es menor que la hora actual, el espacio está disponible
                 if ($reservaActiva->hora_salida && $reservaActiva->hora_salida < $estadoActual['hora']) {
                     $estaOcupado = false;
+                    $estaReservado = false;
+                } else {
+                    $estaReservado = true;
+                }
+            }
+
+            // Verificar si hay una planificación activa para este espacio
+            $planificacionActiva = $planificacionesActivas->firstWhere('id_espacio', $idEspacio);
+            if ($planificacionActiva) {
+                $deberiaEstarOcupado = true;
+                // Si el espacio está marcado como ocupado en la base de datos
+                if ($espacio->estado === 'Ocupado') {
+                    $estaOcupado = true;
                 }
             }
 
@@ -178,7 +193,7 @@ class PlanoDigitalController extends Controller
                 'nombre' => $bloque->espacio->nombre_espacio,
                 'x' => $bloque->posicion_x,
                 'y' => $bloque->posicion_y,
-                'estado' => $this->determinarEstado($estaOcupado, false, $tieneClaseProxima),
+                'estado' => $this->determinarEstado($estaOcupado, $estaReservado, $deberiaEstarOcupado),
                 'detalles' => array_merge(
                     $this->prepararDetallesBloque(
                         $bloque->espacio,
@@ -187,7 +202,7 @@ class PlanoDigitalController extends Controller
                         $planificacionesProximas->firstWhere('id_espacio', $idEspacio)
                     ),
                     [
-                        'estado' => $espacio->estado,
+                        'estado' => $estaReservado ? 'Reservado' : ($estaOcupado ? 'Ocupado' : 'Disponible'),
                         'facultad' => $mapa->piso->facultad->nombre_facultad
                     ]
                 )
@@ -217,7 +232,7 @@ class PlanoDigitalController extends Controller
         // Obtener la hora actual
         $horaActual = Carbon::now()->format('H:i:s');
 
-        return Planificacion_Asignatura::with(['horario', 'asignatura.profesor', 'modulo', 'espacio'])
+        return Planificacion_Asignatura::with(['horario', 'asignatura.user', 'modulo', 'espacio'])
             ->where('id_modulo', $moduloActual->id_modulo)
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
@@ -237,7 +252,7 @@ class PlanoDigitalController extends Controller
         
         return Reserva::where('fecha_reserva', $estadoActual['fecha'])
             ->where('hora', '<=', $estadoActual['hora'])
-            ->where('estado', 'activa') // Solo reservas activas
+            ->where('estado', 'activa')
             ->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'))
             ->get();
     }
@@ -255,7 +270,7 @@ class PlanoDigitalController extends Controller
         // Calcular la hora límite (10 minutos después de la hora actual)
         $horaLimite = $horaActual->copy()->addMinutes(9)->format('H:i:s');
 
-        return Planificacion_Asignatura::with(['horario', 'asignatura.profesor', 'modulo', 'espacio'])
+        return Planificacion_Asignatura::with(['horario', 'asignatura.user', 'modulo', 'espacio'])
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
             })
@@ -270,20 +285,25 @@ class PlanoDigitalController extends Controller
             ->get();
     }
 
-    private function determinarEstado(bool $estaOcupado, bool $estaReservado, bool $tieneClaseProxima): string
+    private function determinarEstado(bool $estaOcupado, bool $estaReservado, bool $deberiaEstarOcupado): string
     {
-        // Si el espacio está ocupado, mostrar en rojo
+        // Si el espacio está reservado, mostrar en rojo
+        if ($estaReservado) {
+            return '#FF0000'; // Rojo
+        }
+        
+        // Si el espacio está ocupado, mostrar en verde del sidebar
         if ($estaOcupado) {
-            return 'red';
+            return '#059669'; // Verde sidebar
         }
         
-        // Si el espacio tiene una clase próxima (en los próximos 10 minutos), mostrar en azul
-        if ($tieneClaseProxima) {
-            return 'blue';
+        // Si el espacio debería estar ocupado pero no lo está, mostrar en naranja
+        if ($deberiaEstarOcupado) {
+            return '#FFA500'; // Naranja
         }
         
-        // Si el espacio está disponible, mostrar en verde
-        return 'green';
+        // Si el espacio está disponible, mostrar en verde del sidebar
+        return '#059669'; // Verde sidebar
     }
 
     private function prepararDetallesBloque($espacio, $planificacion, $reserva, $planificacionProxima): array
@@ -299,7 +319,7 @@ class PlanoDigitalController extends Controller
         if ($planificacion && $planificacion->asignatura) {
             $detalles['planificacion'] = [
                 'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'No especificada',
-                'profesor' => ucwords($planificacion->asignatura->profesor->name ?? 'No asignado'),
+                'profesor' => ucwords($planificacion->asignatura->user->name ?? 'No asignado'),
                 'modulos' => $planificacion->asignatura->planificaciones()
                     ->where('id_espacio', $espacio->id_espacio)
                     ->with('modulo')
@@ -317,7 +337,7 @@ class PlanoDigitalController extends Controller
         if ($planificacionProxima && $planificacionProxima->asignatura) {
             $detalles['planificacion_proxima'] = [
                 'asignatura' => $planificacionProxima->asignatura->nombre_asignatura ?? 'No especificada',
-                'profesor' => ucwords($planificacionProxima->asignatura->profesor->name ?? 'No asignado'),
+                'profesor' => ucwords($planificacionProxima->asignatura->user->name ?? 'No asignado'),
                 'hora_inicio' => substr($planificacionProxima->modulo->hora_inicio ?? '00:00', 0, 5),
                 'hora_termino' => substr($planificacionProxima->modulo->hora_termino ?? '00:00', 0, 5),
                 'modulo' => explode('.', $planificacionProxima->modulo->id_modulo ?? '')[1] ?? 'No especificado'
@@ -379,5 +399,23 @@ class PlanoDigitalController extends Controller
             ],
             'bloques' => $bloques
         ]);
+    }
+
+    public function estadosEspacios()
+    {
+        $espacios = \App\Models\Espacio::all()->map(function($espacio) {
+            // Lógica para determinar si tiene próxima clase
+            $estado = $espacio->estado;
+            if (method_exists($espacio, 'tieneProximaClase') && $espacio->tieneProximaClase()) {
+                $estado = 'Proximo';
+            }
+            // Si tienes un campo o relación diferente, ajusta aquí:
+            // if ($espacio->planificacion_proxima) { $estado = 'Proximo'; }
+            return [
+                'id' => $espacio->id_espacio,
+                'estado' => $estado,
+            ];
+        });
+        return response()->json(['espacios' => $espacios]);
     }
 }

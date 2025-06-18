@@ -24,16 +24,21 @@ class Asignatura extends Model
         'run', //usuario
         'id_carrera',
     ];
+
+    public function reservas()
+    {
+        return $this->hasMany(Reserva::class, 'id_asignatura', 'id_asignatura');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'run', 'run');
+    }
+
     public function carrera()
     {
-        return $this->belongsTo(Carrera::class, 'id_carrera');
+        return $this->belongsTo(Carrera::class, 'id_carrera', 'id_carrera');
     }
-
-    public function profesor()
-    {
-        return $this->belongsTo(User::class, 'run');
-    }
-
 
     public function secciones()
     {
@@ -42,6 +47,6 @@ class Asignatura extends Model
 
     public function planificaciones()
     {
-        return $this->hasMany(Planificacion_Asignatura::class, 'id_asignatura', 'id_asignatura');
+        return $this->hasMany(PlanificacionAsignatura::class, 'id_asignatura', 'id_asignatura');
     }
 }

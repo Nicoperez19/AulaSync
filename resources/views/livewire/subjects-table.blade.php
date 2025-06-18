@@ -30,7 +30,7 @@
                         {{ $asignatura->id_asignatura }}
                     </td>
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Nombre">
-                        {{ $asignatura->nombre }}
+                        {{ $asignatura->nombre_asignatura }}
                     </td>
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Horas Directas">
                         {{ $asignatura->horas_directas }}

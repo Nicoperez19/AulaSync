@@ -124,7 +124,7 @@
                                 td.innerHTML = clases.map(h => `
                                 <div class="bg-blue-100 p-2 rounded-lg min-h-[90px] w-[120px] mx-auto flex flex-col items-center justify-center text-center break-words">
                                     <p class="text-sm font-medium text-blue-900 break-words">${h.asignatura}</p>
-                                    <p class="text-xs text-blue-700 break-words">${h.profesor}</p>
+                                    <p class="text-xs text-blue-700 break-words">${h.user ? h.user.name : 'Sin profesor asignado'}</p>
                                 </div>
                             `).join('');
                             } else {
