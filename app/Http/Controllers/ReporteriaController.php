@@ -32,9 +32,13 @@ class ReporteriaController extends Controller
         $fechaFin = $request->get('fecha_fin', Carbon::now()->endOfMonth()->format('Y-m-d'));
         $piso = $request->get('piso', '');
         $tipoUsuario = $request->get('tipo_usuario', '');
+        $tipoEspacioFiltro = $request->get('tipo_espacio_filtro', '');
+        $diaFiltro = $request->get('dia_filtro', '');
 
         $tiposUsuario = $this->obtenerTiposUsuario();
         $pisos = $this->obtenerPisosDisponibles();
+        $tiposEspacioDisponibles = $this->obtenerTiposEspacioDisponibles();
+        $diasDisponibles = $this->obtenerDiasDisponibles();
 
         // Tipos de espacio distintos
         $tipos = \App\Models\Espacio::query();
@@ -68,30 +72,9 @@ class ReporteriaController extends Controller
         }
         $totalReservas = $reservasQuery->count();
 
-        // Mes anterior
-        $fechaInicioAnterior = Carbon::parse($fechaInicio)->subMonth()->startOfMonth()->format('Y-m-d');
-        $fechaFinAnterior = Carbon::parse($fechaInicio)->subMonth()->endOfMonth()->format('Y-m-d');
-        $reservasMesAnterior = \App\Models\Reserva::whereBetween('fecha_reserva', [$fechaInicioAnterior, $fechaFinAnterior])
-            ->where('estado', 'activa');
-        if (!empty($piso)) {
-            $reservasMesAnterior->whereHas('espacio.piso', function($q) use ($piso) {
-                $q->where('numero_piso', $piso);
-            });
-        }
-        if (!empty($tipoUsuario)) {
-            $reservasMesAnterior->whereHas('user', function($q) use ($tipoUsuario) {
-                if ($tipoUsuario === 'profesor') {
-                    $q->whereNotNull('tipo_profesor');
-                } elseif ($tipoUsuario === 'estudiante') {
-                    $q->whereNull('tipo_profesor')->whereNotNull('id_carrera');
-                } elseif ($tipoUsuario === 'administrativo') {
-                    $q->whereNull('tipo_profesor')->whereNull('id_carrera')->whereNotNull('id_facultad');
-                } else {
-                    $q->whereNull('tipo_profesor')->whereNull('id_carrera')->whereNull('id_facultad');
-                }
-            });
-        }
-        $totalReservasAnterior = $reservasMesAnterior->count();
+        // Fechas para comparativa con mes anterior
+        $fechaInicioAnterior = Carbon::parse($fechaInicio)->subMonth()->format('Y-m-d');
+        $fechaFinAnterior = Carbon::parse($fechaFin)->subMonth()->format('Y-m-d');
 
         // Datos por tipo de espacio
         $tiposEspacio = [];
@@ -158,6 +141,7 @@ class ReporteriaController extends Controller
             $comparativaTexto = $countTipoAnterior > 0
                 ? ($comparativa > 0 ? "+$comparativa%" : "$comparativa%") . " respecto al mes anterior"
                 : ($countTipo > 0 ? "+100% respecto al mes anterior" : "Sin variación");
+            
             $tiposEspacio[] = [
                 'nombre' => $nombreTipo,
                 'utilizacion' => $porcentaje,
@@ -168,6 +152,10 @@ class ReporteriaController extends Controller
         $promedio_utilizacion = $total_tipos > 0 ? round($sumaUtilizacion / $total_tipos, 1) . '%' : '0%';
         $mayor_utilizacion = $mayorUtilizacion ?? '-';
         $fecha_generacion = Carbon::now()->format('d/m/Y H:i:s');
+
+        // Obtener datos de utilización por días y módulos
+        $utilizacionPorDiasModulos = $this->obtenerUtilizacionPorDiasModulos($fechaInicio, $fechaFin, $piso, $tipoUsuario, $tipoEspacioFiltro, $diaFiltro);
+
         return view('reporteria.tipo-espacio', compact(
             'tiposEspacio',
             'fecha_generacion',
@@ -179,8 +167,234 @@ class ReporteriaController extends Controller
             'piso',
             'tipoUsuario',
             'tiposUsuario',
-            'pisos'
+            'pisos',
+            'utilizacionPorDiasModulos',
+            'tipoEspacioFiltro',
+            'diaFiltro',
+            'tiposEspacioDisponibles',
+            'diasDisponibles'
         ));
+    }
+
+    /**
+     * Obtener utilización de tipos de espacio por días y módulos
+     */
+    private function obtenerUtilizacionPorDiasModulos($fechaInicio, $fechaFin, $piso = null, $tipoUsuario = null, $tipoEspacioFiltro = null, $diaFiltro = null)
+    {
+        // Definir los días de la semana
+        $dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
+        
+        // Aplicar filtro de día si está especificado
+        if (!empty($diaFiltro) && in_array($diaFiltro, $dias)) {
+            $dias = [$diaFiltro];
+        }
+        
+        // Definir los módulos (1-15 según el horario del archivo show.blade.php)
+        $modulos = range(1, 15);
+        
+        // Obtener todos los tipos de espacio
+        $tiposQuery = \App\Models\Espacio::query();
+        if (!empty($piso)) {
+            $tiposQuery->whereHas('piso', function($q) use ($piso) {
+                $q->where('numero_piso', $piso);
+            });
+        }
+        $tiposEspacio = $tiposQuery->distinct()->pluck('tipo_espacio');
+
+        // Aplicar filtro de tipo de espacio si está especificado
+        if (!empty($tipoEspacioFiltro) && in_array($tipoEspacioFiltro, $tiposEspacio->toArray())) {
+            $tiposEspacio = collect([$tipoEspacioFiltro]);
+        }
+
+        $datos = [];
+
+        foreach ($tiposEspacio as $tipo) {
+            $datosTipo = [
+                'tipo' => $tipo,
+                'dias' => []
+            ];
+
+            foreach ($dias as $dia) {
+                $datosDia = [
+                    'dia' => $dia,
+                    'modulos' => []
+                ];
+
+                foreach ($modulos as $modulo) {
+                    // Calcular el rango de horas para este módulo
+                    $horarioModulo = $this->obtenerHorarioModulo($dia, $modulo);
+                    
+                    if ($horarioModulo) {
+                        // Contar reservas para este tipo de espacio, día y módulo
+                        $reservasQuery = \App\Models\Reserva::whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
+                            ->where('estado', 'activa')
+                            ->whereRaw('DAYOFWEEK(fecha_reserva) = ?', [$this->obtenerNumeroDia($dia)])
+                            ->whereTime('hora', '>=', $horarioModulo['inicio'])
+                            ->whereTime('hora', '<', $horarioModulo['fin'])
+                            ->whereHas('espacio', function($q) use ($tipo, $piso) {
+                                $q->where('tipo_espacio', $tipo);
+                                if (!empty($piso)) {
+                                    $q->whereHas('piso', function($q2) use ($piso) {
+                                        $q2->where('numero_piso', $piso);
+                                    });
+                                }
+                            });
+
+                        if (!empty($tipoUsuario)) {
+                            $reservasQuery->whereHas('user', function($q) use ($tipoUsuario) {
+                                if ($tipoUsuario === 'profesor') {
+                                    $q->whereNotNull('tipo_profesor');
+                                } elseif ($tipoUsuario === 'estudiante') {
+                                    $q->whereNull('tipo_profesor')->whereNotNull('id_carrera');
+                                } elseif ($tipoUsuario === 'administrativo') {
+                                    $q->whereNull('tipo_profesor')->whereNull('id_carrera')->whereNotNull('id_facultad');
+                                } else {
+                                    $q->whereNull('tipo_profesor')->whereNull('id_carrera')->whereNull('id_facultad');
+                                }
+                            });
+                        }
+
+                        $totalReservas = $reservasQuery->count();
+
+                        // Calcular el total de espacios de este tipo para obtener el porcentaje
+                        $totalEspaciosTipo = \App\Models\Espacio::where('tipo_espacio', $tipo);
+                        if (!empty($piso)) {
+                            $totalEspaciosTipo->whereHas('piso', function($q) use ($piso) {
+                                $q->where('numero_piso', $piso);
+                            });
+                        }
+                        $totalEspacios = $totalEspaciosTipo->count();
+
+                        $porcentaje = $totalEspacios > 0 ? round(($totalReservas / $totalEspacios) * 100, 1) : 0;
+
+                        $datosDia['modulos'][] = [
+                            'modulo' => $modulo,
+                            'reservas' => $totalReservas,
+                            'porcentaje' => $porcentaje,
+                            'horario' => $horarioModulo['inicio'] . ' - ' . $horarioModulo['fin']
+                        ];
+                    }
+                }
+
+                $datosTipo['dias'][] = $datosDia;
+            }
+
+            $datos[] = $datosTipo;
+        }
+
+        return $datos;
+    }
+
+    /**
+     * Obtener horario de un módulo específico
+     */
+    private function obtenerHorarioModulo($dia, $modulo)
+    {
+        $horariosModulos = [
+            'lunes' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ],
+            'martes' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ],
+            'miercoles' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ],
+            'jueves' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ],
+            'viernes' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ]
+        ];
+
+        return $horariosModulos[$dia][$modulo] ?? null;
+    }
+
+    /**
+     * Obtener número de día para MySQL DAYOFWEEK
+     */
+    private function obtenerNumeroDia($dia)
+    {
+        $diasNumeros = [
+            'lunes' => 2,
+            'martes' => 3,
+            'miercoles' => 4,
+            'jueves' => 5,
+            'viernes' => 6
+        ];
+
+        return $diasNumeros[$dia] ?? 1;
     }
 
     public function exportTipoEspacio($format) {
@@ -509,6 +723,31 @@ class ReporteriaController extends Controller
             'estudiante' => 'Estudiante',
             'administrativo' => 'Administrativo',
             'externo' => 'Externo'
+        ];
+    }
+
+    /**
+     * Obtener tipos de espacio disponibles
+     */
+    private function obtenerTiposEspacioDisponibles()
+    {
+        return \App\Models\Espacio::select('tipo_espacio')
+            ->distinct()
+            ->orderBy('tipo_espacio')
+            ->pluck('tipo_espacio', 'tipo_espacio');
+    }
+
+    /**
+     * Obtener días disponibles
+     */
+    private function obtenerDiasDisponibles()
+    {
+        return [
+            'lunes' => 'Lunes',
+            'martes' => 'Martes',
+            'miercoles' => 'Miércoles',
+            'jueves' => 'Jueves',
+            'viernes' => 'Viernes'
         ];
     }
 
