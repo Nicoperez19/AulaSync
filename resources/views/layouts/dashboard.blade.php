@@ -54,11 +54,13 @@
             </div>
             <div class="flex items-center gap-2">
                 <label class="font-semibold">Piso:</label>
-                <select class="rounded-md border-gray-300 shadow-sm w-32">
-                    <option>Todos</option>
-                    <option>Piso 1</option>
-                    <option>Piso 2</option>
-                    <option>Piso 3</option>
+                <select id="piso-selector" class="rounded-md border-gray-300 shadow-sm w-32" onchange="cambiarPiso(this.value)">
+                    <option value="">Todos</option>
+                    @foreach($pisos as $pisoItem)
+                        <option value="{{ $pisoItem->numero_piso }}" {{ $piso == $pisoItem->numero_piso ? 'selected' : '' }}>
+                            Piso {{ $pisoItem->numero_piso }}
+                        </option>
+                    @endforeach
                 </select>
             </div>
             <div class="flex items-center gap-2">
@@ -107,7 +109,7 @@
             <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 relative">
                 <img src="https://img.icons8.com/color/48/000000/combo-chart--v2.png" class="mb-2 w-12 h-12" />
                 <div class="text-xs text-gray-500">% Ocupación semanal</div>
-                <div class="text-3xl font-bold text-primary-600 mt-1 flex items-center gap-2">
+                <div id="ocupacion-semanal" class="text-3xl font-bold text-primary-600 mt-1 flex items-center gap-2">
                     {{ $ocupacionSemanal }}%
                     <span class="text-green-500 text-xl" title="Subió respecto a la semana anterior">▲</span>
                 </div>
@@ -116,7 +118,7 @@
             <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 relative">
                 <img src="https://img.icons8.com/color/48/000000/calendar--v2.png" class="mb-2 w-12 h-12" />
                 <div class="text-xs text-gray-500">% Ocupación diaria</div>
-                <div class="flex gap-1 mt-1 text-xs">
+                <div data-widget="ocupacion-diaria" class="flex gap-1 mt-1 text-xs">
                     @foreach($ocupacionDiaria as $dia => $porcentaje)
                         <span class="font-bold {{ $porcentaje > 70 ? 'text-green-700' : ($porcentaje > 50 ? 'text-yellow-500' : 'text-red-500') }}">{{ $dia }} {{ $porcentaje }}%</span>
                     @endforeach
@@ -126,7 +128,7 @@
             <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 relative">
                 <img src="https://img.icons8.com/color/48/000000/line-chart.png" class="mb-2 w-12 h-12" />
                 <div class="text-xs text-gray-500">Promedio ocupación mensual</div>
-                <div class="text-3xl font-bold text-primary-600 mt-1 flex items-center gap-2">
+                <div id="ocupacion-mensual" class="text-3xl font-bold text-primary-600 mt-1 flex items-center gap-2">
                     {{ $ocupacionMensual }}%
                     <span class="text-green-500 text-xl" title="Subió respecto al mes anterior">▲</span>
                 </div>
@@ -135,13 +137,13 @@
             <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6">
                 <span class="text-5xl mb-2 text-red-500">❌</span>
                 <div class="text-base text-red-700 font-bold mb-1">Usuarios sin escaneo</div>
-                <div class="text-xs text-red-600 text-center">{{ $usuariosSinEscaneo }} usuarios sin registrar asistencia hoy</div>
+                <div id="usuarios-sin-escaneo" class="text-xs text-red-600 text-center">{{ $usuariosSinEscaneo }} usuarios sin registrar asistencia hoy</div>
             </div>
             <!-- KPI 3: Horas utilizadas / disponibles -->
             <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6">
                 <img src="https://img.icons8.com/color/48/000000/hourglass--v2.png" class="mb-2 w-12 h-12" />
                 <div class="text-xs text-gray-500">Horas utilizadas / disponibles</div>
-                <div class="text-2xl font-bold text-yellow-700 mt-1">{{ $horasUtilizadas['utilizadas'] }} / {{ $horasUtilizadas['disponibles'] }}</div>
+                <div id="horas-utilizadas" class="text-2xl font-bold text-yellow-700 mt-1">{{ $horasUtilizadas['utilizadas'] }} / {{ $horasUtilizadas['disponibles'] }}</div>
                 <div class="w-full bg-yellow-200 rounded-full h-2 mt-2" style="max-width:100px;">
                     <div class="bg-yellow-500 h-2 rounded-full" style="width: {{ ($horasUtilizadas['utilizadas'] / $horasUtilizadas['disponibles']) * 100 }}%"></div>
                 </div>
@@ -150,7 +152,7 @@
             <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6">
                 <img src="https://img.icons8.com/color/48/000000/brick-wall.png" class="mb-2 w-12 h-12" />
                 <div class="text-xs text-gray-500">Salas ocupadas / libres (hoy)</div>
-                <div class="text-2xl font-bold" style="color:#a21caf; margin-top:4px;">{{ $salasOcupadas['ocupadas'] }} <span class="text-gray-400">/</span> {{ $salasOcupadas['libres'] }}</div>
+                <div id="salas-ocupadas" class="text-2xl font-bold" style="color:#a21caf; margin-top:4px;">{{ $salasOcupadas['ocupadas'] }} <span class="text-gray-400">/</span> {{ $salasOcupadas['libres'] }}</div>
             </div>
         </div>
     </div>
@@ -192,7 +194,7 @@
                 </div>
             </div>
             <div class="overflow-x-auto">
-                <table class="min-w-full text-center border border-gray-300 rounded-lg dark:bg-dark-eval-1">
+                <table id="tabla-reservas-canceladas" class="min-w-full text-center border border-gray-300 rounded-lg dark:bg-dark-eval-1">
                     <thead>
                         <tr class="bg-gray-200 dark:bg-dark-eval-2">
                             <th class="px-4 py-2 border">Usuario</th>
@@ -206,8 +208,8 @@
                         <tr class="bg-white dark:bg-dark-eval-1">
                             <td class="border">{{ $reserva['usuario'] }}</td>
                             <td class="border">{{ $reserva['espacio'] }}</td>
-                            <td class="border">{{ $reserva['fecha'] }}</td>
-                            <td class="border">{{ $reserva['motivo'] }}</td>
+                            <td class="border">{{ $reserva['hora'] }}</td>
+                            <td class="border">Cancelada</td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -218,7 +220,7 @@
         <div class="p-8 bg-white rounded-xl shadow-lg col-span-3 flex flex-col min-h-[260px]">
             <h3 class="text-lg font-bold mb-4 text-gray-700">Horarios por día</h3>
             <div class="overflow-x-auto">
-                <table class="min-w-full text-center border border-gray-300 rounded-lg">
+                <table id="tabla-horarios-por-dia" class="min-w-full text-center border border-gray-300 rounded-lg">
                     <thead>
                         <tr class="bg-gray-200">
                             <th class="px-4 py-2 border border-gray-300">Módulo/Hora</th>
@@ -269,7 +271,7 @@
     });
 
     // Gráfico de barras: Top Salas
-   new Chart(document.getElementById('grafico-top-salas'), {
+   window.graficoTopSalas = new Chart(document.getElementById('grafico-top-salas'), {
     type: 'bar',
     data: {
         labels: {!! json_encode($topSalas->pluck('nombre')) !!},
@@ -298,7 +300,7 @@
 });
 
     // Gráfico de barras: Top Asignaturas
-    new Chart(document.getElementById('grafico-top-asignaturas'), {
+    window.graficoTopAsignaturas = new Chart(document.getElementById('grafico-top-asignaturas'), {
         type: 'bar',
         data: {
             labels: {!! json_encode($topAsignaturas->pluck('nombre')) !!},
@@ -312,7 +314,7 @@
     });
 
     // Gráfico de áreas: Comparativa tipos
-    new Chart(document.getElementById('grafico-comparativa-tipos'), {
+    window.graficoComparativaTipos = new Chart(document.getElementById('grafico-comparativa-tipos'), {
         type: 'doughnut',
         data: {
             labels: {!! json_encode($comparativaTipos->pluck('tipo')) !!},
@@ -330,13 +332,13 @@
     });
 
     // Gráfico de línea: Evolución mensual
-    new Chart(document.getElementById('grafico-mensual'), {
+    window.graficoMensual = new Chart(document.getElementById('grafico-mensual'), {
         type: 'line',
         data: {
-            labels: {!! json_encode($evolucionMensual['labels']) !!},
+            labels: {!! json_encode($evolucionMensual['dias']) !!},
             datasets: [{
                 label: 'Ocupación (%)',
-                data: {!! json_encode($evolucionMensual['data']) !!},
+                data: {!! json_encode($evolucionMensual['ocupacion']) !!},
                 borderColor: 'rgba(59,130,246,1)',
                 backgroundColor: 'rgba(59,130,246,0.2)',
                 fill: true,
@@ -627,4 +629,176 @@
             bufferQR += event.key;
         }
     }
-    </script>
+
+    function cambiarPiso(piso) {
+        // Mostrar indicador de carga
+        const selector = document.getElementById('piso-selector');
+        selector.disabled = true;
+        
+        // Mostrar indicador de carga en los widgets
+        mostrarCargando();
+        
+        // Hacer petición AJAX para cambiar el piso
+        fetch('/dashboard/set-piso', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ piso: piso })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Obtener los nuevos datos de los widgets
+                return fetch('/dashboard/widget-data');
+            } else {
+                throw new Error('Error al cambiar piso: ' + data.message);
+            }
+        })
+        .then(response => response.json())
+        .then(widgetData => {
+            // Actualizar todos los widgets con los nuevos datos
+            actualizarWidgets(widgetData);
+            selector.disabled = false;
+        })
+        .catch(error => {
+            console.error('Error en la petición:', error);
+            selector.disabled = false;
+            ocultarCargando();
+        });
+    }
+
+    function mostrarCargando() {
+        // Agregar clase de carga a los widgets
+        const widgets = document.querySelectorAll('.bg-white.rounded-xl.shadow-lg');
+        widgets.forEach(widget => {
+            widget.classList.add('opacity-50');
+            widget.innerHTML += '<div class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>';
+        });
+    }
+
+    function ocultarCargando() {
+        // Remover clase de carga de los widgets
+        const widgets = document.querySelectorAll('.bg-white.rounded-xl.shadow-lg');
+        widgets.forEach(widget => {
+            widget.classList.remove('opacity-50');
+            const loadingDiv = widget.querySelector('.absolute.inset-0');
+            if (loadingDiv) {
+                loadingDiv.remove();
+            }
+        });
+    }
+
+    function actualizarWidgets(data) {
+        // Actualizar KPIs
+        actualizarKPI('ocupacion-semanal', data.ocupacionSemanal + '%');
+        actualizarKPI('ocupacion-mensual', data.ocupacionMensual + '%');
+        actualizarKPI('usuarios-sin-escaneo', data.usuariosSinEscaneo);
+        actualizarKPI('horas-utilizadas', data.horasUtilizadas.utilizadas + ' / ' + data.horasUtilizadas.disponibles);
+        actualizarKPI('salas-ocupadas', data.salasOcupadas.ocupadas + ' / ' + data.salasOcupadas.libres);
+        
+        // Actualizar ocupación diaria
+        actualizarOcupacionDiaria(data.ocupacionDiaria);
+        
+        // Actualizar gráficos
+        actualizarGraficoTopSalas(data.topSalas);
+        actualizarGraficoTopAsignaturas(data.topAsignaturas);
+        actualizarGraficoComparativaTipos(data.comparativaTipos);
+        actualizarGraficoEvolucionMensual(data.evolucionMensual);
+        
+        // Actualizar tablas
+        actualizarTablaReservasCanceladas(data.reservasCanceladas);
+        actualizarTablaHorariosPorDia(data.horariosPorDia);
+        
+        ocultarCargando();
+    }
+
+    function actualizarKPI(id, valor) {
+        const elemento = document.getElementById(id);
+        if (elemento) {
+            elemento.textContent = valor;
+        }
+    }
+
+    function actualizarOcupacionDiaria(ocupacionDiaria) {
+        const contenedor = document.querySelector('[data-widget="ocupacion-diaria"]');
+        if (contenedor) {
+            let html = '';
+            for (const [dia, porcentaje] of Object.entries(ocupacionDiaria)) {
+                const color = porcentaje > 70 ? 'text-green-700' : (porcentaje > 50 ? 'text-yellow-500' : 'text-red-500');
+                html += `<span class="font-bold ${color}">${dia} ${porcentaje}%</span>`;
+            }
+            contenedor.innerHTML = html;
+        }
+    }
+
+    function actualizarGraficoTopSalas(topSalas) {
+        if (window.graficoTopSalas) {
+            window.graficoTopSalas.data.labels = topSalas.map(sala => sala.nombre);
+            window.graficoTopSalas.data.datasets[0].data = topSalas.map(sala => sala.uso);
+            window.graficoTopSalas.update();
+        }
+    }
+
+    function actualizarGraficoTopAsignaturas(topAsignaturas) {
+        if (window.graficoTopAsignaturas) {
+            window.graficoTopAsignaturas.data.labels = topAsignaturas.map(asignatura => asignatura.nombre);
+            window.graficoTopAsignaturas.data.datasets[0].data = topAsignaturas.map(asignatura => asignatura.uso);
+            window.graficoTopAsignaturas.update();
+        }
+    }
+
+    function actualizarGraficoComparativaTipos(comparativaTipos) {
+        if (window.graficoComparativaTipos) {
+            window.graficoComparativaTipos.data.labels = comparativaTipos.map(tipo => tipo.tipo);
+            window.graficoComparativaTipos.data.datasets[0].data = comparativaTipos.map(tipo => tipo.total);
+            window.graficoComparativaTipos.update();
+        }
+    }
+
+    function actualizarGraficoEvolucionMensual(evolucionMensual) {
+        if (window.graficoMensual) {
+            window.graficoMensual.data.labels = evolucionMensual.dias;
+            window.graficoMensual.data.datasets[0].data = evolucionMensual.ocupacion;
+            window.graficoMensual.update();
+        }
+    }
+
+    function actualizarTablaReservasCanceladas(reservasCanceladas) {
+        const tbody = document.querySelector('#tabla-reservas-canceladas tbody');
+        if (tbody) {
+            let html = '';
+            reservasCanceladas.forEach(reserva => {
+                html += `
+                    <tr class="bg-white dark:bg-dark-eval-1">
+                        <td class="border">${reserva.usuario}</td>
+                        <td class="border">${reserva.espacio}</td>
+                        <td class="border">${reserva.hora}</td>
+                        <td class="border">Cancelada</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+    }
+
+    function actualizarTablaHorariosPorDia(horariosPorDia) {
+        const tbody = document.querySelector('#tabla-horarios-por-dia tbody');
+        if (tbody) {
+            let html = '';
+            horariosPorDia.forEach(horario => {
+                html += `
+                    <tr class="bg-white">
+                        <td class="border border-gray-300">${horario.modulo}</td>
+                        <td class="border border-gray-300">${horario.dia}</td>
+                        <td class="border border-gray-300">${horario.asignatura}</td>
+                        <td class="border border-gray-300">${horario.espacio}</td>
+                        <td class="border border-gray-300">${horario.usuario}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+    }
+</script>

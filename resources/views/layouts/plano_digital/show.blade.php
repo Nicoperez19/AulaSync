@@ -1,9 +1,9 @@
 <x-show-layout>
     <div class="flex h-screen overflow-hidden">
-        <!-- Sidebar fijo a la izquierda, más compacto y con fondo azul claro -->
+        <!-- Sidebar  -->
         <aside
             class="fixed top-0 left-0 z-40 flex flex-col justify-between w-56 h-screen pt-2 pb-2 text-base border-r border-gray-200 md:w-48 sm:w-40 bg-light-cloud-blue dark:border-gray-700 md:text-sm sm:text-xs">
-            <!-- Logo de la aplicación -->
+
             <div class="flex flex-col items-center gap-2 md:gap-1">
                 <a href="{{ route('dashboard') }}" class="mb-1">
                     <x-application-logo-navbar class="w-10 h-10 md:w-8 md:h-8 sm:w-6 sm:h-6" />
@@ -11,7 +11,8 @@
 
                 <!-- Leyenda -->
                 <div class="w-full p-2 px-1 bg-white rounded-md shadow-sm">
-                    <h3 class="flex items-center justify-center gap-1 mb-2 text-sm font-semibold text-center md:text-xs">
+                    <h3
+                        class="flex items-center justify-center gap-1 mb-2 text-sm font-semibold text-center md:text-xs">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 md:w-3 md:h-3" viewBox="0 0 24 24"
                             fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
@@ -42,8 +43,8 @@
 
             <!-- Información de hora y módulo actual -->
             <div class="w-full px-1 mt-2">
-                <div class="p-2 text-white border border-blue-600 rounded-md shadow-sm bg-light-cloud-blue">
-                    <div class="flex items-center justify-between pb-1 border-b border-blue-400">
+                <div class="p-2 text-white border border-white rounded-md shadow-sm bg-light-cloud-blue">
+                    <div class="flex items-center justify-between pb-1 border-b border-white">
                         <div class="flex items-center gap-1">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
@@ -53,7 +54,7 @@
                             <span id="hora-actual" class="text-xs">--:--:--</span>
                         </div>
                     </div>
-                    <div class="py-1 border-b border-blue-400">
+                    <div class="py-1 border-b border-white">
                         <div class="flex items-center gap-1 mb-1">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
@@ -79,15 +80,19 @@
 
             <!-- Estado del QR -->
             <div class="w-full px-1 ">
-                <div class="p-2 text-white border border-blue-600 rounded-md shadow-sm bg-light-cloud-blue">
+                <div class="p-2 text-white border border-white rounded-md shadow-sm bg-light-cloud-blue">
                     <!-- QR Placeholder -->
                     <div class="p-2 mt-2 text-center rounded-md bg-white/10">
                         <div class="relative">
-                        <span id="qr-status" class="text-xs text-yellow-400">Esperando</span>
-                            <button id="infoButton" class="absolute top-0 right-0 p-1 text-white bg-blue-500 rounded-full hover:bg-blue-600 focus:outline-none">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <span id="qr-status" class="text-xs text-yellow-400">Esperando</span>
+                            <button id="infoButton"
+                                class="absolute top-0 right-0 p-1 m-4 text-white bg-white rounded-full hover:bg-gray-200 focus:outline-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 stroke-black" fill="none"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
+
                             </button>
                         </div>
                         <div class="mt-1 mb-1 qr-placeholder">
@@ -125,8 +130,8 @@
                         </div>
 
                         <div class="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
@@ -157,17 +162,16 @@
                     <div class="flex-1 bg-white shadow-md dark:bg-dark-eval-0">
                         <ul class="flex border-b border-gray-300 dark:border-gray-700" id="pills-tab" role="tablist">
                             @foreach ($pisos as $piso)
-                                <li role="presentation">
-                                    <a href="{{ route('plano.show', $piso->id_mapa) }}"
-                                        class="px-4 py-3 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
-                                                                                                                                                                {{ $piso->id_mapa === $mapa->id_mapa
-                                                                                                                                                                    ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
-                                                                                                                                                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}"
-                                        role="tab"
-                                        aria-selected="{{ $piso->id_mapa === $mapa->id_mapa ? 'true' : 'false' }}">
-                                        Piso {{ $piso->piso->numero_piso }}
-                                    </a>
-                                </li>
+                                                    <li role="presentation">
+                                                        <a href="{{ route('plano.show', $piso->id_mapa) }}"
+                                                            class="px-4 py-3 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
+                                                                                                                                                                                                                {{ $piso->id_mapa === $mapa->id_mapa
+                                ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}" role="tab"
+                                                            aria-selected="{{ $piso->id_mapa === $mapa->id_mapa ? 'true' : 'false' }}">
+                                                            Piso {{ $piso->piso->numero_piso }}
+                                                        </a>
+                                                    </li>
                             @endforeach
                         </ul>
                         <!-- Card para el canvas y controles -->
@@ -210,9 +214,9 @@
     <!-- Modal para mostrar información del espacio -->
     <x-modal name="data-space" :show="false" focusable>
         @slot('title')
-            <h2 id="modalTitulo" class="text-lg font-medium text-white dark:text-gray-100">
-                Cargar Archivo de Datos
-            </h2>
+        <h2 id="modalTitulo" class="text-lg font-medium text-white dark:text-gray-100">
+            Cargar Archivo de Datos
+        </h2>
         @endslot
         <div class="p-6">
             <h3 class="text-lg font-medium text-gray-900">Información del Espacio</h3>
@@ -238,9 +242,9 @@
     <!-- Modal para reconocimiento -->
     <x-modal name="reconocimiento" :show="false" focusable>
         @slot('title')
-            <h2 class="text-lg font-medium text-white dark:text-gray-100">
-                Reconocimiento
-            </h2>
+        <h2 class="text-lg font-medium text-white dark:text-gray-100">
+            Reconocimiento
+        </h2>
         @endslot
         <div class="p-6">
             <div class="flex flex-col items-center justify-center space-y-4">
@@ -259,16 +263,18 @@
     <!-- Modal para instrucciones de uso -->
     <x-modal name="instrucciones-uso" :show="false" focusable>
         @slot('title')
-            <h2 class="text-lg font-medium text-white dark:text-gray-100">
-                Instrucciones de Uso
-            </h2>
+        <h2 class="text-lg font-medium text-white dark:text-gray-100">
+            Instrucciones de Uso
+        </h2>
         @endslot
         <div class="p-6">
             <div class="space-y-4">
                 <div class="flex items-start gap-3">
                     <div class="flex-shrink-0 w-8 h-8 text-blue-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                     </div>
                     <div>
@@ -478,7 +484,7 @@
             elements.indicatorsCtx.shadowBlur = 0;
 
             // Agregar evento de clic al indicador
-            elements.indicatorsCanvas.addEventListener('click', function(event) {
+            elements.indicatorsCanvas.addEventListener('click', function (event) {
                 const rect = elements.indicatorsCanvas.getBoundingClientRect();
                 const x = event.clientX - rect.left;
                 const y = event.clientY - rect.top;
@@ -901,13 +907,11 @@
             }
         };
 
-        // Función para obtener el día actual en español
         function obtenerDiaActual() {
             const dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
             return dias[new Date().getDay()];
         }
 
-        // Función para determinar el módulo actual
         function determinarModulo(hora) {
             const diaActual = obtenerDiaActual();
             const horariosDia = horariosModulos[diaActual];
@@ -1007,10 +1011,10 @@
         actualizarModuloYColores(); // Actualizar inmediatamente al cargar
 
         // Asegurarse de que el modal esté actualizado cuando se abre
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const modal = document.getElementById('modal-solicitar-espacio');
             if (modal) {
-                modal.addEventListener('show.bs.modal', function() {
+                modal.addEventListener('show.bs.modal', function () {
                     actualizarHora();
                     actualizarModuloYColores();
                 });
@@ -1018,10 +1022,10 @@
         });
 
         // Inicialización cuando el DOM está listo
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             const inputEscanner = document.getElementById('qr-input');
             inputEscanner.addEventListener('keydown', handleScan);
-            document.addEventListener('click', function() {
+            document.addEventListener('click', function () {
                 inputEscanner.focus();
             });
             inputEscanner.focus();
@@ -1031,7 +1035,7 @@
             initElements();
 
             const img = new Image();
-            img.onload = function() {
+            img.onload = function () {
                 state.mapImage = img;
                 state.originalImageSize = {
                     width: img.width,
@@ -1046,12 +1050,12 @@
             };
             img.src = "{{ asset('storage/' . $mapa->ruta_mapa) }}";
 
-            window.addEventListener('resize', function() {
+            window.addEventListener('resize', function () {
                 initCanvases();
             });
 
             // Limpiar el intervalo cuando se desmonte el componente
-            window.addEventListener('beforeunload', function() {
+            window.addEventListener('beforeunload', function () {
                 if (state.updateInterval) {
                     clearInterval(state.updateInterval);
                 }
@@ -1061,7 +1065,7 @@
             actualizarEstadoQR(null);
         });
 
-        window.mostrarDetallesBloque = function(bloque) {
+        window.mostrarDetallesBloque = function (bloque) {
             const titulo = document.getElementById('modal-titulo');
             const tipoEspacio = document.getElementById('modal-tipo-espacio');
             const puestos = document.getElementById('modal-puestos');
@@ -1116,7 +1120,7 @@
                         btnEntregarLlaves.className =
                             'mt-4 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700';
                         btnEntregarLlaves.textContent = '¿Desea entregar las llaves?';
-                        btnEntregarLlaves.onclick = function() {
+                        btnEntregarLlaves.onclick = function () {
                             // Cerrar el modal actual
                             window.dispatchEvent(new CustomEvent('close-modal', {
                                 detail: 'detalles-bloque'
@@ -1355,22 +1359,22 @@
 
             window.profesorRunSalida =
                 fetch(`/api/user/${run}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.user) {
-                        document.getElementById('profesor-nombre-salida').textContent = data.user.name || '';
-                        document.getElementById('profesor-correo-salida').textContent = data.user.email || '';
-                        document.getElementById('profesor-info-salida').classList.remove('hidden');
-                        document.getElementById('profesor-scan-section-salida').classList.add('hidden');
-                        document.getElementById('espacio-scan-section-salida').classList.remove('hidden');
-                        initEspacioScannerSalida();
-                    } else {
-                        mostrarErrorEscaneoSalida('La persona no se encuentra registrada, contáctese con soporte.');
-                    }
-                })
-                .catch(error => {
-                    mostrarErrorEscaneoSalida(error.message || 'Error al obtener información del profesor');
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.user) {
+                            document.getElementById('profesor-nombre-salida').textContent = data.user.name || '';
+                            document.getElementById('profesor-correo-salida').textContent = data.user.email || '';
+                            document.getElementById('profesor-info-salida').classList.remove('hidden');
+                            document.getElementById('profesor-scan-section-salida').classList.add('hidden');
+                            document.getElementById('espacio-scan-section-salida').classList.remove('hidden');
+                            initEspacioScannerSalida();
+                        } else {
+                            mostrarErrorEscaneoSalida('La persona no se encuentra registrada, contáctese con soporte.');
+                        }
+                    })
+                    .catch(error => {
+                        mostrarErrorEscaneoSalida(error.message || 'Error al obtener información del profesor');
+                    });
         }
 
         // Función para inicializar el escáner de QR para el espacio en la salida
@@ -1444,16 +1448,16 @@
 
         function registrarSalidaClase(run, espacioId) {
             fetch('/api/registrar-salida-clase', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({
-                        run: run,
-                        espacio_id: espacioId
-                    })
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    run: run,
+                    espacio_id: espacioId
                 })
+            })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
@@ -1661,7 +1665,7 @@
                     if (match) {
                         usuarioEscaneado = match[1];
                         const usuarioInfo = await verificarUsuario(usuarioEscaneado);
-                        
+
                         if (usuarioInfo && usuarioInfo.verificado) {
                             document.getElementById('qr-status').innerHTML = 'Usuario verificado. Escanee el espacio.';
                             document.getElementById('run-escaneado').textContent = usuarioInfo.usuario.run;
@@ -1678,7 +1682,7 @@
                 } else {
                     const espacioProcesado = bufferQR.replace(/'/g, '-');
                     const espacioInfo = await verificarEspacio(espacioProcesado);
-                    
+
                     if (espacioInfo?.verificado) {
                         if (espacioInfo.disponible) {
                             Swal.fire({
@@ -1725,7 +1729,7 @@
                                             'Content-Type': 'application/json',
                                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                                         },
-                                        body: JSON.stringify({ 
+                                        body: JSON.stringify({
                                             id_espacio: espacioProcesado,
                                             run: usuarioEscaneado
                                         })
@@ -1765,7 +1769,7 @@
             }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const inputEscanner = document.getElementById('qr-input');
             inputEscanner.addEventListener('keydown', handleScan);
             document.addEventListener('click', () => inputEscanner.focus());
@@ -1780,7 +1784,7 @@
                 '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">' +
                 '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg> ' + mensaje;
 
-            document.getElementById('reconocimiento-icono').innerHTML = 
+            document.getElementById('reconocimiento-icono').innerHTML =
                 '<svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">' +
                 '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>';
             document.getElementById('reconocimiento-titulo').textContent = 'Error de Reconocimiento';
@@ -1841,7 +1845,7 @@
                             // Actualizar el modal con la información del usuario
                             document.getElementById('reconocimiento-usuario').textContent = `Usuario: ${data.user.name}`;
                             document.getElementById('reconocimiento-espacio').textContent = 'Esperando escaneo del espacio...';
-                            document.getElementById('reconocimiento-icono').innerHTML = 
+                            document.getElementById('reconocimiento-icono').innerHTML =
                                 '<svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">' +
                                 '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>';
                             document.getElementById('reconocimiento-titulo').textContent = 'Usuario Reconocido';
@@ -1891,7 +1895,7 @@
 
                             // Actualizar el modal con la información del espacio
                             document.getElementById('reconocimiento-espacio').textContent = `Espacio: ${data.space.name || qrEspacio}`;
-                            document.getElementById('reconocimiento-icono').innerHTML = 
+                            document.getElementById('reconocimiento-icono').innerHTML =
                                 '<svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">' +
                                 '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>';
                             document.getElementById('reconocimiento-titulo').textContent = 'Reconocimiento Exitoso';
@@ -1917,7 +1921,7 @@
                                     showCancelButton: true,
                                     confirmButtonText: 'Solicitar llave',
                                     cancelButtonText: 'Cancelar',
-                                    callback: function(confirmado) {
+                                    callback: function (confirmado) {
                                         if (confirmado) {
                                             guardarReserva(qrEspacio, qrUsuario, 'clase');
                                         }
@@ -1932,7 +1936,7 @@
                                     showCancelButton: true,
                                     confirmButtonText: 'Sí, utilizar',
                                     cancelButtonText: 'Cancelar',
-                                    callback: function(confirmado) {
+                                    callback: function (confirmado) {
                                         if (confirmado) {
                                             guardarReserva(qrEspacio, qrUsuario, 'espontanea');
                                         }
@@ -1996,7 +2000,7 @@
         }
 
         // Agregar el evento click al botón de pantalla completa
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const fullscreenBtn = document.getElementById('fullscreenBtn');
             fullscreenBtn.addEventListener('click', toggleFullscreen);
         });
@@ -2018,17 +2022,17 @@
 
         function guardarReserva(espacioId, usuarioRun, tipoReserva) {
             fetch('/api/registrar-ingreso-clase', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({
-                        run: usuarioRun,
-                        espacio_id: espacioId,
-                        tipo_reserva: tipoReserva
-                    })
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    run: usuarioRun,
+                    espacio_id: espacioId,
+                    tipo_reserva: tipoReserva
                 })
+            })
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
@@ -2075,31 +2079,27 @@
 
         function actualizarColoresEspacios() {
             fetch('/api/espacios/estados')
-                .then(response => response.json())
-                .then(data => {
-                    data.espacios.forEach(espacio => {
-                        const id = espacio.id;
-                        const estado = espacio.estado;
-                        const elemento = document.getElementById('espacio-' + id);
-                        if (!elemento) return;
+                .then(res => res.json())
+                .then(({ espacios }) => {
+                    const colores = {
+                        Ocupado: "#FF0000",       // Rojo
+                        Disponible: "#059669",    // Verde
+                        Reservado: "#FFA500",     // Naranja
+                        Default: "#CCCCCC"        // Gris
+                    };
 
-                        // Lógica de color según estado
-                        if (estado === "Ocupado") {
-                            elemento.style.fill = "#FF0000"; // Rojo
-                        } else if (estado === "Disponible") {
-                            elemento.style.fill = "#059669"; // Verde sidebar
-                        } else if (estado === "Reservado") {
-                            elemento.style.fill = "#FFA500"; // Naranja
-                        } else {
-                            elemento.style.fill = "#CCCCCC"; // Gris por defecto
-                        }
+                    espacios.forEach(({ id, estado }) => {
+                        const el = document.getElementById(`espacio-${id}`);
+                        if (el) el.style.fill = colores[estado] || colores.Default;
                     });
-                });
+                })
+                .catch(console.error);
         }
+
 
         function scheduleNextUpdate() {
             const delay = getNextUpdateDelay();
-            setTimeout(function() {
+            setTimeout(function () {
                 actualizarColoresEspacios();
                 scheduleNextUpdate();
             }, delay);
@@ -2110,8 +2110,55 @@
         scheduleNextUpdate();
 
         // Agregar el manejador para el botón de información
-        document.getElementById('infoButton').addEventListener('click', function() {
+        document.getElementById('infoButton').addEventListener('click', function () {
             window.dispatchEvent(new CustomEvent('open-modal', { detail: 'instrucciones-uso' }));
         });
+
+        function dibujarIndicadores(bloques) {
+            const ctx = indicatorsCanvas.getContext('2d');
+            ctx.clearRect(0, 0, indicatorsCanvas.width, indicatorsCanvas.height);
+
+            bloques.forEach(bloque => {
+                const { x, y, width, height, estado, clase_proxima } = bloque;
+                
+                // Determinar el color basado en el estado y si hay clase próxima
+                let color;
+                if (estado === 'ocupado') {
+                    color = 'rgba(239, 68, 68, 0.7)'; // Rojo
+                } else if (estado === 'proximo') {
+                    color = 'rgba(234, 179, 8, 0.7)'; // Amarillo
+                } else if (clase_proxima && clase_proxima.hora_inicio) {
+                    // Verificar si estamos en un espacio entre módulos
+                    const horaActual = new Date();
+                    const horaActualStr = horaActual.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+                    const [horaActualHora, horaActualMin] = horaActualStr.split(':').map(Number);
+                    
+                    // Obtener la hora de inicio del módulo
+                    const [horaInicioHora, horaInicioMin] = clase_proxima.hora_inicio.split(':').map(Number);
+                    
+                    // Si estamos en los 10 minutos antes del inicio del módulo
+                    if (horaActualHora === horaInicioHora && 
+                        horaActualMin >= (horaInicioMin - 10) && 
+                        horaActualMin < horaInicioMin) {
+                        color = 'rgba(59, 130, 246, 0.7)'; // Azul para espacios entre módulos
+                    } else {
+                        color = 'rgba(34, 197, 94, 0.7)'; // Verde para otros casos
+                    }
+                } else {
+                    color = 'rgba(34, 197, 94, 0.7)'; // Verde
+                }
+
+                // Dibujar el indicador
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(x + width / 2, y + height / 2, 10, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Agregar borde blanco
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+        }
     </script>
 </x-show-layout>

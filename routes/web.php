@@ -197,4 +197,7 @@ Route::prefix('reporteria')->group(function () {
     Route::get('unidad-academica/export/{format}', [ReporteriaController::class, 'exportUnidadAcademica'])->name('reporteria.unidad-academica.export');
 });
 
+Route::post('/dashboard/set-piso', [DashboardController::class, 'setPiso'])->name('dashboard.setPiso');
+Route::get('/dashboard/widget-data', [DashboardController::class, 'getWidgetData'])->name('dashboard.widgetData');
+
 require __DIR__ . '/auth.php';
