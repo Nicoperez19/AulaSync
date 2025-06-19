@@ -24,9 +24,18 @@ class SubjectsTable extends Component
 
     public function render()
     {
-        $asignaturas = Asignatura::where('nombre_asignatura', 'like', '%' . $this->search . '%')
-            ->orWhere('id_asignatura', 'like', '%' . $this->search . '%')
-            ->orWhere('area_conocimiento', 'like', '%' . $this->search . '%')
+        $asignaturas = Asignatura::with(['user', 'carrera'])
+            ->where(function($query) {
+                $query->where('nombre_asignatura', 'like', '%' . $this->search . '%')
+                      ->orWhere('id_asignatura', 'like', '%' . $this->search . '%')
+                      ->orWhere('area_conocimiento', 'like', '%' . $this->search . '%')
+                      ->orWhereHas('user', function($q) {
+                          $q->where('name', 'like', '%' . $this->search . '%');
+                      })
+                      ->orWhereHas('carrera', function($q) {
+                          $q->where('nombre', 'like', '%' . $this->search . '%');
+                      });
+            })
             ->orderBy('nombre_asignatura', 'asc')
             ->paginate($this->perPage);
 

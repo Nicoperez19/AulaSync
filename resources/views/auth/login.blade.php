@@ -15,10 +15,7 @@
                     <x-form.label for="run" :value="__('RUN')" />
 
                     <x-form.input-with-icon-wrapper>
-                        <x-slot name="icon">
-                            <x-icons.identification aria-hidden="true" class="w-5 h-5 bg-light-cloud-blue" />
-                        </x-slot>
-
+                     
                         <x-form.input withicon id="run" class="block w-full" type="text" name="run"
                             :value="old('run')" placeholder="{{ __('Ej: 12345678') }}" required autofocus x-data
                             x-on:input="

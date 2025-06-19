@@ -27,28 +27,11 @@
 
                 <!-- Nombre -->
                 <div class="space-y-2">
-                    <x-form.label for="nombre_asignatura" value="Nombre" />
-                    <x-form.input id="nombre_asignatura" name="nombre_asignatura" type="text" class="w-full" required maxlength="100" />
+                    <x-form.label for="nombre" value="Nombre" />
+                    <x-form.input id="nombre" name="nombre" type="text" class="w-full" required maxlength="100" />
                 </div>
 
-                <!-- Horas Directas -->
-                <div class="space-y-2">
-                    <x-form.label for="horas_directas" value="Horas Directas" />
-                    <x-form.input id="horas_directas" name="horas_directas" type="number" class="w-full" required />
-                </div>
-
-                <!-- Horas Indirectas -->
-                <div class="space-y-2">
-                    <x-form.label for="horas_indirectas" value="Horas Indirectas" />
-                    <x-form.input id="horas_indirectas" name="horas_indirectas" type="number" class="w-full" required />
-                </div>
-
-                <!-- Área de Conocimiento -->
-                <div class="space-y-2">
-                    <x-form.label for="area_conocimiento" value="Área de Conocimiento" />
-                    <x-form.input id="area_conocimiento" name="area_conocimiento" type="text" class="w-full" required maxlength="100" />
-                </div>
-
+               
                 <!-- Periodo -->
                 <div class="space-y-2">
                     <x-form.label for="periodo" value="Periodo" />
@@ -57,10 +40,10 @@
 
                 <!-- Usuario -->
                 <div class="space-y-2">
-                    <x-form.label for="id_usuario" value="Docente Responsable" />
-                    <select name="id_usuario" id="id_usuario" class="w-full border-gray-300 rounded-md">
+                    <x-form.label for="run" value="Docente Responsable" />
+                    <select name="run" id="run" class="w-full border-gray-300 rounded-md">
                         @foreach ($usuarios as $usuario)
-                            <option value="{{ $usuario->id }}">{{ $usuario->name }}</option>
+                            <option value="{{ $usuario->run }}">{{ $usuario->name }}</option>
                         @endforeach
                     </select>
                 </div>

@@ -563,7 +563,16 @@
 
             const detalles = indicator.detalles || {};
 
-            if (detalles.planificacion) {
+            // Mostrar información de la clase actual si el espacio está en estado naranja (Reservado)
+            if (indicator.estado === '#FFA500' && indicator.informacion_clase_actual) {
+                modalPlanificacion.classList.remove('hidden');
+                modalPlanificacionDetalles.innerHTML = `
+                    <p>Asignatura: ${indicator.informacion_clase_actual.asignatura}</p>
+                    <p>Profesor: ${indicator.informacion_clase_actual.profesor}</p>
+                    <p>Módulo: ${indicator.informacion_clase_actual.modulo}</p>
+                    <p>Horario: ${indicator.informacion_clase_actual.hora_inicio} hrs. - ${indicator.informacion_clase_actual.hora_termino} hrs.</p>
+                `;
+            } else if (detalles.planificacion) {
                 modalPlanificacion.classList.remove('hidden');
                 modalPlanificacionDetalles.innerHTML = `
                     <p>Asignatura: ${detalles.planificacion.asignatura || 'No especificada'}</p>
@@ -905,68 +914,7 @@
                     fin: '23:00:00'
                 }
             }
-            sabado: {
-                1: {
-                    inicio: '08:10:00',
-                    fin: '09:00:00'
-                },
-                2: {
-                    inicio: '09:10:00',
-                    fin: '10:00:00'
-                },
-                3: {
-                    inicio: '10:10:00',
-                    fin: '11:00:00'
-                },
-                4: {
-                    inicio: '11:10:00',
-                    fin: '12:00:00'
-                },
-                5: {
-                    inicio: '12:10:00',
-                    fin: '13:00:00'
-                },
-                6: {
-                    inicio: '13:10:00',
-                    fin: '14:00:00'
-                },
-                7: {
-                    inicio: '14:10:00',
-                    fin: '15:00:00'
-                },
-                8: {
-                    inicio: '15:10:00',
-                    fin: '16:00:00'
-                },
-                9: {
-                    inicio: '16:10:00',
-                    fin: '17:00:00'
-                },
-                10: {
-                    inicio: '17:10:00',
-                    fin: '18:00:00'
-                },
-                11: {
-                    inicio: '18:10:00',
-                    fin: '19:00:00'
-                },
-                12: {
-                    inicio: '19:10:00',
-                    fin: '20:00:00'
-                },
-                13: {
-                    inicio: '20:10:00',
-                    fin: '21:00:00'
-                },
-                14: {
-                    inicio: '21:10:00',
-                    fin: '22:00:00'
-                },
-                15: {
-                    inicio: '22:10:00',
-                    fin: '23:00:00'
-                }
-            }
+            
         };
 
         function obtenerDiaActual() {
@@ -1107,8 +1055,11 @@
                 initCanvases();
                 drawIndicators();
 
-                // Actualizar cada minuto
-                state.updateInterval = setInterval(actualizarEstadoMapa, 60000);
+                // Sincronizar colores después de cargar la imagen
+                sincronizarColoresDespuesCarga();
+
+                // Actualizar cada minuto usando la nueva función de colores
+                state.updateInterval = setInterval(actualizarColoresEspacios, 60000);
             };
             img.src = "{{ asset('storage/' . $mapa->ruta_mapa) }}";
 
@@ -2075,6 +2026,15 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
+                
+                // Preservar los colores de estado existentes
+                data.forEach(nuevoIndicador => {
+                    const indicadorExistente = state.indicators.find(ind => ind.id === nuevoIndicador.id);
+                    if (indicadorExistente && indicadorExistente.estado) {
+                        nuevoIndicador.estado = indicadorExistente.estado;
+                    }
+                });
+                
                 state.indicators = data;
                 drawIndicators();
             } catch (error) {
@@ -2103,8 +2063,11 @@
                             text: data.message || 'La reserva se guardó correctamente.',
                             icon: 'success'
                         });
-                        if (typeof actualizarEstadoMapa === 'function') {
-                            actualizarEstadoMapa();
+                        // Forzar actualización de colores después de registrar reserva
+                        if (typeof forzarActualizacionColores === 'function') {
+                            setTimeout(() => {
+                                forzarActualizacionColores();
+                            }, 500);
                         }
                     } else {
                         window.sweetAlert({
@@ -2139,37 +2102,87 @@
             return nextUpdate - now;
         }
 
+        // Variable para almacenar el estado anterior
+        let estadoAnterior = {};
+
         function actualizarColoresEspacios() {
+            console.log('Verificando cambios en estados de espacios...');
             fetch('/api/espacios/estados')
                 .then(res => res.json())
                 .then(({ espacios }) => {
                     const colores = {
-                        Ocupado: "#FF0000",       // Rojo
-                        Disponible: "#059669",    // Verde
-                        Reservado: "#FFA500",     // Naranja
-                        Default: "#CCCCCC"        // Gris
+                        Ocupado: "#FF0000",       // Rojo - Estado en tabla es "Ocupado"
+                        Disponible: "#059669",    // Verde - Estado "Disponible" sin horario
+                        Reservado: "#FFA500",     // Naranja - Clase en curso pero estado no es "Ocupado"
+                        Proximo: "#3B82F6",       // Azul - Entre módulos (próxima clase en 10 min)
+                        Default: "#CCCCCC"        // Gris - Estado por defecto
                     };
 
-                    espacios.forEach(({ id, estado }) => {
-                        const el = document.getElementById(`espacio-${id}`);
-                        if (el) el.style.fill = colores[estado] || colores.Default;
+                    let hayCambios = false;
+
+                    // Verificar si hay cambios en los estados
+                    state.indicators.forEach(indicator => {
+                        const espacioEstado = espacios.find(esp => esp.id === indicator.id);
+                        if (espacioEstado) {
+                            const nuevoColor = colores[espacioEstado.estado] || colores.Default;
+                            const colorAnterior = estadoAnterior[indicator.id] || indicator.estado;
+                            
+                            // Solo actualizar si el color ha cambiado
+                            if (nuevoColor !== colorAnterior) {
+                                console.log(`Cambio detectado - Espacio ${indicator.id}: ${espacioEstado.estado} (${colorAnterior} -> ${nuevoColor})`);
+                                indicator.estado = nuevoColor;
+                                estadoAnterior[indicator.id] = nuevoColor;
+                                hayCambios = true;
+                            }
+                            
+                            // Actualizar información de la clase actual si existe
+                            if (espacioEstado.informacion_clase_actual) {
+                                indicator.informacion_clase_actual = espacioEstado.informacion_clase_actual;
+                            }
+                        }
                     });
+
+                    // Solo redibujar si hubo cambios
+                    if (hayCambios) {
+                        console.log('Redibujando indicadores debido a cambios...');
+                        drawIndicators();
+                    } else {
+                        console.log('No se detectaron cambios en los estados');
+                    }
                 })
-                .catch(console.error);
+                .catch(error => {
+                    console.error('Error al verificar estados:', error);
+                });
         }
 
-
-        function scheduleNextUpdate() {
-            const delay = getNextUpdateDelay();
-            setTimeout(function () {
+        // Función para sincronizar colores después de cargar el mapa
+        function sincronizarColoresDespuesCarga() {
+            setTimeout(() => {
+                console.log('Sincronizando colores después de cargar el mapa...');
                 actualizarColoresEspacios();
-                scheduleNextUpdate();
-            }, delay);
+            }, 2000); // Esperar 2 segundos después de cargar el mapa
+        }
+
+        // Función para forzar actualización (usar cuando se registre una reserva o cambio de estado)
+        function forzarActualizacionColores() {
+            console.log('Forzando actualización de colores...');
+            estadoAnterior = {}; // Limpiar estado anterior para forzar actualización
+            actualizarColoresEspacios();
         }
 
         // Llama una vez al cargar la página
         actualizarColoresEspacios();
-        scheduleNextUpdate();
+        
+        // Inicializar el estado anterior después de la primera carga
+        setTimeout(() => {
+            state.indicators.forEach(indicator => {
+                estadoAnterior[indicator.id] = indicator.estado;
+            });
+            console.log('Estado inicial establecido');
+        }, 1000);
+        
+        // Deshabilitar la función actualizarEstadoMapa automática para evitar conflictos
+        // Solo se ejecutará cuando se registre una reserva manualmente
 
         // Agregar el manejador para el botón de información
         document.getElementById('infoButton').addEventListener('click', function () {

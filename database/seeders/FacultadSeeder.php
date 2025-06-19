@@ -20,13 +20,13 @@ class FacultadSeeder extends Seeder
                 'id_sede' => 'TH',
                 'id_campus' => null,
             ],
-            [
-                'id_facultad' => 'FACEA',
-                'nombre_facultad' => 'Facultad de Ciencias Económicas y Administrativas',
-                'id_universidad' => 'UCSC',
-                'id_sede' => 'CCP',
-                'id_campus' => 'CSA',
-            ],
+            // [
+            //     'id_facultad' => 'FACEA',
+            //     'nombre_facultad' => 'Facultad de Ciencias Económicas y Administrativas',
+            //     'id_universidad' => 'UCSC',
+            //     'id_sede' => 'CCP',
+            //     'id_campus' => 'CSA',
+            // ],
         ];
         foreach ($facultades as $facultad) {
             Facultad::create($facultad);

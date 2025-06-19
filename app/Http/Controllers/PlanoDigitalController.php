@@ -403,19 +403,106 @@ class PlanoDigitalController extends Controller
 
     public function estadosEspacios()
     {
-        $espacios = \App\Models\Espacio::all()->map(function($espacio) {
-            // Lógica para determinar si tiene próxima clase
-            $estado = $espacio->estado;
-            if (method_exists($espacio, 'tieneProximaClase') && $espacio->tieneProximaClase()) {
-                $estado = 'Proximo';
-            }
-            // Si tienes un campo o relación diferente, ajusta aquí:
-            // if ($espacio->planificacion_proxima) { $estado = 'Proximo'; }
-            return [
-                'id' => $espacio->id_espacio,
-                'estado' => $estado,
-            ];
-        });
-        return response()->json(['espacios' => $espacios]);
+        $horaActual = \Carbon\Carbon::now();
+        $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
+        $horaActualStr = $horaActual->format('H:i:s');
+        
+        // Determinar el período actual
+        $mesActual = date('n');
+        $anioActual = date('Y');
+        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
+        $periodo = $anioActual . '-' . $semestre;
+
+        // Obtener todos los espacios
+        $espacios = \App\Models\Espacio::all();
+        
+        // Obtener todas las planificaciones activas para el período actual
+        $planificacionesActivas = \App\Models\Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.user'])
+            ->whereHas('horario', function ($query) use ($periodo) {
+                $query->where('periodo', $periodo);
+            })
+            ->whereHas('modulo', function ($query) use ($diaActual) {
+                $query->where('dia', $diaActual);
+            })
+            ->get();
+        
+        // Obtener reservas activas para hoy
+        $reservasActivas = \App\Models\Reserva::where('fecha_reserva', $horaActual->toDateString())
+            ->where('estado', 'activa')
+            ->get();
+
+        return response()->json([
+            'espacios' => $espacios->map(function($espacio) use ($horaActual, $horaActualStr, $diaActual, $planificacionesActivas, $reservasActivas) {
+                $estadoTabla = $espacio->estado; // Estado actual en la tabla espacios
+                
+                // Verificar si el espacio está ocupado por una reserva activa
+                $tieneReservaActiva = $reservasActivas->where('id_espacio', $espacio->id_espacio)->isNotEmpty();
+                
+                // Verificar si el espacio tiene una clase programada que debería estar en curso
+                $claseEnCurso = $planificacionesActivas->where('id_espacio', $espacio->id_espacio)
+                    ->filter(function($planificacion) use ($horaActualStr) {
+                        return $planificacion->modulo->hora_inicio <= $horaActualStr && 
+                               $planificacion->modulo->hora_termino > $horaActualStr;
+                    })->first();
+                
+                $tieneClaseEnCurso = $claseEnCurso !== null;
+                
+                // Verificar si el espacio tiene una clase próxima (entre módulos)
+                $tieneClaseProxima = false;
+                $planificacionesDelEspacio = $planificacionesActivas->where('id_espacio', $espacio->id_espacio);
+                
+                foreach ($planificacionesDelEspacio as $planificacion) {
+                    $horaInicioModulo = $planificacion->modulo->hora_inicio;
+                    $horaActualCarbon = \Carbon\Carbon::createFromFormat('H:i:s', $horaActualStr);
+                    $horaInicioCarbon = \Carbon\Carbon::createFromFormat('H:i:s', $horaInicioModulo);
+                    
+                    // Si la clase comienza dentro de los próximos 10 minutos Y no está actualmente en curso
+                    if ($horaInicioCarbon->gt($horaActualCarbon) && 
+                        $horaInicioCarbon->diffInMinutes($horaActualCarbon) <= 10 &&
+                        !$tieneClaseEnCurso) {
+                        $tieneClaseProxima = true;
+                        break;
+                    }
+                }
+                
+                // Determinar el estado final según la lógica correcta
+                if ($tieneReservaActiva) {
+                    $estado = 'Reservado';
+                } elseif ($estadoTabla === 'Ocupado') {
+                    // Si el estado en la tabla es "Ocupado", mostrar rojo
+                    $estado = 'Ocupado';
+                } elseif ($tieneClaseEnCurso && $estadoTabla !== 'Ocupado') {
+                    // Si hay clase en curso pero el estado no es "Ocupado", mostrar naranja
+                    $estado = 'Reservado'; // Usamos 'Reservado' para el color naranja
+                } elseif ($tieneClaseProxima) {
+                    // Si hay clase próxima (entre módulos), mostrar azul
+                    $estado = 'Proximo';
+                } elseif ($estadoTabla === 'Disponible') {
+                    // Si el estado es "Disponible" y no hay horario asociado, mostrar verde
+                    $estado = 'Disponible';
+                } else {
+                    // Estado por defecto
+                    $estado = $estadoTabla;
+                }
+                
+                // Preparar información adicional para el modal
+                $informacionAdicional = null;
+                if ($tieneClaseEnCurso && $claseEnCurso) {
+                    $informacionAdicional = [
+                        'asignatura' => $claseEnCurso->asignatura->nombre_asignatura ?? 'No especificada',
+                        'profesor' => $claseEnCurso->asignatura->user->name ?? 'No especificado',
+                        'modulo' => explode('.', $claseEnCurso->modulo->id_modulo)[1] ?? 'No especificado',
+                        'hora_inicio' => substr($claseEnCurso->modulo->hora_inicio, 0, 5),
+                        'hora_termino' => substr($claseEnCurso->modulo->hora_termino, 0, 5)
+                    ];
+                }
+                
+                return [
+                    'id' => $espacio->id_espacio,
+                    'estado' => $estado,
+                    'informacion_clase_actual' => $informacionAdicional
+                ];
+            })
+        ]);
     }
 }
