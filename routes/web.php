@@ -189,11 +189,14 @@ Route::prefix('reporteria')->group(function () {
     Route::get('utilizacion', [ReporteriaController::class, 'utilizacion'])->name('reporteria.utilizacion');
     Route::get('tipo-espacio', [ReporteriaController::class, 'tipoEspacio'])->name('reporteria.tipo-espacio');
     Route::get('accesos', [ReporteriaController::class, 'accesos'])->name('reporteria.accesos');
+    Route::get('accesos/limpiar', [ReporteriaController::class, 'limpiarFiltrosAccesos'])->name('reporteria.accesos.limpiar');
+    Route::get('accesos/{id}/detalles', [ReporteriaController::class, 'getDetallesAcceso'])->name('reporteria.accesos.detalles');
     Route::get('unidad-academica', [ReporteriaController::class, 'unidadAcademica'])->name('reporteria.unidad-academica');
     // Rutas para exportar a Excel y PDF
     Route::get('utilizacion/export/{format}', [ReporteriaController::class, 'exportUtilizacion'])->name('reporteria.utilizacion.export');
     Route::get('tipo-espacio/export/{format}', [ReporteriaController::class, 'exportTipoEspacio'])->name('reporteria.tipo-espacio.export');
     Route::get('accesos/export/{format}', [ReporteriaController::class, 'exportAccesos'])->name('reporteria.accesos.export');
+    Route::post('accesos/export/{format}', [ReporteriaController::class, 'exportAccesosConFiltros'])->name('reporteria.accesos.export.filtros');
     Route::get('unidad-academica/export/{format}', [ReporteriaController::class, 'exportUnidadAcademica'])->name('reporteria.unidad-academica.export');
 });
 

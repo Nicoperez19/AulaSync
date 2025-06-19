@@ -54,14 +54,19 @@
             </div>
             <div class="flex items-center gap-2">
                 <label class="font-semibold">Piso:</label>
-                <select id="piso-selector" class="rounded-md border-gray-300 shadow-sm w-32" onchange="cambiarPiso(this.value)">
-                    <option value="">Todos</option>
-                    @foreach($pisos as $pisoItem)
-                        <option value="{{ $pisoItem->numero_piso }}" {{ $piso == $pisoItem->numero_piso ? 'selected' : '' }}>
-                            Piso {{ $pisoItem->numero_piso }}
-                        </option>
-                    @endforeach
-                </select>
+                <div class="relative">
+                    <select id="piso-selector" class="rounded-md border-gray-300 shadow-sm w-32 transition-all duration-300" onchange="cambiarPiso(this.value)">
+                        <option value="">Todos</option>
+                        @foreach($pisos as $pisoItem)
+                            <option value="{{ $pisoItem->numero_piso }}" {{ $piso == $pisoItem->numero_piso ? 'selected' : '' }}>
+                                Piso {{ $pisoItem->numero_piso }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <div id="piso-loading" class="absolute right-2 top-1/2 transform -translate-y-1/2 hidden">
+                        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    </div>
+                </div>
             </div>
             <div class="flex items-center gap-2">
                 <label class="font-semibold">Tipo de sala:</label>
@@ -106,16 +111,16 @@
     <div class="p-8 overflow-hidden mb-4 max-w-7xl mx-auto">
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-8 w-full">
             <!-- KPI 1: Ocupación semanal -->
-            <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 relative">
+            <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 relative widget-transition">
                 <img src="https://img.icons8.com/color/48/000000/combo-chart--v2.png" class="mb-2 w-12 h-12" />
                 <div class="text-xs text-gray-500">% Ocupación semanal</div>
-                <div id="ocupacion-semanal" class="text-3xl font-bold text-primary-600 mt-1 flex items-center gap-2">
+                <div id="ocupacion-semanal" class="text-3xl font-bold text-primary-600 mt-1 flex items-center gap-2 kpi-value">
                     {{ $ocupacionSemanal }}%
                     <span class="text-green-500 text-xl" title="Subió respecto a la semana anterior">▲</span>
                 </div>
             </div>
             <!-- KPI 2: Ocupación diaria -->
-            <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 relative">
+            <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 relative widget-transition">
                 <img src="https://img.icons8.com/color/48/000000/calendar--v2.png" class="mb-2 w-12 h-12" />
                 <div class="text-xs text-gray-500">% Ocupación diaria</div>
                 <div data-widget="ocupacion-diaria" class="flex gap-1 mt-1 text-xs">
@@ -125,34 +130,34 @@
                 </div>
             </div>
             <!-- KPI: Promedio ocupación mensual -->
-            <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 relative">
+            <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 relative widget-transition">
                 <img src="https://img.icons8.com/color/48/000000/line-chart.png" class="mb-2 w-12 h-12" />
                 <div class="text-xs text-gray-500">Promedio ocupación mensual</div>
-                <div id="ocupacion-mensual" class="text-3xl font-bold text-primary-600 mt-1 flex items-center gap-2">
+                <div id="ocupacion-mensual" class="text-3xl font-bold text-primary-600 mt-1 flex items-center gap-2 kpi-value">
                     {{ $ocupacionMensual }}%
                     <span class="text-green-500 text-xl" title="Subió respecto al mes anterior">▲</span>
                 </div>
             </div>
             <!-- Usuarios sin escaneo -->
-            <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6">
+            <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 widget-transition">
                 <span class="text-5xl mb-2 text-red-500">❌</span>
                 <div class="text-base text-red-700 font-bold mb-1">Usuarios sin escaneo</div>
-                <div id="usuarios-sin-escaneo" class="text-xs text-red-600 text-center">{{ $usuariosSinEscaneo }} usuarios sin registrar asistencia hoy</div>
+                <div id="usuarios-sin-escaneo" class="text-xs text-red-600 text-center kpi-value">{{ $usuariosSinEscaneo }} usuarios sin registrar asistencia hoy</div>
             </div>
             <!-- KPI 3: Horas utilizadas / disponibles -->
-            <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6">
+            <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 widget-transition">
                 <img src="https://img.icons8.com/color/48/000000/hourglass--v2.png" class="mb-2 w-12 h-12" />
                 <div class="text-xs text-gray-500">Horas utilizadas / disponibles</div>
-                <div id="horas-utilizadas" class="text-2xl font-bold text-yellow-700 mt-1">{{ $horasUtilizadas['utilizadas'] }} / {{ $horasUtilizadas['disponibles'] }}</div>
+                <div id="horas-utilizadas" class="text-2xl font-bold text-yellow-700 mt-1 kpi-value">{{ $horasUtilizadas['utilizadas'] }} / {{ $horasUtilizadas['disponibles'] }}</div>
                 <div class="w-full bg-yellow-200 rounded-full h-2 mt-2" style="max-width:100px;">
                     <div class="bg-yellow-500 h-2 rounded-full" style="width: {{ ($horasUtilizadas['utilizadas'] / $horasUtilizadas['disponibles']) * 100 }}%"></div>
                 </div>
             </div>
             <!-- KPI 4: Salas ocupadas / libres -->
-            <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6">
+            <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 widget-transition">
                 <img src="https://img.icons8.com/color/48/000000/brick-wall.png" class="mb-2 w-12 h-12" />
                 <div class="text-xs text-gray-500">Salas ocupadas / libres (hoy)</div>
-                <div id="salas-ocupadas" class="text-2xl font-bold" style="color:#a21caf; margin-top:4px;">{{ $salasOcupadas['ocupadas'] }} <span class="text-gray-400">/</span> {{ $salasOcupadas['libres'] }}</div>
+                <div id="salas-ocupadas" class="text-2xl font-bold kpi-value" style="color:#a21caf; margin-top:4px;">{{ $salasOcupadas['ocupadas'] }} <span class="text-gray-400">/</span> {{ $salasOcupadas['libres'] }}</div>
             </div>
         </div>
     </div>
@@ -160,32 +165,32 @@
     <!-- Grid inferior: gráficos y tablas ordenados -->
     <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         <!-- Gráfico de barras: Uso por Día -->
-        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative">
+        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition">
             <h4 class="font-semibold mb-4 text-gray-700 flex items-center gap-2">Gráfico de Barras: Uso por Día <span class="ml-2 cursor-pointer" title="Muestra la cantidad de horas ocupadas por día de la semana">ℹ️</span></h4>
             <canvas id="grafico-barras-ejemplo" width="320" height="220"></canvas>
         </div>
         <!-- Gráfico de barras horizontal: Top 3 salas más y menos usadas -->
-        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative">
+        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition">
             <h4 class="font-semibold mb-4 text-gray-700 flex items-center gap-2">Top 3 Salas más usadas <span class="ml-2 cursor-pointer" title="Ranking de salas según uso mensual">ℹ️</span></h4>
             <canvas id="grafico-top-salas" width="320" height="220"></canvas>
         </div>
         <!-- Gráfico de barras: Top asignaturas por uso de espacios -->
-        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative">
+        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition">
             <h4 class="font-semibold mb-4 text-gray-700 flex items-center gap-2">Top asignaturas por uso <span class="ml-2 cursor-pointer" title="Asignaturas con mayor uso de espacios">ℹ️</span></h4>
             <canvas id="grafico-top-asignaturas" width="320" height="220"></canvas>
         </div>
         <!-- Gráfico de áreas: Comparativa tipos de espacios -->
-        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative">
+        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition">
             <h4 class="font-semibold mb-4 text-gray-700 flex items-center gap-2">Comparativa de ocupación por tipo de espacio <span class="ml-2 cursor-pointer" title="Comparación de ocupación entre aulas, laboratorios, etc.">ℹ️</span></h4>
             <canvas id="grafico-comparativa-tipos" width="320" height="220"></canvas>
         </div>
         <!-- Gráfico de línea: Promedio mensual -->
-        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative">
+        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition">
             <h4 class="font-semibold mb-4 text-gray-700 flex items-center gap-2">Evolución mensual de ocupación <span class="ml-2 cursor-pointer" title="Tendencia del promedio de ocupación mensual">ℹ️</span></h4>
             <canvas id="grafico-mensual" width="320" height="220"></canvas>
         </div>
         <!-- Tabla: Reservas canceladas o no utilizadas -->
-        <div class="p-8 bg-white rounded-xl shadow-lg col-span-3 flex flex-col min-h-[260px] relative">
+        <div class="p-8 bg-white rounded-xl shadow-lg col-span-3 flex flex-col min-h-[260px] relative widget-transition">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-bold text-gray-700 flex items-center gap-2">Reservas canceladas o no utilizadas <span class="ml-2 cursor-pointer" title="Reservas que no fueron utilizadas o se cancelaron">ℹ️</span></h3>
                 <div class="flex gap-2">
@@ -217,7 +222,7 @@
             </div>
         </div>
         <!-- Tabla: Horarios por día -->
-        <div class="p-8 bg-white rounded-xl shadow-lg col-span-3 flex flex-col min-h-[260px]">
+        <div class="p-8 bg-white rounded-xl shadow-lg col-span-3 flex flex-col min-h-[260px] widget-transition">
             <h3 class="text-lg font-bold mb-4 text-gray-700">Horarios por día</h3>
             <div class="overflow-x-auto">
                 <table id="tabla-horarios-por-dia" class="min-w-full text-center border border-gray-300 rounded-lg">
@@ -250,7 +255,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Gráfico de barras: Uso por Día
-    new Chart(document.getElementById('grafico-barras-ejemplo'), {
+    window.graficoBarras = new Chart(document.getElementById('grafico-barras-ejemplo'), {
         type: 'bar',
         data: {
             labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
@@ -633,7 +638,9 @@
     function cambiarPiso(piso) {
         // Mostrar indicador de carga
         const selector = document.getElementById('piso-selector');
+        const loadingIndicator = document.getElementById('piso-loading');
         selector.disabled = true;
+        loadingIndicator.classList.remove('hidden');
         
         // Mostrar indicador de carga en los widgets
         mostrarCargando();
@@ -647,25 +654,43 @@
             },
             body: JSON.stringify({ piso: piso })
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error en la respuesta del servidor');
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.success) {
                 // Obtener los nuevos datos de los widgets
                 return fetch('/dashboard/widget-data');
             } else {
-                throw new Error('Error al cambiar piso: ' + data.message);
+                throw new Error('Error al cambiar piso: ' + (data.message || 'Error desconocido'));
             }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error al obtener datos de widgets');
+            }
+            return response.json();
+        })
         .then(widgetData => {
             // Actualizar todos los widgets con los nuevos datos
             actualizarWidgets(widgetData);
             selector.disabled = false;
+            loadingIndicator.classList.add('hidden');
+            
+            // Mostrar notificación de éxito
+            mostrarNotificacion('Piso cambiado exitosamente', 'success');
         })
         .catch(error => {
             console.error('Error en la petición:', error);
             selector.disabled = false;
+            loadingIndicator.classList.add('hidden');
             ocultarCargando();
+            
+            // Mostrar notificación de error
+            mostrarNotificacion('Error al cambiar piso: ' + error.message, 'error');
         });
     }
 
@@ -674,7 +699,11 @@
         const widgets = document.querySelectorAll('.bg-white.rounded-xl.shadow-lg');
         widgets.forEach(widget => {
             widget.classList.add('opacity-50');
-            widget.innerHTML += '<div class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>';
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-10';
+            loadingDiv.innerHTML = '<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>';
+            widget.style.position = 'relative';
+            widget.appendChild(loadingDiv);
         });
     }
 
@@ -690,34 +719,66 @@
         });
     }
 
+    function mostrarNotificacion(mensaje, tipo) {
+        // Crear notificación temporal
+        const notificacion = document.createElement('div');
+        notificacion.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transition-all duration-300 ${
+            tipo === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+        }`;
+        notificacion.textContent = mensaje;
+        
+        document.body.appendChild(notificacion);
+        
+        // Remover después de 3 segundos
+        setTimeout(() => {
+            notificacion.remove();
+        }, 3000);
+    }
+
     function actualizarWidgets(data) {
-        // Actualizar KPIs
-        actualizarKPI('ocupacion-semanal', data.ocupacionSemanal + '%');
-        actualizarKPI('ocupacion-mensual', data.ocupacionMensual + '%');
-        actualizarKPI('usuarios-sin-escaneo', data.usuariosSinEscaneo);
-        actualizarKPI('horas-utilizadas', data.horasUtilizadas.utilizadas + ' / ' + data.horasUtilizadas.disponibles);
-        actualizarKPI('salas-ocupadas', data.salasOcupadas.ocupadas + ' / ' + data.salasOcupadas.libres);
-        
-        // Actualizar ocupación diaria
-        actualizarOcupacionDiaria(data.ocupacionDiaria);
-        
-        // Actualizar gráficos
-        actualizarGraficoTopSalas(data.topSalas);
-        actualizarGraficoTopAsignaturas(data.topAsignaturas);
-        actualizarGraficoComparativaTipos(data.comparativaTipos);
-        actualizarGraficoEvolucionMensual(data.evolucionMensual);
-        
-        // Actualizar tablas
-        actualizarTablaReservasCanceladas(data.reservasCanceladas);
-        actualizarTablaHorariosPorDia(data.horariosPorDia);
-        
-        ocultarCargando();
+        try {
+            // Actualizar KPIs
+            actualizarKPI('ocupacion-semanal', data.ocupacionSemanal + '%');
+            actualizarKPI('ocupacion-mensual', data.ocupacionMensual + '%');
+            actualizarKPI('usuarios-sin-escaneo', data.usuariosSinEscaneo + ' usuarios sin registrar asistencia hoy');
+            actualizarKPI('horas-utilizadas', data.horasUtilizadas.utilizadas + ' / ' + data.horasUtilizadas.disponibles);
+            actualizarKPI('salas-ocupadas', data.salasOcupadas.ocupadas + ' / ' + data.salasOcupadas.libres);
+            
+            // Actualizar ocupación diaria
+            actualizarOcupacionDiaria(data.ocupacionDiaria);
+            
+            // Actualizar gráficos
+            actualizarGraficoBarras(data.usoPorDia);
+            actualizarGraficoTopSalas(data.topSalas);
+            actualizarGraficoTopAsignaturas(data.topAsignaturas);
+            actualizarGraficoComparativaTipos(data.comparativaTipos);
+            actualizarGraficoEvolucionMensual(data.evolucionMensual);
+            
+            // Actualizar tablas
+            actualizarTablaReservasCanceladas(data.reservasCanceladas);
+            actualizarTablaHorariosPorDia(data.horariosPorDia);
+            
+            ocultarCargando();
+        } catch (error) {
+            console.error('Error al actualizar widgets:', error);
+            ocultarCargando();
+            mostrarNotificacion('Error al actualizar los datos', 'error');
+        }
     }
 
     function actualizarKPI(id, valor) {
         const elemento = document.getElementById(id);
         if (elemento) {
+            // Agregar clase de animación
+            elemento.classList.add('updating');
+            
+            // Actualizar el valor
             elemento.textContent = valor;
+            
+            // Remover la clase de animación después de un tiempo
+            setTimeout(() => {
+                elemento.classList.remove('updating');
+            }, 300);
         }
     }
 
@@ -733,35 +794,45 @@
         }
     }
 
+    function actualizarGraficoBarras(usoPorDia) {
+        if (window.graficoBarras && usoPorDia) {
+            const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            const datos = dias.map(dia => usoPorDia[dia] || 0);
+            
+            window.graficoBarras.data.datasets[0].data = datos;
+            window.graficoBarras.update('active');
+        }
+    }
+
     function actualizarGraficoTopSalas(topSalas) {
-        if (window.graficoTopSalas) {
+        if (window.graficoTopSalas && topSalas) {
             window.graficoTopSalas.data.labels = topSalas.map(sala => sala.nombre);
             window.graficoTopSalas.data.datasets[0].data = topSalas.map(sala => sala.uso);
-            window.graficoTopSalas.update();
+            window.graficoTopSalas.update('active');
         }
     }
 
     function actualizarGraficoTopAsignaturas(topAsignaturas) {
-        if (window.graficoTopAsignaturas) {
+        if (window.graficoTopAsignaturas && topAsignaturas) {
             window.graficoTopAsignaturas.data.labels = topAsignaturas.map(asignatura => asignatura.nombre);
             window.graficoTopAsignaturas.data.datasets[0].data = topAsignaturas.map(asignatura => asignatura.uso);
-            window.graficoTopAsignaturas.update();
+            window.graficoTopAsignaturas.update('active');
         }
     }
 
     function actualizarGraficoComparativaTipos(comparativaTipos) {
-        if (window.graficoComparativaTipos) {
+        if (window.graficoComparativaTipos && comparativaTipos) {
             window.graficoComparativaTipos.data.labels = comparativaTipos.map(tipo => tipo.tipo);
             window.graficoComparativaTipos.data.datasets[0].data = comparativaTipos.map(tipo => tipo.total);
-            window.graficoComparativaTipos.update();
+            window.graficoComparativaTipos.update('active');
         }
     }
 
     function actualizarGraficoEvolucionMensual(evolucionMensual) {
-        if (window.graficoMensual) {
+        if (window.graficoMensual && evolucionMensual) {
             window.graficoMensual.data.labels = evolucionMensual.dias;
             window.graficoMensual.data.datasets[0].data = evolucionMensual.ocupacion;
-            window.graficoMensual.update();
+            window.graficoMensual.update('active');
         }
     }
 
@@ -769,16 +840,20 @@
         const tbody = document.querySelector('#tabla-reservas-canceladas tbody');
         if (tbody) {
             let html = '';
-            reservasCanceladas.forEach(reserva => {
-                html += `
-                    <tr class="bg-white dark:bg-dark-eval-1">
-                        <td class="border">${reserva.usuario}</td>
-                        <td class="border">${reserva.espacio}</td>
-                        <td class="border">${reserva.hora}</td>
-                        <td class="border">Cancelada</td>
-                    </tr>
-                `;
-            });
+            if (reservasCanceladas && reservasCanceladas.length > 0) {
+                reservasCanceladas.forEach(reserva => {
+                    html += `
+                        <tr class="bg-white dark:bg-dark-eval-1">
+                            <td class="border">${reserva.usuario}</td>
+                            <td class="border">${reserva.espacio}</td>
+                            <td class="border">${reserva.hora}</td>
+                            <td class="border">Cancelada</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                html = '<tr><td colspan="4" class="border text-center text-gray-500">No hay reservas canceladas</td></tr>';
+            }
             tbody.innerHTML = html;
         }
     }
@@ -787,18 +862,62 @@
         const tbody = document.querySelector('#tabla-horarios-por-dia tbody');
         if (tbody) {
             let html = '';
-            horariosPorDia.forEach(horario => {
-                html += `
-                    <tr class="bg-white">
-                        <td class="border border-gray-300">${horario.modulo}</td>
-                        <td class="border border-gray-300">${horario.dia}</td>
-                        <td class="border border-gray-300">${horario.asignatura}</td>
-                        <td class="border border-gray-300">${horario.espacio}</td>
-                        <td class="border border-gray-300">${horario.usuario}</td>
-                    </tr>
-                `;
-            });
+            if (horariosPorDia && horariosPorDia.length > 0) {
+                horariosPorDia.forEach(horario => {
+                    html += `
+                        <tr class="bg-white">
+                            <td class="border border-gray-300">${horario.modulo}</td>
+                            <td class="border border-gray-300">${horario.dia}</td>
+                            <td class="border border-gray-300">${horario.asignatura}</td>
+                            <td class="border border-gray-300">${horario.espacio}</td>
+                            <td class="border border-gray-300">${horario.usuario}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                html = '<tr><td colspan="5" class="border text-center text-gray-500">No hay horarios para mostrar</td></tr>';
+            }
             tbody.innerHTML = html;
         }
     }
 </script>
+
+<!-- Estilos adicionales -->
+<style>
+    [x-cloak] {
+        display: none !important;
+    }
+    
+    /* Transiciones suaves para los widgets */
+    .widget-transition {
+        transition: all 0.3s ease-in-out;
+    }
+    
+    .widget-loading {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+    
+    .widget-updating {
+        animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% {
+            opacity: 1;
+        }
+        50% {
+            opacity: 0.7;
+        }
+    }
+    
+    /* Animación para los KPIs */
+    .kpi-value {
+        transition: all 0.3s ease;
+    }
+    
+    .kpi-value.updating {
+        transform: scale(1.05);
+        color: #3b82f6;
+    }
+</style>

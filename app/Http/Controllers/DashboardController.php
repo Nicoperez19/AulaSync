@@ -217,13 +217,12 @@ class DashboardController extends Controller
     private function obtenerUsoPorDia($facultad, $piso)
     {
         $inicioSemana = Carbon::now()->startOfWeek();
-        $diasSemana = [];
+        $diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
         $usoPorDia = [];
         
-        for ($i = 0; $i < 5; $i++) {
+        for ($i = 0; $i < 6; $i++) {
             $dia = $inicioSemana->copy()->addDays($i);
-            $diasSemana[] = $dia->format('Y-m-d');
-            $usoPorDia[] = Reserva::whereDate('fecha_reserva', $dia)
+            $usoPorDia[$diasSemana[$i]] = Reserva::whereDate('fecha_reserva', $dia)
                 ->where('estado', 'activa')
                 ->whereHas('espacio', function($query) use ($piso) {
                     if ($piso) {
@@ -235,10 +234,7 @@ class DashboardController extends Controller
                 ->count();
         }
         
-        return [
-            'dias' => $diasSemana,
-            'uso' => $usoPorDia
-        ];
+        return $usoPorDia;
     }
 
     private function obtenerTopSalas($facultad, $piso)
