@@ -34,7 +34,10 @@ class RoleSeeder extends Seeder
         $permission13 = Permission::create(['name' => 'mantenedor de carga de datos']);
         $permission21 = Permission::create(['name' => 'visor de mapas']);
         $permission22 = Permission::create(['name' => 'visor de usuarios']);
+<<<<<<< HEAD
 
+=======
+>>>>>>> Nperez
       
         $role1->givePermissionTo($permission1);
         $role1->givePermissionTo($permission2);

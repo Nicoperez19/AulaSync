@@ -11,13 +11,18 @@ class FacultadController extends Controller
 {
     public function index()
     {
+<<<<<<< HEAD
         $facultades = Facultad::with('universidad')->get();
         $universidades = Universidad::all();
         return view('layouts.faculty.facultad_index', compact('facultades', 'universidades'));
+=======
+        
+>>>>>>> Nperez
     }
 
     public function store(Request $request)
     {
+<<<<<<< HEAD
         try {
             $validatedData = $request->validate([
                 'id_facultad' => 'required|string|max:255',
@@ -48,17 +53,25 @@ class FacultadController extends Controller
             Log::error('Error al crear facultad: ' . $e->getMessage(), ['exception' => $e]);
             return redirect()->route('faculties.index')->with('error', 'Ocurrió un error al crear la facultad. Intenta de nuevo.');
         }
+=======
+       
+>>>>>>> Nperez
     }
 
     public function edit($id)
     {
+<<<<<<< HEAD
         $facultad = Facultad::findOrFail($id);
         $universidades = Universidad::all();
         return view('layouts.faculty.facultad_edit', compact('facultad', 'universidades'));
+=======
+       
+>>>>>>> Nperez
     }
 
     public function update(Request $request, $id)
     {
+<<<<<<< HEAD
         try {
             $validatedData = $request->validate([
                 'nombre_facultad' => 'required|string|max:255',
@@ -92,6 +105,9 @@ class FacultadController extends Controller
             Log::error('Error al actualizar facultad: ' . $e->getMessage(), ['exception' => $e]);
             return redirect()->route('faculties.index')->with('error', 'Ocurrió un error al actualizar la facultad. Intenta de nuevo.');
         }
+=======
+        
+>>>>>>> Nperez
     }
 
     public function destroy($id)

@@ -13,8 +13,14 @@ return new class extends Migration {
         Schema::create('facultades', function (Blueprint $table) {
             $table->string('id_facultad', 20)->primary();
             $table->string('nombre_facultad', 100);
+<<<<<<< HEAD
             $table->string('ubicacion_facultad', 255);
             $table->string('logo_facultad')->nullable();
+=======
+
+            $table->string('id_universidad', 20);
+            $table->foreign('id_universidad')->references('id_universidad')->on('universidades')->onDelete('cascade');
+>>>>>>> Nperez
 
             $table->string('id_sede', 20);
             $table->foreign('id_sede')->references('id_sede')->on('sedes')->onDelete('cascade');

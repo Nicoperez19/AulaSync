@@ -14,7 +14,10 @@ class Carrera extends Model
     protected $fillable = [
         'id_carrera',
         'nombre',
+<<<<<<< HEAD
         'id_facultad',
+=======
+>>>>>>> Nperez
         'id_area_academica'
     ];
 

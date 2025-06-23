@@ -6,13 +6,19 @@
     "license": "MIT",
     "require": {
         "php": "^8.1",
+        "barryvdh/laravel-dompdf": "^3.1",
         "blade-ui-kit/blade-heroicons": "^1.2",
+        "endroid/qr-code": "^6.0",
         "guzzlehttp/guzzle": "^7.2",
         "laravel/framework": "10.48.29",
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
         "livewire/livewire": "^3.6",
+<<<<<<< HEAD
         "maatwebsite/excel": "^3.1",
+=======
+        "maatwebsite/excel": "3.1.48",
+>>>>>>> Nperez
         "spatie/laravel-permission": "^6.16"
     },
     "require-dev": {

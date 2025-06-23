@@ -10,14 +10,21 @@ class Modulo extends Model
     use HasFactory;
 
     protected $table = 'modulos';
+<<<<<<< HEAD
 
     protected $primaryKey = 'id_modulo';
+=======
+    protected $primaryKey = 'id_modulo';
+    public $incrementing = false;
+    protected $keyType = 'string';
+>>>>>>> Nperez
 
     protected $fillable = [
         'id_modulo',
         'dia',
         'hora_inicio',
         'hora_termino',
+<<<<<<< HEAD
         'fecha',
         'id_asignatura',
         'id_reserva',
@@ -36,5 +43,12 @@ class Modulo extends Model
     public function horario()
     {
         return $this->belongsTo(Horario::class, 'id_horario', 'id_horario');
+=======
+    ];
+
+    public function planificaciones()
+    {
+        return $this->hasMany(Planificacion_Asignatura::class, 'id_modulo', 'id_modulo');
+>>>>>>> Nperez
     }
 }

@@ -18,7 +18,11 @@ class AsignaturaController extends Controller
      */
     public function index()
     {
+<<<<<<< HEAD
         $asignaturas = Asignatura::with('profesor', 'carrera')->paginate(10);
+=======
+        $asignaturas = Asignatura::with('user', 'carrera')->paginate(10);
+>>>>>>> Nperez
         $usuarios = User::whereHas('roles', function ($query) {
             $query->where('name', 'Profesor');
         })->get();        
@@ -39,7 +43,38 @@ class AsignaturaController extends Controller
      */
     public function store(Request $request)
     {
+<<<<<<< HEAD
         //
+=======
+        try {
+            $request->validate([
+                'id_asignatura' => 'required|string|max:20|unique:asignaturas,id_asignatura',
+                'nombre_asignatura' => 'required|string|max:100',
+                'horas_directas' => 'required|integer|min:0',
+                'horas_indirectas' => 'required|integer|min:0',
+                'area_conocimiento' => 'required|string|max:100',
+                'periodo' => 'required|string|max:20',
+                'run' => 'required|exists:users,run',
+                'id_carrera' => 'required|exists:carreras,id_carrera',
+            ]);
+
+            Asignatura::create([
+                'id_asignatura' => $request->id_asignatura,
+                'codigo_asignatura' => $request->id_asignatura, // Usar el mismo valor como código
+                'nombre_asignatura' => $request->nombre_asignatura,
+                'horas_directas' => $request->horas_directas,
+                'horas_indirectas' => $request->horas_indirectas,
+                'area_conocimiento' => $request->area_conocimiento,
+                'periodo' => $request->periodo,
+                'run' => $request->run,
+                'id_carrera' => $request->id_carrera,
+            ]);
+
+            return redirect()->route('asignaturas.index')->with('success', 'Asignatura creada exitosamente.');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Error al crear la asignatura: ' . $e->getMessage()]);
+        }
+>>>>>>> Nperez
     }
 
     /**

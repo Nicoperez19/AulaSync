@@ -9,6 +9,7 @@ class Facultad extends Model
 {
     use HasFactory;
     protected $table = 'facultades';
+<<<<<<< HEAD
 
     protected $primaryKey = 'id_facultad';
 
@@ -17,10 +18,19 @@ class Facultad extends Model
         'nombre_facultad',
         'ubicacion_facultad',
         'logo_facultad',
+=======
+    protected $primaryKey = 'id_facultad';
+    public $incrementing = false;
+    protected $keyType = 'string';
+    protected $fillable = [
+        'nombre_facultad',
+        'id_universidad',
+>>>>>>> Nperez
         'id_sede',
         'id_campus',
     ];
 
+<<<<<<< HEAD
     public function sede() {
         return $this->belongsTo(Sede::class, 'id_sede');
     }
@@ -29,6 +39,23 @@ class Facultad extends Model
         return $this->belongsTo(Campus::class, 'id_campus');
     }
 
+=======
+    public function sede()
+    {
+        return $this->belongsTo(Sede::class, 'id_sede');
+    }
+
+    public function campus()
+    {
+        return $this->belongsTo(Campus::class, 'id_campus');
+    }
+
+    public function universidad()
+    {
+        return $this->belongsTo(Universidad::class, 'id_universidad');
+    }
+
+>>>>>>> Nperez
     public function areaAcademicas()
     {
         return $this->hasMany(AreaAcademica::class, 'id_facultad');

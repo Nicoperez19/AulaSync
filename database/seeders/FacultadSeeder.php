@@ -12,6 +12,7 @@ class FacultadSeeder extends Seeder
      */
     public function run(): void
     {
+<<<<<<< HEAD
         // Primer registro real
         Facultad::create([
             'id_facultad' => 1,
@@ -111,6 +112,27 @@ class FacultadSeeder extends Seeder
             'ubicacion_facultad' => 'Edificio L, Campus Central',
             'id_universidad' => 'U002',
         ]);
+=======
+        $facultades = [
+            [
+                'id_facultad' => 'IT_TH',
+                'nombre_facultad' => 'Instituto Tecnológico',
+                'id_universidad' => 'UCSC',
+                'id_sede' => 'TH',
+                'id_campus' => null,
+            ],
+            // [
+            //     'id_facultad' => 'FACEA',
+            //     'nombre_facultad' => 'Facultad de Ciencias Económicas y Administrativas',
+            //     'id_universidad' => 'UCSC',
+            //     'id_sede' => 'CCP',
+            //     'id_campus' => 'CSA',
+            // ],
+        ];
+        foreach ($facultades as $facultad) {
+            Facultad::create($facultad);
+        }
+>>>>>>> Nperez
     }
 
 }

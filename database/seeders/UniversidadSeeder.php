@@ -13,6 +13,7 @@ class UniversidadSeeder extends Seeder
     public function run(): void
     {
         Universidad::create([
+<<<<<<< HEAD
             'id_universidad' => 'U001',
             'nombre_universidad' => 'Universidad de Chile',
             'direccion_universidad' => 'Av. Libertador Bernardo O’Higgins 1058, Santiago',
@@ -39,5 +40,11 @@ class UniversidadSeeder extends Seeder
                 'imagen_logo' => 'default.png', // Nueva ruta
             ]);
         }
+=======
+            'id_universidad' => 'UCSC',
+            'nombre_universidad' => 'Universidad Católica de la Santisima Concepcion',
+            'imagen_logo' => 'ucsc.png', 
+        ]);
+>>>>>>> Nperez
     }
 }

@@ -11,7 +11,12 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('modulos', function (Blueprint $table) {
+<<<<<<< HEAD
             $table->string('id_modulo',20)->primary();
+=======
+            $table->string('id_modulo')->primary(); 
+            $table->string(column: 'dia');
+>>>>>>> Nperez
             $table->time('hora_inicio');
             $table->time('hora_termino');
             $table->timestamps();

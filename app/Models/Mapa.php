@@ -4,10 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+<<<<<<< HEAD
+=======
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+>>>>>>> Nperez
 
 class Mapa extends Model
 {
     use HasFactory;
+<<<<<<< HEAD
     protected $table = 'mapas';
     protected $primaryKey = 'id_mapa';
     public $incrementing = false; 
@@ -26,4 +32,28 @@ class Mapa extends Model
 {
     return $this->hasMany(Bloque::class, 'id_mapa');
 }
+=======
+
+    protected $primaryKey = 'id_mapa';
+    public $incrementing = false;
+    protected $keyType = 'string';
+
+    protected $fillable = [
+        'id_mapa',
+        'nombre_mapa',
+        'ruta_mapa',
+        'ruta_canvas',
+        'piso_id'
+    ];
+
+    public function piso(): BelongsTo
+    {
+        return $this->belongsTo(Piso::class, 'piso_id');
+    }
+
+    public function bloques(): HasMany
+    {
+        return $this->hasMany(Bloque::class, 'id_mapa', 'id_mapa');
+    }
+>>>>>>> Nperez
 }

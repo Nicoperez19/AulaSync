@@ -14,7 +14,10 @@ return new class extends Migration
         Schema::create('seccions', function (Blueprint $table) {
             $table->id();
             $table->integer('numero')->default(1);
+<<<<<<< HEAD
             
+=======
+>>>>>>> Nperez
             $table->string('id_asignatura');
             $table->foreign('id_asignatura')->references('id_asignatura')->on('asignaturas')->onDelete('cascade');
            

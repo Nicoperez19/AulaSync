@@ -14,7 +14,11 @@ class User extends Authenticatable
 
     protected $primaryKey = 'run';
     public $incrementing = false;
+<<<<<<< HEAD
     protected $keyType = 'string';
+=======
+    protected $keyType = 'integer';
+>>>>>>> Nperez
     protected $fillable = [
         'run',
         'name',
@@ -39,8 +43,13 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+<<<<<<< HEAD
         'run' => 'string',
         'fecha_nacimiento' => 'date',
+=======
+        'fecha_nacimiento' => 'date',
+        'anio_ingreso' => 'integer',
+>>>>>>> Nperez
     ];
 
     /**
@@ -55,27 +64,47 @@ class User extends Authenticatable
 
     public function universidad()
     {
+<<<<<<< HEAD
         return $this->belongsTo(Universidad::class, 'id_universidad');
+=======
+        return $this->belongsTo(Universidad::class, 'id_universidad', 'id_universidad');
+>>>>>>> Nperez
     }
 
     public function facultad()
     {
+<<<<<<< HEAD
         return $this->belongsTo(Facultad::class, 'id_facultad');
+=======
+        return $this->belongsTo(Facultad::class, 'id_facultad', 'id_facultad');
+>>>>>>> Nperez
     }
 
     public function carrera()
     {
+<<<<<<< HEAD
         return $this->belongsTo(Carrera::class, 'id_carrera');
+=======
+        return $this->belongsTo(Carrera::class, 'id_carrera', 'id_carrera');
+>>>>>>> Nperez
     }
 
     public function areaAcademica()
     {
+<<<<<<< HEAD
         return $this->belongsTo(AreaAcademica::class, 'id_area_academica');
+=======
+        return $this->belongsTo(AreaAcademica::class, 'id_area_academica', 'id_area_academica');
+>>>>>>> Nperez
     }
 
     public function asignaturas()
     {
+<<<<<<< HEAD
         return $this->hasMany(Asignatura::class, 'run');
+=======
+        return $this->hasMany(Asignatura::class, 'run', 'run');
+>>>>>>> Nperez
     }
 
     public function dataLoads()
@@ -83,5 +112,12 @@ class User extends Authenticatable
         return $this->hasMany(DataLoad::class, 'user_run', 'run');
     }
 
+<<<<<<< HEAD
 
+=======
+    public function reservas()
+    {
+        return $this->hasMany(Reserva::class, 'run', 'run');
+    }
+>>>>>>> Nperez
 }
