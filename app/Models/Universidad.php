@@ -22,6 +22,7 @@ class Universidad extends Model
     public function sedes()
     {
         return $this->hasMany(Sede::class, 'id_universidad', 'id_universidad');
+<<<<<<< HEAD
     }
 <<<<<<< HEAD
 =======
@@ -29,6 +30,8 @@ class Universidad extends Model
     public function facultades()
     {
         return $this->hasMany(Facultad::class, 'id_universidad', 'id_universidad');
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     }
 >>>>>>> Nperez
 }

@@ -40,10 +40,14 @@ export default {
         },
         'cloud-light': '#EDF0FA',
 <<<<<<< HEAD
+<<<<<<< HEAD
         'light-cloud-blue': '#20448C',
 =======
         'light-cloud-blue': '#D2091E',
 >>>>>>> Nperez
+=======
+        'light-cloud-blue': '#20448C',
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         'dark-eval-0': '#151823',
         'dark-eval-1': '#222738',
         'dark-eval-2': '#2A2F42',
@@ -51,10 +55,14 @@ export default {
       },
       fontFamily: {
 <<<<<<< HEAD
+<<<<<<< HEAD
         sans: ['var(--default-font-family)', 'Inter', 'sans-serif'],
 =======
         sans: ['Roboto', 'sans-serif'],
 >>>>>>> Nperez
+=======
+        sans: ['var(--default-font-family)', 'Inter', 'sans-serif'],
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
       },
       spacing: {
         128: '32rem',

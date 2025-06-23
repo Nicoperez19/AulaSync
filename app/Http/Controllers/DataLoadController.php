@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DataLoad;
 use App\Models\User;
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 use App\Models\Asignatura;
 use App\Models\Carrera;
@@ -12,6 +13,8 @@ use App\Models\Seccion;
 use App\Models\Horario;
 use App\Models\Planificacion_Asignatura;
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -20,6 +23,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 use Maatwebsite\Excel\Facades\Excel;
+<<<<<<< HEAD
 <<<<<<< HEAD
 
 class DataLoadController extends Controller
@@ -37,6 +41,11 @@ class DataLoadController extends Controller
     }
 
 >>>>>>> Nperez
+=======
+
+class DataLoadController extends Controller
+{
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     public function index()
     {
         $dataLoads = DataLoad::latest()->paginate(10);
@@ -51,11 +60,15 @@ class DataLoadController extends Controller
     public function upload(Request $request)
     {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         // Aumentar el tiempo máximo de ejecución a 5 minutos
         set_time_limit(300);
         
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls,csv|max:10240' // 10MB max
+<<<<<<< HEAD
 =======
         set_time_limit(300);
         Log::info('Iniciando proceso de carga de archivo');
@@ -63,6 +76,8 @@ class DataLoadController extends Controller
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls,csv|max:10240'
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         ]);
 
         try {
@@ -70,11 +85,15 @@ class DataLoadController extends Controller
             $fileName = $file->getClientOriginalName();
             $fileExtension = $file->getClientOriginalExtension();
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             
             $uniqueFileName = date('Y-m-d_His') . '_' . Auth::user()->run . '_' . Str::random(10) . '.' . $fileExtension;
             
             $path = $file->storeAs('datos_subidos', $uniqueFileName, 'public');
             
+<<<<<<< HEAD
 =======
 
             Log::info('Archivo recibido', [
@@ -86,6 +105,8 @@ class DataLoadController extends Controller
             $path = $file->storeAs('datos_subidos', $uniqueFileName, 'public');
 
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             $dataLoad = DataLoad::create([
                 'nombre_archivo' => $fileName,
                 'ruta_archivo' => $path,
@@ -96,6 +117,9 @@ class DataLoadController extends Controller
             ]);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             // Leer el archivo Excel
             $rows = Excel::toArray([], $file)[0];
             
@@ -161,6 +185,7 @@ class DataLoadController extends Controller
                 'exception' => $e
             ]);
             
+<<<<<<< HEAD
 =======
             Log::info('Registro de carga creado', ['id' => $dataLoad->id]);
 
@@ -424,6 +449,8 @@ class DataLoadController extends Controller
             ]);
 
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             return response()->json([
                 'message' => 'Error al procesar el archivo: ' . $e->getMessage()
             ], 500);
@@ -447,6 +474,7 @@ class DataLoadController extends Controller
         }
     }
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
     public function getProgress(DataLoad $dataLoad)
@@ -457,4 +485,6 @@ class DataLoadController extends Controller
         ]);
     }
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 }

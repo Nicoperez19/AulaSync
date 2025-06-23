@@ -20,6 +20,7 @@ class Reserva extends Model
         'fecha_reserva',
         'id_espacio',
 <<<<<<< HEAD
+<<<<<<< HEAD
         'run' //usuario
 =======
         'run',
@@ -29,6 +30,9 @@ class Reserva extends Model
         'created_at',
         'updated_at'
 >>>>>>> Nperez
+=======
+        'run' //usuario
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     ];
 
     public function espacio()
@@ -39,6 +43,9 @@ class Reserva extends Model
     public function user()
     {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         return $this->belongsTo(User::class, 'run');
     }
 

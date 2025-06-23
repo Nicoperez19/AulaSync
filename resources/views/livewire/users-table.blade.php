@@ -42,12 +42,18 @@
                     <th class="p-3" onclick="sortTable(1)">Nombre <span class="sort-icon">▼</span></th>
                     <th class="p-3" onclick="sortTable(2)">Correo <span class="sort-icon">▼</span></th>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                     <th class="p-3" onclick="sortTable(3)">Celular <span class="sort-icon">▼</span></th>
                     <th class="p-3" onclick="sortTable(4)">Dirección <span class="sort-icon">▼</span></th>
                     <th class="p-3" onclick="sortTable(5)">Fecha Nacimiento <span class="sort-icon">▼</span></th>
                     <th class="p-3" onclick="sortTable(6)">Año Ingreso <span class="sort-icon">▼</span></th>
+<<<<<<< HEAD
 =======
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                     <th class="p-3">Acciones</th>
                 </tr>
             </thead>
@@ -58,16 +64,22 @@
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ $user->name }}</td>
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ $user->email }}</td>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ $user->celular }}</td>
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ $user->direccion }}</td>
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ $user->fecha_nacimiento }}</td>
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ $user->anio_ingreso }}</td>
                         <td class="p-3 dark:border-white whitespace-nowrap">
                             <div class="flex justify-end space-x-2">
+<<<<<<< HEAD
 =======
                         <td class="p-3 dark:border-white whitespace-nowrap">
                             <div class="flex justify-center space-x-2">
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                                 <x-button variant="primary" href="{{ route('users.edit', $user->run) }}"
                                     class="inline-flex items-center px-4 py-2 text-white bg-blue-500 rounded dark:bg-blue-700">
                                     <x-icons.edit class="w-5 h-5 mr-1" aria-hidden="true" />
@@ -127,9 +139,13 @@
         rows.forEach(row => table.appendChild(row));
 
 <<<<<<< HEAD
+<<<<<<< HEAD
         // Agregar clase de ordenamiento solo a la columna actual
 =======
 >>>>>>> Nperez
+=======
+        // Agregar clase de ordenamiento solo a la columna actual
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         table.rows[0].cells[columnIndex].classList.add(isAscending ? "desc" : "asc");
     }
 

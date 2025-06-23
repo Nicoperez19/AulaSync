@@ -13,10 +13,13 @@ return new class extends Migration {
         Schema::create('modulos', function (Blueprint $table) {
 <<<<<<< HEAD
             $table->string('id_modulo',20)->primary();
+<<<<<<< HEAD
 =======
             $table->string('id_modulo')->primary(); 
             $table->string(column: 'dia');
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             $table->time('hora_inicio');
             $table->time('hora_termino');
             $table->timestamps();

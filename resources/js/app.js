@@ -18,6 +18,9 @@ Alpine.data('mainState', () => ({
     isSidebarOpen: false,
     isSidebarHovered: false,
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     scrollingDown: false,
     scrollingUp: false,
     lastScrollTop: 0,
@@ -25,11 +28,14 @@ Alpine.data('mainState', () => ({
     init() {
         this.handleWindowResize()
         window.addEventListener('scroll', this.handleScroll.bind(this))
+<<<<<<< HEAD
 =======
 
     init() {
         this.handleWindowResize()
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         window.addEventListener('resize', this.handleWindowResize.bind(this))
     },
 
@@ -52,6 +58,9 @@ Alpine.data('mainState', () => ({
             this.isSidebarOpen = false
         }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     },
 
     handleScroll() {
@@ -67,12 +76,15 @@ Alpine.data('mainState', () => ({
 }))
 
 // Inicializar Alpine solo si no está ya inicializado
+<<<<<<< HEAD
 =======
     }
 }))
 
 // Inicializar Alpine
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 if (!window.Alpine.isStarted) {
     Alpine.start()
 }

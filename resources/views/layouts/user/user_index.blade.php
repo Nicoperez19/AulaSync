@@ -25,6 +25,7 @@
 
         <x-modal name="add-user" :show="$errors->any()" focusable>
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
             @slot('title')
             <h1 class="text-lg font-medium text-white dark:text-gray-100">
@@ -32,6 +33,8 @@
             @endslot
 
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             <form id="add-user-form" method="POST" action="{{ route('users.add') }}" class="needs-validation"
                 novalidate>
                 @csrf
@@ -82,12 +85,17 @@
                     <div class="space-y-2">
                         <x-form.label for="fecha_nacimiento_add" :value="__('Fecha de Nacimiento')" class="text-left" />
 <<<<<<< HEAD
+<<<<<<< HEAD
                         <x-form.input id="fecha_nacimiento_add" class="block w-full" type="date"
                             name="fecha_nacimiento" value="{{ old('fecha_nacimiento', '') }}" />
 =======
                         <x-form.input id="fecha_nacimiento_add" class="block w-full" type="date" name="fecha_nacimiento"
                             value="{{ old('fecha_nacimiento', '') }}" />
 >>>>>>> Nperez
+=======
+                        <x-form.input id="fecha_nacimiento_add" class="block w-full" type="date"
+                            name="fecha_nacimiento" value="{{ old('fecha_nacimiento', '') }}" />
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                         <div id="fecha_nacimiento-error" class="mt-1 text-xs text-red-500"></div>
                     </div>
 
@@ -99,12 +107,17 @@
                             <option value="">Seleccione un año (opcional)</option>
                             @foreach ($years as $year)
 <<<<<<< HEAD
+<<<<<<< HEAD
                                 <option value="{{ $year }}"
                                     {{ old('anio_ingreso') == $year ? 'selected' : '' }}>{{ $year }}</option>
 =======
                                 <option value="{{ $year }}" {{ old('anio_ingreso') == $year ? 'selected' : '' }}>{{ $year }}
                                 </option>
 >>>>>>> Nperez
+=======
+                                <option value="{{ $year }}"
+                                    {{ old('anio_ingreso') == $year ? 'selected' : '' }}>{{ $year }}</option>
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                             @endforeach
                         </select>
                         <div id="anio_ingreso-error" class="mt-1 text-xs text-red-500"></div>
@@ -125,10 +138,14 @@
 
     <script>
 <<<<<<< HEAD
+<<<<<<< HEAD
         document.addEventListener('DOMContentLoaded', function() {
 =======
         document.addEventListener('DOMContentLoaded', function () {
 >>>>>>> Nperez
+=======
+        document.addEventListener('DOMContentLoaded', function() {
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             const form = document.getElementById('add-user-form');
             const submitButton = form.querySelector('button[type="submit"]');
 
@@ -177,10 +194,14 @@
             }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
             form.addEventListener('submit', async function(e) {
 =======
             form.addEventListener('submit', async function (e) {
 >>>>>>> Nperez
+=======
+            form.addEventListener('submit', async function(e) {
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                 e.preventDefault();
 
                 if (!validateForm()) {
@@ -230,10 +251,14 @@
                                 const firstError = data.errors[field][0];
                                 for (const [key, translation] of Object.entries(
 <<<<<<< HEAD
+<<<<<<< HEAD
                                         errorTranslations)) {
 =======
                                     errorTranslations)) {
 >>>>>>> Nperez
+=======
+                                        errorTranslations)) {
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                                     if (firstError.includes(key)) {
                                         translatedErrors[field] = translation;
                                         break;
@@ -321,6 +346,9 @@
     </script>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 </x-app-layout>
 =======
 </x-app-layout>

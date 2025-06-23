@@ -31,6 +31,7 @@ class MapasTable extends Component
     {
         $rutaPublica = asset($ruta);
         $this->dispatch('mostrar-mapa', ['ruta' => $rutaPublica]);
+<<<<<<< HEAD
 =======
     public function verMapa($id)
     {
@@ -48,5 +49,7 @@ class MapasTable extends Component
             'bloques' => $bloques
         ]);
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     }
 }

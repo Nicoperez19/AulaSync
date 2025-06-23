@@ -32,6 +32,7 @@ class Mapa extends Model
 {
     return $this->hasMany(Bloque::class, 'id_mapa');
 }
+<<<<<<< HEAD
 =======
 
     protected $primaryKey = 'id_mapa';
@@ -56,4 +57,6 @@ class Mapa extends Model
         return $this->hasMany(Bloque::class, 'id_mapa', 'id_mapa');
     }
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 }

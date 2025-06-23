@@ -5,10 +5,14 @@
         "This file is @generated automatically"
     ],
 <<<<<<< HEAD
+<<<<<<< HEAD
     "content-hash": "a4731fa7c4c0fbb1d52add9ce47a9e7d",
 =======
     "content-hash": "b9a5e046442897f5acce8deefa6dda16",
 >>>>>>> Nperez
+=======
+    "content-hash": "a4731fa7c4c0fbb1d52add9ce47a9e7d",
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -572,6 +576,7 @@
         },
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
             "name": "dasprid/enum",
             "version": "1.0.6",
@@ -624,6 +629,8 @@
         },
         {
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             "name": "dflydev/dot-access-data",
             "version": "v3.0.3",
             "source": {
@@ -1155,6 +1162,7 @@
         },
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
             "name": "endroid/qr-code",
             "version": "6.0.8",
@@ -1229,6 +1237,8 @@
         },
         {
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             "name": "ezyang/htmlpurifier",
             "version": "v4.18.0",
             "source": {
@@ -2747,6 +2757,9 @@
         {
             "name": "maatwebsite/excel",
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             "version": "3.1.64",
             "source": {
                 "type": "git",
@@ -2757,6 +2770,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/SpartnerNL/Laravel-Excel/zipball/e25d44a2d91da9179cd2d7fec952313548597a79",
                 "reference": "e25d44a2d91da9179cd2d7fec952313548597a79",
+<<<<<<< HEAD
 =======
             "version": "3.1.48",
             "source": {
@@ -2769,12 +2783,17 @@
                 "url": "https://api.github.com/repos/SpartnerNL/Laravel-Excel/zipball/6d0fe2a1d195960c7af7bf0de760582da02a34b9",
                 "reference": "6d0fe2a1d195960c7af7bf0de760582da02a34b9",
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                 "shasum": ""
             },
             "require": {
                 "composer/semver": "^3.3",
                 "ext-json": "*",
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                 "illuminate/support": "5.8.*||^6.0||^7.0||^8.0||^9.0||^10.0||^11.0||^12.0",
                 "php": "^7.0||^8.0",
                 "phpoffice/phpspreadsheet": "^1.29.9",
@@ -2783,6 +2802,7 @@
             "require-dev": {
                 "laravel/scout": "^7.0||^8.0||^9.0||^10.0",
                 "orchestra/testbench": "^6.0||^7.0||^8.0||^9.0||^10.0",
+<<<<<<< HEAD
 =======
                 "illuminate/support": "5.8.*|^6.0|^7.0|^8.0|^9.0|^10.0",
                 "php": "^7.0|^8.0",
@@ -2792,6 +2812,8 @@
             "require-dev": {
                 "orchestra/testbench": "^6.0|^7.0|^8.0",
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                 "predis/predis": "^1.1"
             },
             "type": "library",
@@ -2835,10 +2857,14 @@
             "support": {
                 "issues": "https://github.com/SpartnerNL/Laravel-Excel/issues",
 <<<<<<< HEAD
+<<<<<<< HEAD
                 "source": "https://github.com/SpartnerNL/Laravel-Excel/tree/3.1.64"
 =======
                 "source": "https://github.com/SpartnerNL/Laravel-Excel/tree/3.1.48"
 >>>>>>> Nperez
+=======
+                "source": "https://github.com/SpartnerNL/Laravel-Excel/tree/3.1.64"
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             },
             "funding": [
                 {
@@ -2851,10 +2877,14 @@
                 }
             ],
 <<<<<<< HEAD
+<<<<<<< HEAD
             "time": "2025-02-24T11:12:50+00:00"
 =======
             "time": "2023-02-22T21:01:38+00:00"
 >>>>>>> Nperez
+=======
+            "time": "2025-02-24T11:12:50+00:00"
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         },
         {
             "name": "maennchen/zipstream-php",
@@ -3043,6 +3073,7 @@
         },
         {
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
             "name": "masterminds/html5",
             "version": "2.9.0",
@@ -3112,6 +3143,8 @@
         },
         {
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             "name": "monolog/monolog",
             "version": "3.9.0",
             "source": {
@@ -4681,6 +4714,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/symfony/console/zipball/a3011c7b7adb58d89f6c0d822abb641d7a5f9719",
                 "reference": "a3011c7b7adb58d89f6c0d822abb641d7a5f9719",
+<<<<<<< HEAD
 =======
             "time": "2025-05-31T00:50:27+00:00"
         },
@@ -4697,6 +4731,8 @@
                 "url": "https://api.github.com/repos/symfony/console/zipball/7d29659bc3c9d8e9a34e2c3414ef9e9e003e6cf3",
                 "reference": "7d29659bc3c9d8e9a34e2c3414ef9e9e003e6cf3",
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                 "shasum": ""
             },
             "require": {
@@ -4762,10 +4798,14 @@
             ],
             "support": {
 <<<<<<< HEAD
+<<<<<<< HEAD
                 "source": "https://github.com/symfony/console/tree/v6.4.21"
 =======
                 "source": "https://github.com/symfony/console/tree/v6.4.22"
 >>>>>>> Nperez
+=======
+                "source": "https://github.com/symfony/console/tree/v6.4.21"
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             },
             "funding": [
                 {
@@ -4782,6 +4822,9 @@
                 }
             ],
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             "time": "2025-04-07T15:42:41+00:00"
         },
         {
@@ -5267,6 +5310,9 @@
         {
             "name": "symfony/http-foundation",
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             "version": "v6.4.21",
             "source": {
                 "type": "git",
@@ -5277,6 +5323,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/symfony/http-foundation/zipball/3f0c7ea41db479383b81d436b836d37168fd5b99",
                 "reference": "3f0c7ea41db479383b81d436b836d37168fd5b99",
+<<<<<<< HEAD
 =======
             "version": "v6.4.22",
             "source": {
@@ -5289,6 +5336,8 @@
                 "url": "https://api.github.com/repos/symfony/http-foundation/zipball/6b7c97fe1ddac8df3cc9ba6410c8abc683e148ae",
                 "reference": "6b7c97fe1ddac8df3cc9ba6410c8abc683e148ae",
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                 "shasum": ""
             },
             "require": {
@@ -5337,10 +5386,14 @@
             "homepage": "https://symfony.com",
             "support": {
 <<<<<<< HEAD
+<<<<<<< HEAD
                 "source": "https://github.com/symfony/http-foundation/tree/v6.4.21"
 =======
                 "source": "https://github.com/symfony/http-foundation/tree/v6.4.22"
 >>>>>>> Nperez
+=======
+                "source": "https://github.com/symfony/http-foundation/tree/v6.4.21"
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             },
             "funding": [
                 {
@@ -5357,6 +5410,9 @@
                 }
             ],
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             "time": "2025-04-27T13:27:38+00:00"
         },
         {
@@ -5371,6 +5427,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/symfony/http-kernel/zipball/983ca05eec6623920d24ec0f1005f487d3734a0c",
                 "reference": "983ca05eec6623920d24ec0f1005f487d3734a0c",
+<<<<<<< HEAD
 =======
             "time": "2025-05-11T15:36:20+00:00"
         },
@@ -5387,6 +5444,8 @@
                 "url": "https://api.github.com/repos/symfony/http-kernel/zipball/15c105b839a7cfa1bc0989c091bfb6477f23b673",
                 "reference": "15c105b839a7cfa1bc0989c091bfb6477f23b673",
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                 "shasum": ""
             },
             "require": {
@@ -5472,10 +5531,14 @@
             "homepage": "https://symfony.com",
             "support": {
 <<<<<<< HEAD
+<<<<<<< HEAD
                 "source": "https://github.com/symfony/http-kernel/tree/v6.4.21"
 =======
                 "source": "https://github.com/symfony/http-kernel/tree/v6.4.22"
 >>>>>>> Nperez
+=======
+                "source": "https://github.com/symfony/http-kernel/tree/v6.4.21"
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             },
             "funding": [
                 {
@@ -5492,10 +5555,14 @@
                 }
             ],
 <<<<<<< HEAD
+<<<<<<< HEAD
             "time": "2025-05-02T08:46:38+00:00"
 =======
             "time": "2025-05-29T07:23:40+00:00"
 >>>>>>> Nperez
+=======
+            "time": "2025-05-02T08:46:38+00:00"
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         },
         {
             "name": "symfony/mailer",
@@ -6529,6 +6596,9 @@
         {
             "name": "symfony/string",
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             "version": "v7.2.6",
             "source": {
                 "type": "git",
@@ -6539,6 +6609,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/symfony/string/zipball/a214fe7d62bd4df2a76447c67c6b26e1d5e74931",
                 "reference": "a214fe7d62bd4df2a76447c67c6b26e1d5e74931",
+<<<<<<< HEAD
 =======
             "version": "v7.3.0",
             "source": {
@@ -6551,6 +6622,8 @@
                 "url": "https://api.github.com/repos/symfony/string/zipball/f3570b8c61ca887a9e2938e85cb6458515d2b125",
                 "reference": "f3570b8c61ca887a9e2938e85cb6458515d2b125",
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                 "shasum": ""
             },
             "require": {
@@ -6609,10 +6682,14 @@
             ],
             "support": {
 <<<<<<< HEAD
+<<<<<<< HEAD
                 "source": "https://github.com/symfony/string/tree/v7.2.6"
 =======
                 "source": "https://github.com/symfony/string/tree/v7.3.0"
 >>>>>>> Nperez
+=======
+                "source": "https://github.com/symfony/string/tree/v7.2.6"
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             },
             "funding": [
                 {
@@ -6629,6 +6706,9 @@
                 }
             ],
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             "time": "2025-04-20T20:18:16+00:00"
         },
         {
@@ -6643,6 +6723,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/symfony/translation/zipball/bb92ea5588396b319ba43283a5a3087a034cb29c",
                 "reference": "bb92ea5588396b319ba43283a5a3087a034cb29c",
+<<<<<<< HEAD
 =======
             "time": "2025-04-20T20:19:01+00:00"
         },
@@ -6659,6 +6740,8 @@
                 "url": "https://api.github.com/repos/symfony/translation/zipball/7e3b3b7146c6fab36ddff304a8041174bf6e17ad",
                 "reference": "7e3b3b7146c6fab36ddff304a8041174bf6e17ad",
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                 "shasum": ""
             },
             "require": {
@@ -6725,10 +6808,14 @@
             "homepage": "https://symfony.com",
             "support": {
 <<<<<<< HEAD
+<<<<<<< HEAD
                 "source": "https://github.com/symfony/translation/tree/v6.4.21"
 =======
                 "source": "https://github.com/symfony/translation/tree/v6.4.22"
 >>>>>>> Nperez
+=======
+                "source": "https://github.com/symfony/translation/tree/v6.4.21"
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             },
             "funding": [
                 {
@@ -6745,10 +6832,14 @@
                 }
             ],
 <<<<<<< HEAD
+<<<<<<< HEAD
             "time": "2025-04-07T19:02:30+00:00"
 =======
             "time": "2025-05-29T07:06:44+00:00"
 >>>>>>> Nperez
+=======
+            "time": "2025-04-07T19:02:30+00:00"
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         },
         {
             "name": "symfony/translation-contracts",
@@ -8030,6 +8121,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/laravel/sail/zipball/2edaaf77f3c07a4099965bb3d7dfee16e801c0f6",
                 "reference": "2edaaf77f3c07a4099965bb3d7dfee16e801c0f6",
+<<<<<<< HEAD
 =======
             "time": "2025-05-08T08:38:12+00:00"
         },
@@ -8046,6 +8138,8 @@
                 "url": "https://api.github.com/repos/laravel/sail/zipball/3e7d899232a8c5e3ea4fc6dee7525ad583887e72",
                 "reference": "3e7d899232a8c5e3ea4fc6dee7525ad583887e72",
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                 "shasum": ""
             },
             "require": {
@@ -8096,10 +8190,14 @@
                 "source": "https://github.com/laravel/sail"
             },
 <<<<<<< HEAD
+<<<<<<< HEAD
             "time": "2025-04-29T14:26:46+00:00"
 =======
             "time": "2025-05-19T13:19:21+00:00"
 >>>>>>> Nperez
+=======
+            "time": "2025-04-29T14:26:46+00:00"
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         },
         {
             "name": "mockery/mockery",
@@ -9901,6 +9999,9 @@
         {
             "name": "spatie/backtrace",
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             "version": "1.7.2",
             "source": {
                 "type": "git",
@@ -9911,6 +10012,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/spatie/backtrace/zipball/9807de6b8fecfaa5b3d10650985f0348b02862b2",
                 "reference": "9807de6b8fecfaa5b3d10650985f0348b02862b2",
+<<<<<<< HEAD
 =======
             "version": "1.7.4",
             "source": {
@@ -9923,6 +10025,8 @@
                 "url": "https://api.github.com/repos/spatie/backtrace/zipball/cd37a49fce7137359ac30ecc44ef3e16404cccbe",
                 "reference": "cd37a49fce7137359ac30ecc44ef3e16404cccbe",
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                 "shasum": ""
             },
             "require": {
@@ -9961,10 +10065,14 @@
             ],
             "support": {
 <<<<<<< HEAD
+<<<<<<< HEAD
                 "source": "https://github.com/spatie/backtrace/tree/1.7.2"
 =======
                 "source": "https://github.com/spatie/backtrace/tree/1.7.4"
 >>>>>>> Nperez
+=======
+                "source": "https://github.com/spatie/backtrace/tree/1.7.2"
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             },
             "funding": [
                 {
@@ -9977,10 +10085,14 @@
                 }
             ],
 <<<<<<< HEAD
+<<<<<<< HEAD
             "time": "2025-04-28T14:55:53+00:00"
 =======
             "time": "2025-05-08T15:41:09+00:00"
 >>>>>>> Nperez
+=======
+            "time": "2025-04-28T14:55:53+00:00"
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         },
         {
             "name": "spatie/error-solutions",
@@ -10302,6 +10414,9 @@
         {
             "name": "symfony/yaml",
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             "version": "v7.2.6",
             "source": {
                 "type": "git",
@@ -10312,6 +10427,7 @@
                 "type": "zip",
                 "url": "https://api.github.com/repos/symfony/yaml/zipball/0feafffb843860624ddfd13478f481f4c3cd8b23",
                 "reference": "0feafffb843860624ddfd13478f481f4c3cd8b23",
+<<<<<<< HEAD
 =======
             "version": "v7.3.0",
             "source": {
@@ -10324,6 +10440,8 @@
                 "url": "https://api.github.com/repos/symfony/yaml/zipball/cea40a48279d58dc3efee8112634cb90141156c2",
                 "reference": "cea40a48279d58dc3efee8112634cb90141156c2",
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                 "shasum": ""
             },
             "require": {
@@ -10367,10 +10485,14 @@
             "homepage": "https://symfony.com",
             "support": {
 <<<<<<< HEAD
+<<<<<<< HEAD
                 "source": "https://github.com/symfony/yaml/tree/v7.2.6"
 =======
                 "source": "https://github.com/symfony/yaml/tree/v7.3.0"
 >>>>>>> Nperez
+=======
+                "source": "https://github.com/symfony/yaml/tree/v7.2.6"
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             },
             "funding": [
                 {
@@ -10387,10 +10509,14 @@
                 }
             ],
 <<<<<<< HEAD
+<<<<<<< HEAD
             "time": "2025-04-04T10:10:11+00:00"
 =======
             "time": "2025-04-04T10:10:33+00:00"
 >>>>>>> Nperez
+=======
+            "time": "2025-04-04T10:10:11+00:00"
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         },
         {
             "name": "theseer/tokenizer",

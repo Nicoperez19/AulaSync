@@ -10,9 +10,13 @@
     <div class="p-6 bg-white rounded-lg shadow-lg">
         <div class="flex items-center justify-between mt-4 mb-[2rem]">
 <<<<<<< HEAD
+<<<<<<< HEAD
             <!-- Buscador pequeño a la izquierda -->
 =======
 >>>>>>> Nperez
+=======
+            <!-- Buscador pequeño a la izquierda -->
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             <div class="w-2/3">
                 <input type="text" id="searchInput" onkeyup="searchTable()" placeholder=""
                     class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white">
@@ -22,14 +26,19 @@
                 <x-icons.add class="w-6 h-6" aria-hidden="true" />
             </x-button>
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 >>>>>>> Nperez
+=======
+
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         </div>
 
         <livewire:data-load-table />
 
         <x-modal name="add-data" :show="$errors->any()" focusable>
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
             @slot('title')
@@ -38,10 +47,13 @@
                 </h2>
             @endslot
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             <form id="upload-form" action="{{ route('data.upload') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="grid gap-6 p-6">
                     <div class="space-y-4">
+<<<<<<< HEAD
 <<<<<<< HEAD
                         <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
                             Cargar Archivo de Datos
@@ -49,6 +61,11 @@
 =======
 
 >>>>>>> Nperez
+=======
+                        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
+                            Cargar Archivo de Datos
+                        </h2>
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 
                         <div class="p-4 mb-4 rounded-lg bg-gray-50 dark:bg-gray-800">
                             <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -71,6 +88,9 @@
                                             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                                     </svg>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                                     <div class="flex text-sm text-gray-600 dark:text-gray-400">
                                         <label for="file-upload"
                                             class="relative font-medium text-blue-600 bg-white rounded-md cursor-pointer dark:bg-gray-800 hover:text-blue-500">
@@ -79,6 +99,7 @@
                                                 accept=".xlsx,.xls,.csv" onchange="handleFileSelect(this)">
                                         </label>
                                         <p class="pl-1">o arrastrar y soltar</p>
+<<<<<<< HEAD
 =======
                                     <div class="text-sm text-gray-600 dark:text-gray-400">
                                         <label for="file-upload"
@@ -88,10 +109,13 @@
                                                 accept=".xlsx,.xls,.csv" onchange="handleFileSelect(this)">
                                         </label>
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                                     </div>
                                     <p class="text-xs text-gray-500 dark:text-gray-400">
                                         Excel o CSV hasta 10MB
                                     </p>
+<<<<<<< HEAD
 <<<<<<< HEAD
                                     <!-- Nombre del archivo seleccionado -->
                                     <div id="selected-file-name" class="mt-2 text-sm font-medium text-gray-700 dark:text-gray-300"></div>
@@ -99,11 +123,18 @@
                                     <div id="selected-file-name"
                                         class="mt-2 text-sm font-medium text-gray-700 dark:text-gray-300"></div>
 >>>>>>> Nperez
+=======
+                                    <!-- Nombre del archivo seleccionado -->
+                                    <div id="selected-file-name" class="mt-2 text-sm font-medium text-gray-700 dark:text-gray-300"></div>
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                                 </div>
                             </div>
                         </div>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                         <!-- Barra de progreso -->
                         <div id="upload-progress" class="hidden mt-4">
                             <div class="relative pt-1">
@@ -113,6 +144,7 @@
                                         style="width: 0%"></div>
                                 </div>
                                 <div id="progress-text" class="mt-1 text-sm text-center text-gray-600 dark:text-gray-400">0%</div>
+<<<<<<< HEAD
 =======
                         <!-- Spinner de carga -->
                         <div id="loading-spinner" class="hidden mt-4">
@@ -140,6 +172,8 @@
                                     </div>
                                 </div>
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                             </div>
                         </div>
 
@@ -157,11 +191,17 @@
                             Cargar
                         </x-button>
 <<<<<<< HEAD
+<<<<<<< HEAD
                         <x-button variant="primary" type="button" id="upload-button" class="hidden">
                             Guardar
                         </x-button>
 =======
 >>>>>>> Nperez
+=======
+                        <x-button variant="primary" type="button" id="upload-button" class="hidden">
+                            Guardar
+                        </x-button>
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                     </div>
                 </div>
             </form>
@@ -173,12 +213,16 @@
                 const selectedFileName = document.getElementById('selected-file-name');
                 const file = input.files[0];
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                 
                 if (file) {
                     // Validar el tipo de archivo
                     const validTypes = ['.xlsx', '.xls', '.csv'];
                     const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
                     
+<<<<<<< HEAD
 =======
 
                 if (file) {
@@ -186,6 +230,8 @@
                     const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
 
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                     if (!validTypes.includes(fileExtension)) {
                         showError('Por favor, seleccione un archivo Excel (.xlsx, .xls) o CSV válido.');
                         input.value = '';
@@ -194,11 +240,16 @@
                         return;
                     }
 <<<<<<< HEAD
+<<<<<<< HEAD
                     
                     // Validar el tamaño del archivo (10MB)
 =======
 
 >>>>>>> Nperez
+=======
+                    
+                    // Validar el tamaño del archivo (10MB)
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                     if (file.size > 10 * 1024 * 1024) {
                         showError('El archivo es demasiado grande. El tamaño máximo permitido es 10MB.');
                         input.value = '';
@@ -207,16 +258,22 @@
                         return;
                     }
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                     
                     // Mostrar el nombre del archivo seleccionado
                     selectedFileName.textContent = `Archivo seleccionado: ${file.name}`;
                     
                     // Mostrar el botón de cargar
+<<<<<<< HEAD
 =======
 
                     selectedFileName.className = 'mt-2 text-sm font-medium text-green-600';
                     selectedFileName.textContent = `Archivo seleccionado: ${file.name}`;
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                     loadButton.classList.remove('hidden');
                     hideMessages();
                 } else {
@@ -238,6 +295,9 @@
             }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             function updateProgress(percent) {
                 const progressBar = document.getElementById('progress-bar');
                 const progressText = document.getElementById('progress-text');
@@ -256,6 +316,7 @@
                 const form = document.getElementById('upload-form');
                 const fileInput = document.getElementById('file-upload');
                 const file = fileInput.files[0];
+<<<<<<< HEAD
 =======
             document.getElementById('load-button').addEventListener('click', function() {
                 const form = document.getElementById('upload-form');
@@ -263,6 +324,8 @@
                 const file = fileInput.files[0];
                 const loadingSpinner = document.getElementById('loading-spinner');
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 
                 if (!file) {
                     showError('Por favor, seleccione un archivo primero.');
@@ -270,6 +333,9 @@
                 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                 const errorDiv = document.getElementById('error-message');
                 const successDiv = document.getElementById('success-message');
                 const uploadedFileDiv = document.getElementById('uploaded-file-name');
@@ -278,10 +344,13 @@
                 hideMessages();
                 progressDiv.classList.remove('hidden');
                 updateProgress(0);
+<<<<<<< HEAD
 =======
                 hideMessages();
                 loadingSpinner.classList.remove('hidden');
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 
                 const formData = new FormData();
                 formData.append('file', file);
@@ -291,6 +360,9 @@
                 xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                 xhr.upload.addEventListener('progress', function (e) {
                     if (e.lengthComputable) {
                         const percent = Math.round((e.loaded / e.total) * 100);
@@ -312,6 +384,7 @@
                             setTimeout(() => {
                                 window.location.reload();
                             }, 2000);
+<<<<<<< HEAD
 =======
                 xhr.onload = function() {
                     loadingSpinner.classList.remove('hidden');
@@ -365,6 +438,8 @@
                             }, 500); // Consultar cada medio segundo
 
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                         } catch (e) {
                             showError('Error al procesar la respuesta del servidor');
                         }
@@ -379,6 +454,7 @@
                 };
 
 <<<<<<< HEAD
+<<<<<<< HEAD
                 // Error en la conexión
                 xhr.onerror = function () {
                     showError('Error en la conexión al servidor');
@@ -387,6 +463,11 @@
                     loadingSpinner.classList.add('hidden');
                     showError('Error de conexión al subir el archivo');
 >>>>>>> Nperez
+=======
+                // Error en la conexión
+                xhr.onerror = function () {
+                    showError('Error en la conexión al servidor');
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                 };
 
                 xhr.send(formData);
@@ -394,7 +475,11 @@
         </script>
     </div>
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 >>>>>>> Nperez
+=======
+
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 </x-app-layout>

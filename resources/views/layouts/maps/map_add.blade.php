@@ -4,16 +4,22 @@
 <<<<<<< HEAD
             <h2 class="text-xl font-semibold leading-tight" style="font-style: oblique;">
                 {{ __('Ingreso de Mapas') }}
+<<<<<<< HEAD
 =======
             <h2 class="text-xl font-semibold leading-tight">
                 {{ __('Crear Nuevo Mapa') }}
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             </h2>
         </div>
     </x-slot>
 
     <div class="p-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         <!-- FORMULARIO -->
         <form method="POST" action="{{ route('mapas.store') }}" enctype="multipart/form-data" id="mapaForm">
             @csrf
@@ -130,6 +136,7 @@
                     </div>
                 </div>
             </div>
+<<<<<<< HEAD
 =======
         <!-- Selectores de sede, facultad y piso -->
         <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
@@ -207,11 +214,16 @@
             <input type="hidden" name="bloques" id="bloques">
             <input type="file" name="archivo" id="archivo">
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         </form>
     </div>
 
     <script>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         document.addEventListener('DOMContentLoaded', () => {
             // 1. Selectores de universidad, facultad y piso
             const universidadSelect = document.getElementById('id_universidad');

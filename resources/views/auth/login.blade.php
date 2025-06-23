@@ -23,11 +23,14 @@
                         <x-form.input withicon id="run" class="block w-full" type="text" name="run"
                             :value="old('run')" placeholder="{{ __('Ej: 12345678') }}" required autofocus
                             x-data
+<<<<<<< HEAD
 =======
                      
                         <x-form.input withicon id="run" class="block w-full" type="text" name="run"
                             :value="old('run')" placeholder="{{ __('Ej: 12345678') }}" required autofocus x-data
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                             x-on:input="
                                 let value = $event.target.value.replace(/[^0-9]/g, '');
                                 if (value.length > 8) {

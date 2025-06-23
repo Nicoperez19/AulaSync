@@ -5,18 +5,34 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 return new class extends Migration
 {
 =======
 return new class extends Migration {
 >>>>>>> Nperez
+=======
+return new class extends Migration
+{
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     /**
      * Run the migrations.
      */
     public function up(): void
     {
+<<<<<<< HEAD
         Schema::create('horarios', function (Blueprint $table) {
 <<<<<<< HEAD
+=======
+<<<<<<<< HEAD:database/migrations/2025_03_25_000005_2_create_campuses_table.php
+        Schema::create('campuses', function (Blueprint $table) {
+            $table->string('id_campus', 20)->primary();
+            $table->string('nombre_campus', 100);
+            $table->string('id_sede', 20); 
+            $table->foreign('id_sede')->references('id_sede')->on('sedes')->onDelete('cascade');
+========
+        Schema::create('horarios', function (Blueprint $table) {
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             $table->string('id_horario',20)->primary(); 
             $table->string('nombre');  
             $table->string('id_espacio'); 
@@ -28,6 +44,7 @@ return new class extends Migration {
             $table->unsignedBigInteger('id');
             $table->foreign('id')->references('id')->on('seccions')->onDelete('cascade');
             
+<<<<<<< HEAD
             $table->timestamps();
         });
 =======
@@ -42,6 +59,11 @@ return new class extends Migration {
         });
 
 >>>>>>> Nperez
+=======
+>>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841:database/migrations/2025_04_31_000014_create_horarios_table.php
+            $table->timestamps();
+        });
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     }
 
     /**
@@ -49,6 +71,10 @@ return new class extends Migration {
      */
     public function down(): void
     {
+<<<<<<< HEAD
         Schema::dropIfExists('horarios');
+=======
+        Schema::dropIfExists('campuses');
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     }
 };

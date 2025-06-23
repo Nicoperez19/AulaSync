@@ -15,17 +15,23 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Inter:wght@200..900&display=swap" as="style"
         onload="this.onload=null;this.rel='stylesheet'">
     <noscript>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200..900&display=swap" rel="stylesheet">
     </noscript>
+<<<<<<< HEAD
 =======
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 
     <!-- Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -43,6 +49,9 @@
         <div class="min-h-screen text-gray-900 bg-gray-100 dark:bg-dark-eval-0 dark:text-gray-200">
             <!-- Navbar -->
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             <div class="fixed top-0 left-0 z-50 w-full">
 =======
             <div class="fixed top-0 left-0 z-[100] w-full">
@@ -55,6 +64,9 @@
 
             <!-- Contenido principal -->
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             <div class="flex flex-col min-h-screen pt-16 bg-cloud-light dark:bg-dark-eval-2 transition-[margin] duration-150"
                 :class="{
                     'ml-64': isSidebarOpen || isSidebarHovered,
@@ -65,9 +77,12 @@
                     'margin-left': (isSidebarOpen || isSidebarHovered) && window.innerWidth >= 768 ? '16rem' : (window
                         .innerWidth >= 768 ? '4rem' : '0rem')
                 }">
+<<<<<<< HEAD
 =======
             <div class="flex flex-col min-h-screen pt-16 bg-gray-100 dark:bg-dark-eval-2 transition-all duration-300 ease-in-out">
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                 <!-- Header -->
                 <header>
                     <div class="p-4 mt-4 sm:p-6">
@@ -77,6 +92,7 @@
 
                 <!-- Main content -->
 <<<<<<< HEAD
+<<<<<<< HEAD
                 <main class="flex-1 px-4 overflow-x-auto sm:px-6">
 =======
                 <main class="flex-1 px-4 overflow-x-auto sm:px-6 transition-all duration-300 ease-in-out"
@@ -85,6 +101,9 @@
                         'opacity-100': !(isSidebarOpen || isSidebarHovered)
                     }">
 >>>>>>> Nperez
+=======
+                <main class="flex-1 px-4 overflow-x-auto sm:px-6">
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                     {{ $slot }}
                 </main>
 
@@ -105,6 +124,7 @@
         document.addEventListener('alpine:init', () => {
             Alpine.data('mainState', () => ({
 <<<<<<< HEAD
+<<<<<<< HEAD
                 isDarkMode: localStorage.getItem('dark') === 'true' || 
                             (!localStorage.getItem('dark') && window.matchMedia('(prefers-color-scheme: dark)').matches),
 =======
@@ -112,6 +132,10 @@
                     (!localStorage.getItem('dark') && window.matchMedia('(prefers-color-scheme: dark)')
                         .matches),
 >>>>>>> Nperez
+=======
+                isDarkMode: localStorage.getItem('dark') === 'true' || 
+                            (!localStorage.getItem('dark') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
                 isSidebarOpen: false,
                 isSidebarHovered: false,
                 scrollingDown: false,

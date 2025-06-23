@@ -22,6 +22,9 @@ return new class extends Migration
             $table->string('id_espacio');
             $table->unsignedBigInteger('run'); 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             
             $table->foreign('id_espacio')->references('id_espacio')->on('espacios')->onDelete('cascade');
             $table->foreign('run')->references('run')->on('users')->onDelete('cascade');

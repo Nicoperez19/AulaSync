@@ -7,14 +7,20 @@ use App\Models\Piso;
 use App\Models\Espacio;
 use App\Models\Mapa;
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 use App\Models\Sede;
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 use App\Models\Bloque;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 
 class MapasController extends Controller
 {
@@ -22,6 +28,7 @@ class MapasController extends Controller
     {
         $universidades = Universidad::all();
         return view('layouts.maps.map_index', compact('universidades'));
+<<<<<<< HEAD
 =======
 use Illuminate\Support\Facades\Log;
 
@@ -38,6 +45,8 @@ class MapasController extends Controller
 
         return view('layouts.maps.map_index', compact('mapas'));
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     }
 
     public function add()
@@ -47,11 +56,15 @@ class MapasController extends Controller
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     public function getFacultades($universidadId)
     {
         return response()->json(
             Facultad::where('id_universidad', $universidadId)->get()
         );
+<<<<<<< HEAD
 =======
     public function store(Request $request)
     {
@@ -155,11 +168,16 @@ class MapasController extends Controller
             return response()->json(['error' => 'Error al obtener las facultades: ' . $e->getMessage()], 500);
         }
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     }
 
     public function getPisos($facultadId)
     {
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         return response()->json(
             Piso::where('id_facultad', $facultadId)->get()
         );
@@ -219,6 +237,7 @@ class MapasController extends Controller
         ]);
     }
 
+<<<<<<< HEAD
 =======
         try {
             Log::info('Obteniendo pisos para facultad:', ['id_facultad' => $facultadId]);
@@ -314,4 +333,6 @@ class MapasController extends Controller
         }
     }
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 }

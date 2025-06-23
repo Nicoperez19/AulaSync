@@ -18,6 +18,9 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->nullable();
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             $table->integer('celular')->nullable();
 =======
             $table->string('celular')->nullable();

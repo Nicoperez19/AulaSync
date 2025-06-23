@@ -27,6 +27,7 @@ class Horario extends Model
     public function seccion()
     {
         return $this->belongsTo(Seccion::class, 'id', 'id');
+<<<<<<< HEAD
 =======
 
     protected $table = 'horarios';
@@ -50,5 +51,7 @@ class Horario extends Model
     {
         return $this->hasMany(Planificacion_Asignatura::class, 'id_horario', 'id_horario');
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     }
 }

@@ -2,6 +2,9 @@
 
 @php
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     $maxWidthClass = [
         'sm' => 'sm:max-w-sm',
         'md' => 'sm:max-w-md',
@@ -38,6 +41,7 @@
     <!-- Modal -->
     <div
         x-show="show"
+<<<<<<< HEAD
 =======
     $maxWidthClass =
         [
@@ -62,6 +66,8 @@
     <!-- Modal -->
     <div x-show="show"
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         class="mb-6 bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-xl transform transition-all sm:w-full {{ $maxWidthClass }} sm:mx-auto"
         x-transition:enter="ease-out duration-300"
         x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
@@ -84,6 +90,7 @@
 
 <script>
 <<<<<<< HEAD
+<<<<<<< HEAD
     function modalComponent({ show = false, focusable = false }) {
 =======
     function modalComponent({
@@ -91,6 +98,9 @@
         focusable = false
     }) {
 >>>>>>> Nperez
+=======
+    function modalComponent({ show = false, focusable = false }) {
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         return {
             show,
             init() {
@@ -110,6 +120,7 @@
                 )].filter(el => !el.disabled);
             },
 <<<<<<< HEAD
+<<<<<<< HEAD
             firstFocusable() { return this.focusables()[0]; },
             lastFocusable() { return this.focusables().at(-1); },
 =======
@@ -120,6 +131,10 @@
                 return this.focusables().at(-1);
             },
 >>>>>>> Nperez
+=======
+            firstFocusable() { return this.focusables()[0]; },
+            lastFocusable() { return this.focusables().at(-1); },
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             navigateFocus(event) {
                 const focusables = this.focusables();
                 const index = focusables.indexOf(document.activeElement);

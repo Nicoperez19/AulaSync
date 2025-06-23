@@ -15,9 +15,13 @@ return new class extends Migration
             $table->id();
             $table->integer('numero')->default(1);
 <<<<<<< HEAD
+<<<<<<< HEAD
             
 =======
 >>>>>>> Nperez
+=======
+            
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             $table->string('id_asignatura');
             $table->foreign('id_asignatura')->references('id_asignatura')->on('asignaturas')->onDelete('cascade');
            

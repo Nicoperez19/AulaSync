@@ -27,6 +27,7 @@ class DatabaseSeeder extends Seeder
         // $this->call(class: EspacioSeeder::class); 
         // $this->call(class: ReservasSeeder::class); 
         // $this->call(class: AsignaturasSeeder::class); 
+<<<<<<< HEAD
 =======
         $this->call(RoleSeeder::class);
         $this->call(UserSeeder::class);
@@ -47,5 +48,7 @@ class DatabaseSeeder extends Seeder
 
         // $this->call(class: ReservasSeeder::class); 
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     }
 }

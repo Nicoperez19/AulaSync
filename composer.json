@@ -15,10 +15,14 @@
         "laravel/tinker": "^2.8",
         "livewire/livewire": "^3.6",
 <<<<<<< HEAD
+<<<<<<< HEAD
         "maatwebsite/excel": "^3.1",
 =======
         "maatwebsite/excel": "3.1.48",
 >>>>>>> Nperez
+=======
+        "maatwebsite/excel": "^3.1",
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         "spatie/laravel-permission": "^6.16"
     },
     "require-dev": {

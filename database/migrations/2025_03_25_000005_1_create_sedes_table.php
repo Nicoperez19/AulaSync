@@ -5,11 +5,16 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 return new class extends Migration
 {
 =======
 return new class extends Migration {
 >>>>>>> Nperez
+=======
+return new class extends Migration
+{
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     /**
      * Run the migrations.
      */
@@ -21,10 +26,14 @@ return new class extends Migration {
             $table->string('id_universidad');
             $table->foreign('id_universidad')->references('id_universidad')->on('universidades')->onDelete('cascade');
 <<<<<<< HEAD
+<<<<<<< HEAD
             $table->foreignId('comunas_id')->constrained();
 =======
             $table->foreignId('comuna_id')->constrained('comunas');
 >>>>>>> Nperez
+=======
+            $table->foreignId('comunas_id')->constrained();
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             $table->timestamps();
         });
     }

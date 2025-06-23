@@ -8,17 +8,22 @@
 
     <!-- Monitoreo de Espacios -->
 <<<<<<< HEAD
+<<<<<<< HEAD
     <x-sidebar.link title="Monitoreo de Espacios" href="" :isActive="request()->routeIs('')">
 =======
     <x-sidebar.link title="Monitoreo de Espacios" href="{{ $primerMapa ? route('plano.show', $primerMapa->id_mapa) : route('dashboard') }}"
         :isActive="request()->routeIs('plano.show')">
 >>>>>>> Nperez
+=======
+    <x-sidebar.link title="Monitoreo de Espacios" href="" :isActive="request()->routeIs('')">
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         <x-slot name="icon">
             <x-icons.location class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         </x-slot>
     </x-sidebar.link>
 
     <!-- Horarios -->
+<<<<<<< HEAD
 <<<<<<< HEAD
     <x-sidebar.link title="Horarios de Uso" href="" :isActive="request()->routeIs('')">
         <x-slot name="icon">
@@ -28,6 +33,11 @@
         :isActive="request()->routeIs('espacios.show')">
         <x-slot name="icon">
             <x-icons.clock class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
+=======
+    <x-sidebar.link title="Horarios de Uso" href="" :isActive="request()->routeIs('')">
+        <x-slot name="icon">
+            <x-icons.clock class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         </x-slot>
     </x-sidebar.link>
 
@@ -38,6 +48,7 @@
         </x-slot>
     </x-sidebar.link>
 
+<<<<<<< HEAD
     <!-- Reportería -->
     <x-sidebar.dropdown title="Reportes" :active="Str::startsWith(request()->route()->uri(), 'reporteria')">
         <x-slot name="icon">
@@ -54,6 +65,8 @@
         </x-slot>
     </x-sidebar.link>
 
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     <!-- Mapa -->
     <x-sidebar.link title="Mapa de Espacios" href="" :isActive="request()->routeIs('')">
         <x-slot name="icon">
@@ -107,6 +120,7 @@
         </x-sidebar.dropdown>
     @endrole
 </nav>
+<<<<<<< HEAD
 =======
         <x-sidebar.sublink title="Accesos registrados" href="{{ route('reporteria.accesos') }}"
             :isActive="request()->routeIs('reporteria.accesos')" />
@@ -172,3 +186,5 @@
     @endrole
 </nav>
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841

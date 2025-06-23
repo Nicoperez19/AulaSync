@@ -16,8 +16,11 @@ class Carrera extends Model
         'nombre',
 <<<<<<< HEAD
         'id_facultad',
+<<<<<<< HEAD
 =======
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         'id_area_academica'
     ];
 

@@ -8,6 +8,7 @@
     </x-slot>
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     <div class="p-6 overflow-hidden bg-white rounded-md shadow-md dark:bg-dark-eval-1">
 
 =======
@@ -254,6 +255,10 @@
             </div>
         </div>
 >>>>>>> Nperez
+=======
+    <div class="p-6 overflow-hidden bg-white rounded-md shadow-md dark:bg-dark-eval-1">
+
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     </div>
 </x-app-layout>
 

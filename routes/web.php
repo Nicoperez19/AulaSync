@@ -17,11 +17,14 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\AsignaturaController;
 use App\Http\Controllers\DataLoadController;
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 use App\Http\Controllers\PlanoDigitalController;
 use App\Http\Controllers\ProfesorController;
 use App\Http\Controllers\ReporteriaController;
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 
 
 use Illuminate\Support\Facades\Route;
@@ -55,6 +58,7 @@ Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::delete('/user/user_delete/{run}', [UserController::class, 'destroy'])->name('users.delete');
     Route::get('/user/user_edit/{run}', [UserController::class, 'edit'])->name('users.edit');
     Route::put('user/user_update/{run}', [UserController::class, 'update'])->name('users.update');
+<<<<<<< HEAD
     Route::get('/horarios/horarios_index', [HorariosController::class, 'index'])->name('horarios.index');
     Route::get('/horarios/{run}', [HorariosController::class, 'getHorarioProfesor'])->name('horarios.get');
     Route::get('/spacetime/spacetime_index', [HorariosController::class, 'mostrarHorarios'])->name('horarios_espacios.index');
@@ -70,6 +74,8 @@ Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::put('user/user_update/{run}', [UserController::class, 'update'])->name('users.update');
 =======
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 });
 
 Route::group(['middleware' => ['permission:mantenedor de roles']], function () {
@@ -152,8 +158,11 @@ Route::group(['middleware' => ['permission:mantenedor de espacios']], function (
 <<<<<<< HEAD
     Route::get('/facultades/{id}', [EspacioController::class, 'getFacultades']);
     Route::get('/pisos/{id}', [EspacioController::class, 'getPisos']);
+<<<<<<< HEAD
 =======
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 });
 
 
@@ -187,17 +196,23 @@ Route::group(['middleware' => ['permission:mantenedor de mapas']], function () {
     Route::get('/mapas/contar-espacios/{pisoId}', [MapasController::class, 'contarEspacios']);
 });
 
+<<<<<<< HEAD
 =======
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 Route::group(['middleware' => ['permission:mantenedor de carga de datos']], function () {
     Route::get('/data', [DataLoadController::class, 'index'])->name('data.index');
     Route::get('/data/{dataLoad}', [DataLoadController::class, 'show'])->name('data.show');
     Route::post('/data_loads/upload', [DataLoadController::class, 'upload'])->name('data.upload');
     Route::delete('/data/{dataLoad}', [DataLoadController::class, 'destroy'])->name('data.destroy');
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     Route::get('/data/progress/{dataLoad}', [DataLoadController::class, 'getProgress'])->name('data.progress');
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 });
 
 Route::middleware('auth')->group(function () {

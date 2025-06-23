@@ -15,10 +15,14 @@ class User extends Authenticatable
     protected $primaryKey = 'run';
     public $incrementing = false;
 <<<<<<< HEAD
+<<<<<<< HEAD
     protected $keyType = 'string';
 =======
     protected $keyType = 'integer';
 >>>>>>> Nperez
+=======
+    protected $keyType = 'string';
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     protected $fillable = [
         'run',
         'name',
@@ -44,12 +48,17 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
 <<<<<<< HEAD
+<<<<<<< HEAD
         'run' => 'string',
         'fecha_nacimiento' => 'date',
 =======
         'fecha_nacimiento' => 'date',
         'anio_ingreso' => 'integer',
 >>>>>>> Nperez
+=======
+        'run' => 'string',
+        'fecha_nacimiento' => 'date',
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     ];
 
     /**
@@ -101,10 +110,14 @@ class User extends Authenticatable
     public function asignaturas()
     {
 <<<<<<< HEAD
+<<<<<<< HEAD
         return $this->hasMany(Asignatura::class, 'run');
 =======
         return $this->hasMany(Asignatura::class, 'run', 'run');
 >>>>>>> Nperez
+=======
+        return $this->hasMany(Asignatura::class, 'run');
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     }
 
     public function dataLoads()
@@ -113,6 +126,7 @@ class User extends Authenticatable
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
     public function reservas()
@@ -120,4 +134,7 @@ class User extends Authenticatable
         return $this->hasMany(Reserva::class, 'run', 'run');
     }
 >>>>>>> Nperez
+=======
+
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 }

@@ -27,6 +27,7 @@
         case 'secondary':
             $variantClasses =
                 'bg-light-cloud-blue text-white hover:bg-white focus:ring-purple-500 dark:text-white dark:bg-dark-eval-1 dark:hover:bg-dark-eval-2 dark:hover:text-gray-200';
+<<<<<<< HEAD
 =======
         case 'login':
             $variantClasses = 'bg-gray-100 text-black hover:bg-steel-blue-600 focus:ring-light-cloud dark:bg-dark-eval-0 dark:hover:bg-dark-eval-0 dark:hover:text-gray-100 dark:text-white';
@@ -34,6 +35,8 @@
         case 'secondary':
             $variantClasses = 'bg-light-cloud-blue text-white hover:bg-steel-blue-600 dark:text-white dark:bg-dark-eval-1 dark:hover:bg-dark-eval-2 dark:hover:text-gray-200';
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             break;
         case 'success':
             $variantClasses = 'bg-green-500 text-white hover:bg-green-600 focus:ring-green-500';

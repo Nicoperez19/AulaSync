@@ -30,6 +30,9 @@ class Asignatura extends Model
         'id_carrera',
     ];
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     public function carrera()
     {
         return $this->belongsTo(Carrera::class, 'id_carrera');
@@ -40,6 +43,7 @@ class Asignatura extends Model
         return $this->belongsTo(User::class, 'run');  
     }
     
+<<<<<<< HEAD
 =======
 
     public function reservas()
@@ -58,10 +62,13 @@ class Asignatura extends Model
     }
 
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     public function secciones()
     {
         return $this->hasMany(Seccion::class, 'id_asignatura', 'id_asignatura');
     }
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 
@@ -70,4 +77,6 @@ class Asignatura extends Model
         return $this->hasMany(PlanificacionAsignatura::class, 'id_asignatura', 'id_asignatura');
     }
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 }

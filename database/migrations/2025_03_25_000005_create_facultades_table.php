@@ -16,11 +16,14 @@ return new class extends Migration {
 <<<<<<< HEAD
             $table->string('ubicacion_facultad', 255);
             $table->string('logo_facultad')->nullable();
+<<<<<<< HEAD
 =======
 
             $table->string('id_universidad', 20);
             $table->foreign('id_universidad')->references('id_universidad')->on('universidades')->onDelete('cascade');
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
 
             $table->string('id_sede', 20);
             $table->foreign('id_sede')->references('id_sede')->on('sedes')->onDelete('cascade');

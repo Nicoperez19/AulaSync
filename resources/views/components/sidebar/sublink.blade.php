@@ -5,6 +5,9 @@
 
 @php
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     $classes = 'transition-colors hover:text-light-cloud-blue dark:hover:text-white whitespace-normal';
 
     if ($isActive) {

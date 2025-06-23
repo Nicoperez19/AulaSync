@@ -18,6 +18,7 @@ class Facultad extends Model
         'nombre_facultad',
         'ubicacion_facultad',
         'logo_facultad',
+<<<<<<< HEAD
 =======
     protected $primaryKey = 'id_facultad';
     public $incrementing = false;
@@ -26,17 +27,23 @@ class Facultad extends Model
         'nombre_facultad',
         'id_universidad',
 >>>>>>> Nperez
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
         'id_sede',
         'id_campus',
     ];
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     public function sede() {
         return $this->belongsTo(Sede::class, 'id_sede');
     }
     
     public function campus() {
         return $this->belongsTo(Campus::class, 'id_campus');
+<<<<<<< HEAD
     }
 
 =======
@@ -53,6 +60,8 @@ class Facultad extends Model
     public function universidad()
     {
         return $this->belongsTo(Universidad::class, 'id_universidad');
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
     }
 
 >>>>>>> Nperez

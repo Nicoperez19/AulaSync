@@ -14,6 +14,9 @@ return new class extends Migration
         Schema::create('asignaturas', function (Blueprint $table) {
             $table->string('id_asignatura',20)->primary();
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c05e560f5edb88b89bd0fe7d8d71ecb8386c841
             $table->string('nombre_asignatura', 100);
          
             $table->integer('horas_directas');
