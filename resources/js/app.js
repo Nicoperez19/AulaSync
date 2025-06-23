@@ -1,53 +1,50 @@
-import Alpine from 'alpinejs'
 import collapse from '@alpinejs/collapse'
 import focus from '@alpinejs/focus'
 import mask from '@alpinejs/mask'
 import PerfectScrollbar from 'perfect-scrollbar'
 import 'perfect-scrollbar/css/perfect-scrollbar.css'
 
-// Configuración de Alpine
-window.Alpine = Alpine
-Alpine.plugin(collapse)
-Alpine.plugin(focus)
-Alpine.plugin(mask)
+document.addEventListener('alpine:init', () => {
+    const Alpine = window.Alpine
 
-// Estado principal de la aplicación
-Alpine.data('mainState', () => ({
-    isDarkMode: localStorage.getItem('dark') === 'true' || 
-                (!localStorage.getItem('dark') && window.matchMedia('(prefers-color-scheme: dark)').matches),
-    isSidebarOpen: false,
-    isSidebarHovered: false,
+    // Configuración de Alpine
+    Alpine.plugin(collapse)
+    Alpine.plugin(focus)
+    Alpine.plugin(mask)
 
-    init() {
-        this.handleWindowResize()
-        window.addEventListener('resize', this.handleWindowResize.bind(this))
-    },
+    // Estado principal de la aplicación
+    Alpine.data('mainState', () => ({
+        isDarkMode: localStorage.getItem('dark') === 'true' ||
+                    (!localStorage.getItem('dark') && window.matchMedia('(prefers-color-scheme: dark)').matches),
+        isSidebarOpen: false,
+        isSidebarHovered: false,
 
-    toggleTheme() {
-        this.isDarkMode = !this.isDarkMode
-        localStorage.setItem('dark', this.isDarkMode)
-    },
+        init() {
+            this.handleWindowResize()
+            window.addEventListener('resize', this.handleWindowResize.bind(this))
+        },
 
-    toggleSidebar() {
-        this.isSidebarOpen = !this.isSidebarOpen
-    },
+        toggleTheme() {
+            this.isDarkMode = !this.isDarkMode
+            localStorage.setItem('dark', this.isDarkMode)
+        },
 
-    handleSidebarHover(value) {
-        if (window.innerWidth < 1024) return
-        this.isSidebarHovered = value
-    },
+        toggleSidebar() {
+            this.isSidebarOpen = !this.isSidebarOpen
+        },
 
-    handleWindowResize() {
-        if (window.innerWidth < 1024) {
-            this.isSidebarOpen = false
+        handleSidebarHover(value) {
+            if (window.innerWidth < 1024) return
+            this.isSidebarHovered = value
+        },
+
+        handleWindowResize() {
+            if (window.innerWidth < 1024) {
+                this.isSidebarOpen = false
+            }
         }
-    }
-}))
-
-// Inicializar Alpine
-if (!window.Alpine.isStarted) {
-    Alpine.start()
-}
+    }))
+})
 
 // Configuración de Perfect Scrollbar
 document.addEventListener('DOMContentLoaded', () => {

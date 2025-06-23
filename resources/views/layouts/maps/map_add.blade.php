@@ -80,7 +80,7 @@
         <form id="saveMapForm" method="POST" action="{{ route('mapas.store') }}" enctype="multipart/form-data" class="hidden">
             @csrf
             <input type="text" name="nombre_mapa" id="nombre_mapa_form" value="">
-            <input type="hidden" name="id_espacio" id="id_espacio">
+            <input type="hidden" name="piso_id" id="piso_id">
             <input type="hidden" name="bloques" id="bloques">
             <input type="file" name="archivo" id="archivo">
         </form>
@@ -310,11 +310,11 @@
                             espacioItem.addEventListener('click', function() {
                                 // Deseleccionar todos
                                 document.querySelectorAll('#espaciosList > div').forEach(item => {
-                                    item.classList.remove('bg-blue-100', 'dark:bg-blue-900');
+                                    item.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'bg-green-200', 'dark:bg-green-900');
                                 });
                                 
                                 // Seleccionar este
-                                this.classList.add('bg-blue-100', 'dark:bg-blue-900');
+                                this.classList.add('bg-green-200', 'dark:bg-green-900');
                                 state.selectedSpace = {
                                     id: espacio.id_espacio,
                                     nombre: espacio.nombre_espacio
@@ -477,7 +477,8 @@
                 // Llenar formulario oculto
                 const nombreMapaForm = document.getElementById('nombre_mapa_form');
                 nombreMapaForm.value = nombreMapa;
-                document.getElementById('id_espacio').value = elements.pisoSelect.value;
+                const pisoId = elements.pisoSelect.value;
+                document.getElementById('piso_id').value = pisoId;
                 document.getElementById('bloques').value = JSON.stringify(bloques);
 
                 // Copiar archivo

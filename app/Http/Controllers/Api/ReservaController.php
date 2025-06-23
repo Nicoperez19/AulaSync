@@ -310,4 +310,66 @@ class ReservaController extends Controller
             ], 500);
         }
     }
+
+    public function devolverLlaves(Request $request)
+    {
+        try {
+            $request->validate([
+                'run' => 'required|exists:users,run',
+                'espacio_id' => 'required|exists:espacios,id_espacio'
+            ]);
+
+            $usuario = User::where('run', $request->run)->first();
+            $espacio = Espacio::where('id_espacio', $request->espacio_id)->first();
+
+            if (!$usuario || !$espacio) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Usuario o espacio no encontrado'
+                ], 404);
+            }
+
+            // Verificar si el espacio está ocupado
+            if ($espacio->estado !== 'Ocupado') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El espacio no está ocupado'
+                ], 400);
+            }
+
+            // Buscar la reserva activa para este espacio
+            $reservaActiva = Reserva::where('id_espacio', $request->espacio_id)
+                ->where('estado', 'activa')
+                ->where('fecha_reserva', Carbon::today())
+                ->first();
+
+            if ($reservaActiva) {
+                // Actualizar la reserva
+                $reservaActiva->update([
+                    'estado' => 'finalizada',
+                    'hora_salida' => Carbon::now()->format('H:i:s')
+                ]);
+            }
+
+            // Cambiar el estado del espacio a disponible
+            $espacio->update(['estado' => 'Disponible']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Devolución exitosa',
+                'data' => [
+                    'usuario' => $usuario->name,
+                    'espacio' => $espacio->nombre_espacio,
+                    'hora_devolucion' => Carbon::now()->format('H:i:s')
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error en devolución de llaves: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al procesar la devolución: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

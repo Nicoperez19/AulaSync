@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Espacio;
 use App\Models\Reserva;
+use App\Models\Planificacion_Asignatura;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -19,31 +20,98 @@ class ActualizarEstadoEspacios extends Command
         $diaActual = strtolower($ahora->locale('es')->isoFormat('dddd'));
         $horaActual = $ahora->format('H:i:s');
 
-        // Obtener todos los espacios que están marcados como ocupados
-        $espaciosOcupados = Espacio::where('estado', 'ocupado')->get();
+        // Determinar el período actual
+        $mesActual = date('n');
+        $anioActual = date('Y');
+        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
+        $periodo = $anioActual . '-' . $semestre;
 
-        foreach ($espaciosOcupados as $espacio) {
-            // Verificar si hay reservas activas
-            $reservaActiva = Reserva::where('espacio_id', $espacio->id_espacio)
-                ->where('fecha', $ahora->toDateString())
-                ->where('hora_termino', '>=', $horaActual)
-                ->first();
+        $this->info('Iniciando actualización de estados de espacios...');
+        $this->info("Hora actual: {$horaActual}");
+        $this->info("Día actual: {$diaActual}");
+        $this->info("Período: {$periodo}");
 
-            // Verificar si hay clases programadas
-            $claseActiva = DB::table('horarios')
-                ->where('espacio_id', $espacio->id_espacio)
-                ->where('dia', $diaActual)
-                ->where('hora_termino', '>=', $horaActual)
-                ->first();
+        // Obtener todos los espacios
+        $espacios = Espacio::all();
+        $this->info("Total de espacios a verificar: " . $espacios->count());
 
-            // Si no hay reservas ni clases activas, marcar el espacio como disponible
-            if (!$reservaActiva && !$claseActiva) {
-                $espacio->estado = 'disponible';
+        // Obtener planificaciones activas para el período actual
+        $planificacionesActivas = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.user'])
+            ->whereHas('horario', function ($query) use ($periodo) {
+                $query->where('periodo', $periodo);
+            })
+            ->whereHas('modulo', function ($query) use ($diaActual) {
+                $query->where('dia', $diaActual);
+            })
+            ->get();
+
+        $this->info("Planificaciones activas encontradas: " . $planificacionesActivas->count());
+
+        // Obtener reservas activas para hoy
+        $reservasActivas = Reserva::where('fecha_reserva', $ahora->toDateString())
+            ->where('estado', 'activa')
+            ->get();
+
+        $this->info("Reservas activas encontradas: " . $reservasActivas->count());
+
+        $espaciosActualizados = 0;
+        $espaciosOcupados = 0;
+        $espaciosDisponibles = 0;
+
+        foreach ($espacios as $espacio) {
+            $estadoAnterior = $espacio->estado;
+            
+            // Verificar si hay reserva activa para este espacio
+            $tieneReservaActiva = $reservasActivas->where('id_espacio', $espacio->id_espacio)->isNotEmpty();
+            
+            // Verificar si hay clase programada que debería estar en curso
+            $planificacionActual = $planificacionesActivas->where('id_espacio', $espacio->id_espacio)
+                ->filter(function($planificacion) use ($horaActual) {
+                    return $planificacion->modulo->hora_inicio <= $horaActual && 
+                           $planificacion->modulo->hora_termino > $horaActual;
+                })->first();
+            
+            $tieneClaseActual = $planificacionActual !== null;
+            
+            // Determinar el estado correcto
+            $nuevoEstado = 'Disponible';
+            
+            if ($tieneReservaActiva) {
+                $nuevoEstado = 'Ocupado';
+                $espaciosOcupados++;
+            } elseif ($tieneClaseActual) {
+                // Si hay clase programada pero no hay reserva activa, 
+                // el espacio debería estar ocupado pero no se ha registrado el ingreso
+                $nuevoEstado = 'Disponible';
+                $espaciosDisponibles++;
+                
+                if ($estadoAnterior === 'Ocupado') {
+                    $this->warn("Espacio {$espacio->nombre_espacio} marcado como ocupado pero no tiene reserva activa. Cambiando a disponible.");
+                }
+            } else {
+                $espaciosDisponibles++;
+                
+                if ($estadoAnterior === 'Ocupado') {
+                    $this->warn("Espacio {$espacio->nombre_espacio} marcado como ocupado pero no tiene actividad. Cambiando a disponible.");
+                }
+            }
+            
+            // Actualizar el estado si es diferente
+            if ($estadoAnterior !== $nuevoEstado) {
+                $espacio->estado = $nuevoEstado;
                 $espacio->save();
-                $this->info("Espacio {$espacio->nombre_espacio} marcado como disponible");
+                $espaciosActualizados++;
+                
+                $this->info("Espacio {$espacio->nombre_espacio}: {$estadoAnterior} → {$nuevoEstado}");
             }
         }
 
-        $this->info('Proceso de actualización de estados completado');
+        $this->info("\n=== RESUMEN DE ACTUALIZACIÓN ===");
+        $this->info("Espacios actualizados: {$espaciosActualizados}");
+        $this->info("Espacios ocupados: {$espaciosOcupados}");
+        $this->info("Espacios disponibles: {$espaciosDisponibles}");
+        $this->info("Total de espacios: " . $espacios->count());
+        
+        $this->info('Proceso de actualización de estados completado exitosamente.');
     }
 } 

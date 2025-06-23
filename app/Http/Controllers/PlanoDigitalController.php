@@ -305,23 +305,20 @@ class PlanoDigitalController extends Controller
 
     private function determinarEstado(bool $estaOcupado, bool $estaReservado, bool $deberiaEstarOcupado): string
     {
-        // Si el espacio está reservado, mostrar en rojo
-        if ($estaReservado) {
-            return '#FF0000'; // Rojo
-        }
-        
-        // Si el espacio está ocupado, mostrar en verde del sidebar
+        // Si el espacio está ocupado (estado en BD = 'Ocupado'), siempre mostrar en rojo
         if ($estaOcupado) {
-            return '#059669'; // Verde sidebar
+            return '#FF0000'; // Rojo - se mantiene hasta devolver llaves
         }
-        
-        // Si el espacio debería estar ocupado pero no lo está, mostrar en naranja
-        if ($deberiaEstarOcupado) {
+        // Si el espacio está reservado pero no ocupado, mostrar en naranja
+        if ($estaReservado) {
             return '#FFA500'; // Naranja
         }
-        
-        // Si el espacio está disponible, mostrar en verde del sidebar
-        return '#059669'; // Verde sidebar
+        // Si el espacio debería estar ocupado pero no lo está, mostrar azul
+        if ($deberiaEstarOcupado) {
+            return '#3B82F6'; // Azul
+        }
+        // Si el espacio está disponible, mostrar en verde
+        return '#059669'; // Verde
     }
 
     private function prepararDetallesBloque($espacio, $planificacion, $reserva, $planificacionProxima): array
@@ -367,6 +364,10 @@ class PlanoDigitalController extends Controller
                 'fecha_reserva' => $reserva->fecha_reserva ?? 'No especificada',
                 'hora' => $reserva->hora ?? '00:00:00'
             ];
+            // Incluir el nombre del usuario que ocupa el espacio
+            $detalles['usuario_ocupando'] = $reserva->user ? $reserva->user->name : null;
+        } else {
+            $detalles['usuario_ocupando'] = null;
         }
 
         return $detalles;
@@ -484,22 +485,18 @@ class PlanoDigitalController extends Controller
                 }
                 
                 // Determinar el estado final según la lógica correcta
-                if ($tieneReservaActiva) {
-                    $estado = 'Reservado';
-                } elseif ($estadoTabla === 'Ocupado') {
-                    // Si el estado en la tabla es "Ocupado", mostrar rojo
+                if ($estadoTabla === 'Ocupado') {
+                    // Si el estado en la tabla es "Ocupado", mostrar rojo y mantenerlo hasta devolución
                     $estado = 'Ocupado';
+                } elseif ($tieneReservaActiva) {
+                    $estado = 'Reservado';
                 } elseif ($tieneClaseEnCurso && $estadoTabla !== 'Ocupado') {
-                    // Si hay clase en curso pero el estado no es "Ocupado", mostrar naranja
-                    $estado = 'Reservado'; // Usamos 'Reservado' para el color naranja
+                    $estado = 'Reservado';
                 } elseif ($tieneClaseProxima) {
-                    // Si hay clase próxima (entre módulos), mostrar azul
                     $estado = 'Proximo';
                 } elseif ($estadoTabla === 'Disponible') {
-                    // Si el estado es "Disponible" y no hay horario asociado, mostrar verde
                     $estado = 'Disponible';
                 } else {
-                    // Estado por defecto
                     $estado = $estadoTabla;
                 }
                 

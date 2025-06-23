@@ -16,7 +16,7 @@ use App\Http\Controllers\DataLoadController;
 use App\Http\Controllers\PlanoDigitalController;
 use App\Http\Controllers\ProfesorController;
 use App\Http\Controllers\ReporteriaController;
-
+use App\Http\Controllers\NotificationController;
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
@@ -44,6 +44,16 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 Route::middleware(['auth', 'role:Administrador'])->group(function () {
     // Notifications
     Route::get('/api/notifications/key-returns', [DashboardController::class, 'getKeyReturnNotifications'])->name('notifications.key-returns');
+    
+    // Centro de Notificaciones
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    Route::post('/notifications/delete', [NotificationController::class, 'delete'])->name('notifications.delete');
+    Route::post('/notifications/clear-all', [NotificationController::class, 'clearAll'])->name('notifications.clear-all');
+    Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
+    Route::get('/notifications/recent', [NotificationController::class, 'getRecentNotifications'])->name('notifications.recent');
+    Route::get('/notifications/filter', [NotificationController::class, 'filter'])->name('notifications.filter');
 
     Route::get('/user/user_index', [UserController::class, 'index'])->name('users.index');
     Route::post('/user/user_store', [UserController::class, 'store'])->name('users.add');

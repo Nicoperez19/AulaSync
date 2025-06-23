@@ -226,10 +226,31 @@
                     <h4 class="text-sm font-medium text-gray-700">Estado Actual: <span id="modalEstado"
                             class="inline-block ml-1 text-sm text-gray-900"></span></h4>
                 </div>
-
-                <div id="modalPlanificacion" class="hidden">
+                <!-- Planificación Actual centrada -->
+                <div id="modalPlanificacion" class="flex flex-col items-center justify-center text-center">
                     <h4 class="text-sm font-medium text-gray-700">Planificación Actual</h4>
                     <p id="modalPlanificacionDetalles" class="mt-1 text-sm text-gray-900"></p>
+                </div>
+                <!-- Botón y área QR de devolución de llaves abajo -->
+                <div class="flex flex-col items-center justify-center mt-8">
+                    <div id="btnDevolverContainer" class="mt-2 hidden">
+                        <button id="btnDevolver" class="px-4 py-2 text-white bg-green-600 rounded hover:bg-green-700 transition" type="button">Devolver Llaves</button>
+                        <hr id="linea-divisoria-qr" class="my-6 hidden border-t-2 border-gray-200 w-full max-w-md mx-auto" />
+                        <div id="area-qr-devolucion" class="mt-4 hidden">
+                            <div class="p-6 bg-white rounded-lg shadow-lg w-full max-w-md mx-auto border border-gray-200 flex flex-col items-center">
+                                <div class="text-center w-full">
+                                    <span id="qr-status-devolucion" class="block mb-2 text-sm font-semibold text-blue-600">Escanee el código QR para devolver</span>
+                                </div>
+                                <div class="flex items-center justify-center w-24 h-24 mb-2 rounded-md bg-blue-50">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                <p class="text-xs text-gray-500 mb-2">Escanee el código QR del usuario y luego del espacio</p>
+                                <input type="text" id="qr-input-devolucion" class="absolute w-full px-1 py-1 border rounded opacity-0 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Escanea un código QR" autofocus>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div id="modalProxima" class="hidden">
                     <h4 class="text-sm font-medium text-gray-700">Próxima Clase</h4>
@@ -297,7 +318,58 @@
         </div>
     </x-modal>
 
+    <!-- Modal para devolución de llaves -->
+    <x-modal name="devolver-llaves" :show="false" focusable>
+        @slot('title')
+        <h2 class="text-lg font-medium text-white dark:text-gray-100">
+            Devolver Llaves
+        </h2>
+        @endslot
+        <div class="p-6">
+            <div class="flex flex-col items-center justify-center">
+                <div class="p-2 text-white border border-white rounded-md shadow-sm bg-light-cloud-blue w-full max-w-md">
+                    <!-- QR Placeholder -->
+                    <div class="p-2 mt-2 text-center rounded-md bg-white/10">
+                        <div class="relative">
+                            <span id="qr-status-devolucion" class="text-xs text-yellow-400">Esperando escaneo...</span>
+                        </div>
+                        <div class="mt-1 mb-1 qr-placeholder">
+                            <div class="flex items-center justify-center w-20 h-20 mx-auto rounded-md bg-white/20">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2 2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <p class="text-xs text-white/80">Escanee el código QR del usuario y luego del espacio</p>
+                    </div>
+                    <!-- Input para el escáner QR (oculto) -->
+                    <div class="mt-2">
+                        <input type="text" id="qr-input-devolucion"
+                            class="absolute w-full px-1 py-1 border rounded opacity-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Escanea un código QR" autofocus>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </x-modal>
+
     <script>
+        // Polyfill para roundRect si no está disponible
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
+                if (width < 2 * radius) radius = width / 2;
+                if (height < 2 * radius) radius = height / 2;
+                this.beginPath();
+                this.moveTo(x + radius, y);
+                this.arcTo(x + width, y, x + width, y + height, radius);
+                this.arcTo(x + width, y + height, x, y + height, radius);
+                this.arcTo(x, y + height, x, y, radius);
+                this.arcTo(x, y, x + width, y, radius);
+                this.closePath();
+                return this;
+            };
+        }
+
         // Variables globales para el QR scanner
         let html5QrcodeScanner = null;
         let currentCameraId = null;
@@ -350,7 +422,8 @@
             currentTime: new Date(),
             currentModule: null,
             currentDay: new Date().getDay(),
-            updateInterval: null // Nueva variable para el intervalo de actualización
+            updateInterval: null, // Nueva variable para el intervalo de actualización
+            hoveredIndicator: null // Variable para el indicador sobre el que está el mouse
         };
 
         // Variables globales para los elementos del canvas
@@ -367,6 +440,69 @@
             elements.mapCtx = elements.mapCanvas.getContext('2d');
             elements.indicatorsCanvas = document.getElementById('indicatorsCanvas');
             elements.indicatorsCtx = elements.indicatorsCanvas.getContext('2d');
+        }
+
+        // Función para detectar qué indicador está siendo hover
+        function getHoveredIndicator(mouseX, mouseY) {
+            if (!state.isImageLoaded) return null;
+
+            for (let i = state.indicators.length - 1; i >= 0; i--) {
+                const indicator = state.indicators[i];
+                const position = calculatePosition(indicator);
+                
+                // Verificar si el mouse está dentro del indicador (considerando el escalado)
+                const scale = 1.2; // Mismo factor de escala que en dibujarIndicador
+                const scaledWidth = config.indicatorWidth * scale;
+                const scaledHeight = config.indicatorHeight * scale;
+                
+                if (mouseX >= position.x - scaledWidth / 2 &&
+                    mouseX <= position.x + scaledWidth / 2 &&
+                    mouseY >= position.y - scaledHeight / 2 &&
+                    mouseY <= position.y + scaledHeight / 2) {
+                    return indicator;
+                }
+            }
+            return null;
+        }
+
+        // Función para manejar el movimiento del mouse
+        function handleMouseMove(event) {
+            const rect = elements.indicatorsCanvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+            
+            const hoveredIndicator = getHoveredIndicator(mouseX, mouseY);
+            
+            // Solo redibujar si el estado de hover cambió
+            if (hoveredIndicator !== state.hoveredIndicator) {
+                state.hoveredIndicator = hoveredIndicator;
+                drawIndicators();
+                
+                // Cambiar el cursor
+                elements.indicatorsCanvas.style.cursor = hoveredIndicator ? 'pointer' : 'default';
+            }
+        }
+
+        // Función para manejar el clic del mouse
+        function handleMouseClick(event) {
+            const rect = elements.indicatorsCanvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
+            
+            const clickedIndicator = getHoveredIndicator(mouseX, mouseY);
+            
+            if (clickedIndicator) {
+                mostrarModalEspacio(clickedIndicator);
+            }
+        }
+
+        // Función para manejar cuando el mouse sale del canvas
+        function handleMouseLeave() {
+            if (state.hoveredIndicator) {
+                state.hoveredIndicator = null;
+                drawIndicators();
+                elements.indicatorsCanvas.style.cursor = 'default';
+            }
         }
 
         function initCanvases() {
@@ -447,57 +583,32 @@
         // Función para dibujar un indicador
         function dibujarIndicador(elements, position, finalWidth, finalHeight, color, id, isHovered, detalles,
             moduloActual) {
-            // Configurar sombras para el efecto hover
-            elements.indicatorsCtx.shadowColor = isHovered ? 'rgba(0, 0, 0, 0.3)' : 'transparent';
-            elements.indicatorsCtx.shadowBlur = isHovered ? 10 : 0;
-            elements.indicatorsCtx.shadowOffsetX = 0;
-            elements.indicatorsCtx.shadowOffsetY = 0;
+            // Calcular el factor de escala para el efecto hover
+            const scale = isHovered ? 1.2 : 1.0;
+            const scaledWidth = finalWidth * scale;
+            const scaledHeight = finalHeight * scale;
+            
+            // Calcular la posición para que el escalado sea desde el centro
+            const offsetX = (scaledWidth - finalWidth) / 2;
+            const offsetY = (scaledHeight - finalHeight) / 2;
+            const drawX = position.x - scaledWidth / 2;
+            const drawY = position.y - scaledHeight / 2;
 
-            // Dibujar el rectángulo del indicador
+            // Dibujar el rectángulo del indicador (diseño original)
             elements.indicatorsCtx.fillStyle = color;
-            elements.indicatorsCtx.fillRect(
-                position.x - finalWidth / 2,
-                position.y - finalHeight / 2,
-                finalWidth,
-                finalHeight
-            );
+            elements.indicatorsCtx.fillRect(drawX, drawY, scaledWidth, scaledHeight);
 
             // Dibujar el borde del indicador
             elements.indicatorsCtx.lineWidth = 2;
             elements.indicatorsCtx.strokeStyle = config.indicatorBorder;
-            elements.indicatorsCtx.strokeRect(
-                position.x - finalWidth / 2,
-                position.y - finalHeight / 2,
-                finalWidth,
-                finalHeight
-            );
+            elements.indicatorsCtx.strokeRect(drawX, drawY, scaledWidth, scaledHeight);
 
-            // Dibujar el texto del indicador
+            // Dibujar el texto del indicador (siempre en el centro original)
             elements.indicatorsCtx.font = `bold ${config.fontSize}px Arial`;
             elements.indicatorsCtx.fillStyle = config.indicatorTextColor;
             elements.indicatorsCtx.textAlign = 'center';
             elements.indicatorsCtx.textBaseline = 'middle';
             elements.indicatorsCtx.fillText(id, position.x, position.y);
-
-            // Restablecer las sombras
-            elements.indicatorsCtx.shadowColor = 'transparent';
-            elements.indicatorsCtx.shadowBlur = 0;
-
-            // Agregar evento de clic al indicador
-            elements.indicatorsCanvas.addEventListener('click', function (event) {
-                const rect = elements.indicatorsCanvas.getBoundingClientRect();
-                const x = event.clientX - rect.left;
-                const y = event.clientY - rect.top;
-
-                // Verificar si el clic fue dentro del indicador
-                if (x >= position.x - finalWidth / 2 && x <= position.x + finalWidth / 2 &&
-                    y >= position.y - finalHeight / 2 && y <= position.y + finalHeight / 2) {
-                    const indicator = state.indicators.find(i => i.id === id);
-                    if (indicator) {
-                        mostrarModalEspacio(indicator);
-                    }
-                }
-            });
         }
 
         // Función para dibujar los indicadores
@@ -508,6 +619,7 @@
             state.indicators.forEach(indicator => {
                 const position = calculatePosition(indicator);
                 const color = indicator.estado || '#10B981'; // Color por defecto verde si no hay estado
+                const isHovered = state.hoveredIndicator && state.hoveredIndicator.id === indicator.id;
 
                 dibujarIndicador(
                     elements,
@@ -516,7 +628,7 @@
                     config.indicatorHeight,
                     color,
                     indicator.id,
-                    false,
+                    isHovered,
                     indicator.detalles || {},
                     null
                 );
@@ -559,7 +671,11 @@
                     estadoTexto = 'Sin estado';
                     estadoColor = 'text-gray-600';
             }
-            modalEstado.innerHTML = `<span class="${estadoColor} font-semibold">${estadoTexto}</span>`;
+            let usuarioOcupando = '';
+            if (estadoTexto === 'Ocupado' && indicator.detalles?.usuario_ocupando) {
+                usuarioOcupando = `<br><span class='text-xs text-gray-700'>Ocupado por: <b>${indicator.detalles.usuario_ocupando}</b></span>`;
+            }
+            modalEstado.innerHTML = `<span class="${estadoColor} font-semibold">${estadoTexto}</span>${usuarioOcupando}`;
 
             const detalles = indicator.detalles || {};
             const infoClaseActual = indicator.informacion_clase_actual;
@@ -604,6 +720,14 @@
             window.dispatchEvent(new CustomEvent('open-modal', {
                 detail: 'data-space'
             }));
+
+            // Mostrar/ocultar botón Devolver Llaves según estado
+            const btnDevolverContainer = document.getElementById('btnDevolverContainer');
+            if (estadoTexto === 'Ocupado') {
+                btnDevolverContainer.classList.remove('hidden');
+            } else {
+                btnDevolverContainer.classList.add('hidden');
+            }
         }
 
         // Definición de horarios por día y módulo
@@ -1048,6 +1172,11 @@
             // Inicializar elementos
             initElements();
 
+            // Agregar event listeners para los eventos de mouse
+            elements.indicatorsCanvas.addEventListener('mousemove', handleMouseMove);
+            elements.indicatorsCanvas.addEventListener('click', handleMouseClick);
+            elements.indicatorsCanvas.addEventListener('mouseleave', handleMouseLeave);
+
             const img = new Image();
             img.onload = function () {
                 state.mapImage = img;
@@ -1135,7 +1264,7 @@
                         // Agregar botón para entregar llaves
                         const btnEntregarLlaves = document.createElement('button');
                         btnEntregarLlaves.className =
-                            'mt-4 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700';
+                            'mt-4 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition';
                         btnEntregarLlaves.textContent = '¿Desea entregar las llaves?';
                         btnEntregarLlaves.onclick = function () {
                             // Cerrar el modal actual
@@ -2239,5 +2368,405 @@
                 ctx.stroke();
             });
         }
+
+        // Mostrar/ocultar botón Devolver según estado y aplicar color visual
+        function actualizarBotonDevolver(estado) {
+            const btnContainer = document.getElementById('btnDevolverContainer');
+            const estadoSpan = document.getElementById('modalEstado');
+            if (!estadoSpan) return;
+            // Limpiar clases previas
+            estadoSpan.className = 'inline-block ml-1 text-sm';
+            if (estado) {
+                const estadoLower = estado.trim().toLowerCase();
+                if (estadoLower === 'ocupado') {
+                    btnContainer.classList.remove('hidden');
+                    estadoSpan.classList.add('text-red-600', 'font-bold');
+                } else if (estadoLower === 'disponible') {
+                    btnContainer.classList.add('hidden');
+                    estadoSpan.classList.add('text-green-600', 'font-bold');
+                } else if (estadoLower === 'próximo' || estadoLower === 'proximo') {
+                    btnContainer.classList.add('hidden');
+                    estadoSpan.classList.add('text-yellow-500', 'font-bold');
+                } else if (estadoLower === 'previsto') {
+                    btnContainer.classList.add('hidden');
+                    estadoSpan.classList.add('text-blue-600', 'font-bold');
+                } else {
+                    btnContainer.classList.add('hidden');
+                }
+            } else {
+                btnContainer.classList.add('hidden');
+            }
+        }
+        // Lógica para abrir el modal de devolución
+        if (document.getElementById('btnDevolver')) {
+            document.getElementById('btnDevolver').onclick = function() {
+                window.dispatchEvent(new CustomEvent('open-modal', { detail: 'devolucion-qr' }));
+                setTimeout(() => {
+                    document.getElementById('qr-input-devolucion').focus();
+                    document.getElementById('qr-status-devolucion').textContent = 'Escanee el código QR para devolver';
+                }, 300);
+            };
+        }
+        // Lógica de escaneo QR (puedes reutilizar la del sidebar, adaptando los IDs)
+        document.getElementById('qr-input-devolucion').addEventListener('keydown', async function(event) {
+            if (event.key === 'Enter') {
+                const qr = event.target.value.trim();
+                // Aquí va la lógica para procesar el QR y registrar la devolución
+                document.getElementById('qr-status-devolucion').textContent = 'Procesando...';
+                // Simulación de éxito
+                setTimeout(() => {
+                    document.getElementById('qr-status-devolucion').textContent = '¡Devolución registrada correctamente!';
+                    event.target.value = '';
+                }, 1000);
+            }
+        });
+        // Llama a actualizarBotonDevolver cuando muestres el modal de detalles y pases el estado
+        // Ejemplo: actualizarBotonDevolver(estadoActual);
+
+        // Función para iniciar el proceso de devolución de llaves
+        window.iniciarDevolucionLlaves = function() {
+            // Cerrar el modal de detalles del espacio
+            window.dispatchEvent(new CustomEvent('close-modal', { detail: 'data-space' }));
+            // Abrir el modal de devolución de llaves
+            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'devolver-llaves' }));
+            // Resetear el estado del proceso
+            if (typeof resetearDevolucionQR === 'function') {
+                resetearDevolucionQR();
+            }
+            // Enfocar el input del usuario
+            setTimeout(() => {
+                const input = document.getElementById('qr-input-devolucion');
+                if (input) input.focus();
+            }, 300);
+        }
+
+        // Función para resetear el proceso de devolución
+        function resetearProcesoDevolucion() {
+            document.getElementById('paso-espacio').classList.add('hidden');
+            document.getElementById('qr-usuario-devolucion').value = '';
+            document.getElementById('qr-espacio-devolucion').value = '';
+            document.getElementById('status-usuario').textContent = '';
+            document.getElementById('status-espacio').textContent = '';
+            document.getElementById('info-devolucion').innerHTML = `
+                <div class="flex items-center gap-2">
+                    <span class="text-gray-600">ℹ️</span>
+                    <span class="text-sm text-gray-700">Proceso de devolución de llaves</span>
+                </div>
+            `;
+        }
+
+        // Variables para el proceso de devolución
+        let usuarioDevolucion = null;
+        let espacioDevolucion = null;
+
+        // Event listener para el QR del usuario en devolución
+        document.addEventListener('DOMContentLoaded', function() {
+            const qrUsuarioInput = document.getElementById('qr-usuario-devolucion');
+            const qrEspacioInput = document.getElementById('qr-espacio-devolucion');
+            
+            if (qrUsuarioInput) {
+                qrUsuarioInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        procesarQRUsuarioDevolucion(this.value);
+                    }
+                });
+            }
+            
+            if (qrEspacioInput) {
+                qrEspacioInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        procesarQREspacioDevolucion(this.value);
+                    }
+                });
+            }
+        });
+
+        // Función para procesar el QR del usuario en devolución
+        async function procesarQRUsuarioDevolucion(qrData) {
+            const statusElement = document.getElementById('status-usuario');
+            statusElement.textContent = 'Verificando usuario...';
+            
+            try {
+                const response = await fetch(`/api/user/${qrData}`);
+                const data = await response.json();
+                
+                if (data.success && data.user) {
+                    usuarioDevolucion = data.user;
+                    statusElement.innerHTML = `
+                        <span class="text-green-600">✓ Usuario verificado: ${data.user.name}</span>
+                    `;
+                    
+                    // Mostrar paso 2
+                    document.getElementById('paso-espacio').classList.remove('hidden');
+                    document.getElementById('qr-espacio-devolucion').focus();
+                    
+                    // Actualizar información
+                    document.getElementById('info-devolucion').innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <span class="text-blue-600">👤</span>
+                            <span class="text-sm text-gray-700">Usuario: ${data.user.name}</span>
+                        </div>
+                    `;
+                } else {
+                    statusElement.innerHTML = `
+                        <span class="text-red-600">✗ Usuario no encontrado</span>
+                    `;
+                    document.getElementById('qr-usuario-devolucion').focus();
+                }
+            } catch (error) {
+                statusElement.innerHTML = `
+                    <span class="text-red-600">✗ Error al verificar usuario</span>
+                `;
+                document.getElementById('qr-usuario-devolucion').focus();
+            }
+        }
+
+        // Función para procesar el QR del espacio en devolución
+        async function procesarQREspacioDevolucion(qrData) {
+            const statusElement = document.getElementById('status-espacio');
+            statusElement.textContent = 'Verificando espacio...';
+            
+            try {
+                const espacioProcesado = qrData.replace(/'/g, '-');
+                const espacioInfo = await verificarEspacio(espacioProcesado);
+                
+                if (espacioInfo?.verificado) {
+                    espacioDevolucion = espacioInfo.espacio;
+                    statusElement.innerHTML = `
+                        <span class="text-green-600">✓ Espacio verificado: ${espacioInfo.espacio.nombre}</span>
+                    `;
+                    
+                    // Procesar la devolución
+                    await procesarDevolucionCompleta();
+                } else {
+                    statusElement.innerHTML = `
+                        <span class="text-red-600">✗ Espacio no encontrado</span>
+                    `;
+                    document.getElementById('qr-espacio-devolucion').focus();
+                }
+            } catch (error) {
+                statusElement.innerHTML = `
+                    <span class="text-red-600">✗ Error al verificar espacio</span>
+                `;
+                document.getElementById('qr-espacio-devolucion').focus();
+            }
+        }
+
+        // Función para procesar la devolución completa
+        async function procesarDevolucionCompleta() {
+            if (!usuarioDevolucion || !espacioDevolucion) {
+                return;
+            }
+            
+            try {
+                // Llamar a la API para registrar la devolución
+                const response = await fetch('/api/reserva/devolver', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    },
+                    body: JSON.stringify({
+                        run: usuarioDevolucion.run,
+                        espacio_id: espacioDevolucion.id
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Mostrar éxito
+                    document.getElementById('info-devolucion').innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <span class="text-green-600">✅</span>
+                            <span class="text-sm text-green-700">Devolución exitosa</span>
+                        </div>
+                    `;
+                    
+                    // Cerrar modal después de 2 segundos
+                    setTimeout(() => {
+                        window.dispatchEvent(new CustomEvent('close-modal', { detail: 'devolver-llaves' }));
+                        // Actualizar el estado del espacio en el plano
+                        actualizarEstadoEspacio(espacioDevolucion.id, 'Disponible');
+                    }, 2000);
+                } else {
+                    document.getElementById('info-devolucion').innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <span class="text-red-600">❌</span>
+                            <span class="text-sm text-red-700">Error: ${data.message || 'Error en la devolución'}</span>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('info-devolucion').innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-red-600">❌</span>
+                        <span class="text-sm text-red-700">Error en la comunicación con el servidor</span>
+                    </div>
+                `;
+            }
+        }
+
+        // Función para actualizar el estado del espacio en el plano
+        function actualizarEstadoEspacio(espacioId, nuevoEstado) {
+            const indicador = state.indicators.find(i => i.id === espacioId);
+            if (indicador) {
+                // Actualizar el color según el nuevo estado
+                switch (nuevoEstado) {
+                    case 'Disponible':
+                        indicador.estado = '#059669'; // Verde
+                        break;
+                    case 'Ocupado':
+                        indicador.estado = '#FF0000'; // Rojo
+                        break;
+                    case 'Reservado':
+                        indicador.estado = '#FFA500'; // Naranja
+                        break;
+                    default:
+                        indicador.estado = '#059669'; // Verde por defecto
+                }
+                
+                // Redibujar los indicadores
+                drawIndicators();
+            }
+        }
+
+        // Función para manejar cuando el mouse sale del canvas
+
+        // ... existente ...
+        // Lógica de escaneo QR para devolución de llaves (modal)
+        let bufferQRDevolucion = '';
+        let esperandoUsuarioDevolucion = true;
+        let usuarioDevolucionQR = null;
+        let espacioDevolucionQR = null;
+
+        function resetearDevolucionQR() {
+            bufferQRDevolucion = '';
+            esperandoUsuarioDevolucion = true;
+            usuarioDevolucionQR = null;
+            espacioDevolucionQR = null;
+            document.getElementById('qr-status-devolucion').textContent = 'Escanee el código QR del usuario';
+            document.getElementById('qr-input-devolucion').value = '';
+        }
+
+        function handleScanDevolucion(event) {
+            if (event.key === 'Enter') {
+                if (esperandoUsuarioDevolucion) {
+                    // Buscar RUN en el QR
+                    const match = bufferQRDevolucion.match(/RUN¿(\d+)/);
+                    if (match) {
+                        usuarioDevolucionQR = match[1];
+                        document.getElementById('qr-status-devolucion').textContent = 'Verificando usuario...';
+                        fetch(`/api/user/${usuarioDevolucionQR}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.success && data.user) {
+                                    document.getElementById('qr-status-devolucion').textContent = `Usuario verificado: ${data.user.name}. Ahora escanee el QR del espacio.`;
+                                    esperandoUsuarioDevolucion = false;
+                                } else {
+                                    document.getElementById('qr-status-devolucion').textContent = 'Usuario no encontrado. Intente nuevamente.';
+                                    resetearDevolucionQR();
+                                }
+                            })
+                            .catch(() => {
+                                document.getElementById('qr-status-devolucion').textContent = 'Error de conexión al verificar usuario.';
+                                resetearDevolucionQR();
+                            });
+                    } else {
+                        document.getElementById('qr-status-devolucion').textContent = 'QR de usuario inválido.';
+                        resetearDevolucionQR();
+                    }
+                } else {
+                    // Buscar código de espacio en el QR (ejemplo: TH'60)
+                    const matchEspacio = bufferQRDevolucion.match(/TH'([A-Z0-9]+)/);
+                    if (matchEspacio) {
+                        espacioDevolucionQR = `TH-${matchEspacio[1]}`;
+                        document.getElementById('qr-status-devolucion').textContent = 'Verificando espacio...';
+                        fetch(`/api/verificar-espacio/${espacioDevolucionQR}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                if (data.verificado) {
+                                    document.getElementById('qr-status-devolucion').textContent = 'Procesando devolución...';
+                                    // Llamar a la API de devolución
+                                    fetch('/api/reserva/devolver', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                        },
+                                        body: JSON.stringify({
+                                            run: usuarioDevolucionQR,
+                                            espacio_id: espacioDevolucionQR
+                                        })
+                                    })
+                                    .then(res => res.json())
+                                    .then(resp => {
+                                        if (resp.success) {
+                                            document.getElementById('qr-status-devolucion').textContent = '¡Devolución registrada correctamente!';
+                                            setTimeout(() => {
+                                                window.dispatchEvent(new CustomEvent('close-modal', { detail: 'devolver-llaves' }));
+                                            }, 1500);
+                                        } else {
+                                            document.getElementById('qr-status-devolucion').textContent = resp.message || 'Error al registrar devolución.';
+                                            resetearDevolucionQR();
+                                        }
+                                    })
+                                    .catch(() => {
+                                        document.getElementById('qr-status-devolucion').textContent = 'Error al registrar devolución.';
+                                        resetearDevolucionQR();
+                                    });
+                                } else {
+                                    document.getElementById('qr-status-devolucion').textContent = 'Espacio no encontrado. Intente nuevamente.';
+                                    resetearDevolucionQR();
+                                }
+                            })
+                            .catch(() => {
+                                document.getElementById('qr-status-devolucion').textContent = 'Error de conexión al verificar espacio.';
+                                resetearDevolucionQR();
+                            });
+                    } else {
+                        document.getElementById('qr-status-devolucion').textContent = 'QR de espacio inválido.';
+                        resetearDevolucionQR();
+                    }
+                }
+                bufferQRDevolucion = '';
+                event.target.value = '';
+            } else if (event.key.length === 1) {
+                bufferQRDevolucion += event.key;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const inputDevolucion = document.getElementById('qr-input-devolucion');
+            if (inputDevolucion) {
+                inputDevolucion.addEventListener('keydown', handleScanDevolucion);
+                document.addEventListener('click', () => inputDevolucion.focus());
+                inputDevolucion.focus();
+            }
+            // Resetear estado cada vez que se abre el modal
+            window.addEventListener('open-modal', function(e) {
+                if (e.detail === 'devolver-llaves') {
+                    resetearDevolucionQR();
+                    setTimeout(() => {
+                        inputDevolucion.focus();
+                    }, 300);
+                }
+            });
+        });
+        // ... existente ...
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const btnDevolver = document.getElementById('btnDevolver');
+            const areaQR = document.getElementById('area-qr-devolucion');
+            const inputQR = document.getElementById('qr-input-devolucion');
+            const lineaDiv = document.getElementById('linea-divisoria-qr');
+            if (btnDevolver && areaQR && inputQR && lineaDiv) {
+                btnDevolver.addEventListener('click', function () {
+                    areaQR.classList.remove('hidden');
+                    lineaDiv.classList.remove('hidden');
+                    setTimeout(() => { inputQR.focus(); }, 200);
+                });
+            }
+        });
     </script>
 </x-show-layout>

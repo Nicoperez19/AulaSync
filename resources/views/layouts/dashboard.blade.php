@@ -4,11 +4,24 @@
             <h2 class="text-xl font-semibold leading-tight" style="font-style: oblique;">
                 {{ __('Dashboard') }}
             </h2>
+            <div class="flex items-center gap-4">
+                <!-- Botón de control de auto-refresh -->
+                <div class="flex items-center gap-2">
+                    <button id="toggle-auto-refresh" class="refresh-button flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+                        <span id="auto-refresh-icon">🔄</span>
+                        <span id="auto-refresh-text">Auto-refresh ON</span>
+                    </button>
+                    <button id="manual-refresh" class="refresh-button flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors">
+                        <span>↻</span>
+                        <span>Actualizar ahora</span>
+                    </button>
+                </div>
+            </div>
         </div>
     </x-slot>
 
     <!-- Filtros globales compactos -->
-    <div class="p-6 mb-8 overflow-hidden bg-white rounded-md shadow-md dark:bg-dark-eval-1">
+    <div class="p-8 mb-8 overflow-hidden bg-white rounded-md shadow-md dark:bg-dark-eval-1">
         <div class="flex flex-wrap items-center justify-between w-full gap-4">
             <!-- Filtros básicos -->
             <div class="flex items-center gap-2">
@@ -48,7 +61,7 @@
     </div>
 
     <!-- KPIs con tendencia -->
-    <div class="p-8 mx-auto mb-4 overflow-hidden max-w-7xl">
+    <div class="w-full p-8 mb-4 overflow-hidden">
         <div class="grid w-full grid-cols-2 gap-8 sm:grid-cols-3 md:grid-cols-6">
             <!-- KPI 1: Ocupación semanal -->
             <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 relative widget-transition">
@@ -103,7 +116,7 @@
     </div>
 
     <!-- Fila de nuevos KPIs -->
-    <div class="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-8 mb-8 md:grid-cols-2 lg:grid-cols-3 p-8">
         <!-- Promedio Duración Reserva -->
         <div class="p-4 bg-white rounded-md shadow-md dark:bg-dark-eval-1">
             <h3 class="text-lg font-semibold text-gray-500 dark:text-gray-400">Promedio de Duración</h3>
@@ -139,36 +152,41 @@
     </div>
 
     <!-- Grid de gráficos -->
-    <div class="grid grid-cols-1 gap-8 mx-auto max-w-7xl md:grid-cols-2 lg:grid-cols-3">
+    <div class="grid grid-cols-1 gap-8 w-full md:grid-cols-2 p-8">
         <!-- Gráfico de barras: Uso por Día -->
-        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition">
+        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition w-full">
             <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Gráfico de Barras: Uso por Día <span class="ml-2 cursor-pointer" title="Muestra la cantidad de horas ocupadas por día de la semana">ℹ️</span></h4>
-            <canvas id="grafico-barras" width="320" height="220"></canvas>
+            <canvas id="grafico-barras" width="500" height="300"></canvas>
         </div>
-        <!-- Gráfico de barras horizontal: Top 3 salas más y menos usadas -->
-        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition">
+        <!-- Gráfico de barras horizontal: Top 3 salas más usadas -->
+        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition w-full">
             <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Top 3 Salas más usadas <span class="ml-2 cursor-pointer" title="Ranking de salas según uso mensual">ℹ️</span></h4>
-            <canvas id="grafico-top-salas" width="320" height="220"></canvas>
+            <canvas id="grafico-top-salas" width="500" height="300"></canvas>
         </div>
-        <!-- Gráfico de barras: Top asignaturas por uso de espacios -->
-        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition">
+        <!-- Gráfico de barras: Top asignaturas por uso -->
+        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition w-full">
             <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Top asignaturas por uso <span class="ml-2 cursor-pointer" title="Asignaturas con mayor uso de espacios">ℹ️</span></h4>
-            <canvas id="grafico-top-asignaturas" width="320" height="220"></canvas>
+            <canvas id="grafico-top-asignaturas" width="500" height="300"></canvas>
         </div>
         <!-- Gráfico de áreas: Comparativa tipos de espacios -->
-        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition">
+        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition w-full">
             <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Comparativa de ocupación por tipo de espacio <span class="ml-2 cursor-pointer" title="Comparación de ocupación entre aulas, laboratorios, etc.">ℹ️</span></h4>
-            <canvas id="grafico-comparativa-tipos" width="320" height="220"></canvas>
+            <canvas id="grafico-comparativa-tipos" width="500" height="300"></canvas>
         </div>
         <!-- Gráfico de línea: Promedio mensual -->
-        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition">
+        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition w-full">
             <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Evolución semanal de ocupación <span class="ml-2 cursor-pointer" title="Tendencia del promedio de ocupación de la semana actual">ℹ️</span></h4>
-            <canvas id="grafico-mensual" width="320" height="220"></canvas>
+            <canvas id="grafico-mensual" width="500" height="300"></canvas>
+        </div>
+        <!-- Nuevo gráfico: Monitoreo de espacios -->
+        <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition w-full">
+            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Monitoreo de Espacios <span class="ml-2 cursor-pointer" title="Ocupación vs. Disponibilidad de espacios en tiempo real">ℹ️</span></h4>
+            <canvas id="grafico-monitoreo-espacios" width="500" height="300"></canvas>
         </div>
     </div>
 
     <!-- Tabla: Reservas canceladas o no utilizadas -->
-    <div class="p-8 mx-auto mt-8 overflow-hidden bg-white rounded-xl shadow-lg max-w-7xl">
+    <div class="p-8 mt-8 overflow-hidden bg-white rounded-xl shadow-lg w-full">
         <div class="flex items-center justify-between mb-4">
             <h3 class="flex items-center gap-2 text-lg font-bold text-gray-700">Reservas canceladas o no utilizadas <span class="ml-2 cursor-pointer" title="Reservas que no fueron utilizadas o se cancelaron">ℹ️</span></h3>
             <div class="flex gap-2">
@@ -201,7 +219,7 @@
     </div>
 
     <!-- Tabla: Reservas Activas Sin Devolución -->
-    <div class="p-8 mx-auto mt-8 overflow-hidden bg-white rounded-xl shadow-lg max-w-7xl">
+    <div class="p-8 mt-8 overflow-hidden bg-white rounded-xl shadow-lg w-full">
         <div class="flex items-center justify-between mb-4">
             <h3 class="flex items-center gap-2 text-lg font-bold text-gray-700">Reservas Activas Sin Devolución <span class="ml-2 cursor-pointer" title="Usuarios que han registrado el ingreso a una sala pero no han registrado la salida.">ℹ️</span></h3>
             <div class="flex gap-2">
@@ -240,7 +258,7 @@
     </div>
 
     <!-- Tabla: Horarios por día -->
-    <div class="p-8 mx-auto mt-8 overflow-hidden bg-white rounded-xl shadow-lg max-w-7xl">
+    <div class="p-8 mt-8 overflow-hidden bg-white rounded-xl shadow-lg w-full">
         <h3 class="mb-4 text-lg font-bold text-gray-700">Horarios de la semana - Usuarios asignados por espacio</h3>
         @include('layouts.partials.horarios-semana', ['horariosAgrupados' => $horariosAgrupados])
     </div>
@@ -255,7 +273,7 @@
             labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
             datasets: [{
                 label: 'Horas ocupadas',
-                data: [4, 5, 3, 6, 2, 1], // ← puedes cambiar estos valores
+                data: {!! json_encode(array_values($usoPorDia)) !!}, // Usar datos reales del backend
                 backgroundColor: 'rgba(59, 130, 246, 0.7)'
             }]
         },
@@ -264,6 +282,15 @@
             plugins: {
                 legend: {
                     display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Cantidad de reservas'
+                    }
                 }
             }
         }
@@ -293,6 +320,13 @@
                     minRotation: 90,
                     maxRotation: 90
                 }
+            },
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Cantidad de reservas'
+                }
             }
         }
     }
@@ -309,7 +343,29 @@
                 backgroundColor: 'rgba(251, 191, 36, 0.7)'
             }]
         },
-        options: {responsive: false, plugins: {legend: {display: false}}}
+        options: {
+            responsive: false, 
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        minRotation: 45,
+                        maxRotation: 45
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Cantidad de planificaciones'
+                    }
+                }
+            }
+        }
     });
 
     // Gráfico de áreas: Comparativa tipos
@@ -323,11 +379,27 @@
                     'rgba(59, 130, 246, 0.7)',
                     'rgba(16, 185, 129, 0.7)',
                     'rgba(251, 191, 36, 0.7)',
-                    'rgba(239, 68, 68, 0.7)'
+                    'rgba(239, 68, 68, 0.7)',
+                    'rgba(168, 85, 247, 0.7)',
+                    'rgba(236, 72, 153, 0.7)'
                 ]
             }]
         },
-        options: {responsive: false, plugins: {legend: {position: 'bottom'}}}
+        options: {
+            responsive: false, 
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': ' + context.parsed + '%';
+                        }
+                    }
+                }
+            }
+        }
     });
 
     // Gráfico de línea: Evolución mensual
@@ -344,7 +416,181 @@
                 tension: 0.4
             }]
         },
-        options: {responsive: false, plugins: {legend: {position: 'bottom'}}}
+        options: {
+            responsive: false, 
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    title: {
+                        display: true,
+                        text: 'Porcentaje de ocupación'
+                    }
+                }
+            }
+        }
+    });
+
+    // Gráfico de monitoreo de espacios
+    window.graficoMonitoreoEspacios = new Chart(document.getElementById('grafico-monitoreo-espacios'), {
+        type: 'bar',
+        data: {
+            labels: ['Ocupadas', 'Libres'],
+            datasets: [{
+                label: 'Salas',
+                data: [{{ $salasOcupadas['ocupadas'] }}, {{ $salasOcupadas['libres'] }}],
+                backgroundColor: [
+                    'rgba(239, 68, 68, 0.7)', // rojo
+                    'rgba(16, 185, 129, 0.7)' // verde
+                ]
+            }]
+        },
+        options: {
+            responsive: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Cantidad de salas'
+                    }
+                }
+            }
+        }
+    });
+
+    // Función para actualizar el gráfico de monitoreo de espacios
+    function actualizarGraficoMonitoreoEspacios(salasOcupadas) {
+        if (window.graficoMonitoreoEspacios && salasOcupadas) {
+            window.graficoMonitoreoEspacios.data.datasets[0].data = [salasOcupadas.ocupadas, salasOcupadas.libres];
+            window.graficoMonitoreoEspacios.update('active');
+        }
+    }
+
+    // Auto-refresh cada 30 segundos
+    let autoRefreshInterval;
+    let autoRefreshEnabled = true;
+    
+    function iniciarAutoRefresh() {
+        if (!autoRefreshEnabled) return;
+        
+        // Limpiar intervalo existente si hay uno
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+        }
+        
+        // Iniciar nuevo intervalo
+        autoRefreshInterval = setInterval(function() {
+            actualizarDashboard();
+        }, 30000); // 30 segundos
+        
+        console.log('Auto-refresh iniciado cada 30 segundos');
+        actualizarEstadoBotonAutoRefresh();
+    }
+    
+    function detenerAutoRefresh() {
+        if (autoRefreshInterval) {
+            clearInterval(autoRefreshInterval);
+            autoRefreshInterval = null;
+            console.log('Auto-refresh detenido');
+        }
+        actualizarEstadoBotonAutoRefresh();
+    }
+    
+    function toggleAutoRefresh() {
+        autoRefreshEnabled = !autoRefreshEnabled;
+        
+        if (autoRefreshEnabled) {
+            iniciarAutoRefresh();
+        } else {
+            detenerAutoRefresh();
+        }
+        
+        actualizarEstadoBotonAutoRefresh();
+    }
+    
+    function actualizarEstadoBotonAutoRefresh() {
+        const boton = document.getElementById('toggle-auto-refresh');
+        const icono = document.getElementById('auto-refresh-icon');
+        const texto = document.getElementById('auto-refresh-text');
+        
+        if (autoRefreshEnabled && autoRefreshInterval) {
+            boton.className = 'refresh-button flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors';
+            icono.textContent = '🔄';
+            texto.textContent = 'Auto-refresh ON';
+        } else {
+            boton.className = 'refresh-button flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-gray-500 rounded-lg hover:bg-gray-600 transition-colors';
+            icono.textContent = '⏸️';
+            texto.textContent = 'Auto-refresh OFF';
+        }
+    }
+    
+    function actualizarDashboard() {
+        // Mostrar indicador sutil de actualización
+        mostrarIndicadorActualizacion();
+        
+        return fetch('/dashboard/widget-data')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al obtener datos del dashboard');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Actualizar todos los widgets con los nuevos datos
+                actualizarWidgets(data);
+                console.log('Dashboard actualizado automáticamente:', new Date().toLocaleTimeString());
+                return data;
+            })
+            .catch(error => {
+                console.error('Error en auto-refresh:', error);
+                throw error; // Re-lanzar el error para que se maneje en el catch
+            });
+    }
+    
+    function mostrarIndicadorActualizacion() {
+        // Crear o actualizar indicador sutil
+        let indicador = document.getElementById('auto-refresh-indicator');
+        if (!indicador) {
+            indicador = document.createElement('div');
+            indicador.id = 'auto-refresh-indicator';
+            indicador.className = 'fixed bottom-4 right-4 bg-blue-500 text-white px-3 py-1 rounded-full text-xs opacity-75 z-50';
+            indicador.innerHTML = '🔄 Actualizando...';
+            document.body.appendChild(indicador);
+        }
+        
+        // Mostrar por 2 segundos
+        indicador.style.display = 'block';
+        setTimeout(() => {
+            indicador.style.display = 'none';
+        }, 2000);
+    }
+
+    // Iniciar auto-refresh cuando se carga la página
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configurar event listeners para los botones
+        document.getElementById('toggle-auto-refresh').addEventListener('click', toggleAutoRefresh);
+        document.getElementById('manual-refresh').addEventListener('click', actualizarManual);
+        
+        // Iniciar auto-refresh
+        iniciarAutoRefresh();
+        
+        // Detener auto-refresh cuando la página no esté visible
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                detenerAutoRefresh();
+            } else if (autoRefreshEnabled) {
+                iniciarAutoRefresh();
+            }
+        });
     });
 
     function cambiarPiso(piso) {
@@ -467,6 +713,7 @@
             actualizarGraficoTopAsignaturas(data.topAsignaturas);
             actualizarGraficoComparativaTipos(data.comparativaTipos);
             actualizarGraficoEvolucionMensual(data.evolucionMensual);
+            actualizarGraficoMonitoreoEspacios(data.salasOcupadas);
             
             // Actualizar tablas
             actualizarTablaReservasCanceladas(data.reservasCanceladas);
@@ -665,5 +912,49 @@
     .kpi-value.updating {
         transform: scale(1.05);
         color: #3b82f6;
+    }
+    
+    /* Estilos para el indicador de auto-refresh */
+    #auto-refresh-indicator {
+        animation: slideInUp 0.3s ease-out;
+    }
+    
+    @keyframes slideInUp {
+        from {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 0.75;
+        }
+    }
+    
+    /* Estilos para los botones de control */
+    .refresh-button {
+        transition: all 0.2s ease-in-out;
+    }
+    
+    .refresh-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .refresh-button:active {
+        transform: translateY(0);
+    }
+    
+    /* Animación para el icono de actualización */
+    .animate-spin {
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        from {
+            transform: rotate(0deg);
+        }
+        to {
+            transform: rotate(360deg);
+        }
     }
 </style>

@@ -171,6 +171,70 @@ class TestEstadosEspacios extends Command
             $this->info("\nMódulo actual: {$moduloActual->id_modulo} ({$moduloActual->hora_inicio} - {$moduloActual->hora_termino})");
         }
         
+        // Verificar notificaciones de devolución de llaves
+        $this->verificarNotificacionesDevolucionLlaves();
+        
         $this->info("\nPrueba completada.");
+    }
+    
+    private function verificarNotificacionesDevolucionLlaves()
+    {
+        $this->info("\n=== VERIFICACIÓN DE NOTIFICACIONES DE DEVOLUCIÓN DE LLAVES ===");
+        
+        $now = Carbon::now();
+        $timeLimit = $now->copy()->addMinutes(10);
+        
+        $this->info("Verificando espacios que terminan entre: " . $now->format('H:i') . " y " . $timeLimit->format('H:i'));
+        
+        // Obtener planificaciones que terminan en los próximos 10 minutos
+        $planificaciones = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.user'])
+            ->whereHas('modulo', function ($query) use ($now, $timeLimit) {
+                $query->where('dia', strtolower($now->locale('es')->isoFormat('dddd')))
+                      ->whereTime('hora_termino', '>', $now->format('H:i:s'))
+                      ->whereTime('hora_termino', '<=', $timeLimit->format('H:i:s'));
+            })
+            ->get();
+            
+        $this->info("Planificaciones que terminan en los próximos 10 minutos: " . $planificaciones->count());
+        
+        if ($planificaciones->isEmpty()) {
+            $this->info("No hay planificaciones que terminen en los próximos 10 minutos.");
+            return;
+        }
+        
+        $notificacionesGeneradas = 0;
+        $notificacionesOmitidas = 0;
+        
+        foreach ($planificaciones as $plan) {
+            $espacio = $plan->espacio;
+            $profesor = $plan->asignatura->user->name ?? 'Profesor no asignado';
+            $horaTermino = Carbon::parse($plan->modulo->hora_termino)->format('H:i');
+            
+            $this->line("\nPlanificación encontrada:");
+            $this->line("  - Espacio: " . ($espacio->nombre_espacio ?? 'No asignado'));
+            $this->line("  - Profesor: {$profesor}");
+            $this->line("  - Hora de término: {$horaTermino}");
+            $this->line("  - Estado del espacio: " . ($espacio->estado ?? 'No definido'));
+            
+            // Verificar si el espacio está realmente ocupado
+            if ($espacio->estado === 'Ocupado') {
+                $this->line("  ✓ NOTIFICACIÓN GENERADA: El espacio está ocupado y requiere devolución de llaves");
+                $notificacionesGeneradas++;
+            } else {
+                $this->line("  ✗ NOTIFICACIÓN OMITIDA: El espacio no está ocupado (estado: {$espacio->estado})");
+                $notificacionesOmitidas++;
+            }
+        }
+        
+        $this->info("\n=== RESUMEN DE NOTIFICACIONES ===");
+        $this->info("Notificaciones generadas: {$notificacionesGeneradas}");
+        $this->info("Notificaciones omitidas: {$notificacionesOmitidas}");
+        $this->info("Total de planificaciones verificadas: " . $planificaciones->count());
+        
+        if ($notificacionesGeneradas > 0) {
+            $this->warn("¡Hay {$notificacionesGeneradas} profesor(es) que deben devolver llaves!");
+        } else {
+            $this->info("No hay notificaciones de devolución de llaves pendientes.");
+        }
     }
 } 

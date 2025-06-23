@@ -49,4 +49,45 @@
         <p class="text-lg">No hay horarios programados para esta semana.</p>
         <p class="text-sm mt-2">Los horarios se mostrarán aquí cuando se programen asignaturas para los espacios.</p>
     </div>
+@endif
+
+@if(!empty($horariosPorTipoDiaModulo))
+    <div class="overflow-x-auto">
+        <table class="min-w-full text-center border border-gray-300 rounded-lg">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="px-2 py-1 border">Tipo de Espacio</th>
+                    @php
+                        $dias = array_keys(reset($horariosPorTipoDiaModulo));
+                        $modulos = [];
+                        foreach ($dias as $dia) {
+                            $modulos = array_unique(array_merge($modulos, array_keys(reset($horariosPorTipoDiaModulo)[$dia])));
+                        }
+                        sort($modulos);
+                    @endphp
+                    @foreach($dias as $dia)
+                        @foreach($modulos as $modulo)
+                            <th class="px-2 py-1 border">{{ $dia }}<br>Mód {{ $modulo }}</th>
+                        @endforeach
+                    @endforeach
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($horariosPorTipoDiaModulo as $tipo => $diasData)
+                    <tr>
+                        <td class="border font-bold bg-gray-50">{{ $tipo }}</td>
+                        @foreach($dias as $dia)
+                            @foreach($modulos as $modulo)
+                                <td class="border {{ ($diasData[$dia][$modulo] ?? 0) > 70 ? 'bg-green-200' : (($diasData[$dia][$modulo] ?? 0) > 40 ? 'bg-yellow-200' : 'bg-red-100') }}">
+                                    {{ $diasData[$dia][$modulo] ?? 0 }}%
+                                </td>
+                            @endforeach
+                        @endforeach
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+@else
+    <div class="p-4 text-center text-gray-500">No hay datos de ocupación para mostrar.</div>
 @endif 

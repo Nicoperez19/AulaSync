@@ -55,6 +55,8 @@ class DashboardController extends Controller
         $porcentajeNoShow = $this->obtenerPorcentajeNoShow($facultad, $piso);
         $canceladasPorTipo = $this->obtenerCanceladasPorTipoSala($facultad, $piso);
 
+        $horariosPorTipoDiaModulo = $this->obtenerOcupacionPorTipoDiaModulo($facultad, $piso);
+
         return view('layouts.dashboard', compact(
             'ocupacionSemanal',
             'ocupacionDiaria',
@@ -75,7 +77,8 @@ class DashboardController extends Controller
             'reservasSinDevolucion',
             'promedioDuracion',
             'porcentajeNoShow',
-            'canceladasPorTipo'
+            'canceladasPorTipo',
+            'horariosPorTipoDiaModulo'
         ));
     }
 
@@ -190,35 +193,14 @@ class DashboardController extends Controller
 
     private function obtenerSalasOcupadas($facultad, $piso)
     {
-        $hoy = Carbon::today();
-        $diaSemana = $hoy->format('l');
-        $horaActual = Carbon::now()->format('H:i:s');
-        
-        $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)->count();
-        
-        $moduloActual = Modulo::where('dia', $diaSemana)
-            ->where('hora_inicio', '<=', $horaActual)
-            ->where('hora_termino', '>=', $horaActual)
-            ->first();
-        
-        if ($moduloActual) {
-            $espaciosOcupados = Planificacion_Asignatura::where('id_modulo', $moduloActual->id_modulo)
-                ->whereHas('espacio', function($query) use ($piso) {
-                    if ($piso) {
-                        $query->whereHas('piso', function($q) use ($piso) {
-                            $q->where('numero_piso', $piso);
-                        });
-                    }
-                })
-                ->count();
-        } else {
-            $espaciosOcupados = 0;
-        }
-        
+        $espaciosQuery = $this->obtenerEspaciosQuery($facultad, $piso);
+        $ocupados = (clone $espaciosQuery)->where('estado', 'Ocupado')->count();
+        $libres = (clone $espaciosQuery)->where('estado', 'Disponible')->count();
+
         return [
-            'ocupadas' => $espaciosOcupados,
-            'libres' => $totalEspacios - $espaciosOcupados,
-            'modulo_actual' => $moduloActual ? $moduloActual->hora_inicio . ' - ' . $moduloActual->hora_termino : 'Sin módulo actual'
+            'ocupadas' => $ocupados,
+            'libres' => $libres,
+            'modulo_actual' => null
         ];
     }
 
@@ -552,21 +534,39 @@ class DashboardController extends Controller
         $now = Carbon::now();
         $timeLimit = $now->copy()->addMinutes(10);
 
+        // Obtener planificaciones que terminan en los próximos 10 minutos
         $planificaciones = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.user'])
             ->whereHas('modulo', function ($query) use ($now, $timeLimit) {
                 $query->where('dia', strtolower($now->locale('es')->isoFormat('dddd')))
                       ->whereTime('hora_termino', '>', $now->format('H:i:s'))
                       ->whereTime('hora_termino', '<=', $timeLimit->format('H:i:s'));
             })
+            ->whereHas('espacio', function ($query) {
+                // Solo incluir espacios que estén realmente ocupados
+                $query->where('estado', 'Ocupado');
+            })
             ->get();
 
-        $notifications = $planificaciones->map(function ($plan) {
-            return [
-                'profesor' => $plan->asignatura->user->name ?? 'Profesor no asignado',
-                'espacio' => $plan->espacio->nombre_espacio ?? 'Espacio no asignado',
-                'hora_termino' => Carbon::parse($plan->modulo->hora_termino)->format('H:i'),
+        $notifications = [];
+        
+        foreach ($planificaciones as $plan) {
+            $profesor = $plan->asignatura->user->name ?? 'Profesor no asignado';
+            $espacio = $plan->espacio->nombre_espacio ?? 'Espacio no asignado';
+            $horaTermino = Carbon::parse($plan->modulo->hora_termino)->format('H:i');
+            
+            // Crear notificación en la base de datos
+            \App\Http\Controllers\NotificationController::createKeyReturnNotification(
+                $profesor,
+                $espacio,
+                $horaTermino
+            );
+            
+            $notifications[] = [
+                'profesor' => $profesor,
+                'espacio' => $espacio,
+                'hora_termino' => $horaTermino,
             ];
-        });
+        }
 
         return response()->json($notifications);
     }
@@ -649,5 +649,54 @@ class DashboardController extends Controller
             ->get()
             ->groupBy('espacio.tipo_espacio')
             ->map(fn($group) => $group->count());
+    }
+
+    private function obtenerOcupacionPorTipoDiaModulo($facultad, $piso)
+    {
+        $diasSemana = [
+            'Monday' => 'Lunes',
+            'Tuesday' => 'Martes',
+            'Wednesday' => 'Miércoles',
+            'Thursday' => 'Jueves',
+            'Friday' => 'Viernes',
+            'Saturday' => 'Sábado',
+        ];
+        $tiposEspacio = \App\Models\Espacio::whereHas('piso', function($q) use ($facultad, $piso) {
+            $q->where('id_facultad', $facultad);
+            if ($piso) $q->where('numero_piso', $piso);
+        })->select('tipo_espacio')->distinct()->pluck('tipo_espacio');
+
+        $modulos = \App\Models\Modulo::all()->groupBy('dia');
+        $resultado = [];
+
+        foreach ($tiposEspacio as $tipo) {
+            foreach ($diasSemana as $diaEN => $diaES) {
+                // Obtener todos los módulos de ese día
+                $modulosDia = $modulos->get($diaEN, collect());
+                foreach ($modulosDia as $modulo) {
+                    // Total de espacios de este tipo
+                    $totalEspacios = \App\Models\Espacio::where('tipo_espacio', $tipo)
+                        ->whereHas('piso', function($q) use ($facultad, $piso) {
+                            $q->where('id_facultad', $facultad);
+                            if ($piso) $q->where('numero_piso', $piso);
+                        })->count();
+                    if ($totalEspacios === 0) {
+                        $resultado[$tipo][$diaES][$modulo->id_modulo] = 0;
+                        continue;
+                    }
+                    // Planificaciones activas para ese tipo, día y módulo
+                    $ocupados = \App\Models\Planificacion_Asignatura::where('id_modulo', $modulo->id_modulo)
+                        ->whereHas('espacio', function($q) use ($tipo, $facultad, $piso) {
+                            $q->where('tipo_espacio', $tipo)
+                              ->whereHas('piso', function($q2) use ($facultad, $piso) {
+                                  $q2->where('id_facultad', $facultad);
+                                  if ($piso) $q2->where('numero_piso', $piso);
+                              });
+                        })->count();
+                    $resultado[$tipo][$diaES][$modulo->id_modulo] = round(($ocupados / $totalEspacios) * 100);
+                }
+            }
+        }
+        return $resultado;
     }
 } 

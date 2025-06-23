@@ -282,3 +282,6 @@ Route::post('/devolver-llaves', [HorarioController::class, 'devolverLlaves']);
 
 Route::get('/espacios/estados', [PlanoDigitalController::class, 'estadosEspacios']);
 
+// Ruta para devolver llaves
+Route::post('/reserva/devolver', [App\Http\Controllers\Api\ReservaController::class, 'devolverLlaves']);
+

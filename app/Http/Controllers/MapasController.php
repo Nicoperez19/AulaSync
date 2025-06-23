@@ -41,7 +41,7 @@ class MapasController extends Controller
             $request->validate([
                 'nombre_mapa' => 'required|string|max:255',
                 'archivo' => 'required|file|mimes:jpeg,png,jpg,gif,pdf|max:10240',
-                'id_espacio' => 'required|exists:pisos,id',
+                'piso_id' => 'required|exists:pisos,id',
                 'bloques' => 'required|string'
             ]);
 
@@ -77,7 +77,7 @@ class MapasController extends Controller
                 'nombre_mapa' => $request->nombre_mapa,
                 'ruta_mapa' => $path,
                 'ruta_canvas' => $path, // Por ahora usamos la misma imagen para el canvas
-                'piso_id' => $request->id_espacio
+                'piso_id' => $request->piso_id
             ]);
 
             // Guardar los bloques
