@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\HorarioController;
 use App\Http\Controllers\PlanoDigitalController;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -24,6 +25,8 @@ use App\Http\Controllers\PlanoDigitalController;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+
+// Route for key return notifications moved to web.php to use session authentication
 
 // Ruta para verificar si un profesor tiene asignado un espacio
 Route::get('/verificar-espacio/{profesorId}/{espacioId}', function ($profesorId, $espacioId, Request $request) {

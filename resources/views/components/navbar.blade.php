@@ -30,6 +30,26 @@
             <x-heroicon-o-sun x-show="isDarkMode" aria-hidden="true" class="w-6 h-6" />
         </x-button>
 
+        @if(auth()->check() && auth()->user()->hasRole('Administrador'))
+        <!-- Notification dropdown -->
+        <div x-data="{ open: false }" class="relative">
+            <button @click="open = !open"
+                class="relative p-2 text-white transition-colors duration-200 rounded-full hover:text-gray-200 hover:bg-white/10 focus:outline-none focus:bg-white/10">
+                <i class="fas fa-bell"></i>
+                <span id="notification-badge"
+                    class="absolute top-0 right-0 px-1 text-xs text-white bg-red-600 rounded-full" style="display: none;"></span>
+            </button>
+            <div x-show="open" @click.away="open = false"
+                class="absolute right-0 w-80 mt-2 origin-top-right bg-white rounded-md shadow-lg dark:bg-dark-eval-2">
+                <div class="p-4 font-bold text-gray-800 dark:text-white border-b">Notificaciones</div>
+                <div id="notification-list" class="flex flex-col p-2 space-y-2 max-h-80 overflow-y-auto">
+                    <!-- Notifications will be injected here -->
+                    <p class="p-4 text-sm text-center text-gray-500">No hay notificaciones</p>
+                </div>
+            </div>
+        </div>
+        @endif
+
         <x-dropdown align="right" width="48">
             <x-slot name="trigger">
                 <button

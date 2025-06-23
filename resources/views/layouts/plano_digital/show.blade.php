@@ -562,22 +562,26 @@
             modalEstado.innerHTML = `<span class="${estadoColor} font-semibold">${estadoTexto}</span>`;
 
             const detalles = indicator.detalles || {};
+            const infoClaseActual = indicator.informacion_clase_actual;
 
-            // Mostrar información de la clase actual si el espacio está en estado naranja (Reservado)
-            if (indicator.estado === '#FFA500' && indicator.informacion_clase_actual) {
+            // Lógica para mostrar la planificación actual
+            if (infoClaseActual && (indicator.estado === '#FF0000' || indicator.estado === '#FFA500')) {
                 modalPlanificacion.classList.remove('hidden');
                 modalPlanificacionDetalles.innerHTML = `
-                    <p>Asignatura: ${indicator.informacion_clase_actual.asignatura}</p>
-                    <p>Profesor: ${indicator.informacion_clase_actual.profesor}</p>
-                    <p>Módulo: ${indicator.informacion_clase_actual.modulo}</p>
-                    <p>Horario: ${indicator.informacion_clase_actual.hora_inicio} hrs. - ${indicator.informacion_clase_actual.hora_termino} hrs.</p>
+                    <p><strong>Asignatura:</strong> ${infoClaseActual.asignatura}</p>
+                    <p><strong>Profesor:</strong> ${infoClaseActual.profesor}</p>
+                    <p><strong>Módulo:</strong> ${infoClaseActual.modulo}</p>
+                    <p><strong>Horario:</strong> ${infoClaseActual.hora_inicio} hrs. - ${infoClaseActual.hora_termino} hrs.</p>
                 `;
+            } else if (indicator.estado === '#FF0000') {
+                modalPlanificacion.classList.remove('hidden');
+                modalPlanificacionDetalles.innerHTML = `<p>No hay información sobre la ocupación actual.</p>`;
             } else if (detalles.planificacion) {
                 modalPlanificacion.classList.remove('hidden');
                 modalPlanificacionDetalles.innerHTML = `
-                    <p>Asignatura: ${detalles.planificacion.asignatura || 'No especificada'}</p>
-                    <p>Profesor: ${detalles.planificacion.profesor || 'No especificado'}</p>
-                    <p>Módulo: ${detalles.planificacion.modulo || 'No especificado'}</p>
+                    <p><strong>Asignatura:</strong> ${detalles.planificacion.asignatura || 'No especificada'}</p>
+                    <p><strong>Profesor:</strong> ${detalles.planificacion.profesor || 'No especificado'}</p>
+                    <p><strong>Módulo:</strong> ${detalles.planificacion.modulo || 'No especificado'}</p>
                 `;
             } else {
                 modalPlanificacion.classList.add('hidden');
@@ -587,10 +591,10 @@
             if (detalles.planificacion_proxima) {
                 modalProxima.classList.remove('hidden');
                 modalProximaDetalles.innerHTML = `
-                    <p>Asignatura: ${detalles.planificacion_proxima.asignatura || 'No especificada'}</p>
-                    <p>Profesor: ${detalles.planificacion_proxima.profesor || 'No especificado'}</p>
-                    <p>Módulo: ${detalles.planificacion_proxima.modulo || 'No especificado'}</p>
-                    <p>Horario: ${detalles.planificacion_proxima.hora_inicio} hrs. - ${detalles.planificacion_proxima.hora_termino} hrs.</p>
+                    <p><strong>Asignatura:</strong> ${detalles.planificacion_proxima.asignatura || 'No especificada'}</p>
+                    <p><strong>Profesor:</strong> ${detalles.planificacion_proxima.profesor || 'No especificado'}</p>
+                    <p><strong>Módulo:</strong> ${detalles.planificacion_proxima.modulo || 'No especificado'}</p>
+                    <p><strong>Horario:</strong> ${detalles.planificacion_proxima.hora_inicio} hrs. - ${detalles.planificacion_proxima.hora_termino} hrs.</p>
                 `;
             } else {
                 modalProxima.classList.add('hidden');

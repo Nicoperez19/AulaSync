@@ -6,7 +6,7 @@ use App\Models\Espacio;
 use App\Models\Reserva;
 use App\Models\User;
 use App\Models\Asignatura;
-use App\Models\PlanificacionAsignatura;
+use App\Models\Planificacion_Asignatura;
 use App\Models\Modulo;
 use App\Models\Piso;
 use Illuminate\Http\Request;
@@ -49,7 +49,11 @@ class DashboardController extends Controller
 
         // Obtener datos para las tablas
         $reservasCanceladas = $this->obtenerReservasCanceladas($facultad, $piso);
-        $horariosPorDia = $this->obtenerHorariosPorDia($facultad, $piso);
+        $horariosAgrupados = $this->obtenerHorariosAgrupados($facultad, $piso);
+        $reservasSinDevolucion = $this->obtenerReservasActivasSinDevolucion($facultad, $piso);
+        $promedioDuracion = $this->obtenerPromedioDuracionReserva($facultad, $piso);
+        $porcentajeNoShow = $this->obtenerPorcentajeNoShow($facultad, $piso);
+        $canceladasPorTipo = $this->obtenerCanceladasPorTipoSala($facultad, $piso);
 
         return view('layouts.dashboard', compact(
             'ocupacionSemanal',
@@ -64,10 +68,14 @@ class DashboardController extends Controller
             'comparativaTipos',
             'evolucionMensual',
             'reservasCanceladas',
-            'horariosPorDia',
+            'horariosAgrupados',
             'facultad',
             'piso',
-            'pisos'
+            'pisos',
+            'reservasSinDevolucion',
+            'promedioDuracion',
+            'porcentajeNoShow',
+            'canceladasPorTipo'
         ));
     }
 
@@ -103,7 +111,7 @@ class DashboardController extends Controller
         $ocupacion = [];
         
         foreach ($modulos as $modulo) {
-            $espaciosOcupados = PlanificacionAsignatura::where('id_modulo', $modulo->id_modulo)
+            $espaciosOcupados = Planificacion_Asignatura::where('id_modulo', $modulo->id_modulo)
                 ->whereHas('espacio', function($query) use ($piso) {
                     if ($piso) {
                         $query->whereHas('piso', function($q) use ($piso) {
@@ -194,7 +202,7 @@ class DashboardController extends Controller
             ->first();
         
         if ($moduloActual) {
-            $espaciosOcupados = PlanificacionAsignatura::where('id_modulo', $moduloActual->id_modulo)
+            $espaciosOcupados = Planificacion_Asignatura::where('id_modulo', $moduloActual->id_modulo)
                 ->whereHas('espacio', function($query) use ($piso) {
                     if ($piso) {
                         $query->whereHas('piso', function($q) use ($piso) {
@@ -239,8 +247,12 @@ class DashboardController extends Controller
 
     private function obtenerTopSalas($facultad, $piso)
     {
-        return Espacio::withCount(['reservas' => function($query) {
-            $query->where('estado', 'activa');
+        $inicioSemana = Carbon::now()->startOfWeek();
+        $finSemana = Carbon::now()->endOfWeek();
+        
+        return Espacio::withCount(['reservas' => function($query) use ($inicioSemana, $finSemana) {
+            $query->where('estado', 'activa')
+                  ->whereBetween('fecha_reserva', [$inicioSemana, $finSemana]);
         }])
         ->whereHas('piso', function($query) use ($piso) {
             if ($piso) {
@@ -260,9 +272,13 @@ class DashboardController extends Controller
 
     private function obtenerTopAsignaturas($facultad, $piso)
     {
-        return Asignatura::withCount(['planificaciones' => function($query) use ($piso) {
-            $query->whereHas('modulo', function($q) {
-                $q->where('dia', Carbon::now()->format('l'));
+        $inicioSemana = Carbon::now()->startOfWeek();
+        $finSemana = Carbon::now()->endOfWeek();
+        $diasSemana = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        
+        return Asignatura::withCount(['planificaciones' => function($query) use ($piso, $diasSemana) {
+            $query->whereHas('modulo', function($q) use ($diasSemana) {
+                $q->whereIn('dia', $diasSemana);
             })
             ->whereHas('espacio', function($q) use ($piso) {
                 if ($piso) {
@@ -286,31 +302,60 @@ class DashboardController extends Controller
 
     private function obtenerComparativaTipos($facultad, $piso)
     {
-        return Espacio::select('tipo_espacio', DB::raw('count(*) as total'))
-            ->whereHas('piso', function($query) use ($piso) {
+        $inicioSemana = Carbon::now()->startOfWeek();
+        $finSemana = Carbon::now()->endOfWeek();
+
+        // 1. Obtener todos los tipos de espacio distintos para el piso y facultad seleccionados
+        $tiposDeEspacioQuery = Espacio::query()
+            ->whereHas('piso', function($query) use ($facultad, $piso) {
+                $query->where('id_facultad', $facultad);
                 if ($piso) {
                     $query->where('numero_piso', $piso);
                 }
-            })
-            ->groupBy('tipo_espacio')
-            ->get()
-            ->map(function($item) {
-                return [
-                    'tipo' => $item->tipo_espacio,
-                    'total' => $item->total
-                ];
             });
+        
+        $todosLosTipos = $tiposDeEspacioQuery->select('tipo_espacio')->distinct()->pluck('tipo_espacio');
+
+        // 2. Obtener las horas reservadas para los tipos de espacio encontrados
+        $reservasPorTipoQuery = Reserva::join('espacios', 'reservas.id_espacio', '=', 'espacios.id_espacio')
+            ->join('pisos', 'espacios.piso_id', '=', 'pisos.id')
+            ->whereBetween('reservas.fecha_reserva', [$inicioSemana, $finSemana])
+            ->where('reservas.estado', 'activa')
+            ->where('pisos.id_facultad', $facultad)
+            ->whereIn('espacios.tipo_espacio', $todosLosTipos);
+
+        if ($piso) {
+            $reservasPorTipoQuery->where('pisos.numero_piso', $piso);
+        }
+
+        $reservasPorTipo = $reservasPorTipoQuery
+            ->select('espacios.tipo_espacio', DB::raw('count(*) as horas_reservadas'))
+            ->groupBy('espacios.tipo_espacio')
+            ->pluck('horas_reservadas', 'tipo_espacio');
+
+        $totalHorasReservadas = $reservasPorTipo->sum();
+
+        // 3. Mapear todos los tipos de espacio, asignando 0 a los que no tienen reservas
+        return $todosLosTipos->map(function($tipo) use ($reservasPorTipo, $totalHorasReservadas) {
+            $horas = $reservasPorTipo->get($tipo, 0);
+            $porcentaje = ($totalHorasReservadas > 0) ? ($horas / $totalHorasReservadas) * 100 : 0;
+            
+            return [
+                'tipo' => $tipo,
+                'total' => round($porcentaje)
+            ];
+        });
     }
 
     private function obtenerEvolucionMensual($facultad, $piso)
     {
-        $inicioMes = Carbon::now()->startOfMonth();
-        $diasMes = [];
+        $inicioSemana = Carbon::now()->startOfWeek();
+        $diasSemana = [];
         $ocupacion = [];
         
-        for ($i = 0; $i < 30; $i++) {
-            $dia = $inicioMes->copy()->addDays($i);
-            $diasMes[] = $dia->format('Y-m-d');
+        for ($i = 0; $i < 7; $i++) {
+            $dia = $inicioSemana->copy()->addDays($i);
+            $diasSemana[] = $dia->format('d/m');
             $ocupacion[] = Reserva::whereDate('fecha_reserva', $dia)
                 ->where('estado', 'activa')
                 ->whereHas('espacio', function($query) use ($piso) {
@@ -324,16 +369,19 @@ class DashboardController extends Controller
         }
         
         return [
-            'dias' => $diasMes,
+            'dias' => $diasSemana,
             'ocupacion' => $ocupacion
         ];
     }
 
     private function obtenerReservasCanceladas($facultad, $piso)
     {
+        $inicioSemana = Carbon::now()->startOfWeek();
+        $finSemana = Carbon::now()->endOfWeek();
+        
         return Reserva::with(['user', 'espacio'])
             ->where('estado', 'finalizada')
-            ->whereDate('fecha_reserva', Carbon::today())
+            ->whereBetween('fecha_reserva', [$inicioSemana, $finSemana])
             ->whereHas('espacio', function($query) use ($piso) {
                 if ($piso) {
                     $query->whereHas('piso', function($q) use ($piso) {
@@ -351,14 +399,21 @@ class DashboardController extends Controller
             });
     }
 
-    private function obtenerHorariosPorDia($facultad, $piso)
+    private function obtenerHorariosAgrupados($facultad, $piso)
     {
-        $hoy = Carbon::today();
-        $diaSemana = $hoy->format('l');
+        $diasSemana = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        $diasTraducidos = [
+            'Monday' => 'Lunes',
+            'Tuesday' => 'Martes', 
+            'Wednesday' => 'Miércoles',
+            'Thursday' => 'Jueves',
+            'Friday' => 'Viernes',
+            'Saturday' => 'Sábado'
+        ];
         
-        return PlanificacionAsignatura::with(['asignatura.user', 'espacio', 'modulo', 'horario'])
-            ->whereHas('modulo', function($query) use ($diaSemana) {
-                $query->where('dia', $diaSemana);
+        $planificaciones = Planificacion_Asignatura::with(['asignatura.user', 'espacio', 'modulo'])
+            ->whereHas('modulo', function($query) use ($diasSemana) {
+                $query->whereIn('dia', $diasSemana);
             })
             ->whereHas('espacio', function($query) use ($piso) {
                 if ($piso) {
@@ -367,34 +422,47 @@ class DashboardController extends Controller
                     });
                 }
             })
-            ->get()
-            ->map(function($planificacion) {
-                return [
-                    'modulo' => $planificacion->modulo->hora_inicio . ' - ' . $planificacion->modulo->hora_termino,
-                    'dia' => $planificacion->modulo->dia,
-                    'asignatura' => $planificacion->asignatura->nombre_asignatura,
-                    'espacio' => $planificacion->espacio->nombre_espacio,
-                    'usuario' => $planificacion->asignatura->user->name ?? 'No asignado'
-                ];
-            });
+            ->get();
+        
+        $horariosAgrupados = [];
+        
+        foreach ($planificaciones as $planificacion) {
+            $dia = $diasTraducidos[$planificacion->modulo->dia] ?? $planificacion->modulo->dia;
+            $hora = $planificacion->modulo->hora_inicio . ' - ' . $planificacion->modulo->hora_termino;
+            
+            if (!isset($horariosAgrupados[$dia])) {
+                $horariosAgrupados[$dia] = [];
+            }
+            
+            if (!isset($horariosAgrupados[$dia][$hora])) {
+                $horariosAgrupados[$dia][$hora] = [];
+            }
+            
+            $horariosAgrupados[$dia][$hora][] = [
+                'espacio' => $planificacion->espacio->nombre_espacio . ' (ID: ' . $planificacion->espacio->id_espacio . ')',
+                'asignatura' => $planificacion->asignatura->nombre_asignatura,
+                'profesor' => $planificacion->asignatura->user->name ?? 'No asignado',
+                'email' => $planificacion->asignatura->user->email ?? 'No disponible'
+            ];
+        }
+        
+        // Ordenar los arrays por día y hora
+        ksort($horariosAgrupados);
+        foreach ($horariosAgrupados as &$horarios) {
+            ksort($horarios);
+        }
+        
+        return $horariosAgrupados;
     }
 
     private function obtenerEspaciosQuery($facultad, $piso)
     {
-        $query = Espacio::query();
-        
-        // Filtrar por la facultad IT_TH específicamente
-        $query->whereHas('piso.facultad', function($q) {
-            $q->where('id_facultad', 'IT_TH');
+        return Espacio::whereHas('piso', function($query) use ($facultad, $piso) {
+            $query->where('id_facultad', $facultad);
+            if ($piso) {
+                $query->where('numero_piso', $piso);
+            }
         });
-        
-        if ($piso) {
-            $query->whereHas('piso', function($q) use ($piso) {
-                $q->where('numero_piso', $piso);
-            });
-        }
-        
-        return $query;
     }
 
     public function setPiso(Request $request)
@@ -430,7 +498,11 @@ class DashboardController extends Controller
 
         // Obtener datos para las tablas
         $reservasCanceladas = $this->obtenerReservasCanceladas($facultad, $piso);
-        $horariosPorDia = $this->obtenerHorariosPorDia($facultad, $piso);
+        $horariosAgrupados = $this->obtenerHorariosAgrupados($facultad, $piso);
+        $reservasSinDevolucion = $this->obtenerReservasActivasSinDevolucion($facultad, $piso);
+        $promedioDuracion = $this->obtenerPromedioDuracionReserva($facultad, $piso);
+        $porcentajeNoShow = $this->obtenerPorcentajeNoShow($facultad, $piso);
+        $canceladasPorTipo = $this->obtenerCanceladasPorTipoSala($facultad, $piso);
 
         return response()->json([
             'ocupacionSemanal' => $ocupacionSemanal,
@@ -445,7 +517,137 @@ class DashboardController extends Controller
             'comparativaTipos' => $comparativaTipos,
             'evolucionMensual' => $evolucionMensual,
             'reservasCanceladas' => $reservasCanceladas,
-            'horariosPorDia' => $horariosPorDia
+            'horariosAgrupados' => $horariosAgrupados,
+            'reservasSinDevolucion' => $reservasSinDevolucion,
+            'promedioDuracion' => $promedioDuracion,
+            'porcentajeNoShow' => $porcentajeNoShow,
+            'canceladasPorTipo' => $canceladasPorTipo
         ]);
+    }
+
+    private function obtenerReservasActivasSinDevolucion($facultad, $piso)
+    {
+        $inicioSemana = Carbon::now()->startOfWeek();
+        $finSemana = Carbon::now()->endOfWeek();
+        
+        return Reserva::with(['user', 'espacio'])
+            ->where('estado', 'activa')
+            ->whereNull('hora_salida')
+            ->whereBetween('fecha_reserva', [$inicioSemana, $finSemana])
+            ->whereHas('espacio', function ($query) use ($facultad, $piso) {
+                $query->whereHas('piso', function ($q) use ($facultad, $piso) {
+                    $q->where('id_facultad', $facultad);
+                    if ($piso) {
+                        $q->where('numero_piso', $piso);
+                    }
+                });
+            })
+            ->latest('fecha_reserva')
+            ->latest('hora')
+            ->get();
+    }
+
+    public function getKeyReturnNotifications()
+    {
+        $now = Carbon::now();
+        $timeLimit = $now->copy()->addMinutes(10);
+
+        $planificaciones = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.user'])
+            ->whereHas('modulo', function ($query) use ($now, $timeLimit) {
+                $query->where('dia', strtolower($now->locale('es')->isoFormat('dddd')))
+                      ->whereTime('hora_termino', '>', $now->format('H:i:s'))
+                      ->whereTime('hora_termino', '<=', $timeLimit->format('H:i:s'));
+            })
+            ->get();
+
+        $notifications = $planificaciones->map(function ($plan) {
+            return [
+                'profesor' => $plan->asignatura->user->name ?? 'Profesor no asignado',
+                'espacio' => $plan->espacio->nombre_espacio ?? 'Espacio no asignado',
+                'hora_termino' => Carbon::parse($plan->modulo->hora_termino)->format('H:i'),
+            ];
+        });
+
+        return response()->json($notifications);
+    }
+
+    private function obtenerPromedioDuracionReserva($facultad, $piso)
+    {
+        $reservas = Reserva::where('estado', 'finalizada')
+            ->whereNotNull('hora')
+            ->whereNotNull('hora_salida')
+            // ->whereBetween('fecha_reserva', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]) // Se comenta para pruebas
+            ->whereHas('espacio', function($query) use ($facultad, $piso) {
+                $query->whereHas('piso', function($q) use ($facultad, $piso) {
+                    $q->where('id_facultad', $facultad);
+                    if ($piso) {
+                        $q->where('numero_piso', $piso);
+                    }
+                });
+            })
+            ->get();
+
+        if ($reservas->isEmpty()) {
+            return 0;
+        }
+
+        $totalDuracion = $reservas->sum(function ($reserva) {
+            $inicio = Carbon::parse($reserva->hora);
+            $fin = Carbon::parse($reserva->hora_salida);
+            return $fin->diffInMinutes($inicio);
+        });
+
+        return round($totalDuracion / $reservas->count());
+    }
+
+    private function obtenerPorcentajeNoShow($facultad, $piso)
+    {
+        $now = Carbon::now();
+        $baseQuery = Reserva::query() // ->whereBetween('fecha_reserva', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]) // Se comenta para pruebas
+            ->whereHas('espacio', function($query) use ($facultad, $piso) {
+                $query->whereHas('piso', function($q) use ($facultad, $piso) {
+                    $q->where('id_facultad', $facultad);
+                    if ($piso) {
+                        $q->where('numero_piso', $piso);
+                    }
+                });
+            });
+
+        $totalReservas = (clone $baseQuery)->count();
+
+        if ($totalReservas === 0) {
+            return 0;
+        }
+
+        $noShowReservas = (clone $baseQuery)
+            ->where('estado', 'finalizada')
+            ->where(function ($query) use ($now) {
+                $query->where('fecha_reserva', '<', $now->toDateString())
+                      ->orWhere(function ($query) use ($now) {
+                          $query->where('fecha_reserva', '=', $now->toDateString())
+                                ->where('hora', '<', $now->toTimeString());
+                      });
+            })
+            ->count();
+
+        return round(($noShowReservas / $totalReservas) * 100);
+    }
+
+    private function obtenerCanceladasPorTipoSala($facultad, $piso)
+    {
+        return Reserva::with('espacio')
+            ->where('estado', 'finalizada')
+            // ->whereBetween('fecha_reserva', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]) // Se comenta para pruebas
+            ->whereHas('espacio', function($query) use ($facultad, $piso) {
+                $query->whereHas('piso', function($q) use ($facultad, $piso) {
+                    $q->where('id_facultad', $facultad);
+                    if ($piso) {
+                        $q->where('numero_piso', $piso);
+                    }
+                });
+            })
+            ->get()
+            ->groupBy('espacio.tipo_espacio')
+            ->map(fn($group) => $group->count());
     }
 } 

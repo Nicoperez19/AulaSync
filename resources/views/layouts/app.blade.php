@@ -123,6 +123,73 @@
             }))
         })
     </script>
+    @if(auth()->check() && auth()->user()->hasRole('Administrador'))
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const KeyReturnToast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 6000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+            });
+
+            let shownNotifications = new Set();
+            const notificationBadge = document.getElementById('notification-badge');
+            const notificationList = document.getElementById('notification-list');
+
+            function fetchKeyReturnNotifications() {
+                fetch('/api/notifications/key-returns')
+                    .then(response => response.json())
+                    .then(notifications => {
+                        // Update badge
+                        if (notifications.length > 0) {
+                            notificationBadge.textContent = notifications.length;
+                            notificationBadge.style.display = 'block';
+                        } else {
+                            notificationBadge.style.display = 'none';
+                        }
+
+                        // Update notification list
+                        if (notificationList) {
+                            if (notifications.length > 0) {
+                                notificationList.innerHTML = ''; // Clear previous list
+                                notifications.forEach(notification => {
+                                    const notificationElement = document.createElement('div');
+                                    notificationElement.className = 'p-2 border-b text-sm text-gray-700 dark:text-gray-200';
+                                    notificationElement.innerHTML = `El profesor <b>${notification.profesor}</b> debe devolver las llaves de <b>${notification.espacio}</b>. (Fin: ${notification.hora_termino})`;
+                                    notificationList.appendChild(notificationElement);
+                                });
+                            } else {
+                                notificationList.innerHTML = '<p class="p-4 text-sm text-center text-gray-500">No hay notificaciones</p>';
+                            }
+                        }
+
+                        // Show toast for new notifications
+                        notifications.forEach(notification => {
+                            const notificationId = `${notification.profesor}-${notification.espacio}-${notification.hora_termino}`;
+                            if (!shownNotifications.has(notificationId)) {
+                                KeyReturnToast.fire({
+                                    icon: 'warning',
+                                    title: 'Devolución de llaves pendiente',
+                                    html: `El profesor <b>${notification.profesor}</b> debe devolver las llaves de la sala <b>${notification.espacio}</b>.<br>Su clase finaliza a las <b>${notification.hora_termino}</b>.`
+                                });
+                                shownNotifications.add(notificationId);
+                            }
+                        });
+                    })
+                    .catch(error => console.error('Error fetching key return notifications:', error));
+            }
+
+            fetchKeyReturnNotifications();
+            setInterval(fetchKeyReturnNotifications, 60000); // Cada 60 segundos
+        });
+    </script>
+    @endif
 </body>
 
 </html>

@@ -7,46 +7,13 @@
         </div>
     </x-slot>
 
-    <!-- Indicadores de Estado de Registro -->
-    <div class="p-6 overflow-hidden bg-white rounded-md shadow-md dark:bg-dark-eval-1 mb-8">
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-            <!-- Indicador: Estado del Escáner -->
-            <div id="indicador-escanner" class="flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-lg transition-all duration-300">
-                <div id="estado-escanner" class="text-3xl mb-2">🔄</div>
-                <div class="text-sm text-gray-500">Estado del Escáner</div>
-                <div id="estado-escanner-texto" class="text-lg font-semibold">Inicializando...</div>
-            </div>
-
-            <!-- Indicador: Usuario Escaneado -->
-            <div id="indicador-usuario" class="flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-lg transition-all duration-300">
-                <div id="estado-usuario" class="text-3xl mb-2">👤</div>
-                <div class="text-sm text-gray-500">Usuario</div>
-                <div id="estado-usuario-texto" class="text-lg font-semibold">Pendiente</div>
-            </div>
-
-            <!-- Indicador: Espacio -->
-            <div id="indicador-espacio" class="flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-lg transition-all duration-300">
-                <div id="estado-espacio" class="text-3xl mb-2">🏢</div>
-                <div class="text-sm text-gray-500">Espacio</div>
-                <div id="estado-espacio-texto" class="text-lg font-semibold">Pendiente</div>
-            </div>
-
-            <!-- Indicador: Estado del Registro -->
-            <div id="indicador-registro" class="flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-lg transition-all duration-300">
-                <div id="estado-registro" class="text-3xl mb-2">📝</div>
-                <div class="text-sm text-gray-500">Estado del Registro</div>
-                <div id="estado-registro-texto" class="text-lg font-semibold">Pendiente</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Filtros globales compactos + avanzados -->
-    <div class="p-6 overflow-hidden bg-white rounded-md shadow-md dark:bg-dark-eval-1 mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div class="flex flex-wrap gap-4 items-center justify-center max-w-4xl w-full">
+    <!-- Filtros globales compactos -->
+    <div class="p-6 mb-8 overflow-hidden bg-white rounded-md shadow-md dark:bg-dark-eval-1">
+        <div class="flex flex-wrap items-center justify-between w-full gap-4">
             <!-- Filtros básicos -->
             <div class="flex items-center gap-2">
                 <label class="font-semibold">Semana:</label>
-                <select class="rounded-md border-gray-300 shadow-sm w-40">
+                <select class="w-40 border-gray-300 rounded-md shadow-sm">
                     <option>Semana actual</option>
                     <option>Semana anterior</option>
                     <option>Hace 2 semanas</option>
@@ -55,7 +22,7 @@
             <div class="flex items-center gap-2">
                 <label class="font-semibold">Piso:</label>
                 <div class="relative">
-                    <select id="piso-selector" class="rounded-md border-gray-300 shadow-sm w-32 transition-all duration-300" onchange="cambiarPiso(this.value)">
+                    <select id="piso-selector" class="w-32 transition-all duration-300 border-gray-300 rounded-md shadow-sm" onchange="cambiarPiso(this.value)">
                         <option value="">Todos</option>
                         @foreach($pisos as $pisoItem)
                             <option value="{{ $pisoItem->numero_piso }}" {{ $piso == $pisoItem->numero_piso ? 'selected' : '' }}>
@@ -63,14 +30,14 @@
                             </option>
                         @endforeach
                     </select>
-                    <div id="piso-loading" class="absolute right-2 top-1/2 transform -translate-y-1/2 hidden">
-                        <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <div id="piso-loading" class="absolute hidden transform -translate-y-1/2 right-2 top-1/2">
+                        <div class="w-4 h-4 border-b-2 border-blue-600 rounded-full animate-spin"></div>
                     </div>
                 </div>
             </div>
             <div class="flex items-center gap-2">
                 <label class="font-semibold">Tipo de sala:</label>
-                <select class="rounded-md border-gray-300 shadow-sm w-40">
+                <select class="w-40 border-gray-300 rounded-md shadow-sm">
                     <option>Todas</option>
                     @foreach($comparativaTipos as $tipo)
                         <option>{{ $tipo['tipo'] }}</option>
@@ -78,50 +45,23 @@
                 </select>
             </div>
         </div>
-        <!-- Filtros avanzados -->
-        <div class="flex flex-wrap gap-4 items-center justify-center">
-            <div class="flex items-center gap-2">
-                <label class="font-semibold">Rango de fechas:</label>
-                <input type="date" class="rounded-md border-gray-300 shadow-sm w-32" />
-                <span class="mx-1">-</span>
-                <input type="date" class="rounded-md border-gray-300 shadow-sm w-32" />
-            </div>
-            <div class="flex items-center gap-2">
-                <label class="font-semibold">Usuario:</label>
-                <select class="rounded-md border-gray-300 shadow-sm w-40">
-                    <option>Todos</option>
-                    <option>Juan Pérez</option>
-                    <option>Ana López</option>
-                    <option>Carlos Ruiz</option>
-                </select>
-            </div>
-            <div class="flex items-center gap-2">
-                <label class="font-semibold">Asignatura:</label>
-                <select class="rounded-md border-gray-300 shadow-sm w-40">
-                    <option>Todas</option>
-                    <option>Matemáticas</option>
-                    <option>Lenguaje</option>
-                    <option>Historia</option>
-                </select>
-            </div>
-        </div>
     </div>
 
     <!-- KPIs con tendencia -->
-    <div class="p-8 overflow-hidden mb-4 max-w-7xl mx-auto">
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-8 w-full">
+    <div class="p-8 mx-auto mb-4 overflow-hidden max-w-7xl">
+        <div class="grid w-full grid-cols-2 gap-8 sm:grid-cols-3 md:grid-cols-6">
             <!-- KPI 1: Ocupación semanal -->
             <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 relative widget-transition">
-                <img src="https://img.icons8.com/color/48/000000/combo-chart--v2.png" class="mb-2 w-12 h-12" />
+                <img src="https://img.icons8.com/color/48/000000/combo-chart--v2.png" class="w-12 h-12 mb-2" />
                 <div class="text-xs text-gray-500">% Ocupación semanal</div>
-                <div id="ocupacion-semanal" class="text-3xl font-bold text-primary-600 mt-1 flex items-center gap-2 kpi-value">
+                <div id="ocupacion-semanal" class="flex items-center gap-2 mt-1 text-3xl font-bold text-primary-600 kpi-value">
                     {{ $ocupacionSemanal }}%
-                    <span class="text-green-500 text-xl" title="Subió respecto a la semana anterior">▲</span>
+                    <span class="text-xl text-green-500" title="Subió respecto a la semana anterior">▲</span>
                 </div>
             </div>
             <!-- KPI 2: Ocupación diaria -->
             <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 relative widget-transition">
-                <img src="https://img.icons8.com/color/48/000000/calendar--v2.png" class="mb-2 w-12 h-12" />
+                <img src="https://img.icons8.com/color/48/000000/calendar--v2.png" class="w-12 h-12 mb-2" />
                 <div class="text-xs text-gray-500">% Ocupación diaria</div>
                 <div data-widget="ocupacion-diaria" class="flex gap-1 mt-1 text-xs">
                     @foreach($ocupacionDiaria as $dia => $porcentaje)
@@ -131,131 +71,185 @@
             </div>
             <!-- KPI: Promedio ocupación mensual -->
             <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 relative widget-transition">
-                <img src="https://img.icons8.com/color/48/000000/line-chart.png" class="mb-2 w-12 h-12" />
+                <img src="https://img.icons8.com/color/48/000000/line-chart.png" class="w-12 h-12 mb-2" />
                 <div class="text-xs text-gray-500">Promedio ocupación mensual</div>
-                <div id="ocupacion-mensual" class="text-3xl font-bold text-primary-600 mt-1 flex items-center gap-2 kpi-value">
+                <div id="ocupacion-mensual" class="flex items-center gap-2 mt-1 text-3xl font-bold text-primary-600 kpi-value">
                     {{ $ocupacionMensual }}%
-                    <span class="text-green-500 text-xl" title="Subió respecto al mes anterior">▲</span>
+                    <span class="text-xl text-green-500" title="Subió respecto al mes anterior">▲</span>
                 </div>
             </div>
             <!-- Usuarios sin escaneo -->
             <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 widget-transition">
-                <span class="text-5xl mb-2 text-red-500">❌</span>
-                <div class="text-base text-red-700 font-bold mb-1">Usuarios sin escaneo</div>
-                <div id="usuarios-sin-escaneo" class="text-xs text-red-600 text-center kpi-value">{{ $usuariosSinEscaneo }} usuarios sin registrar asistencia hoy</div>
+                <span class="mb-2 text-5xl text-red-500">❌</span>
+                <div class="mb-1 text-base font-bold text-red-700">Usuarios sin escaneo</div>
+                <div id="usuarios-sin-escaneo" class="text-xs text-center text-red-600 kpi-value">{{ $usuariosSinEscaneo }} usuarios sin registrar asistencia hoy</div>
             </div>
             <!-- KPI 3: Horas utilizadas / disponibles -->
             <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 widget-transition">
-                <img src="https://img.icons8.com/color/48/000000/hourglass--v2.png" class="mb-2 w-12 h-12" />
+                <img src="https://img.icons8.com/color/48/000000/hourglass--v2.png" class="w-12 h-12 mb-2" />
                 <div class="text-xs text-gray-500">Horas utilizadas / disponibles</div>
-                <div id="horas-utilizadas" class="text-2xl font-bold text-yellow-700 mt-1 kpi-value">{{ $horasUtilizadas['utilizadas'] }} / {{ $horasUtilizadas['disponibles'] }}</div>
-                <div class="w-full bg-yellow-200 rounded-full h-2 mt-2" style="max-width:100px;">
-                    <div class="bg-yellow-500 h-2 rounded-full" style="width: {{ ($horasUtilizadas['utilizadas'] / $horasUtilizadas['disponibles']) * 100 }}%"></div>
+                <div id="horas-utilizadas" class="mt-1 text-2xl font-bold text-yellow-700 kpi-value">{{ $horasUtilizadas['utilizadas'] }} / {{ $horasUtilizadas['disponibles'] }}</div>
+                <div class="w-full h-2 mt-2 bg-yellow-200 rounded-full" style="max-width:100px;">
+                    <div class="h-2 bg-yellow-500 rounded-full" style="width: {{ ($horasUtilizadas['utilizadas'] / $horasUtilizadas['disponibles']) * 100 }}%"></div>
                 </div>
             </div>
             <!-- KPI 4: Salas ocupadas / libres -->
             <div class="flex flex-col items-center justify-center min-w-[160px] bg-white rounded-xl shadow-lg p-6 widget-transition">
-                <img src="https://img.icons8.com/color/48/000000/brick-wall.png" class="mb-2 w-12 h-12" />
+                <img src="https://img.icons8.com/color/48/000000/brick-wall.png" class="w-12 h-12 mb-2" />
                 <div class="text-xs text-gray-500">Salas ocupadas / libres (hoy)</div>
                 <div id="salas-ocupadas" class="text-2xl font-bold kpi-value" style="color:#a21caf; margin-top:4px;">{{ $salasOcupadas['ocupadas'] }} <span class="text-gray-400">/</span> {{ $salasOcupadas['libres'] }}</div>
             </div>
         </div>
     </div>
 
-    <!-- Grid inferior: gráficos y tablas ordenados -->
-    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <!-- Fila de nuevos KPIs -->
+    <div class="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2 lg:grid-cols-3">
+        <!-- Promedio Duración Reserva -->
+        <div class="p-4 bg-white rounded-md shadow-md dark:bg-dark-eval-1">
+            <h3 class="text-lg font-semibold text-gray-500 dark:text-gray-400">Promedio de Duración</h3>
+            <div class="flex items-baseline mt-2">
+                <p id="kpi-promedio-duracion" class="text-3xl font-bold text-gray-900 dark:text-gray-100 kpi-value">{{ $promedioDuracion }}</p>
+                <span class="ml-2 text-gray-500 dark:text-gray-400">minutos</span>
+            </div>
+        </div>
+
+        <!-- % Reservas No Utilizadas (No Show) -->
+        <div class="p-4 bg-white rounded-md shadow-md dark:bg-dark-eval-1">
+            <h3 class="text-lg font-semibold text-gray-500 dark:text-gray-400">% No Presentación</h3>
+            <div class="flex items-baseline mt-2">
+                <p id="kpi-no-show" class="text-3xl font-bold text-gray-900 dark:text-gray-100 kpi-value">{{ $porcentajeNoShow }}</p>
+                <span class="ml-2 text-gray-500 dark:text-gray-400">%</span>
+            </div>
+        </div>
+
+        <!-- Canceladas por Tipo de Sala -->
+        <div class="p-4 bg-white rounded-md shadow-md dark:bg-dark-eval-1">
+            <h3 class="text-lg font-semibold text-gray-500 dark:text-gray-400">Canceladas por Tipo</h3>
+            <div id="lista-canceladas-tipo" class="mt-2 text-sm text-gray-900 dark:text-gray-100">
+                @forelse($canceladasPorTipo as $tipo => $cantidad)
+                    <div class="flex justify-between">
+                        <span class="capitalize">{{ str_replace('_', ' ', $tipo) }}</span>
+                        <span class="font-bold">{{ $cantidad }}</span>
+                    </div>
+                @empty
+                    <p>No hay datos</p>
+                @endforelse
+            </div>
+        </div>
+    </div>
+
+    <!-- Grid de gráficos -->
+    <div class="grid grid-cols-1 gap-8 mx-auto max-w-7xl md:grid-cols-2 lg:grid-cols-3">
         <!-- Gráfico de barras: Uso por Día -->
         <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition">
-            <h4 class="font-semibold mb-4 text-gray-700 flex items-center gap-2">Gráfico de Barras: Uso por Día <span class="ml-2 cursor-pointer" title="Muestra la cantidad de horas ocupadas por día de la semana">ℹ️</span></h4>
-            <canvas id="grafico-barras-ejemplo" width="320" height="220"></canvas>
+            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Gráfico de Barras: Uso por Día <span class="ml-2 cursor-pointer" title="Muestra la cantidad de horas ocupadas por día de la semana">ℹ️</span></h4>
+            <canvas id="grafico-barras" width="320" height="220"></canvas>
         </div>
         <!-- Gráfico de barras horizontal: Top 3 salas más y menos usadas -->
         <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition">
-            <h4 class="font-semibold mb-4 text-gray-700 flex items-center gap-2">Top 3 Salas más usadas <span class="ml-2 cursor-pointer" title="Ranking de salas según uso mensual">ℹ️</span></h4>
+            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Top 3 Salas más usadas <span class="ml-2 cursor-pointer" title="Ranking de salas según uso mensual">ℹ️</span></h4>
             <canvas id="grafico-top-salas" width="320" height="220"></canvas>
         </div>
         <!-- Gráfico de barras: Top asignaturas por uso de espacios -->
         <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition">
-            <h4 class="font-semibold mb-4 text-gray-700 flex items-center gap-2">Top asignaturas por uso <span class="ml-2 cursor-pointer" title="Asignaturas con mayor uso de espacios">ℹ️</span></h4>
+            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Top asignaturas por uso <span class="ml-2 cursor-pointer" title="Asignaturas con mayor uso de espacios">ℹ️</span></h4>
             <canvas id="grafico-top-asignaturas" width="320" height="220"></canvas>
         </div>
         <!-- Gráfico de áreas: Comparativa tipos de espacios -->
         <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition">
-            <h4 class="font-semibold mb-4 text-gray-700 flex items-center gap-2">Comparativa de ocupación por tipo de espacio <span class="ml-2 cursor-pointer" title="Comparación de ocupación entre aulas, laboratorios, etc.">ℹ️</span></h4>
+            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Comparativa de ocupación por tipo de espacio <span class="ml-2 cursor-pointer" title="Comparación de ocupación entre aulas, laboratorios, etc.">ℹ️</span></h4>
             <canvas id="grafico-comparativa-tipos" width="320" height="220"></canvas>
         </div>
         <!-- Gráfico de línea: Promedio mensual -->
         <div class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition">
-            <h4 class="font-semibold mb-4 text-gray-700 flex items-center gap-2">Evolución mensual de ocupación <span class="ml-2 cursor-pointer" title="Tendencia del promedio de ocupación mensual">ℹ️</span></h4>
+            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Evolución semanal de ocupación <span class="ml-2 cursor-pointer" title="Tendencia del promedio de ocupación de la semana actual">ℹ️</span></h4>
             <canvas id="grafico-mensual" width="320" height="220"></canvas>
         </div>
-        <!-- Tabla: Reservas canceladas o no utilizadas -->
-        <div class="p-8 bg-white rounded-xl shadow-lg col-span-3 flex flex-col min-h-[260px] relative widget-transition">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-bold text-gray-700 flex items-center gap-2">Reservas canceladas o no utilizadas <span class="ml-2 cursor-pointer" title="Reservas que no fueron utilizadas o se cancelaron">ℹ️</span></h3>
-                <div class="flex gap-2">
-                    <button class="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 transition" title="Exportar a Excel">Excel</button>
-                    <button class="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition" title="Exportar a PDF">PDF</button>
-                </div>
-            </div>
-            <div class="overflow-x-auto">
-                <table id="tabla-reservas-canceladas" class="min-w-full text-center border border-gray-300 rounded-lg dark:bg-dark-eval-1">
-                    <thead>
-                        <tr class="bg-gray-200 dark:bg-dark-eval-2">
-                            <th class="px-4 py-2 border">Usuario</th>
-                            <th class="px-4 py-2 border">Espacio</th>
-                            <th class="px-4 py-2 border">Fecha</th>
-                            <th class="px-4 py-2 border">Motivo</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($reservasCanceladas as $reserva)
-                        <tr class="bg-white dark:bg-dark-eval-1">
-                            <td class="border">{{ $reserva['usuario'] }}</td>
-                            <td class="border">{{ $reserva['espacio'] }}</td>
-                            <td class="border">{{ $reserva['hora'] }}</td>
-                            <td class="border">Cancelada</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+    </div>
+
+    <!-- Tabla: Reservas canceladas o no utilizadas -->
+    <div class="p-8 mx-auto mt-8 overflow-hidden bg-white rounded-xl shadow-lg max-w-7xl">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="flex items-center gap-2 text-lg font-bold text-gray-700">Reservas canceladas o no utilizadas <span class="ml-2 cursor-pointer" title="Reservas que no fueron utilizadas o se cancelaron">ℹ️</span></h3>
+            <div class="flex gap-2">
+                <button class="px-3 py-1 text-white transition bg-green-500 rounded hover:bg-green-600" title="Exportar a Excel">Excel</button>
+                <button class="px-3 py-1 text-white transition bg-red-500 rounded hover:bg-red-600" title="Exportar a PDF">PDF</button>
             </div>
         </div>
-        <!-- Tabla: Horarios por día -->
-        <div class="p-8 bg-white rounded-xl shadow-lg col-span-3 flex flex-col min-h-[260px] widget-transition">
-            <h3 class="text-lg font-bold mb-4 text-gray-700">Horarios por día</h3>
-            <div class="overflow-x-auto">
-                <table id="tabla-horarios-por-dia" class="min-w-full text-center border border-gray-300 rounded-lg">
-                    <thead>
-                        <tr class="bg-gray-200">
-                            <th class="px-4 py-2 border border-gray-300">Módulo/Hora</th>
-                            <th class="px-4 py-2 border border-gray-300">Día</th>
-                            <th class="px-4 py-2 border border-gray-300">Asignatura</th>
-                            <th class="px-4 py-2 border border-gray-300">Espacio</th>
-                            <th class="px-4 py-2 border border-gray-300">Usuario Asignado</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($horariosPorDia as $horario)
-                        <tr class="bg-white">
-                            <td class="border border-gray-300">{{ $horario['modulo'] }}</td>
-                            <td class="border border-gray-300">{{ $horario['dia'] }}</td>
-                            <td class="border border-gray-300">{{ $horario['asignatura'] }}</td>
-                            <td class="border border-gray-300">{{ $horario['espacio'] }}</td>
-                            <td class="border border-gray-300">{{ $horario['usuario'] }}</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+        <div class="overflow-x-auto">
+            <table id="tabla-reservas-canceladas" class="min-w-full text-center border border-gray-300 rounded-lg dark:bg-dark-eval-1">
+                <thead>
+                    <tr class="bg-gray-200 dark:bg-dark-eval-2">
+                        <th class="px-4 py-2 border">Usuario</th>
+                        <th class="px-4 py-2 border">Espacio</th>
+                        <th class="px-4 py-2 border">Fecha</th>
+                        <th class="px-4 py-2 border">Motivo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($reservasCanceladas as $reserva)
+                    <tr class="bg-white dark:bg-dark-eval-1">
+                        <td class="border">{{ $reserva['usuario'] }}</td>
+                        <td class="border">{{ $reserva['espacio'] }}</td>
+                        <td class="border">{{ $reserva['hora'] }}</td>
+                        <td class="border">Cancelada</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tabla: Reservas Activas Sin Devolución -->
+    <div class="p-8 mx-auto mt-8 overflow-hidden bg-white rounded-xl shadow-lg max-w-7xl">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="flex items-center gap-2 text-lg font-bold text-gray-700">Reservas Activas Sin Devolución <span class="ml-2 cursor-pointer" title="Usuarios que han registrado el ingreso a una sala pero no han registrado la salida.">ℹ️</span></h3>
+            <div class="flex gap-2">
+                <button class="px-3 py-1 text-white transition bg-green-500 rounded hover:bg-green-600" title="Exportar a Excel">Excel</button>
+                <button class="px-3 py-1 text-white transition bg-red-500 rounded hover:bg-red-600" title="Exportar a PDF">PDF</button>
             </div>
         </div>
+        <div class="overflow-x-auto">
+            <table id="tabla-reservas-activas" class="min-w-full text-center border border-gray-300 rounded-lg dark:bg-dark-eval-1">
+                <thead>
+                    <tr class="bg-gray-200 dark:bg-dark-eval-2">
+                        <th class="px-4 py-2 border">Usuario</th>
+                        <th class="px-4 py-2 border">Espacio Reservado</th>
+                        <th class="px-4 py-2 border">Fecha de Reserva</th>
+                        <th class="px-4 py-2 border">Hora de Ingreso</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($reservasSinDevolucion as $reserva)
+                    <tr class="bg-white dark:bg-dark-eval-1">
+                        <td class="border">{{ $reserva->user->name }}</td>
+                        <td class="border">{{ $reserva->espacio->nombre_espacio }} ({{ $reserva->espacio->id_espacio }})</td>
+                        <td class="border">{{ \Carbon\Carbon::parse($reserva->fecha_reserva)->format('d/m/Y') }}</td>
+                        <td class="border">{{ $reserva->hora }}</td>
+                    </tr>
+                    @empty
+                    <tr class="bg-white dark:bg-dark-eval-1">
+                        <td colspan="4" class="p-4 text-center text-gray-500">
+                            No hay reservas activas sin devolución en este momento.
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tabla: Horarios por día -->
+    <div class="p-8 mx-auto mt-8 overflow-hidden bg-white rounded-xl shadow-lg max-w-7xl">
+        <h3 class="mb-4 text-lg font-bold text-gray-700">Horarios de la semana - Usuarios asignados por espacio</h3>
+        @include('layouts.partials.horarios-semana', ['horariosAgrupados' => $horariosAgrupados])
     </div>
 </x-app-layout>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     // Gráfico de barras: Uso por Día
-    window.graficoBarras = new Chart(document.getElementById('grafico-barras-ejemplo'), {
+    window.graficoBarras = new Chart(document.getElementById('grafico-barras'), {
         type: 'bar',
         data: {
             labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
@@ -353,288 +347,6 @@
         options: {responsive: false, plugins: {legend: {position: 'bottom'}}}
     });
 
-    // Funciones para manejar los indicadores de estado con cambios de color automáticos
-    function actualizarEstadoEscanner(estado) {
-        const indicador = document.getElementById('indicador-escanner');
-        const icono = document.getElementById('estado-escanner');
-        const texto = document.getElementById('estado-escanner-texto');
-        
-        // Remover clases de color anteriores
-        indicador.classList.remove('bg-gray-100', 'bg-green-100', 'bg-red-100');
-        texto.classList.remove('text-gray-700', 'text-green-700', 'text-red-700');
-        
-        switch(estado) {
-            case 'inicializando':
-                icono.textContent = '🔄';
-                indicador.classList.add('bg-gray-100');
-                texto.textContent = 'Inicializando...';
-                texto.classList.add('text-gray-700');
-                break;
-            case 'activo':
-                icono.textContent = '✅';
-                indicador.classList.add('bg-green-100');
-                texto.textContent = 'Activo';
-                texto.classList.add('text-green-700');
-                break;
-            case 'error':
-                icono.textContent = '❌';
-                indicador.classList.add('bg-red-100');
-                texto.textContent = 'Error';
-                texto.classList.add('text-red-700');
-                break;
-        }
-    }
-
-    function actualizarEstadoUsuario(estado, datos = null) {
-        const indicador = document.getElementById('indicador-usuario');
-        const icono = document.getElementById('estado-usuario');
-        const texto = document.getElementById('estado-usuario-texto');
-        
-        // Remover clases de color anteriores
-        indicador.classList.remove('bg-gray-100', 'bg-green-100', 'bg-red-100');
-        texto.classList.remove('text-gray-700', 'text-green-700', 'text-red-700');
-        
-        switch(estado) {
-            case 'pendiente':
-                icono.textContent = '👤';
-                indicador.classList.add('bg-gray-100');
-                texto.textContent = 'Pendiente';
-                texto.classList.add('text-gray-700');
-                break;
-            case 'escaneado':
-                icono.textContent = '✅';
-                indicador.classList.add('bg-green-100');
-                texto.textContent = datos?.nombre || 'Usuario Escaneado';
-                texto.classList.add('text-green-700');
-                break;
-            case 'error':
-                icono.textContent = '❌';
-                indicador.classList.add('bg-red-100');
-                texto.textContent = datos?.mensaje || 'Error';
-                texto.classList.add('text-red-700');
-                break;
-        }
-    }
-
-    function actualizarEstadoEspacio(estado, datos = null) {
-        const indicador = document.getElementById('indicador-espacio');
-        const icono = document.getElementById('estado-espacio');
-        const texto = document.getElementById('estado-espacio-texto');
-        
-        // Remover clases de color anteriores
-        indicador.classList.remove('bg-gray-100', 'bg-green-100', 'bg-red-100', 'bg-yellow-100');
-        texto.classList.remove('text-gray-700', 'text-green-700', 'text-red-700', 'text-yellow-700');
-        
-        switch(estado) {
-            case 'pendiente':
-                icono.textContent = '🏢';
-                indicador.classList.add('bg-gray-100');
-                texto.textContent = 'Pendiente';
-                texto.classList.add('text-gray-700');
-                break;
-            case 'escaneado':
-                icono.textContent = '✅';
-                indicador.classList.add('bg-green-100');
-                texto.textContent = datos?.nombre || 'Espacio Escaneado';
-                texto.classList.add('text-green-700');
-                break;
-            case 'ocupado':
-                icono.textContent = '🔒';
-                indicador.classList.add('bg-red-100');
-                texto.textContent = 'Espacio Ocupado';
-                texto.classList.add('text-red-700');
-                break;
-            case 'reservado':
-                icono.textContent = '⏰';
-                indicador.classList.add('bg-yellow-100');
-                texto.textContent = 'Espacio Reservado';
-                texto.classList.add('text-yellow-700');
-                break;
-            case 'error':
-                icono.textContent = '❌';
-                indicador.classList.add('bg-red-100');
-                texto.textContent = datos?.mensaje || 'Error';
-                texto.classList.add('text-red-700');
-                break;
-        }
-    }
-
-    function actualizarEstadoRegistro(estado, datos = null) {
-        const indicador = document.getElementById('indicador-registro');
-        const icono = document.getElementById('estado-registro');
-        const texto = document.getElementById('estado-registro-texto');
-        
-        // Remover clases de color anteriores
-        indicador.classList.remove('bg-gray-100', 'bg-green-100', 'bg-red-100', 'bg-yellow-100');
-        texto.classList.remove('text-gray-700', 'text-green-700', 'text-red-700', 'text-yellow-700');
-        
-        switch(estado) {
-            case 'pendiente':
-                icono.textContent = '📝';
-                indicador.classList.add('bg-gray-100');
-                texto.textContent = 'Pendiente';
-                texto.classList.add('text-gray-700');
-                break;
-            case 'completado':
-                icono.textContent = '✅';
-                indicador.classList.add('bg-green-100');
-                texto.textContent = 'Registro Completado';
-                texto.classList.add('text-green-700');
-                break;
-            case 'procesando':
-                icono.textContent = '⏳';
-                indicador.classList.add('bg-yellow-100');
-                texto.textContent = 'Procesando...';
-                texto.classList.add('text-yellow-700');
-                break;
-            case 'error':
-                icono.textContent = '❌';
-                indicador.classList.add('bg-red-100');
-                texto.textContent = datos?.mensaje || 'Error en Registro';
-                texto.classList.add('text-red-700');
-                break;
-        }
-    }
-
-    // Función para reiniciar todos los estados
-    function reiniciarEstados() {
-        actualizarEstadoEscanner('inicializando');
-        actualizarEstadoUsuario('pendiente');
-        actualizarEstadoEspacio('pendiente');
-        actualizarEstadoRegistro('pendiente');
-    }
-
-    // Inicializar estados al cargar la página
-        document.addEventListener('DOMContentLoaded', function() {
-        reiniciarEstados();
-    });
-
-    async function initQRScannerSalidaProfesor() {
-        if (html5QrcodeScanner === null) {
-            try {
-                actualizarEstadoEscanner('inicializando');
-                document.getElementById('salida-profesor-cargando-msg').textContent =
-                    'Cargando escáner, por favor espere...';
-                document.getElementById('salida-profesor-cargando-msg').classList.remove('hidden');
-                document.getElementById('salida-profesor-error-msg').classList.add('hidden');
-                
-                // Inicializar el escáner
-                html5QrcodeScanner = new Html5QrcodeScanner(
-                    "salida-profesor-placeholder",
-                    { fps: 10, qrbox: { width: 250, height: 250 } }
-                );
-
-                await html5QrcodeScanner.render(onScanSuccess, onScanFailure);
-                actualizarEstadoEscanner('activo');
-            } catch (error) {
-                actualizarEstadoEscanner('error');
-                mostrarErrorEscaneoSalida('Error al inicializar el escáner: ' + error.message);
-            }
-        }
-    }
-
-    function mostrarErrorEscaneoSalida(mensaje) {
-        actualizarEstadoEscanner('error');
-        const errorMsg = document.getElementById('salida-profesor-error-msg');
-        const cargandoMsg = document.getElementById('salida-profesor-cargando-msg');
-        const btnReintentar = document.getElementById('btn-reintentar-salida-profesor');
-        const qrPlaceholder = document.getElementById('salida-profesor-placeholder');
-        
-        if (errorMsg) {
-            errorMsg.textContent = mensaje;
-            errorMsg.classList.remove('hidden');
-        }
-        if (cargandoMsg) cargandoMsg.textContent = '';
-        if (btnReintentar) btnReintentar.classList.remove('hidden');
-        if (qrPlaceholder) qrPlaceholder.style.display = 'flex';
-    }
-
-    function reiniciarEscaneoSalidaProfesor() {
-        actualizarEstadoEscanner('inicializando');
-        document.getElementById('salida-profesor-error-msg').classList.add('hidden');
-        document.getElementById('btn-reintentar-salida-profesor').classList.add('hidden');
-        document.getElementById('salida-profesor-cargando-msg').textContent = 'Cargando escáner, por favor espere...';
-        document.getElementById('salida-profesor-cargando-msg').classList.remove('hidden');
-        initQRScannerSalidaProfesor();
-    }
-
-    async function handleScan(event) {
-        if (event.key === 'Enter') {
-            if (esperandoUsuario) {
-                const match = bufferQR.match(/RUN¿(\d+)/);
-                if (match) {
-                    usuarioEscaneado = match[1];
-                    const usuarioInfo = await verificarUsuario(usuarioEscaneado);
-                    
-                    if (usuarioInfo && usuarioInfo.verificado) {
-                        actualizarEstadoUsuario('escaneado', {
-                            nombre: usuarioInfo.usuario.nombre
-                        });
-                        document.getElementById('qr-status').innerHTML = 'Usuario verificado. Escanee el espacio.';
-                        document.getElementById('run-escaneado').textContent = usuarioInfo.usuario.run;
-                        document.getElementById('nombre-usuario').textContent = usuarioInfo.usuario.nombre;
-                        esperandoUsuario = false;
-                    } else {
-                        actualizarEstadoUsuario('error', {
-                            mensaje: usuarioInfo?.mensaje || 'Error de verificación'
-                        });
-                        document.getElementById('qr-status').innerHTML = usuarioInfo?.mensaje || 'Error de verificación';
-                    }
-                } else {
-                    actualizarEstadoUsuario('error', {
-                        mensaje: 'RUN inválido'
-                    });
-                    document.getElementById('qr-status').innerHTML = 'RUN inválido';
-                }
-            } else {
-                const espacioProcesado = bufferQR.replace(/'/g, '-');
-                const espacioInfo = await verificarEspacio(espacioProcesado);
-                
-                if (espacioInfo?.verificado) {
-                    if (espacioInfo.disponible) {
-                        actualizarEstadoEspacio('escaneado', {
-                            nombre: espacioInfo.espacio.nombre
-                        });
-                        const confirmar = confirm(`¿Desea utilizar el espacio ${espacioInfo.espacio.nombre}?`);
-                        if (confirmar) {
-                            const reserva = await crearReserva(usuarioEscaneado, espacioProcesado);
-                            if (reserva?.success) {
-                                actualizarEstadoRegistro('completado');
-                                document.getElementById('qr-status').innerHTML = 'Reserva exitosa';
-                                document.getElementById('nombre-espacio').textContent = espacioInfo.espacio.nombre;
-                            } else {
-                                actualizarEstadoRegistro('error', {
-                                    mensaje: reserva?.mensaje || 'Error en reserva'
-                                });
-                                document.getElementById('qr-status').innerHTML = reserva?.mensaje || 'Error en reserva';
-                            }
-                        } else {
-                            actualizarEstadoRegistro('error', {
-                                mensaje: 'Reserva cancelada'
-                            });
-                            document.getElementById('qr-status').innerHTML = 'Reserva cancelada';
-                        }
-                    } else {
-                        actualizarEstadoEspacio('error', {
-                            mensaje: 'Espacio ocupado'
-                        });
-                        document.getElementById('qr-status').innerHTML = 'Espacio ocupado';
-                    }
-                } else {
-                    actualizarEstadoEspacio('error', {
-                        mensaje: espacioInfo?.mensaje || 'Error al verificar espacio'
-                    });
-                    document.getElementById('qr-status').innerHTML = espacioInfo?.mensaje || 'Error al verificar espacio';
-                }
-                esperandoUsuario = true;
-            }
-            bufferQR = '';
-                event.target.value = '';
-        } else if (event.key.length === 1) {
-            bufferQR += event.key;
-        }
-    }
-
     function cambiarPiso(piso) {
         // Mostrar indicador de carga
         const selector = document.getElementById('piso-selector');
@@ -701,7 +413,7 @@
             widget.classList.add('opacity-50');
             const loadingDiv = document.createElement('div');
             loadingDiv.className = 'absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 z-10';
-            loadingDiv.innerHTML = '<div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>';
+            loadingDiv.innerHTML = '<div class="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin"></div>';
             widget.style.position = 'relative';
             widget.appendChild(loadingDiv);
         });
@@ -743,6 +455,8 @@
             actualizarKPI('usuarios-sin-escaneo', data.usuariosSinEscaneo + ' usuarios sin registrar asistencia hoy');
             actualizarKPI('horas-utilizadas', data.horasUtilizadas.utilizadas + ' / ' + data.horasUtilizadas.disponibles);
             actualizarKPI('salas-ocupadas', data.salasOcupadas.ocupadas + ' / ' + data.salasOcupadas.libres);
+            actualizarKPI('kpi-promedio-duracion', data.promedioDuracion);
+            actualizarKPI('kpi-no-show', data.porcentajeNoShow + '%');
             
             // Actualizar ocupación diaria
             actualizarOcupacionDiaria(data.ocupacionDiaria);
@@ -756,7 +470,8 @@
             
             // Actualizar tablas
             actualizarTablaReservasCanceladas(data.reservasCanceladas);
-            actualizarTablaHorariosPorDia(data.horariosPorDia);
+            actualizarTablaReservasActivas(data.reservasSinDevolucion);
+            actualizarListaCanceladas(data.canceladasPorTipo);
             
             ocultarCargando();
         } catch (error) {
@@ -852,32 +567,63 @@
                     `;
                 });
             } else {
-                html = '<tr><td colspan="4" class="border text-center text-gray-500">No hay reservas canceladas</td></tr>';
+                html = '<tr><td colspan="4" class="text-center text-gray-500 border">No hay reservas canceladas</td></tr>';
             }
             tbody.innerHTML = html;
         }
     }
 
-    function actualizarTablaHorariosPorDia(horariosPorDia) {
-        const tbody = document.querySelector('#tabla-horarios-por-dia tbody');
+    function actualizarTablaReservasActivas(reservas) {
+        const tbody = document.querySelector('#tabla-reservas-activas tbody');
         if (tbody) {
             let html = '';
-            if (horariosPorDia && horariosPorDia.length > 0) {
-                horariosPorDia.forEach(horario => {
+            if (reservas && reservas.length > 0) {
+                reservas.forEach(reserva => {
+                    const fecha = new Date(reserva.fecha_reserva);
+                    const formattedDate = new Date(fecha.valueOf() + fecha.getTimezoneOffset() * 60000).toLocaleDateString('es-CL');
                     html += `
-                        <tr class="bg-white">
-                            <td class="border border-gray-300">${horario.modulo}</td>
-                            <td class="border border-gray-300">${horario.dia}</td>
-                            <td class="border border-gray-300">${horario.asignatura}</td>
-                            <td class="border border-gray-300">${horario.espacio}</td>
-                            <td class="border border-gray-300">${horario.usuario}</td>
+                        <tr class="bg-white dark:bg-dark-eval-1">
+                            <td class="border">${reserva.user.name}</td>
+                            <td class="border">${reserva.espacio.nombre_espacio} (${reserva.espacio.id_espacio})</td>
+                            <td class="border">${formattedDate}</td>
+                            <td class="border">${reserva.hora}</td>
                         </tr>
                     `;
                 });
             } else {
-                html = '<tr><td colspan="5" class="border text-center text-gray-500">No hay horarios para mostrar</td></tr>';
+                html = `
+                    <tr class="bg-white dark:bg-dark-eval-1">
+                        <td colspan="4" class="p-4 text-center text-gray-500">
+                            No hay reservas activas sin devolución en este momento.
+                        </td>
+                    </tr>
+                `;
             }
             tbody.innerHTML = html;
+        }
+    }
+
+    function actualizarListaCanceladas(canceladasPorTipo) {
+        const contenedor = document.getElementById('lista-canceladas-tipo');
+        if (contenedor) {
+            let html = '';
+            const tipos = Object.keys(canceladasPorTipo);
+
+            if (tipos.length > 0) {
+                tipos.forEach(tipo => {
+                    const cantidad = canceladasPorTipo[tipo];
+                    const tipoFormateado = tipo.replace(/_/g, ' ');
+                    html += `
+                        <div class="flex justify-between">
+                            <span class="capitalize">${tipoFormateado}</span>
+                            <span class="font-bold">${cantidad}</span>
+                        </div>
+                    `;
+                });
+            } else {
+                html = '<p>No hay datos</p>';
+            }
+            contenedor.innerHTML = html;
         }
     }
 </script>

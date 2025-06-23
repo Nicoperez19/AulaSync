@@ -42,6 +42,9 @@ Route::get('/', function () {
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 Route::middleware(['auth', 'role:Administrador'])->group(function () {
+    // Notifications
+    Route::get('/api/notifications/key-returns', [DashboardController::class, 'getKeyReturnNotifications'])->name('notifications.key-returns');
+
     Route::get('/user/user_index', [UserController::class, 'index'])->name('users.index');
     Route::post('/user/user_store', [UserController::class, 'store'])->name('users.add');
     Route::delete('/user/user_delete/{run}', [UserController::class, 'destroy'])->name('users.delete');
