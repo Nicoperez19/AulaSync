@@ -14,7 +14,7 @@
                 <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Buscar por RUN o Nombre"
                     class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white">
             </div>
-            <x-button target="_blank" variant="primary" class="max-w-xs gap-2"
+            <x-button target="_blank" variant="add" class="max-w-xs gap-2"
                 x-on:click="$dispatch('open-modal', 'add-user')">
                 <x-icons.add class="w-6 h-6" aria-hidden="true" />
             </x-button>

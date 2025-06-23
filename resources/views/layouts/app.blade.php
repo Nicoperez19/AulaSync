@@ -73,6 +73,23 @@
 
     <!-- Alpine.js -->
     <script>
+        // Función para mostrar SweetAlert cuando no hay mapas
+        function mostrarSweetAlertNoMapas(event) {
+            event.preventDefault();
+            Swal.fire({
+                title: 'No hay mapas disponibles',
+                html: `
+                    <div class="text-center">
+                        <p class="mb-4">No se han encontrado mapas digitales en el sistema.</p>
+                        <p class="text-sm text-gray-600">Hay que contactarse con el administrador para generar los mapas.</p>
+                    </div>
+                `,
+                icon: 'warning',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#3B82F6'
+            });
+        }
+
         document.addEventListener('alpine:init', () => {
             Alpine.data('mainState', () => ({
                 isDarkMode: localStorage.getItem('dark') === 'true' ||

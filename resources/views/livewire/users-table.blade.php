@@ -52,8 +52,8 @@
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ $user->email }}</td>
                         <td class="p-3 dark:border-white whitespace-nowrap">
                             <div class="flex justify-center space-x-2">
-                                <x-button variant="primary" href="{{ route('users.edit', $user->run) }}"
-                                    class="inline-flex items-center px-4 py-2 text-white bg-blue-500 rounded dark:bg-blue-700">
+                                <x-button variant="view" href="{{ route('users.edit', $user->run) }}"
+                                    class="inline-flex items-center px-4 py-2">
                                     <x-icons.edit class="w-5 h-5 mr-1" aria-hidden="true" />
                                 </x-button>
 

@@ -29,7 +29,8 @@
 </style>
 
 <div class="w-full p-4">
-    <div class="relative overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-md dark:bg-gray-800 dark:border-gray-700">
+    <div
+        class="relative overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-md dark:bg-gray-800 dark:border-gray-700">
         <table id="role-table" class="w-full text-center border-collapse table-auto min-w-max">
             <thead class="text-white border-b border-white bg-light-cloud-blue dark:bg-black dark:text-white">
                 <tr>
@@ -48,21 +49,26 @@
                         <td class="p-3 border dark:border-white whitespace-nowrap">{{ $role->id }}</td>
                         <td class="p-3 border dark:border-white whitespace-nowrap">{{ $role->name }}</td>
                         <td class="p-3 border dark:border-white whitespace-nowrap">
-                            <div class="flex justify-end space-x-2">
-                                <x-button href="{{ route('roles.edit', $role->id) }}" class="px-4 py-2 text-white bg-blue-500 rounded dark:bg-blue-700">
-                                    Editar
+                            <div class="flex justify-center space-x-2">
+                                <x-button href="{{ route('roles.edit', $role->id) }}" variant="view" class="px-4 py-2 ">
+                                    <x-icons.edit class="w-5 h-5 mr-1" aria-hidden="true" />
+
                                 </x-button>
-                                <form action="{{ route('roles.delete', $role->id) }}" method="POST" id="delete-form-{{ $role->id }}">
+                                <form action="{{ route('roles.delete', $role->id) }}" method="POST"
+                                    id="delete-form-{{ $role->id }}">
                                     @csrf
                                     @method('DELETE')
-                                    <x-button type="button" onclick="confirmDelete({{ $role->id }})" class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700">
-                                        Eliminar
+                                    <x-button type="button" onclick="confirmDelete({{ $role->id }})" variant="danger"
+                                        class="px-4 py-2 ">
+                                        <x-icons.delete class="w-5 h-5" aria-hidden="true" />
                                     </x-button>
                                 </form>
                             </div>
                         </td>
                     </tr>
                 @endforeach
+
+
             </tbody>
         </table>
     </div>

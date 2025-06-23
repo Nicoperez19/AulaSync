@@ -43,29 +43,8 @@
                     </svg>
                 </div>
             </div>
-            
-            <div class="flex items-center space-x-2">
-                <label for="perPage" class="text-sm font-medium text-gray-700 dark:text-gray-300">Mostrar:</label>
-                <select wire:model.live="perPage" id="perPage" class="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                    @foreach($paginationOptions as $option)
-                        <option value="{{ $option }}">{{ $option }}</option>
-                    @endforeach
-                </select>
-                <span class="text-sm text-gray-500 dark:text-gray-400">por página</span>
-            </div>
+         
         </div>
-    </div>
-
-    <!-- Indicador de resultados -->
-    <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-        @if($search)
-            Mostrando {{ $asignaturas->count() }} de {{ $asignaturas->total() }} asignaturas
-            @if($asignaturas->count() > 0)
-                que coinciden con "{{ $search }}"
-            @endif
-        @else
-            Mostrando {{ $asignaturas->count() }} de {{ $asignaturas->total() }} asignaturas
-        @endif
     </div>
 
     <div class="mt-4 mb-4">
@@ -92,8 +71,8 @@
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ optional($asignatura->carrera)->nombre ?? 'No asignada' }}</td>
                         <td class="p-3 dark:border-white whitespace-nowrap">
                             <div class="flex justify-center space-x-2">
-                                <x-button variant="primary" href="{{ route('asignaturas.edit', $asignatura->id_asignatura) }}"
-                                    class="inline-flex items-center px-4 py-2 text-white bg-blue-500 rounded dark:bg-blue-700">
+                                <x-button variant="view" href="{{ route('asignaturas.edit', $asignatura->id_asignatura) }}"
+                                    class="inline-flex items-center px-4 py-2">
                                     <x-icons.edit class="w-5 h-5 mr-1" aria-hidden="true" />
                                 </x-button>
 
@@ -103,7 +82,7 @@
                                     @method('DELETE')
                                     <x-button variant="danger" type="button"
                                         onclick="deleteSubject('{{ $asignatura->id_asignatura }}')"
-                                        class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700">
+                                        class="px-4 py-2 ">
                                         <x-icons.delete class="w-5 h-5" aria-hidden="true" />
                                     </x-button>
                                 </form>

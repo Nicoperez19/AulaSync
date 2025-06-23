@@ -7,8 +7,10 @@
     </x-sidebar.link>
 
     <!-- Monitoreo de Espacios -->
-    <x-sidebar.link title="Monitoreo de Espacios" href="{{ $primerMapa ? route('plano.show', $primerMapa->id_mapa) : route('dashboard') }}"
-        :isActive="request()->routeIs('plano.show')">
+    <x-sidebar.link title="Monitoreo de Espacios" 
+        href="{{ $primerMapa ? route('plano.show', $primerMapa->id_mapa) : '#' }}"
+        :isActive="request()->routeIs('plano.show')"
+        onclick="{{ !$primerMapa ? 'mostrarSweetAlertNoMapas(event)' : '' }}">
         <x-slot name="icon">
             <x-icons.location class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         </x-slot>

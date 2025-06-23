@@ -17,12 +17,30 @@ class PlanoDigitalController extends Controller
     public function index()
     {
         $sedes = Sede::with(['universidad', 'facultades.pisos.mapas'])->get();
-        return view('layouts.plano_digital.index', compact('sedes'));
+        
+        // Verificar si hay mapas disponibles
+        $mapasDisponibles = Mapa::count();
+        $tieneMapas = $mapasDisponibles > 0;
+        
+        return view('layouts.plano_digital.index', compact('sedes', 'tieneMapas', 'mapasDisponibles'));
     }
 
     public function show($id)
     {
         try {
+            // Verificar si hay mapas disponibles
+            $mapasDisponibles = Mapa::count();
+            if ($mapasDisponibles === 0) {
+                if (request()->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No hay mapas disponibles en el sistema'
+                    ], 404);
+                }
+                
+                return redirect()->route('plano.index')->with('error', 'No hay mapas disponibles en el sistema');
+            }
+
             $mapa = Mapa::with(['piso.facultad.sede'])->findOrFail($id);
             $estadoActual = $this->obtenerEstadoActual(Carbon::now());
             $bloques = $this->prepararBloques($mapa, $estadoActual);

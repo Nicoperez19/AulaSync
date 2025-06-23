@@ -11,8 +11,8 @@
 @php
 
     $baseClasses = 'inline-flex items-center transition-colors font-medium select-none disabled:opacity-50 
-        disabled:cursor-not-allowed focus:outline-none focus:ring focus:ring-offset-2 focus:ring-offset-white 
-        dark:focus:ring-offset-dark-eval-2';
+                disabled:cursor-not-allowed focus:outline-none focus:ring focus:ring-offset-2 focus:ring-offset-white 
+                dark:focus:ring-offset-dark-eval-2';
 
     switch ($variant) {
         case 'primary':
@@ -39,6 +39,14 @@
         case 'black':
             $variantClasses =
                 'bg-black text-gray-300 hover:text-white hover:bg-gray-800 focus:ring-black dark:hover:bg-dark-eval-3';
+            break;
+        case 'add':
+            $variantClasses =
+                'bg-green-600 text-white hover:text-white hover:bg-green-add focus:ring-black dark:hover:bg-dark-eval-3';
+            break;
+        case 'view':
+            $variantClasses =
+                'bg-blue-600 text-white hover:text-white hover:bg-blue-800 focus:ring-black dark:hover:bg-dark-eval-3';
             break;
         default:
             $variantClasses = 'bg-purple-500 text-white hover:bg-purple-600 focus:ring-purple-500';
@@ -72,7 +80,7 @@
         @if ($iconOnly)
             <span class="sr-only">{{ $srText ?? '' }}</span>
         @endif
-        </a>
+                </a>
 @else
     <button {{ $attributes->merge(['type' => 'submit', 'class' => $classes]) }}>
         {{ $slot }}

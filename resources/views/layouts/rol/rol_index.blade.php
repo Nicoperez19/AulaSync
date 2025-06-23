@@ -10,8 +10,8 @@
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
         <div class="flex justify-end mb-4">
-            <x-button target="_blank" variant="primary" class="max-w-xs gap-2"
-                x-on:click.prevent="$dispatch('open-modal', 'add-role')" variant="primary" class="max-w-xs gap-2">
+            <x-button target="_blank" variant="add" class="max-w-xs gap-2"
+                x-on:click.prevent="$dispatch('open-modal', 'add-role')" variant="add" class="max-w-xs gap-2">
                 <x-icons.add class="w-6 h-6" aria-hidden="true" />
             </x-button>
         </div>
@@ -52,7 +52,7 @@
                     </div>
 
                     <div class="flex justify-end">
-                        <x-button class="justify-center w-full gap-2">
+                        <x-button class="justify-center w-full gap-2" variant="add">
                             <x-heroicon-o-user-add class="w-6 h-6" aria-hidden="true" />
                             {{ __('Agregar Rol') }}
                         </x-button>

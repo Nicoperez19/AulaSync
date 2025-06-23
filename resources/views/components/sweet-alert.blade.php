@@ -23,8 +23,8 @@
             });
         @endif
 
-        // Manejar mensajes de validación
-        @if ($errors->any())
+        // Manejar mensajes de validación solo si no estamos en la página de carga de datos
+        @if ($errors->any() && !request()->routeIs('data.index'))
             Swal.fire({
                 title: '¡Error de Validación!',
                 html: `

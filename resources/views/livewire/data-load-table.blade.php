@@ -86,9 +86,9 @@
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ $data->user->run ?? 'N/A' }}</td>
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ $data->user->name ?? 'Desconocido' }}</td>
                         <td class="p-3 dark:border-white whitespace-nowrap">
-                            <div class="flex justify-end space-x-2">
-                                <x-button variant="primary" href="{{ route('data.show', $data->id) }}"
-                                    class="inline-flex items-center px-4 py-2 text-white bg-blue-500 rounded dark:bg-blue-700">
+                            <div class="flex justify-center space-x-2">
+                                <x-button variant="view" href="{{ route('data.show', $data->id) }}"
+                                    class="inline-flex items-center px-4 py-2">
                                     <x-icons.view class="w-5 h-5 mr-1" aria-hidden="true" />
                                 </x-button>
 

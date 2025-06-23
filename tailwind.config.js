@@ -40,6 +40,8 @@ export default {
         },
         'cloud-light': '#EDF0FA',
         'light-cloud-blue': '#D2091E',
+        'blue-cloud': '#0504AA',
+        'green-add': '#008000',
         'dark-eval-0': '#151823',
         'dark-eval-1': '#222738',
         'dark-eval-2': '#2A2F42',

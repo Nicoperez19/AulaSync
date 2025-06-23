@@ -161,7 +161,7 @@
 
                 <!-- Botón de Guardar -->
                 <div class="flex justify-end mt-6">
-                    <x-button>
+                    <x-button variant="add">
                         <x-icons.ajust class="w-6 h-6" aria-hidden="true" />
                         <span>{{ __('Guardar Cambios') }}</span>
                     </x-button>
