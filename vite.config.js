@@ -12,6 +12,7 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+<<<<<<< HEAD
     build: {
         outDir: 'public/build',
         manifest: true,
@@ -28,3 +29,6 @@ export default defineConfig({
         ]
     }
 });
+=======
+}); 
+>>>>>>> Nperez

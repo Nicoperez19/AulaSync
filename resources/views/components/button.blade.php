@@ -8,20 +8,32 @@
     'pill' => false,
     'squared' => false,
 ])
-
 @php
 
     $baseClasses = 'inline-flex items-center transition-colors font-medium select-none disabled:opacity-50 
+<<<<<<< HEAD
     disabled:cursor-not-allowed focus:outline-none focus:ring focus:ring-offset-2 focus:ring-offset-white 
     dark:focus:ring-offset-dark-eval-2';
+=======
+        disabled:cursor-not-allowed focus:outline-none focus:ring focus:ring-offset-2 focus:ring-offset-white 
+        dark:focus:ring-offset-dark-eval-2';
+>>>>>>> Nperez
 
     switch ($variant) {
         case 'primary':
             $variantClasses = 'bg-light-cloud-blue text-white hover:bg-steel-blue-600 focus:ring-light-cloud';
             break;
+<<<<<<< HEAD
         case 'secondary':
             $variantClasses =
                 'bg-light-cloud-blue text-white hover:bg-white focus:ring-purple-500 dark:text-white dark:bg-dark-eval-1 dark:hover:bg-dark-eval-2 dark:hover:text-gray-200';
+=======
+        case 'login':
+            $variantClasses = 'bg-gray-100 text-black hover:bg-steel-blue-600 focus:ring-light-cloud dark:bg-dark-eval-0 dark:hover:bg-dark-eval-0 dark:hover:text-gray-100 dark:text-white';
+            break;
+        case 'secondary':
+            $variantClasses = 'bg-light-cloud-blue text-white hover:bg-steel-blue-600 dark:text-white dark:bg-dark-eval-1 dark:hover:bg-dark-eval-2 dark:hover:text-gray-200';
+>>>>>>> Nperez
             break;
         case 'success':
             $variantClasses = 'bg-green-500 text-white hover:bg-green-600 focus:ring-green-500';
@@ -65,14 +77,17 @@
     }
 
 @endphp
-
 @if ($href)
     <a href="{{ $href }}" {{ $attributes->merge(['class' => $classes]) }}>
+<<<<<<< HEAD
         {{ $slot }}
+=======
+    {{ $slot }}
+>>>>>>> Nperez
         @if ($iconOnly)
             <span class="sr-only">{{ $srText ?? '' }}</span>
         @endif
-    </a>
+        </a>
 @else
     <button {{ $attributes->merge(['type' => 'submit', 'class' => $classes]) }}>
         {{ $slot }}

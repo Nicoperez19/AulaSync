@@ -31,6 +31,7 @@
                     <x-form.input id="nombre" name="nombre" type="text" class="w-full" required maxlength="100" />
                 </div>
 
+<<<<<<< HEAD
                 <!-- Horas Directas -->
                 <div class="space-y-2">
                     <x-form.label for="horas_directas" value="Horas Directas" />
@@ -49,6 +50,9 @@
                     <x-form.input id="area_conocimiento" name="area_conocimiento" type="text" class="w-full" required maxlength="100" />
                 </div>
 
+=======
+               
+>>>>>>> Nperez
                 <!-- Periodo -->
                 <div class="space-y-2">
                     <x-form.label for="periodo" value="Periodo" />
@@ -57,10 +61,17 @@
 
                 <!-- Usuario -->
                 <div class="space-y-2">
+<<<<<<< HEAD
                     <x-form.label for="id_usuario" value="Docente Responsable" />
                     <select name="id_usuario" id="id_usuario" class="w-full border-gray-300 rounded-md">
                         @foreach ($usuarios as $usuario)
                             <option value="{{ $usuario->id }}">{{ $usuario->name }}</option>
+=======
+                    <x-form.label for="run" value="Docente Responsable" />
+                    <select name="run" id="run" class="w-full border-gray-300 rounded-md">
+                        @foreach ($usuarios as $usuario)
+                            <option value="{{ $usuario->run }}">{{ $usuario->name }}</option>
+>>>>>>> Nperez
                         @endforeach
                     </select>
                 </div>

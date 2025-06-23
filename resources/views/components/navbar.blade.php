@@ -3,7 +3,11 @@
     <div class="flex items-center gap-3">
 
         <!-- Botón Toggle -->
+<<<<<<< HEAD
         <x-button type="button" icon-only sr-text="Toggle sidebar" class="bg-cloud-blue-500"
+=======
+        <x-button type="button" icon-only sr-text="Toggle sidebar" class="bg-cloud-blue-500 dark:bg-dark-eval-1"
+>>>>>>> Nperez
             x-on:click="isSidebarOpen = !isSidebarOpen">
             <x-icons.menu-fold-right x-show="!isSidebarOpen" aria-hidden="true" class="w-6 h-6 lg:block" />
             <x-icons.menu-fold-left x-show="isSidebarOpen" aria-hidden="true" class="w-6 h-6 lg:block" />
@@ -11,7 +15,11 @@
 
         <!-- Logo -->
         <a href="{{ route('dashboard') }}" class="flex items-center">
+<<<<<<< HEAD
             <x-application-logo />
+=======
+            <x-application-logo-navbar />
+>>>>>>> Nperez
         </a>
     </div>
 

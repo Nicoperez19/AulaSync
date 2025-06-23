@@ -15,6 +15,7 @@
                     <x-form.label for="run" :value="__('RUN')" />
 
                     <x-form.input-with-icon-wrapper>
+<<<<<<< HEAD
                         <x-slot name="icon">
                             <x-heroicon-o-identification aria-hidden="true" class="w-5 h-5" />
                         </x-slot>
@@ -22,6 +23,11 @@
                         <x-form.input withicon id="run" class="block w-full" type="text" name="run"
                             :value="old('run')" placeholder="{{ __('Ej: 12345678') }}" required autofocus
                             x-data
+=======
+                     
+                        <x-form.input withicon id="run" class="block w-full" type="text" name="run"
+                            :value="old('run')" placeholder="{{ __('Ej: 12345678') }}" required autofocus x-data
+>>>>>>> Nperez
                             x-on:input="
                                 let value = $event.target.value.replace(/[^0-9]/g, '');
                                 if (value.length > 8) {

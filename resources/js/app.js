@@ -17,6 +17,7 @@ Alpine.data('mainState', () => ({
                 (!localStorage.getItem('dark') && window.matchMedia('(prefers-color-scheme: dark)').matches),
     isSidebarOpen: false,
     isSidebarHovered: false,
+<<<<<<< HEAD
     scrollingDown: false,
     scrollingUp: false,
     lastScrollTop: 0,
@@ -24,6 +25,11 @@ Alpine.data('mainState', () => ({
     init() {
         this.handleWindowResize()
         window.addEventListener('scroll', this.handleScroll.bind(this))
+=======
+
+    init() {
+        this.handleWindowResize()
+>>>>>>> Nperez
         window.addEventListener('resize', this.handleWindowResize.bind(this))
     },
 
@@ -45,6 +51,7 @@ Alpine.data('mainState', () => ({
         if (window.innerWidth < 1024) {
             this.isSidebarOpen = false
         }
+<<<<<<< HEAD
     },
 
     handleScroll() {
@@ -60,6 +67,12 @@ Alpine.data('mainState', () => ({
 }))
 
 // Inicializar Alpine solo si no está ya inicializado
+=======
+    }
+}))
+
+// Inicializar Alpine
+>>>>>>> Nperez
 if (!window.Alpine.isStarted) {
     Alpine.start()
 }

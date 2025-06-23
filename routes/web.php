@@ -3,6 +3,10 @@ use App\Http\Controllers\AreaAcademicaController;
 use App\Http\Controllers\EspacioController;
 use App\Http\Controllers\FacultadController;
 use App\Http\Controllers\CarreraController;
+<<<<<<< HEAD
+=======
+use App\Http\Controllers\HorariosController;
+>>>>>>> Nperez
 use App\Http\Controllers\MapasController;
 use App\Http\Controllers\ReservasController;
 use App\Http\Controllers\PermisionController;
@@ -12,10 +16,19 @@ use App\Http\Controllers\UniversidadController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AsignaturaController;
 use App\Http\Controllers\DataLoadController;
+<<<<<<< HEAD
+=======
+use App\Http\Controllers\PlanoDigitalController;
+use App\Http\Controllers\ProfesorController;
+use App\Http\Controllers\ReporteriaController;
+>>>>>>> Nperez
 
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardController;
+
+use Spatie\Permission\Middleware\RoleMiddleware;
 
 use Spatie\Permission\Middleware\RoleMiddleware;
 
@@ -34,9 +47,7 @@ Route::get('/', function () {
     return view('auth/login');
 });
 
-Route::get('dashboard', function () {
-    return view('layouts/dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');//el ultimo es el nombre de la ruta simplemente.
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::get('/user/user_index', [UserController::class, 'index'])->name('users.index');
@@ -44,6 +55,21 @@ Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::delete('/user/user_delete/{run}', [UserController::class, 'destroy'])->name('users.delete');
     Route::get('/user/user_edit/{run}', [UserController::class, 'edit'])->name('users.edit');
     Route::put('user/user_update/{run}', [UserController::class, 'update'])->name('users.update');
+    Route::get('/horarios/horarios_index', [HorariosController::class, 'index'])->name('horarios.index');
+    Route::get('/horarios/{run}', [HorariosController::class, 'getHorarioProfesor'])->name('horarios.get');
+    Route::get('/spacetime/spacetime_index', [HorariosController::class, 'mostrarHorarios'])->name('horarios_espacios.index');
+    Route::get('/horarios-espacios', [HorariosController::class, 'getHorariosEspacios'])->name('horarios.espacios.get');
+    Route::get('/espacios', action: [HorariosController::class, 'showEspacios'])->name('espacios.show');
+
+<<<<<<< HEAD
+Route::middleware(['auth', 'role:Administrador'])->group(function () {
+    Route::get('/user/user_index', [UserController::class, 'index'])->name('users.index');
+    Route::post('/user/user_store', [UserController::class, 'store'])->name('users.add');
+    Route::delete('/user/user_delete/{run}', [UserController::class, 'destroy'])->name('users.delete');
+    Route::get('/user/user_edit/{run}', [UserController::class, 'edit'])->name('users.edit');
+    Route::put('user/user_update/{run}', [UserController::class, 'update'])->name('users.update');
+=======
+>>>>>>> Nperez
 });
 
 Route::group(['middleware' => ['permission:mantenedor de roles']], function () {
@@ -101,14 +127,33 @@ Route::group(['middleware' => ['permission:mantenedor de pisos']], function () {
     Route::delete('/facultad/{facultadId}/eliminar-piso', [PisoController::class, 'eliminarPiso'])->name('floors.eliminarPiso');
 });
 
+<<<<<<< HEAD
+=======
+Route::group(['middleware' => ['auth', 'permission:mantenedor de mapas']], function () {
+    Route::get('/mapas', [MapasController::class, 'index'])->name('mapas.index');
+    Route::get('/mapas/add', [MapasController::class, 'add'])->name('mapas.add');
+    Route::post('/mapas/store', [MapasController::class, 'store'])->name('mapas.store');
+    Route::get('/sedes/{universidadId}', [MapasController::class, 'getSedes']);
+    Route::get('/facultades-por-sede/{sedeId}', [MapasController::class, 'getFacultadesPorSede']);
+    Route::get('/pisos/{facultadId}', [MapasController::class, 'getPisos']);
+    Route::get('/espacios-por-piso/{pisoId}', [MapasController::class, 'getEspaciosPorPiso']);
+    Route::get('/mapa/{mapa}/bloques', [MapasController::class, 'getBloques'])->name('mapa.bloques');
+});
+
+
+
+>>>>>>> Nperez
 Route::group(['middleware' => ['permission:mantenedor de espacios']], function () {
     Route::get('spaces', [EspacioController::class, 'index'])->name('spaces_index');
     Route::get('spaces/{id_espacio}/edit', [EspacioController::class, 'edit'])->name('spaces.edit');
     Route::post('/spaces', [EspacioController::class, 'store'])->name(name: 'spaces.store');
     Route::put('spaces/{id_espacio}', [EspacioController::class, 'update'])->name('spaces.update');
     Route::delete('/spaces/{id}', [EspacioController::class, 'destroy'])->name('spaces.delete');
+<<<<<<< HEAD
     Route::get('/facultades/{id}', [EspacioController::class, 'getFacultades']);
     Route::get('/pisos/{id}', [EspacioController::class, 'getPisos']);
+=======
+>>>>>>> Nperez
 });
 
 
@@ -131,6 +176,7 @@ Route::group(['middleware' => ['permission:mantenedor de asignaturas']], functio
 
 });
 
+<<<<<<< HEAD
 Route::group(['middleware' => ['permission:mantenedor de mapas']], function () {
     Route::get('/mapas', [MapasController::class, 'index'])->name('mapas.index');
     Route::get('/mapas/add', [MapasController::class, 'add'])->name('mapas.add');
@@ -141,11 +187,17 @@ Route::group(['middleware' => ['permission:mantenedor de mapas']], function () {
     Route::get('/mapas/contar-espacios/{pisoId}', [MapasController::class, 'contarEspacios']);
 });
 
+=======
+>>>>>>> Nperez
 Route::group(['middleware' => ['permission:mantenedor de carga de datos']], function () {
     Route::get('/data', [DataLoadController::class, 'index'])->name('data.index');
     Route::get('/data/{dataLoad}', [DataLoadController::class, 'show'])->name('data.show');
     Route::post('/data_loads/upload', [DataLoadController::class, 'upload'])->name('data.upload');
     Route::delete('/data/{dataLoad}', [DataLoadController::class, 'destroy'])->name('data.destroy');
+<<<<<<< HEAD
+=======
+    Route::get('/data/progress/{dataLoad}', [DataLoadController::class, 'getProgress'])->name('data.progress');
+>>>>>>> Nperez
 });
 
 Route::middleware('auth')->group(function () {
@@ -153,7 +205,10 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 });
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> Nperez
 Route::get('/buttons/text', function () {
     return view('buttons-showcase.text');
 })->middleware(['auth'])->name('buttons.text');
@@ -165,5 +220,32 @@ Route::get('/buttons/icon', function () {
 Route::get('/buttons/text-icon', function () {
     return view('buttons-showcase.text-icon');
 })->middleware(['auth'])->name('buttons.text-icon');
+
+Route::group(['middleware' => ['auth']], function () {
+    Route::get('/plano-digital', [PlanoDigitalController::class, 'index'])->name('plano.index');
+    Route::get('/plano-digital/{id}', [PlanoDigitalController::class, 'show'])->name('plano.show');
+    Route::get('/plano/{id}/bloques', [PlanoDigitalController::class, 'bloques'])->name('plano.bloques');
+    Route::get('/plano/{id}/modulo-actual', [PlanoDigitalController::class, 'getModuloActual'])->name('plano.modulo-actual');
+    Route::get('/plano/{id}/data', [PlanoDigitalController::class, 'getPlanoData'])->name('plano.data');
+    Route::get('/api/profesor/{run}', [ProfesorController::class, 'getProfesor'])->name('profesor.get');
+});
+
+Route::prefix('reporteria')->group(function () {
+    Route::get('utilizacion', [ReporteriaController::class, 'utilizacion'])->name('reporteria.utilizacion');
+    Route::get('tipo-espacio', [ReporteriaController::class, 'tipoEspacio'])->name('reporteria.tipo-espacio');
+    Route::get('accesos', [ReporteriaController::class, 'accesos'])->name('reporteria.accesos');
+    Route::get('accesos/limpiar', [ReporteriaController::class, 'limpiarFiltrosAccesos'])->name('reporteria.accesos.limpiar');
+    Route::get('accesos/{id}/detalles', [ReporteriaController::class, 'getDetallesAcceso'])->name('reporteria.accesos.detalles');
+    Route::get('unidad-academica', [ReporteriaController::class, 'unidadAcademica'])->name('reporteria.unidad-academica');
+    // Rutas para exportar a Excel y PDF
+    Route::get('utilizacion/export/{format}', [ReporteriaController::class, 'exportUtilizacion'])->name('reporteria.utilizacion.export');
+    Route::get('tipo-espacio/export/{format}', [ReporteriaController::class, 'exportTipoEspacio'])->name('reporteria.tipo-espacio.export');
+    Route::get('accesos/export/{format}', [ReporteriaController::class, 'exportAccesos'])->name('reporteria.accesos.export');
+    Route::post('accesos/export/{format}', [ReporteriaController::class, 'exportAccesosConFiltros'])->name('reporteria.accesos.export.filtros');
+    Route::get('unidad-academica/export/{format}', [ReporteriaController::class, 'exportUnidadAcademica'])->name('reporteria.unidad-academica.export');
+});
+
+Route::post('/dashboard/set-piso', [DashboardController::class, 'setPiso'])->name('dashboard.setPiso');
+Route::get('/dashboard/widget-data', [DashboardController::class, 'getWidgetData'])->name('dashboard.widgetData');
 
 require __DIR__ . '/auth.php';

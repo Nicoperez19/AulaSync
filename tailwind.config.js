@@ -39,14 +39,22 @@ export default {
           900: '#581c87',
         },
         'cloud-light': '#EDF0FA',
+<<<<<<< HEAD
         'light-cloud-blue': '#20448C',
+=======
+        'light-cloud-blue': '#D2091E',
+>>>>>>> Nperez
         'dark-eval-0': '#151823',
         'dark-eval-1': '#222738',
         'dark-eval-2': '#2A2F42',
         'dark-eval-3': '#2C3142',
       },
       fontFamily: {
+<<<<<<< HEAD
         sans: ['var(--default-font-family)', 'Inter', 'sans-serif'],
+=======
+        sans: ['Roboto', 'sans-serif'],
+>>>>>>> Nperez
       },
       spacing: {
         128: '32rem',

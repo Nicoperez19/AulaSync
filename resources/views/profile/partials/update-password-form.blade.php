@@ -40,7 +40,7 @@
             <x-form.error :messages="$errors->updatePassword->get('password_confirmation')" />
         </div>
 
-        <div class="flex items-center gap-4">
+        <div class="flex items-center justify-center w-full gap-4 mt-8">
             <x-button>
                 {{ __('Guardar') }}
             </x-button>
