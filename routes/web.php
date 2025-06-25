@@ -44,8 +44,7 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 Route::middleware(['auth', 'role:Administrador'])->group(function () {
     // Notifications
     Route::get('/api/notifications/key-returns', [DashboardController::class, 'getKeyReturnNotifications'])->name('notifications.key-returns');
-    
-    // Centro de Notificaciones
+
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
@@ -199,7 +198,7 @@ Route::group(['middleware' => ['auth']], function () {
 });
 
 Route::prefix('reporteria')->group(function () {
-    Route::get('utilizacion', [ReporteriaController::class, 'utilizacion'])->name('reporteria.utilizacion');
+    Route::get('utilizacion_por_espacio', [ReporteriaController::class, 'utilizacion'])->name('reporteria.utilizacion_por_espacio');
     Route::get('tipo-espacio', [ReporteriaController::class, 'tipoEspacio'])->name('reporteria.tipo-espacio');
     Route::get('accesos', [ReporteriaController::class, 'accesos'])->name('reporteria.accesos');
     Route::get('accesos/limpiar', [ReporteriaController::class, 'limpiarFiltrosAccesos'])->name('reporteria.accesos.limpiar');
@@ -215,5 +214,7 @@ Route::prefix('reporteria')->group(function () {
 
 Route::post('/dashboard/set-piso', [DashboardController::class, 'setPiso'])->name('dashboard.setPiso');
 Route::get('/dashboard/widget-data', [DashboardController::class, 'getWidgetData'])->name('dashboard.widgetData');
+Route::get('/dashboard/utilizacion-tipo-espacio', [App\Http\Controllers\DashboardController::class, 'utilizacionTipoEspacioAjax'])->name('dashboard.utilizacion_tipo_espacio');
+Route::get('/dashboard/no-utilizadas-dia', [App\Http\Controllers\DashboardController::class, 'noUtilizadasDiaAjax']);
 
 require __DIR__ . '/auth.php';

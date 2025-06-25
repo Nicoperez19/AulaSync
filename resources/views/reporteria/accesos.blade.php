@@ -232,9 +232,6 @@
                         <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                             Estado
                         </th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            Acciones
-                        </th>
                     </tr>
                 </thead>
                 <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -296,20 +293,10 @@
                                     {{ ucfirst($acceso['estado']) }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                                <button class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-3"
-                                        onclick="verDetalles({{ $acceso['id'] }})">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
-                                        onclick="exportarAcceso({{ $acceso['id'] }})">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                            <td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
                                 <div class="flex flex-col items-center">
                                     <i class="fas fa-search text-4xl mb-2"></i>
                                     <p class="text-lg font-medium">No se encontraron accesos registrados</p>
@@ -331,127 +318,4 @@
             </div>
         @endif
     </div>
-
-    <!-- Modal de detalles -->
-    <div id="modal-detalles" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-        <div class="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white dark:bg-gray-800">
-            <div class="mt-3">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Detalles del acceso</h3>
-                    <button onclick="cerrarModal()" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div id="modal-content" class="text-sm text-gray-600 dark:text-gray-400 max-h-96 overflow-y-auto">
-                    <!-- Contenido del modal -->
-                </div>
-            </div>
-        </div>
-    </div>
-</x-app-layout>
-
-<script>
-    function verDetalles(id) {
-        // Mostrar indicador de carga
-        const modal = document.getElementById('modal-detalles');
-        const content = document.getElementById('modal-content');
-        content.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin text-2xl text-blue-600"></i><p class="mt-2">Cargando detalles...</p></div>';
-        modal.classList.remove('hidden');
-
-        // Obtener detalles del acceso
-        fetch(`/reporteria/accesos/${id}/detalles`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    content.innerHTML = `<div class="text-red-600"><i class="fas fa-exclamation-triangle mr-2"></i>${data.error}</div>`;
-                    return;
-                }
-
-                content.innerHTML = `
-                    <div class="space-y-4">
-                        <!-- Información del usuario -->
-                        <div class="border-b pb-3">
-                            <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Información del usuario</h4>
-                            <div class="grid grid-cols-2 gap-2 text-sm">
-                                <div><span class="font-medium">Nombre:</span> ${data.usuario.nombre}</div>
-                                <div><span class="font-medium">RUN:</span> ${data.usuario.run}</div>
-                                <div><span class="font-medium">Email:</span> ${data.usuario.email}</div>
-                                <div><span class="font-medium">Celular:</span> ${data.usuario.celular}</div>
-                                <div><span class="font-medium">Tipo:</span> <span class="capitalize">${data.usuario.tipo_usuario}</span></div>
-                                <div><span class="font-medium">Universidad:</span> ${data.usuario.universidad}</div>
-                                <div><span class="font-medium">Facultad:</span> ${data.usuario.facultad}</div>
-                                <div><span class="font-medium">Carrera:</span> ${data.usuario.carrera}</div>
-                            </div>
-                        </div>
-
-                        <!-- Información del espacio -->
-                        <div class="border-b pb-3">
-                            <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Información del espacio</h4>
-                            <div class="grid grid-cols-2 gap-2 text-sm">
-                                <div><span class="font-medium">Nombre:</span> ${data.espacio.nombre}</div>
-                                <div><span class="font-medium">Tipo:</span> ${data.espacio.tipo}</div>
-                                <div><span class="font-medium">Capacidad:</span> ${data.espacio.capacidad}</div>
-                                <div><span class="font-medium">Piso:</span> ${data.espacio.piso}</div>
-                                <div><span class="font-medium">Facultad:</span> ${data.espacio.facultad}</div>
-                                <div><span class="font-medium">Sede:</span> ${data.espacio.sede}</div>
-                                <div><span class="font-medium">Universidad:</span> ${data.espacio.universidad}</div>
-                            </div>
-                        </div>
-
-                        <!-- Información de la reserva -->
-                        <div class="border-b pb-3">
-                            <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Información de la reserva</h4>
-                            <div class="grid grid-cols-2 gap-2 text-sm">
-                                <div><span class="font-medium">Fecha:</span> ${data.reserva.fecha}</div>
-                                <div><span class="font-medium">Hora entrada:</span> ${data.reserva.hora_entrada}</div>
-                                <div><span class="font-medium">Hora salida:</span> ${data.reserva.hora_salida}</div>
-                                <div><span class="font-medium">Duración:</span> ${data.reserva.duracion}</div>
-                                <div><span class="font-medium">Tipo reserva:</span> ${data.reserva.tipo_reserva}</div>
-                                <div><span class="font-medium">Estado:</span> <span class="capitalize">${data.reserva.estado}</span></div>
-                            </div>
-                        </div>
-
-                        <!-- Incidencias -->
-                        <div>
-                            <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Incidencias</h4>
-                            <div class="text-sm text-gray-600 dark:text-gray-400">
-                                ${data.incidencias.length > 0 ? 
-                                    data.incidencias.map(incidencia => `<div class="mb-1">• ${incidencia}</div>`).join('') : 
-                                    '<p class="text-gray-500">No se registraron incidencias</p>'
-                                }
-                            </div>
-                        </div>
-                    </div>
-                `;
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                content.innerHTML = `<div class="text-red-600"><i class="fas fa-exclamation-triangle mr-2"></i>Error al cargar los detalles</div>`;
-            });
-    }
-
-    function cerrarModal() {
-        document.getElementById('modal-detalles').classList.add('hidden');
-    }
-
-    function exportarAcceso(id) {
-        // Implementar exportación individual
-        console.log('Exportar acceso:', id);
-        // Aquí puedes agregar la lógica para exportar un acceso específico
-        alert('Funcionalidad de exportación individual en desarrollo');
-    }
-
-    // Cerrar modal al hacer clic fuera de él
-    document.getElementById('modal-detalles').addEventListener('click', function(e) {
-        if (e.target === this) {
-            cerrarModal();
-        }
-    });
-
-    // Cerrar modal con la tecla Escape
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            cerrarModal();
-        }
-    });
-</script> 
+</x-app-layout> 

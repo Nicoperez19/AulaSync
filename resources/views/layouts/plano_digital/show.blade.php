@@ -4,150 +4,153 @@
         <aside
             class="fixed top-0 left-0 z-40 flex flex-col justify-between w-56 h-screen pt-2 pb-2 text-base border-r border-gray-200 md:w-48 sm:w-40 bg-light-cloud-blue dark:border-gray-700 md:text-sm sm:text-xs">
 
+            <!-- Logo arriba -->
             <div class="flex flex-col items-center gap-2 md:gap-1">
                 <a href="{{ route('dashboard') }}" class="mb-1">
                     <x-application-logo-navbar class="w-10 h-10 md:w-8 md:h-8 sm:w-6 sm:h-6" />
                 </a>
-
-                <!-- Leyenda -->
-                <div class="w-full p-2 px-1 bg-white rounded-md shadow-sm">
-                    <h3
-                        class="flex items-center justify-center gap-1 mb-2 text-sm font-semibold text-center md:text-xs">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 md:w-3 md:h-3" viewBox="0 0 24 24"
-                            fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                            <circle cx="12" cy="10" r="3"></circle>
-                        </svg>
-                        LEYENDA DE ESTADO
-                    </h3>
-                    <div class="flex flex-col items-start gap-1">
-                        <div class="flex items-center w-full gap-1">
-                            <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-                            <span class="flex-1 text-xs">Ocupado</span>
-                        </div>
-                        <div class="flex items-center w-full gap-1">
-                            <div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
-                            <span class="flex-1 text-xs">Próximo</span>
-                        </div>
-                        <div class="flex items-center w-full gap-1">
-                            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                            <span class="flex-1 text-xs">Disponible</span>
-                        </div>
-                        <div class="flex items-center w-full gap-1">
-                            <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-                            <span class="flex-1 text-xs">Previsto</span>
-                        </div>
-                    </div>
-                </div>
             </div>
 
-            <!-- Información de hora y módulo actual -->
-            <div class="w-full px-1 mt-2">
-                <div class="p-2 text-white border border-white rounded-md shadow-sm bg-light-cloud-blue">
-                    <div class="flex items-center justify-between pb-1 border-b border-white">
-                        <div class="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span id="hora-actual" class="text-xs">--:--:--</span>
-                        </div>
-                    </div>
-                    <div class="py-1 border-b border-white">
-                        <div class="flex items-center gap-1 mb-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                            </svg>
-                            <span class="text-xs">Módulo: <span id="modulo-actual">No hay módulo
-                                    programado</span></span>
-                        </div>
-                    </div>
-                    <div class="pt-1">
-                        <div class="flex items-center gap-1 mb-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span class="text-xs">Horario: <span id="horario-actual">--:-- - --:--</span></span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Estado del QR -->
-            <div class="w-full px-1 ">
-                <div class="p-2 text-white border border-white rounded-md shadow-sm bg-light-cloud-blue">
-                    <!-- QR Placeholder -->
-                    <div class="p-2 mt-2 text-center rounded-md bg-white/10">
-                        <div class="relative">
-                            <span id="qr-status" class="text-xs text-yellow-400">Esperando</span>
-                            <button id="infoButton"
-                                class="absolute top-0 right-0 p-1 m-4 text-white bg-white rounded-full hover:bg-gray-200 focus:outline-none">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 stroke-black" fill="none"
-                                    viewBox="0 0 24 24">
+            <!-- Contenido central (centrado verticalmente) -->
+            <div class="flex flex-col items-center justify-center flex-1">
+                <!-- Información de hora y módulo actual -->
+                <div class="w-full px-1 mt-2">
+                    <div class="p-2 text-white border border-white rounded-md shadow-sm bg-light-cloud-blue">
+                        <div class="flex items-center justify-between pb-4">
+                            <div class="flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-
-                            </button>
-                        </div>
-                        <div class="mt-1 mb-1 qr-placeholder">
-                            <div class="flex items-center justify-center w-20 h-20 mx-auto rounded-md bg-white/20">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white/40" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
+                                <span id="hora-actual" class="text-2xl font-semibold">--:--:--</span>
                             </div>
                         </div>
-                        <p class="text-xs text-white/80">Escanee el código QR</p>
+                        <div class="py-1 border border-white">
+                            <div class="flex items-center gap-1 mb-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                                <span class="text-xs">Módulo: <span id="modulo-actual">No hay módulo
+                                        programado</span></span>
+                            </div>
+                        </div>
+                        <div class="pt-1">
+                            <div class="flex items-center gap-1 mb-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span class="text-xs">Horario: <span id="horario-actual">--:-- - --:--</span></span>
+                            </div>
+                        </div>
                     </div>
-                    <!-- Información del usuario escaneado -->
-                    <div class="mt-2 space-y-1">
-                        <div class="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            <span class="text-xs font-semibold">RUN:</span>
-                            <span id="run-escaneado" class="flex-1 text-xs text-right">--</span>
+                </div>
+
+                <!-- Estado del QR y usuario -->
+                <div class="w-full px-1 ">
+                    <div class="p-2 text-white border border-white rounded-md shadow-sm bg-light-cloud-blue">
+                        <!-- QR Placeholder -->
+                        <div class="p-2 mt-2 text-center rounded-md bg-white/10">
+                            <div class="relative">
+                                <span id="qr-status" class="text-xs text-yellow-400">Esperando</span>
+                                <button id="infoButton"
+                                    class="absolute top-0 right-0 p-1 m-4 text-white bg-white rounded-full hover:bg-gray-200 focus:outline-none">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 stroke-black" fill="none"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+
+                                </button>
+                            </div>
+                            <div class="mt-1 mb-1 qr-placeholder">
+                                <div class="flex items-center justify-center w-20 h-20 mx-auto rounded-md bg-white/20">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white/40" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                            </div>
+                            <p class="text-xs text-white/80">Escanee el código QR</p>
                         </div>
-                        <div class="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            <span class="text-xs font-semibold">Usuario:</span>
-                            <span id="nombre-usuario" class="flex-1 text-xs text-right">--</span>
+                        <!-- Información del usuario escaneado -->
+                        <div class="mt-2 space-y-1">
+                            <div class="flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <span class="text-xs font-semibold">RUN:</span>
+                                <span id="run-escaneado" class="flex-1 text-xs text-right">--</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <span class="text-xs font-semibold">Usuario:</span>
+                                <span id="nombre-usuario" class="flex-1 text-xs text-right">--</span>
+
+
+                            </div>
+
+                            <div class="flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <span class="text-xs font-semibold">Espacio:</span>
+                                <span id="nombre-espacio" class="flex-1 text-xs text-right">--</span>
+
+
+                            </div>
 
 
                         </div>
-
-                        <div class="flex items-center gap-1">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            <span class="text-xs font-semibold">Espacio:</span>
-                            <span id="nombre-espacio" class="flex-1 text-xs text-right">--</span>
-
-
+                        <!-- Input para el escáner QR (oculto) -->
+                        <div class="mt-2">
+                            <input type="text" id="qr-input"
+                                class="absolute w-full px-1 py-1 border rounded opacity-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                placeholder="Escanea un código QR" autofocus>
                         </div>
-
-
                     </div>
-                    <!-- Input para el escáner QR (oculto) -->
-                    <div class="mt-2">
-                        <input type="text" id="qr-input"
-                            class="absolute w-full px-1 py-1 border rounded opacity-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Escanea un código QR" autofocus>
+                </div>
+            </div>
+
+            <!-- Leyenda abajo del todo -->
+            <div class="w-full p-2 px-1 mt-auto bg-white rounded-md shadow-sm">
+                <h3 class="flex items-center justify-center gap-1 mb-2 text-sm font-semibold text-center md:text-xs">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 md:w-3 md:h-3" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    LEYENDA DE ESTADO
+                </h3>
+                <div class="flex flex-col items-start gap-1">
+                    <div class="flex items-center w-full gap-1">
+                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                        <span class="flex-1 text-xs">Ocupado</span>
+                    </div>
+                    <div class="flex items-center w-full gap-1">
+                        <div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+                        <span class="flex-1 text-xs">Próximo</span>
+                    </div>
+                    <div class="flex items-center w-full gap-1">
+                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                        <span class="flex-1 text-xs">Disponible</span>
+                    </div>
+                    <div class="flex items-center w-full gap-1">
+                        <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <span class="flex-1 text-xs">Previsto</span>
                     </div>
                 </div>
             </div>
@@ -165,7 +168,7 @@
                                                     <li role="presentation">
                                                         <a href="{{ route('plano.show', $piso->id_mapa) }}"
                                                             class="px-4 py-3 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
-                                                                                                                                                                                                                {{ $piso->id_mapa === $mapa->id_mapa
+                                                                                                                                                                                                                                        {{ $piso->id_mapa === $mapa->id_mapa
                                 ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
                                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}" role="tab"
                                                             aria-selected="{{ $piso->id_mapa === $mapa->id_mapa ? 'true' : 'false' }}">
@@ -214,49 +217,85 @@
     <!-- Modal para mostrar información del espacio -->
     <x-modal name="data-space" :show="false" focusable>
         @slot('title')
-        <h2 id="modalTitulo" class="text-lg font-medium text-white dark:text-gray-100">
-            Cargar Archivo de Datos
-        </h2>
+        <!-- Encabezado rojo -->
+        <div class="flex-1 p-4 text-center">
+            <h2 id="modalTitulo" class="text-2xl font-bold text-center text-white"></h2>
+            <div class="text-xs text-white/80" id="modalSubtitulo"></div>
+        </div>
         @endslot
-        <div class="p-6">
-            <h3 class="text-lg font-medium text-gray-900">Información del Espacio</h3>
-            <br>
-            <div class="space-y-4">
-                <div>
-                    <h4 class="text-sm font-medium text-gray-700">Estado Actual: <span id="modalEstado"
-                            class="inline-block ml-1 text-sm text-gray-900"></span></h4>
-                </div>
-                <!-- Planificación Actual centrada -->
-                <div id="modalPlanificacion" class="flex flex-col items-center justify-center text-center">
-                    <h4 class="text-sm font-medium text-gray-700">Planificación Actual</h4>
-                    <p id="modalPlanificacionDetalles" class="mt-1 text-sm text-gray-900"></p>
-                </div>
-                <!-- Botón y área QR de devolución de llaves abajo -->
-                <div class="flex flex-col items-center justify-center mt-8">
-                    <div id="btnDevolverContainer" class="mt-2 hidden">
-                        <button id="btnDevolver" class="px-4 py-2 text-white bg-green-600 rounded hover:bg-green-700 transition" type="button">Devolver Llaves</button>
-                        <hr id="linea-divisoria-qr" class="my-6 hidden border-t-2 border-gray-200 w-full max-w-md mx-auto" />
-                        <div id="area-qr-devolucion" class="mt-4 hidden">
-                            <div class="p-6 bg-white rounded-lg shadow-lg w-full max-w-md mx-auto border border-gray-200 flex flex-col items-center">
-                                <div class="text-center w-full">
-                                    <span id="qr-status-devolucion" class="block mb-2 text-sm font-semibold text-blue-600">Escanee el código QR para devolver</span>
-                                </div>
-                                <div class="flex items-center justify-center w-24 h-24 mb-2 rounded-md bg-blue-50">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                </div>
-                                <p class="text-xs text-gray-500 mb-2">Escanee el código QR del usuario y luego del espacio</p>
-                                <input type="text" id="qr-input-devolucion" class="absolute w-full px-1 py-1 border rounded opacity-0 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Escanea un código QR" autofocus>
-                            </div>
-                        </div>
+        <!-- Estado visual destacado, separado y más grande -->
+        <h3 class="pt-4 mb-2 text-lg font-semibold text-gray-900">Información del Espacio</h3>
+
+        <div class="flex flex-col gap-2 p-5 mb-4 bg-gray-100 shadow rounded-xl">
+            <div id="estadoContainer" class="flex items-center justify-between mb-4 ">
+                <span class="py-1 text-lg font-medium text-gray-700">Estado actual: </span>
+                <span id="estadoPill"
+                    class="inline-flex items-center px-4 py-2 text-base font-bold border rounded-full">
+                    <span id="estadoIcon" class="w-3 h-3 mr-3 rounded-full"></span>
+                    <span id="modalEstado" class="font-semibold"></span>
+                </span>
+            </div>
+        </div>
+        <!-- Planificación Actual -->
+        <div id="planificacionContainer">
+            <h3 class="mb-2 text-lg font-semibold text-gray-900">Planificación Actual</h3>
+            <div class="flex flex-col gap-2 p-5 mb-4 bg-gray-100 shadow rounded-xl">
+                <div class="flex items-center gap-2">
+                    <span class="p-2 text-red-500 bg-red-100 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m2 0a2 2 0 100-4 2 2 0 000 4zm-8 0a2 2 0 100-4 2 2 0 000 4z" />
+                        </svg>
+                    </span>
+                    <div class="flex flex-col text-left">
+                        <span class="text-xs text-gray-400">Asignatura</span>
+                        <span id="modalPlanificacionAsignatura" class="font-medium text-gray-900"></span>
                     </div>
                 </div>
-                <div id="modalProxima" class="hidden">
-                    <h4 class="text-sm font-medium text-gray-700">Próxima Clase</h4>
-                    <p id="modalProximaDetalles" class="mt-1 text-sm text-gray-900"></p>
+                <div class="flex items-center gap-2">
+                    <span class="p-2 text-red-500 bg-red-100 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </span>
+                    <div class="flex flex-col text-left">
+                        <span class="text-xs text-gray-400">Profesor</span>
+                        <span id="modalPlanificacionProfesor" class="font-medium text-gray-900"></span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="p-2 text-red-500 bg-red-100 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 10h1m2 0h1m2 0h1m2 0h1m2 0h1m2 0h1" />
+                        </svg>
+                    </span>
+                    <div class="flex flex-col text-left">
+                        <span class="text-xs text-gray-400">Módulo</span>
+                        <span id="modalPlanificacionModulo" class="font-medium text-gray-900"></span>
+                    </div>
+                    <span class="p-2 ml-4 text-red-500 bg-red-100 rounded-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3" />
+                        </svg>
+                    </span>
+                    <div class="flex flex-col text-left">
+                        <span class="text-xs text-gray-400">Horario</span>
+                        <span id="modalPlanificacionHorario" class="font-medium text-gray-900"></span>
+                    </div>
                 </div>
             </div>
+        </div>
+        <!-- Próxima clase -->
+        <div id="modalProxima" class="hidden mt-4">
+            <h4 class="mb-2 text-sm font-medium text-gray-700">Próxima Clase</h4>
+            <div id="modalProximaDetalles" class="p-4 bg-gray-100 shadow rounded-xl"></div>
+        </div>
         </div>
     </x-modal>
 
@@ -273,7 +312,7 @@
                     <!-- El ícono se llenará dinámicamente -->
                 </div>
                 <h3 id="reconocimiento-titulo" class="text-xl font-medium text-gray-900"></h3>
-                <div id="reconocimiento-detalles" class="text-sm text-gray-600 space-y-2">
+                <div id="reconocimiento-detalles" class="space-y-2 text-sm text-gray-600">
                     <p id="reconocimiento-usuario"></p>
                     <p id="reconocimiento-espacio"></p>
                 </div>
@@ -302,12 +341,12 @@
                         <h3 class="text-lg font-medium text-gray-900">Proceso de Uso del Espacio</h3>
                         <div class="mt-2 space-y-3 text-gray-600">
                             <p>Para registrar el uso del espacio que desea utilizar, siga estos pasos:</p>
-                            <ol class="list-decimal list-inside space-y-2">
+                            <ol class="space-y-2 list-decimal list-inside">
                                 <li>Escanee el QR del Carnet/Cédula de identidad</li>
                                 <li>Luego escanee el QR que poseen las llaves de la sala a utilizar</li>
                             </ol>
                             <p class="mt-4">Para hacer la devolución:</p>
-                            <ol class="list-decimal list-inside space-y-2">
+                            <ol class="space-y-2 list-decimal list-inside">
                                 <li>Escanee nuevamente el Carnet/Cédula de identidad</li>
                                 <li>Vuelva a escanear el QR de las llaves</li>
                             </ol>
@@ -327,7 +366,8 @@
         @endslot
         <div class="p-6">
             <div class="flex flex-col items-center justify-center">
-                <div class="p-2 text-white border border-white rounded-md shadow-sm bg-light-cloud-blue w-full max-w-md">
+                <div
+                    class="w-full max-w-md p-2 text-white border border-white rounded-md shadow-sm bg-light-cloud-blue">
                     <!-- QR Placeholder -->
                     <div class="p-2 mt-2 text-center rounded-md bg-white/10">
                         <div class="relative">
@@ -335,8 +375,10 @@
                         </div>
                         <div class="mt-1 mb-1 qr-placeholder">
                             <div class="flex items-center justify-center w-20 h-20 mx-auto rounded-md bg-white/20">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2 2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white/40" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                             </div>
                         </div>
@@ -356,7 +398,7 @@
     <script>
         // Polyfill para roundRect si no está disponible
         if (!CanvasRenderingContext2D.prototype.roundRect) {
-            CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
+            CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, radius) {
                 if (width < 2 * radius) radius = width / 2;
                 if (height < 2 * radius) radius = height / 2;
                 this.beginPath();
@@ -449,12 +491,12 @@
             for (let i = state.indicators.length - 1; i >= 0; i--) {
                 const indicator = state.indicators[i];
                 const position = calculatePosition(indicator);
-                
+
                 // Verificar si el mouse está dentro del indicador (considerando el escalado)
                 const scale = 1.2; // Mismo factor de escala que en dibujarIndicador
                 const scaledWidth = config.indicatorWidth * scale;
                 const scaledHeight = config.indicatorHeight * scale;
-                
+
                 if (mouseX >= position.x - scaledWidth / 2 &&
                     mouseX <= position.x + scaledWidth / 2 &&
                     mouseY >= position.y - scaledHeight / 2 &&
@@ -470,14 +512,14 @@
             const rect = elements.indicatorsCanvas.getBoundingClientRect();
             const mouseX = event.clientX - rect.left;
             const mouseY = event.clientY - rect.top;
-            
+
             const hoveredIndicator = getHoveredIndicator(mouseX, mouseY);
-            
+
             // Solo redibujar si el estado de hover cambió
             if (hoveredIndicator !== state.hoveredIndicator) {
                 state.hoveredIndicator = hoveredIndicator;
                 drawIndicators();
-                
+
                 // Cambiar el cursor
                 elements.indicatorsCanvas.style.cursor = hoveredIndicator ? 'pointer' : 'default';
             }
@@ -488,9 +530,9 @@
             const rect = elements.indicatorsCanvas.getBoundingClientRect();
             const mouseX = event.clientX - rect.left;
             const mouseY = event.clientY - rect.top;
-            
+
             const clickedIndicator = getHoveredIndicator(mouseX, mouseY);
-            
+
             if (clickedIndicator) {
                 mostrarModalEspacio(clickedIndicator);
             }
@@ -587,7 +629,7 @@
             const scale = isHovered ? 1.2 : 1.0;
             const scaledWidth = finalWidth * scale;
             const scaledHeight = finalHeight * scale;
-            
+
             // Calcular la posición para que el escalado sea desde el centro
             const offsetX = (scaledWidth - finalWidth) / 2;
             const offsetY = (scaledHeight - finalHeight) / 2;
@@ -639,8 +681,11 @@
         function mostrarModalEspacio(indicator) {
             const modalTitulo = document.getElementById('modalTitulo');
             const modalEstado = document.getElementById('modalEstado');
-            const modalPlanificacion = document.getElementById('modalPlanificacion');
-            const modalPlanificacionDetalles = document.getElementById('modalPlanificacionDetalles');
+            // NUEVOS ELEMENTOS DEL MODAL REDISEÑADO
+            const modalPlanificacionAsignatura = document.getElementById('modalPlanificacionAsignatura');
+            const modalPlanificacionProfesor = document.getElementById('modalPlanificacionProfesor');
+            const modalPlanificacionModulo = document.getElementById('modalPlanificacionModulo');
+            const modalPlanificacionHorario = document.getElementById('modalPlanificacionHorario');
             const modalProxima = document.getElementById('modalProxima');
             const modalProximaDetalles = document.getElementById('modalProximaDetalles');
 
@@ -675,42 +720,44 @@
             if (estadoTexto === 'Ocupado' && indicator.detalles?.usuario_ocupando) {
                 usuarioOcupando = `<br><span class='text-xs text-gray-700'>Ocupado por: <b>${indicator.detalles.usuario_ocupando}</b></span>`;
             }
-            modalEstado.innerHTML = `<span class="${estadoColor} font-semibold">${estadoTexto}</span>${usuarioOcupando}`;
+            modalEstado.innerHTML = `<span class=\"${estadoColor} font-semibold\">${estadoTexto}</span>${usuarioOcupando}`;
 
             const detalles = indicator.detalles || {};
             const infoClaseActual = indicator.informacion_clase_actual;
 
-            // Lógica para mostrar la planificación actual
+            // Mostrar la planificación actual en los nuevos campos
             if (infoClaseActual && (indicator.estado === '#FF0000' || indicator.estado === '#FFA500')) {
-                modalPlanificacion.classList.remove('hidden');
-                modalPlanificacionDetalles.innerHTML = `
-                    <p><strong>Asignatura:</strong> ${infoClaseActual.asignatura}</p>
-                    <p><strong>Profesor:</strong> ${infoClaseActual.profesor}</p>
-                    <p><strong>Módulo:</strong> ${infoClaseActual.modulo}</p>
-                    <p><strong>Horario:</strong> ${infoClaseActual.hora_inicio} hrs. - ${infoClaseActual.hora_termino} hrs.</p>
-                `;
+                modalPlanificacionAsignatura.textContent = infoClaseActual.asignatura || '';
+                modalPlanificacionProfesor.textContent = infoClaseActual.profesor || '';
+                modalPlanificacionModulo.textContent = infoClaseActual.modulo || '';
+                modalPlanificacionHorario.textContent = `${infoClaseActual.hora_inicio} - ${infoClaseActual.hora_termino} hrs`;
             } else if (indicator.estado === '#FF0000') {
-                modalPlanificacion.classList.remove('hidden');
-                modalPlanificacionDetalles.innerHTML = `<p>No hay información sobre la ocupación actual.</p>`;
+                modalPlanificacionAsignatura.textContent = 'No hay información sobre la ocupación actual.';
+                modalPlanificacionProfesor.textContent = '';
+                modalPlanificacionModulo.textContent = '';
+                modalPlanificacionHorario.textContent = '';
             } else if (detalles.planificacion) {
-                modalPlanificacion.classList.remove('hidden');
-                modalPlanificacionDetalles.innerHTML = `
-                    <p><strong>Asignatura:</strong> ${detalles.planificacion.asignatura || 'No especificada'}</p>
-                    <p><strong>Profesor:</strong> ${detalles.planificacion.profesor || 'No especificado'}</p>
-                    <p><strong>Módulo:</strong> ${detalles.planificacion.modulo || 'No especificado'}</p>
-                `;
+                modalPlanificacionAsignatura.textContent = detalles.planificacion.asignatura || 'No especificada';
+                modalPlanificacionProfesor.textContent = detalles.planificacion.profesor || 'No especificado';
+                modalPlanificacionModulo.textContent = detalles.planificacion.modulo || 'No especificado';
+                modalPlanificacionHorario.textContent = '';
             } else {
-                modalPlanificacion.classList.add('hidden');
+                modalPlanificacionAsignatura.textContent = '';
+                modalPlanificacionProfesor.textContent = '';
+                modalPlanificacionModulo.textContent = '';
+                modalPlanificacionHorario.textContent = '';
             }
 
             // Configurar la próxima clase si existe
             if (detalles.planificacion_proxima) {
                 modalProxima.classList.remove('hidden');
                 modalProximaDetalles.innerHTML = `
-                    <p><strong>Asignatura:</strong> ${detalles.planificacion_proxima.asignatura || 'No especificada'}</p>
-                    <p><strong>Profesor:</strong> ${detalles.planificacion_proxima.profesor || 'No especificado'}</p>
-                    <p><strong>Módulo:</strong> ${detalles.planificacion_proxima.modulo || 'No especificado'}</p>
-                    <p><strong>Horario:</strong> ${detalles.planificacion_proxima.hora_inicio} hrs. - ${detalles.planificacion_proxima.hora_termino} hrs.</p>
+                    <div class='flex flex-col gap-1'>
+                        <div><span class='font-semibold'>Asignatura:</span> ${detalles.planificacion_proxima.asignatura || 'No especificada'}</div>
+                        <div><span class='font-semibold'>Profesor:</span> ${detalles.planificacion_proxima.profesor || 'No especificado'}</div>
+                        <div><span class='font-semibold'>Módulo:</span> ${detalles.planificacion_proxima.modulo || 'No especificado'}</div>
+                        <div><span class='font-semibold'>Horario:</span> ${detalles.planificacion_proxima.hora_inicio} - ${detalles.planificacion_proxima.hora_termino} hrs.</div>
+                    </div>
                 `;
             } else {
                 modalProxima.classList.add('hidden');
@@ -723,10 +770,54 @@
 
             // Mostrar/ocultar botón Devolver Llaves según estado
             const btnDevolverContainer = document.getElementById('btnDevolverContainer');
-            if (estadoTexto === 'Ocupado') {
-                btnDevolverContainer.classList.remove('hidden');
-            } else {
-                btnDevolverContainer.classList.add('hidden');
+            if (btnDevolverContainer) {
+                if (estadoTexto === 'Ocupado') {
+                    btnDevolverContainer.classList.remove('hidden');
+                } else {
+                    btnDevolverContainer.classList.add('hidden');
+                }
+            }
+
+            // Estado visual
+            const estadoPill = document.getElementById('estadoPill');
+            const estadoIcon = document.getElementById('estadoIcon');
+            const planificacionContainer = document.getElementById('planificacionContainer');
+            // Determinar color y texto
+            let pillColor = '', iconColor = '', texto = '', mostrarPlanificacion = true;
+            switch (estadoTexto) {
+                case 'Ocupado':
+                    pillColor = 'border-red-500 bg-red-50 text-red-700';
+                    iconColor = 'bg-red-500';
+                    texto = 'Ocupado';
+                    break;
+                case 'Disponible':
+                    pillColor = 'border-green-500 bg-green-50 text-green-700';
+                    iconColor = 'bg-green-500';
+                    texto = 'Disponible';
+                    mostrarPlanificacion = false;
+                    break;
+                case 'Próximo a ocuparse':
+                    pillColor = 'border-blue-500 bg-blue-50 text-blue-700';
+                    iconColor = 'bg-blue-500';
+                    texto = 'Previsto';
+                    mostrarPlanificacion = false;
+                    break;
+                case 'Reservado':
+                    pillColor = 'border-yellow-400 bg-yellow-50 text-yellow-700';
+                    iconColor = 'bg-yellow-400';
+                    texto = 'Reservado';
+                    break;
+                default:
+                    pillColor = 'border-gray-400 bg-gray-50 text-gray-700';
+                    iconColor = 'bg-gray-400';
+                    texto = estadoTexto;
+            }
+            estadoPill.className = `inline-flex items-center px-4 py-2 text-base font-bold border rounded-full ${pillColor}`;
+            estadoIcon.className = `w-3 h-3 mr-3 rounded-full ${iconColor}`;
+            document.getElementById('modalEstado').textContent = texto;
+            // Mostrar/ocultar planificación
+            if (planificacionContainer) {
+                planificacionContainer.style.display = mostrarPlanificacion ? '' : 'none';
             }
         }
 
@@ -1042,7 +1133,7 @@
                     fin: '23:00:00'
                 }
             }
-            
+
         };
 
         function obtenerDiaActual() {
@@ -1268,9 +1359,6 @@
                         btnEntregarLlaves.textContent = '¿Desea entregar las llaves?';
                         btnEntregarLlaves.onclick = function () {
                             // Cerrar el modal actual
-                            window.dispatchEvent(new CustomEvent('close-modal', {
-                                detail: 'detalles-bloque'
-                            }));
 
                             // Esperar a que el modal se cierre
                             setTimeout(() => {
@@ -1413,7 +1501,10 @@
                     `;
                     document.head.appendChild(style);
 
-                    document.getElementById('salida-profesor-placeholder').style.display = 'none';
+                    const elPlaceholder1 = document.getElementById('salida-profesor-placeholder');
+                    if (elPlaceholder1) {
+                        elPlaceholder1.style.display = 'none';
+                    }
 
                     await html5QrcodeScanner.start(
                         currentCameraId,
@@ -1483,7 +1574,10 @@
                     document.getElementById('salida-profesor-error-msg').textContent =
                         'Error al iniciar la cámara. Por favor, verifica los permisos y que la cámara no esté siendo usada por otra aplicación.';
                     document.getElementById('salida-profesor-error-msg').classList.remove('hidden');
-                    document.getElementById('salida-profesor-placeholder').style.display = 'flex';
+                    const elPlaceholder2 = document.getElementById('salida-profesor-placeholder');
+                    if (elPlaceholder2) {
+                        elPlaceholder2.style.display = 'flex';
+                    }
                 }
             }
         }
@@ -2159,7 +2253,7 @@
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-                
+
                 // Preservar los colores de estado existentes
                 data.forEach(nuevoIndicador => {
                     const indicadorExistente = state.indicators.find(ind => ind.id === nuevoIndicador.id);
@@ -2167,7 +2261,7 @@
                         nuevoIndicador.estado = indicadorExistente.estado;
                     }
                 });
-                
+
                 state.indicators = data;
                 drawIndicators();
             } catch (error) {
@@ -2259,7 +2353,7 @@
                         if (espacioEstado) {
                             const nuevoColor = colores[espacioEstado.estado] || colores.Default;
                             const colorAnterior = estadoAnterior[indicator.id] || indicator.estado;
-                            
+
                             // Solo actualizar si el color ha cambiado
                             if (nuevoColor !== colorAnterior) {
                                 console.log(`Cambio detectado - Espacio ${indicator.id}: ${espacioEstado.estado} (${colorAnterior} -> ${nuevoColor})`);
@@ -2267,7 +2361,7 @@
                                 estadoAnterior[indicator.id] = nuevoColor;
                                 hayCambios = true;
                             }
-                            
+
                             // Actualizar información de la clase actual si existe
                             if (espacioEstado.informacion_clase_actual) {
                                 indicator.informacion_clase_actual = espacioEstado.informacion_clase_actual;
@@ -2305,7 +2399,7 @@
 
         // Llama una vez al cargar la página
         actualizarColoresEspacios();
-        
+
         // Inicializar el estado anterior después de la primera carga
         setTimeout(() => {
             state.indicators.forEach(indicator => {
@@ -2313,7 +2407,7 @@
             });
             console.log('Estado inicial establecido');
         }, 1000);
-        
+
         // Deshabilitar la función actualizarEstadoMapa automática para evitar conflictos
         // Solo se ejecutará cuando se registre una reserva manualmente
 
@@ -2328,7 +2422,7 @@
 
             bloques.forEach(bloque => {
                 const { x, y, width, height, estado, clase_proxima } = bloque;
-                
+
                 // Determinar el color basado en el estado y si hay clase próxima
                 let color;
                 if (estado === 'ocupado') {
@@ -2340,13 +2434,13 @@
                     const horaActual = new Date();
                     const horaActualStr = horaActual.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
                     const [horaActualHora, horaActualMin] = horaActualStr.split(':').map(Number);
-                    
+
                     // Obtener la hora de inicio del módulo
                     const [horaInicioHora, horaInicioMin] = clase_proxima.hora_inicio.split(':').map(Number);
-                    
+
                     // Si estamos en los 10 minutos antes del inicio del módulo
-                    if (horaActualHora === horaInicioHora && 
-                        horaActualMin >= (horaInicioMin - 10) && 
+                    if (horaActualHora === horaInicioHora &&
+                        horaActualMin >= (horaInicioMin - 10) &&
                         horaActualMin < horaInicioMin) {
                         color = 'rgba(59, 130, 246, 0.7)'; // Azul para espacios entre módulos
                     } else {
@@ -2399,7 +2493,7 @@
         }
         // Lógica para abrir el modal de devolución
         if (document.getElementById('btnDevolver')) {
-            document.getElementById('btnDevolver').onclick = function() {
+            document.getElementById('btnDevolver').onclick = function () {
                 window.dispatchEvent(new CustomEvent('open-modal', { detail: 'devolucion-qr' }));
                 setTimeout(() => {
                     document.getElementById('qr-input-devolucion').focus();
@@ -2408,7 +2502,7 @@
             };
         }
         // Lógica de escaneo QR (puedes reutilizar la del sidebar, adaptando los IDs)
-        document.getElementById('qr-input-devolucion').addEventListener('keydown', async function(event) {
+        document.getElementById('qr-input-devolucion').addEventListener('keydown', async function (event) {
             if (event.key === 'Enter') {
                 const qr = event.target.value.trim();
                 // Aquí va la lógica para procesar el QR y registrar la devolución
@@ -2424,7 +2518,7 @@
         // Ejemplo: actualizarBotonDevolver(estadoActual);
 
         // Función para iniciar el proceso de devolución de llaves
-        window.iniciarDevolucionLlaves = function() {
+        window.iniciarDevolucionLlaves = function () {
             // Cerrar el modal de detalles del espacio
             window.dispatchEvent(new CustomEvent('close-modal', { detail: 'data-space' }));
             // Abrir el modal de devolución de llaves
@@ -2460,20 +2554,20 @@
         let espacioDevolucion = null;
 
         // Event listener para el QR del usuario en devolución
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const qrUsuarioInput = document.getElementById('qr-usuario-devolucion');
             const qrEspacioInput = document.getElementById('qr-espacio-devolucion');
-            
+
             if (qrUsuarioInput) {
-                qrUsuarioInput.addEventListener('keypress', function(e) {
+                qrUsuarioInput.addEventListener('keypress', function (e) {
                     if (e.key === 'Enter') {
                         procesarQRUsuarioDevolucion(this.value);
                     }
                 });
             }
-            
+
             if (qrEspacioInput) {
-                qrEspacioInput.addEventListener('keypress', function(e) {
+                qrEspacioInput.addEventListener('keypress', function (e) {
                     if (e.key === 'Enter') {
                         procesarQREspacioDevolucion(this.value);
                     }
@@ -2485,21 +2579,21 @@
         async function procesarQRUsuarioDevolucion(qrData) {
             const statusElement = document.getElementById('status-usuario');
             statusElement.textContent = 'Verificando usuario...';
-            
+
             try {
                 const response = await fetch(`/api/user/${qrData}`);
                 const data = await response.json();
-                
+
                 if (data.success && data.user) {
                     usuarioDevolucion = data.user;
                     statusElement.innerHTML = `
                         <span class="text-green-600">✓ Usuario verificado: ${data.user.name}</span>
                     `;
-                    
+
                     // Mostrar paso 2
                     document.getElementById('paso-espacio').classList.remove('hidden');
                     document.getElementById('qr-espacio-devolucion').focus();
-                    
+
                     // Actualizar información
                     document.getElementById('info-devolucion').innerHTML = `
                         <div class="flex items-center gap-2">
@@ -2525,17 +2619,17 @@
         async function procesarQREspacioDevolucion(qrData) {
             const statusElement = document.getElementById('status-espacio');
             statusElement.textContent = 'Verificando espacio...';
-            
+
             try {
                 const espacioProcesado = qrData.replace(/'/g, '-');
                 const espacioInfo = await verificarEspacio(espacioProcesado);
-                
+
                 if (espacioInfo?.verificado) {
                     espacioDevolucion = espacioInfo.espacio;
                     statusElement.innerHTML = `
                         <span class="text-green-600">✓ Espacio verificado: ${espacioInfo.espacio.nombre}</span>
                     `;
-                    
+
                     // Procesar la devolución
                     await procesarDevolucionCompleta();
                 } else {
@@ -2557,7 +2651,7 @@
             if (!usuarioDevolucion || !espacioDevolucion) {
                 return;
             }
-            
+
             try {
                 // Llamar a la API para registrar la devolución
                 const response = await fetch('/api/reserva/devolver', {
@@ -2571,9 +2665,9 @@
                         espacio_id: espacioDevolucion.id
                     })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     // Mostrar éxito
                     document.getElementById('info-devolucion').innerHTML = `
@@ -2582,7 +2676,7 @@
                             <span class="text-sm text-green-700">Devolución exitosa</span>
                         </div>
                     `;
-                    
+
                     // Cerrar modal después de 2 segundos
                     setTimeout(() => {
                         window.dispatchEvent(new CustomEvent('close-modal', { detail: 'devolver-llaves' }));
@@ -2625,7 +2719,7 @@
                     default:
                         indicador.estado = '#059669'; // Verde por defecto
                 }
-                
+
                 // Redibujar los indicadores
                 drawIndicators();
             }
@@ -2699,22 +2793,22 @@
                                             espacio_id: espacioDevolucionQR
                                         })
                                     })
-                                    .then(res => res.json())
-                                    .then(resp => {
-                                        if (resp.success) {
-                                            document.getElementById('qr-status-devolucion').textContent = '¡Devolución registrada correctamente!';
-                                            setTimeout(() => {
-                                                window.dispatchEvent(new CustomEvent('close-modal', { detail: 'devolver-llaves' }));
-                                            }, 1500);
-                                        } else {
-                                            document.getElementById('qr-status-devolucion').textContent = resp.message || 'Error al registrar devolución.';
+                                        .then(res => res.json())
+                                        .then(resp => {
+                                            if (resp.success) {
+                                                document.getElementById('qr-status-devolucion').textContent = '¡Devolución registrada correctamente!';
+                                                setTimeout(() => {
+                                                    window.dispatchEvent(new CustomEvent('close-modal', { detail: 'devolver-llaves' }));
+                                                }, 1500);
+                                            } else {
+                                                document.getElementById('qr-status-devolucion').textContent = resp.message || 'Error al registrar devolución.';
+                                                resetearDevolucionQR();
+                                            }
+                                        })
+                                        .catch(() => {
+                                            document.getElementById('qr-status-devolucion').textContent = 'Error al registrar devolución.';
                                             resetearDevolucionQR();
-                                        }
-                                    })
-                                    .catch(() => {
-                                        document.getElementById('qr-status-devolucion').textContent = 'Error al registrar devolución.';
-                                        resetearDevolucionQR();
-                                    });
+                                        });
                                 } else {
                                     document.getElementById('qr-status-devolucion').textContent = 'Espacio no encontrado. Intente nuevamente.';
                                     resetearDevolucionQR();
@@ -2744,7 +2838,7 @@
                 inputDevolucion.focus();
             }
             // Resetear estado cada vez que se abre el modal
-            window.addEventListener('open-modal', function(e) {
+            window.addEventListener('open-modal', function (e) {
                 if (e.detail === 'devolver-llaves') {
                     resetearDevolucionQR();
                     setTimeout(() => {

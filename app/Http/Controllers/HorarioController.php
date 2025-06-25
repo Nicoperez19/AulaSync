@@ -129,6 +129,20 @@ class HorarioController extends Controller
                 ]);
             }
 
+            // Verificar si el usuario ya tiene una reserva activa en cualquier sala
+            $yaTieneReserva = Reserva::where('run', $request->run)
+                ->where('estado', 'activa')
+                ->whereNull('hora_salida')
+                ->exists();
+
+            if ($yaTieneReserva) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Ya tienes una reserva activa en otra sala. Debes finalizarla antes de solicitar una nueva.'
+                ]);
+            }
+
             $lastReserva = Reserva::select('id_reserva')->orderByDesc('id_reserva')->first();
             $newIdNumber = $lastReserva ? 
                 str_pad(intval(substr($lastReserva->id_reserva, 1)) + 1, 3, '0', STR_PAD_LEFT) : 

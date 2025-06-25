@@ -27,12 +27,12 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <h3 class="font-medium text-center">Imagen del Mapa</h3>
-                                <img src="{{ asset($mapa->ruta_mapa) }}" alt="Mapa Original"
+                                <img src="{{ asset('storage/' . $mapa->ruta_mapa) }}" alt="Mapa Original"
                                     class="w-full h-auto max-h-[500px] object-contain rounded-lg border shadow-md mt-2">
                             </div>
                             <div>
                                 <h3 class="font-medium text-center">Imagen del Canvas</h3>
-                                <img src="{{ asset($mapa->ruta_canvas) }}" alt="Canvas"
+                                <img src="{{ asset('storage/' . $mapa->ruta_canvas) }}" alt="Canvas"
                                     class="w-full h-auto max-h-[500px] object-contain rounded-lg border shadow-md mt-2">
                             </div>
                         </div>

@@ -521,7 +521,7 @@ class ReporteriaController extends Controller
     }
 
     public function getDetallesAcceso($id) {
-        $reserva = Reserva::with(['user', 'espacio.piso.facultad', 'espacio.piso.facultad.sede.universidad'])
+        $reserva = Reserva::with(['user', 'espacio.piso.facultad.sede.universidad'])
             ->where('id_reserva', $id)
             ->first();
 
@@ -574,11 +574,12 @@ class ReporteriaController extends Controller
     /**
      * Obtener accesos registrados con filtros
      */
-    private function obtenerAccesosRegistrados($fechaInicio, $fechaFin, $piso = null, $tipoUsuario = null, $espacio = null)
+    public function obtenerAccesosRegistrados($fechaInicio, $fechaFin, $piso = null, $tipoUsuario = null, $espacio = null)
     {
         $query = Reserva::with(['user', 'espacio.piso.facultad'])
             ->whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
-            ->where('estado', 'activa')
+            ->whereIn('estado', ['activa', 'finalizada']) // Mostrar activas y finalizadas
+            ->whereNotNull('hora') // Solo las que tienen hora de entrada (escaneo QR)
             ->orderBy('fecha_reserva', 'desc')
             ->orderBy('hora', 'desc');
 

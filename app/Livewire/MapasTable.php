@@ -38,7 +38,7 @@ class MapasTable extends Component
         });
 
         $this->dispatch('mostrar-mapa', [
-            'ruta' => asset($mapa->ruta_mapa),
+            'ruta' => asset('storage/' . $mapa->ruta_mapa),
             'bloques' => $bloques
         ]);
     }

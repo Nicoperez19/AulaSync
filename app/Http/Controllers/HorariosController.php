@@ -179,6 +179,26 @@ class HorariosController extends Controller
         $pisos = \App\Models\Piso::with(['espacios' => function($q) {
             $q->orderBy('nombre_espacio');
         }])->orderBy('numero_piso')->get();
-        return view('layouts.spacetime.spacetime_show', compact('pisos'));
+
+        // Pre-cargar todos los horarios de todos los espacios
+        $planificaciones = Planificacion_Asignatura::with(['asignatura.user', 'modulo', 'espacio'])->get();
+
+        // Agrupar por espacio
+        $horariosPorEspacio = $planificaciones->groupBy('id_espacio')->map(function ($items) {
+            return $items->map(function ($plan) {
+                return [
+                    'asignatura' => $plan->asignatura->nombre_asignatura ?? '',
+                    'user' => $plan->asignatura->user ? [
+                        'name' => $plan->asignatura->user->name
+                    ] : null,
+                    'dia' => $plan->modulo->dia ?? '',
+                    'hora_inicio' => $plan->modulo->hora_inicio ?? '',
+                    'hora_termino' => $plan->modulo->hora_termino ?? '',
+                    'espacio' => $plan->espacio->nombre_espacio ?? '',
+                ];
+            });
+        });
+
+        return view('layouts.spacetime.spacetime_show', compact('pisos', 'horariosPorEspacio'));
     }
 }
