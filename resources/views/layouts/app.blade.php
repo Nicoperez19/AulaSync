@@ -164,11 +164,13 @@
                     .then(response => response.json())
                     .then(notifications => {
                         // Update badge
-                        if (notifications.length > 0) {
-                            notificationBadge.textContent = notifications.length;
-                            notificationBadge.style.display = 'block';
-                        } else {
-                            notificationBadge.style.display = 'none';
+                        if (notificationBadge) {
+                            if (notifications.length > 0) {
+                                notificationBadge.textContent = notifications.length;
+                                notificationBadge.style.display = 'block';
+                            } else {
+                                notificationBadge.style.display = 'none';
+                            }
                         }
 
                         // Update notification list

@@ -1,95 +1,95 @@
 @php
-$horariosModulos = [
-    'lunes' => [
-        1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-        2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-        3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-        4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-        5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-        6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-        7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-        8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-        9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-        10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-        11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-        12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-        13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-        14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-        15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
-    ],
-    'martes' => [
-        1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-        2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-        3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-        4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-        5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-        6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-        7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-        8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-        9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-        10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-        11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-        12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-        13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-        14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-        15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
-    ],
-    'miercoles' => [
-        1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-        2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-        3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-        4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-        5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-        6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-        7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-        8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-        9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-        10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-        11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-        12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-        13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-        14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-        15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
-    ],
-    'jueves' => [
-        1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-        2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-        3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-        4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-        5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-        6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-        7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-        8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-        9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-        10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-        11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-        12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-        13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-        14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-        15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
-    ],
-    'viernes' => [
-        1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-        2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-        3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-        4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-        5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-        6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-        7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-        8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-        9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-        10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-        11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-        12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-        13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-        14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-        15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
-    ],
-];
+    $horariosModulos = [
+        'lunes' => [
+            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
+        ],
+        'martes' => [
+            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
+        ],
+        'miercoles' => [
+            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
+        ],
+        'jueves' => [
+            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
+        ],
+        'viernes' => [
+            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
+        ],
+    ];
 
-// Función para obtener el día actual en español
-$diaActual = strtolower(
-    [
+    // Función para obtener el día actual en español
+    $diaActual = strtolower(
+        [
             'domingo',
             'lunes',
             'martes',
@@ -97,26 +97,26 @@ $diaActual = strtolower(
             'jueves',
             'viernes',
             'sabado'
-    ][date('w')]
-);
+        ][date('w')]
+    );
 
-// Función para determinar el módulo actual según la hora
-if (!function_exists('moduloActualDashboard')) {
+    // Función para determinar el módulo actual según la hora
+    if (!function_exists('moduloActualDashboard')) {
         function moduloActualDashboard($horariosModulos, $diaActual)
         {
-        $horaAhora = date('H:i:s');
+            $horaAhora = date('H:i:s');
             if (!isset($horariosModulos[$diaActual]))
                 return null;
-        foreach ($horariosModulos[$diaActual] as $num => $horario) {
-            if ($horaAhora >= $horario['inicio'] && $horaAhora < $horario['fin']) {
-                return $num;
+            foreach ($horariosModulos[$diaActual] as $num => $horario) {
+                if ($horaAhora >= $horario['inicio'] && $horaAhora < $horario['fin']) {
+                    return $num;
+                }
             }
+            return null;
         }
-        return null;
     }
-}
-$moduloActualNum = moduloActualDashboard($horariosModulos, $diaActual);
-$moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloActualNum] : null;
+    $moduloActualNum = moduloActualDashboard($horariosModulos, $diaActual);
+    $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloActualNum] : null;
 @endphp
 
 <x-app-layout>
@@ -125,16 +125,7 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
             <h2 class="text-xl font-semibold leading-tight" style="font-style: oblique;">
                 {{ __('Dashboard') }}
             </h2>
-            <div class="flex items-center gap-4">
-                <!-- Botón de control de auto-refresh -->
-                <div class="flex items-center gap-2">
-                    <button id="toggle-auto-refresh"
-                        class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white transition-colors bg-blue-600 rounded-lg refresh-button hover:bg-blue-700">
-                        <span id="auto-refresh-icon">🔄</span>
-                        <span id="auto-refresh-text">Auto-refresh ON</span>
-                    </button>
-                </div>
-            </div>
+
         </div>
     </x-slot>
 
@@ -346,23 +337,20 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
                             </svg>
                             {{ ucfirst($diaActual) }}, {{ \Carbon\Carbon::now()->format('d/m/Y') }}
                         </span>
-            </div>
+                    </div>
                 </div>
             </div>
             <div class="p-4 bg-white rounded-lg shadow-md md:p-6 dark:bg-gray-800">
-            <div id="tabla-utilizacion-tipo-espacio" class="overflow-x-auto">
-                @include('partials.tabla_utilizacion_tipo_espacio', ['comparativaTipos' => $comparativaTipos])
+                <div id="tabla-utilizacion-tipo-espacio" class="overflow-x-auto">
+                    @include('partials.tabla_utilizacion_tipo_espacio', ['comparativaTipos' => $comparativaTipos])
+                </div>
             </div>
-        </div>
         </div>
         <div
             class="flex flex-col items-center justify-center w-full md:w-[260px] lg:w-[340px] bg-white rounded-xl shadow-lg p-6 md:p-8 widget-transition flex-shrink-0 md:mt-0 mt-8">
             <h4 class="mb-4 text-lg font-bold text-center text-gray-700">Salas ocupadas / libres (hoy)</h4>
-            <canvas 
-                id="grafico-circular-salas" 
-                class="mb-2 w-full max-w-[220px] h-auto aspect-square" 
-                style="max-width:220px;"
-            ></canvas>
+            <canvas id="grafico-circular-salas" class="mb-2 w-full max-w-[220px] h-auto aspect-square"
+                style="max-width:220px;"></canvas>
             <div class="flex justify-center gap-4 mt-2">
                 <div class="flex items-center gap-1">
                     <span class="inline-block w-4 h-4 rounded-full" style="background-color: #10b981;"></span>
@@ -381,8 +369,124 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
 
     <!-- Tablas -->
     <div class="w-full p-8 mb-8">
-        <div class="p-8 mb-8 bg-white shadow-lg rounded-xl">
-            <!-- Reservas canceladas o no utilizadas -->
+        <div class="flex flex-col gap-6 md:flex-row">
+            <!-- Reservas Pendientes -->
+            <div class="w-full p-8 mb-8 bg-white shadow-lg rounded-xl md:w-1/2">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                        <span
+                            class="inline-flex items-center justify-center w-6 h-6 text-orange-600 bg-orange-100 rounded-full"><i
+                                class="fas fa-exclamation-triangle"></i></span>
+                        <h3 class="text-lg font-bold text-gray-700">Reservas Pendientes</h3>
+                    </div>
+                    <span
+                        class="px-3 py-1 text-xs font-semibold text-orange-700 bg-orange-100 rounded-full">{{ $reservasSinDevolucion->count() }}
+                        activa</span>
+                </div>
+                <div class="mb-4 text-xs text-gray-500">Sin devolución de espacio</div>
+                <div class="flex flex-col gap-4">
+                    @forelse($reservasSinDevolucion as $reserva)
+                        <div class="flex flex-col gap-2 p-4 bg-white border border-gray-100 rounded-lg shadow-sm">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span
+                                    class="inline-flex items-center justify-center w-8 h-8 text-gray-400 bg-gray-100 rounded-full"><i
+                                        class="fas fa-user"></i></span>
+                                <div>
+                                    <div class="font-semibold text-gray-800">{{ $reserva->user->name }}</div>
+                                    <div class="text-xs text-gray-500">RUN: {{ $reserva->user->run }}</div>
+                                </div>
+                                <span
+                                    class="px-3 py-1 ml-auto text-xs font-semibold text-blue-700 rounded-full bg-blue-50">Activa</span>
+                            </div>
+                            <div class="flex flex-wrap gap-4 mb-2 text-xs text-gray-600">
+                                <div class="flex items-center gap-1"><i class="fas fa-map-marker-alt"></i>
+                                    {{ $reserva->espacio->id_espacio }}<span
+                                        class="ml-1 text-gray-400">{{ $reserva->espacio->nombre_espacio }}</span></div>
+                                <div class="flex items-center gap-1"><i class="fas fa-calendar-alt"></i>
+                                    {{ \Carbon\Carbon::parse($reserva->fecha_reserva)->format('d/m/Y') }} <span
+                                        class="ml-1 text-gray-400">Fecha reserva</span></div>
+                                <div class="flex items-center gap-1"><i class="fas fa-clock"></i> {{ $reserva->hora }} <span
+                                        class="ml-1 text-gray-400">Hora ingreso</span></div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="py-8 text-center text-gray-500">No hay reservas activas sin devolución en este momento.
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+            <!-- Registro de Accesos -->
+            <div class="w-full p-8 mb-8 bg-white shadow-lg rounded-xl md:w-1/2">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2">
+                        <span
+                            class="inline-flex items-center justify-center w-6 h-6 text-blue-600 bg-blue-100 rounded-full"><i
+                                class="fas fa-eye"></i></span>
+                        <h3 class="text-lg font-bold text-gray-700">Registro de Accesos</h3>
+                    </div>
+                    <a href="{{ route('reporteria.accesos') }}"
+                        class="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-blue-700 transition border border-blue-200 rounded-md bg-blue-50 hover:bg-blue-100"><i
+                            class="fas fa-arrow-right"></i> Ver detalles</a>
+                </div>
+                <div class="flex flex-col gap-4">
+                    @forelse($accesosActuales as $acceso)
+                        <div class="flex flex-col gap-2 p-4 bg-white border border-gray-100 rounded-lg shadow-sm">
+                            <div class="flex items-center gap-3 mb-2">
+                                <span
+                                    class="inline-flex items-center justify-center w-8 h-8 text-gray-400 bg-gray-100 rounded-full"><i
+                                        class="fas fa-user"></i></span>
+                                <div>
+                                    <div class="font-semibold text-gray-800">{{ $acceso->user->name }}</div>
+                                    <div class="text-xs text-gray-500"><span class="mx-1">•</span> <span
+                                            class="text-blue-700">{{ $acceso->user->email }}</span></div>
+                                </div>
+                                <span class="flex items-center gap-1 ml-auto text-xs text-green-600"><span
+                                        class="w-2 h-2 bg-green-400 rounded-full"></span> En curso</span>
+                            </div>
+                            <div
+                                class="flex flex-col gap-4 p-3 mb-2 text-xs text-gray-700 rounded-md md:flex-row md:items-start md:justify-between bg-gray-50">
+
+                                <!-- Bloque: Información del espacio -->
+                                <div class="flex flex-col gap-1">
+                                    <div class="flex items-center gap-1">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        <span class="font-semibold">{{ $acceso->espacio->id_espacio }}</span> -
+                                        {{ $acceso->espacio->nombre_espacio }}
+                                    </div>
+                                    <div class="text-gray-500">
+                                        Piso {{ $acceso->espacio->piso->numero_piso ?? '-' }},
+                                        {{ $acceso->espacio->piso->facultad->nombre_facultad ?? '' }}
+                                    </div>
+                                </div>
+
+                                <!-- Bloque: Fechas y horas -->
+                                <div class="flex flex-wrap gap-6 text-xs text-gray-600">
+                                    <div>
+                                        <span class="block text-gray-400">Fecha</span>
+                                        <span
+                                            class="font-semibold text-gray-800">{{ \Carbon\Carbon::parse($acceso->fecha_reserva)->format('d/m/Y') }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-gray-400">Entrada</span>
+                                        <span class="font-semibold text-gray-800">{{ $acceso->hora }}</span>
+                                    </div>
+                                    <div>
+                                        <span class="block text-gray-400">Salida</span>
+                                        <span
+                                            class="font-semibold text-gray-800">{{ $acceso->hora_salida ?? 'En curso' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    @empty
+                        <div class="py-8 text-center text-gray-500">No hay accesos actuales.</div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+        <!-- Widget de Reservas canceladas o no utilizadas en una fila aparte -->
+        <div class="w-full p-8 mb-8 bg-white shadow-lg rounded-xl">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="flex items-center gap-2 text-lg font-bold text-gray-700">Reservas canceladas o no utilizadas
                     <span class="ml-2 cursor-pointer"
@@ -400,126 +504,11 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
                 @include('partials.tabla_no_utilizadas_dia', ['noUtilizadasDia' => $noUtilizadasDia ?? []])
             </div>
         </div>
-        <div class="p-8 mb-8 bg-white shadow-lg rounded-xl">
-            <!-- Reservas activas sin devolución -->
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="flex items-center gap-2 text-lg font-bold text-gray-700">Reservas Activas Sin Devolución
-                    <span class="ml-2 cursor-pointer"
-                        title="Usuarios que han registrado el ingreso a una sala pero no han registrado la salida.">ℹ️</span>
-                </h3>
-            </div>
-            <div class="overflow-x-auto">
-                <table id="tabla-reservas-activas"
-                    class="min-w-full text-center border border-gray-300 rounded-lg dark:bg-dark-eval-1">
-                    <thead>
-                        <tr class="bg-gray-200 dark:bg-dark-eval-2">
-                            <th class="px-4 py-2 border">Usuario</th>
-                            <th class="px-4 py-2 border">Espacio Reservado</th>
-                            <th class="px-4 py-2 border">Fecha de Reserva</th>
-                            <th class="px-4 py-2 border">Hora de Ingreso</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($reservasSinDevolucion as $reserva)
-                        <tr class="bg-white dark:bg-dark-eval-1">
-                            <td class="border">{{ $reserva->user->name }}</td>
-                                <td class="border">{{ $reserva->espacio->nombre_espacio }}
-                                    ({{ $reserva->espacio->id_espacio }})</td>
-                                <td class="border">{{ \Carbon\Carbon::parse($reserva->fecha_reserva)->format('d/m/Y') }}
-                                </td>
-                            <td class="border">{{ $reserva->hora }}</td>
-                        </tr>
-                        @empty
-                        <tr class="bg-white dark:bg-dark-eval-1">
-                            <td colspan="4" class="p-4 text-center text-gray-500">
-                                No hay reservas activas sin devolución en este momento.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="p-8 mb-8 bg-white shadow-lg rounded-xl">
-            <!-- Registro de accesos actuales -->
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="flex items-center gap-2 text-lg font-bold text-gray-700">Registro de accesos actuales</h3>
-            </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full bg-white rounded-lg dark:bg-gray-800">
-                    <thead class="bg-gray-50 dark:bg-gray-700">
-                        <tr>
-                            <th
-                                class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
-                                Usuario</th>
-                            <th
-                                class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
-                                Espacio</th>
-                            <th
-                                class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
-                                Fecha</th>
-                            <th
-                                class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
-                                Hora entrada</th>
-                            <th
-                                class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
-                                Hora salida</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
-                        @forelse($accesosActuales as $acceso)
-                            <tr class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700">
-                            <td class="px-4 py-3 whitespace-nowrap">
-                                <div>
-                                        <div
-                                            class="text-sm font-medium text-gray-900 dark:text-white @if(is_null($acceso->hora_salida)) font-bold text-green-700 @endif">
-                                        {{ $acceso->user->name }}
-                                    </div>
-                                    <div class="text-sm text-gray-500 dark:text-gray-400">
-                                        {{ $acceso->user->run }}
-                                    </div>
-                                    <div class="text-xs text-gray-400 dark:text-gray-500">
-                                        {{ $acceso->user->email }}
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-4 py-3 whitespace-nowrap">
-                                <div>
-                                    <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                            {{ $acceso->espacio->nombre_espacio }} - {{ $acceso->espacio->id_espacio }} -
-                                            Piso {{ $acceso->espacio->piso->numero_piso ?? '-' }}
-                                    </div>
-                                    <div class="text-xs text-gray-400 dark:text-gray-500">
-                                        {{ $acceso->espacio->piso->facultad->nombre_facultad ?? '' }}
-                                    </div>
-                                </div>
-                            </td>
-                                <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap dark:text-white">
-                                {{ \Carbon\Carbon::parse($acceso->fecha_reserva)->format('d/m/Y') }}
-                            </td>
-                                <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap dark:text-white">
-                                {{ $acceso->hora }}
-                            </td>
-                                <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap dark:text-white">
-                                {{ $acceso->hora_salida ?? '-' }}
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="5" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
-                                No hay accesos actuales.
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="p-8 mb-8 bg-white shadow-lg rounded-xl">
-            <!-- Horarios de la semana -->
-            <h3 class="mb-4 text-lg font-bold text-gray-700">Horarios de la semana - Usuarios asignados por espacio</h3>
-            @include('layouts.partials.horarios-semana', ['horariosAgrupados' => $horariosAgrupados])
-        </div>
+    </div>
+    <div class="p-8 mb-8 bg-white shadow-lg rounded-xl">
+        <!-- Horarios de la semana -->
+        <h3 class="mb-4 text-lg font-bold text-gray-700">Horarios de la semana - Usuarios asignados por espacio</h3>
+        @include('layouts.partials.horarios-semana', ['horariosAgrupados' => $horariosAgrupados])
     </div>
 </x-app-layout>
 
@@ -559,11 +548,11 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
         // Crear nueva notificación
         const notificacion = document.createElement('div');
         notificacion.className = `dashboard-notification fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transition-all duration-300 ${tipo === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-        }`;
+            }`;
         notificacion.textContent = mensaje;
-        
+
         document.body.appendChild(notificacion);
-        
+
         // Remover después del tiempo especificado
         setTimeout(() => {
             if (notificacion.parentNode) {
@@ -577,11 +566,11 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
     // ========================================
     // FUNCIONES DE ACTUALIZACIÓN DE WIDGETS
     // ========================================
-    
+
     // Función principal de actualización de widgets
     function actualizarWidgets(data) {
         const errores = [];
-        
+
         // Actualizar KPIs con manejo individual de errores
         try {
             actualizarKPIs(data);
@@ -714,7 +703,7 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
         if (window.graficoBarras && usoPorDia) {
             const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
             const datos = dias.map(dia => usoPorDia[dia] || 0);
-            
+
             window.graficoBarras.data.datasets[0].data = datos;
             window.graficoBarras.update('active');
         }
@@ -823,22 +812,22 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
     // ========================================
     // SISTEMA DE AUTO-REFRESH MEJORADO
     // ========================================
-    
+
     function iniciarAutoRefresh() {
         if (!autoRefreshEnabled) return;
-        
+
         if (autoRefreshInterval) {
             clearInterval(autoRefreshInterval);
         }
-        
+
         autoRefreshInterval = setInterval(function () {
             actualizarDashboard();
         }, 30000);
-        
+
         console.log('Auto-refresh iniciado cada 30 segundos');
         actualizarEstadoBotonAutoRefresh();
     }
-    
+
     function detenerAutoRefresh() {
         if (autoRefreshInterval) {
             clearInterval(autoRefreshInterval);
@@ -847,24 +836,24 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
         }
         actualizarEstadoBotonAutoRefresh();
     }
-    
+
     function toggleAutoRefresh() {
         autoRefreshEnabled = !autoRefreshEnabled;
-        
+
         if (autoRefreshEnabled) {
             iniciarAutoRefresh();
         } else {
             detenerAutoRefresh();
         }
-        
+
         actualizarEstadoBotonAutoRefresh();
     }
-    
+
     function actualizarEstadoBotonAutoRefresh() {
         const boton = document.getElementById('toggle-auto-refresh');
         const icono = document.getElementById('auto-refresh-icon');
         const texto = document.getElementById('auto-refresh-text');
-        
+
         if (autoRefreshEnabled && autoRefreshInterval) {
             boton.className = 'refresh-button flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors';
             icono.textContent = '🔄';
@@ -875,10 +864,10 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
             texto.textContent = 'Auto-refresh OFF';
         }
     }
-    
+
     function actualizarDashboard() {
         mostrarIndicadorActualizacion();
-        
+
         return fetch('/dashboard/widget-data')
             .then(response => {
                 if (!response.ok) {
@@ -895,7 +884,7 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
                 mostrarNotificacion('Error al actualizar el dashboard: ' + error.message, 'error');
             });
     }
-    
+
     function mostrarIndicadorActualizacion() {
         let indicador = document.getElementById('auto-refresh-indicator');
         if (!indicador) {
@@ -945,11 +934,11 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
     function cambiarPiso(piso) {
         const selector = document.getElementById('piso-selector');
         const loadingIndicator = document.getElementById('piso-loading');
-        
+
         selector.disabled = true;
         loadingIndicator.classList.remove('hidden');
         mostrarCargando();
-        
+
         fetch('/dashboard/set-piso', {
             method: 'POST',
             headers: {
@@ -958,38 +947,38 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
             },
             body: JSON.stringify({ piso: piso })
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Error en la respuesta del servidor');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                return fetch('/dashboard/widget-data');
-            } else {
-                throw new Error('Error al cambiar piso: ' + (data.message || 'Error desconocido'));
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Error al obtener datos de widgets');
-            }
-            return response.json();
-        })
-        .then(widgetData => {
-            actualizarWidgets(widgetData);
-            selector.disabled = false;
-            loadingIndicator.classList.add('hidden');
-            mostrarNotificacion('Piso cambiado exitosamente', 'success');
-        })
-        .catch(error => {
-            console.error('Error en la petición:', error);
-            selector.disabled = false;
-            loadingIndicator.classList.add('hidden');
-            ocultarCargando();
-            mostrarNotificacion('Error al cambiar piso: ' + error.message, 'error');
-        });
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    return fetch('/dashboard/widget-data');
+                } else {
+                    throw new Error('Error al cambiar piso: ' + (data.message || 'Error desconocido'));
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al obtener datos de widgets');
+                }
+                return response.json();
+            })
+            .then(widgetData => {
+                actualizarWidgets(widgetData);
+                selector.disabled = false;
+                loadingIndicator.classList.add('hidden');
+                mostrarNotificacion('Piso cambiado exitosamente', 'success');
+            })
+            .catch(error => {
+                console.error('Error en la petición:', error);
+                selector.disabled = false;
+                loadingIndicator.classList.add('hidden');
+                ocultarCargando();
+                mostrarNotificacion('Error al cambiar piso: ' + error.message, 'error');
+            });
     }
 
     // ========================================
@@ -1070,7 +1059,7 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
             }]
         },
         options: {
-            responsive: false, 
+            responsive: false,
             plugins: {
                 legend: { display: false }
             },
@@ -1110,7 +1099,7 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
             }]
         },
         options: {
-            responsive: false, 
+            responsive: false,
             plugins: {
                 legend: { position: 'bottom' },
                 tooltip: {
@@ -1139,7 +1128,7 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
             }]
         },
         options: {
-            responsive: false, 
+            responsive: false,
             plugins: {
                 legend: { position: 'bottom' }
             },
@@ -1220,10 +1209,10 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
     document.addEventListener('DOMContentLoaded', function () {
         // Configurar event listeners
         document.getElementById('toggle-auto-refresh').addEventListener('click', toggleAutoRefresh);
-        
+
         // Iniciar auto-refresh
         iniciarAutoRefresh();
-        
+
         // Detener auto-refresh cuando la página no esté visible
         document.addEventListener('visibilitychange', function () {
             if (document.hidden) {
@@ -1257,22 +1246,23 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
     [x-cloak] {
         display: none !important;
     }
-    
+
     /* Transiciones suaves para los widgets */
     .widget-transition {
         transition: all 0.3s ease-in-out;
     }
-    
+
     .widget-loading {
         opacity: 0.6;
         pointer-events: none;
     }
-    
+
     .widget-updating {
         animation: pulse 1.5s infinite;
     }
-    
+
     @keyframes pulse {
+
         0%,
         100% {
             opacity: 1;
@@ -1282,22 +1272,22 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
             opacity: 0.7;
         }
     }
-    
+
     /* Animación para los KPIs */
     .kpi-value {
         transition: all 0.3s ease;
     }
-    
+
     .kpi-value.updating {
         transform: scale(1.05);
         color: #3b82f6;
     }
-    
+
     /* Estilos para el indicador de auto-refresh */
     #auto-refresh-indicator {
         animation: slideInUp 0.3s ease-out;
     }
-    
+
     @keyframes slideInUp {
         from {
             transform: translateY(100%);
@@ -1309,26 +1299,26 @@ $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloAc
             opacity: 0.75;
         }
     }
-    
+
     /* Estilos para los botones de control */
     .refresh-button {
         transition: all 0.2s ease-in-out;
     }
-    
+
     .refresh-button:hover {
         transform: translateY(-1px);
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }
-    
+
     .refresh-button:active {
         transform: translateY(0);
     }
-    
+
     /* Animación para el icono de actualización */
     .animate-spin {
         animation: spin 1s linear infinite;
     }
-    
+
     @keyframes spin {
         from {
             transform: rotate(0deg);

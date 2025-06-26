@@ -2,7 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\ReservaController;
+use App\Http\Controllers\Api\ApiReservaController;
 use App\Models\User;
 use App\Http\Controllers\EspacioController;
 use Illuminate\Support\Facades\DB;
@@ -83,11 +83,12 @@ Route::get('/verificar-espacio/{profesorId}/{espacioId}', function ($profesorId,
 });
 
 // Rutas para reservas
-Route::get('/verificar-espacio/{userId}/{espacioId}', [ReservaController::class, 'verificarEspacio']);
-Route::post('/registrar-ingreso-clase', [ReservaController::class, 'registrarIngresoClase']);
-Route::post('/registrar-salida-clase', [ReservaController::class, 'registrarSalidaClase']);
-Route::post('/registrar-reserva-espontanea', [ReservaController::class, 'registrarReservaEspontanea']);
-Route::post('/registrar-entrada-clase', [ReservaController::class, 'registrarIngresoClase']);
+Route::get('/verificar-espacio/{userId}/{espacioId}', [ApiReservaController::class, 'verificarEspacio']);
+Route::post('/registrar-ingreso-clase', [ApiReservaController::class, 'registrarIngresoClase']);
+Route::post('/registrar-salida-clase', [ApiReservaController::class, 'registrarSalidaClase']);
+Route::post('/registrar-reserva-espontanea', [ApiReservaController::class, 'registrarReservaEspontanea']);
+Route::post('/registrar-entrada-clase', [ApiReservaController::class, 'registrarIngresoClase']);
+Route::get('/reserva-activa/{id}', [App\Http\Controllers\Api\ApiReservaController::class, 'getReservaActiva']);
 
 Route::get('/user/{run}', function ($run) {
     try {
@@ -111,7 +112,7 @@ Route::get('/user/{run}', function ($run) {
             ]);
         } else {
             return response()->json([
-                'success' => false, 
+                'success' => false,
                 'message' => 'El profesor no se encuentra registrado, contáctese con soporte.'
             ], 404);
         }
@@ -135,9 +136,9 @@ Route::get('/verificar-clase-usuario', function ($request) {
         ->join('espacios as e', 'pa.id_espacio', '=', 'e.id_espacio')
         ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
         ->join('users as u', 'h.run', '=', 'u.run')
-        ->where(function($q) use ($espacioId) {
+        ->where(function ($q) use ($espacioId) {
             $q->where('pa.id_espacio', $espacioId)
-              ->orWhere('e.nombre_espacio', $espacioId);
+                ->orWhere('e.nombre_espacio', $espacioId);
         })
         ->where('h.run', $run)
         ->where('m.dia', $dia)
@@ -163,20 +164,29 @@ Route::get('/verificar-clase-usuario', function ($request) {
 });
 
 Route::get('/espacio/{id}', function ($id) {
-    $espacio = \DB::table('espacios')
-        ->where('id_espacio', $id)
-        ->orWhere('nombre_espacio', $id)
-        ->first();
-    if ($espacio) {
-        return response()->json([
-            'success' => true,
-            'espacio' => $espacio
-        ]);
-    } else {
+    try {
+        $espacio = \DB::table('espacios')
+            ->where('id_espacio', $id)
+            ->orWhere('nombre_espacio', $id)
+            ->first();
+        
+        if ($espacio) {
+            return response()->json([
+                'success' => true,
+                'espacio' => $espacio
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Espacio no encontrado'
+            ], 404);
+        }
+    } catch (\Exception $e) {
+        \Log::error('Error al buscar espacio: ' . $e->getMessage());
         return response()->json([
             'success' => false,
-            'message' => 'Espacio no encontrado'
-        ], 404);
+            'message' => 'Error interno del servidor'
+        ], 500);
     }
 });
 
@@ -188,7 +198,7 @@ Route::get('/verificar-planificacion/{id_espacio}/{id_modulo}', function ($id_es
     try {
         // Extraer el día y número de módulo del id_modulo (ejemplo: "MI.5")
         list($dia, $numeroModulo) = explode('.', $id_modulo);
-        
+
         // Verificar si existe planificación para este espacio y módulo
         $tienePlanificacion = DB::table('planificacion_asignaturas')
             ->where('id_espacio', $id_espacio)
@@ -207,14 +217,12 @@ Route::get('/verificar-planificacion/{id_espacio}/{id_modulo}', function ($id_es
     }
 });
 
-Route::get('/reserva-activa/{id}', [App\Http\Controllers\ReservaController::class, 'getReservaActiva']);
-
 // Ruta para verificar la planificación de múltiples espacios
 Route::get('/verificar-planificacion-multiple', function (Request $request) {
     try {
         $id_modulo = $request->query('id_modulo');
         $espacios = explode(',', $request->query('espacios'));
-        
+
         if (!$id_modulo || empty($espacios)) {
             return response()->json([
                 'error' => 'Se requieren id_modulo y espacios'
@@ -240,16 +248,15 @@ Route::get('/verificar-planificacion-multiple', function (Request $request) {
     }
 });
 
-Route::get('/espacio/{id}', [ReservaController::class, 'getEspacioEstado']);
 
 // Ruta para obtener pisos de la sede TH y facultad IT_TH
 Route::get('/pisos/th/it', function () {
     try {
         $pisos = \App\Models\Piso::with(['facultad.sede'])
-            ->whereHas('facultad', function($query) {
+            ->whereHas('facultad', function ($query) {
                 $query->where('id_facultad', 'IT_TH');
             })
-            ->whereHas('facultad.sede', function($query) {
+            ->whereHas('facultad.sede', function ($query) {
                 $query->where('id_sede', 'TH');
             })
             ->orderBy('numero_piso')
@@ -283,5 +290,39 @@ Route::post('/devolver-llaves', [HorarioController::class, 'devolverLlaves']);
 Route::get('/espacios/estados', [PlanoDigitalController::class, 'estadosEspacios']);
 
 // Ruta para devolver llaves
-Route::post('/reserva/devolver', [App\Http\Controllers\Api\ReservaController::class, 'devolverLlaves']);
+Route::post('/reserva/devolver', [ApiReservaController::class, 'devolverLlaves']);
+
+// Ruta para verificar la programación de un usuario en un espacio específico
+Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $usuario) {
+    try {
+        // Obtener la hora actual
+        $horaActual = \Carbon\Carbon::now();
+        $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
+        $horaActualStr = $horaActual->format('H:i:s');
+
+        // Verificar si el usuario tiene clase programada en este espacio
+        $tieneProgramacion = DB::table('planificacion_asignaturas as pa')
+            ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
+            ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
+            ->where('pa.id_espacio', $espacio)
+            ->where('h.run', $usuario)
+            ->where('m.dia', $diaActual)
+            ->where(function($query) use ($horaActualStr) {
+                $query->where('m.hora_inicio', '<=', $horaActualStr)
+                      ->where('m.hora_termino', '>=', $horaActualStr);
+            })
+            ->exists();
+
+        return response()->json([
+            'success' => true,
+            'tieneProgramacion' => $tieneProgramacion
+        ]);
+    } catch (\Exception $e) {
+        \Log::error('Error al verificar programación: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al verificar la programación: ' . $e->getMessage()
+        ], 500);
+    }
+});
 

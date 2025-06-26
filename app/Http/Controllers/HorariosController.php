@@ -18,7 +18,7 @@ class HorariosController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::role('Profesor');
+        $query = User::role('Profesor')->with(['areaAcademica', 'facultad']);
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
