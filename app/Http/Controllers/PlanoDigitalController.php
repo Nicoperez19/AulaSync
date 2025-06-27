@@ -115,10 +115,23 @@ class PlanoDigitalController extends Controller
     public function bloques($id)
     {
         try {
+            \Log::info('Solicitud de bloques recibida:', ['id' => $id]);
             $mapa = $this->obtenerMapa($id);
             $estadoActual = $this->obtenerEstadoActual(Carbon::now());
             $bloques = $this->prepararBloques($mapa, $estadoActual);
-            return response()->json($bloques);
+            \Log::info('Bloques preparados:', ['count' => count($bloques)]);
+            
+            // Log detallado de cada bloque para debuggear
+            foreach ($bloques as $bloque) {
+                \Log::info('Bloque procesado:', [
+                    'id' => $bloque['id'],
+                    'nombre' => $bloque['nombre'],
+                    'estado' => $bloque['estado'],
+                    'detalles' => $bloque['detalles']
+                ]);
+            }
+            
+            return response()->json(['bloques' => $bloques]);
         } catch (\Exception $e) {
             \Log::error('Error al obtener bloques: ' . $e->getMessage());
             return response()->json(['error' => 'Error al obtener los bloques'], 500);
@@ -176,42 +189,78 @@ class PlanoDigitalController extends Controller
             $idEspacio = $bloque->id_espacio;
             $espacio = $bloque->espacio;
             
+            \Log::info('Procesando espacio:', [
+                'id_espacio' => $idEspacio,
+                'nombre_espacio' => $espacio->nombre_espacio,
+                'estado_bd' => $espacio->estado
+            ]);
+            
             // Inicializar estados
             $estaOcupado = false;
             $estaReservado = false;
             $deberiaEstarOcupado = false;
+            $tieneClaseProxima = false;
 
             // Verificar si hay una reserva activa para este espacio
             $reservaActiva = $reservasActivas->firstWhere('id_espacio', $idEspacio);
             if ($reservaActiva) {
+                \Log::info('Reserva activa encontrada:', [
+                    'id_espacio' => $idEspacio,
+                    'reserva' => $reservaActiva->toArray()
+                ]);
                 // Si la reserva tiene hora_salida y es menor que la hora actual, el espacio está disponible
                 if ($reservaActiva->hora_salida && $reservaActiva->hora_salida < $estadoActual['hora']) {
                     $estaOcupado = false;
                     $estaReservado = false;
                 } else {
-                    $estaReservado = true;
+                    // Si el espacio está marcado como Ocupado en la BD, entonces está ocupado, no reservado
+                    if ($espacio->estado === 'Ocupado') {
+                        $estaOcupado = true;
+                        $estaReservado = false;
+                        \Log::info('Espacio con reserva activa marcado como Ocupado en BD:', ['id_espacio' => $idEspacio]);
+                    } else {
+                        $estaReservado = true;
+                        \Log::info('Espacio con reserva activa marcado como Reservado:', ['id_espacio' => $idEspacio]);
+                    }
                 }
             }
 
-            // Verificar si hay una planificación activa para este espacio
+            // Verificar si hay una planificación activa para este espacio (clase en curso)
             $planificacionActiva = $planificacionesActivas->firstWhere('id_espacio', $idEspacio);
             if ($planificacionActiva) {
+                \Log::info('Planificación activa encontrada:', [
+                    'id_espacio' => $idEspacio,
+                    'planificacion' => $planificacionActiva->toArray()
+                ]);
                 $deberiaEstarOcupado = true;
-                // Si el espacio está marcado como ocupado en la base de datos
+                // Si el espacio está marcado como ocupado en la base de datos, tiene prioridad
                 if ($espacio->estado === 'Ocupado') {
                     $estaOcupado = true;
+                    $estaReservado = false; // Asegurar que no se marque como reservado
+                    \Log::info('Espacio con planificación activa marcado como Ocupado en BD:', ['id_espacio' => $idEspacio]);
                 }
             }
 
-            // Verificar si hay una planificación próxima para este espacio
+            // Verificar si hay una planificación próxima para este espacio (clase próxima)
             $tieneClaseProxima = $planificacionesProximas->contains('id_espacio', $idEspacio);
+
+            $estadoFinal = $this->determinarEstado($estaOcupado, $estaReservado, $deberiaEstarOcupado, $tieneClaseProxima);
+            
+            \Log::info('Estado determinado:', [
+                'id_espacio' => $idEspacio,
+                'estaOcupado' => $estaOcupado,
+                'estaReservado' => $estaReservado,
+                'deberiaEstarOcupado' => $deberiaEstarOcupado,
+                'tieneClaseProxima' => $tieneClaseProxima,
+                'estado_final' => $estadoFinal
+            ]);
 
             return [
                 'id' => $idEspacio,
                 'nombre' => $bloque->espacio->nombre_espacio,
                 'x' => $bloque->posicion_x,
                 'y' => $bloque->posicion_y,
-                'estado' => $this->determinarEstado($estaOcupado, $estaReservado, $deberiaEstarOcupado),
+                'estado' => $estadoFinal,
                 'detalles' => array_merge(
                     $this->prepararDetallesBloque(
                         $bloque->espacio,
@@ -303,21 +352,37 @@ class PlanoDigitalController extends Controller
             ->get();
     }
 
-    private function determinarEstado(bool $estaOcupado, bool $estaReservado, bool $deberiaEstarOcupado): string
+    private function determinarEstado(bool $estaOcupado, bool $estaReservado, bool $deberiaEstarOcupado, bool $tieneClaseProxima): string
     {
+        \Log::info('Determinando estado:', [
+            'estaOcupado' => $estaOcupado,
+            'estaReservado' => $estaReservado,
+            'deberiaEstarOcupado' => $deberiaEstarOcupado,
+            'tieneClaseProxima' => $tieneClaseProxima
+        ]);
+        
         // Si el espacio está ocupado (estado en BD = 'Ocupado'), siempre mostrar en rojo
         if ($estaOcupado) {
+            \Log::info('Estado determinado: Ocupado (Rojo)');
             return '#FF0000'; // Rojo - se mantiene hasta devolver llaves
         }
         // Si el espacio está reservado pero no ocupado, mostrar en naranja
         if ($estaReservado) {
+            \Log::info('Estado determinado: Reservado (Naranja)');
             return '#FFA500'; // Naranja
         }
-        // Si el espacio debería estar ocupado pero no lo está, mostrar azul
+        // Si el espacio debería estar ocupado pero no lo está (clase en curso), mostrar naranja
         if ($deberiaEstarOcupado) {
-            return '#3B82F6'; // Azul
+            \Log::info('Estado determinado: Debería estar ocupado (Naranja)');
+            return '#FFA500'; // Naranja - para clases en curso en el módulo actual
+        }
+        // Si el espacio tiene clase próxima (siguiente módulo), mostrar azul
+        if ($tieneClaseProxima) {
+            \Log::info('Estado determinado: Próximo (Azul)');
+            return '#3B82F6'; // Azul - para clases próximas
         }
         // Si el espacio está disponible, mostrar en verde
+        \Log::info('Estado determinado: Disponible (Verde)');
         return '#059669'; // Verde
     }
 
@@ -362,12 +427,23 @@ class PlanoDigitalController extends Controller
         if ($reserva) {
             $detalles['reserva'] = [
                 'fecha_reserva' => $reserva->fecha_reserva ?? 'No especificada',
-                'hora' => $reserva->hora ?? '00:00:00'
+                'hora' => $reserva->hora ?? '00:00:00',
+                'hora_salida' => $reserva->hora_salida ?? null
             ];
             // Incluir el nombre del usuario que ocupa el espacio
             $detalles['usuario_ocupando'] = $reserva->user ? $reserva->user->name : null;
+            
+            // Incluir información adicional del usuario si está disponible
+            if ($reserva->user) {
+                $detalles['usuario_info'] = [
+                    'nombre' => $reserva->user->name ?? 'No especificado',
+                    'email' => $reserva->user->email ?? 'No especificado',
+                    'run' => $reserva->user->run ?? 'No especificado'
+                ];
+            }
         } else {
             $detalles['usuario_ocupando'] = null;
+            $detalles['usuario_info'] = null;
         }
 
         return $detalles;
@@ -491,8 +567,10 @@ class PlanoDigitalController extends Controller
                 } elseif ($tieneReservaActiva) {
                     $estado = 'Reservado';
                 } elseif ($tieneClaseEnCurso && $estadoTabla !== 'Ocupado') {
-                    $estado = 'Reservado';
+                    // Clase en curso en el módulo actual - mostrar naranja
+                    $estado = 'Reservado'; // Naranja
                 } elseif ($tieneClaseProxima) {
+                    // Clase próxima (siguiente módulo) - mostrar azul
                     $estado = 'Proximo';
                 } elseif ($estadoTabla === 'Disponible') {
                     $estado = 'Disponible';

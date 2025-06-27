@@ -109,18 +109,29 @@ class HorarioController extends Controller
     {
         DB::beginTransaction();
         try {
+            \Log::info('=== INICIO CREAR RESERVA ===');
+            \Log::info('Datos recibidos:', $request->all());
+            
             $espacio = Espacio::select('id_espacio', 'estado', 'nombre_espacio')->find($request->id_espacio);
             
             if (!$espacio) {
                 DB::rollBack();
+                \Log::error('Espacio no encontrado:', ['id_espacio' => $request->id_espacio]);
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'Espacio no encontrado'
                 ]);
             }
 
+            \Log::info('Espacio encontrado:', [
+                'id_espacio' => $espacio->id_espacio,
+                'nombre' => $espacio->nombre_espacio,
+                'estado_actual' => $espacio->estado
+            ]);
+
             if ($espacio->estado === 'Ocupado') {
                 DB::rollBack();
+                \Log::warning('Espacio ya está ocupado');
                 return response()->json([
                     'success' => false,
                     'mensaje' => '¿Desea devolver las llaves?',
@@ -137,6 +148,7 @@ class HorarioController extends Controller
 
             if ($yaTieneReserva) {
                 DB::rollBack();
+                \Log::warning('Usuario ya tiene reserva activa:', ['run' => $request->run]);
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'Ya tienes una reserva activa en otra sala. Debes finalizarla antes de solicitar una nueva.'
@@ -149,6 +161,8 @@ class HorarioController extends Controller
                 '001';
             $newId = 'R' . $newIdNumber;
 
+            \Log::info('Creando nueva reserva:', ['id_reserva' => $newId]);
+
             $reserva = new Reserva();
             $reserva->id_reserva = $newId;
             $reserva->hora = Carbon::now()->format('H:i:s');
@@ -159,10 +173,27 @@ class HorarioController extends Controller
             $reserva->estado = 'activa';
             $reserva->save();
 
+            \Log::info('Reserva creada exitosamente:', [
+                'id_reserva' => $reserva->id_reserva,
+                'espacio_id' => $reserva->id_espacio,
+                'run' => $reserva->run
+            ]);
+
+            \Log::info('Estado del espacio antes de actualizar:', ['estado' => $espacio->estado]);
             $espacio->estado = 'Ocupado';
             $espacio->save();
+            \Log::info('Estado del espacio después de actualizar:', ['estado' => $espacio->estado]);
+
+            // Verificar que el cambio se guardó correctamente
+            $espacioVerificado = Espacio::select('id_espacio', 'estado', 'nombre_espacio')->find($request->id_espacio);
+            \Log::info('Verificación del estado del espacio:', [
+                'id_espacio' => $espacioVerificado->id_espacio,
+                'estado_verificado' => $espacioVerificado->estado
+            ]);
 
             DB::commit();
+            \Log::info('=== RESERVA CREADA EXITOSAMENTE ===');
+            
             return response()->json([
                 'success' => true,
                 'reserva' => [
@@ -177,6 +208,10 @@ class HorarioController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('Error al crear reserva:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json([
                 'success' => false,
                 'mensaje' => 'Error al crear reserva: ' . $e->getMessage()
