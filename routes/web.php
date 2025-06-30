@@ -64,6 +64,7 @@ Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::get('/spacetime/spacetime_index', [HorariosController::class, 'mostrarHorarios'])->name('horarios_espacios.index');
     Route::get('/horarios-espacios', [HorariosController::class, 'getHorariosEspacios'])->name('horarios.espacios.get');
     Route::get('/espacios', action: [HorariosController::class, 'showEspacios'])->name('espacios.show');
+    Route::get('/espacios/{idEspacio}/export-pdf', [HorariosController::class, 'exportHorarioEspacioPDF'])->name('espacios.export-pdf');
 
 });
 

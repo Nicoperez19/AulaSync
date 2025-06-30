@@ -2,35 +2,54 @@
     <x-slot name="header">
         <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">
-                <div class="bg-blue-100 p-2 rounded-full">
-                    <i class="fa-solid fa-graduation-cap text-blue-600 text-2xl"></i>
+                <div class=" p-2 rounded-xl bg-light-cloud-blue">
+                    <i class="fa-solid fa-graduation-cap text-white text-2xl"></i>
                 </div>
                 <div>
-                    <h2 class="text-2xl font-bold leading-tight text-gray-900">Horarios</h2>
+                    <h2 class="text-2xl font-bold leading-tight text-black">Horarios</h2>
                     <p class="text-gray-500 text-base">Directorio de profesores</p>
                 </div>
             </div>
         </div>
     </x-slot>
 
-    <div class="p-6 bg-gray-50 min-h-[80vh]">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-            <div class="flex-1 relative">
-            <input type="text" name="search" id="search-profesor" value="{{ request('search') }}"
-                    placeholder="Nombre o RUN" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-200 focus:border-blue-400 transition pr-10" />
-                <span id="search-spinner" class="absolute right-3 top-1/2 -translate-y-1/2 hidden">
-                    <svg class="animate-spin h-5 w-5 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
-                    </svg>
-                </span>
-            </div>
-            <!-- Aquí podrías agregar un filtro por área/facultad si lo deseas -->
+    <div class="p-6 min-h-[80vh]">
+        <!-- Tarjeta de filtros -->
+        <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <form id="filtro-letra-form" method="GET" action="" class="flex flex-col gap-4" onsubmit="return false;">
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
+                    <div class="flex-1 flex items-center gap-2">
+                        <div class="relative w-full">
+                            <input type="text" name="search" id="search-profesor" value="{{ request('search') }}"
+                                placeholder="Buscar por nombre, apellido o RUN..." class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-light-cloud-blue/30 focus:border-light-cloud-blue transition pr-10" />
+                        </div>
+                        <button id="buscar-btn" type="button" class="px-4 py-2 bg-light-cloud-blue text-white rounded font-semibold text-sm hover:bg-[#b10718] transition">Buscar</button>
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
+                    <span class="font-semibold text-light-cloud-blue mr-2">Apellido:</span>
+                    <div class="flex flex-wrap gap-1 items-center">
+                        @php
+                            $letras = ['Todos','A','B','C','D','E','F','G','H','I','J','K','L','M','N','Ñ','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
+                            $letraSeleccionada = request('letra', 'Todos');
+                        @endphp
+                        @foreach($letras as $letra)
+                            <button type="button"
+                                class="{{ $letra === 'Todos' ? 'w-16' : 'w-8' }} h-8 flex items-center justify-center rounded border text-xs font-bold uppercase focus:outline-none letra-filtro-btn transition
+                                {{ $letraSeleccionada == $letra ? 'bg-light-cloud-blue text-white' : 'bg-white text-light-cloud-blue  hover:bg-light-cloud-blue/10' }}"
+                                data-letra="{{ $letra }}">{{ $letra }}</button>
+                        @endforeach
+                    </div>
+                    <input type="hidden" name="letra" id="letra-filtro-input" value="{{ $letraSeleccionada }}">
+                    <button id="aplicar-filtro-btn" type="button" class="ml-2 px-4 py-2 bg-light-cloud-blue text-white rounded font-semibold text-sm hover:bg-[#b10718] transition">Aplicar filtro</button>
+                </div>
+            </form>
         </div>
+        <!-- Fin tarjeta de filtros -->
 
         <div id="profesores-lista">
             <p class="mb-4 text-gray-500 text-sm">{{ $profesores->total() }} profesores encontrados</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                 @foreach ($profesores as $profesor)
                     <div class="bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:shadow-md transition profesor-card cursor-pointer" data-run="{{ $profesor->run }}">
                         <div class="flex items-center gap-3">
@@ -44,8 +63,8 @@
                         <div class="flex flex-wrap gap-2">
                             <!-- Etiquetas de área/facultad eliminadas -->
                         </div>
-                        <button class="mt-2 flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-blue-100 text-blue-700 rounded-lg font-semibold text-sm border border-blue-100 transition ver-horario-btn" type="button">
-                            <i class="fa-solid fa-calendar-days"></i> Ver datos funcionario
+                        <button class="mt-2 flex items-center gap-2 px-3 py-1.5 border border-light-cloud-blue text-light-cloud-blue bg-white hover:bg-light-cloud-blue/10 rounded-lg font-semibold text-sm transition ver-horario-btn" type="button">
+                            <i class="fa-solid fa-calendar-days !text-light-cloud-blue"></i> Ver datos funcionario
                         </button>
                     </div>
                 @endforeach
@@ -64,8 +83,7 @@
                     <div class="bg-red-100 rounded-full p-4 mb-4">
                         <i class="fa-solid fa-user text-3xl text-red-600"></i>
                     </div>
-                    <h3 class="text-base font-bold text-red-900 mb-2 text-center" id="modalNombreProfesor">Profesor</h3>
-                    <p class="text-xs text-gray-700 mb-1 text-center" id="modalRunProfesor">RUN: </p>
+                    <h3 class="text-base font-bold text-black mb-2 text-center" id="modalNombreProfesor">Profesor</h3>
                     <p class="text-xs text-gray-700 mb-1 text-center" id="modalCorreoProfesor">Correo: </p>
                 </div>
                 <!-- Columna derecha: Horario -->
@@ -73,7 +91,7 @@
                     <!-- Encabezado colorido -->
                     <div class="relative bg-red-700 p-8 flex items-center justify-between">
                         <h3 class="text-2xl font-bold text-white flex items-center gap-2" id="modalTitle">
-                            <i class="fa-solid fa-calendar-days"></i> Horario del Profesor
+                            <i class="fa-solid fa-calendar-days text-white"></i> Horario del Profesor
                         </h3>
                         <button onclick="cerrarModal()" class="text-2xl font-bold text-white hover:text-gray-200 ml-2">&times;</button>
                         <!-- Círculos decorativos -->
@@ -98,6 +116,17 @@
                     </table>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Spinner -->
+        <div id="profesores-spinner" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-10 z-50 hidden">
+            <div class="flex flex-col items-center">
+                <svg class="animate-spin h-10 w-10 text-black mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path>
+                </svg>
+                <span class="text-black text-sm font-semibold">Cargando...</span>
             </div>
         </div>
     </div>
@@ -169,7 +198,6 @@
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('modalNombreProfesor').textContent = data.horario.docente.name;
-                    document.getElementById('modalRunProfesor').textContent = `RUN: ${data.horario.docente.run}`;
                     document.getElementById('modalCorreoProfesor').textContent = `Correo: ${data.horario.docente.email}`;
                     const horarioBody = document.getElementById('horarioBody');
                     horarioBody.innerHTML = '';
@@ -237,5 +265,93 @@
             document.body.classList.remove('overflow-hidden');
             document.documentElement.classList.remove('overflow-hidden');
         }
+
+        // Manejo visual de selección de letra
+        const letraBtns = document.querySelectorAll('.letra-filtro-btn');
+        const letraInput = document.getElementById('letra-filtro-input');
+        letraBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                letraBtns.forEach(b => b.classList.remove('bg-light-cloud-blue', 'text-white'));
+                letraBtns.forEach(b => b.classList.add('bg-white', 'text-light-cloud-blue'));
+                this.classList.remove('bg-white', 'text-light-cloud-blue');
+                this.classList.add('bg-light-cloud-blue', 'text-white');
+                letraInput.value = this.dataset.letra;
+            });
+        });
+
+        // Aplicar filtro por AJAX
+        const aplicarFiltroBtn = document.getElementById('aplicar-filtro-btn');
+        const filtroForm = document.getElementById('filtro-letra-form');
+        const profesoresLista = document.getElementById('profesores-lista');
+        const profesoresSpinner = document.getElementById('profesores-spinner');
+
+        function mostrarSpinner() {
+            profesoresSpinner.classList.remove('hidden');
+        }
+        function ocultarSpinner() {
+            profesoresSpinner.classList.add('hidden');
+        }
+
+        aplicarFiltroBtn.addEventListener('click', function() {
+            const formData = new FormData(filtroForm);
+            const params = new URLSearchParams(formData).toString();
+            mostrarSpinner();
+            fetch(`?${params}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newList = doc.getElementById('profesores-lista');
+                profesoresLista.innerHTML = newList.innerHTML;
+                activarClickCard();
+            })
+            .finally(() => ocultarSpinner());
+        });
+
+        // Buscar por AJAX
+        const buscarBtn = document.getElementById('buscar-btn');
+        buscarBtn.addEventListener('click', function() {
+            const formData = new FormData(filtroForm);
+            const params = new URLSearchParams(formData).toString();
+            mostrarSpinner();
+            fetch(`?${params}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const newList = doc.getElementById('profesores-lista');
+                profesoresLista.innerHTML = newList.innerHTML;
+                activarClickCard();
+            })
+            .finally(() => ocultarSpinner());
+        });
+
+        // Permitir que al hacer clic en la tarjeta completa se active el modal
+        function activarClickCard() {
+            document.querySelectorAll('.profesor-card').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    // Evitar doble apertura si se hace click en el botón interno
+                    if (e.target.closest('.ver-horario-btn')) return;
+                    const run = this.dataset.run;
+                    mostrarHorario(run);
+                });
+            });
+            // Seguir permitiendo el click en el botón
+            document.querySelectorAll('.profesor-card .ver-horario-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const run = this.closest('.profesor-card').dataset.run;
+                    mostrarHorario(run);
+                });
+            });
+        }
+
+        // Llamar a la función al cargar y después de AJAX
+        activarClickCard();
     </script>
 </x-app-layout>

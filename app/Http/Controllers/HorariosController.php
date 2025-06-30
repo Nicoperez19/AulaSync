@@ -8,8 +8,11 @@ use App\Models\Planificacion_Asignatura;
 use App\Models\Sede;
 use App\Models\Asignatura;
 use App\Models\Modulo;
+use App\Models\Espacio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 
 class HorariosController extends Controller
 {
@@ -25,6 +28,12 @@ class HorariosController extends Controller
                 $q->where('name', 'like', '%' . $search . '%')
                     ->orWhere('run', 'like', '%' . $search . '%');
             });
+        }
+        // Filtro por letra inicial del apellido
+        if ($request->filled('letra') && $request->letra !== 'Todos') {
+            $letra = $request->letra;
+            // Quitar tildes y comparar solo la primera letra del apellido
+            $query->whereRaw("UPPER(REPLACE(SUBSTRING_INDEX(name, ',', 1), 'Á', 'A')) LIKE ?", [strtoupper($letra) . '%']);
         }
         $profesores = $query->orderBy('name')->paginate(27);
         $horarios = Horario::with(['docente', 'planificaciones.asignatura', 'planificaciones.espacio'])->get();
@@ -188,6 +197,7 @@ class HorariosController extends Controller
             return $items->map(function ($plan) {
                 return [
                     'asignatura' => $plan->asignatura->nombre_asignatura ?? '',
+                    'codigo_asignatura' => $plan->asignatura->codigo_asignatura ?? '',
                     'user' => $plan->asignatura->user ? [
                         'name' => $plan->asignatura->user->name
                     ] : null,
@@ -200,5 +210,85 @@ class HorariosController extends Controller
         });
 
         return view('layouts.spacetime.spacetime_show', compact('pisos', 'horariosPorEspacio'));
+    }
+
+    public function exportHorarioEspacioPDF($idEspacio)
+    {
+        try {
+            // Obtener el espacio con sus relaciones
+            $espacio = Espacio::with(['piso.facultad'])->where('id_espacio', $idEspacio)->first();
+            
+            if (!$espacio) {
+                return response()->json(['error' => 'Espacio no encontrado'], 404);
+            }
+
+            // Obtener las planificaciones del espacio
+            $planificaciones = Planificacion_Asignatura::with(['asignatura.user', 'modulo'])
+                ->where('id_espacio', $idEspacio)
+                ->get();
+
+            // Formatear los horarios
+            $horarios = $planificaciones->map(function ($plan) {
+                return [
+                    'asignatura' => $plan->asignatura->nombre_asignatura ?? '',
+                    'codigo_asignatura' => $plan->asignatura->codigo_asignatura ?? '',
+                    'user' => $plan->asignatura->user ? [
+                        'name' => $plan->asignatura->user->name
+                    ] : null,
+                    'dia' => $plan->modulo->dia ?? '',
+                    'hora_inicio' => $plan->modulo->hora_inicio ?? '',
+                    'hora_termino' => $plan->modulo->hora_termino ?? '',
+                ];
+            })->toArray();
+
+            // Obtener TODOS los módulos disponibles desde las 8:10 hasta el último horario
+            $todosLosModulos = Modulo::orderBy('hora_inicio')->get();
+            
+            // Filtrar módulos que empiecen desde las 8:10 o después
+            $modulosFiltrados = $todosLosModulos->filter(function($modulo) {
+                return $modulo->hora_inicio >= '08:10:00';
+            });
+
+            // Obtener módulos únicos y ordenarlos
+            $modulosUnicos = $modulosFiltrados->map(function($modulo) {
+                return [
+                    'hora_inicio' => $modulo->hora_inicio,
+                    'hora_termino' => $modulo->hora_termino
+                ];
+            })->unique(function($item) {
+                return $item['hora_inicio'] . '-' . $item['hora_termino'];
+            })->sortBy('hora_inicio')
+            ->values()
+            ->toArray();
+
+            $fecha_generacion = Carbon::now()->format('d/m/Y H:i:s');
+
+            // Determinar el semestre actual
+            $mesActual = Carbon::now()->month;
+            $anioActual = Carbon::now()->year;
+            $semestre = ($mesActual >= 3 && $mesActual <= 7) ? 1 : 2; // Marzo-Julio = Semestre 1, Agosto-Febrero = Semestre 2
+            $periodo = $anioActual . '_' . $semestre;
+
+            // Generar el PDF
+            $pdf = Pdf::loadView('reporteria.pdf.horarios-espacio', compact(
+                'espacio', 
+                'horarios', 
+                'modulosUnicos', 
+                'fecha_generacion'
+            ));
+
+            // Formato del nombre: espacio_horario_2025_1.pdf
+            $filename = $idEspacio . '_horario_' . $periodo . '.pdf';
+            
+            return $pdf->download($filename);
+
+        } catch (\Exception $e) {
+            Log::error('Error al exportar horario de espacio a PDF:', [
+                'error' => $e->getMessage(),
+                'id_espacio' => $idEspacio
+            ]);
+            
+            return response()->json(['error' => 'Error al generar el PDF'], 500);
+        }
     }
 }

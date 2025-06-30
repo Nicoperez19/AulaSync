@@ -17,10 +17,10 @@
     </div>
 
     <div class="p-6 space-y-6 flex flex-col items-center justify-center" x-data="{ selectedPiso: '{{ $pisos->first()->id ?? 1 }}' }">
-        <!-- Nav Pills de Pisos -->
+        <!-- Nav Pills de Pisos - Arriba alineados a la izquierda -->
         <div class="w-full max-w-7xl mx-auto">
             <div class="bg-white shadow-md rounded-t-xl">
-                <ul class="flex border-b border-gray-200 justify-center" role="tablist">
+                <ul class="flex border-b border-gray-200 justify-start" role="tablist">
                     @foreach ($pisos as $piso)
                         <li role="presentation">
                             <button type="button" @click="selectedPiso = '{{ $piso->id }}'"
@@ -74,7 +74,7 @@
                                                 <span class="px-2 py-0.5 text-xs font-semibold bg-gray-200 rounded-full text-gray-700">{{ $espacios->count() }} espacio{{ $espacios->count() > 1 ? 's' : '' }}</span>
                                             </div>
                                         </div>
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 justify-center w-full">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 justify-center justify-items-center w-full">
                                             @foreach ($espacios as $espacio)
                                                 @php
                                                     $estado = $espacio->esta_ocupado ? 'Ocupado' : 'Disponible';
@@ -95,7 +95,7 @@
                                                     <div class="flex items-center justify-center gap-2 mb-2">
                                                         <span class="px-2 py-0.5 text-xs font-semibold rounded-full {{ $badgeTipo }}">{{ $tipo }}</span>
                                                         <span class="flex items-center gap-1 text-xs text-gray-500">
-                                                            <i class="fa-solid fa-users"></i> {{ $espacio->capacidad ?? '-' }} personas
+                                                            <i class="fa-solid fa-users"></i> {{ $espacio->puestos_disponibles ?? '-' }} personas
                                                         </span>
                                                     </div>
                                                     <span class="flex items-center justify-center gap-1 text-xs font-medium text-violet-700 group-hover:underline">
@@ -136,7 +136,6 @@
                     <div class="flex flex-col min-w-0">
                         <h1 id="modalEspacioTitle" class="text-3xl font-bold text-white truncate"></h1>
                         <div class="flex items-center gap-2 mt-1">
-                            <i class="fa-solid fa-location-dot text-white/80"></i>
                             <span id="modalEspacioTipo" class="text-lg text-white/80 truncate"></span>
                         </div>
                     </div>
@@ -170,6 +169,7 @@
     <script>
         // Convertir los datos de PHP a JavaScript
         const horariosPorEspacio = @json($horariosPorEspacio);
+        let espacioActualId = null; // Variable global para el ID del espacio actual
 
         // Diccionario de colores pastel muy claros para bloques de clase
         const coloresClases = [
@@ -182,14 +182,24 @@
         }
 
         function mostrarHorarioEspacio(idEspacio, nombreEspacio) {
-            // Buscar tipo de espacio desde la tarjeta
+            // Guardar el ID del espacio actual para la exportación
+            espacioActualId = idEspacio;
+            
+            // Buscar tipo de espacio y nombre desde la tarjeta
             let tipoEspacio = '';
+            let nombreCompleto = '';
             const card = document.querySelector(`[data-id='${idEspacio}']`);
             if(card) {
                 const tipoSpan = card.querySelector('span.rounded-full');
                 if(tipoSpan) tipoEspacio = tipoSpan.textContent;
+                
+                const nombreSpan = card.querySelector('.text-base.font-semibold');
+                if(nombreSpan) nombreCompleto = nombreSpan.textContent;
             }
-            document.getElementById('modalEspacioTitle').textContent = `Horario de ${idEspacio}`;
+            
+            // Formatear el título como "Horario sala de clases TH-50"
+            const tituloFormateado = `Horario ${tipoEspacio.toLowerCase()} ${nombreCompleto} (${idEspacio})`;
+            document.getElementById('modalEspacioTitle').textContent = tituloFormateado;
             document.getElementById('modalEspacioTipo').textContent = tipoEspacio;
             document.getElementById('horarioEspacioModal').classList.remove('hidden');
             document.body.classList.add('overflow-hidden');
@@ -199,51 +209,54 @@
             const tbody = document.getElementById('horarioEspacioBody');
             tbody.innerHTML = '';
 
-            if (horarios.length === 0) {
-                tbody.innerHTML = `<tr><td colspan='7' class='py-12 text-center'>
-                    <div class='flex flex-col items-center justify-center gap-2'>
-                        <i class='fa-solid fa-calendar-xmark text-5xl text-red-400 mb-2'></i>
-                        <p class='text-xl font-bold text-gray-700'>Este espacio no tiene horario asignado.</p>
-                        <p class='text-base text-gray-500'>No hay clases ni actividades programadas para este espacio.</p>
-                    </div>
-                </td></tr>`;
-                return;
-            }
+            // Definir todos los módulos disponibles desde las 8:10 hasta las 22:10
+            const todosLosModulos = [
+                { hora_inicio: '08:10:00', hora_termino: '09:00:00' },
+                { hora_inicio: '09:10:00', hora_termino: '10:00:00' },
+                { hora_inicio: '10:10:00', hora_termino: '11:00:00' },
+                { hora_inicio: '11:10:00', hora_termino: '12:00:00' },
+                { hora_inicio: '12:10:00', hora_termino: '13:00:00' },
+                { hora_inicio: '13:10:00', hora_termino: '14:00:00' },
+                { hora_inicio: '14:10:00', hora_termino: '15:00:00' },
+                { hora_inicio: '15:10:00', hora_termino: '16:00:00' },
+                { hora_inicio: '16:10:00', hora_termino: '17:00:00' },
+                { hora_inicio: '17:10:00', hora_termino: '18:00:00' },
+                { hora_inicio: '18:10:00', hora_termino: '19:00:00' },
+                { hora_inicio: '19:10:00', hora_termino: '20:00:00' },
+                { hora_inicio: '20:10:00', hora_termino: '21:00:00' },
+                { hora_inicio: '21:10:00', hora_termino: '22:00:00' },
+                { hora_inicio: '22:10:00', hora_termino: '23:00:00' }
+            ];
 
-            // Obtener módulos únicos y ordenarlos
-                    const modulosUnicos = [...new Set(horarios.map(h => h.hora_inicio + '-' + h.hora_termino))]
-                        .map(hora => {
-                            const [hora_inicio, hora_termino] = hora.split('-');
-                    return { hora_inicio, hora_termino };
-                        })
-                        .sort((a, b) => a.hora_inicio.localeCompare(b.hora_inicio));
-                    const diasUnicos = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+            const diasUnicos = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
-                    modulosUnicos.forEach(modulo => {
-                        const tr = document.createElement('tr');
-                        // Celda de la hora
-                        const tdHora = document.createElement('td');
-                        tdHora.className = 'py-3 px-4 border-b text-center text-sm text-gray-600 leading-tight';
+            todosLosModulos.forEach(modulo => {
+                const tr = document.createElement('tr');
+                // Celda de la hora
+                const tdHora = document.createElement('td');
+                tdHora.className = 'py-3 px-4 border-b text-center text-sm text-gray-600 leading-tight';
                 tdHora.innerHTML = `<div class='flex flex-col items-center justify-center'><span class='font-semibold text-gray-800'>${formatearHora(modulo.hora_inicio)} a ${formatearHora(modulo.hora_termino)}</span></div>`;
-                        tr.appendChild(tdHora);
-                        diasUnicos.forEach(dia => {
-                            const td = document.createElement('td');
-                            td.className = 'py-3 px-4 border-b text-center align-middle';
+                tr.appendChild(tdHora);
+                
+                diasUnicos.forEach(dia => {
+                    const td = document.createElement('td');
+                    td.className = 'py-3 px-4 border-b text-center align-middle';
                     const clases = horarios.filter(h => h.dia.toLowerCase() === dia && h.hora_inicio === modulo.hora_inicio && h.hora_termino === modulo.hora_termino);
-                            if (clases.length > 0) {
-                                td.innerHTML = clases.map(h => `
+                    
+                    if (clases.length > 0) {
+                        td.innerHTML = clases.map(h => `
                             <div class='p-2 rounded-lg min-h-[90px] w-[150px] mx-auto flex flex-col items-center justify-center text-center break-words text-black font-semibold ${getColorClase(h.asignatura)} shadow-md'>
-                                <div class='text-xs uppercase tracking-wide mb-1'>${h.asignatura}</div>
+                                <div class='text-xs uppercase tracking-wide mb-1'>${h.asignatura} (${h.codigo_asignatura || 'N/A'})</div>
                                 <div class='text-xs font-normal mb-1'><i class='fa-solid fa-user mr-1'></i>${h.user ? h.user.name : 'Sin profesor asignado'}</div>
-                                </div>
-                            `).join('');
-                            } else {
+                            </div>
+                        `).join('');
+                    } else {
                         td.innerHTML = `<div class='h-full min-h-[60px] flex items-center justify-center'><span class='text-sm text-gray-400'>-</span></div>`;
-                            }
-                            tr.appendChild(td);
-                        });
-                        tbody.appendChild(tr);
-                    });
+                    }
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
         }
 
         function formatearHora(hora) {
@@ -257,7 +270,75 @@
             document.getElementById('horarioEspacioModal').classList.add('hidden');
             document.body.classList.remove('overflow-hidden');
             document.documentElement.classList.remove('overflow-hidden');
+            espacioActualId = null; // Limpiar el ID del espacio actual
         }
+
+        // Función para exportar PDF
+        function exportarHorarioPDF() {
+            if (!espacioActualId) {
+                alert('Error: No se ha seleccionado ningún espacio');
+                return;
+            }
+
+            // Mostrar indicador de carga
+            const exportBtn = document.getElementById('exportPdfBtn');
+            const originalText = exportBtn.innerHTML;
+            exportBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Generando PDF...';
+            exportBtn.disabled = true;
+
+            // Realizar la petición para descargar el PDF
+            fetch(`/espacios/${espacioActualId}/export-pdf`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al generar el PDF');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                // Crear un enlace temporal para descargar el archivo
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                
+                // Determinar el semestre actual para el nombre del archivo
+                const fecha = new Date();
+                const mes = fecha.getMonth() + 1; // getMonth() devuelve 0-11
+                const anio = fecha.getFullYear();
+                const semestre = (mes >= 3 && mes <= 7) ? 1 : 2; // Marzo-Julio = Semestre 1, Agosto-Febrero = Semestre 2
+                const periodo = `${anio}_${semestre}`;
+                
+                // Formato del nombre: espacio_horario_2025_1.pdf
+                a.download = `${espacioActualId}_horario_${periodo}.pdf`;
+                
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al generar el PDF: ' + error.message);
+            })
+            .finally(() => {
+                // Restaurar el botón
+                exportBtn.innerHTML = originalText;
+                exportBtn.disabled = false;
+            });
+        }
+
+        // Agregar event listener al botón de exportar
+        document.addEventListener('DOMContentLoaded', function() {
+            const exportBtn = document.getElementById('exportPdfBtn');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', exportarHorarioPDF);
+            }
+        });
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {

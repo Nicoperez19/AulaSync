@@ -23,7 +23,7 @@
         x-collapse
     >
         <ul
-           "
+           
         >
             {{ $slot }}
         </ul>
