@@ -29,6 +29,22 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Verificar si hay una URL guardada por expiración de sesión
+        $intendedUrl = $request->session()->get('url.intended');
+        
+        if ($intendedUrl) {
+            // Limpiar la URL guardada
+            $request->session()->forget('url.intended');
+            return redirect($intendedUrl);
+        }
+
+        // Verificar si hay una URL enviada desde el formulario (localStorage)
+        $formIntendedUrl = $request->input('intended_url');
+        if ($formIntendedUrl && filter_var($formIntendedUrl, FILTER_VALIDATE_URL)) {
+            return redirect($formIntendedUrl);
+        }
+
+        // Usar la funcionalidad estándar de Laravel para intended URL
         return redirect()->intended(RouteServiceProvider::HOME);
     }
 

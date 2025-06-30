@@ -90,6 +90,126 @@
             });
         }
 
+        // Interceptor global para manejar expiración de sesión en peticiones AJAX
+        document.addEventListener('DOMContentLoaded', function() {
+            // Guardar la URL actual en localStorage para recuperarla después del login
+            if (!localStorage.getItem('intended_url')) {
+                localStorage.setItem('intended_url', window.location.href);
+            }
+            
+            // Interceptar todas las peticiones fetch
+            const originalFetch = window.fetch;
+            window.fetch = function(...args) {
+                return originalFetch.apply(this, args).then(response => {
+                    // Si la respuesta es 401 (Unauthorized), verificar si es por expiración de sesión
+                    if (response.status === 401) {
+                        return response.clone().json().then(data => {
+                            if (data.error === 'session_expired') {
+                                // Guardar la URL actual antes de redirigir
+                                localStorage.setItem('intended_url', window.location.href);
+                                
+                                // Mostrar mensaje y redirigir al login
+                                Swal.fire({
+                                    title: 'Sesión Expirada',
+                                    text: data.message || 'Tu sesión ha expirado por inactividad.',
+                                    icon: 'warning',
+                                    confirmButtonText: 'Ir al Login',
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false
+                                }).then(() => {
+                                    window.location.href = data.redirect || '/login';
+                                });
+                                return Promise.reject(new Error('Session expired'));
+                            }
+                            return response;
+                        }).catch(() => {
+                            // Si no es JSON, verificar si es una redirección de sesión expirada
+                            if (response.headers.get('location') && response.headers.get('location').includes('login')) {
+                                // Guardar la URL actual antes de redirigir
+                                localStorage.setItem('intended_url', window.location.href);
+                                
+                                Swal.fire({
+                                    title: 'Sesión Expirada',
+                                    text: 'Tu sesión ha expirado por inactividad.',
+                                    icon: 'warning',
+                                    confirmButtonText: 'Ir al Login',
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false
+                                }).then(() => {
+                                    window.location.href = '/login';
+                                });
+                                return Promise.reject(new Error('Session expired'));
+                            }
+                            return response;
+                        });
+                    }
+                    return response;
+                });
+            };
+
+            // Interceptar peticiones XMLHttpRequest (para compatibilidad)
+            const originalXHROpen = XMLHttpRequest.prototype.open;
+            const originalXHRSend = XMLHttpRequest.prototype.send;
+            
+            XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
+                this._url = url;
+                return originalXHROpen.apply(this, arguments);
+            };
+            
+            XMLHttpRequest.prototype.send = function(data) {
+                const xhr = this;
+                const originalOnReadyStateChange = xhr.onreadystatechange;
+                
+                xhr.onreadystatechange = function() {
+                    if (xhr.readyState === 4 && xhr.status === 401) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.error === 'session_expired') {
+                                // Guardar la URL actual antes de redirigir
+                                localStorage.setItem('intended_url', window.location.href);
+                                
+                                Swal.fire({
+                                    title: 'Sesión Expirada',
+                                    text: response.message || 'Tu sesión ha expirado por inactividad.',
+                                    icon: 'warning',
+                                    confirmButtonText: 'Ir al Login',
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false
+                                }).then(() => {
+                                    window.location.href = response.redirect || '/login';
+                                });
+                                return;
+                            }
+                        } catch (e) {
+                            // Si no es JSON válido, verificar si es redirección
+                            if (xhr.responseText.includes('login') || xhr.getResponseHeader('location')?.includes('login')) {
+                                // Guardar la URL actual antes de redirigir
+                                localStorage.setItem('intended_url', window.location.href);
+                                
+                                Swal.fire({
+                                    title: 'Sesión Expirada',
+                                    text: 'Tu sesión ha expirado por inactividad.',
+                                    icon: 'warning',
+                                    confirmButtonText: 'Ir al Login',
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false
+                                }).then(() => {
+                                    window.location.href = '/login';
+                                });
+                                return;
+                            }
+                        }
+                    }
+                    
+                    if (originalOnReadyStateChange) {
+                        originalOnReadyStateChange.apply(xhr, arguments);
+                    }
+                };
+                
+                return originalXHRSend.apply(this, arguments);
+            };
+        });
+
         document.addEventListener('alpine:init', () => {
             Alpine.data('mainState', () => ({
                 isDarkMode: localStorage.getItem('dark') === 'true' ||

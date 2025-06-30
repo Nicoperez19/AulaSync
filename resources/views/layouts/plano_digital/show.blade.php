@@ -12,7 +12,7 @@
             </div>
 
             <!-- Contenido central (centrado verticalmente) -->
-            <div class="flex flex-col items-center justify-center flex-1">
+            <div class="flex flex-col items-center justify-center flex-1 p-1">
                 <!-- Información de hora y módulo actual -->
                 <div class="w-full px-1 mt-2">
                     <div class="p-2 text-white border border-white rounded-md shadow-sm bg-light-cloud-blue">
@@ -141,16 +141,16 @@
                         <span class="flex-1 text-xs">Ocupado</span>
                     </div>
                     <div class="flex items-center w-full gap-1">
-                        <div class="w-3 h-3 bg-yellow-500 rounded-full animate-pulse"></div>
+                        <div class="w-3 h-3 bg-orange-500 rounded-full"></div>
+                        <span class="flex-1 text-xs">Reservado</span>
+                    </div>
+                    <div class="flex items-center w-full gap-1">
+                        <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
                         <span class="flex-1 text-xs">Próximo</span>
                     </div>
                     <div class="flex items-center w-full gap-1">
                         <div class="w-3 h-3 bg-green-500 rounded-full"></div>
                         <span class="flex-1 text-xs">Disponible</span>
-                    </div>
-                    <div class="flex items-center w-full gap-1">
-                        <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-                        <span class="flex-1 text-xs">Previsto</span>
                     </div>
                 </div>
             </div>
@@ -204,6 +204,18 @@
                                         viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                                    </svg>
+                                </button>
+
+                                <!-- Botón de actualización manual -->
+                                <button id="refreshBtn"
+                                    class="absolute z-10 p-2 text-white transition-colors duration-200 bg-green-600 rounded-lg shadow-lg bottom-4 right-16 hover:bg-green-700"
+                                    onclick="forzarActualizacionEstados()"
+                                    title="Actualizar estados de espacios">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                     </svg>
                                 </button>
                             </div>
@@ -300,7 +312,7 @@
         <!-- Botón de devolución (solo visible cuando el espacio está ocupado) -->
         <div id="btnDevolverContainer" class="hidden mt-6">
             <button id="btnDevolverLlaves" 
-                class="w-full px-4 py-3 text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors duration-200"
+                class="w-full px-4 py-3 text-white transition-colors duration-200 bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
                 onclick="iniciarDevolucion()">
                 <div class="flex items-center justify-center space-x-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -314,7 +326,7 @@
         <!-- Botón de solicitud (solo visible cuando el espacio está disponible) -->
         <div id="btnSolicitarContainer" class="hidden mt-6">
             <button id="btnSolicitarLlaves" 
-                class="w-full px-4 py-3 text-white bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors duration-200"
+                class="w-full px-4 py-3 text-white transition-colors duration-200 bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                 onclick="iniciarSolicitud()">
                 <div class="flex items-center justify-center space-x-2">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -914,47 +926,73 @@
         // FUNCIÓN PARA DIBUJAR TODOS LOS INDICADORES
         // ========================================
         function drawIndicators() {
-            if (!state.isImageLoaded) return;
+            if (!state.isImageLoaded) {
+                console.log('⚠️ Imagen no cargada, no se pueden dibujar indicadores');
+                return;
+            }
             
             // Limpiar el canvas de indicadores
             elements.indicatorsCtx.clearRect(0, 0, elements.indicatorsCanvas.width, elements.indicatorsCanvas.height);
 
             // Verificar que state.indicators existe y es un array
             if (!state.indicators || !Array.isArray(state.indicators)) {
-                console.warn('state.indicators no está definido o no es un array:', state.indicators);
+                console.warn('⚠️ state.indicators no está definido o no es un array:', state.indicators);
                 return;
             }
 
+            console.log(`🎨 Dibujando ${state.indicators.length} indicadores...`);
+
             // Dibujar cada indicador
-            state.indicators.forEach(indicator => {
+            state.indicators.forEach((indicator, index) => {
                 const position = calculatePosition(indicator);
-                // Normalizar el color según el estado textual o de color
+                
+                // Normalizar el color según el estado
                 let color = indicator.estado;
-                console.log(`Indicador ${indicator.id}: estado original = "${color}"`);
-                console.log(`Indicador ${indicator.id}: tipo de estado = "${typeof color}"`);
+                console.log(`📍 Indicador ${indicator.id} (${index + 1}/${state.indicators.length}): estado original = "${color}"`);
                 
-                // Convertir a minúsculas para comparación
-                const estadoLower = color ? color.toLowerCase() : '';
-                console.log(`Indicador ${indicator.id}: estado en minúsculas = "${estadoLower}"`);
+                // Si el estado es un color hexadecimal, usarlo directamente
+                if (color && color.startsWith('#')) {
+                    console.log(`🎨 Indicador ${indicator.id}: usando color hexadecimal ${color}`);
+                } else {
+                    // Convertir estados textuales a colores
+                    const estadoLower = color ? color.toLowerCase() : '';
+                    console.log(`🔍 Indicador ${indicator.id}: estado en minúsculas = "${estadoLower}"`);
+                    
+                    switch (estadoLower) {
+                        case 'disponible':
+                        case 'available':
+                            color = '#059669'; // Verde
+                            console.log(`🟢 Indicador ${indicator.id}: aplicando verde (disponible)`);
+                            break;
+                        case 'ocupado':
+                        case 'rojo':
+                        case 'red':
+                        case 'occupied':
+                            color = '#FF0000'; // Rojo
+                            console.log(`🔴 Indicador ${indicator.id}: aplicando rojo (ocupado)`);
+                            break;
+                        case 'reservado':
+                        case 'amarillo':
+                        case 'yellow':
+                        case 'reserved':
+                            color = '#FFA500'; // Naranja
+                            console.log(`🟠 Indicador ${indicator.id}: aplicando naranja (reservado)`);
+                            break;
+                        case 'proximo':
+                        case 'azul':
+                        case 'blue':
+                        case 'next':
+                            color = '#3B82F6'; // Azul
+                            console.log(`🔵 Indicador ${indicator.id}: aplicando azul (próximo)`);
+                            break;
+                        default:
+                            // Si no hay estado o es desconocido, usar verde por defecto
+                            color = '#059669'; // Verde
+                            console.log(`🟢 Indicador ${indicator.id}: aplicando verde por defecto`);
+                    }
+                }
                 
-                if (!color || estadoLower === 'disponible') {
-                    color = '#059669';
-                    console.log(`Indicador ${indicator.id}: aplicando verde (disponible)`);
-                }
-                if (estadoLower === 'ocupado' || estadoLower === 'rojo' || estadoLower === 'red') {
-                    color = '#FF0000';
-                    console.log(`Indicador ${indicator.id}: aplicando rojo (ocupado)`);
-                }
-                if (estadoLower === 'reservado' || estadoLower === 'amarillo' || estadoLower === 'yellow') {
-                    color = '#FFA500';
-                    console.log(`Indicador ${indicator.id}: aplicando amarillo (reservado)`);
-                }
-                if (estadoLower === 'proximo' || estadoLower === 'azul' || estadoLower === 'blue') {
-                    color = '#3B82F6';
-                    console.log(`Indicador ${indicator.id}: aplicando azul (próximo)`);
-                }
-                
-                console.log(`Indicador ${indicator.id}: color final = "${color}"`);
+                console.log(`✅ Indicador ${indicator.id}: color final = "${color}"`);
 
                 const isHovered = state.hoveredIndicator && state.hoveredIndicator.id === indicator.id;
 
@@ -970,6 +1008,18 @@
                     null
                 );
             });
+            
+            console.log('✅ Todos los indicadores han sido dibujados');
+            
+            // Mostrar resumen de estados cada 10 actualizaciones para no saturar la consola
+            if (!state.contadorActualizaciones) {
+                state.contadorActualizaciones = 0;
+            }
+            state.contadorActualizaciones++;
+            
+            if (state.contadorActualizaciones % 10 === 0) {
+                mostrarResumenEstados();
+            }
         }
 
         // ========================================
@@ -1027,8 +1077,8 @@
                     const usuarioInfo = indicator.detalles.usuario_info;
                     
                     informacionUsuario = `
-                        <div class='mt-2 p-3 bg-gray-50 rounded-lg'>
-                            <h4 class='text-sm font-semibold text-gray-800 mb-2'>Información del Usuario</h4>
+                        <div class='p-3 mt-2 rounded-lg bg-gray-50'>
+                            <h4 class='mb-2 text-sm font-semibold text-gray-800'>Información del Usuario</h4>
                             <div class='space-y-1 text-xs text-gray-600'>
                                 ${usuarioInfo ? `
                                     <div><span class='font-medium'>Nombre:</span> ${usuarioInfo.nombre}</div>
@@ -1357,6 +1407,7 @@
             }
 
             // Actualizar colores de los indicadores desde el servidor
+            console.log('🔄 Actualizando módulo y colores de espacios...');
             await actualizarColoresEspacios();
         }
 
@@ -1454,9 +1505,8 @@
                         const resultado = await procesarDevolucion(usuarioEscaneadoDevolucion, espacioProcesado);
                         
                         if (resultado.success) {
-                            Swal.fire('¡Devolución exitosa!', 'Las llaves han sido devueltas correctamente.', 'success');
+                            cerrarModalesDespuesDeSwal(['devolver-llaves', 'data-space']);
                             document.getElementById('qr-status-devolucion').innerHTML = 'Devolución exitosa';
-                            
                             // Actualizar el color del indicador a 'Disponible' (verde)
                             const block = state.indicators.find(b => b.id === espacioProcesado);
                             if (block) {
@@ -1464,13 +1514,6 @@
                                 state.originalCoordinates = state.indicators.map(i => ({ ...i }));
                                 drawIndicators();
                             }
-                            
-                            // Cerrar el modal de devolución después de 2 segundos
-                            setTimeout(() => {
-                                window.dispatchEvent(new CustomEvent('close-modal', {
-                                    detail: 'devolver-llaves'
-                                }));
-                            }, 2000);
                         } else {
                             Swal.fire('Error', resultado.mensaje || 'Error al procesar la devolución', 'error');
                             document.getElementById('qr-status-devolucion').innerHTML = resultado.mensaje || 'Error al procesar la devolución';
@@ -1491,6 +1534,19 @@
         }
 
         // ========================================
+        // Función utilitaria para cerrar modales después de un SweetAlert
+        function cerrarModalesDespuesDeSwal(modales = []) {
+            return Swal.fire('¡Devolución exitosa!', 'Las llaves han sido devueltas correctamente.', 'success').then(() => {
+                modales.forEach(nombre => {
+                    window.dispatchEvent(new CustomEvent('close-modal', { detail: nombre }));
+                    setTimeout(() => {
+                        document.querySelectorAll(`[data-modal="${nombre}"]`).forEach(el => el.classList.add('hidden'));
+                    }, 200);
+                });
+            });
+        }
+
+        // ========================================
         // Función para sincronizar colores después de cargar la imagen
         async function sincronizarColoresDespuesCarga() {
             // Obtener datos actualizados del servidor después de cargar la imagen
@@ -1501,43 +1557,135 @@
         // Función para actualizar colores de espacios
         async function actualizarColoresEspacios() {
             try {
-                console.log('Iniciando actualización de colores para mapaId:', mapaId);
+                console.log('🔄 Iniciando actualización de colores para mapaId:', mapaId);
                 
                 // Verificar si hay cambios locales recientes (menos de 10 segundos)
                 if (state.lastLocalChange && (Date.now() - state.lastLocalChange) < 10000) {
-                    console.log('Ignorando actualización del servidor debido a cambios locales recientes');
+                    console.log('⏭️ Ignorando actualización del servidor debido a cambios locales recientes');
                     return;
                 }
                 
                 // Obtener datos actualizados del servidor
                 const response = await fetch(`/plano/${encodeURIComponent(mapaId)}/bloques`);
-                console.log('Respuesta del servidor:', response.status, response.statusText);
+                console.log('📡 Respuesta del servidor:', response.status, response.statusText);
                 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('Datos recibidos del servidor:', data);
+                    console.log('📊 Datos recibidos del servidor:', data);
                     
                     // Verificar que data.bloques existe y es un array
                     if (!data.bloques || !Array.isArray(data.bloques)) {
-                        console.error('La respuesta no contiene data.bloques válido:', data);
+                        console.error('❌ La respuesta no contiene data.bloques válido:', data);
                         return;
                     }
                     
-                    // Actualizar los indicadores con los nuevos datos
-                    state.indicators = data.bloques;
-                    console.log('Indicadores actualizados:', state.indicators);
+                    // Verificar si hay cambios en los indicadores antes de actualizar
+                    let hayCambios = false;
+                    let cambiosDetectados = [];
                     
-                    // Redibujar los indicadores con los nuevos colores
-                    drawIndicators();
-                    console.log('Colores actualizados desde el servidor');
+                    if (state.indicators && state.indicators.length > 0) {
+                        data.bloques.forEach((nuevoBloque, index) => {
+                            const bloqueActual = state.indicators[index];
+                            if (!bloqueActual || 
+                                bloqueActual.estado !== nuevoBloque.estado ||
+                                bloqueActual.nombre !== nuevoBloque.nombre) {
+                                hayCambios = true;
+                                cambiosDetectados.push({
+                                    id: nuevoBloque.id,
+                                    estadoAnterior: bloqueActual?.estado,
+                                    estadoNuevo: nuevoBloque.estado
+                                });
+                                console.log(`🔄 Cambio detectado en bloque ${nuevoBloque.id}:`, {
+                                    estadoAnterior: bloqueActual?.estado,
+                                    estadoNuevo: nuevoBloque.estado,
+                                    nombreAnterior: bloqueActual?.nombre,
+                                    nombreNuevo: nuevoBloque.nombre
+                                });
+                            }
+                        });
+                    } else {
+                        hayCambios = true; // Primera carga
+                    }
+                    
+                    if (hayCambios) {
+                        // Actualizar los indicadores con los nuevos datos
+                        state.indicators = data.bloques;
+                        console.log('✅ Indicadores actualizados:', state.indicators);
+                        
+                        // Redibujar los indicadores con los nuevos colores
+                        drawIndicators();
+                        console.log('🎨 Colores actualizados desde el servidor');
+                        
+                        // Mostrar información sobre los cambios si es una actualización manual
+                        if (cambiosDetectados.length > 0) {
+                            console.log(`📊 Se actualizaron ${cambiosDetectados.length} espacios:`, cambiosDetectados);
+                        }
+                    } else {
+                        console.log('✅ No hay cambios en los estados de los espacios');
+                    }
                 } else {
-                    console.error('Error en la respuesta del servidor:', response.status, response.statusText);
+                    console.error('❌ Error en la respuesta del servidor:', response.status, response.statusText);
                     const errorText = await response.text();
-                    console.error('Detalles del error:', errorText);
+                    console.error('📄 Detalles del error:', errorText);
+                    throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
                 }
             } catch (error) {
-                console.error('Error al actualizar colores de espacios:', error);
-                // Si hay error, no redibujar para evitar errores
+                console.error('💥 Error al actualizar colores de espacios:', error);
+                throw error; // Re-lanzar el error para que se maneje en la función llamadora
+            }
+        }
+
+        // ========================================
+        // FUNCIÓN PARA MOSTRAR ESTADO DE ACTUALIZACIÓN
+        // ========================================
+        function mostrarEstadoActualizacion(mensaje, tipo = 'info') {
+            // Crear o actualizar el elemento de estado
+            let estadoElement = document.getElementById('estado-actualizacion');
+            if (!estadoElement) {
+                estadoElement = document.createElement('div');
+                estadoElement.id = 'estado-actualizacion';
+                estadoElement.className = 'fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-white text-sm font-medium transition-all duration-300';
+                document.body.appendChild(estadoElement);
+            }
+
+            // Configurar colores según el tipo
+            const colores = {
+                'info': 'bg-blue-500',
+                'success': 'bg-green-500',
+                'warning': 'bg-yellow-500',
+                'error': 'bg-red-500'
+            };
+
+            estadoElement.className = `fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-white text-sm font-medium transition-all duration-300 ${colores[tipo] || colores.info}`;
+            estadoElement.textContent = mensaje;
+
+            // Ocultar después de 3 segundos
+            setTimeout(() => {
+                estadoElement.style.opacity = '0';
+                setTimeout(() => {
+                    if (estadoElement.parentNode) {
+                        estadoElement.parentNode.removeChild(estadoElement);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // ========================================
+        // FUNCIÓN PARA FORZAR ACTUALIZACIÓN DE ESTADOS
+        // ========================================
+        async function forzarActualizacionEstados() {
+            console.log('🚀 Forzando actualización de estados...');
+            mostrarEstadoActualizacion('🔄 Actualizando estados de espacios...', 'info');
+            
+            // Limpiar el timestamp de cambios locales para permitir actualización
+            state.lastLocalChange = null;
+            
+            try {
+                await actualizarColoresEspacios();
+                mostrarEstadoActualizacion('✅ Estados actualizados correctamente', 'success');
+            } catch (error) {
+                console.error('Error al forzar actualización:', error);
+                mostrarEstadoActualizacion('❌ Error al actualizar estados', 'error');
             }
         }
 
@@ -1653,6 +1801,34 @@
                     setTimeout(() => { inputQR.focus(); }, 200);
                 });
             }
+
+            // Configurar botón de actualización manual
+            const refreshBtn = document.getElementById('refreshBtn');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', async function() {
+                    // Agregar efecto visual de carga
+                    const icon = refreshBtn.querySelector('svg');
+                    icon.style.transform = 'rotate(360deg)';
+                    icon.style.transition = 'transform 0.5s ease-in-out';
+                    
+                    await forzarActualizacionEstados();
+                    
+                    // Restaurar el ícono
+                    setTimeout(() => {
+                        icon.style.transform = 'rotate(0deg)';
+                    }, 500);
+                });
+            }
+
+            // Hacer funciones disponibles globalmente para debugging
+            window.mostrarResumenEstados = mostrarResumenEstados;
+            window.forzarActualizacionEstados = forzarActualizacionEstados;
+            window.actualizarColoresEspacios = actualizarColoresEspacios;
+            
+            console.log('🔧 Funciones de debugging disponibles:');
+            console.log('  - window.mostrarResumenEstados() - Muestra resumen de estados');
+            console.log('  - window.forzarActualizacionEstados() - Fuerza actualización');
+            console.log('  - window.actualizarColoresEspacios() - Actualiza colores');
         });
 
         // ========================================
@@ -2068,6 +2244,55 @@
         //     // Mostrar alerta
         //     Swal.fire('Prueba de Color', 'Todos los indicadores han sido forzados a color rojo. Revisa la consola para más detalles.', 'info');
         // }
+
+        // ========================================
+        // FUNCIÓN PARA MOSTRAR RESUMEN DE ESTADOS
+        // ========================================
+        function mostrarResumenEstados() {
+            if (!state.indicators || !Array.isArray(state.indicators)) {
+                console.log('⚠️ No hay indicadores disponibles para mostrar resumen');
+                return;
+            }
+
+            const resumen = {
+                total: state.indicators.length,
+                disponibles: 0,
+                ocupados: 0,
+                reservados: 0,
+                proximos: 0,
+                sinEstado: 0
+            };
+
+            state.indicators.forEach(indicator => {
+                const estado = indicator.estado;
+                if (estado === '#059669' || estado === 'disponible') {
+                    resumen.disponibles++;
+                } else if (estado === '#FF0000' || estado === 'ocupado') {
+                    resumen.ocupados++;
+                } else if (estado === '#FFA500' || estado === 'reservado') {
+                    resumen.reservados++;
+                } else if (estado === '#3B82F6' || estado === 'proximo') {
+                    resumen.proximos++;
+                } else {
+                    resumen.sinEstado++;
+                }
+            });
+
+            console.log('📊 RESUMEN DE ESTADOS DE ESPACIOS:');
+            console.log(`📈 Total de espacios: ${resumen.total}`);
+            console.log(`🟢 Disponibles: ${resumen.disponibles}`);
+            console.log(`🔴 Ocupados: ${resumen.ocupados}`);
+            console.log(`🟠 Reservados: ${resumen.reservados}`);
+            console.log(`🔵 Próximos: ${resumen.proximos}`);
+            console.log(`⚪ Sin estado: ${resumen.sinEstado}`);
+            console.log('📊 FIN RESUMEN');
+
+            return resumen;
+        }
+
+        // ========================================
+        // FUNCIÓN PARA MOSTRAR ESTADO DE ACTUALIZACIÓN
+        // ========================================
 
     </script>
 </x-show-layout>

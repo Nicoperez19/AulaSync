@@ -182,78 +182,27 @@ class PlanoDigitalController extends Controller
     {
         $moduloActual = $this->obtenerModuloActual($estadoActual);
         $planificacionesActivas = $this->obtenerPlanificacionesActivas($mapa, $moduloActual);
-        $reservasActivas = $this->obtenerReservasActivas($mapa, $estadoActual);
         $planificacionesProximas = $this->obtenerPlanificacionesProximas($mapa, $estadoActual);
 
-        return $mapa->bloques->map(function ($bloque) use ($planificacionesActivas, $reservasActivas, $planificacionesProximas, $estadoActual, $mapa) {
+        return $mapa->bloques->map(function ($bloque) use ($planificacionesActivas, $planificacionesProximas, $mapa) {
             $idEspacio = $bloque->id_espacio;
             $espacio = $bloque->espacio;
-            
-            \Log::info('Procesando espacio:', [
-                'id_espacio' => $idEspacio,
-                'nombre_espacio' => $espacio->nombre_espacio,
-                'estado_bd' => $espacio->estado
-            ]);
-            
-            // Inicializar estados
-            $estaOcupado = false;
-            $estaReservado = false;
-            $deberiaEstarOcupado = false;
-            $tieneClaseProxima = false;
 
-            // Verificar si hay una reserva activa para este espacio
-            $reservaActiva = $reservasActivas->firstWhere('id_espacio', $idEspacio);
-            if ($reservaActiva) {
-                \Log::info('Reserva activa encontrada:', [
-                    'id_espacio' => $idEspacio,
-                    'reserva' => $reservaActiva->toArray()
-                ]);
-                // Si la reserva tiene hora_salida y es menor que la hora actual, el espacio está disponible
-                if ($reservaActiva->hora_salida && $reservaActiva->hora_salida < $estadoActual['hora']) {
-                    $estaOcupado = false;
-                    $estaReservado = false;
+            // 1. Si el campo estado es "Ocupado", siempre rojo
+            if ($espacio->estado === 'Ocupado') {
+                $estadoFinal = '#FF0000';
+            } else {
+                // 2. Si el campo estado es "Disponible"
+                $planificacionActiva = $planificacionesActivas->firstWhere('id_espacio', $idEspacio);
+                $planificacionProxima = $planificacionesProximas->firstWhere('id_espacio', $idEspacio);
+                if ($planificacionActiva) {
+                    $estadoFinal = '#FFA500'; // Naranja (reservado)
+                } elseif ($planificacionProxima) {
+                    $estadoFinal = '#3B82F6'; // Azul (próximo)
                 } else {
-                    // Si el espacio está marcado como Ocupado en la BD, entonces está ocupado, no reservado
-                    if ($espacio->estado === 'Ocupado') {
-                        $estaOcupado = true;
-                        $estaReservado = false;
-                        \Log::info('Espacio con reserva activa marcado como Ocupado en BD:', ['id_espacio' => $idEspacio]);
-                    } else {
-                        $estaReservado = true;
-                        \Log::info('Espacio con reserva activa marcado como Reservado:', ['id_espacio' => $idEspacio]);
-                    }
+                    $estadoFinal = '#059669'; // Verde (disponible)
                 }
             }
-
-            // Verificar si hay una planificación activa para este espacio (clase en curso)
-            $planificacionActiva = $planificacionesActivas->firstWhere('id_espacio', $idEspacio);
-            if ($planificacionActiva) {
-                \Log::info('Planificación activa encontrada:', [
-                    'id_espacio' => $idEspacio,
-                    'planificacion' => $planificacionActiva->toArray()
-                ]);
-                $deberiaEstarOcupado = true;
-                // Si el espacio está marcado como ocupado en la base de datos, tiene prioridad
-                if ($espacio->estado === 'Ocupado') {
-                    $estaOcupado = true;
-                    $estaReservado = false; // Asegurar que no se marque como reservado
-                    \Log::info('Espacio con planificación activa marcado como Ocupado en BD:', ['id_espacio' => $idEspacio]);
-                }
-            }
-
-            // Verificar si hay una planificación próxima para este espacio (clase próxima)
-            $tieneClaseProxima = $planificacionesProximas->contains('id_espacio', $idEspacio);
-
-            $estadoFinal = $this->determinarEstado($estaOcupado, $estaReservado, $deberiaEstarOcupado, $tieneClaseProxima);
-            
-            \Log::info('Estado determinado:', [
-                'id_espacio' => $idEspacio,
-                'estaOcupado' => $estaOcupado,
-                'estaReservado' => $estaReservado,
-                'deberiaEstarOcupado' => $deberiaEstarOcupado,
-                'tieneClaseProxima' => $tieneClaseProxima,
-                'estado_final' => $estadoFinal
-            ]);
 
             return [
                 'id' => $idEspacio,
@@ -264,12 +213,12 @@ class PlanoDigitalController extends Controller
                 'detalles' => array_merge(
                     $this->prepararDetallesBloque(
                         $bloque->espacio,
-                        $estaOcupado ? $planificacionesActivas->firstWhere('id_espacio', $idEspacio) : null,
-                        $estaOcupado ? $reservasActivas->firstWhere('id_espacio', $idEspacio) : null,
-                        $planificacionesProximas->firstWhere('id_espacio', $idEspacio)
+                        $planificacionActiva ?? null,
+                        null,
+                        $planificacionProxima ?? null
                     ),
                     [
-                        'estado' => $estaReservado ? 'Reservado' : ($estaOcupado ? 'Ocupado' : 'Disponible'),
+                        'estado' => $espacio->estado,
                         'facultad' => $mapa->piso->facultad->nombre_facultad
                     ]
                 )
@@ -313,17 +262,6 @@ class PlanoDigitalController extends Controller
             ->get();
     }
 
-    private function obtenerReservasActivas(Mapa $mapa, array $estadoActual)
-    {
-        $horaActual = Carbon::now()->format('H:i:s');
-        
-        return Reserva::where('fecha_reserva', $estadoActual['fecha'])
-            ->where('hora', '<=', $estadoActual['hora'])
-            ->where('estado', 'activa')
-            ->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'))
-            ->get();
-    }
-
     private function obtenerPlanificacionesProximas(Mapa $mapa, array $estadoActual)
     {
         $horaActual = Carbon::parse($estadoActual['hora']);
@@ -350,40 +288,6 @@ class PlanoDigitalController extends Controller
                 $query->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'));
             })
             ->get();
-    }
-
-    private function determinarEstado(bool $estaOcupado, bool $estaReservado, bool $deberiaEstarOcupado, bool $tieneClaseProxima): string
-    {
-        \Log::info('Determinando estado:', [
-            'estaOcupado' => $estaOcupado,
-            'estaReservado' => $estaReservado,
-            'deberiaEstarOcupado' => $deberiaEstarOcupado,
-            'tieneClaseProxima' => $tieneClaseProxima
-        ]);
-        
-        // Si el espacio está ocupado (estado en BD = 'Ocupado'), siempre mostrar en rojo
-        if ($estaOcupado) {
-            \Log::info('Estado determinado: Ocupado (Rojo)');
-            return '#FF0000'; // Rojo - se mantiene hasta devolver llaves
-        }
-        // Si el espacio está reservado pero no ocupado, mostrar en naranja
-        if ($estaReservado) {
-            \Log::info('Estado determinado: Reservado (Naranja)');
-            return '#FFA500'; // Naranja
-        }
-        // Si el espacio debería estar ocupado pero no lo está (clase en curso), mostrar naranja
-        if ($deberiaEstarOcupado) {
-            \Log::info('Estado determinado: Debería estar ocupado (Naranja)');
-            return '#FFA500'; // Naranja - para clases en curso en el módulo actual
-        }
-        // Si el espacio tiene clase próxima (siguiente módulo), mostrar azul
-        if ($tieneClaseProxima) {
-            \Log::info('Estado determinado: Próximo (Azul)');
-            return '#3B82F6'; // Azul - para clases próximas
-        }
-        // Si el espacio está disponible, mostrar en verde
-        \Log::info('Estado determinado: Disponible (Verde)');
-        return '#059669'; // Verde
     }
 
     private function prepararDetallesBloque($espacio, $planificacion, $reserva, $planificacionProxima): array

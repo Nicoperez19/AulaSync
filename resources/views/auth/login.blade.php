@@ -1,16 +1,31 @@
 <x-guest-layout>
     <x-auth-card>
         <!-- Session Status -->
-        <x-auth-session-status class="mb-4" :status="session('status')" />
+        <x-auth-session-status class="m-4" :status="session('status')" />
 
-        <!-- Validation Errors -->
+        @if (session('session_expired'))
+            <div class="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div class="flex">
+                    <div class="flex-shrink-0">
+                        <svg class="w-5 h-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm text-yellow-800">
+                            {{ session('session_expired') }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <x-auth-validation-errors class="mb-4" :errors="$errors" />
 
         <form method="POST" action="{{ route('login') }}">
             @csrf
 
-            <div class="grid gap-6">
-                <!-- RUN -->
+            <div class="grid gap-6 mt-8">
                 <div class="space-y-2">
                     <x-form.label for="run" :value="__('RUN')" />
 
@@ -29,7 +44,6 @@
                     </x-form.input-with-icon-wrapper>
                 </div>
 
-                <!-- Password -->
                 <div class="space-y-2">
                     <x-form.label for="password" :value="__('Contraseña')" />
 
@@ -43,7 +57,6 @@
                     </x-form.input-with-icon-wrapper>
                 </div>
 
-                <!-- Remember Me -->
                 <div class="flex items-center justify-between">
                     <label for="remember_me" class="inline-flex items-center">
                         <input id="remember_me" type="checkbox"
@@ -63,21 +76,31 @@
                 </div>
 
                 <div>
-                    <x-button class="justify-center w-full gap-2">
-                        <x-heroicon-o-login class="w-6 h-6" aria-hidden="true" />
+                    <x-button class="justify-center w-full gap-1">
+                        <x-heroicon-o-login class="w-7 h-7" aria-hidden="true" />
                         <span>{{ __('Ingresar') }}</span>
                     </x-button>
                 </div>
-
-                {{-- @if (Route::has('register'))
-                    <p class="text-sm text-gray-600 dark:text-gray-400">
-                        {{ __('Don't have an account?') }}
-                        <a href="{{ route('register') }}" class="text-blue-500 hover:underline">
-                            {{ __('Register') }}
-                        </a>
-                    </p>
-                @endif --}}
             </div>
         </form>
     </x-auth-card>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const intendedUrl = localStorage.getItem('intended_url');
+            
+            if (intendedUrl) {
+                localStorage.removeItem('intended_url');
+                
+                const form = document.querySelector('form[action="{{ route("login") }}"]');
+                if (form) {
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'intended_url';
+                    hiddenInput.value = intendedUrl;
+                    form.appendChild(hiddenInput);
+                }
+            }
+        });
+    </script>
 </x-guest-layout>

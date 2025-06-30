@@ -1,8 +1,9 @@
 <x-guest-layout>
     <x-auth-card>
-        <div class="mb-4 text-sm text-gray-600 dark:text-gray-400">
-            {{ __('¿Olvidó su contraseña? No hay problema. Simplemente indíquenos su dirección de correo electrónico y le enviaremos un enlace para restablecer su contraseña que le permitirá elegir una nueva.') }}        </div>
-
+        <div class="mb-4 text-gray-600 dark:text-gray-400 max-w-xl" style="text-align: justify;">
+            {{ __('¿Olvidó su contraseña? No hay problema. Simplemente indíquenos su dirección de correo institucional y le enviaremos un enlace para restablecer su contraseña que le permitirá elegir una nueva.') }}
+        </div>
+        
         <!-- Session Status -->
         <x-auth-session-status class="mb-4" :status="session('status')" />
 
