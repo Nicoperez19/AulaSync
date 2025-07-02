@@ -16,7 +16,7 @@ class Notification extends Model
         'message',
         'data',
         'read_at',
-        'user_id',
+        'user_run',
         'priority',
         'expires_at',
         'action_url',
@@ -44,7 +44,7 @@ class Notification extends Model
 
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_run', 'run');
     }
 
     public function scopeUnread($query)

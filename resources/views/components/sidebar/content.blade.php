@@ -24,13 +24,6 @@
         </x-slot>
     </x-sidebar.link>
 
-    <!-- Gestión de Reservas -->
-    <x-sidebar.link title="Reservas" href="" :isActive="request()->routeIs('')">
-        <x-slot name="icon">
-            <x-icons.calendar class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
-        </x-slot>
-    </x-sidebar.link>
-
     <!-- Reportería -->
     <x-sidebar.dropdown title="Reportes" :active="Str::startsWith(request()->route()->uri(), 'reporteria')">
         <x-slot name="icon">

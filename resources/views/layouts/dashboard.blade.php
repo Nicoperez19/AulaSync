@@ -306,10 +306,11 @@
                         Utilización de Espacios por Tipo
                     </h1>
                     <x-button class="inline-flex items-center gap-2 px-4 py-2 mt-3 text-sm font-medium hover:bg-red-700"
-                        variant="primary" href="{{ route('reporteria.utilizacion_por_espacio') }}">
+                        variant="primary" href="{{ route('reporteria.tipo-espacio') }}">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
-                            <path
-                                d="M18.375 2.25c-1.035 0-1.875.84-1.875 1.875v15.75c0 1.035.84 1.875 1.875 1.875h.75c1.035 0 1.875-.84 1.875-1.875V4.125c0-1.036-.84-1.875-1.875-1.875h-.75ZM9.75 8.625c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v11.25c0 1.035-.84 1.875-1.875 1.875h-.75a1.875 1.875 0 0 1-1.875-1.875V8.625ZM3 13.125c0-1.036.84-1.875 1.875-1.875h.75c1.036 0 1.875.84 1.875 1.875v6.75c0 1.035-.84 1.875-1.875 1.875h-.75A1.875 1.875 0 0 1 3 19.875v-6.75Z" />
+                            <path fill-rule="evenodd"
+                                d="M12.97 3.97a.75.75 0 0 1 1.06 0l7.5 7.5a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06l6.22-6.22H3a.75.75 0 0 1 0-1.5h16.19l-6.22-6.22a.75.75 0 0 1 0-1.06Z"
+                                clip-rule="evenodd" />
                         </svg>
                         Ver detalles
                     </x-button>
@@ -424,9 +425,15 @@
                                 class="fas fa-eye"></i></span>
                         <h3 class="text-lg font-bold text-gray-700">Registro de Accesos</h3>
                     </div>
-                    <a href="{{ route('reporteria.accesos') }}"
-                        class="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-blue-700 transition border border-blue-200 rounded-md bg-blue-50 hover:bg-blue-100"><i
-                            class="fas fa-arrow-right"></i> Ver detalles</a>
+                    <x-button class="inline-flex items-center gap-2 px-4 py-2 mt-3 text-sm font-medium hover:bg-red-700"
+                        variant="primary" href="{{ route('reporteria.accesos') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                            <path fill-rule="evenodd"
+                                d="M12.97 3.97a.75.75 0 0 1 1.06 0l7.5 7.5a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06l6.22-6.22H3a.75.75 0 0 1 0-1.5h16.19l-6.22-6.22a.75.75 0 0 1 0-1.06Z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        Ver detalles
+                    </x-button>
                 </div>
                 <div class="flex flex-col gap-4">
                     @forelse($accesosActuales as $acceso)

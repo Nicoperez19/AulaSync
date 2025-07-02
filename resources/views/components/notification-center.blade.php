@@ -99,20 +99,57 @@ function notificationCenter() {
         unreadCount: 0,
         urgentCount: 0,
         pollingInterval: null,
+        isMainPage: false,
 
         init() {
-            this.loadNotifications();
-            this.startPolling();
+            // Verificar si estamos en una página principal donde queremos mostrar notificaciones
+            this.checkIfMainPage();
+            
+            // Solo inicializar si estamos en una página principal
+            if (this.isMainPage) {
+                this.loadNotifications();
+                this.startPolling();
+            }
+        },
+
+        checkIfMainPage() {
+            // Lista de rutas principales donde queremos mostrar notificaciones
+            const mainRoutes = [
+                '/dashboard',
+                '/',
+                '/notifications',
+                '/reservations',
+                '/spaces',
+                '/maps',
+                '/schedules',
+                '/users',
+                '/faculties',
+                '/careers',
+                '/academic-areas',
+                '/universities',
+                '/roles',
+                '/permissions',
+                '/data',
+                '/floors',
+                '/spacetime',
+                '/subjects',
+                '/reporteria'
+            ];
+            
+            const currentPath = window.location.pathname;
+            this.isMainPage = mainRoutes.some(route => currentPath.startsWith(route));
         },
 
         toggleDropdown() {
             this.isOpen = !this.isOpen;
-            if (this.isOpen) {
+            if (this.isOpen && this.isMainPage) {
                 this.loadNotifications();
             }
         },
 
         async loadNotifications() {
+            if (!this.isMainPage) return;
+            
             try {
                 const response = await fetch('/notifications/recent');
                 const data = await response.json();
@@ -123,6 +160,8 @@ function notificationCenter() {
         },
 
         async updateCounts() {
+            if (!this.isMainPage) return;
+            
             try {
                 const response = await fetch('/notifications/unread-count');
                 const data = await response.json();
@@ -134,6 +173,8 @@ function notificationCenter() {
         },
 
         async markAsRead(notificationId) {
+            if (!this.isMainPage) return;
+            
             try {
                 const response = await fetch('/notifications/mark-read', {
                     method: 'POST',
@@ -154,6 +195,8 @@ function notificationCenter() {
         },
 
         async markAllAsRead() {
+            if (!this.isMainPage) return;
+            
             try {
                 const response = await fetch('/notifications/mark-all-read', {
                     method: 'POST',
@@ -173,6 +216,8 @@ function notificationCenter() {
         },
 
         startPolling() {
+            if (!this.isMainPage) return;
+            
             this.pollingInterval = setInterval(() => {
                 this.updateCounts();
             }, 30000); // Actualizar cada 30 segundos

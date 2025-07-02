@@ -1,545 +1,681 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <h2 class="text-xl font-semibold leading-tight">
-                {{ __('Análisis por tipo de espacio') }}
-            </h2>
+        <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-light-cloud-blue rounded-xl">
+                    <i class="text-2xl text-white fa-solid fa-building"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold leading-tight text-black">Análisis por tipo Espacios</h2>
+                    <p class="text-gray-500">Gestión y análisis de uso de espacios</p>
+                </div>
+            </div>
         </div>
     </x-slot>
-
-    <!-- Filtros -->
-    <div class="p-6 bg-white rounded-lg shadow-md dark:bg-gray-800 mb-6">
-        <h3 class="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-300">Filtros de búsqueda</h3>
-        <form method="GET" action="{{ route('reporteria.tipo-espacio') }}" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-            <!-- Fecha de inicio -->
-            <div>
-                <label for="fecha_inicio" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Fecha de inicio
-                </label>
-                <input type="date" 
-                       id="fecha_inicio" 
-                       name="fecha_inicio" 
-                       value="{{ $fechaInicio }}"
-                       class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
+    <div class="p-6 min-h-[80vh]" x-data="{ activeTab: 'resumen' }">
+        <!-- KPIs -->
+        <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
+            <div class="flex flex-col justify-between p-4 bg-white rounded-lg shadow">
+                <div class="text-sm text-gray-500">Tipos de espacio</div>
+                <div class="text-2xl font-bold text-gray-800">{{ $total_tipos }}</div>
+                <div class="mt-1 text-xs text-green-600">&nbsp;</div>
             </div>
-            <!-- Fecha de fin -->
-            <div>
-                <label for="fecha_fin" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Fecha de fin
-                </label>
-                <input type="date" 
-                       id="fecha_fin" 
-                       name="fecha_fin" 
-                       value="{{ $fechaFin }}"
-                       class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
+            <div class="flex flex-col justify-between p-4 bg-white rounded-lg shadow">
+                <div class="text-sm text-gray-500">Promedio utilización</div>
+                <div class="text-2xl font-bold text-gray-800">{{ $promedio_utilizacion }}%</div>
+                <div class="mt-1 text-xs text-green-600">&nbsp;</div>
             </div>
-            <!-- Piso -->
-            <div>
-                <label for="piso" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Piso
-                </label>
-                <select id="piso" 
-                        name="piso" 
-                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
-                    <option value="">Todos los pisos</option>
-                    @foreach($pisos as $numeroPiso => $nombrePiso)
-                        <option value="{{ $numeroPiso }}" {{ $piso == $numeroPiso ? 'selected' : '' }}>
-                            Piso {{ $nombrePiso }}
-                        </option>
-                    @endforeach
-                </select>
+            <div class="flex flex-col justify-between p-4 bg-white rounded-lg shadow">
+                <div class="text-sm text-gray-500">Total reservas</div>
+                <div class="text-2xl font-bold text-gray-800">{{ $total_reservas }}</div>
+                <div class="mt-1 text-xs text-orange-600">Este mes</div>
             </div>
-            <!-- Tipo de usuario -->
-            <div>
-                <label for="tipo_usuario" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Tipo de usuario
-                </label>
-                <select id="tipo_usuario" 
-                        name="tipo_usuario" 
-                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
-                    <option value="">Todos los tipos</option>
-                    @foreach($tiposUsuario as $key => $tipo)
-                        <option value="{{ $key }}" {{ $tipoUsuario == $key ? 'selected' : '' }}>
-                            {{ $tipo }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            <!-- Tipo de espacio -->
-            <div>
-                <label for="tipo_espacio_filtro" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Tipo de espacio
-                </label>
-                <select id="tipo_espacio_filtro" 
-                        name="tipo_espacio_filtro" 
-                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
-                    <option value="">Todos los tipos</option>
-                    @foreach($tiposEspacioDisponibles as $key => $tipo)
-                        <option value="{{ $key }}" {{ $tipoEspacioFiltro == $key ? 'selected' : '' }}>
-                            {{ $tipo }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            <!-- Día -->
-            <div>
-                <label for="dia_filtro" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Día
-                </label>
-                <select id="dia_filtro" 
-                        name="dia_filtro" 
-                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600">
-                    <option value="">Todos los días</option>
-                    @foreach($diasDisponibles as $key => $dia)
-                        <option value="{{ $key }}" {{ $diaFiltro == $key ? 'selected' : '' }}>
-                            {{ $dia }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            <!-- Botones -->
-            <div class="flex gap-2 items-end col-span-full">
-                <button type="submit" 
-                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
-                    <i class="fas fa-search mr-2"></i>Filtrar
-                </button>
-                <a href="{{ route('reporteria.tipo-espacio') }}" 
-                   class="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors">
-                    <i class="fas fa-times mr-2"></i>Limpiar
-                </a>
-            </div>
-        </form>
-    </div>
-
-    <!-- KPIs -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div class="bg-white rounded-lg shadow-md p-4 dark:bg-gray-800">
-            <div class="flex items-center">
-                <div class="p-2 bg-blue-100 rounded-lg dark:bg-blue-900">
-                    <i class="fas fa-users text-blue-600 dark:text-blue-400"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total de tipos de espacio</p>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $total_tipos }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="bg-white rounded-lg shadow-md p-4 dark:bg-gray-800">
-            <div class="flex items-center">
-                <div class="p-2 bg-green-100 rounded-lg dark:bg-green-900">
-                    <i class="fas fa-user-check text-green-600 dark:text-green-400"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Promedio utilización</p>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $promedio_utilizacion }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="bg-white rounded-lg shadow-md p-4 dark:bg-gray-800">
-            <div class="flex items-center">
-                <div class="p-2 bg-yellow-100 rounded-lg dark:bg-yellow-900">
-                    <i class="fas fa-building text-yellow-600 dark:text-yellow-400"></i>
-                </div>
-                <div class="ml-4">
-                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Mayor utilización</p>
-                    <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $mayor_utilizacion }}</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="p-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                Registro por tipo de espacio ({{ $total_tipos }} tipos)
-            </h3>
-            <div class="flex gap-2">
-                <a href="{{ route('reporteria.tipo-espacio.export', ['format' => 'excel']) }}" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors">
-                    <i class="fas fa-file-excel mr-2"></i>Exportar Excel
-                </a>
-                <a href="{{ route('reporteria.tipo-espacio.export', ['format' => 'pdf']) }}" class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors">
-                    <i class="fas fa-file-pdf mr-2"></i>Exportar PDF
-                </a>
-            </div>
-        </div>
-        <div class="overflow-x-auto">
-            <table class="min-w-full bg-white dark:bg-gray-800 rounded-lg">
-                <thead>
-                    <tr>
-                        <th class="py-2 px-4 border">Tipo de sala</th>
-                        <th class="py-2 px-4 border">Nivel de utilización</th>
-                        <th class="py-2 px-4 border">Comparativa</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($tiposEspacio as $tipo)
-                        <tr>
-                            <td class="py-2 px-4 border">{{ $tipo['nombre'] }}</td>
-                            <td class="py-2 px-4 border align-middle">
-                                <div class="w-full flex items-center gap-2">
-                                    <div class="w-full bg-gray-200 rounded-full h-4 dark:bg-gray-700">
-                                        <div class="bg-green-400 h-4 rounded-full" style="width: {{ $tipo['utilizacion'] }}%"></div>
-                                    </div>
-                                    <span class="text-sm font-semibold text-gray-900 dark:text-white min-w-[40px] text-right">{{ $tipo['utilizacion'] }}%</span>
-                                </div>
-                            </td>
-                            <td class="py-2 px-4 border">{{ $tipo['comparativa'] }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="3" class="py-4 text-center text-gray-500">No hay datos para mostrar.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- Nueva sección: Utilización por días y módulos -->
-    <div class="p-6 bg-white rounded-lg shadow-md dark:bg-gray-800 mt-6">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                Utilización por días y módulos
-                @if($tipoEspacioFiltro || $diaFiltro)
-                    <span class="text-sm font-normal text-gray-500 dark:text-gray-400">
-                        (Filtrado: 
-                        @if($tipoEspacioFiltro)
-                            {{ $tipoEspacioFiltro }}
-                        @endif
-                        @if($tipoEspacioFiltro && $diaFiltro)
-                            - 
-                        @endif
-                        @if($diaFiltro)
-                            {{ ucfirst($diaFiltro) }}
-                        @endif
-                        )
-                    </span>
-                @endif
-            </h3>
-            <div class="flex gap-2">
-                <button onclick="toggleView()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors">
-                    <i class="fas fa-table mr-2"></i><span id="toggle-text">Vista por Día</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- Resumen estadístico -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            @php
-                $totalModulos = 0;
-                $modulosConUtilizacion = 0;
-                $promedioUtilizacion = 0;
-                $moduloMasUtilizado = null;
-                $maxUtilizacion = 0;
-                
-                foreach($utilizacionPorDiasModulos as $datosTipo) {
-                    foreach($datosTipo['dias'] as $datosDia) {
-                        foreach($datosDia['modulos'] as $modulo) {
-                            $totalModulos++;
-                            $promedioUtilizacion += $modulo['porcentaje'];
-                            if ($modulo['porcentaje'] > 0) {
-                                $modulosConUtilizacion++;
-                            }
-                            if ($modulo['porcentaje'] > $maxUtilizacion) {
-                                $maxUtilizacion = $modulo['porcentaje'];
-                                $moduloMasUtilizado = "M{$modulo['modulo']} - {$datosDia['dia']} - {$datosTipo['tipo']}";
-                            }
-                        }
-                    }
-                }
-                $promedioUtilizacion = $totalModulos > 0 ? round($promedioUtilizacion / $totalModulos, 1) : 0;
-                $porcentajeModulosUtilizados = $totalModulos > 0 ? round(($modulosConUtilizacion / $totalModulos) * 100, 1) : 0;
-            @endphp
-            
-            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                <div class="flex items-center">
-                    <div class="p-2 bg-blue-100 rounded-lg dark:bg-blue-800">
-                        <i class="fas fa-clock text-blue-600 dark:text-blue-400"></i>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-blue-600 dark:text-blue-400">Total módulos analizados</p>
-                        <p class="text-2xl font-semibold text-blue-900 dark:text-blue-100">{{ $totalModulos }}</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
-                <div class="flex items-center">
-                    <div class="p-2 bg-green-100 rounded-lg dark:bg-green-800">
-                        <i class="fas fa-check-circle text-green-600 dark:text-green-400"></i>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-green-600 dark:text-green-400">Módulos con utilización</p>
-                        <p class="text-2xl font-semibold text-green-900 dark:text-green-100">{{ $porcentajeModulosUtilizados }}%</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
-                <div class="flex items-center">
-                    <div class="p-2 bg-yellow-100 rounded-lg dark:bg-yellow-800">
-                        <i class="fas fa-chart-line text-yellow-600 dark:text-yellow-400"></i>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-yellow-600 dark:text-yellow-400">Promedio utilización</p>
-                        <p class="text-2xl font-semibold text-yellow-900 dark:text-yellow-100">{{ $promedioUtilizacion }}%</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
-                <div class="flex items-center">
-                    <div class="p-2 bg-red-100 rounded-lg dark:bg-red-800">
-                        <i class="fas fa-fire text-red-600 dark:text-red-400"></i>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-red-600 dark:text-red-400">Máxima utilización</p>
-                        <p class="text-lg font-semibold text-red-900 dark:text-red-100">{{ $maxUtilizacion }}%</p>
-                        <p class="text-xs text-red-700 dark:text-red-300">{{ $moduloMasUtilizado }}</p>
-                    </div>
+            <div class="flex flex-col justify-between p-4 bg-white rounded-lg shadow">
+                <div class="text-sm text-gray-500">Espacios activos</div>
+                <div class="text-2xl font-bold text-gray-800">{{ $espacios_ocupados }}/{{ $total_espacios }}</div>
+                <div class="mt-1 text-xs text-purple-600">
+                    {{ $total_espacios > 0 ? round(($espacios_ocupados / $total_espacios) * 100) : 0 }}% ocupación
                 </div>
             </div>
         </div>
 
-        <!-- Leyenda de módulos -->
-        <div class="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Leyenda de módulos:</h4>
-            <div class="grid grid-cols-5 md:grid-cols-10 gap-2 text-xs">
-                @for($i = 1; $i <= 15; $i++)
-                    @php
-                        $horario = '';
-                        if ($i == 1) {
-                            $horario = '08:10 - 09:00';
-                        } elseif ($i == 2) {
-                            $horario = '09:10 - 10:00';
-                        } elseif ($i == 3) {
-                            $horario = '10:10 - 11:00';
-                        } elseif ($i == 4) {
-                            $horario = '11:10 - 12:00';
-                        } elseif ($i == 5) {
-                            $horario = '12:10 - 13:00';
-                        } elseif ($i == 6) {
-                            $horario = '13:10 - 14:00';
-                        } elseif ($i == 7) {
-                            $horario = '14:10 - 15:00';
-                        } elseif ($i == 8) {
-                            $horario = '15:10 - 16:00';
-                        } elseif ($i == 9) {
-                            $horario = '16:10 - 17:00';
-                        } elseif ($i == 10) {
-                            $horario = '17:10 - 18:00';
-                        } elseif ($i == 11) {
-                            $horario = '18:10 - 19:00';
-                        } elseif ($i == 12) {
-                            $horario = '19:10 - 20:00';
-                        } elseif ($i == 13) {
-                            $horario = '20:10 - 21:00';
-                        } elseif ($i == 14) {
-                            $horario = '21:10 - 22:00';
-                        } elseif ($i == 15) {
-                            $horario = '22:10 - 23:00';
-                        }
-                    @endphp
-                    <div class="flex items-center gap-1">
-                        <span class="font-semibold text-gray-600 dark:text-gray-400">M{{ $i }}:</span>
-                        <span class="text-gray-500 dark:text-gray-400">{{ $horario }}</span>
-                    </div>
-                @endfor
-            </div>
-        </div>
+        <!-- Nav Pills -->
+            <ul class="flex justify-start border-b border-gray-200" role="tablist">
+                <li role="presentation">
+                    <button type="button" @click="activeTab = 'resumen'"
+                        class="px-8 py-3 text-base font-semibold transition-all duration-300 border border-b-0 rounded-t-xl focus:outline-none"
+                        :class="activeTab == 'resumen' 
+                                ? 'bg-light-cloud-blue text-white border-red-600 shadow-md'
+                                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-light-cloud-blue'">
+                        Resumen General
+                    </button>
+                </li>
+                <li role="presentation">
+                    <button type="button" @click="activeTab = 'horarios'"
+                        class="px-8 py-3 text-base font-semibold transition-all duration-300 border border-b-0 rounded-t-xl focus:outline-none"
+                        :class="activeTab == 'horarios' 
+                                ? 'bg-light-cloud-blue text-white border-red-600 shadow-md'
+                                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-light-cloud-blue'">
+                        Por Horarios
+                    </button>
+                </li>
+                <li role="presentation">
+                    <button type="button" @click="activeTab = 'historico'"
+                        class="px-8 py-3 text-base font-semibold transition-all duration-300 border border-b-0 rounded-t-xl focus:outline-none"
+                        :class="activeTab == 'historico' 
+                                ? 'bg-light-cloud-blue text-white border-red-600 shadow-md'
+                                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-light-cloud-blue'">
+                        Histórico
+                    </button>
+                </li>
+            </ul>
 
-        <!-- Vista por tipo de espacio -->
-        <div id="vista-por-tipo" class="space-y-6">
-            @foreach($utilizacionPorDiasModulos as $datosTipo)
-                <div class="border rounded-lg p-4 dark:border-gray-600">
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-                        <i class="fas fa-building mr-2 text-blue-600"></i>
-                        {{ ucfirst($datosTipo['tipo']) }}
-                    </h4>
-                    
+        <!-- Contenido de Resumen General -->
+        <div x-show="activeTab == 'resumen'" x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95">
+            <div class="p-6 bg-white shadow-md rounded-b-xl">
+                <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-2">
+                    <div class="p-4 bg-white rounded-lg shadow">
+                        <h2 class="mb-2 font-semibold text-gray-700">Utilización por Tipo de Espacio</h2>
+                        <canvas id="chartUtilizacion" height="180"></canvas>
+                    </div>
+                    <div class="p-4 bg-white rounded-lg shadow">
+                        <h2 class="mb-2 font-semibold text-gray-700">Distribución de Reservas</h2>
+                        <canvas id="chartReservas" height="180"></canvas>
+                    </div>
+                </div>
+                <div class="p-4 bg-white rounded-lg shadow">
+                    <h2 class="mb-4 font-semibold text-gray-700">Resumen Detallado por Tipo de Espacio</h2>
                     <div class="overflow-x-auto">
-                        <table class="min-w-full bg-white dark:bg-gray-800 rounded-lg">
+                        <table class="min-w-full text-sm text-left">
                             <thead>
-                                <tr class="bg-gray-50 dark:bg-gray-700">
-                                    <th class="py-2 px-3 border text-xs font-semibold text-gray-700 dark:text-gray-300">Día</th>
-                                    @for($i = 1; $i <= 15; $i++)
-                                        <th class="py-2 px-1 border text-xs font-semibold text-gray-700 dark:text-gray-300">M{{ $i }}</th>
-                                    @endfor
+                                <tr class="text-xs text-gray-500 uppercase">
+                                    <th class="px-4 py-2">Tipo de Espacio</th>
+                                    <th class="px-4 py-2">Total Espacios</th>
+                                    <th class="px-4 py-2">Total Reservas</th>
+                                    <th class="px-4 py-2">Horas Utilizadas</th>
+                                    <th class="px-4 py-2">Promedio de Uso</th>
+                                    <th class="px-4 py-2">Estado</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach($datosTipo['dias'] as $datosDia)
-                                    <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                        <td class="py-2 px-3 border text-sm font-medium text-gray-700 dark:text-gray-300">
-                                            <i class="fas fa-calendar-day mr-1 text-green-600"></i>
-                                            {{ ucfirst($datosDia['dia']) }}
+                                @foreach($resumen as $tipo)
+                                    <tr>
+                                        <td class="px-4 py-2 font-semibold">{{ $tipo['nombre'] }}</td>
+                                        <td class="px-4 py-2">{{ $tipo['total_espacios'] }}</td>
+                                        <td class="px-4 py-2">{{ $tipo['total_reservas'] }}</td>
+                                        <td class="px-4 py-2">{{ $tipo['horas_utilizadas'] }} h</td>
+                                        <td class="px-4 py-2">
+                                            <span
+                                                class="px-2 py-1 font-bold text-blue-700 bg-blue-100 rounded">{{ $tipo['promedio'] }}%</span>
                                         </td>
-                                        @for($i = 1; $i <= 15; $i++)
-                                            @php
-                                                $modulo = collect($datosDia['modulos'])->firstWhere('modulo', $i);
-                                                $porcentaje = $modulo ? $modulo['porcentaje'] : 0;
-                                                $reservas = $modulo ? $modulo['reservas'] : 0;
-                                                
-                                                // Determinar color basado en el porcentaje
-                                                $color = 'bg-gray-400';
-                                                if ($porcentaje > 0 && $porcentaje <= 25) {
-                                                    $color = 'bg-green-400';
-                                                } elseif ($porcentaje > 25 && $porcentaje <= 50) {
-                                                    $color = 'bg-yellow-400';
-                                                } elseif ($porcentaje > 50 && $porcentaje <= 75) {
-                                                    $color = 'bg-orange-400';
-                                                } elseif ($porcentaje > 75) {
-                                                    $color = 'bg-red-400';
-                                                }
-                                            @endphp
-                                            <td class="py-2 px-1 border text-center">
-                                                <div class="flex flex-col items-center">
-                                                    <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700 mb-1">
-                                                        <div class="{{ $color }} h-2 rounded-full transition-all duration-300" style="width: {{ $porcentaje }}%"></div>
-                                                    </div>
-                                                    <span class="text-xs font-semibold text-gray-900 dark:text-white">{{ $porcentaje }}%</span>
-                                                    <span class="text-xs text-gray-500 dark:text-gray-400">({{ $reservas }})</span>
-                                                </div>
-                                            </td>
-                                        @endfor
+                                        <td class="px-4 py-2">
+                                            <span
+                                                class="{{ $tipo['estado'] == 'Óptimo' ? 'bg-green-100 text-green-700' : ($tipo['estado'] == 'Medio uso' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700') }} px-2 py-1 rounded text-xs font-semibold">
+                                                {{ $tipo['estado'] }}
+                                            </span>
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
                 </div>
-            @endforeach
+            </div>
         </div>
 
-        <!-- Vista por día -->
-        <div id="vista-por-dia" class="hidden space-y-6">
-            @php
-                $dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
-            @endphp
-            
-            @foreach($dias as $dia)
-                <div class="border rounded-lg p-4 dark:border-gray-600">
-                    <h4 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
-                        <i class="fas fa-calendar-week mr-2 text-green-600"></i>
-                        {{ ucfirst($dia) }}
-                    </h4>
-                    
+        <!-- Contenido de Por Horarios -->
+        <div x-show="activeTab == 'horarios'" x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95">
+            <div class="p-6 bg-white shadow-md rounded-b-xl">
+                <div class="flex flex-wrap items-end gap-4 mb-4">
+                    <div>
+                        <label class="block mb-1 text-xs font-semibold text-gray-500">Día de la semana</label>
+                        <select id="filtro-dia" class="rounded-md border-gray-300 shadow-sm h-[37px] px-4">
+                            @foreach($diasDisponibles as $dia)
+                                <option value="{{ $dia }}" {{ $dia == $diaActual ? 'selected' : '' }}>{{ ucfirst($dia) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-xs font-semibold text-gray-500">Tipo de espacio</label>
+                        <select id="filtro-tipo" class="rounded-md border-gray-300 shadow-sm h-[37px] px-4">
+                            <option value="">Todos los tipos</option>
+                            @foreach($tiposEspacioDisponibles as $tipo)
+                                <option value="{{ $tipo }}">{{ $tipo }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="p-4 mb-4 rounded-lg bg-blue-50">
+                    <label class="block mb-2 font-semibold">Rango de Horarios a Mostrar</label>
+                    <div class="flex items-center gap-4">
+                        <div class="flex-1">
+                            <label class="text-xs">Inicio:</label>
+                            <input type="range" id="modulo-inicio" min="0" max="14" value="0" class="w-full">
+                            <div class="text-xs text-right" id="label-inicio"></div>
+                        </div>
+                        <div class="flex-1">
+                            <label class="text-xs">Fin:</label>
+                            <input type="range" id="modulo-fin" min="0" max="14" value="14" class="w-full">
+                            <div class="text-xs text-right" id="label-fin"></div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-2">
+                        <button type="button" class="btn btn-xs" onclick="setRango(0,modulosDia.length-1)">Todo el
+                            día</button>
+                        <button type="button" class="btn btn-xs" onclick="setRango(0,5)">Mañana (8-14h)</button>
+                        <button type="button" class="btn btn-xs" onclick="setRango(6,9)">Tarde (14-18h)</button>
+                        <button type="button" class="btn btn-xs" onclick="setRango(10,modulosDia.length-1)">Noche
+                            (18-23h)</button>
+                    </div>
+                    <div class="mt-1 text-xs" id="rango-mostrando"></div>
+                </div>
+                <div class="p-4 mb-6 bg-white rounded-lg shadow">
+                    <h2 class="mb-2 font-semibold text-gray-700">Ocupación por Horarios de la Semana</h2>
+                    <canvas id="chartHorarios" height="180"></canvas>
+                </div>
+                <div class="p-4 bg-white rounded-lg shadow">
+                    <h2 class="mb-4 font-semibold text-gray-700">Detalle de Ocupación por Rangos de Horarios</h2>
                     <div class="overflow-x-auto">
-                        <table class="min-w-full bg-white dark:bg-gray-800 rounded-lg">
+                        <table class="min-w-full text-sm text-left">
                             <thead>
-                                <tr class="bg-gray-50 dark:bg-gray-700">
-                                    <th class="py-2 px-3 border text-xs font-semibold text-gray-700 dark:text-gray-300">Tipo de Espacio</th>
-                                    @for($i = 1; $i <= 15; $i++)
-                                        <th class="py-2 px-1 border text-xs font-semibold text-gray-700 dark:text-gray-300">M{{ $i }}</th>
-                                    @endfor
-                                </tr>
+                                <tr class="text-xs text-gray-500 uppercase" id="thead-horarios"></tr>
                             </thead>
-                            <tbody>
-                                @foreach($utilizacionPorDiasModulos as $datosTipo)
-                                    @php
-                                        $datosDia = collect($datosTipo['dias'])->firstWhere('dia', $dia);
-                                    @endphp
-                                    @if($datosDia)
-                                        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                            <td class="py-2 px-3 border text-sm font-medium text-gray-700 dark:text-gray-300">
-                                                <i class="fas fa-building mr-1 text-blue-600"></i>
-                                                {{ ucfirst($datosTipo['tipo']) }}
-                                            </td>
-                                            @for($i = 1; $i <= 15; $i++)
-                                                @php
-                                                    $modulo = collect($datosDia['modulos'])->firstWhere('modulo', $i);
-                                                    $porcentaje = $modulo ? $modulo['porcentaje'] : 0;
-                                                    $reservas = $modulo ? $modulo['reservas'] : 0;
-                                                    
-                                                    // Determinar color basado en el porcentaje
-                                                    $color = 'bg-gray-400';
-                                                    if ($porcentaje > 0 && $porcentaje <= 25) {
-                                                        $color = 'bg-green-400';
-                                                    } elseif ($porcentaje > 25 && $porcentaje <= 50) {
-                                                        $color = 'bg-yellow-400';
-                                                    } elseif ($porcentaje > 50 && $porcentaje <= 75) {
-                                                        $color = 'bg-orange-400';
-                                                    } elseif ($porcentaje > 75) {
-                                                        $color = 'bg-red-400';
-                                                    }
-                                                @endphp
-                                                <td class="py-2 px-1 border text-center">
-                                                    <div class="flex flex-col items-center">
-                                                        <div class="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700 mb-1">
-                                                            <div class="{{ $color }} h-2 rounded-full transition-all duration-300" style="width: {{ $porcentaje }}%"></div>
-                                                        </div>
-                                                        <span class="text-xs font-semibold text-gray-900 dark:text-white">{{ $porcentaje }}%</span>
-                                                        <span class="text-xs text-gray-500 dark:text-gray-400">({{ $reservas }})</span>
-                                                    </div>
-                                                </td>
-                                            @endfor
-                                        </tr>
-                                    @endif
-                                @endforeach
-                            </tbody>
+                            <tbody id="tbody-horarios"></tbody>
                         </table>
                     </div>
                 </div>
-            @endforeach
+            </div>
         </div>
 
-        <!-- Leyenda de colores -->
-        <div class="mt-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Leyenda de colores:</h4>
-            <div class="flex flex-wrap gap-4 text-xs">
-                <div class="flex items-center gap-2">
-                    <div class="w-4 h-2 bg-gray-400 rounded"></div>
-                    <span class="text-gray-600 dark:text-gray-400">Sin utilización (0%)</span>
+        <!-- Contenido de Histórico -->
+        <div x-show="activeTab == 'historico'" x-transition:enter="transition ease-out duration-300"
+            x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+            x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100 scale-100"
+            x-transition:leave-end="opacity-0 scale-95">
+            <div class="p-6 bg-white shadow-md rounded-b-xl">
+                <h2 class="mb-4 font-semibold text-gray-700">Historial detallado de uso de espacios</h2>
+                <div class="flex flex-wrap items-end gap-4 mb-4">
+                    <div>
+                        <label class="block mb-1 text-xs font-semibold text-gray-500">Fecha desde</label>
+                        <input type="date" id="filtro-hist-fecha-inicio"
+                            class="rounded-md border-gray-300 shadow-sm h-[37px] px-4" />
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-xs font-semibold text-gray-500">Fecha hasta</label>
+                        <input type="date" id="filtro-hist-fecha-fin"
+                            class="rounded-md border-gray-300 shadow-sm h-[37px] px-4" />
+                    </div>
+                    <div>
+                        <label class="block mb-1 text-xs font-semibold text-gray-500">Tipo de espacio</label>
+                        <select id="filtro-hist-tipo" class="rounded-md border-gray-300 shadow-sm h-[37px] px-4">
+                            <option value="">Todos</option>
+                            @foreach($tiposEspacioDisponibles as $tipo)
+                                <option value="{{ $tipo }}">{{ $tipo }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <button id="btn-hist-buscar"
+                            class="px-4 py-2 text-sm font-semibold text-white transition bg-blue-600 rounded hover:bg-blue-700">Buscar</button>
+                    </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-4 h-2 bg-green-400 rounded"></div>
-                    <span class="text-gray-600 dark:text-gray-400">Baja utilización (1-25%)</span>
+                <div class="flex gap-2 mb-4">
+                    <button class="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700">Exportar
+                        Excel</button>
+                    <button class="px-4 py-2 text-white bg-red-600 rounded-md hover:bg-red-700">Exportar PDF</button>
                 </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-4 h-2 bg-yellow-400 rounded"></div>
-                    <span class="text-gray-600 dark:text-gray-400">Media utilización (26-50%)</span>
+                <!-- Spinner -->
+                <div id="spinner-historico" class="flex items-center justify-center hidden py-8">
+                    <svg class="w-8 h-8 text-blue-600 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none"
+                        viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                        </circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+                    </svg>
                 </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-4 h-2 bg-orange-400 rounded"></div>
-                    <span class="text-gray-600 dark:text-gray-400">Alta utilización (51-75%)</span>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm text-left">
+                        <thead>
+                            <tr class="text-xs text-gray-500 uppercase">
+                                <th class="px-4 py-2">Fecha</th>
+                                <th class="px-4 py-2">Hora Inicio</th>
+                                <th class="px-4 py-2">Hora Fin</th>
+                                <th class="px-4 py-2">Espacio</th>
+                                <th class="px-4 py-2">Tipo Espacio</th>
+                                <th class="px-4 py-2">Usuario</th>
+                                <th class="px-4 py-2">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-historico"></tbody>
+                    </table>
                 </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-4 h-2 bg-red-400 rounded"></div>
-                    <span class="text-gray-600 dark:text-gray-400">Muy alta utilización (76-100%)</span>
+                <div class="flex items-center justify-between mt-4">
+                    <div class="flex gap-2" id="paginacion-historico"></div>
+                </div>
+                <div class="grid grid-cols-1 gap-4 mt-6 md:grid-cols-4">
+                    <div class="p-4 text-center rounded-lg bg-blue-50">
+                        <div class="text-2xl font-bold text-blue-700" id="kpi-hist-total">0</div>
+                        <div class="text-xs text-blue-700">Total registros</div>
+                    </div>
+                    <div class="p-4 text-center rounded-lg bg-green-50">
+                        <div class="text-2xl font-bold text-green-700" id="kpi-hist-completadas">0</div>
+                        <div class="text-xs text-green-700">Completadas</div>
+                    </div>
+                    <div class="p-4 text-center rounded-lg bg-yellow-50">
+                        <div class="text-2xl font-bold text-yellow-700" id="kpi-hist-canceladas">0</div>
+                        <div class="text-xs text-yellow-700">Canceladas</div>
+                    </div>
+                    <div class="p-4 text-center rounded-lg bg-purple-50">
+                        <div class="text-2xl font-bold text-purple-700" id="kpi-hist-enprogreso">0</div>
+                        <div class="text-xs text-purple-700">En progreso</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Chart.js scripts con datos reales -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        let currentView = 'tipo'; // Vista actual: 'tipo' o 'dia'
-        
-        function toggleView() {
-            const vistaPorTipo = document.getElementById('vista-por-tipo');
-            const vistaPorDia = document.getElementById('vista-por-dia');
-            const toggleText = document.getElementById('toggle-text');
-            
-            if (currentView === 'tipo') {
-                // Cambiar a vista por día
-                vistaPorTipo.classList.add('hidden');
-                vistaPorDia.classList.remove('hidden');
-                toggleText.textContent = 'Vista por Tipo';
-                currentView = 'dia';
-            } else {
-                // Cambiar a vista por tipo
-                vistaPorTipo.classList.remove('hidden');
-                vistaPorDia.classList.add('hidden');
-                toggleText.textContent = 'Vista por Día';
-                currentView = 'tipo';
-            }
-        }
-
-        // Inicializar el texto del botón al cargar la página
-        document.addEventListener('DOMContentLoaded', function() {
-            const toggleText = document.getElementById('toggle-text');
-            if (toggleText) {
-                toggleText.textContent = 'Vista por Día';
+        // Gráfico de barras para Utilización por Tipo de Espacio
+        const labelsUtil = @json($labels_grafico);
+        const dataUtil = @json($data_grafico);
+        new Chart(document.getElementById('chartUtilizacion').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: labelsUtil,
+                datasets: [{
+                    label: 'Utilización (%)',
+                    data: dataUtil,
+                    backgroundColor: '#3b82f6',
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                },
+                scales: {
+                    y: { beginAtZero: true, max: 100 }
+                }
             }
         });
+        // Gráfico de torta para Distribución de Reservas
+        const dataReservas = @json($data_reservas_grafico);
+        new Chart(document.getElementById('chartReservas').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: labelsUtil,
+                datasets: [{
+                    label: 'Reservas',
+                    data: dataReservas,
+                    backgroundColor: [
+                        '#3b82f6', '#06b6d4', '#f59e42', '#a78bfa', '#f472b6', '#6b7280', '#fbbf24', '#10b981'
+                    ],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'bottom' },
+                }
+            }
+        });
+
+        // Datos desde el backend
+        const horariosModulosTipoEspacio = {
+            domingo: {
+                1: { inicio: '08:10:00', fin: '09:00:00' },
+                2: { inicio: '09:10:00', fin: '10:00:00' },
+                3: { inicio: '10:10:00', fin: '11:00:00' },
+                4: { inicio: '11:10:00', fin: '12:00:00' },
+                5: { inicio: '12:10:00', fin: '13:00:00' },
+                6: { inicio: '13:10:00', fin: '14:00:00' },
+                7: { inicio: '14:10:00', fin: '15:00:00' },
+                8: { inicio: '15:10:00', fin: '16:00:00' },
+                9: { inicio: '16:10:00', fin: '17:00:00' },
+                10: { inicio: '17:10:00', fin: '18:00:00' },
+                11: { inicio: '18:10:00', fin: '19:00:00' },
+                12: { inicio: '19:10:00', fin: '20:00:00' },
+                13: { inicio: '20:10:00', fin: '21:00:00' },
+                14: { inicio: '21:10:00', fin: '22:00:00' },
+                15: { inicio: '22:10:00', fin: '23:00:00' }
+            },
+            lunes: {
+                1: { inicio: '08:10:00', fin: '09:00:00' },
+                2: { inicio: '09:10:00', fin: '10:00:00' },
+                3: { inicio: '10:10:00', fin: '11:00:00' },
+                4: { inicio: '11:10:00', fin: '12:00:00' },
+                5: { inicio: '12:10:00', fin: '13:00:00' },
+                6: { inicio: '13:10:00', fin: '14:00:00' },
+                7: { inicio: '14:10:00', fin: '15:00:00' },
+                8: { inicio: '15:10:00', fin: '16:00:00' },
+                9: { inicio: '16:10:00', fin: '17:00:00' },
+                10: { inicio: '17:10:00', fin: '18:00:00' },
+                11: { inicio: '18:10:00', fin: '19:00:00' },
+                12: { inicio: '19:10:00', fin: '20:00:00' },
+                13: { inicio: '20:10:00', fin: '21:00:00' },
+                14: { inicio: '21:10:00', fin: '22:00:00' },
+                15: { inicio: '22:10:00', fin: '23:00:00' }
+            },
+            martes: {
+                1: { inicio: '08:10:00', fin: '09:00:00' },
+                2: { inicio: '09:10:00', fin: '10:00:00' },
+                3: { inicio: '10:10:00', fin: '11:00:00' },
+                4: { inicio: '11:10:00', fin: '12:00:00' },
+                5: { inicio: '12:10:00', fin: '13:00:00' },
+                6: { inicio: '13:10:00', fin: '14:00:00' },
+                7: { inicio: '14:10:00', fin: '15:00:00' },
+                8: { inicio: '15:10:00', fin: '16:00:00' },
+                9: { inicio: '16:10:00', fin: '17:00:00' },
+                10: { inicio: '17:10:00', fin: '18:00:00' },
+                11: { inicio: '18:10:00', fin: '19:00:00' },
+                12: { inicio: '19:10:00', fin: '20:00:00' },
+                13: { inicio: '20:10:00', fin: '21:00:00' },
+                14: { inicio: '21:10:00', fin: '22:00:00' },
+                15: { inicio: '22:10:00', fin: '23:00:00' }
+            },
+            miercoles: {
+                1: { inicio: '08:10:00', fin: '09:00:00' },
+                2: { inicio: '09:10:00', fin: '10:00:00' },
+                3: { inicio: '10:10:00', fin: '11:00:00' },
+                4: { inicio: '11:10:00', fin: '12:00:00' },
+                5: { inicio: '12:10:00', fin: '13:00:00' },
+                6: { inicio: '13:10:00', fin: '14:00:00' },
+                7: { inicio: '14:10:00', fin: '15:00:00' },
+                8: { inicio: '15:10:00', fin: '16:00:00' },
+                9: { inicio: '16:10:00', fin: '17:00:00' },
+                10: { inicio: '17:10:00', fin: '18:00:00' },
+                11: { inicio: '18:10:00', fin: '19:00:00' },
+                12: { inicio: '19:10:00', fin: '20:00:00' },
+                13: { inicio: '20:10:00', fin: '21:00:00' },
+                14: { inicio: '21:10:00', fin: '22:00:00' },
+                15: { inicio: '22:10:00', fin: '23:00:00' }
+            },
+            jueves: {
+                1: { inicio: '08:10:00', fin: '09:00:00' },
+                2: { inicio: '09:10:00', fin: '10:00:00' },
+                3: { inicio: '10:10:00', fin: '11:00:00' },
+                4: { inicio: '11:10:00', fin: '12:00:00' },
+                5: { inicio: '12:10:00', fin: '13:00:00' },
+                6: { inicio: '13:10:00', fin: '14:00:00' },
+                7: { inicio: '14:10:00', fin: '15:00:00' },
+                8: { inicio: '15:10:00', fin: '16:00:00' },
+                9: { inicio: '16:10:00', fin: '17:00:00' },
+                10: { inicio: '17:10:00', fin: '18:00:00' },
+                11: { inicio: '18:10:00', fin: '19:00:00' },
+                12: { inicio: '19:10:00', fin: '20:00:00' },
+                13: { inicio: '20:10:00', fin: '21:00:00' },
+                14: { inicio: '21:10:00', fin: '22:00:00' },
+                15: { inicio: '22:10:00', fin: '23:00:00' }
+            },
+            viernes: {
+                1: { inicio: '08:10:00', fin: '09:00:00' },
+                2: { inicio: '09:10:00', fin: '10:00:00' },
+                3: { inicio: '10:10:00', fin: '11:00:00' },
+                4: { inicio: '11:10:00', fin: '12:00:00' },
+                5: { inicio: '12:10:00', fin: '13:00:00' },
+                6: { inicio: '13:10:00', fin: '14:00:00' },
+                7: { inicio: '14:10:00', fin: '15:00:00' },
+                8: { inicio: '15:10:00', fin: '16:00:00' },
+                9: { inicio: '16:10:00', fin: '17:00:00' },
+                10: { inicio: '17:10:00', fin: '18:00:00' },
+                11: { inicio: '18:10:00', fin: '19:00:00' },
+                12: { inicio: '19:10:00', fin: '20:00:00' },
+                13: { inicio: '20:10:00', fin: '21:00:00' },
+                14: { inicio: '21:10:00', fin: '22:00:00' },
+                15: { inicio: '22:10:00', fin: '23:00:00' }
+            },
+            sabado: {
+                1: { inicio: '08:10:00', fin: '09:00:00' },
+                2: { inicio: '09:10:00', fin: '10:00:00' },
+                3: { inicio: '10:10:00', fin: '11:00:00' },
+                4: { inicio: '11:10:00', fin: '12:00:00' },
+                5: { inicio: '12:10:00', fin: '13:00:00' },
+                6: { inicio: '13:10:00', fin: '14:00:00' },
+                7: { inicio: '14:10:00', fin: '15:00:00' },
+                8: { inicio: '15:10:00', fin: '16:00:00' },
+                9: { inicio: '16:10:00', fin: '17:00:00' },
+                10: { inicio: '17:10:00', fin: '18:00:00' },
+                11: { inicio: '18:10:00', fin: '19:00:00' },
+                12: { inicio: '19:10:00', fin: '20:00:00' },
+                13: { inicio: '20:10:00', fin: '21:00:00' },
+                14: { inicio: '21:10:00', fin: '22:00:00' },
+                15: { inicio: '22:10:00', fin: '23:00:00' }
+            }
+        };
+
+        // ========================================
+        // FUNCIÓN PARA OBTENER EL DÍA ACTUAL
+        // ========================================
+        function obtenerDiaActual() {
+            const dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+            return dias[new Date().getDay()];
+        }
+
+        // ========================================
+        // FUNCIÓN PARA DETERMINAR EL MÓDULO ACTUAL
+        // ========================================
+        function determinarModulo(hora) {
+            const diaActual = obtenerDiaActual();
+            const horariosDia = horariosModulosTipoEspacio[diaActual];
+
+            if (!horariosDia) return null;
+
+            // Buscar en qué módulo estamos según la hora actual
+            for (const [modulo, horario] of Object.entries(horariosDia)) {
+                if (hora >= horario.inicio && hora < horario.fin) {
+                    return parseInt(modulo);
+                }
+            }
+            return null;
+        }
+
+        const ocupacionHorarios = @json($ocupacionHorarios);
+        const tiposEspacio = @json($tiposEspacioDisponibles);
+        const diasDisponibles = @json($diasDisponibles);
+        let diaActual = @json($diaActual);
+
+        // Estado de filtros
+        let diaSeleccionado = diaActual;
+        let tipoSeleccionado = '';
+        let modulosDia = Object.values(horariosModulosTipoEspacio[diaSeleccionado]);
+        let moduloInicio = 0;
+        let moduloFin = modulosDia.length - 1;
+
+        // Inicializar filtros y range
+        document.getElementById('filtro-dia').addEventListener('change', function () {
+            diaSeleccionado = this.value;
+            modulosDia = Object.values(horariosModulosTipoEspacio[diaSeleccionado]);
+            document.getElementById('modulo-inicio').max = modulosDia.length - 1;
+            document.getElementById('modulo-fin').max = modulosDia.length - 1;
+            if (moduloFin > modulosDia.length - 1) moduloFin = modulosDia.length - 1;
+            if (moduloInicio > moduloFin) moduloInicio = 0;
+            document.getElementById('modulo-inicio').value = moduloInicio;
+            document.getElementById('modulo-fin').value = moduloFin;
+            updateModuloLabels();
+            updateRangoText();
+            renderChartHorarios();
+            renderTablaHorarios();
+        });
+        document.getElementById('filtro-tipo').addEventListener('change', function () {
+            tipoSeleccionado = this.value;
+            renderChartHorarios();
+            renderTablaHorarios();
+        });
+        document.getElementById('modulo-inicio').addEventListener('input', function (e) {
+            moduloInicio = parseInt(e.target.value);
+            if (moduloInicio > moduloFin) {
+                moduloFin = moduloInicio;
+                document.getElementById('modulo-fin').value = moduloFin;
+            }
+            updateModuloLabels();
+            updateRangoText();
+            renderChartHorarios();
+            renderTablaHorarios();
+        });
+        document.getElementById('modulo-fin').addEventListener('input', function (e) {
+            moduloFin = parseInt(e.target.value);
+            if (moduloFin < moduloInicio) {
+                moduloInicio = moduloFin;
+                document.getElementById('modulo-inicio').value = moduloInicio;
+            }
+            updateModuloLabels();
+            updateRangoText();
+            renderChartHorarios();
+            renderTablaHorarios();
+        });
+        function setRango(inicio, fin) {
+            moduloInicio = inicio;
+            moduloFin = fin;
+            document.getElementById('modulo-inicio').value = inicio;
+            document.getElementById('modulo-fin').value = fin;
+            updateModuloLabels();
+            updateRangoText();
+            renderChartHorarios();
+            renderTablaHorarios();
+        }
+        function updateModuloLabels() {
+            document.getElementById('label-inicio').innerText = modulosDia[moduloInicio].inicio + ' - ' + modulosDia[moduloInicio].fin;
+            document.getElementById('label-fin').innerText = modulosDia[moduloFin].inicio + ' - ' + modulosDia[moduloFin].fin;
+        }
+        function updateRangoText() {
+            document.getElementById('rango-mostrando').innerText = `Mostrando ${moduloFin - moduloInicio + 1} de ${modulosDia.length} rangos horarios`;
+        }
+        // Inicializar labels y tabla
+        updateModuloLabels();
+        updateRangoText();
+
+        // Gráfico de barras apiladas
+        let chartHorarios;
+        function renderChartHorarios() {
+            const ctx = document.getElementById('chartHorarios').getContext('2d');
+            if (chartHorarios) chartHorarios.destroy();
+            const labels = modulosDia.slice(moduloInicio, moduloFin + 1).map(m => m.inicio + '-' + m.fin);
+            let datasets = [];
+            if (tipoSeleccionado) {
+                // Solo un tipo
+                const data = [];
+                for (let i = moduloInicio + 1; i <= moduloFin + 1; i++) {
+                    data.push((ocupacionHorarios[tipoSeleccionado] && ocupacionHorarios[tipoSeleccionado][diaSeleccionado] && ocupacionHorarios[tipoSeleccionado][diaSeleccionado][i]) || 0);
+                }
+                datasets.push({
+                    label: tipoSeleccionado,
+                    data: data,
+                    backgroundColor: '#3b82f6',
+                });
+            } else {
+                // Todos los tipos
+                tiposEspacio.forEach((tipo, idx) => {
+                    const data = [];
+                    for (let i = moduloInicio + 1; i <= moduloFin + 1; i++) {
+                        data.push((ocupacionHorarios[tipo] && ocupacionHorarios[tipo][diaSeleccionado] && ocupacionHorarios[tipo][diaSeleccionado][i]) || 0);
+                    }
+                    datasets.push({
+                        label: tipo,
+                        data: data,
+                        backgroundColor: coloresGraficos[idx % coloresGraficos.length],
+                    });
+                });
+            }
+            chartHorarios = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: labels, datasets: datasets },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, max: 100 } }
+                }
+            });
+        }
+        // Tabla de detalle
+        function renderTablaHorarios() {
+            // Encabezado
+            let thead = '<th class="px-4 py-2">Rango de Horarios</th>';
+            let tipos = tipoSeleccionado ? [tipoSeleccionado] : tiposEspacio;
+            tipos.forEach(tipo => {
+                thead += `<th class=\"py-2 px-4\">${tipo}</th>`;
+            });
+            thead += '<th class="px-4 py-2">Promedio</th>';
+            document.getElementById('thead-horarios').innerHTML = thead;
+            // Cuerpo
+            let tbody = '';
+            for (let i = moduloInicio + 1; i <= moduloFin + 1; i++) {
+                let fila = `<td class=\"py-2 px-4\">${modulosDia[i - 1].inicio}-${modulosDia[i - 1].fin}</td>`;
+                let suma = 0;
+                tipos.forEach(tipo => {
+                    const val = (ocupacionHorarios[tipo] && ocupacionHorarios[tipo][diaSeleccionado] && ocupacionHorarios[tipo][diaSeleccionado][i]) || 0;
+                    suma += val;
+                    fila += `<td class=\"py-2 px-4\">${val}%</td>`;
+                });
+                const prom = tipos.length > 0 ? Math.round(suma / tipos.length) : 0;
+                fila += `<td class=\"py-2 px-4 font-bold\">${prom}%</td>`;
+                tbody += `<tr>${fila}</tr>`;
+            }
+            document.getElementById('tbody-horarios').innerHTML = tbody;
+        }
+        // Colores para los gráficos
+        const coloresGraficos = ['#3b82f6', '#06b6d4', '#f59e42', '#a78bfa', '#f472b6', '#6b7280', '#fbbf24', '#10b981'];
+        // Inicializar
+        renderChartHorarios();
+        renderTablaHorarios();
+
+        // --- HISTÓRICO DINÁMICO ---
+        function cargarHistorico(page = 1) {
+            document.getElementById('spinner-historico').classList.remove('hidden');
+            document.getElementById('tbody-historico').innerHTML = '';
+            let fecha_inicio = document.getElementById('filtro-hist-fecha-inicio').value;
+            let fecha_fin = document.getElementById('filtro-hist-fecha-fin').value;
+            let tipo_espacio = document.getElementById('filtro-hist-tipo').value;
+            fetch(`/reporteria/tipo-espacio/historico-ajax?page=${page}&fecha_inicio=${fecha_inicio}&fecha_fin=${fecha_fin}&tipo_espacio=${tipo_espacio}`)
+                .then(res => res.json())
+                .then(res => {
+                    document.getElementById('spinner-historico').classList.add('hidden');
+                    // Tabla
+                    let rows = '';
+                    res.data.forEach(reg => {
+                        rows += `<tr>
+                            <td class='px-4 py-2'>${reg.fecha}</td>
+                            <td class='px-4 py-2'>${reg.hora_inicio}</td>
+                            <td class='px-4 py-2'>${reg.hora_termino}</td>
+                            <td class='px-4 py-2'>${reg.espacio}</td>
+                            <td class='px-4 py-2'>${reg.tipo_espacio}</td>
+                            <td class='px-4 py-2'>${reg.usuario}</td>
+                            <td class='px-4 py-2'>${renderEstado(reg.estado)}</td>
+                        </tr>`;
+                    });
+                    document.getElementById('tbody-historico').innerHTML = rows;
+                    // KPIs
+                    document.getElementById('kpi-hist-total').innerText = res.total;
+                    document.getElementById('kpi-hist-completadas').innerText = res.completadas;
+                    document.getElementById('kpi-hist-canceladas').innerText = res.canceladas;
+                    document.getElementById('kpi-hist-enprogreso').innerText = res.en_progreso;
+                    // Paginación
+                    let pag = '';
+                    for (let i = 1; i <= res.last_page; i++) {
+                        pag += `<button onclick='cargarHistorico(${i})' class='px-2 py-1 rounded ${i === res.current_page ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}'>${i}</button>`;
+                    }
+                    document.getElementById('paginacion-historico').innerHTML = pag;
+                });
+        }
+        function renderEstado(estado) {
+            if (estado === 'completada') return `<span class='px-2 py-1 text-xs text-green-700 bg-green-100 rounded-full'>Completada</span>`;
+            if (estado === 'cancelada') return `<span class='px-2 py-1 text-xs text-yellow-700 bg-yellow-100 rounded-full'>Cancelada</span>`;
+            if (estado === 'en progreso') return `<span class='px-2 py-1 text-xs text-purple-700 bg-purple-100 rounded-full'>En progreso</span>`;
+            return `<span class='px-2 py-1 text-xs text-gray-700 bg-gray-100 rounded-full'>${estado}</span>`;
+        }
+        // Inicializar filtros con valores por defecto
+        document.getElementById('filtro-hist-fecha-inicio').value = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+        document.getElementById('filtro-hist-fecha-fin').value = new Date().toISOString().slice(0, 10);
+        // Buscar al cargar y al cambiar filtros
+        document.getElementById('btn-hist-buscar').onclick = () => cargarHistorico(1);
+        cargarHistorico(1);
     </script>
-</x-app-layout> 
+</x-app-layout>

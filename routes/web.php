@@ -208,6 +208,7 @@ Route::prefix('reporteria')->group(function () {
     // Rutas para exportar a Excel y PDF
     Route::get('utilizacion/export/{format}', [ReporteriaController::class, 'exportUtilizacion'])->name('reporteria.utilizacion.export');
     Route::get('tipo-espacio/export/{format}', [ReporteriaController::class, 'exportTipoEspacio'])->name('reporteria.tipo-espacio.export');
+    Route::get('historico-espacios/export/{format}', [ReporteriaController::class, 'exportHistoricoEspacios'])->name('reporteria.tipo-espacio.export');
     Route::get('accesos/export/{format}', [ReporteriaController::class, 'exportAccesos'])->name('reporteria.accesos.export');
     Route::post('accesos/export/{format}', [ReporteriaController::class, 'exportAccesosConFiltros'])->name('reporteria.accesos.export.filtros');
     Route::get('unidad-academica/export/{format}', [ReporteriaController::class, 'exportUnidadAcademica'])->name('reporteria.unidad-academica.export');

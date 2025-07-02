@@ -36,7 +36,7 @@ class EspacioController extends Controller
                 'id_universidad' => 'required|exists:universidades,id_universidad',
                 'id_facultad' => 'required|exists:facultades,id_facultad',
                 'piso_id' => 'required|exists:pisos,id',
-                'tipo_espacio' => 'required|in:Aula,Laboratorio,Biblioteca,Sala de Reuniones,Oficinas',
+                'tipo_espacio' => 'required|in:Sala de Clases,Laboratorio,Biblioteca,Sala de Reuniones,Oficinas',
                 'estado' => 'required|in:Disponible,Ocupado,Reservado',
                 'puestos_disponibles' => 'required|integer|min:1',
             ]);
@@ -92,7 +92,7 @@ class EspacioController extends Controller
                 'id_universidad' => 'required|exists:universidades,id_universidad',
                 'id_facultad' => 'required|exists:facultades,id_facultad',
                 'piso_id' => 'required|exists:pisos,id',
-                'tipo_espacio' => 'required|in:Aula,Laboratorio,Biblioteca,Sala de Reuniones,Oficinas',
+                'tipo_espacio' => 'required|in:Sala de Clases,Laboratorio,Biblioteca,Sala de Reuniones,Oficinas',
                 'estado' => 'required|in:Disponible,Ocupado,Reservado',
                 'puestos_disponibles' => 'nullable|integer|min:0',
             ]);

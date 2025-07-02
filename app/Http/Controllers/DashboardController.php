@@ -813,7 +813,7 @@ class DashboardController extends Controller
         // Calcular utilización por tipo de espacio para el día y módulo
         // Si no hay lógica real, usar datos de ejemplo para evitar error 500
         $comparativaTipos = [
-            ['tipo' => 'Aula', 'porcentaje' => 0, 'comparativa' => 'Sin variación'],
+            ['tipo' => 'Sala de Clases', 'porcentaje' => 0, 'comparativa' => 'Sin variación'],
             ['tipo' => 'Laboratorio', 'porcentaje' => 0, 'comparativa' => 'Sin variación'],
             ['tipo' => 'Auditorio', 'porcentaje' => 0, 'comparativa' => 'Sin variación'],
             ['tipo' => 'Sala de Estudio', 'porcentaje' => 0, 'comparativa' => 'Sin variación'],

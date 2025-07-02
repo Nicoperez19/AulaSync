@@ -27,7 +27,7 @@
                     </div>
                 </div>
                 <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
-                    <span class="font-semibold text-light-cloud-blue mr-2">Apellido:</span>
+                    <span class="font-semibold text-light-cloud-blue mr-2">Usuario:</span>
                     <div class="flex flex-wrap gap-1 items-center">
                         @php
                             $letras = ['Todos','A','B','C','D','E','F','G','H','I','J','K','L','M','N','Ñ','O','P','Q','R','S','T','U','V','W','X','Y','Z'];

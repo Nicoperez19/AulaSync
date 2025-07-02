@@ -14,7 +14,7 @@ return new class extends Migration {
             $table->string('id_espacio')->primary();
             $table->string('nombre_espacio');
             $table->foreignId('piso_id')->constrained('pisos')->onDelete('cascade');
-            $table->enum('tipo_espacio', ['Aula', 'Laboratorio', 'Biblioteca', 'Sala de Reuniones', 'Oficinas', 'Taller', 'Auditorio', 'Sala de Estudio']);
+            $table->enum('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Biblioteca', 'Sala de Reuniones', 'Oficinas', 'Taller', 'Auditorio', 'Sala de Estudio']);
             $table->enum('estado', ['Disponible', 'Ocupado', 'Reservado']);
             $table->string('qr_espacio')->nullable();
             $table->integer('puestos_disponibles')->nullable();

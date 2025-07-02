@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('title');
             $table->text('message');
             $table->json('data')->nullable(); // Datos adicionales en formato JSON
-            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
+            $table->unsignedBigInteger('user_run')->nullable();
             $table->string('priority')->default('medium'); // low, medium, high, urgent
             $table->timestamp('read_at')->nullable();
             $table->timestamp('expires_at')->nullable();
@@ -25,8 +25,11 @@ return new class extends Migration
             $table->string('action_text')->nullable(); // Texto del botón de acción
             $table->timestamps();
             
+            // Clave foránea que referencia la columna 'run' de users
+            $table->foreign('user_run')->references('run')->on('users')->onDelete('cascade');
+            
             // Índices para mejorar el rendimiento
-            $table->index(['user_id', 'read_at']);
+            $table->index(['user_run', 'read_at']);
             $table->index(['type', 'priority']);
             $table->index('expires_at');
         });
