@@ -2,12 +2,13 @@
     <x-slot name="header">
         <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">
-                <div class=" p-2 rounded-xl bg-light-cloud-blue">
-                    <i class="fa-solid fa-user-circle text-white text-2xl"></i>
+                <div class="p-2 rounded-xl bg-light-cloud-blue">
+                    <i class="fa-solid fa-qrcode text-white text-2xl"></i>
                 </div>
+
                 <div>
-                    <h2 class="text-2xl font-bold leading-tight text-black"> Accesos registrados (QR)
-                    </h2>
+                    <h2 class="text-2xl font-bold leading-tight">Accesos registrados (QR)</h2>
+                    <p class="text-gray-500 text-sm">Revisa los registros de acceso escaneados por código QR</p>
                 </div>
             </div>
         </div>
@@ -303,7 +304,7 @@
                                                 </td>
                                                 <td class="px-4 py-3 whitespace-nowrap">
                                                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
-                                                                                                                                                        {{ $acceso['tipo_usuario'] == 'profesor' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                                                                                                                                                                            {{ $acceso['tipo_usuario'] == 'profesor' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
                             ($acceso['tipo_usuario'] == 'estudiante' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
                                 ($acceso['tipo_usuario'] == 'administrativo' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
                                     'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200')) }}">
@@ -312,7 +313,7 @@
                                                 </td>
                                                 <td class="px-4 py-3 whitespace-nowrap">
                                                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
-                                                                                                                                                        {{ $acceso['estado'] == 'activa' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                                                                                                                                                                            {{ $acceso['estado'] == 'activa' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
                             ($acceso['estado'] == 'finalizada' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' :
                                 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200') }}">
                                                         {{ ucfirst($acceso['estado']) }}

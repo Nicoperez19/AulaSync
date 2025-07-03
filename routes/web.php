@@ -166,10 +166,9 @@ Route::group(['middleware' => ['permission:mantenedor de asignaturas']], functio
 
 Route::group(['middleware' => ['permission:mantenedor de carga de datos']], function () {
     Route::get('/data', [DataLoadController::class, 'index'])->name('data.index');
-    Route::get('/data/{dataLoad}', [DataLoadController::class, 'show'])->name('data.show');
     Route::post('/data_loads/upload', [DataLoadController::class, 'upload'])->name('data.upload');
     Route::delete('/data/{dataLoad}', [DataLoadController::class, 'destroy'])->name('data.destroy');
-    Route::get('/data/progress/{dataLoad}', [DataLoadController::class, 'getProgress'])->name('data.progress');
+    Route::get('/data/detalle/{id}', [DataLoadController::class, 'detalleJson'])->name('data.detalle');
 });
 
 Route::middleware('auth')->group(function () {

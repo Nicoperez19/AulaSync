@@ -34,11 +34,6 @@ class DataLoadController extends Controller
         return view('layouts.data.data_index', compact('dataLoads'));
     }
 
-    public function show(DataLoad $dataLoad)
-    {
-        return view('layouts.data.data_show', compact('dataLoad'));
-    }
-
     public function upload(Request $request)
     {
         set_time_limit(300);
@@ -75,14 +70,29 @@ class DataLoadController extends Controller
             $rows = Excel::toArray([], $file)[0];
             Log::info('Archivo Excel leído', ['total_filas' => count($rows)]);
 
+            // Validación de columnas exactas
+            $expected = ['ID_CURS', 'COD_RAM', 'RAMO_NOMBRE'];
+            $header = $rows[0] ?? [];
+            if ($header !== $expected) {
+                // Elimina el archivo subido si existe
+                if (isset($path)) {
+                    Storage::disk('public')->delete($path);
+                }
+                // Elimina el registro DataLoad creado
+                if (isset($dataLoad)) {
+                    $dataLoad->delete();
+                }
+                return response()->json([
+                    'message' => 'El archivo no es válido. Debe contener exactamente las columnas: ID_CURS, COD_RAM, RAMO_NOMBRE.'
+                ], 422);
+            }
+
             $role = Role::findByName('Profesor');
             $processedUsersCount = 0;
             $processedAsignaturasCount = 0;
             $processedHorariosCount = 0;
             $errors = [];
             $skippedRows = 0;
-            $totalRows = count($rows) - 1; // Restamos 1 por la fila de encabezados
-            $currentRow = 0;
 
             // Actualizar estado inicial
             $dataLoad->update([
@@ -95,14 +105,6 @@ class DataLoadController extends Controller
                     Log::info('Saltando encabezados del archivo');
                     continue;
                 }
-
-                $currentRow++;
-                // Actualizar el progreso cada fila
-                $progress = ($currentRow / $totalRows) * 100;
-                $dataLoad->update([
-                    'estado' => 'procesando',
-                    'registros_cargados' => round($progress)
-                ]);
 
                 try {
                     $sede = $row[7];
@@ -354,11 +356,31 @@ class DataLoadController extends Controller
         }
     }
 
-    public function getProgress(DataLoad $dataLoad)
+
+
+    public function detalleJson($id)
     {
+        $dataLoad = \App\Models\DataLoad::with('user')->findOrFail($id);
+
+        // Calcula el tamaño del archivo en MB
+        $tamano = null;
+        if ($dataLoad->ruta_archivo && \Storage::disk('public')->exists($dataLoad->ruta_archivo)) {
+            $tamano = round(\Storage::disk('public')->size($dataLoad->ruta_archivo) / 1024 / 1024, 1) . ' MB';
+        }
+
         return response()->json([
+            'id' => $dataLoad->id,
+            'nombre_archivo' => $dataLoad->nombre_archivo,
             'estado' => $dataLoad->estado,
-            'progreso' => $dataLoad->registros_cargados
+            'registros_cargados' => $dataLoad->registros_cargados,
+            'tamano' => $tamano,
+            'tipo_carga' => $dataLoad->tipo_carga,
+            'ruta_archivo' => $dataLoad->ruta_archivo,
+            'usuario_nombre' => $dataLoad->user->name ?? '',
+            'usuario_run' => $dataLoad->user->run ?? '',
+            'fecha_carga' => $dataLoad->created_at ? $dataLoad->created_at->format('d/m/Y H:i:s') : '',
+            'fecha_actualizacion' => $dataLoad->updated_at ? $dataLoad->updated_at->format('d/m/Y H:i:s') : '',
+            'url_descarga' => $dataLoad->ruta_archivo ? \Storage::disk('public')->url($dataLoad->ruta_archivo) : '',
         ]);
     }
 }

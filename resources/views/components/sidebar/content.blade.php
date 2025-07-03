@@ -1,4 +1,4 @@
-<nav aria-label="main" class="flex flex-col gap-4 my-[2rem]" style="color:white;">
+<nav aria-label="main" class="flex flex-col gap-4 my-[2rem] pt-2" style="color:white;">
     <!-- Dashboard -->
     <x-sidebar.link title="Dashboard" href="{{ route('dashboard') }}" :isActive="request()->routeIs('dashboard')">
         <x-slot name="icon">
@@ -7,7 +7,7 @@
     </x-sidebar.link>
 
     <!-- Monitoreo de Espacios -->
-    <x-sidebar.link title="Monitoreo de Espacios" 
+    <x-sidebar.link title="Monitoreo de Espacios"
         href="{{ $primerMapa ? route('plano.show', $primerMapa->id_mapa) : '#' }}"
         :isActive="request()->routeIs('plano.show')"
         onclick="{{ !$primerMapa ? 'mostrarSweetAlertNoMapas(event)' : '' }}">
@@ -17,7 +17,8 @@
     </x-sidebar.link>
 
     <!-- Horarios -->
-    <x-sidebar.link title="Horarios por Espacios" href="{{ $sede ? route('espacios.show', $sede->id_sede) : route('dashboard') }}"
+    <x-sidebar.link title="Horarios por Espacios"
+        href="{{ $sede ? route('espacios.show', $sede->id_sede) : route('dashboard') }}"
         :isActive="request()->routeIs('espacios.show')">
         <x-slot name="icon">
             <x-icons.clock class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
@@ -49,23 +50,24 @@
         </x-slot>
     </x-sidebar.link>
 
+
+    <x-sidebar.link title="Carga Masiva" href="{{ route('data.index') }}" :isActive="request()->routeIs('data.index')">
+        <x-slot name="icon">
+            <x-icons.upload class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
+        </x-slot>
+    </x-sidebar.link>
+
     @role('Administrador')
     <x-sidebar.dropdown title="Mantenedores" :active="Str::startsWith(request()->route()->uri(), 'users')">
         <x-slot name="icon">
             <x-icons.config class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         </x-slot>
-        {{-- <x-sidebar.sublink title="Áreas Académicas" href="{{ route('academic_areas.index') }}"
-            :isActive="request()->routeIs('academic_areas.index')" /> --}}
         <x-sidebar.sublink title="Asignaturas" href="{{ route('asignaturas.index') }}"
             :isActive="request()->routeIs('asignaturas.index')" />
         <x-sidebar.sublink title="Carreras" href="{{ route('careers.index') }}"
             :isActive="request()->routeIs('careers.index')" />
-        <x-sidebar.sublink title="Carga Masiva" href="{{ route('data.index') }}"
-            :isActive="request()->routeIs('data.index')" />
         <x-sidebar.sublink title="Espacios" href="{{ route('spaces_index') }}"
             :isActive="request()->routeIs('espacios.index')" />
-        {{-- <x-sidebar.sublink title="Facultad" href="{{ route('faculties.index') }}"
-            :isActive="request()->routeIs('faculties.index')" /> --}}
         <x-sidebar.sublink title="Mapa" href="{{ route('mapas.index') }}"
             :isActive="request()->routeIs('maps.index')" />
         <x-sidebar.sublink title="Permisos" href="{{ route('permissions.index') }}"
@@ -76,8 +78,6 @@
             :isActive="request()->routeIs('reservas.index')" />
         <x-sidebar.sublink title="Roles" href="{{ route('roles.index') }}"
             :isActive="request()->routeIs('roles.index')" />
-        {{-- <x-sidebar.sublink title="Universidad" href="{{ route('universities.index') }}"
-            :isActive="request()->routeIs('universitys.index')" /> --}}
         <x-sidebar.sublink title="Usuarios" href="{{ route('users.index') }}"
             :isActive="request()->routeIs('users.index')" />
     </x-sidebar.dropdown>
