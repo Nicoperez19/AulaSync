@@ -383,4 +383,15 @@ class DataLoadController extends Controller
             'url_descarga' => $dataLoad->ruta_archivo ? \Storage::disk('public')->url($dataLoad->ruta_archivo) : '',
         ]);
     }
+
+    public function download($id)
+    {
+        $dataLoad = DataLoad::findOrFail($id);
+        
+        if (!$dataLoad->ruta_archivo || !Storage::disk('public')->exists($dataLoad->ruta_archivo)) {
+            return back()->withErrors(['error' => 'El archivo no existe o ha sido eliminado.']);
+        }
+
+        return Storage::disk('public')->download($dataLoad->ruta_archivo, $dataLoad->nombre_archivo);
+    }
 }

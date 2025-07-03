@@ -102,7 +102,7 @@
                         </td>
                         <td class="px-4 py-3 text-center">
                             <div class="flex items-center justify-center gap-3">
-                                <button type="button" onclick="verDetalleCarga({{ $data->id }})" class="text-blue-600 hover:text-blue-800" title="Ver">
+                                <button type="button" onclick="verDetalleCarga({{ $data->id }})" class="text-blue-600 hover:text-blue-800" title="Ver detalles">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"
                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -111,6 +111,13 @@
                                             d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
                                 </button>
+                                <a href="{{ route('data.download', $data->id) }}" class="text-green-600 hover:text-green-800" title="Descargar archivo">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 4v12"/>
+                                    </svg>
+                                </a>
                                 <form id="delete-form-{{ $data->id }}" action="{{ route('data.destroy', $data->id) }}"
                                     method="POST" class="inline">
                                     @csrf

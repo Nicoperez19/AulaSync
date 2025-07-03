@@ -169,6 +169,7 @@ Route::group(['middleware' => ['permission:mantenedor de carga de datos']], func
     Route::post('/data_loads/upload', [DataLoadController::class, 'upload'])->name('data.upload');
     Route::delete('/data/{dataLoad}', [DataLoadController::class, 'destroy'])->name('data.destroy');
     Route::get('/data/detalle/{id}', [DataLoadController::class, 'detalleJson'])->name('data.detalle');
+    Route::get('/data/download/{id}', [DataLoadController::class, 'download'])->name('data.download');
 });
 
 Route::middleware('auth')->group(function () {
