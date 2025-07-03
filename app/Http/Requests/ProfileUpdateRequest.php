@@ -15,13 +15,42 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
-            'celular' => ['nullable', 'string', 'regex:/^9\d{8}$/'],
+        $userId = $this->user()->id;
+        $rules = [
+            'name' => ['nullable', 'string', 'max:255'],
+            'celular' => ['nullable', 'string', 'regex:/^9\\d{8}$/'],
             'direccion' => ['nullable', 'string', 'max:255'],
             'fecha_nacimiento' => ['nullable', 'date'],
             'anio_ingreso' => ['nullable', 'integer', 'min:2010', 'max:' . date('Y')],
         ];
+
+        // Solo aplica unique si el email es diferente al actual
+        if ($this->filled('email') && $this->input('email') !== $this->user()->email) {
+            $rules['email'] = [
+                'nullable',
+                'string',
+                'email',
+                'max:255',
+                \Illuminate\Validation\Rule::unique('users', 'email')->ignore($userId),
+            ];
+        } else {
+            $rules['email'] = [
+                'nullable',
+                'string',
+                'email',
+                'max:255',
+            ];
+        }
+
+        return $rules;
+    }
+
+    protected function prepareForValidation()
+    {
+        if ($this->has('email')) {
+            $this->merge([
+                'email' => strtolower(trim($this->input('email'))),
+            ]);
+        }
     }
 }

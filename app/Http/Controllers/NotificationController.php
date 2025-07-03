@@ -14,25 +14,25 @@ class NotificationController extends Controller
         $user = Auth::user();
         
         // Obtener notificaciones del usuario
-        $notifications = Notification::where('user_id', $user->id)
+        $notifications = Notification::where('user_run', $user->run)
             ->active()
             ->orderBy('created_at', 'desc')
             ->paginate(20);
             
         // Contadores
-        $unreadCount = Notification::where('user_id', $user->id)
+        $unreadCount = Notification::where('user_run', $user->run)
             ->unread()
             ->active()
             ->count();
             
-        $urgentCount = Notification::where('user_id', $user->id)
+        $urgentCount = Notification::where('user_run', $user->run)
             ->unread()
             ->active()
             ->byPriority(Notification::PRIORITY_URGENT)
             ->count();
             
         // Estadísticas por tipo
-        $statsByType = Notification::where('user_id', $user->id)
+        $statsByType = Notification::where('user_run', $user->run)
             ->active()
             ->selectRaw('type, COUNT(*) as count')
             ->groupBy('type')
@@ -47,7 +47,7 @@ class NotificationController extends Controller
         $notification = Notification::findOrFail($request->notification_id);
         
         // Verificar que la notificación pertenece al usuario
-        if ($notification->user_id !== Auth::id()) {
+        if ($notification->user_run !== Auth::user()->run) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
         
@@ -60,7 +60,7 @@ class NotificationController extends Controller
     {
         $user = Auth::user();
         
-        Notification::where('user_id', $user->id)
+        Notification::where('user_run', $user->run)
             ->unread()
             ->active()
             ->update(['read_at' => Carbon::now()]);
@@ -73,7 +73,7 @@ class NotificationController extends Controller
         $notification = Notification::findOrFail($request->notification_id);
         
         // Verificar que la notificación pertenece al usuario
-        if ($notification->user_id !== Auth::id()) {
+        if ($notification->user_run !== Auth::user()->run) {
             return response()->json(['success' => false, 'message' => 'No autorizado'], 403);
         }
         
@@ -86,59 +86,60 @@ class NotificationController extends Controller
     {
         $user = Auth::user();
         
-        Notification::where('user_id', $user->id)->delete();
+        Notification::where('user_run', $user->run)->delete();
         
         return response()->json(['success' => true]);
     }
 
-    public function getUnreadCount()
+    public function getUnreadCount(Request $request)
     {
+        if (!$request->ajax()) {
+            return redirect()->route('dashboard');
+        }
         $user = Auth::user();
-        
-        $unreadCount = Notification::where('user_id', $user->id)
+        $unreadCount = Notification::where('user_run', $user->run)
             ->unread()
             ->active()
             ->count();
-            
-        $urgentCount = Notification::where('user_id', $user->id)
+        $urgentCount = Notification::where('user_run', $user->run)
             ->unread()
             ->active()
             ->byPriority(Notification::PRIORITY_URGENT)
             ->count();
-            
         return response()->json([
             'unread_count' => $unreadCount,
             'urgent_count' => $urgentCount
         ]);
     }
 
-    public function getRecentNotifications()
+    public function getRecentNotifications(Request $request)
     {
+        if (!$request->ajax()) {
+            return redirect()->route('dashboard');
+        }
         $user = Auth::user();
-        
-        $notifications = Notification::where('user_id', $user->id)
+        $notifications = Notification::where('user_run', $user->run)
             ->active()
             ->orderBy('created_at', 'desc')
             ->limit(10)
             ->get();
-            
         return response()->json($notifications);
     }
 
     public function filter(Request $request)
     {
+        if (!$request->ajax()) {
+            return redirect()->route('dashboard');
+        }
         $user = Auth::user();
-        $query = Notification::where('user_id', $user->id)->active();
-        
+        $query = Notification::where('user_run', $user->run)->active();
         // Filtros
         if ($request->has('type') && $request->type !== 'all') {
             $query->byType($request->type);
         }
-        
         if ($request->has('priority') && $request->priority !== 'all') {
             $query->byPriority($request->priority);
         }
-        
         if ($request->has('status')) {
             if ($request->status === 'unread') {
                 $query->unread();
@@ -146,9 +147,7 @@ class NotificationController extends Controller
                 $query->read();
             }
         }
-        
         $notifications = $query->orderBy('created_at', 'desc')->paginate(20);
-        
         return response()->json($notifications);
     }
 
@@ -160,7 +159,7 @@ class NotificationController extends Controller
             'title' => $data['title'],
             'message' => $data['message'],
             'data' => $data['data'] ?? null,
-            'user_id' => $data['user_id'] ?? null,
+            'user_run' => $data['user_run'] ?? null,
             'priority' => $data['priority'] ?? Notification::PRIORITY_MEDIUM,
             'expires_at' => isset($data['expires_at']) ? Carbon::parse($data['expires_at']) : null,
             'action_url' => $data['action_url'] ?? null,
@@ -169,7 +168,7 @@ class NotificationController extends Controller
     }
 
     // Método para crear notificación de devolución de llaves
-    public static function createKeyReturnNotification($profesor, $espacio, $horaTermino)
+    public static function createKeyReturnNotification($profesor, $espacio, $horaTermino, $userRun)
     {
         return self::createNotification([
             'type' => Notification::TYPE_KEY_RETURN,
@@ -179,6 +178,7 @@ class NotificationController extends Controller
             'expires_at' => Carbon::now()->addHours(2), // Expira en 2 horas
             'action_url' => '/dashboard',
             'action_text' => 'Ver Dashboard',
+            'user_run' => $userRun,
             'data' => [
                 'profesor' => $profesor,
                 'espacio' => $espacio,
@@ -194,7 +194,7 @@ class NotificationController extends Controller
             'type' => Notification::TYPE_RESERVATION,
             'title' => 'Reserva confirmada',
             'message' => "Su reserva para el espacio {$espacio} ha sido confirmada para el {$fecha} a las {$hora}.",
-            'user_id' => $user->id,
+            'user_run' => $user->run,
             'priority' => Notification::PRIORITY_MEDIUM,
             'expires_at' => Carbon::now()->addDays(1),
             'action_url' => '/reservations',

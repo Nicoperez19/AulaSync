@@ -194,6 +194,13 @@
         });
 
         function mostrarHorario(run) {
+            // Mostrar el modal y el spinner inmediatamente
+            abrirModal();
+            const horarioBody = document.getElementById('horarioBody');
+            horarioBody.innerHTML = "<tr><td colspan='7' class='text-center py-8'><span class='text-gray-400'>Cargando horario...</span></td></tr>";
+            document.getElementById('modalNombreProfesor').textContent = 'Cargando...';
+            document.getElementById('modalCorreoProfesor').textContent = '';
+
             fetch(`/horarios/${run}`)
                 .then(response => response.json())
                 .then(data => {
@@ -235,8 +242,8 @@
                                         <div class='text-xs uppercase tracking-wide mb-1'>${plan.asignatura.nombre_asignatura}</div>
                                         <div class='text-xs font-normal mb-1'><i class='fa-solid fa-door-closed mr-1'></i>${plan.espacio.id_espacio}</div>
                                         <div class='text-xs font-normal mb-1'><i class='fa-solid fa-hashtag mr-1'></i>${plan.asignatura.codigo_asignatura}</div>
-</div>
-`).join('');
+                                    </div>
+                                `).join('');
                                 td.innerHTML = clasesHTML;
                             } else {
                                 td.innerHTML = `<div class='h-full min-h-[60px] flex items-center justify-center'><span class='text-sm text-gray-400'>-</span></div>`;
@@ -245,12 +252,10 @@
                         });
                         horarioBody.appendChild(tr);
                     });
-
-                    abrirModal();
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error al cargar el horario');
+                    horarioBody.innerHTML = "<tr><td colspan='7' class='text-center py-8 text-red-500'>Error al cargar el horario</td></tr>";
                 });
         }
 

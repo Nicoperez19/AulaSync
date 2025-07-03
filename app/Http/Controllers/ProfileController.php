@@ -16,7 +16,7 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
-        return view('profile.edit', [
+        return view('profile.edit_profile', [
             'user' => $request->user(),
         ]);
     }
@@ -26,13 +26,30 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $data = $request->validated();
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        // Solo actualiza los campos que vienen y son diferentes
+        foreach (['name', 'email', 'celular', 'direccion', 'fecha_nacimiento', 'anio_ingreso'] as $field) {
+            if (array_key_exists($field, $data) && $data[$field] !== null && $user->$field !== $data[$field]) {
+                $user->$field = $data[$field];
+                // Si el email cambia, desverifica
+                if ($field === 'email') {
+                    $user->email_verified_at = null;
+                }
+            }
         }
 
-        $request->user()->save();
+        // Si viene contraseña y no está vacía, actualizar
+        if ($request->filled('password')) {
+            $request->validate([
+                'current_password' => ['required', 'current_password'],
+                'password' => ['required', 'string', 'min:8', 'confirmed'],
+            ]);
+            $user->password = bcrypt($request->password);
+        }
+
+        $user->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }
