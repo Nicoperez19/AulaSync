@@ -72,8 +72,17 @@ class HorarioController extends Controller
             $diaActual = $ahora->dayOfWeek;
             $horaActual = $ahora->format('H:i:s');
 
+            // Determinar el período actual
+            $mesActual = date('n');
+            $anioActual = date('Y');
+            $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
+            $periodo = $anioActual . '-' . $semestre;
+            
             $planificacionActual = Planificacion_Asignatura::select('id_asignatura', 'id_modulo')
                 ->where('id_espacio', $idEspacio)
+                ->whereHas('horario', function($query) use ($periodo) {
+                    $query->where('periodo', $periodo);
+                })
                 ->whereHas('modulo', function($query) use ($diaActual, $horaActual) {
                     $query->where('dia', $diaActual)
                           ->where('hora_inicio', '<=', $horaActual)

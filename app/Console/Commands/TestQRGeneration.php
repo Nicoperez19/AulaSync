@@ -35,12 +35,21 @@ class TestQRGeneration extends Command
         
         $this->info("Verificando planificaciones que terminan entre: " . $now->format('H:i') . " y " . $timeLimit->format('H:i'));
         
+        // Determinar el período actual
+        $mesActual = date('n');
+        $anioActual = date('Y');
+        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
+        $periodo = $anioActual . '-' . $semestre;
+        
         // Obtener planificaciones que terminan en los próximos 10 minutos
         $planificaciones = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.user'])
             ->whereHas('modulo', function ($query) use ($now, $timeLimit) {
                 $query->where('dia', strtolower($now->locale('es')->isoFormat('dddd')))
                       ->whereTime('hora_termino', '>', $now->format('H:i:s'))
                       ->whereTime('hora_termino', '<=', $timeLimit->format('H:i:s'));
+            })
+            ->whereHas('horario', function ($query) use ($periodo) {
+                $query->where('periodo', $periodo);
             })
             ->get();
             

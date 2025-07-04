@@ -43,17 +43,16 @@ Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard
 
 Route::middleware(['auth', 'role:Administrador'])->group(function () {
     // Notifications
-    Route::get('/api/notifications/key-returns', [DashboardController::class, 'getKeyReturnNotifications'])->name('notifications.key-returns');
-
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('/notifications/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
-    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
-    Route::post('/notifications/delete', [NotificationController::class, 'delete'])->name('notifications.delete');
-    Route::post('/notifications/clear-all', [NotificationController::class, 'clearAll'])->name('notifications.clear-all');
-    Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
-    Route::get('/notifications/recent', [NotificationController::class, 'getRecentNotifications'])->name('notifications.recent');
-    Route::get('/notifications/filter', [NotificationController::class, 'filter'])->name('notifications.filter');
-    Route::get('/notifications/json', [\App\Http\Controllers\NotificationController::class, 'json'])->middleware('auth')->name('notifications.json');
+    // Route::get('/api/notifications/key-returns', [DashboardController::class, 'getKeyReturnNotifications'])->name('notifications.key-returns');
+    // Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    // Route::post('/notifications/mark-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    // Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+    // Route::post('/notifications/delete', [NotificationController::class, 'delete'])->name('notifications.delete');
+    // Route::post('/notifications/clear-all', [NotificationController::class, 'clearAll'])->name('notifications.clear-all');
+    // Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
+    // Route::get('/notifications/recent', [NotificationController::class, 'getRecentNotifications'])->name('notifications.recent');
+    // Route::get('/notifications/filter', [NotificationController::class, 'filter'])->name('notifications.filter');
+    // Route::get('/notifications/json', [\App\Http\Controllers\NotificationController::class, 'json'])->middleware('auth')->name('notifications.json');
 
     Route::get('/user/user_index', [UserController::class, 'index'])->name('users.index');
     Route::post('/user/user_store', [UserController::class, 'store'])->name('users.add');
@@ -66,6 +65,7 @@ Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::get('/horarios-espacios', [HorariosController::class, 'getHorariosEspacios'])->name('horarios.espacios.get');
     Route::get('/espacios', action: [HorariosController::class, 'showEspacios'])->name('espacios.show');
     Route::get('/espacios/{idEspacio}/export-pdf', [HorariosController::class, 'exportHorarioEspacioPDF'])->name('espacios.export-pdf');
+    Route::get('/horarios-por-periodo', [HorariosController::class, 'getHorariosPorPeriodo'])->name('horarios.por-periodo');
 
 });
 
@@ -171,6 +171,7 @@ Route::group(['middleware' => ['permission:mantenedor de carga de datos']], func
     Route::delete('/data/{dataLoad}', [DataLoadController::class, 'destroy'])->name('data.destroy');
     Route::get('/data/detalle/{id}', [DataLoadController::class, 'detalleJson'])->name('data.detalle');
     Route::get('/data/download/{id}', [DataLoadController::class, 'download'])->name('data.download');
+    Route::get('/data/progress/{id}', [DataLoadController::class, 'progress'])->name('data.progress');
 });
 
 Route::middleware('auth')->group(function () {

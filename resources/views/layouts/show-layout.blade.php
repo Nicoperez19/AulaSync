@@ -46,30 +46,7 @@
     <!-- SweetAlert Component -->
     <x-sweet-alert />
 
-    <!-- Alpine.js -->
-    <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('mainState', () => ({
-                isDarkMode: localStorage.getItem('dark') === 'true' ||
-                    (!localStorage.getItem('dark') && window.matchMedia('(prefers-color-scheme: dark)')
-                        .matches),
-
-                init() {
-                    this.handleWindowResize()
-                    window.addEventListener('resize', this.handleWindowResize.bind(this))
-                },
-
-                toggleTheme() {
-                    this.isDarkMode = !this.isDarkMode
-                    localStorage.setItem('dark', this.isDarkMode)
-                },
-
-                handleWindowResize() {
-                    // Manejo de redimensionamiento si es necesario
-                }
-            }))
-        })
-    </script>
+    <!-- Alpine.js se carga a través de Vite en app.js -->
 </body>
 
 </html> 

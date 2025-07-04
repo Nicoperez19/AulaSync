@@ -1,15 +1,21 @@
 <x-app-layout>
 <x-slot name="header">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div class="flex items-center gap-3">
-                <div class="p-2 rounded-xl bg-light-cloud-blue">
-                    <i class="fa-solid fa-clock text-white text-2xl"></i>
-                </div>
-                <div>
-                    <h2 class="text-2xl font-bold leading-tight">Horarios por Espacio</h2>
-                    <p class="text-gray-500 text-sm">Visualiza y gestiona la programación de espacios por bloques y días</p>
-                </div>
-            </div>
+                                <div class="flex items-center gap-3">
+                        <div class="p-2 rounded-xl bg-light-cloud-blue">
+                            <i class="fa-solid fa-clock text-white text-2xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold leading-tight">Horarios por Espacio</h2>
+                            <p class="text-gray-500 text-sm">Visualiza y gestiona la programación de espacios por bloques y días</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm text-light-cloud-blue font-semibold">
+                            <i class="fa-solid fa-calendar-days mr-1"></i>
+                            Período: {{ $semestre }}er Semestre {{ $anioActual }}
+                        </span>
+                    </div>
         </div>
     </x-slot>
 
@@ -23,6 +29,55 @@
     </div>
 
     <div class="p-6 space-y-6 flex flex-col items-center justify-center" x-data="{ selectedPiso: '{{ $pisos->first()->id ?? 1 }}' }">
+        <!-- Tarjeta de filtros -->
+        <div class="w-full max-w-7xl mx-auto mb-6">
+            <div class="bg-white rounded-xl shadow-sm p-6">
+                <form id="filtro-periodo-form" method="GET" action="" class="flex flex-col gap-4" onsubmit="return false;">
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
+                        <div class="flex-1 flex items-center gap-4">
+                            <div class="flex items-center gap-2">
+                                <label for="anio" class="text-sm font-semibold text-gray-700">Año:</label>
+                                <select name="anio" id="anio" class="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-light-cloud-blue/30 focus:border-light-cloud-blue transition">
+                                    <option value="">Todos los años</option>
+                                    @foreach($aniosDisponibles as $anio)
+                                        <option value="{{ $anio }}" {{ $anioFiltro == $anio ? 'selected' : '' }}>{{ $anio }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <label for="semestre" class="text-sm font-semibold text-gray-700">Semestre:</label>
+                                <select name="semestre" id="semestre" class="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-light-cloud-blue/30 focus:border-light-cloud-blue transition">
+                                    <option value="">Todos los semestres</option>
+                                    @foreach($semestresDisponibles as $sem)
+                                        <option value="{{ $sem }}" {{ $semestreFiltro == $sem ? 'selected' : '' }}>{{ $sem }}er Semestre</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+                        <button id="aplicar-filtro-btn" type="button" class="px-6 py-2 bg-light-cloud-blue text-white rounded-lg font-semibold hover:bg-blue-600 transition flex items-center gap-2">
+                            <i class="fa-solid fa-filter"></i>
+                            Aplicar Filtros
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Mensaje informativo -->
+        <div id="mensaje-informativo" class="w-full max-w-7xl mx-auto mb-6">
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-info-circle text-blue-500 text-xl"></i>
+                    <div>
+                        <h3 class="text-blue-800 font-semibold">Instrucciones</h3>
+                        <p class="text-blue-700 text-sm">
+                            Selecciona el año y semestre arriba, luego haz clic en "Aplicar Filtros" para cargar los horarios correspondientes.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Nav Pills de Pisos - Arriba alineados a la izquierda -->
         <div class="w-full max-w-7xl mx-auto">
             <div class="">
@@ -175,9 +230,117 @@
     </div>
 
     <script>
-        // Convertir los datos de PHP a JavaScript
-        const horariosPorEspacio = @json($horariosPorEspacio);
+        // Variable global para almacenar los horarios
+        let horariosPorEspacio = @json($horariosPorEspacio);
         let espacioActualId = null; // Variable global para el ID del espacio actual
+
+        // Elementos del formulario de filtros
+        const filtroForm = document.getElementById('filtro-periodo-form');
+        const aplicarFiltroBtn = document.getElementById('aplicar-filtro-btn');
+
+        // Aplicar filtros por AJAX
+        function aplicarFiltros() {
+            const anioFiltro = document.getElementById('anio')?.value;
+            const semestreFiltro = document.getElementById('semestre')?.value;
+            
+            // Verificar que ambos filtros estén seleccionados
+            if (!anioFiltro || !semestreFiltro) {
+                alert('Por favor, selecciona tanto el año como el semestre para cargar los horarios.');
+                return;
+            }
+            
+            // Mostrar indicador de carga
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'flex';
+            }
+            
+            // Cargar horarios por AJAX
+            fetch(`/horarios-por-periodo?anio=${anioFiltro}&semestre=${semestreFiltro}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error en la respuesta del servidor');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Actualizar los horarios globales
+                horariosPorEspacio = data.horariosPorEspacio;
+                
+                // Actualizar el contador de clases en las tarjetas
+                actualizarContadoresClases();
+                
+                // Ocultar mensaje informativo
+                const mensajeInformativo = document.getElementById('mensaje-informativo');
+                if (mensajeInformativo) {
+                    mensajeInformativo.style.display = 'none';
+                }
+                
+                // Mostrar mensaje de éxito
+                mostrarMensajeExito(`Horarios cargados para ${semestreFiltro}er Semestre ${anioFiltro}`);
+            })
+            .catch(error => {
+                console.error('Error al cargar horarios:', error);
+                alert('Error al cargar los horarios. Por favor, inténtalo de nuevo.');
+            })
+            .finally(() => {
+                // Ocultar indicador de carga
+                if (loadingIndicator) {
+                    loadingIndicator.style.display = 'none';
+                }
+            });
+        }
+        
+        // Función para actualizar los contadores de clases en las tarjetas
+        function actualizarContadoresClases() {
+            document.querySelectorAll('[data-id]').forEach(card => {
+                const espacioId = card.getAttribute('data-id');
+                const contadorSpan = card.querySelector('.bg-violet-100');
+                if (contadorSpan) {
+                    const clases = horariosPorEspacio[espacioId] || [];
+                    contadorSpan.textContent = clases.length + ' clases';
+                }
+            });
+        }
+        
+        // Función para mostrar mensaje de éxito
+        function mostrarMensajeExito(mensaje) {
+            // Crear un toast de éxito
+            const toast = document.createElement('div');
+            toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 transform transition-all duration-300 translate-x-full';
+            toast.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-check-circle"></i>
+                    <span>${mensaje}</span>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            // Animar entrada
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Remover después de 3 segundos
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+        // Event listeners para los filtros
+        document.addEventListener('DOMContentLoaded', function() {
+            if (aplicarFiltroBtn) {
+                aplicarFiltroBtn.addEventListener('click', aplicarFiltros);
+            }
+            
+            // Solo aplicar filtros cuando se haga clic en el botón
+            // No automáticamente al cambiar los selects
+        });
 
         // Diccionario de colores pastel muy claros para bloques de clase
         const coloresClases = [
@@ -307,6 +470,19 @@
                 return;
             }
 
+            // Obtener los filtros actuales
+            const anioFiltro = document.getElementById('anio')?.value || '';
+            const semestreFiltro = document.getElementById('semestre')?.value || '';
+            
+            // Construir la URL con los filtros
+            let url = `/espacios/${espacioActualId}/export-pdf`;
+            const params = new URLSearchParams();
+            if (anioFiltro) params.append('anio', anioFiltro);
+            if (semestreFiltro) params.append('semestre', semestreFiltro);
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+
             // Mostrar indicador de carga
             const exportBtn = document.getElementById('exportPdfBtn');
             const originalText = exportBtn.innerHTML;
@@ -314,7 +490,7 @@
             exportBtn.disabled = true;
 
             // Realizar la petición para descargar el PDF
-            fetch(`/espacios/${espacioActualId}/export-pdf`, {
+            fetch(url, {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -333,11 +509,16 @@
                 a.style.display = 'none';
                 a.href = url;
                 
-                // Determinar el semestre actual para el nombre del archivo
+                // Determinar el período para el nombre del archivo
                 const fecha = new Date();
                 const mes = fecha.getMonth() + 1; // getMonth() devuelve 0-11
-                const anio = fecha.getFullYear();
-                const semestre = (mes >= 3 && mes <= 7) ? 1 : 2; // Marzo-Julio = Semestre 1, Agosto-Febrero = Semestre 2
+                let anio = fecha.getFullYear();
+                let semestre = (mes >= 3 && mes <= 7) ? 1 : 2; // Marzo-Julio = Semestre 1, Agosto-Febrero = Semestre 2
+                
+                // Usar los filtros si están disponibles
+                if (anioFiltro) anio = anioFiltro;
+                if (semestreFiltro) semestre = semestreFiltro;
+                
                 const periodo = `${anio}_${semestre}`;
                 
                 // Formato del nombre: espacio_horario_2025_1.pdf

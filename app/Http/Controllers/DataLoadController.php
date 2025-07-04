@@ -28,10 +28,71 @@ class DataLoadController extends Controller
         $this->qrService = $qrService;
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $dataLoads = DataLoad::latest()->paginate(10);
-        return view('layouts.data.data_index', compact('dataLoads'));
+        // Obtener filtros de la request
+        $semestreFiltro = $request->input('semestre');
+        $anioFiltro = $request->input('anio');
+        
+        // Obtener todos los períodos únicos de los horarios para los filtros
+        $periodosDisponibles = Horario::select('periodo')
+            ->whereNotNull('periodo')
+            ->where('periodo', '!=', '')
+            ->distinct()
+            ->pluck('periodo')
+            ->sort()
+            ->values();
+        
+        // Separar años y semestres de los períodos
+        $aniosDisponibles = [];
+        $semestresDisponibles = [];
+        
+        foreach ($periodosDisponibles as $periodo) {
+            if (preg_match('/^(\d{4})-(\d+)$/', $periodo, $matches)) {
+                $anio = $matches[1];
+                $semestre = $matches[2];
+                
+                if (!in_array($anio, $aniosDisponibles)) {
+                    $aniosDisponibles[] = $anio;
+                }
+                
+                if (!in_array($semestre, $semestresDisponibles)) {
+                    $semestresDisponibles[] = $semestre;
+                }
+            }
+        }
+        
+        // Ordenar arrays
+        sort($aniosDisponibles);
+        sort($semestresDisponibles);
+        
+        // Construir la consulta base
+        $query = DataLoad::latest();
+        
+        // Aplicar filtros si están presentes
+        if ($semestreFiltro && $anioFiltro) {
+            $periodoFiltro = $anioFiltro . '-' . $semestreFiltro;
+            
+            // Filtrar por DataLoads que tengan horarios con el período específico
+            $query->whereHas('user.horarios', function($q) use ($periodoFiltro) {
+                $q->where('periodo', $periodoFiltro);
+            });
+        } elseif ($anioFiltro) {
+            // Filtrar solo por año
+            $query->whereHas('user.horarios', function($q) use ($anioFiltro) {
+                $q->where('periodo', 'like', $anioFiltro . '-%');
+            });
+        }
+        
+        $dataLoads = $query->paginate(10);
+        
+        return view('layouts.data.data_index', compact(
+            'dataLoads', 
+            'aniosDisponibles', 
+            'semestresDisponibles',
+            'semestreFiltro',
+            'anioFiltro'
+        ));
     }
 
     public function upload(Request $request)
@@ -70,22 +131,22 @@ class DataLoadController extends Controller
             $rows = Excel::toArray([], $file)[0];
             Log::info('Archivo Excel leído', ['total_filas' => count($rows)]);
 
-            // Validación de columnas exactas
-            $expected = ['ID_CURS', 'COD_RAM', 'RAMO_NOMBRE'];
-            $header = $rows[0] ?? [];
-            if ($header !== $expected) {
-                // Elimina el archivo subido si existe
-                if (isset($path)) {
-                    Storage::disk('public')->delete($path);
-                }
-                // Elimina el registro DataLoad creado
-                if (isset($dataLoad)) {
-                    $dataLoad->delete();
-                }
-                return response()->json([
-                    'message' => 'El archivo no es válido. Debe contener exactamente las columnas: ID_CURS, COD_RAM, RAMO_NOMBRE.'
-                ], 422);
-            }
+            // // Validación de columnas exactas
+            // $expected = ['ID_CURSO', 'COD_RAMO', 'RAMO_NOMBRE'];
+            // $header = $rows[0] ?? [];
+            // if ($header !== $expected) {
+            //     // Elimina el archivo subido si existe
+            //     if (isset($path)) {
+            //         Storage::disk('public')->delete($path);
+            //     }
+            //     // Elimina el registro DataLoad creado
+            //     if (isset($dataLoad)) {
+            //         $dataLoad->delete();
+            //     }
+            //     return response()->json([
+            //         'message' => 'El archivo no es válido. Debe contener exactamente las columnas: ID_CURSO, COD_RAMO, RAMO_NOMBRE.'
+            //     ], 422);
+            // }
 
             $role = Role::findByName('Profesor');
             $processedUsersCount = 0;
@@ -202,7 +263,10 @@ class DataLoadController extends Controller
 
                         if ($existingHorario) {
                             $horario = $existingHorario;
-                            Log::info('Usando horario existente', [
+                            // Actualizar el período del horario existente
+                            $horario->periodo = $semestre;
+                            $horario->save();
+                            Log::info('Horario existente actualizado', [
                                 'id_horario' => $horario->id_horario,
                                 'nombre' => $horario->nombre,
                                 'periodo' => $semestre,
@@ -393,5 +457,40 @@ class DataLoadController extends Controller
         }
 
         return Storage::disk('public')->download($dataLoad->ruta_archivo, $dataLoad->nombre_archivo);
+    }
+
+    public function progress($id)
+    {
+        try {
+            $dataLoad = DataLoad::findOrFail($id);
+            
+            return response()->json([
+                'estado' => $dataLoad->estado,
+                'registros_cargados' => $dataLoad->registros_cargados,
+                'mensaje' => $this->getEstadoMensaje($dataLoad->estado)
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error al obtener progreso: ' . $e->getMessage());
+            return response()->json([
+                'estado' => 'error',
+                'mensaje' => 'Error al obtener el progreso'
+            ], 500);
+        }
+    }
+
+    private function getEstadoMensaje($estado)
+    {
+        switch ($estado) {
+            case 'pendiente':
+                return 'Archivo en cola de procesamiento';
+            case 'procesando':
+                return 'Procesando archivo...';
+            case 'completado':
+                return 'Procesamiento completado exitosamente';
+            case 'error':
+                return 'Error en el procesamiento';
+            default:
+                return 'Estado desconocido';
+        }
     }
 }

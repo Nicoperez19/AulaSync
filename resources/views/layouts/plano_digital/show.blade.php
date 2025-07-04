@@ -56,7 +56,7 @@
                         <!-- QR Placeholder -->
                         <div class="p-2 mt-2 text-center rounded-md bg-white/10">
                             <div class="relative">
-                                <span id="qr-status" class="text-xs text-yellow-400">Esperando</span>
+                                <span id="qr-status" class="text-xs text-white">Esperando</span>
                                 <button id="infoButton"
                                     class="absolute top-0 right-0 p-1 m-4 text-white bg-white rounded-full hover:bg-gray-200 focus:outline-none">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 stroke-black" fill="none"

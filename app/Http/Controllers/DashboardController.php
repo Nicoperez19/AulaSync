@@ -440,10 +440,19 @@ class DashboardController extends Controller
             return [];
         }
         
+        // Determinar el período actual
+        $mesActual = date('n');
+        $anioActual = date('Y');
+        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
+        $periodo = $anioActual . '-' . $semestre;
+        
         $planificaciones = Planificacion_Asignatura::with(['asignatura.user', 'espacio', 'modulo'])
             ->whereHas('modulo', function($query) use ($diaActual, $moduloActual) {
                 $query->where('dia', $diaActual)
                       ->where('id_modulo', $moduloActual->id_modulo);
+            })
+            ->whereHas('horario', function($query) use ($periodo) {
+                $query->where('periodo', $periodo);
             })
             ->whereHas('espacio', function($query) use ($piso) {
                 if ($piso) {
@@ -567,12 +576,21 @@ class DashboardController extends Controller
         $now = Carbon::now();
         $timeLimit = $now->copy()->addMinutes(10);
 
+        // Determinar el período actual
+        $mesActual = date('n');
+        $anioActual = date('Y');
+        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
+        $periodo = $anioActual . '-' . $semestre;
+        
         // Obtener planificaciones que terminan en los próximos 10 minutos
         $planificaciones = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.user'])
             ->whereHas('modulo', function ($query) use ($now, $timeLimit) {
                 $query->where('dia', strtolower($now->locale('es')->isoFormat('dddd')))
                       ->whereTime('hora_termino', '>', $now->format('H:i:s'))
                       ->whereTime('hora_termino', '<=', $timeLimit->format('H:i:s'));
+            })
+            ->whereHas('horario', function ($query) use ($periodo) {
+                $query->where('periodo', $periodo);
             })
             ->whereHas('espacio', function ($query) {
                 // Solo incluir espacios que estén realmente ocupados
@@ -686,6 +704,12 @@ class DashboardController extends Controller
 
     private function obtenerOcupacionPorTipoDiaModulo($facultad, $piso)
     {
+        // Determinar el período actual
+        $mesActual = date('n');
+        $anioActual = date('Y');
+        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
+        $periodo = $anioActual . '-' . $semestre;
+        
         $diasSemana = [
             'Monday' => 'Lunes',
             'Tuesday' => 'Martes',
@@ -719,6 +743,9 @@ class DashboardController extends Controller
                     }
                     // Planificaciones activas para ese tipo, día y módulo
                     $ocupados = \App\Models\Planificacion_Asignatura::where('id_modulo', $modulo->id_modulo)
+                        ->whereHas('horario', function($q) use ($periodo) {
+                            $q->where('periodo', $periodo);
+                        })
                         ->whereHas('espacio', function($q) use ($tipo, $facultad, $piso) {
                             $q->where('tipo_espacio', $tipo)
                               ->whereHas('piso', function($q2) use ($facultad, $piso) {
@@ -747,10 +774,20 @@ class DashboardController extends Controller
     public function noUtilizadasDiaAjax(Request $request)
     {
         $fecha = $request->get('fecha', now()->toDateString());
+        
+        // Determinar el período actual
+        $mesActual = date('n');
+        $anioActual = date('Y');
+        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
+        $periodo = $anioActual . '-' . $semestre;
+        
         $planificaciones = \App\Models\Planificacion_Asignatura::with(['asignatura.user', 'espacio', 'modulo'])
             ->whereHas('modulo', function($q) use ($fecha) {
                 $dia = \Carbon\Carbon::parse($fecha)->locale('es')->isoFormat('dddd');
                 $q->where('dia', strtolower($dia));
+            })
+            ->whereHas('horario', function($q) use ($periodo) {
+                $q->where('periodo', $periodo);
             })
             ->get();
 
@@ -888,10 +925,19 @@ class DashboardController extends Controller
                 }
             }
         }
+        // Determinar el período actual
+        $mesActual = date('n');
+        $anioActual = date('Y');
+        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
+        $periodo = $anioActual . '-' . $semestre;
+        
         // Obtener los usuarios asignados por espacio para el módulo actual
         $asignaciones = \App\Models\Planificacion_Asignatura::with(['espacio.piso', 'asignatura.user'])
             ->whereHas('modulo', function($q) use ($diaActual, $moduloActualNum) {
                 $q->where('dia', $diaActual)->where('numero_modulo', $moduloActualNum);
+            })
+            ->whereHas('horario', function($q) use ($periodo) {
+                $q->where('periodo', $periodo);
             })
             ->get();
         return view('partials.horarios_modulo_actual', [

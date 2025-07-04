@@ -355,8 +355,6 @@
     // ========================================
     let autoRefreshInterval;
     let autoRefreshEnabled = true;
-    let notificationQueue = [];
-    let isShowingNotification = false;
     let moduloActual = null;
     let moduloCheckInterval;
     window.horariosModulos = window.horariosModulos || {
@@ -467,46 +465,6 @@
         }
         return null;
     }
-    // ========================================
-    // SISTEMA DE NOTIFICACIONES MEJORADO
-    // ========================================
-    function mostrarNotificacion(mensaje, tipo, duracion = 3000) {
-        notificationQueue.push({ mensaje, tipo, duracion });
-        if (!isShowingNotification) {
-            procesarColaNotificaciones();
-        }
-    }
-
-    function procesarColaNotificaciones() {
-        if (notificationQueue.length === 0) {
-            isShowingNotification = false;
-            return;
-        }
-
-        isShowingNotification = true;
-        const { mensaje, tipo, duracion } = notificationQueue.shift();
-
-        // Remover notificaciones existentes
-        const notificacionesExistentes = document.querySelectorAll('.dashboard-notification');
-        notificacionesExistentes.forEach(notif => notif.remove());
-
-        // Crear nueva notificación
-        const notificacion = document.createElement('div');
-        notificacion.className = `dashboard-notification fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 transition-all duration-300 ${tipo === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-            }`;
-        notificacion.textContent = mensaje;
-
-        document.body.appendChild(notificacion);
-
-        // Remover después del tiempo especificado
-        setTimeout(() => {
-            if (notificacion.parentNode) {
-                notificacion.remove();
-            }
-            // Procesar siguiente notificación
-            setTimeout(procesarColaNotificaciones, 300);
-        }, duracion);
-    }
 
     // ========================================
     // FUNCIONES DE ACTUALIZACIÓN DE WIDGETS
@@ -523,16 +481,12 @@
             errores.push(`Error al actualizar KPIs: ${error.message}`);
         }
 
-
-
         // Actualizar gráficos con manejo individual
         try {
             actualizarGraficoBarras(data.usoPorDia);
         } catch (error) {
             errores.push(`Error al actualizar gráfico de uso por día: ${error.message}`);
         }
-
-
 
         try {
             actualizarGraficoEvolucionMensual(data.evolucionMensual);
@@ -545,10 +499,6 @@
         } catch (error) {
             errores.push(`Error al actualizar gráfico circular de salas: ${error.message}`);
         }
-
-
-
-
 
         // Actualizar horarios de la semana si hay datos
         try {
@@ -602,7 +552,6 @@
         if (nuevoModulo !== moduloActual) {
             if (moduloActual !== null) {
                 console.log(`Cambio de módulo detectado: ${moduloActual} → ${nuevoModulo}`);
-                mostrarNotificacion(`Módulo ${nuevoModulo} iniciado`, 'success', 2000);
                 actualizarHorariosSemana();
                 actualizarIndicadorModuloInfo(nuevoModulo);
             }
@@ -683,7 +632,6 @@
             .catch(error => {
                 console.error('Error al actualizar horarios:', error);
                 contenedor.innerHTML = '<div class="text-center text-red-500 p-4">Error al cargar los horarios</div>';
-                mostrarNotificacion('Error al actualizar horarios de la semana', 'error');
             });
     }
 
@@ -713,8 +661,6 @@
         }
     }
 
-
-
     function actualizarGraficoBarras(usoPorDia) {
         if (window.graficoBarras && usoPorDia) {
             const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -724,10 +670,6 @@
             window.graficoBarras.update('active');
         }
     }
-
-
-
-
 
     function actualizarGraficoEvolucionMensual(evolucionMensual) {
         if (window.graficoMensual && evolucionMensual) {
@@ -754,8 +696,6 @@
         }
     }
 
-
-
     // ========================================
     // SISTEMA DE AUTO-REFRESH MEJORADO
     // ========================================
@@ -781,8 +721,6 @@
             console.log('Auto-refresh detenido');
         }
     }
-
-
 
     function actualizarDashboard() {
         mostrarIndicadorActualizacion();
@@ -846,8 +784,6 @@
         });
     }
 
-
-
     // ========================================
     // INICIALIZACIÓN DE GRÁFICOS
     // ========================================
@@ -879,8 +815,6 @@
             }
         }
     });
-
-
 
     // Gráfico de línea: Evolución mensual
     window.graficoMensual = new Chart(document.getElementById('grafico-mensual'), {
@@ -973,8 +907,6 @@
         }]
     });
 
-
-
     // ========================================
     // INICIALIZACIÓN Y EVENT LISTENERS
     // ========================================
@@ -1062,7 +994,6 @@
     }
 
     @keyframes pulse {
-
         0%,
         100% {
             opacity: 1;

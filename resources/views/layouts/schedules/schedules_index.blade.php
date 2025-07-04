@@ -26,6 +26,30 @@
                         <button id="buscar-btn" type="button" class="px-4 py-2 bg-light-cloud-blue text-white rounded font-semibold text-sm hover:bg-[#b10718] transition">Buscar</button>
                     </div>
                 </div>
+                
+                <!-- Filtros por período -->
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-light-cloud-blue">Año:</span>
+                        <select name="anio" id="anio-filtro" class="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-light-cloud-blue/30 focus:border-light-cloud-blue transition">
+                            <option value="">Todos los años</option>
+                            @foreach($aniosDisponibles ?? [] as $anio)
+                                <option value="{{ $anio }}" {{ request('anio') == $anio ? 'selected' : '' }}>{{ $anio }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-light-cloud-blue">Semestre:</span>
+                        <select name="semestre" id="semestre-filtro" class="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-light-cloud-blue/30 focus:border-light-cloud-blue transition">
+                            <option value="">Todos los semestres</option>
+                            @foreach($semestresDisponibles ?? [] as $semestre)
+                                <option value="{{ $semestre }}" {{ request('semestre') == $semestre ? 'selected' : '' }}>{{ $semestre }}er Semestre</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                
                 <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
                     <span class="font-semibold text-light-cloud-blue mr-2">Usuario:</span>
                     <div class="flex flex-wrap gap-1 items-center">
@@ -48,7 +72,19 @@
         <!-- Fin tarjeta de filtros -->
 
         <div id="profesores-lista">
-            <p class="mb-4 text-gray-500 text-sm">{{ $profesores->total() }} profesores encontrados</p>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4">
+                <p class="text-gray-500 text-sm">{{ $profesores->total() }} profesores encontrados</p>
+                @php
+                    $mesActual = date('n');
+                    $anioActual = date('Y');
+                    $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
+                    $periodoActual = $anioActual . '-' . $semestre;
+                @endphp
+                <p class="text-sm text-light-cloud-blue font-semibold">
+                    <i class="fa-solid fa-calendar-days mr-1"></i>
+                    Período actual: {{ $semestre }}er Semestre {{ $anioActual }}
+                </p>
+            </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                 @foreach ($profesores as $profesor)
                     <div class="bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:shadow-md transition profesor-card cursor-pointer" data-run="{{ $profesor->run }}">
@@ -85,6 +121,10 @@
                     </div>
                     <h3 class="text-base font-bold text-black mb-2 text-center" id="modalNombreProfesor">Profesor</h3>
                     <p class="text-xs text-gray-700 mb-1 text-center" id="modalCorreoProfesor">Correo: </p>
+                    <p class="text-xs text-gray-600 mb-1 text-center" id="modalPeriodo">
+                        <i class="fa-solid fa-calendar-days mr-1"></i>
+                        Período: {{ $semestre }}er Semestre {{ $anioActual }}
+                    </p>
                 </div>
                 <!-- Columna derecha: Horario -->
                 <div class="flex-1 flex flex-col bg-white">
@@ -153,21 +193,35 @@
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 })
-                .then(response => response.text())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();
+                })
                 .then(html => {
                     // Extraer solo el contenido de la lista de profesores
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
                     const newList = doc.getElementById('profesores-lista');
-                    document.getElementById('profesores-lista').innerHTML = newList.innerHTML;
-                    // Volver a activar los eventos de click en las tarjetas y botones
-                    document.querySelectorAll('.profesor-card .ver-horario-btn').forEach(btn => {
-                        btn.addEventListener('click', function(e) {
-                            e.stopPropagation();
-                            const run = this.closest('.profesor-card').dataset.run;
-                            mostrarHorario(run);
+                    if (newList) {
+                        document.getElementById('profesores-lista').innerHTML = newList.innerHTML;
+                        // Volver a activar los eventos de click en las tarjetas y botones
+                        document.querySelectorAll('.profesor-card .ver-horario-btn').forEach(btn => {
+                            btn.addEventListener('click', function(e) {
+                                e.stopPropagation();
+                                const run = this.closest('.profesor-card').dataset.run;
+                                mostrarHorario(run);
+                            });
                         });
-                    });
+                    } else {
+                        console.error('No se encontró el elemento profesores-lista en la respuesta');
+                        document.getElementById('profesores-lista').innerHTML = '<div class="text-center py-8 text-red-500">Error al cargar los datos</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error en la búsqueda:', error);
+                    document.getElementById('profesores-lista').innerHTML = '<div class="text-center py-8 text-red-500">Error al cargar los datos: ' + error.message + '</div>';
                 })
                 .finally(() => {
                     searchSpinner.classList.add('hidden');
@@ -201,9 +255,30 @@
             document.getElementById('modalNombreProfesor').textContent = 'Cargando...';
             document.getElementById('modalCorreoProfesor').textContent = '';
 
-            fetch(`/horarios/${run}`)
-                .then(response => response.json())
+            // Obtener los filtros actuales
+            const anioFiltro = document.getElementById('anio-filtro').value;
+            const semestreFiltro = document.getElementById('semestre-filtro').value;
+            
+            // Construir la URL con los parámetros de filtro
+            let url = `/horarios/${run}`;
+            const params = new URLSearchParams();
+            if (anioFiltro) params.append('anio', anioFiltro);
+            if (semestreFiltro) params.append('semestre', semestreFiltro);
+            if (params.toString()) {
+                url += '?' + params.toString();
+            }
+
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    if (!data.horario || !data.horario.docente) {
+                        throw new Error('No se encontró el horario para el período seleccionado');
+                    }
                     document.getElementById('modalNombreProfesor').textContent = data.horario.docente.name;
                     document.getElementById('modalCorreoProfesor').textContent = `Correo: ${data.horario.docente.email}`;
                     const horarioBody = document.getElementById('horarioBody');
@@ -255,7 +330,9 @@
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    horarioBody.innerHTML = "<tr><td colspan='7' class='text-center py-8 text-red-500'>Error al cargar el horario</td></tr>";
+                    document.getElementById('modalNombreProfesor').textContent = 'Error';
+                    document.getElementById('modalCorreoProfesor').textContent = '';
+                    horarioBody.innerHTML = "<tr><td colspan='7' class='text-center py-8 text-red-500'>Error al cargar el horario: " + error.message + "</td></tr>";
                 });
         }
 
@@ -298,43 +375,50 @@
             profesoresSpinner.classList.add('hidden');
         }
 
-        aplicarFiltroBtn.addEventListener('click', function() {
+        function aplicarFiltros() {
             const formData = new FormData(filtroForm);
             const params = new URLSearchParams(formData).toString();
             mostrarSpinner();
             fetch(`?${params}`, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
-            .then(response => response.text())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text();
+            })
             .then(html => {
                 const parser = new DOMParser();
                 const doc = parser.parseFromString(html, 'text/html');
                 const newList = doc.getElementById('profesores-lista');
-                profesoresLista.innerHTML = newList.innerHTML;
-                activarClickCard();
+                if (newList) {
+                    profesoresLista.innerHTML = newList.innerHTML;
+                    activarClickCard();
+                } else {
+                    console.error('No se encontró el elemento profesores-lista en la respuesta');
+                    profesoresLista.innerHTML = '<div class="text-center py-8 text-red-500">Error al cargar los datos</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error al aplicar filtros:', error);
+                profesoresLista.innerHTML = '<div class="text-center py-8 text-red-500">Error al cargar los datos: ' + error.message + '</div>';
             })
             .finally(() => ocultarSpinner());
-        });
+        }
+
+        aplicarFiltroBtn.addEventListener('click', aplicarFiltros);
 
         // Buscar por AJAX
         const buscarBtn = document.getElementById('buscar-btn');
-        buscarBtn.addEventListener('click', function() {
-            const formData = new FormData(filtroForm);
-            const params = new URLSearchParams(formData).toString();
-            mostrarSpinner();
-            fetch(`?${params}`, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            })
-            .then(response => response.text())
-            .then(html => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const newList = doc.getElementById('profesores-lista');
-                profesoresLista.innerHTML = newList.innerHTML;
-                activarClickCard();
-            })
-            .finally(() => ocultarSpinner());
-        });
+        buscarBtn.addEventListener('click', aplicarFiltros);
+
+        // Aplicar filtros automáticamente cuando cambien los selectores de año y semestre
+        const anioFiltro = document.getElementById('anio-filtro');
+        const semestreFiltro = document.getElementById('semestre-filtro');
+        
+        anioFiltro.addEventListener('change', aplicarFiltros);
+        semestreFiltro.addEventListener('change', aplicarFiltros);
 
         // Permitir que al hacer clic en la tarjeta completa se active el modal
         function activarClickCard() {
