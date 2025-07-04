@@ -191,6 +191,45 @@ class HorarioController extends Controller
             }
 
             // ========================================
+            // VALIDACIÓN DE CLASES PROGRAMADAS
+            // ========================================
+            $clasesProgramadas = $this->verificarClasesProgramadas($request->run, $horaActual, $ahora->dayOfWeek);
+            
+            \Log::info('Resultado de verificación de clases programadas:', $clasesProgramadas);
+            
+            // Si el usuario tiene clases programadas, verificar que esté solicitando el espacio correcto
+            if ($clasesProgramadas['tiene_clases']) {
+                $espacioProgramado = $clasesProgramadas['proxima_clase']['espacio']['id'];
+                
+                // Si está solicitando un espacio diferente al programado, mostrar advertencia
+                if ($espacioProgramado !== $request->id_espacio) {
+                    DB::rollBack();
+                    \Log::warning('Usuario solicita espacio diferente al programado:', [
+                        'run' => $request->run,
+                        'espacio_solicitado' => $request->id_espacio,
+                        'espacio_programado' => $espacioProgramado,
+                        'clase_programada' => $clasesProgramadas['proxima_clase']
+                    ]);
+                    
+                    return response()->json([
+                        'success' => false,
+                        'mensaje' => "Hola {$clasesProgramadas['usuario']['nombre']}, tienes clase de '{$clasesProgramadas['proxima_clase']['asignatura']}' programada en el espacio '{$clasesProgramadas['proxima_clase']['espacio']['nombre']}' a las {$clasesProgramadas['proxima_clase']['hora_inicio']}. ¿Desea solicitar las llaves de su espacio programado?",
+                        'tipo' => 'clase_programada',
+                        'clase_programada' => $clasesProgramadas['proxima_clase'],
+                        'usuario' => $clasesProgramadas['usuario'],
+                        'espacio_correcto' => $espacioProgramado
+                    ]);
+                } else {
+                    // Está solicitando el espacio correcto - continuar normalmente
+                    \Log::info('Usuario solicita su espacio programado correctamente:', [
+                        'run' => $request->run,
+                        'espacio' => $request->id_espacio,
+                        'clase' => $clasesProgramadas['proxima_clase']['asignatura']
+                    ]);
+                }
+            }
+
+            // ========================================
             // VALIDACIONES DE USUARIO Y RESERVAS
             // ========================================
             
@@ -741,5 +780,160 @@ class HorarioController extends Controller
         }
         
         return null;
+    }
+
+    /**
+     * Verificar si el usuario tiene clases programadas y obtener información del horario
+     */
+    public function verificarClasesProgramadas($run, $horaActual, $diaActual)
+    {
+        try {
+            \Log::info('Verificando clases programadas para usuario:', [
+                'run' => $run,
+                'hora_actual' => $horaActual,
+                'dia_actual' => $diaActual
+            ]);
+
+            // Obtener día actual en formato string
+            $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+            $diaActualString = $diasSemana[$diaActual] ?? 'lunes';
+            
+            // Mapeo de días a códigos
+            $codigosDias = [
+                'lunes' => 'LU',
+                'martes' => 'MA', 
+                'miercoles' => 'MI',
+                'jueves' => 'JU',
+                'viernes' => 'VI',
+                'sabado' => 'SA',
+                'domingo' => 'DO'
+            ];
+            
+            $codigoDia = $codigosDias[$diaActualString] ?? 'LU';
+            
+            // Determinar el módulo actual según la hora
+            $moduloActual = $this->determinarModuloActual($horaActual, $diaActualString);
+            
+            if (!$moduloActual) {
+                \Log::info('No hay módulo actual disponible');
+                return [
+                    'tiene_clases' => false,
+                    'mensaje' => 'No hay módulo actual disponible'
+                ];
+            }
+
+            // Buscar clases programadas para este usuario en el módulo actual o siguiente
+            $clasesProgramadas = Planificacion_Asignatura::where('profesor', $run)
+                ->where('id_modulo', 'like', $codigoDia . '.%')
+                ->whereRaw('CAST(SUBSTRING(id_modulo, 4) AS UNSIGNED) >= ?', [$moduloActual])
+                ->whereRaw('CAST(SUBSTRING(id_modulo, 4) AS UNSIGNED) <= ?', [$moduloActual + 2]) // Buscar en módulo actual y siguientes 2
+                ->with(['espacio:id_espacio,nombre_espacio,estado'])
+                ->get();
+
+            \Log::info('Clases programadas encontradas:', [
+                'total_clases' => $clasesProgramadas->count(),
+                'clases' => $clasesProgramadas->toArray()
+            ]);
+
+            if ($clasesProgramadas->isEmpty()) {
+                return [
+                    'tiene_clases' => false,
+                    'mensaje' => 'No tienes clases programadas en este horario'
+                ];
+            }
+
+            // Obtener información del usuario
+            $usuario = User::where('run', $run)->first();
+            $usuarioNoRegistrado = UsuarioNoRegistrado::where('run', $run)->first();
+            
+            $nombreUsuario = $usuario ? $usuario->name : ($usuarioNoRegistrado ? $usuarioNoRegistrado->nombre : 'Usuario');
+
+            // Buscar la próxima clase (módulo más cercano)
+            $proximaClase = $clasesProgramadas->sortBy(function($clase) {
+                return (int) substr($clase->id_modulo, 4);
+            })->first();
+
+            \Log::info('Próxima clase encontrada:', [
+                'clase' => $proximaClase->toArray()
+            ]);
+
+            return [
+                'tiene_clases' => true,
+                'usuario' => [
+                    'run' => $run,
+                    'nombre' => $nombreUsuario,
+                    'tipo' => $usuario ? 'registrado' : 'no_registrado'
+                ],
+                'proxima_clase' => [
+                    'modulo' => $proximaClase->id_modulo,
+                    'asignatura' => $proximaClase->asignatura,
+                    'espacio' => [
+                        'id' => $proximaClase->espacio->id_espacio,
+                        'nombre' => $proximaClase->espacio->nombre_espacio,
+                        'estado' => $proximaClase->espacio->estado
+                    ],
+                    'hora_inicio' => $this->obtenerHoraInicioModulo($proximaClase->id_modulo, $diaActualString),
+                    'hora_fin' => $this->obtenerHoraFinModulo($proximaClase->id_modulo, $diaActualString)
+                ],
+                'todas_las_clases' => $clasesProgramadas->map(function($clase) use ($diaActualString) {
+                    return [
+                        'modulo' => $clase->id_modulo,
+                        'asignatura' => $clase->asignatura,
+                        'espacio' => [
+                            'id' => $clase->espacio->id_espacio,
+                            'nombre' => $clase->espacio->nombre_espacio,
+                            'estado' => $clase->espacio->estado
+                        ],
+                        'hora_inicio' => $this->obtenerHoraInicioModulo($clase->id_modulo, $diaActualString),
+                        'hora_fin' => $this->obtenerHoraFinModulo($clase->id_modulo, $diaActualString)
+                    ];
+                })->toArray()
+            ];
+
+        } catch (\Exception $e) {
+            \Log::error('Error al verificar clases programadas:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return [
+                'tiene_clases' => false,
+                'mensaje' => 'Error al verificar clases programadas: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Obtener hora de inicio de un módulo específico
+     */
+    private function obtenerHoraInicioModulo($idModulo, $diaActual)
+    {
+        $horariosModulos = [
+            'lunes' => [1 => '08:10:00', 2 => '09:10:00', 3 => '10:10:00', 4 => '11:10:00', 5 => '12:10:00', 6 => '13:10:00', 7 => '14:10:00', 8 => '15:10:00', 9 => '16:10:00', 10 => '17:10:00', 11 => '18:10:00', 12 => '19:10:00', 13 => '20:10:00', 14 => '21:10:00', 15 => '22:10:00'],
+            'martes' => [1 => '08:10:00', 2 => '09:10:00', 3 => '10:10:00', 4 => '11:10:00', 5 => '12:10:00', 6 => '13:10:00', 7 => '14:10:00', 8 => '15:10:00', 9 => '16:10:00', 10 => '17:10:00', 11 => '18:10:00', 12 => '19:10:00', 13 => '20:10:00', 14 => '21:10:00', 15 => '22:10:00'],
+            'miercoles' => [1 => '08:10:00', 2 => '09:10:00', 3 => '10:10:00', 4 => '11:10:00', 5 => '12:10:00', 6 => '13:10:00', 7 => '14:10:00', 8 => '15:10:00', 9 => '16:10:00', 10 => '17:10:00', 11 => '18:10:00', 12 => '19:10:00', 13 => '20:10:00', 14 => '21:10:00', 15 => '22:10:00'],
+            'jueves' => [1 => '08:10:00', 2 => '09:10:00', 3 => '10:10:00', 4 => '11:10:00', 5 => '12:10:00', 6 => '13:10:00', 7 => '14:10:00', 8 => '15:10:00', 9 => '16:10:00', 10 => '17:10:00', 11 => '18:10:00', 12 => '19:10:00', 13 => '20:10:00', 14 => '21:10:00', 15 => '22:10:00'],
+            'viernes' => [1 => '08:10:00', 2 => '09:10:00', 3 => '10:10:00', 4 => '11:10:00', 5 => '12:10:00', 6 => '13:10:00', 7 => '14:10:00', 8 => '15:10:00', 9 => '16:10:00', 10 => '17:10:00', 11 => '18:10:00', 12 => '19:10:00', 13 => '20:10:00', 14 => '21:10:00', 15 => '22:10:00']
+        ];
+
+        $numeroModulo = (int) substr($idModulo, 4);
+        return $horariosModulos[$diaActual][$numeroModulo] ?? '08:10:00';
+    }
+
+    /**
+     * Obtener hora de fin de un módulo específico
+     */
+    private function obtenerHoraFinModulo($idModulo, $diaActual)
+    {
+        $horariosModulos = [
+            'lunes' => [1 => '09:00:00', 2 => '10:00:00', 3 => '11:00:00', 4 => '12:00:00', 5 => '13:00:00', 6 => '14:00:00', 7 => '15:00:00', 8 => '16:00:00', 9 => '17:00:00', 10 => '18:00:00', 11 => '19:00:00', 12 => '20:00:00', 13 => '21:00:00', 14 => '22:00:00', 15 => '23:00:00'],
+            'martes' => [1 => '09:00:00', 2 => '10:00:00', 3 => '11:00:00', 4 => '12:00:00', 5 => '13:00:00', 6 => '14:00:00', 7 => '15:00:00', 8 => '16:00:00', 9 => '17:00:00', 10 => '18:00:00', 11 => '19:00:00', 12 => '20:00:00', 13 => '21:00:00', 14 => '22:00:00', 15 => '23:00:00'],
+            'miercoles' => [1 => '09:00:00', 2 => '10:00:00', 3 => '11:00:00', 4 => '12:00:00', 5 => '13:00:00', 6 => '14:00:00', 7 => '15:00:00', 8 => '16:00:00', 9 => '17:00:00', 10 => '18:00:00', 11 => '19:00:00', 12 => '20:00:00', 13 => '21:00:00', 14 => '22:00:00', 15 => '23:00:00'],
+            'jueves' => [1 => '09:00:00', 2 => '10:00:00', 3 => '11:00:00', 4 => '12:00:00', 5 => '13:00:00', 6 => '14:00:00', 7 => '15:00:00', 8 => '16:00:00', 9 => '17:00:00', 10 => '18:00:00', 11 => '19:00:00', 12 => '20:00:00', 13 => '21:00:00', 14 => '22:00:00', 15 => '23:00:00'],
+            'viernes' => [1 => '09:00:00', 2 => '10:00:00', 3 => '11:00:00', 4 => '12:00:00', 5 => '13:00:00', 6 => '14:00:00', 7 => '15:00:00', 8 => '16:00:00', 9 => '17:00:00', 10 => '18:00:00', 11 => '19:00:00', 12 => '20:00:00', 13 => '21:00:00', 14 => '22:00:00', 15 => '23:00:00']
+        ];
+
+        $numeroModulo = (int) substr($idModulo, 4);
+        return $horariosModulos[$diaActual][$numeroModulo] ?? '09:00:00';
     }
 } 

@@ -329,3 +329,26 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
     }
 });
 
+// Endpoint para verificar clases programadas de un usuario
+Route::get('/verificar-clases-programadas/{run}', function ($run) {
+    try {
+        $horaActual = now()->format('H:i:s');
+        $diaActual = now()->dayOfWeek; // 0 = domingo, 1 = lunes, etc.
+        
+        $controller = new HorarioController();
+        $resultado = $controller->verificarClasesProgramadas($run, $horaActual, $diaActual);
+        
+        return response()->json($resultado);
+    } catch (\Exception $e) {
+        \Log::error('Error al verificar clases programadas:', [
+            'error' => $e->getMessage(),
+            'run' => $run
+        ]);
+        
+        return response()->json([
+            'tiene_clases' => false,
+            'mensaje' => 'Error al verificar clases programadas: ' . $e->getMessage()
+        ], 500);
+    }
+});
+
