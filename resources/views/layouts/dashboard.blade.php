@@ -304,7 +304,7 @@
             </div>
         </div>
         <!-- Widget de Reservas canceladas o no utilizadas en una fila aparte -->
-        <div class="w-full p-8 mb-8 bg-white shadow-lg rounded-xl">
+        {{-- <div class="w-full p-8 mb-8 bg-white shadow-lg rounded-xl">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="flex items-center gap-2 text-lg font-bold text-gray-700">Reservas canceladas o no utilizadas
                     <span class="ml-2 cursor-pointer"
@@ -321,7 +321,7 @@
                 <!-- Aquí se cargará la tabla por AJAX -->
                 @include('partials.tabla_no_utilizadas_dia', ['noUtilizadasDia' => $noUtilizadasDia ?? []])
             </div>
-        </div>
+        </div> --}}
     </div>
 
 

@@ -50,8 +50,8 @@
             :isActive="request()->routeIs('reporteria.accesos')" />
         <x-sidebar.sublink title="Análisis por tipo de espacio" href="{{ route('reporteria.tipo-espacio') }}"
             :isActive="request()->routeIs('reporteria.tipo-espacio')" />
-        <x-sidebar.sublink title="Por unidad académica" href="{{ route('reporteria.unidad-academica') }}"
-            :isActive="request()->routeIs('reporteria.unidad-academica')" />
+        {{-- <x-sidebar.sublink title="Por unidad académica" href="{{ route('reporteria.unidad-academica') }}"
+            :isActive="request()->routeIs('reporteria.unidad-academica')" /> --}}
     </x-sidebar.dropdown>
 
 

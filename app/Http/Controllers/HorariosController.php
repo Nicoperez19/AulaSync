@@ -304,10 +304,9 @@ class HorariosController extends Controller
         sort($aniosDisponibles);
         sort($semestresDisponibles);
         
-        // Determinar el período actual por defecto
-        $mesActual = date('n');
-        $anioActual = date('Y');
-        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
+        // Determinar el período por defecto (primer semestre 2025)
+        $anioActual = '2025';
+        $semestre = 1;
         $periodo = $anioActual . '-' . $semestre;
         
         // Obtener todos los pisos con sus espacios, ordenados por número de piso
@@ -315,8 +314,14 @@ class HorariosController extends Controller
             $q->orderBy('nombre_espacio');
         }])->orderBy('numero_piso')->get();
         
-        // Solo cargar horarios si se han seleccionado filtros específicos
+        // Cargar horarios por defecto para el primer semestre 2025 o para los filtros seleccionados
         $horariosPorEspacio = collect([]);
+        
+        // Si no hay filtros específicos, usar el período por defecto (primer semestre 2025)
+        if (!$semestreFiltro && !$anioFiltro) {
+            $semestreFiltro = 1;
+            $anioFiltro = '2025';
+        }
         
         if ($semestreFiltro && $anioFiltro) {
             $periodo = $anioFiltro . '-' . $semestreFiltro;

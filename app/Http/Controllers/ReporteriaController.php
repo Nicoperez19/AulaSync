@@ -75,8 +75,15 @@ class ReporteriaController extends Controller
             $horas_utilizadas = $reservas_tipo->sum(function($r) {
                 return $r->hora && $r->hora_salida ? \Carbon\Carbon::parse($r->hora)->diffInMinutes(\Carbon\Carbon::parse($r->hora_salida))/60 : 0;
             });
-            $capacidad = $total_espacios_tipo * $dias_laborales * 15;
-            $promedio = $capacidad > 0 ? round(($total_reservas_tipo / $capacidad) * 100) : 0;
+            
+            // Cálculo simplificado: porcentaje de espacios que tienen al menos una reserva
+            $espacios_con_reservas = \App\Models\Reserva::whereIn('id_espacio', $espacios)
+                ->whereMonth('fecha_reserva', $mes)
+                ->whereYear('fecha_reserva', $anio)
+                ->distinct('id_espacio')
+                ->count('id_espacio');
+            
+            $promedio = $total_espacios_tipo > 0 ? round(($espacios_con_reservas / $total_espacios_tipo) * 100) : 0;
             $estado = $promedio >= 80 ? 'Óptimo' : ($promedio >= 40 ? 'Medio uso' : 'Bajo uso');
             $resumen[] = [
                 'nombre' => $tipo,

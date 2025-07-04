@@ -203,6 +203,7 @@ Route::group(['middleware' => ['auth', 'session.timeout']], function () {
 Route::prefix('reporteria')->group(function () {
     Route::get('utilizacion_por_espacio', [ReporteriaController::class, 'utilizacion'])->name('reporteria.utilizacion_por_espacio');
     Route::get('tipo-espacio', [ReporteriaController::class, 'tipoEspacio'])->name('reporteria.tipo-espacio');
+    Route::get('tipo-espacio/historico-ajax', [ReporteriaController::class, 'historicoAjax'])->name('reporteria.tipo-espacio.historico-ajax');
     Route::get('accesos', [ReporteriaController::class, 'accesos'])->name('reporteria.accesos');
     Route::get('accesos/limpiar', [ReporteriaController::class, 'limpiarFiltrosAccesos'])->name('reporteria.accesos.limpiar');
     Route::get('accesos/{id}/detalles', [ReporteriaController::class, 'getDetallesAcceso'])->name('reporteria.accesos.detalles');
