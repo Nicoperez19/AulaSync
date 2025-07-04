@@ -397,43 +397,24 @@
         </div>
     </x-modal>
 
-    <!-- Modal para devolución de llaves -->
+    <!-- Modal para devolución de llaves (rediseñado) -->
     <x-modal name="devolver-llaves" :show="false" focusable>
         @slot('title')
-        <h2 class="text-lg font-medium text-white dark:text-gray-100">
-            Devolver Llaves
-        </h2>
+        <div class="bg-red-700 text-white py-3 px-6 rounded-t">
+            <h2 class="text-lg font-semibold text-center">Devolver Llaves</h2>
+        </div>
         @endslot
-        <div class="p-6">
-            <div class="flex flex-col items-center justify-center">
-                <div
-                    class="w-full max-w-md p-2 text-white border border-white rounded-md shadow-sm bg-light-cloud-blue">
-                    <!-- QR Placeholder -->
-                    <div class="p-2 mt-2 text-center rounded-md bg-white/10">
-                        <div class="relative">
-                        <span id="qr-status-devolucion" class="text-xs text-white break-words max-w-[120px] block">
-    Esperando escaneo...
-</span>
-                        </div>
-                        <div class="mt-1 mb-1 qr-placeholder">
-                            <div class="flex items-center justify-center w-20 h-20 mx-auto rounded-md bg-white/20">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white/40" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                </svg>
-                            </div>
-                        </div>
-                        <p class="text-xs text-white/80">Escanee el código QR del usuario y luego del espacio</p>
-                    </div>
-                    <!-- Input para el escáner QR (oculto) -->
-                    <div class="mt-2">
-                        <input type="text" id="qr-input-devolucion"
-                            class="absolute w-full px-1 py-1 border rounded opacity-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Escanea un código QR" autofocus>
-                    </div>
-                </div>
+        <div class="bg-white p-8 flex flex-col items-center justify-center">
+            <div class="mb-6 flex flex-col items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-20 h-20 text-black mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span id="qr-status-devolucion" class="text-base text-black mb-2">Esperando escaneo del usuario...</span>
+                <span class="text-sm text-black">Escanee el código QR del usuario y luego del espacio</span>
             </div>
+            <input type="text" id="qr-input-devolucion"
+                class="absolute w-full px-1 py-1 border rounded opacity-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Escanea un código QR" autofocus>
         </div>
     </x-modal>
 
@@ -472,6 +453,108 @@
                     </div>
                 </div>
             </div>
+        </div>
+    </x-modal>
+
+    <!-- Modal para registro de usuario no registrado -->
+    <x-modal name="registro-usuario" :show="false" focusable>
+        @slot('title')
+        <h2 class="text-lg font-medium text-white dark:text-gray-100">
+            Registro de Usuario
+        </h2>
+        @endslot
+        <div class="p-6">
+            <div class="space-y-4">
+                <div class="text-center">
+                    <div class="w-16 h-16 mx-auto mb-4 text-yellow-500 bg-yellow-100 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900">Usuario No Registrado</h3>
+                    <p class="text-sm text-gray-600 mt-2">
+                        El RUN <span id="run-no-registrado" class="font-semibold"></span> no está registrado en el sistema.
+                        Complete los siguientes datos para continuar con la solicitud.
+                    </p>
+                </div>
+
+                <form id="form-registro-usuario" class="space-y-4">
+                    <div>
+                        <label for="nombre-usuario" class="block text-sm font-medium text-gray-700">Nombre Completo *</label>
+                        <input type="text" id="nombre-usuario" name="nombre" required
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label for="email-usuario" class="block text-sm font-medium text-gray-700">Correo Electrónico *</label>
+                        <input type="email" id="email-usuario" name="email" required
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label for="telefono-usuario" class="block text-sm font-medium text-gray-700">Teléfono *</label>
+                        <input type="tel" id="telefono-usuario" name="telefono" required
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label for="modulos-utilizacion" class="block text-sm font-medium text-gray-700">Módulos de Utilización *</label>
+                        <select id="modulos-utilizacion" name="modulos_utilizacion" required
+                            class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Seleccione la cantidad de módulos</option>
+                            <option value="1">1 módulo</option>
+                            <option value="2">2 módulos</option>
+                            <option value="3">3 módulos</option>
+                            <option value="4">4 módulos</option>
+                            <option value="5">5 módulos</option>
+                            <option value="6">6 módulos</option>
+                            <option value="7">7 módulos</option>
+                            <option value="8">8 módulos</option>
+                            <option value="9">9 módulos</option>
+                            <option value="10">10 módulos</option>
+                            <option value="11">11 módulos</option>
+                            <option value="12">12 módulos</option>
+                            <option value="13">13 módulos</option>
+                            <option value="14">14 módulos</option>
+                            <option value="15">15 módulos</option>
+                        </select>
+                    </div>
+
+                    <div class="flex space-x-3 pt-4">
+                        <button type="button" onclick="cancelarRegistro()"
+                            class="flex-1 px-4 py-2 text-gray-700 bg-gray-200 border border-gray-300 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                            Cancelar
+                        </button>
+                        <button type="submit"
+                            class="flex-1 px-4 py-2 text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            Registrar y Continuar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </x-modal>
+
+    <!-- Modal para seleccionar cantidad de módulos -->
+    <x-modal name="seleccionar-modulos" :show="false" focusable>
+        @slot('title')
+        <h2 class="text-lg font-medium text-black text-center">
+            Seleccionar Módulos
+        </h2>
+        @endslot
+        <div class="p-6 text-center">
+            <p class="mb-4 text-base text-gray-800">¿Por cuántos módulos desea reservar?</p>
+            <div class="mb-2">
+                <input type="number" id="input-cantidad-modulos" min="1" max="1" value="1"
+                    class="w-24 px-2 py-1 border border-gray-300 rounded text-center text-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="mb-4 text-sm text-gray-600">
+                Disponibles: <span id="max-modulos-disponibles">1</span> módulos consecutivos antes de la próxima clase/reserva.
+            </div>
+            <button id="btn-confirmar-modulos"
+                class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                Reservar
+            </button>
         </div>
     </x-modal>
 
@@ -528,6 +611,13 @@
         let esperandoUsuarioSolicitud = true; // Flag para solicitud
         let usuarioEscaneadoSolicitud = null; // Usuario escaneado para solicitud
         let espacioEscaneadoSolicitud = null; // Espacio escaneado para solicitud
+
+        // ========================================
+        // VARIABLES GLOBALES PARA USUARIOS NO REGISTRADOS
+        // ========================================
+        let usuarioNoRegistrado = null;  // Datos del usuario no registrado
+        let espacioPendiente = null;     // Espacio pendiente después del registro
+        let modoOperacionActual = null;  // 'solicitud' o 'devolucion'
 
         // ========================================
         // VARIABLES GLOBALES PARA EL ESTADO DE LA SOLICITUD
@@ -640,6 +730,24 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
                     body: JSON.stringify({ run, id_espacio: idEspacio })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                return null;
+            }
+        }
+
+        // Función para registrar usuario no registrado
+        async function registrarUsuarioNoRegistrado(datosUsuario) {
+            try {
+                const response = await fetch('/api/registrar-usuario-no-registrado', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify(datosUsuario)
                 });
                 return await response.json();
             } catch (error) {
@@ -1489,6 +1597,13 @@
             }, 300);
         }
 
+        // ========================================
+        // AJUSTE: Cerrar modal de devolución de llaves al finalizar
+        // ========================================
+        function cerrarModalDevolverLlaves() {
+            window.dispatchEvent(new CustomEvent('close-modal', { detail: 'devolver-llaves' }));
+        }
+
         // Función para manejar el escaneo de devolución
         async function handleScanDevolucion(event) {
             if (event.key === 'Enter') {
@@ -1531,6 +1646,10 @@
                                 state.originalCoordinates = state.indicators.map(i => ({ ...i }));
                                 drawIndicators();
                             }
+                            // Cerrar el modal después de la devolución exitosa
+                            setTimeout(() => {
+                                cerrarModalDevolverLlaves();
+                            }, 1000);
                         } else {
                             Swal.fire('Error', resultado.mensaje || 'Error al procesar la devolución', 'error');
                             document.getElementById('qr-status-devolucion').innerHTML = resultado.mensaje || 'Error al procesar la devolución';
@@ -1539,7 +1658,6 @@
                         Swal.fire('Error', espacioInfo?.mensaje || 'Error al verificar espacio', 'error');
                         document.getElementById('qr-status-devolucion').innerHTML = espacioInfo?.mensaje || 'Error al verificar espacio';
                     }
-                    
                     // Resetear el estado de devolución
                     resetearEstadoDevolucion();
                 }
@@ -1791,6 +1909,12 @@
                 document.addEventListener('click', () => inputSolicitud.focus());
                 inputSolicitud.focus();
             }
+
+            // Configurar el formulario de registro de usuario
+            const formRegistro = document.getElementById('form-registro-usuario');
+            if (formRegistro) {
+                formRegistro.addEventListener('submit', procesarRegistroUsuario);
+            }
             // Resetear estado cada vez que se abre el modal
             window.addEventListener('open-modal', function (e) {
                 if (e.detail === 'devolver-llaves') {
@@ -2007,6 +2131,125 @@
         }
 
         // ========================================
+        // FUNCIONES PARA MANEJAR USUARIOS NO REGISTRADOS
+        // ========================================
+        
+        // Función para mostrar el modal de registro de usuario
+        function mostrarModalRegistroUsuario(run) {
+            document.getElementById('run-no-registrado').textContent = run;
+            
+            // Cerrar modal actual y abrir modal de registro
+            window.dispatchEvent(new CustomEvent('close-modal', {
+                detail: 'solicitar-llaves'
+            }));
+            
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('open-modal', {
+                    detail: 'registro-usuario'
+                }));
+            }, 300);
+        }
+
+        // Función para cancelar el registro
+        function cancelarRegistro() {
+            // Cerrar modal de registro
+            window.dispatchEvent(new CustomEvent('close-modal', {
+                detail: 'registro-usuario'
+            }));
+            
+            // Resetear variables
+            usuarioNoRegistrado = null;
+            espacioPendiente = null;
+            modoOperacionActual = null;
+            
+            // Volver al modal de solicitud
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent('open-modal', {
+                    detail: 'solicitar-llaves'
+                }));
+                
+                // Resetear estado de solicitud
+                resetearEstadoSolicitud();
+                
+                // Configurar el input de solicitud
+                const inputSolicitud = document.getElementById('qr-input-solicitud');
+                if (inputSolicitud) {
+                    inputSolicitud.value = '';
+                    inputSolicitud.focus();
+                }
+                
+                // Actualizar el estado del QR
+                document.getElementById('qr-status-solicitud').innerHTML = 'Esperando escaneo del usuario...';
+            }, 300);
+        }
+
+        // Función para procesar el formulario de registro
+        async function procesarRegistroUsuario(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const datosUsuario = {
+                run: usuarioNoRegistrado.run,
+                nombre: formData.get('nombre'),
+                email: formData.get('email'),
+                telefono: formData.get('telefono'),
+                modulos_utilizacion: parseInt(formData.get('modulos_utilizacion'))
+            };
+
+            try {
+                const resultado = await registrarUsuarioNoRegistrado(datosUsuario);
+                
+                if (resultado && resultado.success) {
+                    Swal.fire({
+                        title: '¡Usuario registrado exitosamente!',
+                        text: 'El usuario ha sido registrado y puede continuar con la solicitud.',
+                        icon: 'success',
+                        confirmButtonText: 'Continuar'
+                    }).then(() => {
+                        // Cerrar modal de registro
+                        window.dispatchEvent(new CustomEvent('close-modal', {
+                            detail: 'registro-usuario'
+                        }));
+                        
+                        // Continuar con el flujo original según el modo de operación
+                        if (modoOperacionActual === 'solicitud') {
+                            // Volver al modal de solicitud y continuar
+                            setTimeout(() => {
+                                window.dispatchEvent(new CustomEvent('open-modal', {
+                                    detail: 'solicitar-llaves'
+                                }));
+                                
+                                // Actualizar estado para continuar con el espacio
+                                esperandoUsuarioSolicitud = false;
+                                usuarioEscaneadoSolicitud = datosUsuario.run;
+                                
+                                // Actualizar el estado del QR
+                                document.getElementById('qr-status-solicitud').innerHTML = 'Usuario registrado. Escanee el espacio para solicitar.';
+                                
+                                // Configurar el input de solicitud
+                                const inputSolicitud = document.getElementById('qr-input-solicitud');
+                                if (inputSolicitud) {
+                                    inputSolicitud.value = '';
+                                    inputSolicitud.focus();
+                                }
+                            }, 300);
+                        }
+                        
+                        // Resetear variables
+                        usuarioNoRegistrado = null;
+                        espacioPendiente = null;
+                        modoOperacionActual = null;
+                    });
+                } else {
+                    Swal.fire('Error', resultado?.mensaje || 'Error al registrar usuario', 'error');
+                }
+            } catch (error) {
+                console.error('Error al procesar registro:', error);
+                Swal.fire('Error', 'Error al procesar el registro', 'error');
+            }
+        }
+
+        // ========================================
         // FIN DEL SCRIPT - CÓDIGO LIMPIO Y UNIFICADO
         // ========================================
 
@@ -2115,8 +2358,19 @@
                         const usuarioInfo = await verificarUsuario(usuarioEscaneadoSolicitud);
 
                         if (usuarioInfo && usuarioInfo.verificado) {
-                            document.getElementById('qr-status-solicitud').innerHTML = 'Usuario verificado. Escanee el espacio para solicitar.';
+                            if (usuarioInfo.tipo_usuario === 'registrado') {
+                                document.getElementById('qr-status-solicitud').innerHTML = 'Usuario registrado verificado. Escanee el espacio para solicitar.';
+                            } else if (usuarioInfo.tipo_usuario === 'no_registrado') {
+                                document.getElementById('qr-status-solicitud').innerHTML = 'Usuario no registrado verificado. Escanee el espacio para solicitar.';
+                            }
                             esperandoUsuarioSolicitud = false;
+                        } else if (usuarioInfo && usuarioInfo.usuario_no_registrado && usuarioInfo.tipo_usuario === 'nuevo') {
+                            // Usuario completamente nuevo - mostrar modal de registro
+                            usuarioNoRegistrado = {
+                                run: usuarioInfo.run_escaneado
+                            };
+                            modoOperacionActual = 'solicitud';
+                            mostrarModalRegistroUsuario(usuarioInfo.run_escaneado);
                         } else {
                             Swal.fire('Error', usuarioInfo?.mensaje || 'Error de verificación', 'error');
                             document.getElementById('qr-status-solicitud').innerHTML = usuarioInfo?.mensaje || 'Error de verificación';
@@ -2204,8 +2458,42 @@
                                     }));
                                 }, 2000);
                             } else {
-                                Swal.fire('Error', reserva?.mensaje || 'Error al procesar la solicitud', 'error');
-                                document.getElementById('qr-status-solicitud').innerHTML = reserva?.mensaje || 'Error al procesar la solicitud';
+                                // Manejar diferentes tipos de errores con mensajes específicos
+                                let titulo = 'Error';
+                                let mensaje = reserva?.mensaje || 'Error al procesar la solicitud';
+                                let icono = 'error';
+                                
+                                if (reserva?.tipo) {
+                                    switch (reserva.tipo) {
+                                        case 'reserva_activa':
+                                            titulo = 'Reserva Activa';
+                                            icono = 'warning';
+                                            if (reserva.reserva_activa) {
+                                                mensaje = `Ya tienes una reserva activa en el espacio '${reserva.reserva_activa.espacio}' desde las ${reserva.reserva_activa.hora_inicio}. Debes finalizarla antes de solicitar una nueva.`;
+                                            }
+                                            break;
+                                        case 'reserva_diaria':
+                                            titulo = 'Límite Diario';
+                                            icono = 'warning';
+                                            break;
+                                        case 'limite_excedido':
+                                            titulo = 'Límite Excedido';
+                                            icono = 'warning';
+                                            break;
+                                        case 'mismo_espacio':
+                                            titulo = 'Espacio Ya Reservado';
+                                            icono = 'warning';
+                                            break;
+                                        case 'devolucion':
+                                            titulo = 'Espacio Ocupado';
+                                            icono = 'question';
+                                            mensaje = `¿Desea devolver las llaves del espacio '${reserva.espacio}'?`;
+                                            break;
+                                    }
+                                }
+                                
+                                Swal.fire(titulo, mensaje, icono);
+                                document.getElementById('qr-status-solicitud').innerHTML = mensaje;
                             }
                         } else {
                             Swal.fire('Error', 'El espacio no está disponible para solicitar.', 'error');
@@ -2312,16 +2600,92 @@
         // ========================================
 
         // Obtener módulo actual
-        const moduloActual = obtenerModuloActual();
+        const moduloActual = moduloActualNum(); // o determinarModulo(horaActual)
+        const moduloParaHora = moduloActualNum('08:30:00'); // o determinarModulo('08:30:00')
 
-        // Obtener módulo para una hora específica
-        const moduloParaHora = obtenerModuloActual('08:30:00');
+   
+        // ========================================
+        // LÓGICA PARA RESERVA POR MÓDULOS
+        // ========================================
+        let maxModulosDisponibles = 1;
+        let espacioParaReserva = null;
+        let runParaReserva = null;
 
-        // Verificar si hay un módulo activo
-        if (modtuloActual) {
-            console.log(`Módulo activo: ${moduloActual}`);
-        } else {
-            console.log('No hay módulo activo');
+        // Función para calcular módulos disponibles consecutivos
+        async function calcularModulosDisponibles(idEspacio) {
+            try {
+                // Obtener hora y día actual
+                const ahora = new Date();
+                const horaActual = ahora.toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                const diaActual = obtenerDiaActual();
+                
+                const response = await fetch(`/api/espacio/${idEspacio}/modulos-disponibles?hora_actual=${horaActual}&dia_actual=${diaActual}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('Respuesta del endpoint modulos-disponibles:', data);
+                    
+                    if (data.success) {
+                        return data.max_modulos || 1;
+                    } else {
+                        console.warn('No hay módulos disponibles:', data.mensaje);
+                        return 1;
+                    }
+                } else {
+                    console.error('Error en la respuesta del servidor:', response.status);
+                    return 1;
+                }
+            } catch (error) {
+                console.error('Error al calcular módulos disponibles:', error);
+                return 1;
+            }
         }
+
+        // Mostrar modal de módulos
+        async function mostrarModalSeleccionarModulos(idEspacio, run) {
+            maxModulosDisponibles = await calcularModulosDisponibles(idEspacio);
+            document.getElementById('max-modulos-disponibles').textContent = maxModulosDisponibles;
+            const inputModulos = document.getElementById('input-cantidad-modulos');
+            inputModulos.max = maxModulosDisponibles;
+            inputModulos.value = 1;
+            espacioParaReserva = idEspacio;
+            runParaReserva = run;
+            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'seleccionar-modulos' }));
+        }
+
+        // Confirmar reserva con módulos
+        document.addEventListener('DOMContentLoaded', function () {
+            const btnConfirmarModulos = document.getElementById('btn-confirmar-modulos');
+            if (btnConfirmarModulos) {
+                btnConfirmarModulos.addEventListener('click', async function () {
+                    const cantidad = parseInt(document.getElementById('input-cantidad-modulos').value);
+                    if (!espacioParaReserva || !runParaReserva) return;
+                    // Llama a crearReserva con la cantidad de módulos
+                    const response = await fetch('/api/crear-reserva', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({
+                            run: runParaReserva,
+                            id_espacio: espacioParaReserva,
+                            modulos: cantidad
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        Swal.fire('¡Reserva exitosa!', data.mensaje, 'success');
+                        window.dispatchEvent(new CustomEvent('close-modal', { detail: 'seleccionar-modulos' }));
+                    } else {
+                        Swal.fire('Error', data.mensaje || 'No se pudo reservar', 'error');
+                    }
+                });
+            }
+        });
     </script>
 </x-show-layout>

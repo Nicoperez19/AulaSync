@@ -283,6 +283,9 @@ Route::get('/pisos/th/it', function () {
 Route::get('/verificar-horario/{run}', [HorarioController::class, 'verificarHorario']);
 
 Route::get('/verificar-usuario/{run}', [HorarioController::class, 'verificarUsuario']);
+Route::get('/verificar-usuario-no-registrado/{run}', [HorarioController::class, 'verificarUsuarioNoRegistrado']);
+Route::post('/registrar-usuario-no-registrado', [HorarioController::class, 'registrarUsuarioNoRegistrado']);
+Route::post('/convertir-usuario-no-registrado', [HorarioController::class, 'convertirUsuarioNoRegistrado']);
 Route::get('/verificar-espacio/{idEspacio}', [HorarioController::class, 'verificarEspacio']);
 Route::post('/crear-reserva', [HorarioController::class, 'crearReserva']);
 Route::post('/devolver-llaves', [HorarioController::class, 'devolverLlaves']);

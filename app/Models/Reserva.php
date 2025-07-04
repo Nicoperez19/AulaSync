@@ -37,6 +37,11 @@ class Reserva extends Model
         return $this->belongsTo(User::class, 'run', 'run');
     }
 
+    public function usuarioNoRegistrado()
+    {
+        return $this->belongsTo(UsuarioNoRegistrado::class, 'run', 'run');
+    }
+
     public function asignatura()
     {
         return $this->belongsTo(Asignatura::class, 'id_asignatura', 'id_asignatura');

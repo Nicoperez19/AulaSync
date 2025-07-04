@@ -167,74 +167,173 @@ class EspacioController extends Controller
 
     /**
      * Devuelve los módulos disponibles para reservar en un espacio
-     * Solo devuelve el primer bloque de módulos consecutivos libres
-     * También evalúa si hay clase en el siguiente módulo para marcarlo como próximo
+     * Solo revisa la tabla planificacion_asignaturas usando el formato id_modulo (ej: "VI.4")
      */
     public function modulosDisponibles(Request $request, $espacioId)
     {
-        $horaActual = $request->input('hora_actual');
-        $diaActual = $request->input('dia_actual');
-
-        // Buscar módulos futuros del día, ordenados por hora de inicio
-        $modulos = Modulo::where('dia', $diaActual)
-            ->where('hora_termino', '>', $horaActual)
-            ->orderBy('hora_inicio')
-            ->get();
-
-        $modulosDisponibles = [];
-        $enRacha = false;
-
-        // Buscar el primer bloque de módulos consecutivos libres
-        foreach ($modulos as $modulo) {
-            $hayClase = Planificacion_Asignatura::where('id_espacio', $espacioId)
-                ->where('id_modulo', $modulo->id_modulo)
-                ->exists();
-            if (!$hayClase) {
-                $modulosDisponibles[] = [
-                    'id_modulo' => $modulo->id_modulo,
-                    'numero' => explode('.', $modulo->id_modulo)[1] ?? $modulo->id_modulo,
-                    'hora_inicio' => $modulo->hora_inicio,
-                    'hora_termino' => $modulo->hora_termino
-                ];
-                $enRacha = true;
-            } else {
-                if ($enRacha) break;
-            }
-        }
-
-        // Si hay módulos disponibles, devolverlos
-        if (!empty($modulosDisponibles)) {
+        // Obtener día y módulo actual
+        $horaActual = $request->input('hora_actual', now()->format('H:i:s'));
+        $diaActual = $request->input('dia_actual', strtolower(now()->locale('es')->isoFormat('dddd')));
+        
+        // Mapeo de días a códigos
+        $codigosDias = [
+            'lunes' => 'LU',
+            'martes' => 'MA', 
+            'miercoles' => 'MI',
+            'jueves' => 'JU',
+            'viernes' => 'VI',
+            'sabado' => 'SA',
+            'domingo' => 'DO'
+        ];
+        
+        $codigoDia = $codigosDias[$diaActual] ?? 'LU';
+        
+        // Determinar el módulo actual según la hora
+        $moduloActual = $this->determinarModuloActual($horaActual, $diaActual);
+        
+        if (!$moduloActual) {
             return response()->json([
-                'success' => true,
-                'modulos' => $modulosDisponibles,
-                'es_proximo' => false,
-                'siguiente_modulo' => null
+                'success' => false,
+                'mensaje' => 'No hay módulo actual disponible.',
+                'max_modulos' => 0
             ]);
         }
-
-        // Si no hay módulos disponibles, buscar el siguiente módulo y ver si tiene clase programada
-        $siguienteModulo = $modulos->first();
-        $esProximo = false;
-        $siguienteModuloData = null;
-        if ($siguienteModulo) {
-            $hayClaseEnSiguiente = Planificacion_Asignatura::where('id_espacio', $espacioId)
-                ->where('id_modulo', $siguienteModulo->id_modulo)
-                ->exists();
-            if ($hayClaseEnSiguiente) {
-                $esProximo = true;
-                $siguienteModuloData = [
-                    'id_modulo' => $siguienteModulo->id_modulo,
-                    'hora_inicio' => $siguienteModulo->hora_inicio,
-                    'hora_termino' => $siguienteModulo->hora_termino
-                ];
+        
+        // Obtener todas las planificaciones para este espacio en este día
+        $planificaciones = Planificacion_Asignatura::where('id_espacio', $espacioId)
+            ->where('id_modulo', 'like', $codigoDia . '.%')
+            ->pluck('id_modulo')
+            ->toArray();
+        
+        // Contar módulos consecutivos disponibles desde el módulo actual
+        $maxModulos = 0;
+        for ($i = $moduloActual; $i <= 15; $i++) {
+            $moduloCodigo = $codigoDia . '.' . $i;
+            
+            // Si existe planificación para este módulo, terminar
+            if (in_array($moduloCodigo, $planificaciones)) {
+                break;
+            }
+            
+            $maxModulos++;
+        }
+        
+        return response()->json([
+            'success' => true,
+            'max_modulos' => $maxModulos,
+            'modulo_actual' => $moduloActual,
+            'codigo_dia' => $codigoDia,
+            'planificaciones_encontradas' => $planificaciones
+        ]);
+    }
+    
+    /**
+     * Determina el módulo actual según la hora y día
+     */
+    private function determinarModuloActual($horaActual, $diaActual)
+    {
+        // Definir horarios de módulos (mismo formato que en el frontend)
+        $horariosModulos = [
+            'lunes' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ],
+            'martes' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ],
+            'miercoles' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ],
+            'jueves' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ],
+            'viernes' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ]
+        ];
+        
+        $horariosDia = $horariosModulos[$diaActual] ?? null;
+        
+        if (!$horariosDia) {
+            return null;
+        }
+        
+        // Buscar en qué módulo estamos según la hora actual
+        foreach ($horariosDia as $modulo => $horario) {
+            if ($horaActual >= $horario['inicio'] && $horaActual < $horario['fin']) {
+                return $modulo;
             }
         }
-
-        return response()->json([
-            'success' => false,
-            'mensaje' => 'No hay módulos disponibles para reservar.',
-            'es_proximo' => $esProximo,
-            'siguiente_modulo' => $siguienteModuloData
-        ]);
+        
+        return null;
     }
 }
