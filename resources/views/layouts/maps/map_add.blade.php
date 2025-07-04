@@ -1,9 +1,15 @@
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <h2 class="text-xl font-semibold leading-tight">
-                {{ __('Crear Nuevo Mapa') }}
-            </h2>
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl bg-light-cloud-blue">
+                    <i class="fa-solid fa-map text-white text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold leading-tight">Gestión de Mapas</h2>
+                    <p class="text-gray-500 text-sm">Agrega, edita y administra la ubicación de los espacios en el mapa institucional</p>
+                </div>
+            </div>
         </div>
     </x-slot>
 

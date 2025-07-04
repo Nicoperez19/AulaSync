@@ -189,8 +189,8 @@ class HorariosController extends Controller
             $q->orderBy('nombre_espacio');
         }])->orderBy('numero_piso')->get();
 
-        // Pre-cargar todos los horarios de todos los espacios
-        $planificaciones = Planificacion_Asignatura::with(['asignatura.user', 'modulo', 'espacio'])->get();
+        // Pre-cargar todos los horarios de todos los espacios con la relación horario
+        $planificaciones = Planificacion_Asignatura::with(['asignatura.user', 'modulo', 'espacio', 'horario'])->get();
 
         // Agrupar por espacio
         $horariosPorEspacio = $planificaciones->groupBy('id_espacio')->map(function ($items) {
@@ -205,11 +205,21 @@ class HorariosController extends Controller
                     'hora_inicio' => $plan->modulo->hora_inicio ?? '',
                     'hora_termino' => $plan->modulo->hora_termino ?? '',
                     'espacio' => $plan->espacio->nombre_espacio ?? '',
+                    'periodo' => $plan->horario->periodo ?? '',
                 ];
             });
         });
 
-        return view('layouts.spacetime.spacetime_show', compact('pisos', 'horariosPorEspacio'));
+        // Obtener el período más común de los horarios existentes
+        $periodos = $planificaciones->pluck('horario.periodo')->filter()->unique()->values();
+        $periodoActual = $periodos->first() ?? '2025-1'; // Valor por defecto si no hay horarios
+        
+        // Extraer año y semestre del período (formato: "2025-1")
+        $partesPeriodo = explode('-', $periodoActual);
+        $anioActual = $partesPeriodo[0] ?? date('Y');
+        $semestre = $partesPeriodo[1] ?? 1;
+
+        return view('layouts.spacetime.spacetime_show', compact('pisos', 'horariosPorEspacio', 'semestre', 'anioActual'));
     }
 
     public function exportHorarioEspacioPDF($idEspacio)

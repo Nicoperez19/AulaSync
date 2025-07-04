@@ -163,7 +163,7 @@
                 <!-- Card: Navegación de Pisos y Plano -->
                 <div class="flex flex-col flex-1 min-h-0">
                     <div class="flex-1 bg-white shadow-md dark:bg-dark-eval-0">
-                        <ul class="flex border-b border-gray-300 dark:border-gray-700" id="pills-tab" role="tablist">
+                        <ul class="flex border-b  dark:border-gray-700" id="pills-tab" role="tablist">
                             @foreach ($pisos as $piso)
                                                     <li role="presentation">
                                                         <a href="{{ route('plano.show', $piso->id_mapa) }}"
@@ -411,7 +411,9 @@
                     <!-- QR Placeholder -->
                     <div class="p-2 mt-2 text-center rounded-md bg-white/10">
                         <div class="relative">
-                            <span id="qr-status-devolucion" class="text-xs text-yellow-400">Esperando escaneo...</span>
+                        <span id="qr-status-devolucion" class="text-xs text-white break-words max-w-[120px] block">
+    Esperando escaneo...
+</span>
                         </div>
                         <div class="mt-1 mb-1 qr-placeholder">
                             <div class="flex items-center justify-center w-20 h-20 mx-auto rounded-md bg-white/20">
@@ -449,7 +451,7 @@
                     <!-- QR Placeholder -->
                     <div class="p-2 mt-2 text-center rounded-md bg-white/10">
                         <div class="relative">
-                            <span id="qr-status-solicitud" class="text-xs text-yellow-400">Esperando escaneo...</span>
+                            <span id="qr-status-solicitud" class="text-xs text-white">Esperando escaneo...</span>
                         </div>
                         <div class="mt-1 mb-1 qr-placeholder">
                             <div class="flex items-center justify-center w-20 h-20 mx-auto rounded-md bg-white/20">
@@ -1333,11 +1335,26 @@
             return dias[new Date().getDay()];
         }
 
+
+        function moduloActualNum(hora) {
+            const diaActual = obtenerDiaActual();
+            const horariosDia = horariosModulos[diaActual];
+
+            if (!horariosDia) return null;
+
+            // Buscar en qué módulo estamos según la hora actual
+            for (const [modulo, horario] of Object.entries(horariosDia)) {
+                if (hora >= horario.inicio && hora < horario.fin) {
+                    return parseInt(modulo);
+                }
+            }
+            return null;
+        }
         // ========================================
         // FUNCIÓN PARA DETERMINAR EL MÓDULO ACTUAL
         // ========================================
         function determinarModulo(hora) {
-            const diaActual = obtenerDiaActual();
+            const diaActual = moduloActualNum();
             const horariosDia = horariosModulos[diaActual];
 
             if (!horariosDia) return null;
@@ -2294,5 +2311,17 @@
         // FUNCIÓN PARA MOSTRAR ESTADO DE ACTUALIZACIÓN
         // ========================================
 
+        // Obtener módulo actual
+        const moduloActual = obtenerModuloActual();
+
+        // Obtener módulo para una hora específica
+        const moduloParaHora = obtenerModuloActual('08:30:00');
+
+        // Verificar si hay un módulo activo
+        if (modtuloActual) {
+            console.log(`Módulo activo: ${moduloActual}`);
+        } else {
+            console.log('No hay módulo activo');
+        }
     </script>
 </x-show-layout>

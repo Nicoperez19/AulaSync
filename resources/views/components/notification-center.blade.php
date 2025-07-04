@@ -149,9 +149,8 @@ function notificationCenter() {
 
         async loadNotifications() {
             if (!this.isMainPage) return;
-            
             try {
-                const response = await fetch('/notifications/recent');
+                const response = await fetch('/notifications/json');
                 const data = await response.json();
                 this.notifications = data;
             } catch (error) {

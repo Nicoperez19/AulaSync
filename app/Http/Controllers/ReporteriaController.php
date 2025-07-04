@@ -535,10 +535,165 @@ class ReporteriaController extends Controller
     // 4. Reportes por unidad académica
     public function unidadAcademica(Request $request)
     {
-        return view('reporteria.unidad-academica');
+        // Obtener todas las áreas académicas con sus carreras
+        $areasAcademicas = \App\Models\AreaAcademica::with(['carreras', 'facultad'])->get();
+        
+        $datosUnidadAcademica = [];
+        
+        foreach ($areasAcademicas as $areaAcademica) {
+            // Obtener asignaturas de todas las carreras de esta área académica
+            $carrerasIds = $areaAcademica->carreras->pluck('id_carrera');
+            $asignaturas = \App\Models\Asignatura::whereIn('id_carrera', $carrerasIds)->get();
+            
+            // Obtener planificaciones de estas asignaturas
+            $asignaturasIds = $asignaturas->pluck('id_asignatura');
+            $planificaciones = \App\Models\Planificacion_Asignatura::whereIn('id_asignatura', $asignaturasIds)->get();
+            
+            // Obtener espacios utilizados por esta área académica
+            $espaciosUtilizados = $planificaciones->pluck('id_espacio')->unique();
+            $totalEspacios = \App\Models\Espacio::whereHas('piso.facultad', function($q) use ($areaAcademica) {
+                $q->where('id_facultad', $areaAcademica->id_facultad);
+            })->count();
+            
+            // Calcular porcentaje de utilización
+            $porcentajeUtilizacion = $totalEspacios > 0 ? round(($espaciosUtilizados->count() / $totalEspacios) * 100, 2) : 0;
+            
+            // Obtener reservas rechazadas (estado = 'rechazada') - solo reservas generales
+            $reservasRechazadas = \App\Models\Reserva::where('estado', 'rechazada')->count();
+            
+            // Obtener espacios no utilizados
+            $espaciosNoUtilizados = \App\Models\Espacio::whereHas('piso.facultad', function($q) use ($areaAcademica) {
+                $q->where('id_facultad', $areaAcademica->id_facultad);
+            })->whereNotIn('id_espacio', $espaciosUtilizados)->get();
+            
+            // Detalles de espacios no utilizados
+            $detallesEspaciosNoUtilizados = $espaciosNoUtilizados->map(function($espacio) {
+                return [
+                    'id' => $espacio->id_espacio,
+                    'nombre' => $espacio->nombre_espacio,
+                    'tipo' => $espacio->tipo_espacio,
+                    'piso' => $espacio->piso->numero_piso ?? 'N/A',
+                    'capacidad' => $espacio->puestos_disponibles ?? 'N/A'
+                ];
+            });
+            
+            $datosUnidadAcademica[] = [
+                'area_academica' => $areaAcademica,
+                'total_carreras' => $areaAcademica->carreras->count(),
+                'total_asignaturas' => $asignaturas->count(),
+                'total_planificaciones' => $planificaciones->count(),
+                'espacios_utilizados' => $espaciosUtilizados->count(),
+                'total_espacios' => $totalEspacios,
+                'porcentaje_utilizacion' => $porcentajeUtilizacion,
+                'reservas_rechazadas' => $reservasRechazadas,
+                'espacios_no_utilizados' => $detallesEspaciosNoUtilizados,
+                'problemas' => $this->identificarProblemas($areaAcademica, $asignaturas, $planificaciones, $espaciosNoUtilizados)
+            ];
+        }
+        
+        return view('reporteria.unidad-academica', compact('datosUnidadAcademica'));
     }
+    
     public function exportUnidadAcademica($format)
     {
+        // Obtener los mismos datos que en unidadAcademica
+        $areasAcademicas = \App\Models\AreaAcademica::with(['carreras', 'facultad'])->get();
+        
+        $datosUnidadAcademica = [];
+        
+        foreach ($areasAcademicas as $areaAcademica) {
+            $carrerasIds = $areaAcademica->carreras->pluck('id_carrera');
+            $asignaturas = \App\Models\Asignatura::whereIn('id_carrera', $carrerasIds)->get();
+            $asignaturasIds = $asignaturas->pluck('id_asignatura');
+            $planificaciones = \App\Models\Planificacion_Asignatura::whereIn('id_asignatura', $asignaturasIds)->get();
+            
+            $espaciosUtilizados = $planificaciones->pluck('id_espacio')->unique();
+            $totalEspacios = \App\Models\Espacio::whereHas('piso.facultad', function($q) use ($areaAcademica) {
+                $q->where('id_facultad', $areaAcademica->id_facultad);
+            })->count();
+            
+            $porcentajeUtilizacion = $totalEspacios > 0 ? round(($espaciosUtilizados->count() / $totalEspacios) * 100, 2) : 0;
+            
+            $reservasRechazadas = \App\Models\Reserva::where('estado', 'rechazada')->count();
+            
+            $espaciosNoUtilizados = \App\Models\Espacio::whereHas('piso.facultad', function($q) use ($areaAcademica) {
+                $q->where('id_facultad', $areaAcademica->id_facultad);
+            })->whereNotIn('id_espacio', $espaciosUtilizados)->get();
+            
+            $datosUnidadAcademica[] = [
+                'area_academica' => $areaAcademica,
+                'total_carreras' => $areaAcademica->carreras->count(),
+                'total_asignaturas' => $asignaturas->count(),
+                'total_planificaciones' => $planificaciones->count(),
+                'espacios_utilizados' => $espaciosUtilizados->count(),
+                'total_espacios' => $totalEspacios,
+                'porcentaje_utilizacion' => $porcentajeUtilizacion,
+                'reservas_rechazadas' => $reservasRechazadas,
+                'espacios_no_utilizados' => $espaciosNoUtilizados
+            ];
+        }
+        
+        if ($format === 'pdf') {
+            $pdf = Pdf::loadView('reporteria.pdf.unidad-academica', compact('datosUnidadAcademica'));
+            $filename = 'unidad_academica_' . date('Y-m-d_H-i-s') . '.pdf';
+            return $pdf->download($filename);
+        }
+        
+        // Excel: implementar si se requiere
+        return back();
+    }
+    
+    /**
+     * Identificar problemas específicos de una área académica
+     */
+    private function identificarProblemas($areaAcademica, $asignaturas, $planificaciones, $espaciosNoUtilizados)
+    {
+        $problemas = [];
+        
+        // Problema 1: Área sin asignaturas
+        if ($asignaturas->count() == 0) {
+            $problemas[] = [
+                'tipo' => 'sin_asignaturas',
+                'descripcion' => 'Esta área académica no tiene asignaturas registradas',
+                'severidad' => 'alta'
+            ];
+        }
+        
+        // Problema 2: Área sin planificaciones
+        if ($planificaciones->count() == 0) {
+            $problemas[] = [
+                'tipo' => 'sin_planificaciones',
+                'descripcion' => 'No hay planificaciones de horarios para las asignaturas',
+                'severidad' => 'alta'
+            ];
+        }
+        
+        // Problema 3: Muchos espacios no utilizados
+        if ($espaciosNoUtilizados->count() > 5) {
+            $problemas[] = [
+                'tipo' => 'espacios_no_utilizados',
+                'descripcion' => 'Hay ' . $espaciosNoUtilizados->count() . ' espacios sin utilizar',
+                'severidad' => 'media'
+            ];
+        }
+        
+        // Problema 4: Baja utilización de espacios
+        $totalEspacios = \App\Models\Espacio::whereHas('piso.facultad', function($q) use ($areaAcademica) {
+            $q->where('id_facultad', $areaAcademica->id_facultad);
+        })->count();
+        
+        if ($totalEspacios > 0) {
+            $porcentajeUtilizacion = ($planificaciones->pluck('id_espacio')->unique()->count() / $totalEspacios) * 100;
+            if ($porcentajeUtilizacion < 30) {
+                $problemas[] = [
+                    'tipo' => 'baja_utilizacion',
+                    'descripcion' => 'Solo se utiliza el ' . round($porcentajeUtilizacion, 1) . '% de los espacios disponibles',
+                    'severidad' => 'media'
+                ];
+            }
+        }
+        
+        return $problemas;
     }
 
     /**

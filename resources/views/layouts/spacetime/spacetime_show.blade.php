@@ -1,9 +1,15 @@
 <x-app-layout>
-    <x-slot name="header">
-        <div class="flex flex-col items-center gap-2 md:flex-row md:items-center md:justify-between">
-            <h2 class="text-2xl font-bold leading-tight text-gray-900 text-center w-full">
-                {{ __('Horarios por Espacios') }}
-            </h2>
+<x-slot name="header">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl bg-light-cloud-blue">
+                    <i class="fa-solid fa-clock text-white text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold leading-tight">Horarios por Espacio</h2>
+                    <p class="text-gray-500 text-sm">Visualiza y gestiona la programación de espacios por bloques y días</p>
+                </div>
+            </div>
         </div>
     </x-slot>
 
@@ -19,7 +25,7 @@
     <div class="p-6 space-y-6 flex flex-col items-center justify-center" x-data="{ selectedPiso: '{{ $pisos->first()->id ?? 1 }}' }">
         <!-- Nav Pills de Pisos - Arriba alineados a la izquierda -->
         <div class="w-full max-w-7xl mx-auto">
-            <div class="bg-white shadow-md rounded-t-xl">
+            <div class="">
                 <ul class="flex border-b border-gray-200 justify-start" role="tablist">
                     @foreach ($pisos as $piso)
                         <li role="presentation">
@@ -137,6 +143,8 @@
                         <h1 id="modalEspacioTitle" class="text-3xl font-bold text-white truncate"></h1>
                         <div class="flex items-center gap-2 mt-1">
                             <span id="modalEspacioTipo" class="text-lg text-white/80 truncate"></span>
+                            <span class="text-lg text-white/80">•</span>
+                            <span id="modalPeriodo" class="text-lg text-white/80 font-semibold">{{ $semestre }}er semestre - {{ $anioActual }}</span>
                         </div>
                     </div>
                 </div>
@@ -197,10 +205,29 @@
                 if(nombreSpan) nombreCompleto = nombreSpan.textContent;
             }
             
+            // Obtener el período del horario del espacio específico
+            let periodoEspacio = '';
+            const horariosEspacio = horariosPorEspacio[idEspacio] || [];
+            if (horariosEspacio.length > 0 && horariosEspacio[0].periodo) {
+                const partesPeriodo = horariosEspacio[0].periodo.split('-');
+                if (partesPeriodo.length === 2) {
+                    const anio = partesPeriodo[0];
+                    const semestre = partesPeriodo[1];
+                    periodoEspacio = `${semestre}er semestre - ${anio}`;
+                }
+            }
+            
             // Formatear el título como "Horario sala de clases TH-50"
             const tituloFormateado = `Horario ${tipoEspacio.toLowerCase()} ${nombreCompleto} (${idEspacio})`;
             document.getElementById('modalEspacioTitle').textContent = tituloFormateado;
             document.getElementById('modalEspacioTipo').textContent = tipoEspacio;
+            
+            // Actualizar el período en el modal
+            const periodoElement = document.getElementById('modalPeriodo');
+            if (periodoElement && periodoEspacio) {
+                periodoElement.textContent = periodoEspacio;
+            }
+            
             document.getElementById('horarioEspacioModal').classList.remove('hidden');
             document.body.classList.add('overflow-hidden');
             document.documentElement.classList.add('overflow-hidden');

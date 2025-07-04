@@ -1,245 +1,97 @@
-@php
-    $horariosModulos = [
-        'lunes' => [
-            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
-        ],
-        'martes' => [
-            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
-        ],
-        'miercoles' => [
-            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
-        ],
-        'jueves' => [
-            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
-        ],
-        'viernes' => [
-            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
-        ],
-    ];
-
-    // Función para obtener el día actual en español
-    $diaActual = strtolower(
-        [
-            'domingo',
-            'lunes',
-            'martes',
-            'miercoles',
-            'jueves',
-            'viernes',
-            'sabado'
-        ][date('w')]
-    );
-
-    // Función para determinar el módulo actual según la hora
-    if (!function_exists('moduloActualDashboard')) {
-        function moduloActualDashboard($horariosModulos, $diaActual)
-        {
-            $horaAhora = date('H:i:s');
-            if (!isset($horariosModulos[$diaActual]))
-                return null;
-            foreach ($horariosModulos[$diaActual] as $num => $horario) {
-                if ($horaAhora >= $horario['inicio'] && $horaAhora < $horario['fin']) {
-                    return $num;
-                }
-            }
-            return null;
-        }
-    }
-    $moduloActualNum = moduloActualDashboard($horariosModulos, $diaActual);
-    $moduloActualHorario = $moduloActualNum ? $horariosModulos[$diaActual][$moduloActualNum] : null;
-@endphp
-
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <h2 class="text-xl font-semibold leading-tight" style="font-style: oblique;">
-                {{ __('Dashboard') }}
-            </h2>
-
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl bg-light-cloud-blue">
+                    <i class="fa-solid fa-gauge-high text-white text-2xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold leading-tight">Dashboard</h2>
+                    <p class="text-gray-500 text-sm">Resumen general de uso de espacios</p>
+                </div>
+            </div>
         </div>
     </x-slot>
 
-    <!-- Filtros globales compactos -->
-    <div class="p-8 mb-8 overflow-hidden bg-white rounded-md shadow-md dark:bg-dark-eval-1">
-        <div class="flex flex-wrap items-center justify-between w-full gap-4">
-            <!-- Filtros básicos -->
-            <div class="flex items-center gap-2">
-                <label class="font-semibold">Semana:</label>
-                <select class="w-40 border-gray-300 rounded-md shadow-sm">
-                    <option>Semana actual</option>
-                    <option>Semana anterior</option>
-                    <option>Hace 2 semanas</option>
-                </select>
-            </div>
-            <div class="flex items-center gap-2">
-                <label class="font-semibold">Piso:</label>
-                <div class="relative">
-                    <select id="piso-selector"
-                        class="w-32 transition-all duration-300 border-gray-300 rounded-md shadow-sm"
-                        onchange="cambiarPiso(this.value)">
-                        <option value="">Todos</option>
-                        @foreach($pisos as $pisoItem)
-                            <option value="{{ $pisoItem->numero_piso }}" {{ $piso == $pisoItem->numero_piso ? 'selected' : '' }}>
-                                Piso {{ $pisoItem->numero_piso }}
-                            </option>
-                        @endforeach
-                    </select>
-                    <div id="piso-loading" class="absolute hidden transform -translate-y-1/2 right-2 top-1/2">
-                        <div class="w-4 h-4 border-b-2 border-blue-600 rounded-full animate-spin"></div>
-                    </div>
-                </div>
-            </div>
-            <div class="flex items-center gap-2">
-                <label class="font-semibold">Tipo de sala:</label>
-                <select class="w-40 border-gray-300 rounded-md shadow-sm">
-                    <option>Todas</option>
-                    @foreach($comparativaTipos as $tipo)
-                        <option>{{ $tipo['nombre'] }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
+    <!-- Modal fijo de reloj digital y módulo actual -->
+    <div id="modal-reloj"
+        class="fixed bottom-6 right-8 z-50 bg-light-cloud-blue shadow-lg rounded-xl border border-gray-200 px-5 py-3 flex flex-col items-center gap-1 min-w-[162px] text-white">
+        <div class="font-mono text-2xl font-bold text-white text-center" id="modal-hora-actual">19:51:28</div>
+        <div class="mt-1 text-sm font-bold text-white text-center" id="modal-modulo-actual">Módulo actual: 12</div>
     </div>
 
-    <!-- KPIs principales -->
-    <div class="w-full p-8 mb-8">
-        <div class="grid w-full grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6">
+    <div class="w-full p-6">
+        <div class="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-5">
             <!-- Total de reservas hoy -->
-            <div class="flex flex-col items-center justify-center p-6 bg-white shadow-lg rounded-xl widget-transition">
-                <span class="mb-2 text-4xl text-blue-500">📅</span>
-                <div class="mb-1 text-base font-bold text-blue-700">Total de reservas hoy</div>
-                <div id="total-reservas-hoy" class="text-2xl font-bold text-blue-700 kpi-value">{{ $totalReservasHoy }}
+            <div
+                class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-gray-500 font-semibold">Total de Reservas Hoy</span>
+                    <span class="bg-blue-100 text-blue-500 rounded-full p-2"><i
+                            class="fa-regular fa-calendar text-xl"></i></span>
+                </div>
+                <div class="flex items-end gap-2">
+                    <span class="text-3xl font-bold text-blue-600">{{ $totalReservasHoy }}</span>
                 </div>
             </div>
             <!-- % No Presentación -->
-            <div class="flex flex-col items-center justify-center p-6 bg-white shadow-lg rounded-xl widget-transition">
-                <span class="mb-2 text-4xl text-yellow-500">📉</span>
-                <div class="mb-1 text-base font-bold text-yellow-700">% No Presentación</div>
-                <div id="kpi-no-show" class="text-2xl font-bold text-yellow-700 kpi-value">{{ $porcentajeNoShow }}%
-                </div>
-            </div>
-            <!-- Usuarios sin escaneo -->
-            <div class="flex flex-col items-center justify-center p-6 bg-white shadow-lg rounded-xl widget-transition">
-                <span class="mb-2 text-5xl text-red-500">❌</span>
-                <div class="mb-1 text-base font-bold text-red-700">Usuarios sin escaneo</div>
-                <div id="usuarios-sin-escaneo" class="text-xs text-center text-red-600 kpi-value">
-                    {{ $usuariosSinEscaneo }} usuarios sin registrar asistencia hoy
-                </div>
-            </div>
-            <!-- Horas utilizadas / disponibles -->
-            <div class="flex flex-col items-center justify-center p-6 bg-white shadow-lg rounded-xl widget-transition">
-                <img src="https://img.icons8.com/color/48/000000/hourglass--v2.png" class="w-12 h-12 mb-2" />
-                <div class="text-xs text-gray-500">Horas utilizadas / disponibles</div>
-                <div id="horas-utilizadas" class="mt-1 text-2xl font-bold text-yellow-700 kpi-value">
-                    {{ $horasUtilizadas['utilizadas'] }} / {{ $horasUtilizadas['disponibles'] }}
-                </div>
-            </div>
-            <!-- Ocupación semanal -->
             <div
-                class="relative flex flex-col items-center justify-center p-6 bg-white shadow-lg rounded-xl widget-transition">
-                <img src="https://img.icons8.com/color/48/000000/combo-chart--v2.png" class="w-12 h-12 mb-2" />
-                <div class="text-xs text-gray-500">% Ocupación semanal</div>
-                <div id="ocupacion-semanal"
-                    class="flex items-center gap-2 mt-1 text-3xl font-bold text-primary-600 kpi-value">
-                    {{ $ocupacionSemanal }}%
-                    <span class="text-xl text-green-500" title="Subió respecto a la semana anterior">▲</span>
+                class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-gray-500 font-semibold">% No Presentación</span>
+                    <span class="bg-green-100 text-green-500 rounded-full p-2"><i
+                            class="fa-solid fa-user-xmark text-xl"></i></span>
+                </div>
+                <div class="flex items-end gap-2">
+                    <span class="text-3xl font-bold text-green-600">{{ $porcentajeNoShow }}%</span>
                 </div>
             </div>
-            <!-- Ocupación mensual -->
+            <!-- % Ocupación Semanal -->
             <div
-                class="relative flex flex-col items-center justify-center p-6 bg-white shadow-lg rounded-xl widget-transition">
-                <img src="https://img.icons8.com/color/48/000000/line-chart.png" class="w-12 h-12 mb-2" />
-                <div class="text-xs text-gray-500">Promedio ocupación mensual</div>
-                <div id="ocupacion-mensual"
-                    class="flex items-center gap-2 mt-1 text-3xl font-bold text-primary-600 kpi-value">
-                    {{ $ocupacionMensual }}%
-                    <span class="text-xl text-green-500" title="Subió respecto al mes anterior">▲</span>
+                class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-gray-500 font-semibold">% Ocupación Semanal</span>
+                    <span class="bg-purple-100 text-purple-500 rounded-full p-2"><i
+                            class="fa-solid fa-chart-column text-xl"></i></span>
+                </div>
+                <div class="flex items-end gap-2">
+                    <span class="text-3xl font-bold text-purple-600">{{ $ocupacionSemanal }}%</span>
+                </div>
+            </div>
+            <!-- Promedio Ocupación Mensual -->
+            <div
+                class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-gray-500 font-semibold">Promedio Ocupación Mensual</span>
+                    <span class="bg-orange-100 text-orange-500 rounded-full p-2"><i
+                            class="fa-solid fa-wave-square text-xl"></i></span>
+                </div>
+                <div class="flex items-end gap-2">
+                    <span class="text-3xl font-bold text-orange-600">{{ $ocupacionMensual }}%</span>
+                </div>
+            </div>
+            <!-- Sala Más Utilizada -->
+            <div
+                class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-gray-500 font-semibold">Sala Más Utilizada</span>
+                    <span class="bg-yellow-100 text-yellow-500 rounded-full p-2"><i
+                            class="fa-solid fa-star text-xl"></i></span>
+                </div>
+                <div class="flex flex-col gap-1 mt-2">
+                    @if($salaMasUtilizada && $salaMasUtilizada->espacio)
+                        <span
+                            class="text-xl font-bold text-yellow-600">{{ $salaMasUtilizada->espacio->nombre_espacio ?? $salaMasUtilizada->id_espacio }}</span>
+                    @else
+                        <span class="text-gray-400">Sin datos</span>
+                    @endif
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Gráfico de barras: Reservas por tipo de espacio -->
-    <div
-        class="w-full p-8 mb-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition">
-        <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Reservas por tipo de espacio <span
-                class="ml-2 cursor-pointer"
-                title="Cantidad de reservas por tipo de espacio (aula, laboratorio, etc.)">ℹ️</span></h4>
-        <canvas id="grafico-reservas-tipo-espacio" width="500" height="300"></canvas>
-    </div>
-
     <!-- Grid de gráficos secundarios -->
-    <div class="grid w-full grid-cols-1 gap-8 p-8 mb-8 md:grid-cols-2">
+    <div class="grid w-full grid-cols-1 gap-8 px-8 md:grid-cols-2">
         <!-- Gráfico de barras: Uso por Día -->
         <div
             class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition w-full">
@@ -248,28 +100,7 @@
                     title="Muestra la cantidad de horas ocupadas por día de la semana">ℹ️</span></h4>
             <canvas id="grafico-barras" width="500" height="300"></canvas>
         </div>
-        <!-- Gráfico de barras horizontal: Top 3 salas más usadas -->
-        <div
-            class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition w-full">
-            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Top 3 Salas más usadas <span
-                    class="ml-2 cursor-pointer" title="Ranking de salas según uso mensual">ℹ️</span></h4>
-            <canvas id="grafico-top-salas" width="500" height="300"></canvas>
-        </div>
-        <!-- Gráfico de barras: Top asignaturas por uso -->
-        <div
-            class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition w-full">
-            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Top asignaturas por uso <span
-                    class="ml-2 cursor-pointer" title="Asignaturas con mayor uso de espacios">ℹ️</span></h4>
-            <canvas id="grafico-top-asignaturas" width="500" height="300"></canvas>
-        </div>
-        <!-- Gráfico de áreas: Comparativa tipos de espacios -->
-        <div
-            class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition w-full">
-            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Comparativa de ocupación por tipo de
-                espacio <span class="ml-2 cursor-pointer"
-                    title="Comparación de ocupación entre aulas, laboratorios, etc.">ℹ️</span></h4>
-            <canvas id="grafico-comparativa-tipos" width="500" height="300"></canvas>
-        </div>
+
         <!-- Gráfico de línea: Promedio mensual -->
         <div
             class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition w-full">
@@ -278,26 +109,9 @@
                     title="Tendencia del promedio de ocupación de la semana actual">ℹ️</span></h4>
             <canvas id="grafico-mensual" width="500" height="300"></canvas>
         </div>
-        <!-- Gráfico de ocupación diaria -->
-        <div
-            class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition w-full">
-            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Ocupación diaria por módulo <span
-                    class="ml-2 cursor-pointer" title="Ocupación por módulo del día actual">ℹ️</span></h4>
-            <div class="flex flex-wrap justify-center gap-2">
-                @foreach($ocupacionDiaria as $dia => $porcentaje)
-                    <div class="text-center">
-                        <div
-                            class="text-sm font-bold {{ $porcentaje > 70 ? 'text-green-700' : ($porcentaje > 50 ? 'text-yellow-500' : 'text-red-500') }}">
-                            {{ $porcentaje }}%
-                        </div>
-                        <div class="text-xs text-gray-500">{{ $dia }}</div>
-                    </div>
-                @endforeach
-            </div>
-        </div>
     </div>
 
-    <div class="flex flex-col w-full gap-8 p-4 mb-8 md:p-8 md:flex-row">
+    <div class="flex flex-col w-full gap-8 p-8  md:p-8 md:flex-row">
         <div class="flex flex-col flex-1 gap-6">
             <div class="p-4 bg-white rounded-lg shadow-md md:p-6 dark:bg-gray-800">
                 <!-- Encabezado con título y botón alineados -->
@@ -317,18 +131,14 @@
                 </div>
                 <div class="flex flex-wrap items-center justify-between gap-4 text-sm text-gray-500 dark:text-gray-300">
                     <div class="flex flex-wrap items-center gap-4">
-                        <span class="inline-flex items-center gap-2 px-3 py-1 text-gray-500 dark:text-gray-300">
+                        <span id="modulo-actual-info"
+                            class="inline-flex items-center gap-2 px-3 py-1 text-gray-500 dark:text-gray-300">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none"
                                 viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            @if($moduloActualNum)
-                                Módulo {{ $moduloActualNum }} ({{ substr($moduloActualHorario['inicio'], 0, 5) }} -
-                                {{ substr($moduloActualHorario['fin'], 0, 5) }})
-                            @else
-                                No hay módulo disponible
-                            @endif
+                            <span id="modulo-actual-text">Cargando módulo...</span>
                         </span>
                         <span class="inline-flex items-center gap-2 px-3 py-1 text-gray-500 dark:text-gray-300">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-600 dark:text-gray-300"
@@ -336,7 +146,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
-                            {{ ucfirst($diaActual) }}, {{ \Carbon\Carbon::now()->format('d/m/Y') }}
+                            <span id="dia-actual-text">Cargando...</span>, {{ \Carbon\Carbon::now()->format('d/m/Y') }}
                         </span>
                     </div>
                 </div>
@@ -363,13 +173,14 @@
                 </div>
             </div>
             <div id="salas-ocupadas" class="mt-4 text-2xl font-bold kpi-value" style="color:#a21caf;">
-                {{ $salasOcupadas['ocupadas'] }} <span class="text-gray-400"> de </span> {{ $salasOcupadas['libres'] }}
+                {{ $salasOcupadas['ocupadas'] }} <span class="text-gray-400"> de </span>
+                {{ $salasOcupadas['ocupadas'] + $salasOcupadas['libres'] }} <span class="text-gray-400"> en total</span>
             </div>
         </div>
     </div>
 
     <!-- Tablas -->
-    <div class="w-full p-8 mb-8">
+    <div class=" w-full gap-8 px-4 md:px-8">
         <div class="flex flex-col gap-6 md:flex-row">
             <!-- Reservas Pendientes -->
             <div class="w-full p-8 mb-8 bg-white shadow-lg rounded-xl md:w-1/2">
@@ -512,10 +323,28 @@
             </div>
         </div>
     </div>
-    <div class="p-8 mb-8 bg-white shadow-lg rounded-xl">
-        <!-- Horarios de la semana -->
-        <h3 class="mb-4 text-lg font-bold text-gray-700">Horarios de la semana - Usuarios asignados por espacio</h3>
-        @include('layouts.partials.horarios-semana', ['horariosAgrupados' => $horariosAgrupados])
+
+
+    <div class="w-full px-8 mb-8">
+        <div id="horarios-semana-container" class="p-6 mb-8 bg-white shadow-lg rounded-xl">
+            <!-- Horarios de la semana -->
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-gray-700">Horarios de la semana - Usuarios asignados por espacio</h3>
+                <x-button class="inline-flex items-center gap-2 px-4 py-2 mt-3 text-sm font-medium hover:bg-red-700"
+                    variant="primary" href="{{ route('espacios.show') }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                        <path fill-rule="evenodd"
+                            d="M12.97 3.97a.75.75 0 0 1 1.06 0l7.5 7.5a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06l6.22-6.22H3a.75.75 0 0 1 0-1.5h16.19l-6.22-6.22a.75.75 0 0 1 0-1.06Z"
+                            clip-rule="evenodd" />
+                    </svg>
+                    Ver detalles
+                </x-button>
+            </div>
+            <div id="horarios-semana-content">
+                @include('layouts.partials.horarios-semana', ['horariosAgrupados' => $horariosAgrupados])
+
+            </div>
+        </div>
     </div>
 </x-app-layout>
 
@@ -528,7 +357,116 @@
     let autoRefreshEnabled = true;
     let notificationQueue = [];
     let isShowingNotification = false;
+    let moduloActual = null;
+    let moduloCheckInterval;
+    window.horariosModulos = window.horariosModulos || {
+        'lunes': {
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
+        },
+        'martes': {
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
+        },
+        'miercoles': {
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
+        },
+        'jueves': {
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
+        },
+        'viernes': {
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
+        }
+    };
 
+    function obtenerDiaActual() {
+        const dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        return dias[new Date().getDay()];
+    }
+
+    function obtenerModuloActual(hora = null) {
+        const diaActual = obtenerDiaActual();
+        const horaAhora = hora || new Date().toTimeString().slice(0, 8);
+
+        if (!window.horariosModulos[diaActual]) {
+            return null;
+        }
+
+        for (const [num, horario] of Object.entries(window.horariosModulos[diaActual])) {
+            if (horaAhora >= horario.inicio && horaAhora < horario.fin) {
+                return parseInt(num);
+            }
+        }
+        return null;
+    }
     // ========================================
     // SISTEMA DE NOTIFICACIONES MEJORADO
     // ========================================
@@ -585,12 +523,7 @@
             errores.push(`Error al actualizar KPIs: ${error.message}`);
         }
 
-        // Actualizar ocupación diaria
-        try {
-            actualizarOcupacionDiaria(data.ocupacionDiaria);
-        } catch (error) {
-            errores.push(`Error al actualizar ocupación diaria: ${error.message}`);
-        }
+
 
         // Actualizar gráficos con manejo individual
         try {
@@ -599,23 +532,7 @@
             errores.push(`Error al actualizar gráfico de uso por día: ${error.message}`);
         }
 
-        try {
-            actualizarGraficoTopSalas(data.topSalas);
-        } catch (error) {
-            errores.push(`Error al actualizar gráfico de top salas: ${error.message}`);
-        }
 
-        try {
-            actualizarGraficoTopAsignaturas(data.topAsignaturas);
-        } catch (error) {
-            errores.push(`Error al actualizar gráfico de top asignaturas: ${error.message}`);
-        }
-
-        try {
-            actualizarGraficoComparativaTipos(data.comparativaTipos);
-        } catch (error) {
-            errores.push(`Error al actualizar gráfico de comparativa de tipos: ${error.message}`);
-        }
 
         try {
             actualizarGraficoEvolucionMensual(data.evolucionMensual);
@@ -629,23 +546,17 @@
             errores.push(`Error al actualizar gráfico circular de salas: ${error.message}`);
         }
 
-        try {
-            actualizarGraficoReservasTipoEspacio(data.reservasPorTipo);
-        } catch (error) {
-            errores.push(`Error al actualizar gráfico de reservas por tipo: ${error.message}`);
-        }
 
-        // Actualizar tablas con manejo individual
-        try {
-            actualizarTablaReservasCanceladas(data.reservasCanceladas);
-        } catch (error) {
-            errores.push(`Error al actualizar tabla de reservas canceladas: ${error.message}`);
-        }
 
+
+
+        // Actualizar horarios de la semana si hay datos
         try {
-            actualizarTablaReservasActivas(data.reservasSinDevolucion);
+            if (data.horariosAgrupados) {
+                actualizarHorariosSemanaConDatos(data.horariosAgrupados);
+            }
         } catch (error) {
-            errores.push(`Error al actualizar tabla de reservas activas: ${error.message}`);
+            errores.push(`Error al actualizar horarios de la semana: ${error.message}`);
         }
 
         // Ocultar indicadores de carga
@@ -666,17 +577,125 @@
 
     // Función para actualizar todos los KPIs
     function actualizarKPIs(data) {
+        if (!data) return;
+
         const kpis = [
-            { id: 'ocupacion-semanal', valor: data.ocupacionSemanal + '%' },
-            { id: 'ocupacion-mensual', valor: data.ocupacionMensual + '%' },
-            { id: 'usuarios-sin-escaneo', valor: data.usuariosSinEscaneo + ' usuarios sin registrar asistencia hoy' },
-            { id: 'horas-utilizadas', valor: data.horasUtilizadas.utilizadas + ' / ' + data.horasUtilizadas.disponibles },
-            { id: 'salas-ocupadas', valor: data.salasOcupadas.ocupadas + ' / ' + data.salasOcupadas.libres }
+            { id: 'ocupacion-semanal', valor: (data.ocupacionSemanal || 0) + '%' },
+            { id: 'ocupacion-mensual', valor: (data.ocupacionMensual || 0) + '%' },
+            { id: 'usuarios-sin-escaneo', valor: (data.usuariosSinEscaneo || 0) + ' usuarios sin registrar asistencia hoy' },
+            { id: 'horas-utilizadas', valor: (data.horasUtilizadas?.utilizadas || 0) + ' / ' + (data.horasUtilizadas?.disponibles || 0) },
+            { id: 'salas-ocupadas', valor: (data.salasOcupadas?.ocupadas || 0) + ' / ' + (data.salasOcupadas?.libres || 0) }
         ];
 
         kpis.forEach(kpi => {
             actualizarKPI(kpi.id, kpi.valor);
         });
+    }
+
+    // ========================================
+    // FUNCIONES DE DETECCIÓN DE MÓDULO
+    // ========================================
+
+    function verificarCambioModulo() {
+        const nuevoModulo = obtenerModuloActual();
+
+        if (nuevoModulo !== moduloActual) {
+            if (moduloActual !== null) {
+                console.log(`Cambio de módulo detectado: ${moduloActual} → ${nuevoModulo}`);
+                mostrarNotificacion(`Módulo ${nuevoModulo} iniciado`, 'success', 2000);
+                actualizarHorariosSemana();
+                actualizarIndicadorModuloInfo(nuevoModulo);
+            }
+            moduloActual = nuevoModulo;
+        }
+    }
+
+    function actualizarIndicadorModuloInfo(modulo) {
+        const textoModulo = document.getElementById('modulo-actual-text');
+        if (!textoModulo) return;
+
+        const diaActual = obtenerDiaActual();
+        const horarios = window.horariosModulos[diaActual];
+
+        if (modulo && horarios && horarios[modulo]) {
+            const horario = horarios[modulo];
+            const inicio = horario.inicio.substring(0, 5);
+            const fin = horario.fin.substring(0, 5);
+            textoModulo.textContent = `Módulo ${modulo} (${inicio} - ${fin})`;
+        } else {
+            textoModulo.textContent = 'No hay módulo disponible';
+        }
+    }
+
+    function actualizarDiaActual() {
+        const textoDia = document.getElementById('dia-actual-text');
+        if (!textoDia) return;
+
+        const diaActual = obtenerDiaActual();
+        const diasCapitalizados = {
+            'lunes': 'Lunes',
+            'martes': 'Martes',
+            'miercoles': 'Miércoles',
+            'jueves': 'Jueves',
+            'viernes': 'Viernes',
+            'sabado': 'Sábado',
+            'domingo': 'Domingo'
+        };
+
+        textoDia.textContent = diasCapitalizados[diaActual] || diaActual;
+    }
+
+    function iniciarVerificacionModulo() {
+        // Verificar inmediatamente
+        verificarCambioModulo();
+
+        // Verificar cada 30 segundos
+        moduloCheckInterval = setInterval(verificarCambioModulo, 30000);
+        console.log('Verificación de módulos iniciada');
+    }
+
+    function detenerVerificacionModulo() {
+        if (moduloCheckInterval) {
+            clearInterval(moduloCheckInterval);
+            moduloCheckInterval = null;
+            console.log('Verificación de módulos detenida');
+        }
+    }
+
+    function actualizarHorariosSemana() {
+        const contenedor = document.getElementById('horarios-semana-content');
+        if (!contenedor) return;
+
+        // Mostrar indicador de carga
+        contenedor.innerHTML = '<div class="flex items-center justify-center p-8"><div class="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin"></div><span class="ml-2">Actualizando horarios...</span></div>';
+
+        fetch('/dashboard/horarios-semana')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al obtener horarios de la semana');
+                }
+                return response.text();
+            })
+            .then(html => {
+                contenedor.innerHTML = html;
+                console.log('Horarios de la semana actualizados');
+            })
+            .catch(error => {
+                console.error('Error al actualizar horarios:', error);
+                contenedor.innerHTML = '<div class="text-center text-red-500 p-4">Error al cargar los horarios</div>';
+                mostrarNotificacion('Error al actualizar horarios de la semana', 'error');
+            });
+    }
+
+    function actualizarHorariosSemanaConDatos(horariosAgrupados) {
+        const contenedor = document.getElementById('horarios-semana-content');
+        if (!contenedor) return;
+
+        // Actualizar el contenido con los datos recibidos
+        console.log('Datos de horarios recibidos:', horariosAgrupados);
+
+        // Por ahora, llamamos a la función que hace fetch para obtener el HTML actualizado
+        actualizarHorariosSemana();
     }
 
     // ========================================
@@ -694,17 +713,7 @@
         }
     }
 
-    function actualizarOcupacionDiaria(ocupacionDiaria) {
-        const contenedor = document.querySelector('[data-widget="ocupacion-diaria"]');
-        if (contenedor && ocupacionDiaria) {
-            let html = '';
-            for (const [dia, porcentaje] of Object.entries(ocupacionDiaria)) {
-                const color = porcentaje > 70 ? 'text-green-700' : (porcentaje > 50 ? 'text-yellow-500' : 'text-red-500');
-                html += `<span class="font-bold ${color}">${dia} ${porcentaje}%</span>`;
-            }
-            contenedor.innerHTML = html;
-        }
-    }
+
 
     function actualizarGraficoBarras(usoPorDia) {
         if (window.graficoBarras && usoPorDia) {
@@ -716,37 +725,9 @@
         }
     }
 
-    function actualizarGraficoTopSalas(topSalas) {
-        if (window.graficoTopSalas && topSalas) {
-            window.graficoTopSalas.data.labels = topSalas.map(sala => sala.nombre);
-            window.graficoTopSalas.data.datasets[0].data = topSalas.map(sala => sala.uso);
-            window.graficoTopSalas.update('active');
-        }
-    }
 
-    function actualizarGraficoTopAsignaturas(topAsignaturas) {
-        if (window.graficoTopAsignaturas && topAsignaturas) {
-            window.graficoTopAsignaturas.data.labels = topAsignaturas.map(asignatura => asignatura.nombre);
-            window.graficoTopAsignaturas.data.datasets[0].data = topAsignaturas.map(asignatura => asignatura.uso);
-            window.graficoTopAsignaturas.update('active');
-        }
-    }
 
-    function actualizarGraficoComparativaTipos(comparativaTipos) {
-        if (window.graficoComparativaTipos && comparativaTipos) {
-            window.graficoComparativaTipos.data.labels = comparativaTipos.map(tipo => tipo.nombre);
-            window.graficoComparativaTipos.data.datasets[0].data = comparativaTipos.map(tipo => tipo.total);
-            window.graficoComparativaTipos.update('active');
-        }
-    }
 
-    function actualizarGraficoReservasTipoEspacio(reservasPorTipo) {
-        if (window.graficoReservasTipoEspacio && reservasPorTipo) {
-            window.graficoReservasTipoEspacio.data.labels = reservasPorTipo.map(tipo => tipo.nombre);
-            window.graficoReservasTipoEspacio.data.datasets[0].data = reservasPorTipo.map(tipo => tipo.total);
-            window.graficoReservasTipoEspacio.update('active');
-        }
-    }
 
     function actualizarGraficoEvolucionMensual(evolucionMensual) {
         if (window.graficoMensual && evolucionMensual) {
@@ -758,63 +739,22 @@
 
     function actualizarGraficoCircularSalas(salasOcupadas) {
         if (window.graficoCircularSalas && salasOcupadas) {
-            window.graficoCircularSalas.data.datasets[0].data = [salasOcupadas.ocupadas, salasOcupadas.libres];
+            const ocupadas = salasOcupadas.ocupadas || 0;
+            const libres = salasOcupadas.libres || 0;
+
+            window.graficoCircularSalas.data.datasets[0].data = [ocupadas, libres];
             window.graficoCircularSalas.update('active');
+
+            // Actualizar el elemento HTML que muestra las salas ocupadas
+            const elementoSalas = document.getElementById('salas-ocupadas');
+            if (elementoSalas) {
+                const total = ocupadas + libres;
+                elementoSalas.innerHTML = `${ocupadas} <span class="text-gray-400"> de </span> ${total} <span class="text-gray-400"> en total</span>`;
+            }
         }
     }
 
-    function actualizarTablaReservasCanceladas(reservasCanceladas) {
-        const tbody = document.querySelector('#tabla-reservas-canceladas tbody');
-        if (tbody) {
-            let html = '';
-            if (reservasCanceladas && reservasCanceladas.length > 0) {
-                reservasCanceladas.forEach(reserva => {
-                    html += `
-                        <tr class="bg-white dark:bg-dark-eval-1">
-                            <td class="border">${reserva.usuario}</td>
-                            <td class="border">${reserva.espacio}</td>
-                            <td class="border">${reserva.hora}</td>
-                            <td class="border">${reserva.hora_planificada ?? '-'}</td>
-                            <td class="border">No utilizado</td>
-                        </tr>
-                    `;
-                });
-            } else {
-                html = '<tr><td colspan="4" class="text-center text-gray-500 border">No hay reservas canceladas</td></tr>';
-            }
-            tbody.innerHTML = html;
-        }
-    }
 
-    function actualizarTablaReservasActivas(reservas) {
-        const tbody = document.querySelector('#tabla-reservas-activas tbody');
-        if (tbody) {
-            let html = '';
-            if (reservas && reservas.length > 0) {
-                reservas.forEach(reserva => {
-                    const fecha = new Date(reserva.fecha_reserva);
-                    const formattedDate = new Date(fecha.valueOf() + fecha.getTimezoneOffset() * 60000).toLocaleDateString('es-CL');
-                    html += `
-                        <tr class="bg-white dark:bg-dark-eval-1">
-                            <td class="border">${reserva.user.name}</td>
-                            <td class="border">${reserva.espacio.nombre_espacio} (${reserva.espacio.id_espacio})</td>
-                            <td class="border">${formattedDate}</td>
-                            <td class="border">${reserva.hora}</td>
-                        </tr>
-                    `;
-                });
-            } else {
-                html = `
-                    <tr class="bg-white dark:bg-dark-eval-1">
-                        <td colspan="4" class="p-4 text-center text-gray-500">
-                            No hay reservas activas sin devolución en este momento.
-                        </td>
-                    </tr>
-                `;
-            }
-            tbody.innerHTML = html;
-        }
-    }
 
     // ========================================
     // SISTEMA DE AUTO-REFRESH MEJORADO
@@ -832,7 +772,6 @@
         }, 30000);
 
         console.log('Auto-refresh iniciado cada 30 segundos');
-        actualizarEstadoBotonAutoRefresh();
     }
 
     function detenerAutoRefresh() {
@@ -841,36 +780,9 @@
             autoRefreshInterval = null;
             console.log('Auto-refresh detenido');
         }
-        actualizarEstadoBotonAutoRefresh();
     }
 
-    function toggleAutoRefresh() {
-        autoRefreshEnabled = !autoRefreshEnabled;
 
-        if (autoRefreshEnabled) {
-            iniciarAutoRefresh();
-        } else {
-            detenerAutoRefresh();
-        }
-
-        actualizarEstadoBotonAutoRefresh();
-    }
-
-    function actualizarEstadoBotonAutoRefresh() {
-        const boton = document.getElementById('toggle-auto-refresh');
-        const icono = document.getElementById('auto-refresh-icon');
-        const texto = document.getElementById('auto-refresh-text');
-
-        if (autoRefreshEnabled && autoRefreshInterval) {
-            boton.className = 'refresh-button flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors';
-            icono.textContent = '🔄';
-            texto.textContent = 'Auto-refresh ON';
-        } else {
-            boton.className = 'refresh-button flex items-center gap-2 px-3 py-2 text-sm font-medium text-white bg-gray-500 rounded-lg hover:bg-gray-600 transition-colors';
-            icono.textContent = '⏸️';
-            texto.textContent = 'Auto-refresh OFF';
-        }
-    }
 
     function actualizarDashboard() {
         mostrarIndicadorActualizacion();
@@ -934,59 +846,7 @@
         });
     }
 
-    // ========================================
-    // FUNCIÓN DE CAMBIO DE PISO MEJORADA
-    // ========================================
 
-    function cambiarPiso(piso) {
-        const selector = document.getElementById('piso-selector');
-        const loadingIndicator = document.getElementById('piso-loading');
-
-        selector.disabled = true;
-        loadingIndicator.classList.remove('hidden');
-        mostrarCargando();
-
-        fetch('/dashboard/set-piso', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify({ piso: piso })
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Error en la respuesta del servidor');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    return fetch('/dashboard/widget-data');
-                } else {
-                    throw new Error('Error al cambiar piso: ' + (data.message || 'Error desconocido'));
-                }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Error al obtener datos de widgets');
-                }
-                return response.json();
-            })
-            .then(widgetData => {
-                actualizarWidgets(widgetData);
-                selector.disabled = false;
-                loadingIndicator.classList.add('hidden');
-                mostrarNotificacion('Piso cambiado exitosamente', 'success');
-            })
-            .catch(error => {
-                console.error('Error en la petición:', error);
-                selector.disabled = false;
-                loadingIndicator.classList.add('hidden');
-                ocultarCargando();
-                mostrarNotificacion('Error al cambiar piso: ' + error.message, 'error');
-            });
-    }
 
     // ========================================
     // INICIALIZACIÓN DE GRÁFICOS
@@ -1020,105 +880,7 @@
         }
     });
 
-    // Gráfico de barras: Top Salas
-    window.graficoTopSalas = new Chart(document.getElementById('grafico-top-salas'), {
-        type: 'bar',
-        data: {
-            labels: {!! json_encode($topSalas->pluck('nombre')) !!},
-            datasets: [{
-                label: 'Uso',
-                data: {!! json_encode($topSalas->pluck('uso')) !!},
-                backgroundColor: 'rgba(16, 185, 129, 0.7)'
-            }]
-        },
-        options: {
-            responsive: false,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                x: {
-                    ticks: {
-                        minRotation: 90,
-                        maxRotation: 90
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Cantidad de reservas'
-                    }
-                }
-            }
-        }
-    });
 
-    // Gráfico de barras: Top Asignaturas
-    window.graficoTopAsignaturas = new Chart(document.getElementById('grafico-top-asignaturas'), {
-        type: 'bar',
-        data: {
-            labels: {!! json_encode($topAsignaturas->pluck('nombre')) !!},
-            datasets: [{
-                label: 'Uso',
-                data: {!! json_encode($topAsignaturas->pluck('uso')) !!},
-                backgroundColor: 'rgba(251, 191, 36, 0.7)'
-            }]
-        },
-        options: {
-            responsive: false,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                x: {
-                    ticks: {
-                        minRotation: 45,
-                        maxRotation: 45
-                    }
-                },
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Cantidad de planificaciones'
-                    }
-                }
-            }
-        }
-    });
-
-    // Gráfico de áreas: Comparativa tipos
-    window.graficoComparativaTipos = new Chart(document.getElementById('grafico-comparativa-tipos'), {
-        type: 'doughnut',
-        data: {
-            labels: {!! json_encode($comparativaTipos->pluck('nombre')) !!},
-            datasets: [{
-                data: {!! json_encode($comparativaTipos->pluck('total')) !!},
-                backgroundColor: [
-                    'rgba(59, 130, 246, 0.7)',
-                    'rgba(16, 185, 129, 0.7)',
-                    'rgba(251, 191, 36, 0.7)',
-                    'rgba(239, 68, 68, 0.7)',
-                    'rgba(168, 85, 247, 0.7)',
-                    'rgba(236, 72, 153, 0.7)'
-                ]
-            }]
-        },
-        options: {
-            responsive: false,
-            plugins: {
-                legend: { position: 'bottom' },
-                tooltip: {
-                    callbacks: {
-                        label: function (context) {
-                            return context.label + ': ' + context.parsed + '%';
-                        }
-                    }
-                }
-            }
-        }
-    });
 
     // Gráfico de línea: Evolución mensual
     window.graficoMensual = new Chart(document.getElementById('grafico-mensual'), {
@@ -1173,59 +935,73 @@
                 tooltip: {
                     callbacks: {
                         label: function (context) {
-                            return context.label + ': ' + context.parsed;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const porcentaje = ((context.parsed / total) * 100).toFixed(1);
+                            return context.label + ': ' + context.parsed + ' (' + porcentaje + '%)';
+                        },
+                        afterLabel: function (context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const porcentajeOcupacion = ((context.dataset.data[0] / total) * 100).toFixed(1);
+                            return 'Porcentaje de ocupación del día: ' + porcentajeOcupacion + '%';
                         }
                     }
                 }
             }
-        }
+        },
+        plugins: [{
+            id: 'centerText',
+            beforeDraw: function (chart) {
+                const { ctx, chartArea: { left, top, width, height } } = chart;
+                ctx.save();
+
+                const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                const ocupadas = chart.data.datasets[0].data[0];
+                const porcentajeOcupacion = total > 0 ? ((ocupadas / total) * 100).toFixed(1) : '0';
+
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.font = 'bold 24px Arial';
+                ctx.fillStyle = '#374151';
+                ctx.fillText(porcentajeOcupacion + '%', left + width / 2, top + height / 2 - 10);
+
+                ctx.font = '14px Arial';
+                ctx.fillStyle = '#6B7280';
+                ctx.fillText('Ocupación', left + width / 2, top + height / 2 + 15);
+
+                ctx.restore();
+            }
+        }]
     });
 
-    // Gráfico de barras: Reservas por tipo de espacio
-    window.graficoReservasTipoEspacio = new Chart(document.getElementById('grafico-reservas-tipo-espacio'), {
-        type: 'bar',
-        data: {
-            labels: {!! json_encode($reservasPorTipo->pluck('nombre')) !!},
-            datasets: [{
-                label: 'Reservas',
-                data: {!! json_encode($reservasPorTipo->pluck('total')) !!},
-                backgroundColor: 'rgba(59, 130, 246, 0.7)'
-            }]
-        },
-        options: {
-            responsive: false,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Cantidad de reservas'
-                    }
-                }
-            }
-        }
-    });
+
 
     // ========================================
     // INICIALIZACIÓN Y EVENT LISTENERS
     // ========================================
 
     document.addEventListener('DOMContentLoaded', function () {
-        // Configurar event listeners
-        document.getElementById('toggle-auto-refresh').addEventListener('click', toggleAutoRefresh);
-
         // Iniciar auto-refresh
         iniciarAutoRefresh();
+
+        // Iniciar verificación de módulos
+        iniciarVerificacionModulo();
+
+        // Inicializar indicador del módulo actual
+        const moduloInicial = obtenerModuloActual();
+        actualizarIndicadorModuloInfo(moduloInicial);
+        moduloActual = moduloInicial;
+
+        // Inicializar día actual
+        actualizarDiaActual();
 
         // Detener auto-refresh cuando la página no esté visible
         document.addEventListener('visibilitychange', function () {
             if (document.hidden) {
                 detenerAutoRefresh();
+                detenerVerificacionModulo();
             } else if (autoRefreshEnabled) {
                 iniciarAutoRefresh();
+                iniciarVerificacionModulo();
             }
         });
 
@@ -1246,6 +1022,23 @@
             });
         }
     });
+
+    // Modal fijo de reloj digital y módulo actual
+    function actualizarModalReloj() {
+        const ahora = new Date();
+        // Hora en formato 24h
+        const hora = ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        document.getElementById('modal-hora-actual').textContent = hora;
+        // Módulo actual
+        let modulo = '-';
+        if (typeof obtenerModuloActual === 'function') {
+            const moduloNum = obtenerModuloActual();
+            if (moduloNum) modulo = moduloNum;
+        }
+        document.getElementById('modal-modulo-actual').textContent = 'Módulo actual: ' + modulo;
+    }
+    actualizarModalReloj();
+    setInterval(actualizarModalReloj, 1000);
 </script>
 
 <!-- Estilos adicionales -->

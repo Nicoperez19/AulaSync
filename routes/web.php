@@ -53,6 +53,7 @@ Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::get('/notifications/unread-count', [NotificationController::class, 'getUnreadCount'])->name('notifications.unread-count');
     Route::get('/notifications/recent', [NotificationController::class, 'getRecentNotifications'])->name('notifications.recent');
     Route::get('/notifications/filter', [NotificationController::class, 'filter'])->name('notifications.filter');
+    Route::get('/notifications/json', [\App\Http\Controllers\NotificationController::class, 'json'])->middleware('auth')->name('notifications.json');
 
     Route::get('/user/user_index', [UserController::class, 'index'])->name('users.index');
     Route::post('/user/user_store', [UserController::class, 'store'])->name('users.add');
@@ -218,5 +219,7 @@ Route::post('/dashboard/set-piso', [DashboardController::class, 'setPiso'])->nam
 Route::get('/dashboard/widget-data', [DashboardController::class, 'getWidgetData'])->name('dashboard.widgetData');
 Route::get('/dashboard/utilizacion-tipo-espacio', [App\Http\Controllers\DashboardController::class, 'utilizacionTipoEspacioAjax'])->name('dashboard.utilizacion_tipo_espacio');
 Route::get('/dashboard/no-utilizadas-dia', [App\Http\Controllers\DashboardController::class, 'noUtilizadasDiaAjax']);
+Route::get('/dashboard/horarios-actual', [App\Http\Controllers\DashboardController::class, 'horariosActualAjax'])->name('dashboard.horarios-actual');
+Route::get('/dashboard/horarios-semana', [App\Http\Controllers\DashboardController::class, 'horariosSemana'])->name('dashboard.horarios-semana');
 
 require __DIR__ . '/auth.php';

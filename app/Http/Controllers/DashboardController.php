@@ -42,8 +42,6 @@ class DashboardController extends Controller
 
         // Obtener datos para los gráficos
         $usoPorDia = $this->obtenerUsoPorDia($facultad, $piso);
-        $topSalas = $this->obtenerTopSalas($facultad, $piso);
-        $topAsignaturas = $this->obtenerTopAsignaturas($facultad, $piso);
         $comparativaTipos = $this->obtenerComparativaTipos($facultad, $piso);
         $evolucionMensual = $this->obtenerEvolucionMensual($facultad, $piso);
 
@@ -100,6 +98,13 @@ class DashboardController extends Controller
         // Total de reservas hoy
         $totalReservasHoy = \App\Models\Reserva::whereDate('fecha_reserva', today())->count();
 
+        // KPI: Sala más utilizada
+        $salaMasUtilizada = \App\Models\Reserva::select('id_espacio', DB::raw('count(*) as total'))
+            ->groupBy('id_espacio')
+            ->orderByDesc('total')
+            ->with('espacio')
+            ->first();
+
         return view('layouts.dashboard', compact(
             'ocupacionSemanal',
             'ocupacionDiaria',
@@ -108,11 +113,9 @@ class DashboardController extends Controller
             'horasUtilizadas',
             'salasOcupadas',
             'usoPorDia',
-            'topSalas',
-            'topAsignaturas',
             'comparativaTipos',
-            'reservasPorTipo',
             'evolucionMensual',
+            'reservasPorTipo',
             'reservasCanceladas',
             'horariosAgrupados',
             'facultad',
@@ -129,7 +132,8 @@ class DashboardController extends Controller
             'modulosDisponibles',
             'accesosActuales',
             'reservasNoUtilizadas',
-            'totalReservasHoy'
+            'totalReservasHoy',
+            'salaMasUtilizada'
         ));
     }
 
@@ -276,61 +280,6 @@ class DashboardController extends Controller
         }
         
         return $usoPorDia;
-    }
-
-    private function obtenerTopSalas($facultad, $piso)
-    {
-        $inicioSemana = Carbon::now()->startOfWeek();
-        $finSemana = Carbon::now()->endOfWeek();
-        
-        return Espacio::withCount(['reservas' => function($query) use ($inicioSemana, $finSemana) {
-            $query->whereIn('estado', ['activa', 'finalizada']) // Incluir tanto activas como finalizadas
-                  ->whereBetween('fecha_reserva', [$inicioSemana, $finSemana]);
-        }])
-        ->whereHas('piso', function($query) use ($piso) {
-            if ($piso) {
-                $query->where('numero_piso', $piso);
-            }
-        })
-        ->orderBy('reservas_count', 'desc')
-        ->take(3)
-        ->get()
-        ->map(function($espacio) {
-            return [
-                'nombre' => $espacio->nombre_espacio,
-                'uso' => $espacio->reservas_count
-            ];
-        });
-    }
-
-    private function obtenerTopAsignaturas($facultad, $piso)
-    {
-        $inicioSemana = Carbon::now()->startOfWeek();
-        $finSemana = Carbon::now()->endOfWeek();
-        $diasSemana = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        
-        return Asignatura::withCount(['planificaciones' => function($query) use ($piso, $diasSemana) {
-            $query->whereHas('modulo', function($q) use ($diasSemana) {
-                $q->whereIn('dia', $diasSemana);
-            })
-            ->whereHas('espacio', function($q) use ($piso) {
-                if ($piso) {
-                    $q->whereHas('piso', function($q) use ($piso) {
-                        $q->where('numero_piso', $piso);
-                    });
-                }
-            });
-        }])
-        ->orderBy('planificaciones_count', 'desc')
-        ->take(5)
-        ->get()
-        ->map(function($asignatura) {
-            return [
-                'nombre' => $asignatura->nombre_asignatura,
-                'uso' => $asignatura->planificaciones_count,
-                'profesor' => $asignatura->user->name ?? 'No asignado'
-            ];
-        });
     }
 
     private function obtenerComparativaTipos($facultad, $piso)
@@ -542,17 +491,6 @@ class DashboardController extends Controller
         });
     }
 
-    public function setPiso(Request $request)
-    {
-        $request->validate([
-            'piso' => 'nullable|integer'
-        ]);
-
-        session(['piso' => $request->piso]);
-
-        return response()->json(['success' => true]);
-    }
-
     public function getWidgetData(Request $request)
     {
         $piso = $request->session()->get('piso');
@@ -568,8 +506,6 @@ class DashboardController extends Controller
 
         // Obtener datos para los gráficos
         $usoPorDia = $this->obtenerUsoPorDia($facultad, $piso);
-        $topSalas = $this->obtenerTopSalas($facultad, $piso);
-        $topAsignaturas = $this->obtenerTopAsignaturas($facultad, $piso);
         $comparativaTipos = $this->obtenerComparativaTipos($facultad, $piso);
         $evolucionMensual = $this->obtenerEvolucionMensual($facultad, $piso);
 
@@ -592,11 +528,9 @@ class DashboardController extends Controller
             'horasUtilizadas' => $horasUtilizadas,
             'salasOcupadas' => $salasOcupadas,
             'usoPorDia' => $usoPorDia,
-            'topSalas' => $topSalas,
-            'topAsignaturas' => $topAsignaturas,
             'comparativaTipos' => $comparativaTipos,
-            'reservasPorTipo' => $reservasPorTipo,
             'evolucionMensual' => $evolucionMensual,
+            'reservasPorTipo' => $reservasPorTipo,
             'reservasCanceladas' => $reservasCanceladas,
             'horariosAgrupados' => $horariosAgrupados,
             'reservasSinDevolucion' => $reservasSinDevolucion,
@@ -801,25 +735,12 @@ class DashboardController extends Controller
 
     public function utilizacionTipoEspacioAjax(Request $request)
     {
-        $horariosModulos = [
-            'lunes' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
-            'martes' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
-            'miercoles' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
-            'jueves' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
-            'viernes' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
-        ];
-        $diaActual = strtolower(['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'][date('w')]);
-        $modulo = $request->input('modulo');
-        // Calcular utilización por tipo de espacio para el día y módulo
-        // Si no hay lógica real, usar datos de ejemplo para evitar error 500
-        $comparativaTipos = [
-            ['tipo' => 'Sala de Clases', 'porcentaje' => 0, 'comparativa' => 'Sin variación'],
-            ['tipo' => 'Laboratorio', 'porcentaje' => 0, 'comparativa' => 'Sin variación'],
-            ['tipo' => 'Auditorio', 'porcentaje' => 0, 'comparativa' => 'Sin variación'],
-            ['tipo' => 'Sala de Estudio', 'porcentaje' => 0, 'comparativa' => 'Sin variación'],
-            ['tipo' => 'Taller', 'porcentaje' => 0, 'comparativa' => 'Sin variación'],
-            ['tipo' => 'Sala de Reuniones', 'porcentaje' => 0, 'comparativa' => 'Sin variación'],
-        ];
+        $piso = $request->session()->get('piso');
+        $facultad = 'IT_TH';
+        
+        // Usar la misma lógica que el método principal
+        $comparativaTipos = $this->obtenerComparativaTipos($facultad, $piso);
+        
         return view('partials.tabla_utilizacion_tipo_espacio', compact('comparativaTipos'));
     }
 
@@ -861,5 +782,133 @@ class DashboardController extends Controller
             }
         }
         return view('partials.tabla_no_utilizadas_dia', compact('noUtilizadasDia'))->render();
+    }
+
+    public function horariosActualAjax(Request $request)
+    {
+        $diaActual = strtolower([
+            'domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'
+        ][date('w')]);
+        $horaAhora = date('H:i:s');
+        $moduloActualNum = null;
+        $moduloActualHorario = null;
+        $horariosModulos = [
+            'lunes' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
+            ],
+            'martes' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
+            ],
+            'miercoles' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
+            ],
+            'jueves' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
+            ],
+            'viernes' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
+            ],
+        ];
+        if (isset($horariosModulos[$diaActual])) {
+            foreach ($horariosModulos[$diaActual] as $num => $horario) {
+                if ($horaAhora >= $horario['inicio'] && $horaAhora < $horario['fin']) {
+                    $moduloActualNum = $num;
+                    $moduloActualHorario = $horario;
+                    break;
+                }
+            }
+        }
+        // Obtener los usuarios asignados por espacio para el módulo actual
+        $asignaciones = \App\Models\Planificacion_Asignatura::with(['espacio.piso', 'asignatura.user'])
+            ->whereHas('modulo', function($q) use ($diaActual, $moduloActualNum) {
+                $q->where('dia', $diaActual)->where('numero_modulo', $moduloActualNum);
+            })
+            ->get();
+        return view('partials.horarios_modulo_actual', [
+            'diaActual' => $diaActual,
+            'moduloActualNum' => $moduloActualNum,
+            'moduloActualHorario' => $moduloActualHorario,
+            'asignaciones' => $asignaciones
+        ])->render();
+    }
+
+    public function horariosSemana(Request $request)
+    {
+        $piso = $request->session()->get('piso');
+        $facultad = 'IT_TH';
+        
+        $horariosAgrupados = $this->obtenerHorariosAgrupados($facultad, $piso);
+        
+        return view('layouts.partials.horarios-semana', compact('horariosAgrupados'));
     }
 } 

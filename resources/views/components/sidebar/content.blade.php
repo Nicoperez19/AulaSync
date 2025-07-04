@@ -16,7 +16,7 @@
         </x-slot>
     </x-sidebar.link>
 
-    <!-- Horarios -->
+    <!-- Horarios Espacios -->
     <x-sidebar.link title="Horarios por Espacios"
         href="{{ $sede ? route('espacios.show', $sede->id_sede) : route('dashboard') }}"
         :isActive="request()->routeIs('espacios.show')">
@@ -25,6 +25,21 @@
         </x-slot>
     </x-sidebar.link>
 
+    <!-- Horarios Profesores -->
+    <x-sidebar.link title="Horarios Profesores" href="{{ route('horarios.index') }}"
+        :isActive="request()->routeIs('horarios.index')">
+        <x-slot name="icon">
+            <x-icons.dashboard class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
+        </x-slot>
+    </x-sidebar.link>
+
+    <!-- Carga Masiva -->
+
+    <x-sidebar.link title="Carga Masiva" href="{{ route('data.index') }}" :isActive="request()->routeIs('data.index')">
+        <x-slot name="icon">
+            <x-icons.upload class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
+        </x-slot>
+    </x-sidebar.link>
     <!-- Reportería -->
     <x-sidebar.dropdown title="Reportes" :active="Str::startsWith(request()->route()->uri(), 'reporteria')">
         <x-slot name="icon">
@@ -37,25 +52,11 @@
             :isActive="request()->routeIs('reporteria.tipo-espacio')" />
         <x-sidebar.sublink title="Por unidad académica" href="{{ route('reporteria.unidad-academica') }}"
             :isActive="request()->routeIs('reporteria.unidad-academica')" />
-        <x-sidebar.sublink title="Utilización de espacios" href="{{ route('reporteria.utilizacion_por_espacio') }}"
-            :isActive="request()->routeIs('reporteria.utilizacion_por_espacio')" />
     </x-sidebar.dropdown>
 
 
-    <!-- Horarios Profesores -->
-    <x-sidebar.link title="Horarios Profesores" href="{{ route('horarios.index') }}"
-        :isActive="request()->routeIs('horarios.index')">
-        <x-slot name="icon">
-            <x-icons.dashboard class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
-        </x-slot>
-    </x-sidebar.link>
 
 
-    <x-sidebar.link title="Carga Masiva" href="{{ route('data.index') }}" :isActive="request()->routeIs('data.index')">
-        <x-slot name="icon">
-            <x-icons.upload class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
-        </x-slot>
-    </x-sidebar.link>
 
     @role('Administrador')
     <x-sidebar.dropdown title="Mantenedores" :active="Str::startsWith(request()->route()->uri(), 'users')">

@@ -218,4 +218,15 @@ class NotificationController extends Controller
             'expires_at' => Carbon::now()->addDays(7),
         ]);
     }
+
+    public function json(Request $request)
+    {
+        $user = Auth::user();
+        $notifications = Notification::where('user_run', $user->run)
+            ->active()
+            ->orderBy('created_at', 'desc')
+            ->limit(20)
+            ->get();
+        return response()->json($notifications);
+    }
 }
