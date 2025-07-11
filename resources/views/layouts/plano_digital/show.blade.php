@@ -704,32 +704,32 @@
         // Esta función procesa los códigos QR escaneados y maneja la lógica de reservas
         async function handleScan(event) {
             if (event.key === 'Enter') {
-                if (esperandoUsuario) {
+            if (esperandoUsuario) {
                     // Procesar QR de usuario (formato: RUN¿12345678')
-                    const match = bufferQR.match(/RUN¿(\d+)/);
-                    if (match) {
+                const match = bufferQR.match(/RUN¿(\d+)/);
+                if (match) {
                         usuarioEscaneado = match[1];
                         const usuarioInfo = await verificarUsuario(usuarioEscaneado);
-
-                        if (usuarioInfo && usuarioInfo.verificado) {
+                    
+                    if (usuarioInfo && usuarioInfo.verificado) {
                             document.getElementById('qr-status').innerHTML = 'Usuario verificado. Escanee el espacio.';
-                            document.getElementById('run-escaneado').textContent = usuarioInfo.usuario.run;
-                            document.getElementById('nombre-usuario').textContent = usuarioInfo.usuario.nombre;
-                            esperandoUsuario = false;
-                        } else {
-                            Swal.fire('Error', usuarioInfo?.mensaje || 'Error de verificación', 'error');
-                            document.getElementById('qr-status').innerHTML = usuarioInfo?.mensaje || 'Error de verificación';
-                        }
+                        document.getElementById('run-escaneado').textContent = usuarioInfo.usuario.run;
+                        document.getElementById('nombre-usuario').textContent = usuarioInfo.usuario.nombre;
+                        esperandoUsuario = false;
                     } else {
-                        Swal.fire('Error', 'RUN inválido', 'error');
-                        document.getElementById('qr-status').innerHTML = 'RUN inválido';
+                        Swal.fire('Error', usuarioInfo?.mensaje || 'Error de verificación', 'error');
+                        document.getElementById('qr-status').innerHTML = usuarioInfo?.mensaje || 'Error de verificación';
                     }
                 } else {
+                    Swal.fire('Error', 'RUN inválido', 'error');
+                    document.getElementById('qr-status').innerHTML = 'RUN inválido';
+                }
+            } else {
                     // Procesar QR de espacio (formato: TH'L01)
-                    const espacioProcesado = bufferQR.replace(/'/g, '-');
-                    const espacioInfo = await verificarEspacio(espacioProcesado);
-
-                    if (espacioInfo?.verificado) {
+                const espacioProcesado = bufferQR.replace(/'/g, '-');
+                const espacioInfo = await verificarEspacio(espacioProcesado);
+                
+                if (espacioInfo?.verificado) {
                         if (espacioInfo.disponible) {
                             // Reservar directamente, sin confirmación
                             const reserva = await crearReserva(usuarioEscaneado, espacioProcesado);
@@ -752,14 +752,14 @@
                             // Espacio ocupado - mostrar mensaje informativo
                             Swal.fire('Espacio Ocupado', `El espacio ${espacioInfo.espacio.nombre} está actualmente ocupado.`, 'info');
                             document.getElementById('qr-status').innerHTML = 'Espacio ocupado';
-                        }
-                    } else {
-                        Swal.fire('Error', espacioInfo?.mensaje || 'Error al verificar espacio', 'error');
-                        document.getElementById('qr-status').innerHTML = espacioInfo?.mensaje || 'Error al verificar espacio';
                     }
-                    esperandoUsuario = true;
+                } else {
+                    Swal.fire('Error', espacioInfo?.mensaje || 'Error al verificar espacio', 'error');
+                    document.getElementById('qr-status').innerHTML = espacioInfo?.mensaje || 'Error al verificar espacio';
                 }
-                bufferQR = '';
+                esperandoUsuario = true;
+            }
+            bufferQR = '';
                 event.target.value = '';
             } else if (event.key.length === 1) {
                 bufferQR += event.key;
@@ -1487,10 +1487,10 @@
 
         // Función para resetear el estado de devolución
         function resetearEstadoDevolucion() {
-            esperandoUsuarioDevolucion = true;
-            usuarioEscaneadoDevolucion = null;
-            espacioEscaneadoDevolucion = null;
-            bufferQRDevolucion = '';
+                    esperandoUsuarioDevolucion = true;
+                    usuarioEscaneadoDevolucion = null;
+                    espacioEscaneadoDevolucion = null;
+                    bufferQRDevolucion = '';
         }
 
         // Función para iniciar el proceso de devolución
@@ -1833,7 +1833,7 @@
                 document.addEventListener('click', () => inputSolicitud.focus());
                 inputSolicitud.focus();
             }
-
+            
             // Configurar el formulario de registro de usuario
             const formRegistro = document.getElementById('form-registro-usuario');
             if (formRegistro) {
@@ -1866,7 +1866,7 @@
                     setTimeout(() => { inputQR.focus(); }, 200);
                 });
             }
-
+            
             // Configurar botón de actualización manual
             const refreshBtn = document.getElementById('refreshBtn');
             if (refreshBtn) {
@@ -1932,75 +1932,7 @@
             }
         }
 
-        // ========================================
-        // FUNCIÓN PARA INICIAR EL ESCÁNER DE SALIDA
-        // ========================================
-        async function initQRScannerSalidaProfesor() {
-            if (html5QrcodeScanner === null) {
-                try {
-                    document.getElementById('salida-profesor-cargando-msg').textContent =
-                        'Cargando escáner, por favor espere...';
-                    document.getElementById('salida-profesor-cargando-msg').classList.remove('hidden');
-                    document.getElementById('salida-profesor-error-msg').classList.add('hidden');
-
-                    const hasPermission = await requestCameraPermission();
-                    if (!hasPermission) {
-                        document.getElementById('salida-profesor-cargando-msg').textContent = '';
-                        document.getElementById('salida-profesor-error-msg').textContent =
-                            'Se requieren permisos de cámara para escanear códigos QR';
-                        document.getElementById('salida-profesor-error-msg').classList.remove('hidden');
-                        return;
-                    }
-
-                    currentCameraId = await getFirstCamera();
-                    if (!currentCameraId) {
-                        document.getElementById('salida-profesor-cargando-msg').textContent = '';
-                        document.getElementById('salida-profesor-error-msg').textContent =
-                            'No se encontró ninguna cámara disponible';
-                        document.getElementById('salida-profesor-error-msg').classList.remove('hidden');
-                        return;
-                    }
-
-                    const config = {
-                        fps: 60,
-                        qrbox: {
-                            width: 300,
-                            height: 300
-                        },
-                        aspectRatio: 1.0,
-                        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
-                        rememberLastUsedCamera: true,
-                        showTorchButtonIfSupported: true,
-                        autoFocus: true,
-                        disableFlip: false,
-                        showZoomSliderIfSupported: true,
-                        defaultZoomValueIfSupported: 2,
-                        experimentalFeatures: {
-                            useBarCodeDetectorIfSupported: true
-                        }
-                    };
-
-                    html5QrcodeScanner = new Html5Qrcode("qr-reader-salida-profesor", {
-                        verbose: false,
-                        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE]
-                    });
-
-                    await html5QrcodeScanner.start(
-                        currentCameraId,
-                        config,
-                        onSalidaProfesorScanSuccess,
-                        (error) => {
-                            if (error.includes("QR code parse error")) return;
-                        }
-                    );
-                } catch (err) {
-                    document.getElementById('salida-profesor-cargando-msg').textContent = '';
-                    document.getElementById('salida-profesor-error-msg').textContent =
-                        'Error al iniciar la cámara. Por favor, verifica los permisos y que la cámara no esté siendo usada por otra aplicación.';
-                    document.getElementById('salida-profesor-error-msg').classList.remove('hidden');
-                }
-            }
-        }
+        
 
         // ========================================
         // FUNCIÓN PARA MANEJAR EL ESCANEO DE SALIDA
@@ -2053,7 +1985,7 @@
             }
             if (cargandoMsg) cargandoMsg.textContent = '';
         }
-
+     
         // ========================================
         // FUNCIONES PARA MANEJAR USUARIOS NO REGISTRADOS
         // ========================================
@@ -2181,18 +2113,6 @@
         // FUNCIONES PARA CÁMARA Y PERMISOS
         // ========================================
         
-        // Función para solicitar permisos de cámara
-        async function requestCameraPermission() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: true
-                });
-                stream.getTracks().forEach(track => track.stop());
-                return true;
-            } catch (err) {
-                return false;
-            }
-        }
 
         // Función para obtener la primera cámara disponible
         async function getFirstCamera() {
@@ -2204,8 +2124,8 @@
                 return null;
             }
         }
-
-        // Asegurar que indicators sea siempre un array
+        
+              // Asegurar que indicators sea siempre un array
         if (!state.indicators || !Array.isArray(state.indicators)) {
             state.indicators = [];
         }

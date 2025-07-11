@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Services\QRService;
 
 class UsuarioNoRegistrado extends Model
 {
@@ -18,7 +17,6 @@ class UsuarioNoRegistrado extends Model
         'email',
         'telefono',
         'modulos_utilizacion',
-        'qr_run',
         'convertido_a_usuario',
         'id_usuario_registrado'
     ];
@@ -37,48 +35,34 @@ class UsuarioNoRegistrado extends Model
     }
 
     /**
-     * Relación con el usuario registrado (si se convierte)
+     * Relación con el profesor registrado (si se convierte)
      */
-    public function usuarioRegistrado()
+    public function profesorRegistrado()
     {
-        return $this->belongsTo(User::class, 'id_usuario_registrado', 'run');
+        return $this->belongsTo(Profesor::class, 'id_usuario_registrado', 'run_profesor');
     }
 
-    /**
-     * Genera el código QR para el usuario no registrado
-     */
-    public function generateQR()
-    {
-        $qrService = new QRService();
-        $qrFileName = $qrService->generateQRForUser($this->run);
-        $this->qr_run = $qrFileName;
-        $this->save();
-        return $this;
-    }
+
 
     /**
-     * Convierte el usuario no registrado en un usuario registrado
+     * Convierte el usuario no registrado en un profesor registrado
      */
-    public function convertirAUsuarioRegistrado()
+    public function convertirAProfesorRegistrado()
     {
-        // Crear el usuario registrado
-        $usuario = new User();
-        $usuario->run = $this->run;
-        $usuario->name = $this->nombre;
-        $usuario->email = $this->email;
-        $usuario->celular = $this->telefono;
-        $usuario->password = bcrypt('password123'); // Contraseña temporal
-        $usuario->save();
-
-        // Generar QR para el usuario registrado
-        $usuario->generateQR();
+        // Crear el profesor registrado
+        $profesor = new Profesor();
+        $profesor->run_profesor = $this->run;
+        $profesor->name = $this->nombre;
+        $profesor->email = $this->email;
+        $profesor->tipo_profesor = 'Profesor Colaborador'; // Por defecto
+        $profesor->save();
 
         // Marcar como convertido
         $this->convertido_a_usuario = true;
         $this->id_usuario_registrado = $this->run;
         $this->save();
 
-        return $usuario;
+        return $profesor;
     }
 
     /**

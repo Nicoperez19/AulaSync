@@ -21,7 +21,7 @@ class Asignatura extends Model
         'horas_indirectas',
         'area_conocimiento',
         'periodo',
-        'run', //usuario
+        'run_profesor', //profesor
         'id_carrera',
     ];
 
@@ -30,9 +30,9 @@ class Asignatura extends Model
         return $this->hasMany(Reserva::class, 'id_asignatura', 'id_asignatura');
     }
 
-    public function user()
+    public function profesor()
     {
-        return $this->belongsTo(User::class, 'run', 'run');
+        return $this->belongsTo(Profesor::class, 'run_profesor', 'run_profesor');
     }
 
     public function carrera()

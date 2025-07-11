@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\DataLoad;
-use App\Models\User;
+use App\Models\Profesor;
 use App\Models\Asignatura;
 use App\Models\Carrera;
 use App\Models\Seccion;
@@ -13,9 +13,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Hash;
+
 use Illuminate\Support\Str;
-use Spatie\Permission\Models\Role;
+
 use Maatwebsite\Excel\Facades\Excel;
 use App\Services\QRService;
 
@@ -74,12 +74,12 @@ class DataLoadController extends Controller
             $periodoFiltro = $anioFiltro . '-' . $semestreFiltro;
             
             // Filtrar por DataLoads que tengan horarios con el período específico
-            $query->whereHas('user.horarios', function($q) use ($periodoFiltro) {
+            $query->whereHas('profesor.horarios', function($q) use ($periodoFiltro) {
                 $q->where('periodo', $periodoFiltro);
             });
         } elseif ($anioFiltro) {
             // Filtrar solo por año
-            $query->whereHas('user.horarios', function($q) use ($anioFiltro) {
+            $query->whereHas('profesor.horarios', function($q) use ($anioFiltro) {
                 $q->where('periodo', 'like', $anioFiltro . '-%');
             });
         }
@@ -130,25 +130,6 @@ class DataLoadController extends Controller
 
             $rows = Excel::toArray([], $file)[0];
             Log::info('Archivo Excel leído', ['total_filas' => count($rows)]);
-
-            // // Validación de columnas exactas
-            // $expected = ['ID_CURSO', 'COD_RAMO', 'RAMO_NOMBRE'];
-            // $header = $rows[0] ?? [];
-            // if ($header !== $expected) {
-            //     // Elimina el archivo subido si existe
-            //     if (isset($path)) {
-            //         Storage::disk('public')->delete($path);
-            //     }
-            //     // Elimina el registro DataLoad creado
-            //     if (isset($dataLoad)) {
-            //         $dataLoad->delete();
-            //     }
-            //     return response()->json([
-            //         'message' => 'El archivo no es válido. Debe contener exactamente las columnas: ID_CURSO, COD_RAMO, RAMO_NOMBRE.'
-            //     ], 422);
-            // }
-
-            $role = Role::findByName('Profesor');
             $processedUsersCount = 0;
             $processedAsignaturasCount = 0;
             $processedHorariosCount = 0;
@@ -193,28 +174,29 @@ class DataLoadController extends Controller
                     $run = $row[11];
                     $name = $row[12];
                     $email = $row[13];
-                    $existingUser = User::where('run', $run)->first();
+                    $tipoProfesor = $row[16];
+                    $existingProfesor = Profesor::where('run_profesor', $run)->first();
                     
-                    if ($existingUser) {
-                        $existingUser->update([
+                    if ($existingProfesor) {
+                        $existingProfesor->update([
                             'name' => $name,
                             'email' => $email,
                             'id_carrera' => $idCarrera
                         ]);
-                        Log::info('Usuario actualizado', ['run' => $run]);
+                        Log::info('Profesor actualizado', ['run_profesor' => $run]);
+                        $processedUsersCount++;
                     } else {
-                        $user = User::create([
-                            'run' => $run,
-                            'password' => Hash::make($run),
+                        // Crear nuevo profesor
+                        $profesor = Profesor::create([
+                            'run_profesor' => $run,
                             'name' => $name,
                             'email' => $email,
-                            'tipo_profesor' => 'Profesor',
-                            'id_carrera' => $idCarrera
+                            'id_carrera' => $idCarrera,
+                            'tipo_profesor' => $tipoProfesor 
                         ]);
-                        $user->assignRole($role);
-                        Log::info('Nuevo usuario creado', ['run' => $run]);
+                        Log::info('Nuevo profesor creado', ['run_profesor' => $run]);
+                        $processedUsersCount++;
                     }
-                    $processedUsersCount++;
 
                     $idAsignatura = $row[0];
                     $codigoAsignatura = $row[1];
@@ -228,7 +210,7 @@ class DataLoadController extends Controller
                             'id_asignatura' => $idAsignatura,
                             'codigo_asignatura' => $codigoAsignatura,
                             'nombre_asignatura' => $nombreAsignatura,
-                            'run' => $run,
+                            'run_profesor' => $run,
                             'id_carrera' => $idCarrera
                         ]);
                         Log::info('Nueva asignatura creada', ['id_asignatura' => $idAsignatura]);
@@ -270,14 +252,14 @@ class DataLoadController extends Controller
                                 'id_horario' => $horario->id_horario,
                                 'nombre' => $horario->nombre,
                                 'periodo' => $semestre,
-                                'run' => $run
+                                'run_profesor' => $run
                             ]);
                         } else {
                             $horario = new Horario();
                             $horario->id_horario = $idHorario;
                             $horario->nombre = "Horario de " . $name;
                             $horario->periodo = $semestre;
-                            $horario->run = $run;
+                            $horario->run_profesor = $run;
 
                             if (!$horario->save()) {
                                 throw new \Exception("Error al guardar el horario");
@@ -291,7 +273,7 @@ class DataLoadController extends Controller
                                 'id_horario' => $horario->id_horario,
                                 'nombre' => $horario->nombre,
                                 'periodo' => $semestre,
-                                'run' => $run
+                                'run_profesor' => $run
                             ]);
                         }
 
@@ -349,7 +331,7 @@ class DataLoadController extends Controller
                     } catch (\Exception $e) {
                         Log::error('Error al procesar horario: ' . $e->getMessage(), [
                             'fila' => $index + 1,
-                            'run' => $run,
+                            'run_profesor' => $run,
                             'semestre' => $semestre
                         ]);
                         $errors[] = "Fila " . ($index + 1) . ": Error al procesar horario - " . $e->getMessage();
@@ -368,7 +350,7 @@ class DataLoadController extends Controller
                 'registros_cargados' => $processedUsersCount + $processedAsignaturasCount + $processedHorariosCount
             ]);
 
-            $message = 'Archivo procesado exitosamente. Se procesaron ' . $processedUsersCount . ' usuarios, ' .
+            $message = 'Archivo procesado exitosamente. Se procesaron ' . $processedUsersCount . ' profesores, ' .
                 $processedAsignaturasCount . ' asignaturas y ' . $processedHorariosCount . ' horarios.';
             if (!empty($errors)) {
                 $message .= ' Se encontraron ' . count($errors) . ' errores: ' . implode(', ', $errors);
@@ -378,7 +360,7 @@ class DataLoadController extends Controller
                 'message' => $message,
                 'data' => [
                     'nombre_archivo' => $dataLoad,
-                    'usuarios_procesados' => $processedUsersCount,
+                    'profesores_procesados' => $processedUsersCount,
                     'asignaturas_procesadas' => $processedAsignaturasCount,
                     'horarios_procesados' => $processedHorariosCount,
                     'filas_omitidas' => $skippedRows,
@@ -424,7 +406,7 @@ class DataLoadController extends Controller
 
     public function detalleJson($id)
     {
-        $dataLoad = \App\Models\DataLoad::with('user')->findOrFail($id);
+        $dataLoad = DataLoad::with('user')->findOrFail($id);
 
         // Calcula el tamaño del archivo en MB
         $tamano = null;

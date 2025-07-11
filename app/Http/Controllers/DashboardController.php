@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Espacio;
 use App\Models\Reserva;
 use App\Models\User;
+use App\Models\Profesor;
 use App\Models\Asignatura;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Modulo;
@@ -81,7 +82,7 @@ class DashboardController extends Controller
         $modulosDisponibles = \App\Models\Modulo::where('dia', $diaFiltro)->orderBy('hora_inicio')->get();
 
         // Accesos actuales (reservas activas sin hora de salida)
-        $accesosActuales = \App\Models\Reserva::with(['user', 'espacio.piso.facultad'])
+        $accesosActuales = \App\Models\Reserva::with(['profesor', 'espacio.piso.facultad'])
             ->where('estado', 'activa')
             ->whereNull('hora_salida')
             ->orderBy('fecha_reserva', 'desc')
@@ -89,7 +90,7 @@ class DashboardController extends Controller
             ->get();
 
         // Reservas no utilizadas (No Show): reservas finalizadas sin hora de ingreso
-        $reservasNoUtilizadas = \App\Models\Reserva::with(['user', 'espacio'])
+        $reservasNoUtilizadas = \App\Models\Reserva::with(['profesor', 'espacio'])
             ->where('estado', 'finalizada')
             ->whereNull('hora') // No escanearon QR, no ingresaron
             ->orderBy('fecha_reserva', 'desc')
@@ -219,8 +220,8 @@ class DashboardController extends Controller
         // Obtener los espacios de la facultad y piso especificados
         $espacios = $this->obtenerEspaciosQuery($facultad, $piso)->pluck('id_espacio');
         
-        // Obtener usuarios que no tienen reservas hoy en los espacios especificados
-        return User::whereDoesntHave('reservas', function($query) use ($hoy, $espacios) {
+        // Obtener profesores que no tienen reservas hoy en los espacios especificados
+        return Profesor::whereDoesntHave('reservas', function($query) use ($hoy, $espacios) {
             $query->whereDate('fecha_reserva', $hoy)
                   ->whereIn('id_espacio', $espacios);
         })->count();
@@ -404,7 +405,7 @@ class DashboardController extends Controller
         $inicioSemana = Carbon::now()->startOfWeek();
         $finSemana = Carbon::now()->endOfWeek();
         
-        return Reserva::with(['user', 'espacio'])
+        return Reserva::with(['profesor', 'espacio'])
             ->where('estado', 'finalizada')
             ->whereBetween('fecha_reserva', [$inicioSemana, $finSemana])
             ->whereHas('espacio', function($query) use ($piso) {
@@ -446,7 +447,7 @@ class DashboardController extends Controller
         $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
         $periodo = $anioActual . '-' . $semestre;
         
-        $planificaciones = Planificacion_Asignatura::with(['asignatura.user', 'espacio', 'modulo'])
+        $planificaciones = Planificacion_Asignatura::with(['asignatura.profesor', 'espacio', 'modulo'])
             ->whereHas('modulo', function($query) use ($diaActual, $moduloActual) {
                 $query->where('dia', $diaActual)
                       ->where('id_modulo', $moduloActual->id_modulo);
@@ -554,7 +555,7 @@ class DashboardController extends Controller
         $inicioSemana = Carbon::now()->startOfWeek();
         $finSemana = Carbon::now()->endOfWeek();
         
-        return Reserva::with(['user', 'espacio'])
+        return Reserva::with(['profesor', 'espacio'])
             ->where('estado', 'activa')
             ->whereNull('hora_salida')
             ->whereBetween('fecha_reserva', [$inicioSemana, $finSemana])
@@ -583,7 +584,7 @@ class DashboardController extends Controller
         $periodo = $anioActual . '-' . $semestre;
         
         // Obtener planificaciones que terminan en los próximos 10 minutos
-        $planificaciones = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.user'])
+        $planificaciones = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.profesor'])
             ->whereHas('modulo', function ($query) use ($now, $timeLimit) {
                 $query->where('dia', strtolower($now->locale('es')->isoFormat('dddd')))
                       ->whereTime('hora_termino', '>', $now->format('H:i:s'))
@@ -781,7 +782,7 @@ class DashboardController extends Controller
         $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
         $periodo = $anioActual . '-' . $semestre;
         
-        $planificaciones = \App\Models\Planificacion_Asignatura::with(['asignatura.user', 'espacio', 'modulo'])
+        $planificaciones = \App\Models\Planificacion_Asignatura::with(['asignatura.profesor', 'espacio', 'modulo'])
             ->whereHas('modulo', function($q) use ($fecha) {
                 $dia = \Carbon\Carbon::parse($fecha)->locale('es')->isoFormat('dddd');
                 $q->where('dia', strtolower($dia));
@@ -793,14 +794,14 @@ class DashboardController extends Controller
 
         $noUtilizadasDia = [];
         foreach ($planificaciones as $plan) {
-            $usuario = $plan->asignatura->user->name ?? null;
+            $usuario = $plan->asignatura->profesor->name ?? null;
             $espacio = $plan->espacio->nombre_espacio ?? null;
             $modulo = $plan->modulo->hora_inicio . ' - ' . $plan->modulo->hora_termino;
             $fechaPlan = $fecha;
             if (!$usuario || !$espacio) continue;
 
             $reservaOcupada = \App\Models\Reserva::where('id_espacio', $plan->espacio->id_espacio)
-                ->where('id_usuario', $plan->asignatura->user->id ?? null)
+                ->where('id_usuario', $plan->asignatura->profesor->run_profesor ?? null)
                 ->whereDate('fecha_reserva', $fecha)
                 ->where('hora_planificada', $plan->modulo->hora_inicio)
                 ->where('estado', 'activa')
@@ -932,7 +933,7 @@ class DashboardController extends Controller
         $periodo = $anioActual . '-' . $semestre;
         
         // Obtener los usuarios asignados por espacio para el módulo actual
-        $asignaciones = \App\Models\Planificacion_Asignatura::with(['espacio.piso', 'asignatura.user'])
+        $asignaciones = \App\Models\Planificacion_Asignatura::with(['espacio.piso', 'asignatura.profesor'])
             ->whereHas('modulo', function($q) use ($diaActual, $moduloActualNum) {
                 $q->where('dia', $diaActual)->where('numero_modulo', $moduloActualNum);
             })

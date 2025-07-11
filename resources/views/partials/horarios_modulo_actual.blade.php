@@ -29,10 +29,10 @@ $coloresTipo = [
                     <span class="text-xs text-gray-500 ml-2">Piso {{ $asig->espacio->piso->numero_piso ?? '-' }}</span>
                 </div>
                 <div class="font-semibold text-sm text-gray-800">{{ $asig->asignatura->nombre_asignatura ?? '-' }}</div>
-                <div class="text-xs text-gray-500">{{ $asig->asignatura->user->name ?? '-' }}</div>
+                <div class="text-xs text-gray-500">{{ $asig->asignatura->profesor->name ?? '-' }}</div>
                 <div class="flex items-center gap-1 text-xs text-gray-500">
                     <i class="fas fa-envelope"></i>
-                    <span>{{ $asig->asignatura->user->email ?? '-' }}</span>
+                    <span>{{ $asig->asignatura->profesor->email ?? '-' }}</span>
                 </div>
             </div>
         @empty

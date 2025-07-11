@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
-use App\Services\QRService;
 
 class User extends Authenticatable
 {
@@ -17,7 +16,6 @@ class User extends Authenticatable
     protected $keyType = 'string';
     protected $fillable = [
         'run',
-        'qr_run',
         'name',
         'email',
         'password',
@@ -25,7 +23,6 @@ class User extends Authenticatable
         'direccion',
         'fecha_nacimiento',
         'anio_ingreso',
-        'tipo_profesor',
         'id_universidad',
         'id_facultad',
         'id_carrera',
@@ -74,35 +71,10 @@ class User extends Authenticatable
         return $this->belongsTo(AreaAcademica::class, 'id_area_academica');
     }
 
-    public function asignaturas()
+    public function profesor()
     {
-        return $this->hasMany(Asignatura::class, 'run');
+        return $this->hasOne(Profesor::class, 'run_profesor', 'run');
     }
 
-    public function dataLoads()
-    {
-        return $this->hasMany(DataLoad::class, 'user_run', 'run');
-    }
 
-    public function horarios()
-    {
-        return $this->hasMany(Horario::class, 'run', 'run');
-    }
-
-    public function reservas()
-    {
-        return $this->hasMany(Reserva::class, 'run', 'run');
-    }
-
-    /**
-     * Genera el código QR para el usuario y lo guarda en la base de datos
-     */
-    public function generateQR()
-    {
-        $qrService = new QRService();
-        $qrFileName = $qrService->generateQRForUser($this->run);
-        $this->qr_run = $qrFileName;
-        $this->save();
-        return $this;
-    }
 }

@@ -18,12 +18,12 @@ class Horario extends Model
         'id_horario',
         'nombre',
         'periodo',
-        'run',
+        'run_profesor',
     ];
 
-    public function docente()
+    public function profesor()
     {
-        return $this->belongsTo(User::class, 'run', 'run');
+        return $this->belongsTo(Profesor::class, 'run_profesor', 'run_profesor');
     }
 
     public function planificaciones()

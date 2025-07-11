@@ -466,7 +466,7 @@
                         td.innerHTML = clases.map(h => `
                             <div class='p-2 rounded-lg min-h-[90px] w-[150px] mx-auto flex flex-col items-center justify-center text-center break-words text-black font-semibold ${getColorClase(h.asignatura)} shadow-md'>
                                 <div class='text-xs uppercase tracking-wide mb-1'>${h.asignatura} (${h.codigo_asignatura || 'N/A'})</div>
-                                <div class='text-xs font-normal mb-1'><i class='fa-solid fa-user mr-1'></i>${h.user ? h.user.name : 'Sin profesor asignado'}</div>
+                                <div class='text-xs font-normal mb-1'><i class='fa-solid fa-user mr-1'></i>${h.profesor ? h.profesor.name : 'Sin profesor asignado'}</div>
                             </div>
                         `).join('');
                     } else {

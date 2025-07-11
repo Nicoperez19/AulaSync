@@ -16,14 +16,14 @@ return new class extends Migration
             $table->time('hora');
             $table->date('fecha_reserva');
             $table->string('id_espacio');
-            $table->unsignedBigInteger('run'); 
+            $table->unsignedBigInteger('run_profesor'); 
             $table->enum('tipo_reserva', ['clase', 'espontanea', 'directa'])->default('clase');
             $table->enum('estado', ['activa', 'finalizada'])->default('activa');
             $table->time('hora_salida')->nullable();
             $table->timestamps();
             
             $table->foreign('id_espacio')->references('id_espacio')->on('espacios')->onDelete('cascade');
-            $table->foreign('run')->references('run')->on('users')->onDelete('cascade');
+            $table->foreign('run_profesor')->references('run_profesor')->on('profesors')->onDelete('cascade');
         });
     }
 

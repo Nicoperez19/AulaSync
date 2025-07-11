@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Horario;
-use App\Models\User;
+use App\Models\Profesor;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Sede;
 use App\Models\Asignatura;
@@ -57,13 +57,13 @@ class HorariosController extends Controller
         sort($aniosDisponibles);
         sort($semestresDisponibles);
         
-        $query = User::role('Profesor')->with(['areaAcademica', 'facultad']);
+        $query = Profesor::with(['areaAcademica', 'facultad']);
         
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('run', 'like', '%' . $search . '%');
+                    ->orWhere('run_profesor', 'like', '%' . $search . '%');
             });
         }
         
@@ -95,7 +95,7 @@ class HorariosController extends Controller
         $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
         $periodo = $anioActual . '-' . $semestre;
         
-        $horarios = Horario::with(['docente', 'planificaciones.asignatura', 'planificaciones.espacio'])
+        $horarios = Horario::with(['profesor', 'planificaciones.asignatura', 'planificaciones.espacio'])
             ->where('periodo', $periodo)
             ->get();
         
@@ -109,7 +109,7 @@ class HorariosController extends Controller
             });
         });
         
-        $horarios = $horarios->groupBy('run');
+        $horarios = $horarios->groupBy('run_profesor');
         
         return view('layouts.schedules.schedules_index', compact(
             'profesores', 
@@ -192,8 +192,8 @@ class HorariosController extends Controller
                 $periodo = $anioActual . '-' . $semestre;
             }
             
-            $horario = Horario::with(['docente', 'planificaciones.asignatura', 'planificaciones.espacio'])
-                ->where('run', $run)
+            $horario = Horario::with(['profesor', 'planificaciones.asignatura', 'planificaciones.espacio'])
+                ->where('run_profesor', $run)
                 ->where('periodo', $periodo)
                 ->first();
 
@@ -201,7 +201,7 @@ class HorariosController extends Controller
                 return response()->json(['error' => 'Horario no encontrado para el período ' . $periodo], 404);
             }
 
-            $asignaturas = Asignatura::where('run', $run)
+            $asignaturas = Asignatura::where('run_profesor', $run)
                 ->with(['planificaciones.espacio', 'planificaciones.modulo'])
                 ->get();
 
@@ -231,7 +231,7 @@ class HorariosController extends Controller
         try {
             $id_espacio = $request->input('id_espacio');
 
-            $query = Planificacion_Asignatura::with(['asignatura.user', 'modulo', 'espacio']);
+            $query = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo', 'espacio']);
 
             if ($id_espacio) {
                 $query->where('id_espacio', $id_espacio);
@@ -244,8 +244,8 @@ class HorariosController extends Controller
                 return $items->map(function ($plan) {
                     return [
                         'asignatura' => $plan->asignatura->nombre_asignatura ?? '',
-                        'user' => $plan->asignatura->user ? [
-                            'name' => $plan->asignatura->user->name
+                        'profesor' => $plan->asignatura->profesor ? [
+                            'name' => $plan->asignatura->profesor->name
                         ] : null,
                         'dia' => $plan->modulo->dia ?? '',
                         'hora_inicio' => $plan->modulo->hora_inicio ?? '',
@@ -327,7 +327,7 @@ class HorariosController extends Controller
             $periodo = $anioFiltro . '-' . $semestreFiltro;
             
             // Cargar horarios solo para el período seleccionado
-            $planificaciones = Planificacion_Asignatura::with(['asignatura.user', 'modulo', 'espacio', 'horario'])
+            $planificaciones = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo', 'espacio', 'horario'])
                 ->whereHas('horario', function($q) use ($periodo) {
                     $q->where('periodo', $periodo);
                 })
@@ -339,8 +339,8 @@ class HorariosController extends Controller
                     return [
                         'asignatura' => $plan->asignatura->nombre_asignatura ?? '',
                         'codigo_asignatura' => $plan->asignatura->codigo_asignatura ?? '',
-                        'user' => $plan->asignatura->user ? [
-                            'name' => $plan->asignatura->user->name
+                        'profesor' => $plan->asignatura->profesor ? [
+                            'name' => $plan->asignatura->profesor->name
                         ] : null,
                         'dia' => $plan->modulo->dia ?? '',
                         'hora_inicio' => $plan->modulo->hora_inicio ?? '',
@@ -377,7 +377,7 @@ class HorariosController extends Controller
             $periodo = $anioFiltro . '-' . $semestreFiltro;
             
             // Cargar horarios solo para el período seleccionado
-            $planificaciones = Planificacion_Asignatura::with(['asignatura.user', 'modulo', 'espacio', 'horario'])
+            $planificaciones = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo', 'espacio', 'horario'])
                 ->whereHas('horario', function($q) use ($periodo) {
                     $q->where('periodo', $periodo);
                 })
@@ -389,8 +389,8 @@ class HorariosController extends Controller
                     return [
                         'asignatura' => $plan->asignatura->nombre_asignatura ?? '',
                         'codigo_asignatura' => $plan->asignatura->codigo_asignatura ?? '',
-                        'user' => $plan->asignatura->user ? [
-                            'name' => $plan->asignatura->user->name
+                        'profesor' => $plan->asignatura->profesor ? [
+                            'name' => $plan->asignatura->profesor->name
                         ] : null,
                         'dia' => $plan->modulo->dia ?? '',
                         'hora_inicio' => $plan->modulo->hora_inicio ?? '',
@@ -438,7 +438,7 @@ class HorariosController extends Controller
             }
             
             // Obtener las planificaciones del espacio
-            $planificaciones = Planificacion_Asignatura::with(['asignatura.user', 'modulo'])
+            $planificaciones = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo'])
                 ->where('id_espacio', $idEspacio)
                 ->whereHas('horario', function($q) use ($periodo) {
                     $q->where('periodo', $periodo);
@@ -450,8 +450,8 @@ class HorariosController extends Controller
                 return [
                     'asignatura' => $plan->asignatura->nombre_asignatura ?? '',
                     'codigo_asignatura' => $plan->asignatura->codigo_asignatura ?? '',
-                    'user' => $plan->asignatura->user ? [
-                        'name' => $plan->asignatura->user->name
+                    'profesor' => $plan->asignatura->profesor ? [
+                        'name' => $plan->asignatura->profesor->name
                     ] : null,
                     'dia' => $plan->modulo->dia ?? '',
                     'hora_inicio' => $plan->modulo->hora_inicio ?? '',

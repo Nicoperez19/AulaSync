@@ -60,7 +60,13 @@ Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::get('/user/user_edit/{run}', [UserController::class, 'edit'])->name('users.edit');
     Route::put('user/user_update/{run}', [UserController::class, 'update'])->name('users.update');
     Route::get('/horarios/horarios_index', [HorariosController::class, 'index'])->name('horarios.index');
+});
+
+Route::middleware(['auth'])->group(function () {
     Route::get('/horarios/{run}', [HorariosController::class, 'getHorarioProfesor'])->name('horarios.get');
+});
+
+Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::get('/spacetime/spacetime_index', [HorariosController::class, 'mostrarHorarios'])->name('horarios_espacios.index');
     Route::get('/horarios-espacios', [HorariosController::class, 'getHorariosEspacios'])->name('horarios.espacios.get');
     Route::get('/espacios', action: [HorariosController::class, 'showEspacios'])->name('espacios.show');

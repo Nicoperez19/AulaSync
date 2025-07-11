@@ -60,7 +60,7 @@ class TestEstadosEspacios extends Command
         }
         
         // Obtener planificaciones activas
-        $planificacionesActivas = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.user'])
+        $planificacionesActivas = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.profesor'])
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
             })
@@ -149,7 +149,7 @@ class TestEstadosEspacios extends Command
                 // Mostrar información de la clase actual
                 if ($planificacionActual) {
                     $this->line("    Asignatura: " . ($planificacionActual->asignatura->nombre_asignatura ?? 'No especificada'));
-                    $this->line("    Profesor: " . ($planificacionActual->asignatura->user->name ?? 'No especificado'));
+                    $this->line("    Profesor: " . ($planificacionActual->asignatura->profesor->name ?? 'No especificado'));
                     $this->line("    Módulo: " . (explode('.', $planificacionActual->modulo->id_modulo)[1] ?? 'No especificado'));
                     $this->line("    Horario: " . substr($planificacionActual->modulo->hora_inicio, 0, 5) . " - " . substr($planificacionActual->modulo->hora_termino, 0, 5));
                 }
@@ -187,7 +187,7 @@ class TestEstadosEspacios extends Command
         $this->info("Verificando espacios que terminan entre: " . $now->format('H:i') . " y " . $timeLimit->format('H:i'));
         
         // Obtener planificaciones que terminan en los próximos 10 minutos
-        $planificaciones = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.user'])
+        $planificaciones = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.profesor'])
             ->whereHas('modulo', function ($query) use ($now, $timeLimit) {
                 $query->where('dia', strtolower($now->locale('es')->isoFormat('dddd')))
                       ->whereTime('hora_termino', '>', $now->format('H:i:s'))
@@ -207,7 +207,7 @@ class TestEstadosEspacios extends Command
         
         foreach ($planificaciones as $plan) {
             $espacio = $plan->espacio;
-            $profesor = $plan->asignatura->user->name ?? 'Profesor no asignado';
+            $profesor = $plan->asignatura->profesor->name ?? 'Profesor no asignado';
             $horaTermino = Carbon::parse($plan->modulo->hora_termino)->format('H:i');
             
             $this->line("\nPlanificación encontrada:");

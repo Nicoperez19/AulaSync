@@ -87,7 +87,7 @@
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                 @foreach ($profesores as $profesor)
-                    <div class="bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:shadow-md transition profesor-card cursor-pointer" data-run="{{ $profesor->run }}">
+                    <div class="bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-3 shadow-sm hover:shadow-md transition profesor-card cursor-pointer" data-run="{{ $profesor->run_profesor }}">
                         <div class="flex items-center gap-3">
                             <div class="bg-gray-100 rounded-full p-3 flex items-center justify-center">
                                 <i class="fa-solid fa-user text-2xl text-gray-400"></i>
@@ -276,11 +276,11 @@
                     return response.json();
                 })
                 .then(data => {
-                    if (!data.horario || !data.horario.docente) {
+                    if (!data.horario || !data.horario.profesor) {
                         throw new Error('No se encontró el horario para el período seleccionado');
                     }
-                    document.getElementById('modalNombreProfesor').textContent = data.horario.docente.name;
-                    document.getElementById('modalCorreoProfesor').textContent = `Correo: ${data.horario.docente.email}`;
+                    document.getElementById('modalNombreProfesor').textContent = data.horario.profesor.name;
+                    document.getElementById('modalCorreoProfesor').textContent = `Correo: ${data.horario.profesor.email}`;
                     const horarioBody = document.getElementById('horarioBody');
                     horarioBody.innerHTML = '';
 

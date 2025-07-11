@@ -67,7 +67,7 @@
                     <tr class="{{ $index % 2 === 0 ? 'bg-gray-200' : 'bg-gray-100' }}">
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ $asignatura->id_asignatura }}</td>
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ $asignatura->nombre_asignatura }}</td>
-                        <td class="p-3 dark:border-white whitespace-nowrap">{{ optional($asignatura->user)->name ?? 'No asignado' }}</td>
+                        <td class="p-3 dark:border-white whitespace-nowrap">{{ optional($asignatura->profesor)->name ?? 'No asignado' }}</td>
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ optional($asignatura->carrera)->nombre ?? 'No asignada' }}</td>
                         <td class="p-3 dark:border-white whitespace-nowrap">
                             <div class="flex justify-center space-x-2">

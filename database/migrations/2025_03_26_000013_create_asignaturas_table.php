@@ -21,9 +21,9 @@ return new class extends Migration
             $table->string('area_conocimiento', 100)->nullable();
             $table->string('periodo', 20)->nullable();
 
-            $table->unsignedBigInteger('run');
+            $table->unsignedBigInteger('run_profesor');
             $table->string('id_carrera', 20);
-            $table->foreign('run')->references('run')->on('users')->onDelete('cascade');
+            $table->foreign('run_profesor')->references('run_profesor')->on('profesors')->onDelete('cascade');
             $table->foreign('id_carrera')->references('id_carrera')->on('carreras')->onDelete('cascade');
             $table->timestamps();
         });

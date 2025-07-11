@@ -564,9 +564,6 @@ class HorarioController extends Controller
             $usuarioNoRegistrado->modulos_utilizacion = $request->modulos_utilizacion;
             $usuarioNoRegistrado->save();
 
-            // Generar QR para el usuario no registrado
-            $usuarioNoRegistrado->generateQR();
-
             return response()->json([
                 'success' => true,
                 'mensaje' => 'Usuario no registrado guardado exitosamente',

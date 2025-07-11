@@ -15,8 +15,8 @@ return new class extends Migration {
             $table->string('nombre');
             $table->string('periodo'); // Ej: "2025-1"
 
-            $table->unsignedBigInteger('run');
-            $table->foreign('run')->references('run')->on('users')->onDelete('cascade');
+            $table->unsignedBigInteger('run_profesor');
+            $table->foreign('run_profesor')->references('run_profesor')->on('profesors')->onDelete('cascade');
 
             $table->timestamps();
         });

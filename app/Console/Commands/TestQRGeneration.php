@@ -42,7 +42,7 @@ class TestQRGeneration extends Command
         $periodo = $anioActual . '-' . $semestre;
         
         // Obtener planificaciones que terminan en los próximos 10 minutos
-        $planificaciones = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.user'])
+        $planificaciones = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.profesor'])
             ->whereHas('modulo', function ($query) use ($now, $timeLimit) {
                 $query->where('dia', strtolower($now->locale('es')->isoFormat('dddd')))
                       ->whereTime('hora_termino', '>', $now->format('H:i:s'))
@@ -62,7 +62,7 @@ class TestQRGeneration extends Command
         
         foreach ($planificaciones as $plan) {
             $espacio = $plan->espacio;
-            $profesor = $plan->asignatura->user->name ?? 'Profesor no asignado';
+            $profesor = $plan->asignatura->profesor->name ?? 'Profesor no asignado';
             $horaTermino = Carbon::parse($plan->modulo->hora_termino)->format('H:i');
             
             $this->line("\nPlanificación:");
@@ -113,7 +113,7 @@ class TestQRGeneration extends Command
             }
             
             // Verificar planificaciones para este espacio
-            $planificaciones = Planificacion_Asignatura::with(['modulo', 'asignatura.user'])
+            $planificaciones = Planificacion_Asignatura::with(['modulo', 'asignatura.profesor'])
                 ->where('id_espacio', $espacio->id_espacio)
                 ->whereHas('modulo', function ($query) {
                     $query->where('dia', strtolower(Carbon::now()->locale('es')->isoFormat('dddd')));
@@ -124,7 +124,7 @@ class TestQRGeneration extends Command
                 $this->line("  - Tiene planificaciones para hoy:");
                 foreach ($planificaciones as $plan) {
                     $this->line("    * " . ($plan->asignatura->nombre_asignatura ?? 'Sin asignatura') . 
-                               " - " . ($plan->asignatura->user->name ?? 'Sin profesor') .
+                               " - " . ($plan->asignatura->profesor->name ?? 'Sin profesor') .
                                " (" . $plan->modulo->hora_inicio . " - " . $plan->modulo->hora_termino . ")");
                 }
             } else {
@@ -147,7 +147,7 @@ class TestQRGeneration extends Command
         $diaActual = strtolower($now->locale('es')->isoFormat('dddd'));
         $horaActual = $now->format('H:i:s');
         
-        $planificacionesActivas = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.user'])
+        $planificacionesActivas = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.profesor'])
             ->whereHas('modulo', function ($query) use ($diaActual, $horaActual) {
                 $query->where('dia', $diaActual)
                       ->where('hora_inicio', '<=', $horaActual)
@@ -165,7 +165,7 @@ class TestQRGeneration extends Command
             
             foreach ($planificacionesActivas as $plan) {
                 $espacio = $plan->espacio;
-                $profesor = $plan->asignatura->user->name ?? 'Profesor no asignado';
+                $profesor = $plan->asignatura->profesor->name ?? 'Profesor no asignado';
                 
                 $this->line("  - {$espacio->nombre_espacio}: {$profesor} (módulo actual)");
             }

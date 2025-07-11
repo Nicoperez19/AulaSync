@@ -248,7 +248,7 @@ class PlanoDigitalController extends Controller
         // Obtener la hora actual
         $horaActual = Carbon::now()->format('H:i:s');
 
-        return Planificacion_Asignatura::with(['horario', 'asignatura.user', 'modulo', 'espacio'])
+        return Planificacion_Asignatura::with(['horario', 'asignatura.profesor', 'modulo', 'espacio'])
             ->where('id_modulo', $moduloActual->id_modulo)
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
@@ -275,7 +275,7 @@ class PlanoDigitalController extends Controller
         // Calcular la hora límite (10 minutos después de la hora actual)
         $horaLimite = $horaActual->copy()->addMinutes(9)->format('H:i:s');
 
-        return Planificacion_Asignatura::with(['horario', 'asignatura.user', 'modulo', 'espacio'])
+        return Planificacion_Asignatura::with(['horario', 'asignatura.profesor', 'modulo', 'espacio'])
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
             })
@@ -303,7 +303,7 @@ class PlanoDigitalController extends Controller
         if ($planificacion && $planificacion->asignatura) {
             $detalles['planificacion'] = [
                 'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'No especificada',
-                'profesor' => ucwords($planificacion->asignatura->user->name ?? 'No asignado'),
+                'profesor' => ucwords($planificacion->asignatura->profesor->name ?? 'No asignado'),
                 'modulos' => $planificacion->asignatura->planificaciones()
                     ->where('id_espacio', $espacio->id_espacio)
                     ->with('modulo')
@@ -321,7 +321,7 @@ class PlanoDigitalController extends Controller
         if ($planificacionProxima && $planificacionProxima->asignatura) {
             $detalles['planificacion_proxima'] = [
                 'asignatura' => $planificacionProxima->asignatura->nombre_asignatura ?? 'No especificada',
-                'profesor' => ucwords($planificacionProxima->asignatura->user->name ?? 'No asignado'),
+                'profesor' => ucwords($planificacionProxima->asignatura->profesor->name ?? 'No asignado'),
                 'hora_inicio' => substr($planificacionProxima->modulo->hora_inicio ?? '00:00', 0, 5),
                 'hora_termino' => substr($planificacionProxima->modulo->hora_termino ?? '00:00', 0, 5),
                 'modulo' => explode('.', $planificacionProxima->modulo->id_modulo ?? '')[1] ?? 'No especificado'
@@ -402,7 +402,7 @@ class PlanoDigitalController extends Controller
 
     public function estadosEspacios()
     {
-        $horaActual = \Carbon\Carbon::now();
+        $horaActual = Carbon::now();
         $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
         $horaActualStr = $horaActual->format('H:i:s');
         
@@ -416,7 +416,7 @@ class PlanoDigitalController extends Controller
         $espacios = \App\Models\Espacio::all();
         
         // Obtener todas las planificaciones activas para el período actual
-        $planificacionesActivas = \App\Models\Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.user'])
+        $planificacionesActivas = \App\Models\Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.profesor'])
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
             })
@@ -487,7 +487,7 @@ class PlanoDigitalController extends Controller
                 if ($tieneClaseEnCurso && $claseEnCurso) {
                     $informacionAdicional = [
                         'asignatura' => $claseEnCurso->asignatura->nombre_asignatura ?? 'No especificada',
-                        'profesor' => $claseEnCurso->asignatura->user->name ?? 'No especificado',
+                        'profesor' => $claseEnCurso->asignatura->profesor->name ?? 'No especificado',
                         'modulo' => explode('.', $claseEnCurso->modulo->id_modulo)[1] ?? 'No especificado',
                         'hora_inicio' => substr($claseEnCurso->modulo->hora_inicio, 0, 5),
                         'hora_termino' => substr($claseEnCurso->modulo->hora_termino, 0, 5)

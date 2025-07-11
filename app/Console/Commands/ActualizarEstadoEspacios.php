@@ -36,7 +36,7 @@ class ActualizarEstadoEspacios extends Command
         $this->info("Total de espacios a verificar: " . $espacios->count());
 
         // Obtener planificaciones activas para el período actual
-        $planificacionesActivas = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.user'])
+        $planificacionesActivas = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.profesor'])
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
             })

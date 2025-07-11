@@ -19,7 +19,7 @@ class Reserva extends Model
         'hora',
         'fecha_reserva',
         'id_espacio',
-        'run',
+        'run_profesor',
         'tipo_reserva',
         'estado',
         'hora_salida',
@@ -32,9 +32,9 @@ class Reserva extends Model
         return $this->belongsTo(Espacio::class, 'id_espacio', 'id_espacio');
     }
 
-    public function user()
+    public function profesor()
     {
-        return $this->belongsTo(User::class, 'run', 'run');
+        return $this->belongsTo(Profesor::class, 'run_profesor', 'run_profesor');
     }
 
     public function usuarioNoRegistrado()
