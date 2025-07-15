@@ -21,4 +21,9 @@ class Carrera extends Model
     {
         return $this->belongsTo(AreaAcademica::class, 'id_area_academica');
     }
+
+    public function asignaturas()
+    {
+        return $this->hasMany(Asignatura::class, 'id_carrera', 'id_carrera');
+    }
 }

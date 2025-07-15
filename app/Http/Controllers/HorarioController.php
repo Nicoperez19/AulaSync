@@ -820,11 +820,13 @@ class HorarioController extends Controller
             }
 
             // Buscar clases programadas para este usuario en el módulo actual o siguiente
-            $clasesProgramadas = Planificacion_Asignatura::where('profesor', $run)
+            $clasesProgramadas = Planificacion_Asignatura::whereHas('asignatura', function($query) use ($run) {
+                    $query->where('run_profesor', $run);
+                })
                 ->where('id_modulo', 'like', $codigoDia . '.%')
                 ->whereRaw('CAST(SUBSTRING(id_modulo, 4) AS UNSIGNED) >= ?', [$moduloActual])
                 ->whereRaw('CAST(SUBSTRING(id_modulo, 4) AS UNSIGNED) <= ?', [$moduloActual + 2]) // Buscar en módulo actual y siguientes 2
-                ->with(['espacio:id_espacio,nombre_espacio,estado'])
+                ->with(['espacio:id_espacio,nombre_espacio,estado', 'asignatura.profesor'])
                 ->get();
 
             \Log::info('Clases programadas encontradas:', [

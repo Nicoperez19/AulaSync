@@ -484,8 +484,8 @@ class DashboardController extends Controller
             $horariosAgrupados[$dia][$hora]['espacios'][] = [
                 'espacio' => 'Sala de clases (' . $planificacion->espacio->id_espacio . '), Piso ' . ($planificacion->espacio->piso->numero_piso ?? 'N/A'),
                 'asignatura' => $planificacion->asignatura->nombre_asignatura,
-                'profesor' => $planificacion->asignatura->user->name ?? 'No asignado',
-                'email' => $planificacion->asignatura->user->email ?? 'No disponible'
+                'profesor' => $planificacion->asignatura->profesor->name ?? 'No asignado',
+                'email' => $planificacion->asignatura->profesor->email ?? 'No disponible'
             ];
         }
         return $horariosAgrupados;
@@ -602,7 +602,7 @@ class DashboardController extends Controller
         $notifications = [];
         
         foreach ($planificaciones as $plan) {
-            $profesor = $plan->asignatura->user->name ?? 'Profesor no asignado';
+            $profesor = $plan->asignatura->profesor->name ?? 'Profesor no asignado';
             $espacio = $plan->espacio->nombre_espacio ?? 'Espacio no asignado';
             $horaTermino = Carbon::parse($plan->modulo->hora_termino)->format('H:i');
             

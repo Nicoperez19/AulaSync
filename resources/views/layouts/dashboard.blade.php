@@ -3,11 +3,11 @@
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">
                 <div class="p-2 rounded-xl bg-light-cloud-blue">
-                    <i class="fa-solid fa-gauge-high text-white text-2xl"></i>
+                    <i class="text-2xl text-white fa-solid fa-gauge-high"></i>
                 </div>
                 <div>
                     <h2 class="text-2xl font-bold leading-tight">Dashboard</h2>
-                    <p class="text-gray-500 text-sm">Resumen general de uso de espacios</p>
+                    <p class="text-sm text-gray-500">Resumen general de uso de espacios</p>
                 </div>
             </div>
         </div>
@@ -16,8 +16,8 @@
     <!-- Modal fijo de reloj digital y módulo actual -->
     <div id="modal-reloj"
         class="fixed bottom-6 right-8 z-50 bg-light-cloud-blue shadow-lg rounded-xl border border-gray-200 px-5 py-3 flex flex-col items-center gap-1 min-w-[162px] text-white">
-        <div class="font-mono text-2xl font-bold text-white text-center" id="modal-hora-actual">19:51:28</div>
-        <div class="mt-1 text-sm font-bold text-white text-center" id="modal-modulo-actual">Módulo actual: 12</div>
+        <div class="font-mono text-2xl font-bold text-center text-white" id="modal-hora-actual">19:51:28</div>
+        <div class="mt-1 text-sm font-bold text-center text-white" id="modal-modulo-actual">Módulo actual: 12</div>
     </div>
 
     <div class="w-full p-6">
@@ -26,9 +26,9 @@
             <div
                 class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-gray-500 font-semibold">Total de Reservas Hoy</span>
-                    <span class="bg-blue-100 text-blue-500 rounded-full p-2"><i
-                            class="fa-regular fa-calendar text-xl"></i></span>
+                    <span class="font-semibold text-gray-500">Total de Reservas Hoy</span>
+                    <span class="p-2 text-blue-500 bg-blue-100 rounded-full"><i
+                            class="text-xl fa-regular fa-calendar"></i></span>
                 </div>
                 <div class="flex items-end gap-2">
                     <span class="text-3xl font-bold text-blue-600">{{ $totalReservasHoy }}</span>
@@ -38,9 +38,9 @@
             <div
                 class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-gray-500 font-semibold">% No Presentación</span>
-                    <span class="bg-green-100 text-green-500 rounded-full p-2"><i
-                            class="fa-solid fa-user-xmark text-xl"></i></span>
+                    <span class="font-semibold text-gray-500">% No Presentación</span>
+                    <span class="p-2 text-green-500 bg-green-100 rounded-full"><i
+                            class="text-xl fa-solid fa-user-xmark"></i></span>
                 </div>
                 <div class="flex items-end gap-2">
                     <span class="text-3xl font-bold text-green-600">{{ $porcentajeNoShow }}%</span>
@@ -50,9 +50,9 @@
             <div
                 class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-gray-500 font-semibold">% Ocupación Semanal</span>
-                    <span class="bg-purple-100 text-purple-500 rounded-full p-2"><i
-                            class="fa-solid fa-chart-column text-xl"></i></span>
+                    <span class="font-semibold text-gray-500">% Ocupación Semanal</span>
+                    <span class="p-2 text-purple-500 bg-purple-100 rounded-full"><i
+                            class="text-xl fa-solid fa-chart-column"></i></span>
                 </div>
                 <div class="flex items-end gap-2">
                     <span class="text-3xl font-bold text-purple-600">{{ $ocupacionSemanal }}%</span>
@@ -62,9 +62,9 @@
             <div
                 class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-gray-500 font-semibold">Promedio Ocupación Mensual</span>
-                    <span class="bg-orange-100 text-orange-500 rounded-full p-2"><i
-                            class="fa-solid fa-wave-square text-xl"></i></span>
+                    <span class="font-semibold text-gray-500">Promedio Ocupación Mensual</span>
+                    <span class="p-2 text-orange-500 bg-orange-100 rounded-full"><i
+                            class="text-xl fa-solid fa-wave-square"></i></span>
                 </div>
                 <div class="flex items-end gap-2">
                     <span class="text-3xl font-bold text-orange-600">{{ $ocupacionMensual }}%</span>
@@ -74,9 +74,9 @@
             <div
                 class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="text-gray-500 font-semibold">Sala Más Utilizada</span>
-                    <span class="bg-yellow-100 text-yellow-500 rounded-full p-2"><i
-                            class="fa-solid fa-star text-xl"></i></span>
+                    <span class="font-semibold text-gray-500">Sala Más Utilizada</span>
+                    <span class="p-2 text-yellow-500 bg-yellow-100 rounded-full"><i
+                            class="text-xl fa-solid fa-star"></i></span>
                 </div>
                 <div class="flex flex-col gap-1 mt-2">
                     @if($salaMasUtilizada && $salaMasUtilizada->espacio)
@@ -113,7 +113,7 @@
         </div>
     </div>
 
-    <div class="flex flex-col w-full gap-8 p-8  md:p-8 md:flex-row">
+    <div class="flex flex-col w-full gap-8 p-8 md:p-8 md:flex-row">
         <div class="flex flex-col flex-1 gap-6">
             <div class="p-4 bg-white rounded-lg shadow-md md:p-6 dark:bg-gray-800">
                 <!-- Encabezado con título y botón alineados -->
@@ -182,7 +182,7 @@
     </div>
 
     <!-- Tablas -->
-    <div class=" w-full gap-8 px-4 md:px-8">
+    <div class="w-full gap-8 px-4  md:px-8">
         <div class="flex flex-col gap-6 md:flex-row">
             <!-- Reservas Pendientes -->
             <div class="w-full p-8 mb-8 bg-white shadow-lg rounded-xl md:w-1/2">
@@ -633,7 +633,7 @@
             })
             .catch(error => {
                 console.error('Error al actualizar horarios:', error);
-                contenedor.innerHTML = '<div class="text-center text-red-500 p-4">Error al cargar los horarios</div>';
+                contenedor.innerHTML = '<div class="p-4 text-center text-red-500">Error al cargar los horarios</div>';
             });
     }
 

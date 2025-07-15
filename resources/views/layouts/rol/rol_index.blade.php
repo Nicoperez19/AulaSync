@@ -1,12 +1,19 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <h2 class="text-xl font-semibold leading-tight" style="font-style: oblique;">
-                {{ __('Roles') }}
-            </h2>
+        <div class="flex flex-col gap-2 pr-6 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl bg-light-cloud-blue">
+                    <i class="text-2xl text-white fa-solid fa-user-shield"></i>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl font-bold leading-tight">Roles</h2>
+                    <p class="text-sm text-gray-500">Administra los roles del sistema y sus permisos asociados</p>
+                </div>
+            </div>
+
         </div>
     </x-slot>
-
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
         <div class="flex justify-end mb-4">
@@ -19,11 +26,11 @@
         <livewire:roles-table />
 
         <x-modal name="add-role" :show="$errors->any()" focusable>
-            
-             @slot('title')
-                <h1 class="text-lg font-medium text-white dark:text-gray-100">
-                    {{ __('Agregar Rol') }}
-                </h1>
+
+            @slot('title')
+            <h1 class="text-lg font-medium text-white dark:text-gray-100">
+                {{ __('Agregar Rol') }}
+            </h1>
             @endslot
             <form method="POST" action="{{ route('roles.add') }}">
                 @csrf

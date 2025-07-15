@@ -142,6 +142,313 @@ class ReporteriaController extends Controller
         ));
     }
 
+    public function espacios(Request $request)
+    {
+        $mes = now()->month;
+        $anio = now()->year;
+
+        // Obtener filtros de la request
+        $tipoEspacioFiltro = $request->get('tipo_espacio', '');
+        $pisoFiltro = $request->get('piso', '');
+        $estadoFiltro = $request->get('estado', '');
+        $busqueda = $request->get('busqueda', '');
+
+        // Query base optimizada - solo cargar relaciones necesarias
+        $espaciosQuery = \App\Models\Espacio::with(['piso.facultad']);
+
+        // Aplicar filtros
+        if (!empty($tipoEspacioFiltro)) {
+            $espaciosQuery->where('tipo_espacio', $tipoEspacioFiltro);
+        }
+        if (!empty($pisoFiltro)) {
+            $espaciosQuery->whereHas('piso', function($q) use ($pisoFiltro) {
+                $q->where('numero_piso', $pisoFiltro);
+            });
+        }
+        if (!empty($estadoFiltro)) {
+            $espaciosQuery->where('estado', $estadoFiltro);
+        }
+        if (!empty($busqueda)) {
+            $espaciosQuery->where('nombre_espacio', 'like', '%' . $busqueda . '%');
+        }
+
+        $espacios = $espaciosQuery->get();
+        $espaciosIds = $espacios->pluck('id_espacio');
+
+        // KPIs optimizados - una sola consulta para reservas
+        $total_espacios = $espacios->count();
+        $espacios_ocupados = $espacios->where('estado', 'Ocupado')->count();
+        
+        // Obtener estadísticas de reservas en una sola consulta
+        $reservasStats = \App\Models\Reserva::whereIn('id_espacio', $espaciosIds)
+            ->whereMonth('fecha_reserva', $mes)
+            ->whereYear('fecha_reserva', $anio)
+            ->selectRaw('
+                id_espacio,
+                COUNT(*) as total_reservas,
+                COUNT(DISTINCT fecha_reserva) as dias_con_reservas,
+                SUM(CASE WHEN hora IS NOT NULL AND hora_salida IS NOT NULL 
+                    THEN TIMESTAMPDIFF(MINUTE, hora, hora_salida) ELSE 0 END) / 60 as horas_utilizadas
+            ')
+            ->groupBy('id_espacio')
+            ->get()
+            ->keyBy('id_espacio');
+
+        $total_reservas = $reservasStats->sum('total_reservas');
+
+        // Días laborales simplificado
+        $dias_laborales = collect(range(1, now()->daysInMonth))
+            ->map(function($day) use ($anio, $mes) {
+                return \Carbon\Carbon::create($anio, $mes, $day);
+            })
+            ->filter(function($date) {
+                return $date->isWeekday();
+            })->count();
+
+        // Promedio utilización simplificado
+        $promedio_utilizacion = $total_espacios > 0 ? round(($total_reservas / ($total_espacios * $dias_laborales * 15)) * 100) : 0;
+
+        // Calcular estadísticas por espacio de forma optimizada
+        $resumen = [];
+        $labels_grafico = [];
+        $data_grafico = [];
+        $data_reservas_grafico = [];
+
+        foreach ($espacios as $espacio) {
+            $stats = $reservasStats->get($espacio->id_espacio);
+            $total_reservas_espacio = $stats ? $stats->total_reservas : 0;
+            $horas_utilizadas = $stats ? round($stats->horas_utilizadas) : 0;
+            $dias_con_reservas = $stats ? $stats->dias_con_reservas : 0;
+            
+            $promedio = $dias_laborales > 0 ? round(($dias_con_reservas / $dias_laborales) * 100) : 0;
+            $estado = $promedio >= 80 ? 'Óptimo' : ($promedio >= 40 ? 'Medio uso' : 'Bajo uso');
+            
+            $resumen[] = [
+                'id_espacio' => $espacio->id_espacio,
+                'nombre' => $espacio->nombre_espacio,
+                'tipo_espacio' => $espacio->tipo_espacio,
+                'piso' => $espacio->piso ? $espacio->piso->numero_piso : 'N/A',
+                'facultad' => $espacio->piso && $espacio->piso->facultad ? $espacio->piso->facultad->nombre_facultad : 'N/A',
+                'estado' => $espacio->estado,
+                'puestos_disponibles' => $espacio->puestos_disponibles,
+                'total_reservas' => $total_reservas_espacio,
+                'horas_utilizadas' => $horas_utilizadas,
+                'promedio' => $promedio,
+                'estado_utilizacion' => $estado,
+            ];
+            
+            $labels_grafico[] = $espacio->nombre_espacio;
+            $data_grafico[] = $promedio;
+            $data_reservas_grafico[] = $total_reservas_espacio;
+        }
+
+        // Datos para filtros - consultas optimizadas
+        $tiposEspacioDisponibles = \App\Models\Espacio::distinct()->pluck('tipo_espacio');
+        $pisosDisponibles = \App\Models\Piso::whereHas('facultad', function($q) {
+            $q->where('id_facultad', 'IT_TH');
+        })->orderBy('numero_piso')->pluck('numero_piso', 'numero_piso');
+        $estadosDisponibles = ['Disponible', 'Ocupado', 'Mantenimiento'];
+
+        // Horarios simplificados - solo si hay espacios
+        $diasDisponibles = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
+        $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
+        if (!in_array($diaActual, $diasDisponibles)) $diaActual = 'lunes';
+
+        // Ocupación por horarios - solo para espacios con reservas
+        $ocupacionHorarios = [];
+        if ($espaciosIds->isNotEmpty()) {
+            $ocupacionData = \App\Models\Reserva::whereIn('id_espacio', $espaciosIds)
+                ->whereMonth('fecha_reserva', $mes)
+                ->whereYear('fecha_reserva', $anio)
+                ->selectRaw('
+                    id_espacio,
+                    DAYOFWEEK(fecha_reserva) as dia_semana,
+                    HOUR(hora) as hora_inicio,
+                    COUNT(*) as reservas
+                ')
+                ->groupBy('id_espacio', 'dia_semana', 'hora_inicio')
+                ->get();
+
+            foreach ($espacios as $espacio) {
+                $ocupacionHorarios[$espacio->id_espacio] = [];
+                foreach ($diasDisponibles as $dia) {
+                    $ocupacionHorarios[$espacio->id_espacio][$dia] = [];
+                    for ($moduloNum = 1; $moduloNum <= 15; $moduloNum++) {
+                        $ocupacionHorarios[$espacio->id_espacio][$dia][$moduloNum] = 0;
+                    }
+                }
+            }
+
+            // Llenar datos de ocupación
+            foreach ($ocupacionData as $data) {
+                $diaNum = $this->obtenerNumeroDia($data->dia_semana);
+                $modulo = $this->obtenerModuloPorHora($data->hora_inicio);
+                if (isset($ocupacionHorarios[$data->id_espacio][$diaNum][$modulo])) {
+                    $ocupacionHorarios[$data->id_espacio][$diaNum][$modulo] = 100;
+                }
+            }
+        }
+
+        return view('reporteria.espacios', compact(
+            'total_espacios',
+            'espacios_ocupados',
+            'total_reservas',
+            'promedio_utilizacion',
+            'resumen',
+            'labels_grafico',
+            'data_grafico',
+            'data_reservas_grafico',
+            'diasDisponibles',
+            'diaActual',
+            'ocupacionHorarios',
+            'tiposEspacioDisponibles',
+            'pisosDisponibles',
+            'estadosDisponibles',
+            'tipoEspacioFiltro',
+            'pisoFiltro',
+            'estadoFiltro',
+            'busqueda'
+        ));
+    }
+
+    public function exportEspacios(Request $request, $format)
+    {
+        $mes = now()->month;
+        $anio = now()->year;
+
+        // Obtener filtros de la request
+        $tipoEspacioFiltro = $request->get('tipo_espacio', '');
+        $pisoFiltro = $request->get('piso', '');
+        $estadoFiltro = $request->get('estado', '');
+        $busqueda = $request->get('busqueda', '');
+
+        // Query base optimizada
+        $espaciosQuery = \App\Models\Espacio::with(['piso.facultad']);
+
+        // Aplicar filtros
+        if (!empty($tipoEspacioFiltro)) {
+            $espaciosQuery->where('tipo_espacio', $tipoEspacioFiltro);
+        }
+        if (!empty($pisoFiltro)) {
+            $espaciosQuery->whereHas('piso', function($q) use ($pisoFiltro) {
+                $q->where('numero_piso', $pisoFiltro);
+            });
+        }
+        if (!empty($estadoFiltro)) {
+            $espaciosQuery->where('estado', $estadoFiltro);
+        }
+        if (!empty($busqueda)) {
+            $espaciosQuery->where('nombre_espacio', 'like', '%' . $busqueda . '%');
+        }
+
+        $espacios = $espaciosQuery->get();
+        $espaciosIds = $espacios->pluck('id_espacio');
+
+        // Días laborales simplificado
+        $dias_laborales = collect(range(1, now()->daysInMonth))
+            ->map(function($day) use ($anio, $mes) {
+                return \Carbon\Carbon::create($anio, $mes, $day);
+            })
+            ->filter(function($date) {
+                return $date->isWeekday();
+            })->count();
+
+        // Obtener estadísticas de reservas en una sola consulta
+        $reservasStats = \App\Models\Reserva::whereIn('id_espacio', $espaciosIds)
+            ->whereMonth('fecha_reserva', $mes)
+            ->whereYear('fecha_reserva', $anio)
+            ->selectRaw('
+                id_espacio,
+                COUNT(*) as total_reservas,
+                COUNT(DISTINCT fecha_reserva) as dias_con_reservas,
+                SUM(CASE WHEN hora IS NOT NULL AND hora_salida IS NOT NULL 
+                    THEN TIMESTAMPDIFF(MINUTE, hora, hora_salida) ELSE 0 END) / 60 as horas_utilizadas
+            ')
+            ->groupBy('id_espacio')
+            ->get()
+            ->keyBy('id_espacio');
+
+        // Calcular datos para exportación
+        $datos = [];
+        foreach ($espacios as $espacio) {
+            $stats = $reservasStats->get($espacio->id_espacio);
+            $total_reservas_espacio = $stats ? $stats->total_reservas : 0;
+            $horas_utilizadas = $stats ? round($stats->horas_utilizadas) : 0;
+            $dias_con_reservas = $stats ? $stats->dias_con_reservas : 0;
+            
+            $promedio = $dias_laborales > 0 ? round(($dias_con_reservas / $dias_laborales) * 100) : 0;
+            $estado = $promedio >= 80 ? 'Óptimo' : ($promedio >= 40 ? 'Medio uso' : 'Bajo uso');
+            
+            $datos[] = [
+                'id_espacio' => $espacio->id_espacio,
+                'nombre' => $espacio->nombre_espacio,
+                'tipo_espacio' => $espacio->tipo_espacio,
+                'piso' => $espacio->piso ? $espacio->piso->numero_piso : 'N/A',
+                'facultad' => $espacio->piso && $espacio->piso->facultad ? $espacio->piso->facultad->nombre_facultad : 'N/A',
+                'estado' => $espacio->estado,
+                'puestos_disponibles' => $espacio->puestos_disponibles ?? 'N/A',
+                'total_reservas' => $total_reservas_espacio,
+                'horas_utilizadas' => $horas_utilizadas,
+                'promedio_utilizacion' => $promedio . '%',
+                'estado_utilizacion' => $estado,
+            ];
+        }
+
+        if ($format === 'pdf') {
+            $data = [
+                'datos' => $datos,
+                'fecha_generacion' => Carbon::now()->format('d/m/Y H:i:s'),
+                'periodo' => Carbon::now()->format('m/Y'),
+                'total_registros' => count($datos),
+                'filtros_aplicados' => [
+                    'tipo_espacio' => $tipoEspacioFiltro,
+                    'piso' => $pisoFiltro,
+                    'estado' => $estadoFiltro,
+                    'busqueda' => $busqueda
+                ]
+            ];
+
+            $filename = 'analisis_espacios_' . date('Y-m-d_H-i-s') . '.pdf';
+            $pdf = Pdf::loadView('reporteria.pdf.espacios', $data);
+            return $pdf->download($filename);
+        } else {
+            // Exportar a Excel
+            return Excel::download(new class($datos) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\WithStyles {
+                private $datos;
+                
+                public function __construct($datos) {
+                    $this->datos = $datos;
+                }
+                
+                public function array(): array {
+                    return $this->datos;
+                }
+                
+                public function headings(): array {
+                    return [
+                        'ID Espacio',
+                        'Nombre',
+                        'Tipo de Espacio',
+                        'Piso',
+                        'Facultad',
+                        'Estado',
+                        'Puestos Disponibles',
+                        'Total Reservas',
+                        'Horas Utilizadas',
+                        'Promedio Utilización',
+                        'Estado Utilización'
+                    ];
+                }
+                
+                public function styles(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet) {
+                    return [
+                        1 => ['font' => ['bold' => true]],
+                    ];
+                }
+            }, 'analisis_espacios_' . date('Y-m-d_H-i-s') . '.xlsx');
+        }
+    }
+
     public function exportTipoEspacio($format)
     {
         // Obtener todos los tipos de espacio distintos
@@ -1117,6 +1424,76 @@ class ReporteriaController extends Controller
         }
 
         return $horariosPico;
+    }
+
+    /**
+     * Obtener número de día de la semana para MySQL
+     */
+    private function obtenerNumeroDia($dia)
+    {
+        $dias = [
+            'lunes' => 2,
+            'martes' => 3,
+            'miercoles' => 4,
+            'jueves' => 5,
+            'viernes' => 6,
+            'sabado' => 7,
+            'domingo' => 1
+        ];
+        
+        return $dias[$dia] ?? 1;
+    }
+
+    /**
+     * Obtener hora de inicio o fin de un módulo
+     */
+    private function obtenerHoraModulo($moduloNum, $tipo = 'inicio')
+    {
+        $modulosHorarios = [
+            1 => ['inicio' => '08:10', 'fin' => '09:00'],
+            2 => ['inicio' => '09:10', 'fin' => '10:00'],
+            3 => ['inicio' => '10:10', 'fin' => '11:00'],
+            4 => ['inicio' => '11:10', 'fin' => '12:00'],
+            5 => ['inicio' => '12:10', 'fin' => '13:00'],
+            6 => ['inicio' => '13:10', 'fin' => '14:00'],
+            7 => ['inicio' => '14:10', 'fin' => '15:00'],
+            8 => ['inicio' => '15:10', 'fin' => '16:00'],
+            9 => ['inicio' => '16:10', 'fin' => '17:00'],
+            10 => ['inicio' => '17:10', 'fin' => '18:00'],
+            11 => ['inicio' => '18:10', 'fin' => '19:00'],
+            12 => ['inicio' => '19:10', 'fin' => '20:00'],
+            13 => ['inicio' => '20:10', 'fin' => '21:00'],
+            14 => ['inicio' => '21:10', 'fin' => '22:00'],
+            15 => ['inicio' => '22:10', 'fin' => '23:00']
+        ];
+        
+        return $modulosHorarios[$moduloNum][$tipo] ?? '00:00';
+    }
+
+    /**
+     * Obtener módulo por hora
+     */
+    private function obtenerModuloPorHora($hora)
+    {
+        $horaInt = (int)$hora;
+        
+        if ($horaInt >= 8 && $horaInt < 9) return 1;
+        if ($horaInt >= 9 && $horaInt < 10) return 2;
+        if ($horaInt >= 10 && $horaInt < 11) return 3;
+        if ($horaInt >= 11 && $horaInt < 12) return 4;
+        if ($horaInt >= 12 && $horaInt < 13) return 5;
+        if ($horaInt >= 13 && $horaInt < 14) return 6;
+        if ($horaInt >= 14 && $horaInt < 15) return 7;
+        if ($horaInt >= 15 && $horaInt < 16) return 8;
+        if ($horaInt >= 16 && $horaInt < 17) return 9;
+        if ($horaInt >= 17 && $horaInt < 18) return 10;
+        if ($horaInt >= 18 && $horaInt < 19) return 11;
+        if ($horaInt >= 19 && $horaInt < 20) return 12;
+        if ($horaInt >= 20 && $horaInt < 21) return 13;
+        if ($horaInt >= 21 && $horaInt < 22) return 14;
+        if ($horaInt >= 22 && $horaInt < 23) return 15;
+        
+        return 1; // Por defecto
     }
 
     public function historicoAjax(Request $request)

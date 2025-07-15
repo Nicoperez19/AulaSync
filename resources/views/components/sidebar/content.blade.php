@@ -40,6 +40,15 @@
             <x-icons.upload class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
         </x-slot>
     </x-sidebar.link>
+
+    <!-- Tablero Académico -->
+    <x-sidebar.link title="Tablero Académico" href="{{ route('modulos.actuales') }}"
+        :isActive="request()->routeIs('modulos.actuales')">
+        <x-slot name="icon">
+            <x-icons.table class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
+        </x-slot>
+    </x-sidebar.link>
+
     <!-- Reportería -->
     <x-sidebar.dropdown title="Reportes" :active="Str::startsWith(request()->route()->uri(), 'reporteria')">
         <x-slot name="icon">
@@ -50,6 +59,8 @@
             :isActive="request()->routeIs('reporteria.accesos')" />
         <x-sidebar.sublink title="Análisis por tipo de espacio" href="{{ route('reporteria.tipo-espacio') }}"
             :isActive="request()->routeIs('reporteria.tipo-espacio')" />
+        <x-sidebar.sublink title="Análisis por espacios" href="{{ route('reporteria.espacios') }}"
+            :isActive="request()->routeIs('reporteria.espacios')" />
         {{-- <x-sidebar.sublink title="Por unidad académica" href="{{ route('reporteria.unidad-academica') }}"
             :isActive="request()->routeIs('reporteria.unidad-academica')" /> --}}
     </x-sidebar.dropdown>

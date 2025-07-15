@@ -10,6 +10,8 @@ class Profesor extends Model
     use HasFactory;
 
     protected $table = 'profesors';
+    protected $primaryKey = 'run_profesor';
+    public $incrementing = false;
 
     protected $fillable = [
         'run_profesor',

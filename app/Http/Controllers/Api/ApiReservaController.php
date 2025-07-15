@@ -274,7 +274,7 @@ class ApiReservaController extends Controller
                 'hora' => $horaInicio,
                 'fecha_reserva' => $fechaReserva,
                 'id_espacio' => $request->espacio_id,
-                'run' => $request->user_id,
+                'run_profesor' => $request->user_id,
                 'tipo_reserva' => 'espontanea',
                 'estado' => 'activa',
                 'hora_salida' => $horaTermino
@@ -430,10 +430,10 @@ class ApiReservaController extends Controller
 
             // Si no está ocupado, buscamos reservas activas
             $reserva = \App\Models\Reserva::where('id_espacio', $id)
-                ->where('fecha', \Carbon\Carbon::today())
-                ->where('hora_inicio', '<=', \Carbon\Carbon::now()->format('H:i:s'))
-                ->where('hora_termino', '>=', \Carbon\Carbon::now()->format('H:i:s'))
-                ->with(['usuario', 'espacio'])
+                ->where('fecha_reserva', \Carbon\Carbon::today())
+                ->where('hora', '<=', \Carbon\Carbon::now()->format('H:i:s'))
+                ->where('hora_salida', '>=', \Carbon\Carbon::now()->format('H:i:s'))
+                ->with(['user', 'espacio'])
                 ->first();
 
             if (!$reserva) {
@@ -447,11 +447,11 @@ class ApiReservaController extends Controller
                 'success' => true,
                 'reserva' => [
                     'id' => $reserva->id_reserva,
-                    'profesor_nombre' => $reserva->usuario->name,
-                    'profesor_email' => $reserva->usuario->email,
-                    'hora_inicio' => $reserva->hora_inicio,
-                    'hora_termino' => $reserva->hora_termino,
-                    'fecha' => $reserva->fecha,
+                    'profesor_nombre' => $reserva->user->name,
+                    'profesor_email' => $reserva->user->email,
+                    'hora_inicio' => $reserva->hora,
+                    'hora_termino' => $reserva->hora_salida,
+                    'fecha' => $reserva->fecha_reserva,
                     'espacio_nombre' => $reserva->espacio->nombre_espacio,
                     'tipo_reserva' => $reserva->tipo_reserva,
                     'estado_espacio' => $espacio->estado

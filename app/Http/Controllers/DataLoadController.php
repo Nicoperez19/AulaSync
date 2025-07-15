@@ -6,7 +6,6 @@ use App\Models\DataLoad;
 use App\Models\Profesor;
 use App\Models\Asignatura;
 use App\Models\Carrera;
-use App\Models\Seccion;
 use App\Models\Horario;
 use App\Models\Planificacion_Asignatura;
 use Illuminate\Http\Request;
@@ -202,7 +201,36 @@ class DataLoadController extends Controller
                     $codigoAsignatura = $row[1];
                     $nombreAsignatura = preg_replace('/^[a-z]{2}:\s*/i', '', $row[2]);
 
-                    $numeroSeccion = $row[3];
+                    $numeroSeccion = trim($row[3]); // Columna D
+                    
+                    // Validar que la sección sea un número de hasta 4 dígitos
+                    if (!empty($numeroSeccion) && !preg_match('/^\d{1,4}$/', $numeroSeccion)) {
+                        Log::warning('Sección inválida', [
+                            'numero_fila' => $index + 1,
+                            'seccion' => $numeroSeccion,
+                            'id_asignatura' => $idAsignatura,
+                            'mensaje' => 'La sección debe ser un número de 1 a 4 dígitos'
+                        ]);
+                        $errors[] = "Fila " . ($index + 1) . ": Sección inválida - debe ser un número de 1 a 4 dígitos (valor: " . $numeroSeccion . ")";
+                        continue;
+                    }
+                    
+                    // Si la sección está vacía, asignar un valor por defecto
+                    if (empty($numeroSeccion)) {
+                        $numeroSeccion = '1';
+                        Log::info('Sección vacía, asignando valor por defecto', [
+                            'numero_fila' => $index + 1,
+                            'seccion' => $numeroSeccion,
+                            'id_asignatura' => $idAsignatura
+                        ]);
+                    }
+                    
+                    Log::info('Procesando sección', [
+                        'numero_fila' => $index + 1,
+                        'seccion' => $numeroSeccion,
+                        'id_asignatura' => $idAsignatura,
+                        'tipo_dato' => gettype($numeroSeccion)
+                    ]);
 
                     $existingAsignatura = Asignatura::where('id_asignatura', $idAsignatura)->first();
                     if (!$existingAsignatura) {
@@ -210,29 +238,55 @@ class DataLoadController extends Controller
                             'id_asignatura' => $idAsignatura,
                             'codigo_asignatura' => $codigoAsignatura,
                             'nombre_asignatura' => $nombreAsignatura,
+                            'seccion' => $numeroSeccion,
                             'run_profesor' => $run,
                             'id_carrera' => $idCarrera
                         ]);
-                        Log::info('Nueva asignatura creada', ['id_asignatura' => $idAsignatura]);
-                    } else {
-                        $asignatura = $existingAsignatura;
-                        Log::info('Asignatura ya existe', ['id_asignatura' => $idAsignatura]);
-                    }
-
-                    $existingSeccion = Seccion::where('id_asignatura', $idAsignatura)
-                        ->where('numero', $numeroSeccion)
-                        ->first();
-
-                    if (!$existingSeccion) {
-                        Seccion::create([
-                            'numero' => $numeroSeccion,
-                            'id_asignatura' => $idAsignatura
-                        ]);
-                        Log::info('Nueva sección creada', [
+                        Log::info('Nueva asignatura creada', [
                             'id_asignatura' => $idAsignatura,
-                            'numero' => $numeroSeccion
+                            'seccion' => $numeroSeccion,
+                            'seccion_guardada' => $asignatura->seccion
+                        ]);
+                        
+                        // Verificar que la sección se guardó correctamente
+                        $asignaturaVerificada = Asignatura::find($idAsignatura);
+                        if ($asignaturaVerificada && $asignaturaVerificada->seccion !== $numeroSeccion) {
+                            Log::error('Error: La sección no se guardó correctamente', [
+                                'id_asignatura' => $idAsignatura,
+                                'seccion_esperada' => $numeroSeccion,
+                                'seccion_guardada' => $asignaturaVerificada->seccion
+                            ]);
+                        }
+                    } else {
+                        // Actualizar la sección si es diferente
+                        if ($existingAsignatura->seccion != $numeroSeccion) {
+                            $existingAsignatura->update(['seccion' => $numeroSeccion]);
+                            Log::info('Sección actualizada', [
+                                'id_asignatura' => $idAsignatura,
+                                'seccion_anterior' => $existingAsignatura->getOriginal('seccion'),
+                                'seccion_nueva' => $numeroSeccion,
+                                'seccion_guardada' => $existingAsignatura->fresh()->seccion
+                            ]);
+                            
+                            // Verificar que la sección se actualizó correctamente
+                            $asignaturaActualizada = Asignatura::find($idAsignatura);
+                            if ($asignaturaActualizada && $asignaturaActualizada->seccion !== $numeroSeccion) {
+                                Log::error('Error: La sección no se actualizó correctamente', [
+                                    'id_asignatura' => $idAsignatura,
+                                    'seccion_esperada' => $numeroSeccion,
+                                    'seccion_guardada' => $asignaturaActualizada->seccion
+                                ]);
+                            }
+                        }
+                        $asignatura = $existingAsignatura;
+                        Log::info('Asignatura ya existe', [
+                            'id_asignatura' => $idAsignatura,
+                            'seccion_actual' => $asignatura->seccion,
+                            'seccion_nueva' => $numeroSeccion
                         ]);
                     }
+
+                  
                     $processedAsignaturasCount++;
 
                     $semestre = $row[5]; // Columna F
@@ -293,6 +347,19 @@ class DataLoadController extends Controller
                                     $modulo = $matches[2];
                                     $grupo = $matches[3];
                                     $espacio = preg_replace('/^[a-z]{2}:\s*/i', '', $matches[4]);
+                                    
+                                    // Verificar si el espacio existe en la base de datos
+                                    $espacioExiste = \App\Models\Espacio::where('id_espacio', $espacio)->exists();
+                                    
+                                    if (!$espacioExiste) {
+                                        Log::warning('Espacio no encontrado en la base de datos', [
+                                            'id_espacio' => $espacio,
+                                            'fila' => $index + 1,
+                                            'run_profesor' => $run
+                                        ]);
+                                        continue; // Saltar esta planificación si el espacio no existe
+                                    }
+                                    
                                     $existingPlanificacion = Planificacion_Asignatura::where('id_asignatura', $idAsignatura)
                                         ->where('id_horario', $horario->id_horario)
                                         ->where('id_modulo', $dia . '.' . $modulo)

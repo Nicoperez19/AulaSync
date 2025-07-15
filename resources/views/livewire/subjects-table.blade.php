@@ -31,7 +31,7 @@
 <div>
     <!-- Campo de búsqueda -->
     <div class="mb-4">
-        <div class="flex flex-col sm:flex-row gap-4">
+        <div class="flex flex-col gap-4 sm:flex-row">
             <div class="relative flex-1">
                 <input type="text" 
                        wire:model.live="search" 
@@ -44,6 +44,12 @@
                 </div>
             </div>
          
+            <div class="flex justify-end ">
+                <x-button x-on:click.prevent="$dispatch('open-modal', 'add-asignatura')" variant="add"
+                    class="max-w-xs gap-2">
+                    <x-icons.add class="w-6 h-6" aria-hidden="true" />
+                </x-button>
+            </div>
         </div>
     </div>
 
@@ -56,9 +62,12 @@
             <thead class="text-white bg-light-cloud-blue dark:bg-black dark:text-white">
                 <tr>
                     <th class="p-3" onclick="sortTable(0)">ID Asignatura <span class="sort-icon">▼</span></th>
-                    <th class="p-3" onclick="sortTable(1)">Nombre <span class="sort-icon">▼</span></th>
-                    <th class="p-3" onclick="sortTable(2)">Docente Responsable <span class="sort-icon">▼</span></th>
-                    <th class="p-3" onclick="sortTable(3)">Carrera <span class="sort-icon">▼</span></th>
+                    <th class="p-3" onclick="sortTable(1)">Código <span class="sort-icon">▼</span></th>
+                    <th class="p-3" onclick="sortTable(2)">Nombre <span class="sort-icon">▼</span></th>
+                    <th class="p-3" onclick="sortTable(3)">Sección <span class="sort-icon">▼</span></th>
+                    <th class="p-3" onclick="sortTable(4)">Docente <span class="sort-icon">▼</span></th>
+                    <th class="p-3" onclick="sortTable(5)">Carrera <span class="sort-icon">▼</span></th>
+                    <th class="p-3" onclick="sortTable(6)">Período <span class="sort-icon">▼</span></th>
                     <th class="p-3">Acciones</th>
                 </tr>
             </thead>
@@ -66,9 +75,12 @@
                 @foreach ($asignaturas as $index => $asignatura)
                     <tr class="{{ $index % 2 === 0 ? 'bg-gray-200' : 'bg-gray-100' }}">
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ $asignatura->id_asignatura }}</td>
+                        <td class="p-3 dark:border-white whitespace-nowrap">{{ $asignatura->codigo_asignatura }}</td>
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ $asignatura->nombre_asignatura }}</td>
+                        <td class="p-3 dark:border-white whitespace-nowrap">{{ $asignatura->seccion }}</td>
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ optional($asignatura->profesor)->name ?? 'No asignado' }}</td>
                         <td class="p-3 dark:border-white whitespace-nowrap">{{ optional($asignatura->carrera)->nombre ?? 'No asignada' }}</td>
+                        <td class="p-3 dark:border-white whitespace-nowrap">{{ $asignatura->periodo ?? 'No especificado' }}</td>
                         <td class="p-3 dark:border-white whitespace-nowrap">
                             <div class="flex justify-center space-x-2">
                                 <x-button variant="view" href="{{ route('asignaturas.edit', $asignatura->id_asignatura) }}"

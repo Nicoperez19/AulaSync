@@ -1,13 +1,22 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <h2 class="text-xl font-semibold leading-tight">
-                {{ __('Usuarios/ Permisos') }}
-            </h2>
+        <div class="flex flex-col gap-2 pr-6 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl bg-light-cloud-blue">
+                    <i class="text-2xl text-white fa-solid fa-shield-halved"></i>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl font-bold leading-tight">Permisos</h2>
+                    <p class="text-sm text-gray-500">Administra los permisos asignables a roles y usuarios</p>
+                </div>
+            </div>
+
         </div>
     </x-slot>
     <div class="flex justify-end mb-4">
-        <x-button x-on:click.prevent="$dispatch('open-modal', 'add-permission')" variant="primary" class="max-w-xs gap-2">
+        <x-button x-on:click.prevent="$dispatch('open-modal', 'add-permission')" variant="primary"
+            class="max-w-xs gap-2">
             <x-icons.add class="w-6 h-6" aria-hidden="true" />
         </x-button>
     </div>
@@ -55,9 +64,8 @@
 
                                     <x-button type="button"
                                         onclick="confirmDelete({{ $permission->id }}, '{{ $permission->name }}')"
-                                        variant="danger"
-                                        class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700"> <x-icons.delete
-                                            class="w-6 h-6" aria-hidden="true" />
+                                        variant="danger" class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700">
+                                        <x-icons.delete class="w-6 h-6" aria-hidden="true" />
                                     </x-button>
                                 </form>
                             </td>
@@ -74,8 +82,8 @@
             <div class="p-6 space-y-6">
                 <div class="space-y-2">
                     <x-form.label for="name_permission" :value="__('Nombre del Permiso')" class="text-left" />
-                    <x-form.input id="name_permission" class="block w-full" type="text" name="name" required
-                        autofocus placeholder="{{ __('Nombre del permiso') }}" />
+                    <x-form.input id="name_permission" class="block w-full" type="text" name="name" required autofocus
+                        placeholder="{{ __('Nombre del permiso') }}" />
                 </div>
                 <div class="flex justify-end">
                     <x-button class="justify-center w-full gap-2">
@@ -134,7 +142,7 @@
         const form = document.getElementById('edit-permission-form');
 
         if (form) {
-            form.addEventListener('submit', function(e) {
+            form.addEventListener('submit', function (e) {
                 e.preventDefault(); // Evita el envío inmediato
 
                 Swal.fire({

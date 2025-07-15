@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Models\Profesor;
 use App\Models\Carrera;
 use App\Models\Asignatura;
 use Spatie\Permission\Models\Role;
@@ -18,13 +18,11 @@ class AsignaturaController extends Controller
      */
     public function index()
     {
-        $asignaturas = Asignatura::with('user', 'carrera')->paginate(10);
-        $usuarios = User::whereHas('roles', function ($query) {
-            $query->where('name', 'Profesor');
-        })->get();        
+        $asignaturas = Asignatura::with('profesor', 'carrera')->paginate(10);
+        $profesores = Profesor::all();       
         $carreras = Carrera::all();
 
-        return view('layouts.subjects.subject_index', compact('asignaturas', 'usuarios', 'carreras'));
+        return view('layouts.subjects.subject_index', compact('asignaturas', 'profesores', 'carreras'));
     }
     /**
      * Show the form for creating a new resource.
@@ -42,24 +40,27 @@ class AsignaturaController extends Controller
         try {
             $request->validate([
                 'id_asignatura' => 'required|string|max:20|unique:asignaturas,id_asignatura',
+                'codigo_asignatura' => 'required|string|max:100',
                 'nombre_asignatura' => 'required|string|max:100',
-                'horas_directas' => 'required|integer|min:0',
-                'horas_indirectas' => 'required|integer|min:0',
-                'area_conocimiento' => 'required|string|max:100',
-                'periodo' => 'required|string|max:20',
-                'run' => 'required|exists:users,run',
+                'seccion' => 'required|string|max:50',
+                'horas_directas' => 'nullable|integer|min:0',
+                'horas_indirectas' => 'nullable|integer|min:0',
+                'area_conocimiento' => 'nullable|string|max:100',
+                'periodo' => 'nullable|string|max:20',
+                'run_profesor' => 'required|exists:profesors,run_profesor',
                 'id_carrera' => 'required|exists:carreras,id_carrera',
             ]);
 
             Asignatura::create([
                 'id_asignatura' => $request->id_asignatura,
-                'codigo_asignatura' => $request->id_asignatura, // Usar el mismo valor como código
+                'codigo_asignatura' => $request->codigo_asignatura,
                 'nombre_asignatura' => $request->nombre_asignatura,
+                'seccion' => $request->seccion,
                 'horas_directas' => $request->horas_directas,
                 'horas_indirectas' => $request->horas_indirectas,
                 'area_conocimiento' => $request->area_conocimiento,
                 'periodo' => $request->periodo,
-                'run' => $request->run,
+                'run_profesor' => $request->run_profesor,
                 'id_carrera' => $request->id_carrera,
             ]);
 

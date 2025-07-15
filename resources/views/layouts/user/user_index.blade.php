@@ -1,11 +1,20 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <h2 class="text-xl font-semibold leading-tight" style="font-style: oblique;">
-                {{ __('Usuarios / Usuarios') }}
-            </h2>
+        <div class="flex flex-col gap-2 pr-6 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl bg-light-cloud-blue">
+                    <i class="text-2xl text-white fa-solid fa-users"></i>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl font-bold leading-tight">Usuarios</h2>
+                    <p class="text-sm text-gray-500">Administra los usuarios registrados en el sistema</p>
+                </div>
+            </div>
+
         </div>
     </x-slot>
+
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
         <div class="flex items-center justify-between mt-4">

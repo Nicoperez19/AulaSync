@@ -1,9 +1,17 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <h2 class="text-xl font-semibold leading-tight" style="font-style: oblique;">
-                {{ __('Espacios') }}
-            </h2>
+        <div class="flex flex-col gap-2 pr-6 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl bg-light-cloud-blue">
+                    <i class="text-2xl text-white fa-solid fa-building"></i>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl font-bold leading-tight">Espacios</h2>
+                    <p class="text-sm text-gray-500">Administra los espacios físicos disponibles en el sistema</p>
+                </div>
+            </div>
+
         </div>
     </x-slot>
 
@@ -34,8 +42,7 @@
                     </div>
                     <div class="space-y-2">
                         <x-form.label for="id_facultad" :value="__('Facultad')" class="text-left" />
-                        <select id="selectedFacultad" name="id_facultad" class="w-full p-2 border rounded"
-                            disabled>
+                        <select id="selectedFacultad" name="id_facultad" class="w-full p-2 border rounded" disabled>
                             <option value="">Seleccione</option>
                         </select>
                     </div>
@@ -56,16 +63,20 @@
                             required>
                             <option value="" disabled selected>{{ __('Seleccionar Tipo de Espacio') }}</option>
                             <option value="Aula" {{ old('tipo_espacio') == 'Aula' ? 'selected' : '' }}>
-                                {{ __('Aula') }}</option>
+                                {{ __('Aula') }}
+                            </option>
                             <option value="Laboratorio" {{ old('tipo_espacio') == 'Laboratorio' ? 'selected' : '' }}>
-                                {{ __('Laboratorio') }}</option>
+                                {{ __('Laboratorio') }}
+                            </option>
                             <option value="Biblioteca" {{ old('tipo_espacio') == 'Biblioteca' ? 'selected' : '' }}>
-                                {{ __('Biblioteca') }}</option>
-                            <option value="Sala de Reuniones"
-                                {{ old('tipo_espacio') == 'Sala de Reuniones' ? 'selected' : '' }}>
-                                {{ __('Sala de Reuniones') }}</option>
+                                {{ __('Biblioteca') }}
+                            </option>
+                            <option value="Sala de Reuniones" {{ old('tipo_espacio') == 'Sala de Reuniones' ? 'selected' : '' }}>
+                                {{ __('Sala de Reuniones') }}
+                            </option>
                             <option value="Oficinas" {{ old('tipo_espacio') == 'Oficinas' ? 'selected' : '' }}>
-                                {{ __('Oficinas') }}</option>
+                                {{ __('Oficinas') }}
+                            </option>
                         </select>
                     </div>
 
@@ -76,11 +87,14 @@
                             required>
                             <option value="" disabled selected>{{ __('Seleccionar Estado') }}</option>
                             <option value="Disponible" {{ old('estado') == 'Disponible' ? 'selected' : '' }}>
-                                {{ __('Disponible') }}</option>
+                                {{ __('Disponible') }}
+                            </option>
                             <option value="Ocupado" {{ old('estado') == 'Ocupado' ? 'selected' : '' }}>
-                                {{ __('Ocupado') }}</option>
+                                {{ __('Ocupado') }}
+                            </option>
                             <option value="Reservado" {{ old('estado') == 'Reservado' ? 'selected' : '' }}>
-                                {{ __('Reservado') }}</option>
+                                {{ __('Reservado') }}
+                            </option>
                         </select>
                     </div>
 
@@ -108,7 +122,7 @@
     </div>
 
     <script>
-        document.getElementById("selectedUniversidad").addEventListener("change", function() {
+        document.getElementById("selectedUniversidad").addEventListener("change", function () {
             const universidadId = this.value;
             if (universidadId) {
                 fetch(`/facultades/${universidadId}`) // Cambiado aquí
@@ -127,7 +141,7 @@
             }
         });
 
-        document.getElementById("selectedFacultad").addEventListener("change", function() {
+        document.getElementById("selectedFacultad").addEventListener("change", function () {
             const facultadId = this.value;
             if (facultadId) {
                 fetch(`/pisos/${facultadId}`) // Cambiado aquí
@@ -147,7 +161,7 @@
         });
 
         // Cargar espacios (si es necesario)
-        document.getElementById("selectedPiso").addEventListener("change", function() {
+        document.getElementById("selectedPiso").addEventListener("change", function () {
             const pisoId = this.value;
             if (pisoId) {
                 fetch(`/espacios/${pisoId}`) // Cambiado aquí

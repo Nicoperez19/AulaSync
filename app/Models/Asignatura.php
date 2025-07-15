@@ -17,6 +17,7 @@ class Asignatura extends Model
         'id_asignatura',//id_curso
         'codigo_asignatura',//cod_ramo
         'nombre_asignatura',//ramo_nombre
+        'seccion',
         'horas_directas',
         'horas_indirectas',
         'area_conocimiento',

@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('id_asignatura',20)->primary();
             $table->string('codigo_asignatura', 100);
             $table->string('nombre_asignatura', 100);
+            $table->string('seccion', 50);
          
             $table->integer('horas_directas')->nullable();
             $table->integer('horas_indirectas')->nullable();

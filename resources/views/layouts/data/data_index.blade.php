@@ -3,19 +3,19 @@
         [x-cloak] { display: none !important; }
     </style>
     <x-slot name="header">
-        <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between pr-6">
+        <div class="flex flex-col gap-2 pr-6 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">
                 <div class="p-2 rounded-xl bg-light-cloud-blue">
-                    <i class="fa-solid fa-file-arrow-up text-white text-2xl"></i>
+                    <i class="text-2xl text-white fa-solid fa-file-arrow-up"></i>
                 </div>
 
                 <div>
                     <h2 class="text-2xl font-bold leading-tight">Carga Masiva de Datos</h2>
-                    <p class="text-gray-500 text-sm">Sube archivos para importar información al sistema de forma rápida
+                    <p class="text-sm text-gray-500">Sube archivos para importar información al sistema de forma rápida
                     </p>
                 </div>
             </div>
-            <x-button target="_blank" variant="primary" class="max-w-xs p-2 gap-2 justify-end"
+            <x-button target="_blank" variant="primary" class="justify-end max-w-xs gap-2 p-2"
                 x-on:click="$dispatch('open-modal', 'add-data')">
                 <x-icons.add class="w-6 h-6" aria-hidden="true" />
                 Cargar archivo
@@ -26,13 +26,13 @@
 
     <div class="p-6">
         <div class="">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-                <h3 class="text-lg font-semibold mb-2 md:mb-0">Documentos Cargados</h3>
-                <div class="flex gap-2 items-center">
+            <div class="flex flex-col mb-4 md:flex-row md:items-center md:justify-between">
+                <h3 class="mb-2 text-lg font-semibold md:mb-0">Documentos Cargados</h3>
+                <div class="flex items-center gap-2">
                     <input type="text" id="searchInput" placeholder="Buscar documentos..."
-                        class="px-3 py-2 border rounded text-sm" onkeydown="if(event.key==='Enter'){buscarArchivo();}">
+                        class="px-3 py-2 text-sm border rounded" onkeydown="if(event.key==='Enter'){buscarArchivo();}">
                     <x-button
-                        class="bg-light-cloud-blue border px-3 py-2 rounded text-sm flex items-center gap-2 hover:bg-light-red-800 text-white font-medium"
+                        class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white border rounded bg-light-cloud-blue hover:bg-light-red-800"
                         onclick="buscarArchivo()">
 
                         Buscar
@@ -123,21 +123,21 @@
         </x-modal>
 
         <!-- Modal de Detalles de Carga -->
-        <div id="modal-detalle-carga" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden" style="padding-top: 80px;">
-            <div class="bg-white rounded-xl shadow-lg w-full max-w-6xl p-8 relative">
-                <button class="absolute top-6 right-6 text-gray-400 hover:text-gray-600" onclick="cerrarModal()">
+        <div id="modal-detalle-carga" class="fixed inset-0 z-50 flex items-center justify-center hidden bg-black bg-opacity-40" style="padding-top: 80px;">
+            <div class="relative w-full max-w-6xl p-8 bg-white shadow-lg rounded-xl">
+                <button class="absolute text-gray-400 top-6 right-6 hover:text-gray-600" onclick="cerrarModal()">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
-                <h2 class="text-2xl font-bold mb-6 text-gray-900">Detalles de Carga de Datos</h2>
+                <h2 class="mb-6 text-2xl font-bold text-gray-900">Detalles de Carga de Datos</h2>
              
 
                 <!-- Información principal en 2 columnas -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <div class="grid grid-cols-1 gap-8 mb-8 lg:grid-cols-2">
                     <!-- Información del archivo -->
-                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200 p-6">
+                    <div class="p-6 border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
                         <div class="flex items-center gap-3 mb-6">
-                            <div class="p-3 rounded-lg bg-blue-200">
-                                <svg class="w-7 h-7 text-blue-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <div class="p-3 bg-blue-200 rounded-lg">
+                                <svg class="text-blue-700 w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-6a2 2 0 012-2h2a2 2 0 012 2v6"/>
                                 </svg>
                             </div>
@@ -145,34 +145,34 @@
                         </div>
                         
                         <div class="space-y-4">
-                            <div class="bg-white rounded-lg p-4 border border-blue-200">
-                                <div class="text-sm font-medium text-gray-500 mb-1">Nombre del Archivo</div>
-                                <div id="archivo-nombre" class="text-gray-900 font-semibold break-words"></div>
+                            <div class="p-4 bg-white border border-blue-200 rounded-lg">
+                                <div class="mb-1 text-sm font-medium text-gray-500">Nombre del Archivo</div>
+                                <div id="archivo-nombre" class="font-semibold text-gray-900 break-words"></div>
                             </div>
-                            <div class="bg-white rounded-lg p-4 border border-blue-200">
-                                <div class="text-sm font-medium text-gray-500 mb-1">Tipo de Archivo</div>
-                                <div class="text-gray-900 font-semibold">XLSX</div>
+                            <div class="p-4 bg-white border border-blue-200 rounded-lg">
+                                <div class="mb-1 text-sm font-medium text-gray-500">Tipo de Archivo</div>
+                                <div class="font-semibold text-gray-900">XLSX</div>
                             </div>
-                            <div class="bg-white rounded-lg p-4 border border-blue-200">
-                                <div class="text-sm font-medium text-gray-500 mb-1">Tamaño</div>
-                                <div id="archivo-tamano" class="text-gray-900 font-semibold"></div>
+                            <div class="p-4 bg-white border border-blue-200 rounded-lg">
+                                <div class="mb-1 text-sm font-medium text-gray-500">Tamaño</div>
+                                <div id="archivo-tamano" class="font-semibold text-gray-900"></div>
                             </div>
-                            <div class="bg-white rounded-lg p-4 border border-blue-200">
-                                <div class="text-sm font-medium text-gray-500 mb-1">Registros Procesados</div>
-                                <div id="archivo-registros" class="text-green-600 font-bold text-lg"></div>
+                            <div class="p-4 bg-white border border-blue-200 rounded-lg">
+                                <div class="mb-1 text-sm font-medium text-gray-500">Registros Procesados</div>
+                                <div id="archivo-registros" class="text-lg font-bold text-green-600"></div>
                             </div>
-                            <div class="bg-white rounded-lg p-4 border border-blue-200">
-                                <div class="text-sm font-medium text-gray-500 mb-1">Estado</div>
+                            <div class="p-4 bg-white border border-blue-200 rounded-lg">
+                                <div class="mb-1 text-sm font-medium text-gray-500">Estado</div>
                                 <span id="archivo-estado" class="inline-block px-3 py-1 text-sm font-semibold rounded-full"></span>
                             </div>
                         </div>
                     </div>
 
                     <!-- Información del usuario -->
-                    <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-xl border border-green-200 p-6">
+                    <div class="p-6 border border-green-200 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
                         <div class="flex items-center gap-3 mb-6">
-                            <div class="p-3 rounded-lg bg-green-200">
-                                <svg class="w-7 h-7 text-green-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <div class="p-3 bg-green-200 rounded-lg">
+                                <svg class="text-green-700 w-7 h-7" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804"/>
                                 </svg>
                             </div>
@@ -180,25 +180,25 @@
                         </div>
                         
                         <div class="space-y-4">
-                            <div class="bg-white rounded-lg p-4 border border-green-200">
+                            <div class="p-4 bg-white border border-green-200 rounded-lg">
                                 <div class="flex items-center gap-3">
                                     <span class="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full">
-                                        <svg class="w-7 h-7 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+                                        <svg class="text-green-600 w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
                                             <path d="M12 12c2.7 0 8 1.34 8 4v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2c0-2.66 5.3-4 8-4zm0-2a4 4 0 100-8 4 4 0 000 8z"/>
                                         </svg>
                                     </span>
                                     <div>
-                                        <div id="usuario-nombre" class="font-semibold text-gray-900 text-lg"></div>
+                                        <div id="usuario-nombre" class="text-lg font-semibold text-gray-900"></div>
                                     </div>
                                 </div>
                             </div>
-                            <div class="bg-white rounded-lg p-4 border border-green-200">
-                                <div class="text-sm font-medium text-gray-500 mb-1">Fecha de Carga</div>
-                                <div id="fecha-carga" class="text-gray-900 font-semibold"></div>
+                            <div class="p-4 bg-white border border-green-200 rounded-lg">
+                                <div class="mb-1 text-sm font-medium text-gray-500">Fecha de Carga</div>
+                                <div id="fecha-carga" class="font-semibold text-gray-900"></div>
                             </div>
-                            <div class="bg-white rounded-lg p-4 border border-green-200">
-                                <div class="text-sm font-medium text-gray-500 mb-1">Última Actualización</div>
-                                <div id="fecha-actualizacion" class="text-gray-900 font-semibold"></div>
+                            <div class="p-4 bg-white border border-green-200 rounded-lg">
+                                <div class="mb-1 text-sm font-medium text-gray-500">Última Actualización</div>
+                                <div id="fecha-actualizacion" class="font-semibold text-gray-900"></div>
                             </div>
                         </div>
                     </div>

@@ -64,6 +64,7 @@ Route::middleware(['auth', 'role:Administrador'])->group(function () {
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/horarios/{run}', [HorariosController::class, 'getHorarioProfesor'])->name('horarios.get');
+    Route::get('/modulos-actuales', [\App\Http\Controllers\TableController::class, 'index'])->name('modulos.actuales');
 });
 
 Route::middleware(['auth', 'role:Administrador'])->group(function () {
@@ -209,6 +210,7 @@ Route::group(['middleware' => ['auth', 'session.timeout']], function () {
 Route::prefix('reporteria')->group(function () {
     Route::get('utilizacion_por_espacio', [ReporteriaController::class, 'utilizacion'])->name('reporteria.utilizacion_por_espacio');
     Route::get('tipo-espacio', [ReporteriaController::class, 'tipoEspacio'])->name('reporteria.tipo-espacio');
+    Route::get('espacios', [ReporteriaController::class, 'espacios'])->name('reporteria.espacios');
     Route::get('tipo-espacio/historico-ajax', [ReporteriaController::class, 'historicoAjax'])->name('reporteria.tipo-espacio.historico-ajax');
     Route::get('accesos', [ReporteriaController::class, 'accesos'])->name('reporteria.accesos');
     Route::get('accesos/limpiar', [ReporteriaController::class, 'limpiarFiltrosAccesos'])->name('reporteria.accesos.limpiar');
@@ -217,6 +219,7 @@ Route::prefix('reporteria')->group(function () {
     // Rutas para exportar a Excel y PDF
     Route::get('utilizacion/export/{format}', [ReporteriaController::class, 'exportUtilizacion'])->name('reporteria.utilizacion.export');
     Route::get('tipo-espacio/export/{format}', [ReporteriaController::class, 'exportTipoEspacio'])->name('reporteria.tipo-espacio.export');
+    Route::get('espacios/export/{format}', [ReporteriaController::class, 'exportEspacios'])->name('reporteria.espacios.export');
     Route::get('historico-espacios/export/{format}', [ReporteriaController::class, 'exportHistoricoEspacios'])->name('reporteria.tipo-espacio.export');
     Route::get('accesos/export/{format}', [ReporteriaController::class, 'exportAccesos'])->name('reporteria.accesos.export');
     Route::post('accesos/export/{format}', [ReporteriaController::class, 'exportAccesosConFiltros'])->name('reporteria.accesos.export.filtros');

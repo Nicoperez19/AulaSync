@@ -11,8 +11,8 @@
         ][$maxWidth] ?? 'sm:max-w-2xl';
 @endphp
 
-<div x-data="modalComponent({ show: @js($show), focusable: {{ $attributes->has('focusable') ? 'true' : 'false' }} })" x-init="init()" x-show="show"
-    @open-modal.window="handleOpen($event, '{{ $name }}')" @close.stop="show = false"
+<div x-data="modalComponent({ show: @js($show), focusable: {{ $attributes->has('focusable') ? 'true' : 'false' }} })"
+    x-init="init()" x-show="show" @open-modal.window="handleOpen($event, '{{ $name }}')" @close.stop="show = false"
     @keydown.escape.window="show = false" @keydown.tab.prevent="navigateFocus($event)"
     class="fixed inset-0 z-50 px-4 pt-32 overflow-y-auto sm:px-0" style="display: none;">
     <!-- Background overlay -->
