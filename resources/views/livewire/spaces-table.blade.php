@@ -1,3 +1,33 @@
+<style>
+    .sort-icon {
+        display: none;
+        margin-left: 5px;
+        transition: transform 0.2s;
+    }
+
+    .asc .sort-icon,
+    .desc .sort-icon {
+        display: inline-block;
+    }
+
+    .asc .sort-icon {
+        transform: rotate(180deg);
+    }
+
+    .desc .sort-icon {
+        transform: rotate(0deg);
+    }
+
+    th {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    th:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+</style>
+
 <div class="w-full min-h-screen p-4 bg-gray-100 dark:bg-gray-900">
     <div class="relative overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-md dark:bg-gray-800 dark:border-gray-700">
         <table class="w-full text-center border-collapse table-auto min-w-max">

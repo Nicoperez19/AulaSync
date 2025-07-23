@@ -20,8 +20,6 @@ return new class extends Migration
             $table->string('celular')->nullable();
             $table->string('direccion')->nullable();
             $table->date('fecha_nacimiento')->nullable();
-            $table->year('anio_ingreso')->nullable();
-            $table->string('tipo_profesor')->nullable();
             
             $table->timestamp('email_verified_at')->nullable();
             
