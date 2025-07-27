@@ -4,18 +4,29 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use App\Models\Planificacion_Asignatura;
+use App\Models\Espacio;
+use App\Models\Piso;
+use App\Helpers\SemesterHelper;
 use Carbon\Carbon;
 
 class ModulosActualesTable extends Component
 {
     public $planificaciones = [];
+    public $espacios = [];
+    public $pisos = [];
     public $horaActual;
     public $fechaActual;
     public $moduloActual;
+    public $selectedPiso = null;
 
     public function mount()
     {
         $this->actualizarDatos();
+        
+        // Establecer el primer piso como seleccionado por defecto
+        if ($this->pisos->count() > 0) {
+            $this->selectedPiso = $this->pisos->first()->id;
+        }
     }
 
     public function actualizarDatos()
@@ -31,14 +42,17 @@ class ModulosActualesTable extends Component
             ->where('hora_termino', '>', $this->horaActual)
             ->first();
 
-        if ($this->moduloActual) {
-            // Determinar el período actual
-            $mesActual = date('n');
-            $anioActual = date('Y');
-            $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
-            $periodo = $anioActual . '-' . $semestre;
+        // Obtener todos los pisos con sus espacios
+        $this->pisos = Piso::with(['espacios'])->get();
 
-            $this->planificaciones = Planificacion_Asignatura::with([
+        if ($this->moduloActual) {
+            // Determinar el período actual usando el helper
+            $anioActual = SemesterHelper::getCurrentAcademicYear();
+            $semestre = SemesterHelper::getCurrentSemester();
+            $periodo = SemesterHelper::getCurrentPeriod();
+
+            // Obtener todas las planificaciones del módulo actual
+            $planificacionesActivas = Planificacion_Asignatura::with([
                 'asignatura.profesor',
                 'espacio',
                 'modulo'
@@ -47,8 +61,59 @@ class ModulosActualesTable extends Component
             ->whereHas('horario', function($q) use ($periodo) {
                 $q->where('periodo', $periodo);
             })
-            ->get()
-            ->map(function ($planificacion) {
+            ->get();
+
+            // Procesar espacios por piso
+            $this->espacios = [];
+            foreach ($this->pisos as $piso) {
+                $espaciosPiso = [];
+                foreach ($piso->espacios as $espacio) {
+                    // Buscar si el espacio tiene una planificación activa
+                    $planificacionActiva = $planificacionesActivas->where('id_espacio', $espacio->id_espacio)->first();
+                    
+                    $estado = $espacio->estado ?? 'Disponible';
+                    $tieneClase = false;
+                    $datosClase = null;
+
+                    if ($planificacionActiva) {
+                        $tieneClase = true;
+                        // No cambiar el estado, mantener el original de la BD
+                        $datosClase = [
+                            'codigo_asignatura' => $planificacionActiva->asignatura->codigo_asignatura ?? '-',
+                            'nombre_asignatura' => $planificacionActiva->asignatura->nombre_asignatura ?? '-',
+                            'seccion' => $planificacionActiva->asignatura->seccion ?? '-',
+                            'profesor' => [
+                                'name' => $planificacionActiva->asignatura->profesor->name ?? '-'
+                            ]
+                        ];
+                    }
+
+                    $espaciosPiso[] = [
+                        'id_espacio' => $espacio->id_espacio,
+                        'nombre_espacio' => $espacio->nombre_espacio,
+                        'estado' => $estado, // Mantener el estado original de la BD
+                        'tipo_espacio' => $espacio->tipo_espacio,
+                        'puestos_disponibles' => $espacio->puestos_disponibles,
+                        'tiene_clase' => $tieneClase,
+                        'datos_clase' => $datosClase,
+                        'modulo' => [
+                            'id_modulo' => $this->moduloActual->id_modulo,
+                            'numero_modulo' => explode('.', $this->moduloActual->id_modulo)[1] ?? 'N/A',
+                            'hora_inicio' => substr($this->moduloActual->hora_inicio, 0, 5),
+                            'hora_termino' => substr($this->moduloActual->hora_termino, 0, 5),
+                        ]
+                    ];
+                }
+                $this->espacios[$piso->id] = $espaciosPiso;
+            }
+
+            // Establecer el primer piso como seleccionado por defecto
+            if ($this->pisos->count() > 0 && $this->selectedPiso === null) {
+                $this->selectedPiso = $this->pisos->first()->id;
+            }
+
+            // Mantener las planificaciones para compatibilidad
+            $this->planificaciones = $planificacionesActivas->map(function ($planificacion) {
                 return [
                     'id' => $planificacion->id,
                     'modulo' => [
@@ -74,7 +139,13 @@ class ModulosActualesTable extends Component
             });
         } else {
             $this->planificaciones = [];
+            $this->espacios = [];
         }
+    }
+
+    public function selectPiso($pisoId)
+    {
+        $this->selectedPiso = $pisoId;
     }
 
     public function render()

@@ -9,6 +9,7 @@ use App\Models\Sede;
 use App\Models\Asignatura;
 use App\Models\Modulo;
 use App\Models\Espacio;
+use App\Helpers\SemesterHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -89,11 +90,10 @@ class HorariosController extends Controller
         
         $profesores = $query->orderBy('name')->paginate(27);
         
-        // Determinar el período actual para los horarios
-        $mesActual = date('n');
-        $anioActual = date('Y');
-        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
-        $periodo = $anioActual . '-' . $semestre;
+        // Determinar el período actual para los horarios usando el helper
+        $anioActual = SemesterHelper::getCurrentAcademicYear();
+        $semestre = SemesterHelper::getCurrentSemester();
+        $periodo = SemesterHelper::getCurrentPeriod();
         
         $horarios = Horario::with(['profesor', 'planificaciones.asignatura', 'planificaciones.espacio'])
             ->where('periodo', $periodo)
@@ -185,11 +185,10 @@ class HorariosController extends Controller
             if ($semestreFiltro && $anioFiltro) {
                 $periodo = $anioFiltro . '-' . $semestreFiltro;
             } else {
-                // Determinar el período actual
-                $mesActual = date('n');
-                $anioActual = date('Y');
-                $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
-                $periodo = $anioActual . '-' . $semestre;
+                // Determinar el período actual usando el helper
+                $anioActual = SemesterHelper::getCurrentAcademicYear();
+                $semestre = SemesterHelper::getCurrentSemester();
+                $periodo = SemesterHelper::getCurrentPeriod();
             }
             
             $horario = Horario::with(['profesor', 'planificaciones.asignatura', 'planificaciones.espacio'])
@@ -304,10 +303,10 @@ class HorariosController extends Controller
         sort($aniosDisponibles);
         sort($semestresDisponibles);
         
-        // Determinar el período por defecto (primer semestre 2025)
-        $anioActual = '2025';
-        $semestre = 1;
-        $periodo = $anioActual . '-' . $semestre;
+        // Determinar el período por defecto usando el helper
+        $anioActual = SemesterHelper::getCurrentAcademicYear();
+        $semestre = SemesterHelper::getCurrentSemester();
+        $periodo = SemesterHelper::getCurrentPeriod();
         
         // Obtener todos los pisos con sus espacios, ordenados por número de piso
         $pisos = \App\Models\Piso::with(['espacios' => function($q) {
@@ -317,10 +316,10 @@ class HorariosController extends Controller
         // Cargar horarios por defecto para el primer semestre 2025 o para los filtros seleccionados
         $horariosPorEspacio = collect([]);
         
-        // Si no hay filtros específicos, usar el período por defecto (primer semestre 2025)
+        // Si no hay filtros específicos, usar el período actual
         if (!$semestreFiltro && !$anioFiltro) {
-            $semestreFiltro = 1;
-            $anioFiltro = '2025';
+            $semestreFiltro = SemesterHelper::getCurrentSemester();
+            $anioFiltro = SemesterHelper::getCurrentAcademicYear();
         }
         
         if ($semestreFiltro && $anioFiltro) {
@@ -430,11 +429,10 @@ class HorariosController extends Controller
             if ($semestreFiltro && $anioFiltro) {
                 $periodo = $anioFiltro . '-' . $semestreFiltro;
             } else {
-                // Determinar el período actual
-                $mesActual = date('n');
-                $anioActual = date('Y');
-                $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
-                $periodo = $anioActual . '-' . $semestre;
+                // Determinar el período actual usando el helper
+                $anioActual = SemesterHelper::getCurrentAcademicYear();
+                $semestre = SemesterHelper::getCurrentSemester();
+                $periodo = SemesterHelper::getCurrentPeriod();
             }
             
             // Obtener las planificaciones del espacio

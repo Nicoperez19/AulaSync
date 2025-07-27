@@ -55,6 +55,29 @@ class AjaxSessionTimeout
             
             // Actualizar la última actividad
             Session::put('last_activity', time());
+        } else {
+            // Si el usuario no está autenticado, verificar si la respuesta será un 403
+            $response = $next($request);
+            
+            // Si la respuesta es un error 403 y el usuario no está autenticado
+            if ($response->getStatusCode() === 403) {
+                // Guardar la URL actual para redirigir después del login
+                session(['url.intended' => $request->fullUrl()]);
+                
+                // Si es una petición AJAX, devolver respuesta JSON
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'error' => 'not_authenticated',
+                        'message' => 'Debes iniciar sesión para acceder a esta página.',
+                        'redirect' => route('login')
+                    ], 401);
+                }
+                
+                // Para peticiones normales, redirigir al login
+                return redirect()->route('login')->with('error', 'Debes iniciar sesión para acceder a esta página.');
+            }
+            
+            return $response;
         }
         
         return $next($request);

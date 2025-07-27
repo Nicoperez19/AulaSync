@@ -3,12 +3,13 @@
 namespace App\Livewire;
 
 use App\Models\Mapa;
-
 use Livewire\Component;
 
 class MapasTable extends Component
 {
     public $mapas;
+    public $mapaSeleccionado = null;
+    public $mostrarModal = false;
 
     public function mount()
     {
@@ -28,18 +29,13 @@ class MapasTable extends Component
 
     public function verMapa($id)
     {
-        $mapa = Mapa::with('bloques')->findOrFail($id);
-        $bloques = $mapa->bloques->map(function($bloque) {
-            return [
-                'id_espacio' => $bloque->id_espacio,
-                'posicion_x' => $bloque->posicion_x,
-                'posicion_y' => $bloque->posicion_y
-            ];
-        });
+        $this->mapaSeleccionado = Mapa::with(['bloques.espacio', 'piso'])->findOrFail($id);
+        $this->mostrarModal = true;
+    }
 
-        $this->dispatch('mostrar-mapa', [
-            'ruta' => asset('storage/' . $mapa->ruta_mapa),
-            'bloques' => $bloques
-        ]);
+    public function cerrarModal()
+    {
+        $this->mostrarModal = false;
+        $this->mapaSeleccionado = null;
     }
 }

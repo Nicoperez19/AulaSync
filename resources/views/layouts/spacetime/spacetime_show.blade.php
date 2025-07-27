@@ -541,8 +541,18 @@
                     // Determinar el período para el nombre del archivo
                     const fecha = new Date();
                     const mes = fecha.getMonth() + 1; // getMonth() devuelve 0-11
+                    const dia = fecha.getDate();
                     let anio = fecha.getFullYear();
-                    let semestre = (mes >= 3 && mes <= 7) ? 1 : 2; // Marzo-Julio = Semestre 1, Agosto-Febrero = Semestre 2
+                    
+                    // Nueva lógica: segundo semestre comienza el 21 de julio
+                    let semestre;
+                    if (mes >= 7 && dia >= 21) {
+                        semestre = 2;
+                    } else if (mes >= 8) {
+                        semestre = 2;
+                    } else {
+                        semestre = 1;
+                    }
 
                     // Usar los filtros si están disponibles
                     if (anioFiltro) anio = anioFiltro;

@@ -6,8 +6,8 @@
                     <i class="text-2xl text-white fa-solid fa-table"></i>
                 </div>
                 <div>
-                    <h2 class="text-2xl font-bold leading-tight">Módulos Actuales</h2>
-                    <p class="text-sm text-gray-500">Visualiza las asignaturas activas en el módulo actual</p>
+                    <h2 class="text-2xl font-bold leading-tight">Estado de Espacios</h2>
+                    <p class="text-sm text-gray-500">Visualiza el estado de todos los espacios en el módulo actual</p>
                 </div>
             </div>
 

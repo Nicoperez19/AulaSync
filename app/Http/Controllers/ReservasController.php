@@ -22,6 +22,16 @@ class ReservasController extends Controller
         return view('layouts.reservations.reservations_index', compact('reservas', 'universidades', 'espaciosDisponibles'));
     }
 
+    public function create()
+    {
+        $universidades = Universidad::all();
+        $espaciosDisponibles = Espacio::where('estado', 'disponible')
+            ->with('piso.facultad.universidad')
+            ->get();
+
+        return view('layouts.reservations.reservations_create', compact('universidades', 'espaciosDisponibles'));
+    }
+
 
     public function store(Request $request)
     {

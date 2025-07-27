@@ -2,7 +2,7 @@
     <div class="flex h-screen overflow-hidden">
         <!-- Sidebar  -->
         <aside
-            class="fixed top-0 left-0 z-40 flex flex-col justify-between w-56 h-screen pt-2 pb-2 text-base border-r border-gray-200 md:w-48 sm:w-40 bg-light-cloud-blue dark:border-gray-700 md:text-sm sm:text-xs">
+            class="fixed top-0 left-0 z-40 flex flex-col justify-between w-56 h-screen pt-2 text-base border-r border-gray-200 md:w-48 sm:w-40 bg-light-cloud-blue dark:border-gray-700 md:text-sm sm:text-xs">
 
             <!-- Logo arriba -->
             <div class="flex flex-col items-center gap-2 md:gap-1">
@@ -11,25 +11,26 @@
                 </a>
             </div>
 
-            <!-- Contenido central (centrado verticalmente) -->
-            <div class="flex flex-col items-center justify-center flex-1 p-1">
-                <!-- Información de hora y módulo actual -->
-                <div class="w-full px-1 mt-2">
-                    <div class="p-2 text-white border border-white rounded-md shadow-sm bg-light-cloud-blue">
+            <div class="flex flex-col items-center justify-center w-full max-w-md p-1 mx-auto ">
+                <!-- Tarjeta de Hora y Módulo -->
+                <div class="w-full mt-6">
+                    <div class="p-4 text-white bg-red-700 rounded shadow-[0_0_10px_2px_rgba(255,255,255,0.4)]">
                         <div class="flex items-center justify-between pb-4">
-                            <div class="flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
+                            <div
+                                class="flex items-center gap-1 bg-red-700 rounded shadow-[0_0_1px_1px_rgba(255,255,255,0.1)]">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
                                 <span id="hora-actual" class="text-2xl font-semibold">--:--:--</span>
                             </div>
                         </div>
-                        <div class="py-1 border border-white">
+
+                        <div class="py-1">
                             <div class="flex items-center gap-1 mb-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                 </svg>
@@ -37,10 +38,11 @@
                                         programado</span></span>
                             </div>
                         </div>
+
                         <div class="pt-1">
                             <div class="flex items-center gap-1 mb-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
@@ -50,76 +52,73 @@
                     </div>
                 </div>
 
-                <!-- Estado del QR y usuario -->
-                <div class="w-full px-1 ">
-                    <div class="p-2 text-white border border-white rounded-md shadow-sm bg-light-cloud-blue">
-                        <!-- QR Placeholder -->
-                        <div class="p-2 mt-2 text-center rounded-md bg-white/10">
-                            <div class="relative">
-                                <span id="qr-status" class="text-xs text-white">Esperando</span>
+                <!-- Tarjeta de QR y Usuario -->
+                <div class="w-full mt-20">
+                    <div class="mt-4 mb-4 text-white bg-light-cloud-blue">
+                        <div class="flex items-center gap-3 p-3 mb-3 rounded-md bg-red-500/80">
+
+                            <div class="bg-red-400 rounded shadow-[0_0_10px_2px_rgba(255,255,255,0.4)]">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="text-white w-7 h-7" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
                             </div>
-                            
-                            <div class="mt-1 mb-1 qr-placeholder">
-                                <div class="flex items-center justify-center w-20 h-20 mx-auto rounded-md bg-white/20">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white/40" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                </div>
+                            <div>
+                                <span id="qr-status" class="block text-sm font-semibold">Esperando</span>
+                                <span class="text-xs text-white/80">Escanea el código QR</span>
                             </div>
-                            <p class="text-xs text-white/80">Escanee el código QR</p>
                         </div>
-                        <!-- Información del usuario escaneado -->
-                        <div class="mt-2 space-y-1">
-                            <div class="flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
+
+                        <hr class="pb-4 my-2 border-white/30">
+                        <h3 class="px-4 mb-2 text-xs font-semibold tracking-wide uppercase text-white/80">Información de
+                            usuario</h3>
+
+                        <div class="px-4 space-y-1 text-sm">
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
-                                <span class="text-xs font-semibold">RUN:</span>
-                                <span id="run-escaneado" class="flex-1 text-xs text-right">--</span>
+                                <span class="font-bold">RUN:</span>
+                                <span id="run-escaneado" class="ml-auto">Usuario</span>
                             </div>
-                            <div class="flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
+
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
-                                <span class="text-xs font-semibold">Usuario:</span>
-                                <span id="nombre-usuario" class="flex-1 text-xs text-right">--</span>
-
-
+                                <span class="font-bold">Usuario:</span>
+                                <span id="nombre-usuario" class="ml-auto">Usuario</span>
                             </div>
 
-                            <div class="flex items-center gap-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                        d="M17.657 16.657L13.414 12 17.657 7.757M6.343 7.757L10.586 12 6.343 16.243" />
                                 </svg>
-                                <span class="text-xs font-semibold">Espacio:</span>
-                                <span id="nombre-espacio" class="flex-1 text-xs text-right">--</span>
-
-
+                                <span class="font-bold">Espacio:</span>
+                                <span id="nombre-espacio" class="ml-auto">No asignado</span>
                             </div>
-
-
                         </div>
-                        <!-- Input para el escáner QR (oculto) -->
-                        <div class="mt-2">
-                            <input type="text" id="qr-input"
-                                class="absolute w-full px-1 py-1 border rounded opacity-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Escanea un código QR" autofocus>
-                        </div>
+
+                        <input type="text" id="qr-input"
+                            class="absolute w-full px-1 py-1 border rounded opacity-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Escanea un código QR" autofocus>
                     </div>
                 </div>
             </div>
 
+
+
             <!-- Leyenda abajo del todo -->
-            <div class="w-full p-2 px-1 mt-auto bg-white rounded-md shadow-sm">
-                <h3 class="flex items-center justify-center gap-1 mb-2 text-sm font-semibold text-center md:text-xs">
+            <div class="w-full px-1 py-2 mt-auto bg-red-700 rounded-md shadow-sm">
+                <h3
+                    class="flex items-center justify-center gap-1 mb-2 text-sm font-semibold text-center text-white md:text-xs">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 md:w-3 md:h-3" viewBox="0 0 24 24"
                         fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
@@ -129,44 +128,43 @@
                 </h3>
                 <div class="flex flex-col items-start gap-1">
                     <div class="flex items-center w-full gap-1">
-                        <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-                        <span class="flex-1 text-xs">Ocupado</span>
+                        <div class="w-3 h-3 bg-red-500 border-2 border-white rounded-full"></div>
+                        <span class="flex-1 text-xs text-white">Ocupado</span>
                     </div>
                     <div class="flex items-center w-full gap-1">
-                        <div class="w-3 h-3 bg-orange-500 rounded-full"></div>
-                        <span class="flex-1 text-xs">Reservado</span>
+                        <div class="w-3 h-3 bg-orange-500 border-2 border-white rounded-full "></div>
+                        <span class="flex-1 text-xs text-white">Reservado</span>
                     </div>
                     <div class="flex items-center w-full gap-1">
-                        <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-                        <span class="flex-1 text-xs">Próximo</span>
+                        <div class="w-3 h-3 bg-blue-500 border-2 border-white rounded-full"></div>
+                        <span class="flex-1 text-xs text-white">Próximo</span>
                     </div>
                     <div class="flex items-center w-full gap-1">
-                        <div class="w-3 h-3 bg-green-500 rounded-full"></div>
-                        <span class="flex-1 text-xs">Disponible</span>
+                        <div class="w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                        <span class="flex-1 text-xs text-white">Disponible</span>
                     </div>
                 </div>
             </div>
         </aside>
 
-        <!-- Contenido principal ajustado con margen izquierdo -->
-        <div class="flex-1 h-screen pt-4 pb-[2rem] ml-64 overflow-hidden">
+        <div class="flex-1 h-screen pt-4 pb-[2rem] ml-52 overflow-hidden">
             <div class="flex flex-col h-full">
 
-                <!-- Card: Navegación de Pisos y Plano -->
                 <div class="flex flex-col flex-1 min-h-0">
                     <div class="flex-1 bg-white shadow-md dark:bg-dark-eval-0">
-                        <ul class="flex border-b dark:border-gray-700" id="pills-tab" role="tablist">
+                        <ul class="flex" id="pills-tab" role="tablist">
                             @foreach ($pisos as $piso)
-                                                    <li role="presentation">
-                                                        <a href="{{ route('plano.show', $piso->id_mapa) }}"
-                                                            class="px-4 py-3 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
-                                                                                                                                                                                                                                        {{ $piso->id_mapa === $mapa->id_mapa
-                                ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
-                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}" role="tab"
-                                                            aria-selected="{{ $piso->id_mapa === $mapa->id_mapa ? 'true' : 'false' }}">
-                                                            Piso {{ $piso->piso->numero_piso }}
-                                                        </a>
-                                                    </li>
+                                <li role="presentation">
+                                    <a href="{{ route('plano.show', $piso->id_mapa) }}"
+                                        class="px-4 py-2 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
+                                        {{ $piso->id_mapa === $mapa->id_mapa
+                                            ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
+                                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}"
+                                        role="tab"
+                                        aria-selected="{{ $piso->id_mapa === $mapa->id_mapa ? 'true' : 'false' }}">
+                                        Piso {{ $piso->piso->numero_piso }}
+                                    </a>
+                                </li>
                             @endforeach
                         </ul>
                         <!-- Card para el canvas y controles -->
@@ -202,8 +200,7 @@
                                 <!-- Botón de actualización manual -->
                                 <button id="refreshBtn"
                                     class="absolute z-10 p-2 text-white transition-colors duration-200 bg-green-600 rounded-lg shadow-lg bottom-4 right-16 hover:bg-green-700"
-                                    onclick="forzarActualizacionEstados()"
-                                    title="Actualizar estados de espacios">
+                                    onclick="forzarActualizacionEstados()" title="Actualizar estados de espacios">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
                                         viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -221,11 +218,11 @@
     <!-- Modal para mostrar información del espacio -->
     <x-modal name="data-space" :show="false" focusable>
         @slot('title')
-        <!-- Encabezado rojo -->
-        <div class="flex-1 p-4 text-center">
-            <h2 id="modalTitulo" class="text-2xl font-bold text-center text-white"></h2>
-            <div class="text-xs text-white/80" id="modalSubtitulo"></div>
-        </div>
+            <!-- Encabezado rojo -->
+            <div class="flex-1 p-4 text-center">
+                <h2 id="modalTitulo" class="text-2xl font-bold text-center text-white"></h2>
+                <div class="text-xs text-white/80" id="modalSubtitulo"></div>
+            </div>
         @endslot
         <!-- Estado visual destacado, separado y más grande -->
         <h3 class="pt-4 mb-2 text-lg font-semibold text-gray-900">Información del Espacio</h3>
@@ -300,15 +297,17 @@
             <h4 class="mb-2 text-sm font-medium text-gray-700">Próxima Clase</h4>
             <div id="modalProximaDetalles" class="p-4 bg-gray-100 shadow rounded-xl"></div>
         </div>
-        
+
         <!-- Botón de solicitud (solo visible cuando el espacio está disponible) -->
         <div id="btnSolicitarContainer" class="hidden mt-6">
-            <button id="btnSolicitarLlaves" 
+            <button id="btnSolicitarLlaves"
                 class="w-full px-4 py-3 text-white transition-colors duration-200 bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
                 onclick="iniciarSolicitud()">
                 <div class="flex items-center justify-center space-x-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
                     </svg>
                     <span class="font-medium">Solicitar Llaves</span>
                 </div>
@@ -320,9 +319,9 @@
     <!-- Modal para reconocimiento -->
     <x-modal name="reconocimiento" :show="false" focusable>
         @slot('title')
-        <h2 class="text-lg font-medium text-white dark:text-gray-100">
-            Reconocimiento
-        </h2>
+            <h2 class="text-lg font-medium text-white dark:text-gray-100">
+                Reconocimiento
+            </h2>
         @endslot
         <div class="p-6">
             <div class="flex flex-col items-center justify-center space-y-4">
@@ -342,16 +341,19 @@
     <!-- Modal para devolución de llaves (rediseñado) -->
     <x-modal name="devolver-llaves" :show="false" focusable>
         @slot('title')
-        <div class="px-6 py-3 text-white bg-red-700 rounded-t">
-            <h2 class="text-lg font-semibold text-center">Devolver Llaves</h2>
-        </div>
+            <div class="px-6 py-3 text-white bg-red-700 rounded-t">
+                <h2 class="text-lg font-semibold text-center">Devolver Llaves</h2>
+            </div>
         @endslot
         <div class="flex flex-col items-center justify-center p-8 bg-white">
             <div class="flex flex-col items-center mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-20 h-20 mb-4 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-20 h-20 mb-4 text-black" fill="none"
+                    viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
-                <span id="qr-status-devolucion" class="mb-2 text-base text-black">Esperando escaneo del usuario...</span>
+                <span id="qr-status-devolucion" class="mb-2 text-base text-black">Esperando escaneo del
+                    usuario...</span>
                 <span class="text-sm text-black">Escanee el código QR del usuario y luego del espacio</span>
             </div>
             <input type="text" id="qr-input-devolucion"
@@ -363,9 +365,9 @@
     <!-- Modal para solicitud de llaves -->
     <x-modal name="solicitar-llaves" :show="false" focusable>
         @slot('title')
-        <h2 class="text-lg font-medium text-white dark:text-gray-100">
-            Solicitar Llaves
-        </h2>
+            <h2 class="text-lg font-medium text-white dark:text-gray-100">
+                Solicitar Llaves
+            </h2>
         @endslot
         <div class="p-6">
             <div class="flex flex-col items-center justify-center">
@@ -378,8 +380,8 @@
                         </div>
                         <div class="mt-1 mb-1 qr-placeholder">
                             <div class="flex items-center justify-center w-20 h-20 mx-auto rounded-md bg-white/20">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white/40" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white/40"
+                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
@@ -401,46 +403,47 @@
     <!-- Modal para registro de usuario no registrado -->
     <x-modal name="registro-usuario" :show="false" focusable>
         @slot('title')
-        <h2 class="text-lg font-medium text-white dark:text-gray-100">
-            Registro de Usuario
-        </h2>
+            <h2 class="text-lg font-medium text-white dark:text-gray-100">
+                Registro de Usuario
+            </h2>
         @endslot
         <div class="p-6">
             <div class="space-y-4">
                 <div class="text-center">
-                    <div class="flex items-center justify-center w-16 h-16 mx-auto mb-4 text-yellow-500 bg-yellow-100 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                        </svg>
-                    </div>
+
                     <h3 class="text-lg font-medium text-gray-900">Usuario No Registrado</h3>
                     <p class="mt-2 text-sm text-gray-600">
-                        El RUN <span id="run-no-registrado" class="font-semibold"></span> no está registrado en el sistema.
+                        El RUN <span id="run-no-registrado" class="font-semibold"></span> no está registrado en el
+                        sistema.
                         Complete los siguientes datos para continuar con la solicitud.
                     </p>
                 </div>
 
                 <form id="form-registro-usuario" class="space-y-4">
                     <div>
-                        <label for="nombre-usuario" class="block text-sm font-medium text-gray-700">Nombre Completo *</label>
+                        <label for="nombre-usuario" class="block text-sm font-medium text-gray-700">Nombre Completo
+                            *</label>
                         <input type="text" id="nombre-usuario" name="nombre" required
                             class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
                     <div>
-                        <label for="email-usuario" class="block text-sm font-medium text-gray-700">Correo Electrónico *</label>
+                        <label for="email-usuario" class="block text-sm font-medium text-gray-700">Correo Electrónico
+                            *</label>
                         <input type="email" id="email-usuario" name="email" required
                             class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
                     <div>
-                        <label for="telefono-usuario" class="block text-sm font-medium text-gray-700">Teléfono *</label>
+                        <label for="telefono-usuario" class="block text-sm font-medium text-gray-700">Teléfono
+                            *</label>
                         <input type="tel" id="telefono-usuario" name="telefono" required
                             class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
                     <div>
-                        <label for="modulos-utilizacion" class="block text-sm font-medium text-gray-700">Módulos de Utilización *</label>
+                        <label for="modulos-utilizacion" class="block text-sm font-medium text-gray-700">Módulos de
+                            Utilización *</label>
                         <select id="modulos-utilizacion" name="modulos_utilizacion" required
                             class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                             <option value="">Seleccione la cantidad de módulos</option>
@@ -480,9 +483,9 @@
     <!-- Modal para seleccionar cantidad de módulos -->
     <x-modal name="seleccionar-modulos" :show="false" focusable>
         @slot('title')
-        <h2 class="text-lg font-medium text-center text-black">
-            Seleccionar Módulos
-        </h2>
+            <h2 class="text-lg font-medium text-center text-black">
+                Seleccionar Módulos
+            </h2>
         @endslot
         <div class="p-6 text-center">
             <p class="mb-4 text-base text-gray-800">¿Por cuántos módulos desea reservar?</p>
@@ -491,7 +494,8 @@
                     class="w-24 px-2 py-1 text-lg text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
             </div>
             <div class="mb-4 text-sm text-gray-600">
-                Disponibles: <span id="max-modulos-disponibles">1</span> módulos consecutivos antes de la próxima clase/reserva.
+                Disponibles: <span id="max-modulos-disponibles">1</span> módulos consecutivos antes de la próxima
+                clase/reserva.
             </div>
             <button id="btn-confirmar-modulos"
                 class="px-6 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -512,7 +516,7 @@
         // POLYFILL PARA ROUNDRECT (COMPATIBILIDAD)
         // ========================================
         if (!CanvasRenderingContext2D.prototype.roundRect) {
-            CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, radius) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
                 if (width < 2 * radius) radius = width / 2;
                 if (height < 2 * radius) radius = height / 2;
                 this.beginPath();
@@ -529,19 +533,19 @@
         // ========================================
         // VARIABLES GLOBALES PARA EL ESCÁNER QR
         // ========================================
-        let bufferQR = '';               // Buffer para almacenar el código QR escaneado
-        let esperandoUsuario = true;     // Flag para indicar si estamos esperando escanear usuario o espacio
-        let usuarioEscaneado = null;     // Usuario que se escaneó
-        let qrUsuario = null;            // QR del usuario procesado
-        let qrEspacio = null;            // QR del espacio procesado
-        let esperandoEspacio = false;    // Flag para indicar si estamos esperando escanear el espacio
-        let lastScanTime = 0;            // Último tiempo de escaneo para evitar duplicados
+        let bufferQR = ''; // Buffer para almacenar el código QR escaneado
+        let esperandoUsuario = true; // Flag para indicar si estamos esperando escanear usuario o espacio
+        let usuarioEscaneado = null; // Usuario que se escaneó
+        let qrUsuario = null; // QR del usuario procesado
+        let qrEspacio = null; // QR del espacio procesado
+        let esperandoEspacio = false; // Flag para indicar si estamos esperando escanear el espacio
+        let lastScanTime = 0; // Último tiempo de escaneo para evitar duplicados
 
         // ========================================
         // VARIABLES GLOBALES PARA EL MODO DE OPERACIÓN
         // ========================================
         let modoOperacion = 'solicitud'; // 'solicitud' o 'devolucion'
-        let bufferQRDevolucion = '';     // Buffer específico para devolución
+        let bufferQRDevolucion = ''; // Buffer específico para devolución
         let esperandoUsuarioDevolucion = true; // Flag para devolución
         let usuarioEscaneadoDevolucion = null; // Usuario escaneado para devolución
         let espacioEscaneadoDevolucion = null; // Espacio escaneado para devolución
@@ -549,7 +553,7 @@
         // ========================================
         // VARIABLES GLOBALES PARA EL FLUJO DE SOLICITUD
         // ========================================
-        let bufferQRSolicitud = '';      // Buffer específico para solicitud
+        let bufferQRSolicitud = ''; // Buffer específico para solicitud
         let esperandoUsuarioSolicitud = true; // Flag para solicitud
         let usuarioEscaneadoSolicitud = null; // Usuario escaneado para solicitud
         let espacioEscaneadoSolicitud = null; // Espacio escaneado para solicitud
@@ -557,30 +561,30 @@
         // ========================================
         // VARIABLES GLOBALES PARA USUARIOS NO REGISTRADOS
         // ========================================
-        let usuarioNoRegistrado = null;  // Datos del usuario no registrado
-        let espacioPendiente = null;     // Espacio pendiente después del registro
-        let modoOperacionActual = null;  // 'solicitud' o 'devolucion'
+        let usuarioNoRegistrado = null; // Datos del usuario no registrado
+        let espacioPendiente = null; // Espacio pendiente después del registro
+        let modoOperacionActual = null; // 'solicitud' o 'devolucion'
 
         // ========================================
         // VARIABLES GLOBALES PARA EL ESTADO DE LA SOLICITUD
         // ========================================
-        let userId = null;               // ID del usuario actual
-        let espacioId = null;            // ID del espacio actual
+        let userId = null; // ID del usuario actual
+        let espacioId = null; // ID del espacio actual
         let tieneClaseProgramada = false; // Si el usuario tiene clase programada
-        let duracionSeleccionada = null;  // Duración seleccionada para la reserva
-        let noDisponibleReserva = false;  // Si la reserva no está disponible
+        let duracionSeleccionada = null; // Duración seleccionada para la reserva
+        let noDisponibleReserva = false; // Si la reserva no está disponible
 
         // ========================================
         // VARIABLES PARA CONTROL DE ENFOQUE
         // ========================================
-        let qrScanTimeout = null;        // Timeout para el escaneo QR
-        let qrScanAttempts = 0;          // Intentos de escaneo
-        let qrScanMaxAttempts = 30;      // Máximo de intentos (3 segundos si fps=10)
+        let qrScanTimeout = null; // Timeout para el escaneo QR
+        let qrScanAttempts = 0; // Intentos de escaneo
+        let qrScanMaxAttempts = 30; // Máximo de intentos (3 segundos si fps=10)
 
         // ========================================
         // VARIABLES PARA CONTROL DE PANTALLA COMPLETA
         // ========================================
-        let isFullscreen = false;        // Estado de pantalla completa
+        let isFullscreen = false; // Estado de pantalla completa
         let originalSidebarDisplay = ''; // Estado original del sidebar
         let originalMainContentMargin = ''; // Margen original del contenido principal
 
@@ -593,53 +597,53 @@
         // CONFIGURACIÓN GLOBAL PARA LOS INDICADORES
         // ========================================
         const config = {
-            indicatorSize: 35,           // Tamaño del indicador
-            indicatorWidth: 37,          // Ancho del indicador
-            indicatorHeight: 37,         // Alto del indicador
-            indicatorBorder: '#FFFFFF',  // Color del borde
+            indicatorSize: 35, // Tamaño del indicador
+            indicatorWidth: 37, // Ancho del indicador
+            indicatorHeight: 37, // Alto del indicador
+            indicatorBorder: '#FFFFFF', // Color del borde
             indicatorTextColor: '#FFFFFF', // Color del texto
-            fontSize: 12                 // Tamaño de fuente
+            fontSize: 12 // Tamaño de fuente
         };
 
         // ========================================
         // VARIABLES GLOBALES PARA EL ESTADO DEL MAPA
         // ========================================
         const state = {
-            mapImage: null,              // Imagen del mapa
-            originalImageSize: null,     // Tamaño original de la imagen
+            mapImage: null, // Imagen del mapa
+            originalImageSize: null, // Tamaño original de la imagen
             indicators: @json($bloques) || [], // Indicadores/bloques del mapa
             originalCoordinates: @json($bloques) || [], // Coordenadas originales
-            isImageLoaded: false,        // Si la imagen está cargada
-            mouseX: 0,                   // Posición X del mouse
-            mouseY: 0,                   // Posición Y del mouse
-            currentZoom: 1,              // Zoom actual
-            isDragging: false,           // Si se está arrastrando
-            lastX: 0,                    // Última posición X
-            lastY: 0,                    // Última posición Y
-            offsetX: 0,                  // Offset X
-            offsetY: 0,                  // Offset Y
-            currentTime: new Date(),     // Tiempo actual
-            currentModule: null,         // Módulo actual
+            isImageLoaded: false, // Si la imagen está cargada
+            mouseX: 0, // Posición X del mouse
+            mouseY: 0, // Posición Y del mouse
+            currentZoom: 1, // Zoom actual
+            isDragging: false, // Si se está arrastrando
+            lastX: 0, // Última posición X
+            lastY: 0, // Última posición Y
+            offsetX: 0, // Offset X
+            offsetY: 0, // Offset Y
+            currentTime: new Date(), // Tiempo actual
+            currentModule: null, // Módulo actual
             currentDay: new Date().getDay(), // Día actual
-            updateInterval: null,        // Intervalo de actualización
-            hoveredIndicator: null,      // Indicador sobre el que está el mouse
-            lastLocalChange: null        // Timestamp del último cambio local
+            updateInterval: null, // Intervalo de actualización
+            hoveredIndicator: null, // Indicador sobre el que está el mouse
+            lastLocalChange: null // Timestamp del último cambio local
         };
 
         // ========================================
         // VARIABLES GLOBALES PARA LOS ELEMENTOS DEL CANVAS
         // ========================================
         let elements = {
-            mapCanvas: null,             // Canvas del mapa
-            mapCtx: null,                // Contexto del canvas del mapa
-            indicatorsCanvas: null,      // Canvas de los indicadores
-            indicatorsCtx: null          // Contexto del canvas de indicadores
+            mapCanvas: null, // Canvas del mapa
+            mapCtx: null, // Contexto del canvas del mapa
+            indicatorsCanvas: null, // Canvas de los indicadores
+            indicatorsCtx: null // Contexto del canvas de indicadores
         };
 
         // ========================================
         // FUNCIONES DE VERIFICACIÓN DE USUARIO Y ESPACIO
         // ========================================
-        
+
         // Función para verificar si un usuario existe en el sistema
         async function verificarUsuario(run) {
             try {
@@ -671,7 +675,10 @@
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
-                    body: JSON.stringify({ run, id_espacio: idEspacio })
+                    body: JSON.stringify({
+                        run,
+                        id_espacio: idEspacio
+                    })
                 });
                 return await response.json();
             } catch (error) {
@@ -704,32 +711,33 @@
         // Esta función procesa los códigos QR escaneados y maneja la lógica de reservas
         async function handleScan(event) {
             if (event.key === 'Enter') {
-            if (esperandoUsuario) {
+                if (esperandoUsuario) {
                     // Procesar QR de usuario (formato: RUN¿12345678')
-                const match = bufferQR.match(/RUN¿(\d+)/);
-                if (match) {
+                    const match = bufferQR.match(/RUN¿(\d+)/);
+                    if (match) {
                         usuarioEscaneado = match[1];
                         const usuarioInfo = await verificarUsuario(usuarioEscaneado);
-                    
-                    if (usuarioInfo && usuarioInfo.verificado) {
+
+                        if (usuarioInfo && usuarioInfo.verificado) {
                             document.getElementById('qr-status').innerHTML = 'Usuario verificado. Escanee el espacio.';
-                        document.getElementById('run-escaneado').textContent = usuarioInfo.usuario.run;
-                        document.getElementById('nombre-usuario').textContent = usuarioInfo.usuario.nombre;
-                        esperandoUsuario = false;
+                            document.getElementById('run-escaneado').textContent = usuarioInfo.usuario.run;
+                            document.getElementById('nombre-usuario').textContent = usuarioInfo.usuario.nombre;
+                            esperandoUsuario = false;
+                        } else {
+                            Swal.fire('Error', usuarioInfo?.mensaje || 'Error de verificación', 'error');
+                            document.getElementById('qr-status').innerHTML = usuarioInfo?.mensaje ||
+                                'Error de verificación';
+                        }
                     } else {
-                        Swal.fire('Error', usuarioInfo?.mensaje || 'Error de verificación', 'error');
-                        document.getElementById('qr-status').innerHTML = usuarioInfo?.mensaje || 'Error de verificación';
+                        Swal.fire('Error', 'RUN inválido', 'error');
+                        document.getElementById('qr-status').innerHTML = 'RUN inválido';
                     }
                 } else {
-                    Swal.fire('Error', 'RUN inválido', 'error');
-                    document.getElementById('qr-status').innerHTML = 'RUN inválido';
-                }
-            } else {
                     // Procesar QR de espacio (formato: TH'L01)
-                const espacioProcesado = bufferQR.replace(/'/g, '-');
-                const espacioInfo = await verificarEspacio(espacioProcesado);
-                
-                if (espacioInfo?.verificado) {
+                    const espacioProcesado = bufferQR.replace(/'/g, '-');
+                    const espacioInfo = await verificarEspacio(espacioProcesado);
+
+                    if (espacioInfo?.verificado) {
                         if (espacioInfo.disponible) {
                             // Reservar directamente, sin confirmación
                             const reserva = await crearReserva(usuarioEscaneado, espacioProcesado);
@@ -741,7 +749,9 @@
                                 const block = state.indicators.find(b => b.id === espacioProcesado);
                                 if (block) {
                                     block.estado = '#FF0000'; // Rojo
-                                    state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                                    state.originalCoordinates = state.indicators.map(i => ({
+                                        ...i
+                                    }));
                                     drawIndicators();
                                 }
                             } else {
@@ -750,16 +760,18 @@
                             }
                         } else {
                             // Espacio ocupado - mostrar mensaje informativo
-                            Swal.fire('Espacio Ocupado', `El espacio ${espacioInfo.espacio.nombre} está actualmente ocupado.`, 'info');
+                            Swal.fire('Espacio Ocupado',
+                                `El espacio ${espacioInfo.espacio.nombre} está actualmente ocupado.`, 'info');
                             document.getElementById('qr-status').innerHTML = 'Espacio ocupado';
+                        }
+                    } else {
+                        Swal.fire('Error', espacioInfo?.mensaje || 'Error al verificar espacio', 'error');
+                        document.getElementById('qr-status').innerHTML = espacioInfo?.mensaje ||
+                            'Error al verificar espacio';
                     }
-                } else {
-                    Swal.fire('Error', espacioInfo?.mensaje || 'Error al verificar espacio', 'error');
-                    document.getElementById('qr-status').innerHTML = espacioInfo?.mensaje || 'Error al verificar espacio';
+                    esperandoUsuario = true;
                 }
-                esperandoUsuario = true;
-            }
-            bufferQR = '';
+                bufferQR = '';
                 event.target.value = '';
             } else if (event.key.length === 1) {
                 bufferQR += event.key;
@@ -899,7 +911,10 @@
         // FUNCIÓN PARA CALCULAR LA POSICIÓN DE LOS INDICADORES
         // ========================================
         function calculatePosition(indicator) {
-            if (!state.isImageLoaded || !state.mapImage) return { x: 0, y: 0 };
+            if (!state.isImageLoaded || !state.mapImage) return {
+                x: 0,
+                y: 0
+            };
 
             // Calcular proporciones del canvas
             const canvasRatio = elements.mapCanvas.width / elements.mapCanvas.height;
@@ -920,19 +935,26 @@
 
             // Buscar las coordenadas originales del indicador
             const originalIndicator = state.originalCoordinates.find(i => i.id === indicator.id);
-            if (!originalIndicator) return { x: 0, y: 0 };
+            if (!originalIndicator) return {
+                x: 0,
+                y: 0
+            };
 
             // Calcular la posición escalada
             const x = offsetX + (originalIndicator.x / state.originalImageSize.width) * drawWidth;
             const y = offsetY + (originalIndicator.y / state.originalImageSize.height) * drawHeight;
 
-            return { x, y };
+            return {
+                x,
+                y
+            };
         }
 
         // ========================================
         // FUNCIÓN PARA DIBUJAR UN INDICADOR
         // ========================================
-        function dibujarIndicador(elements, position, finalWidth, finalHeight, color, id, isHovered, detalles, moduloActual) {
+        function dibujarIndicador(elements, position, finalWidth, finalHeight, color, id, isHovered, detalles,
+            moduloActual) {
             // Calcular el factor de escala para el efecto hover
             const scale = isHovered ? 1.2 : 1.0;
             const scaledWidth = finalWidth * scale;
@@ -984,7 +1006,7 @@
                 console.log('⚠️ Imagen no cargada, no se pueden dibujar indicadores');
                 return;
             }
-            
+
             // Limpiar el canvas de indicadores
             elements.indicatorsCtx.clearRect(0, 0, elements.indicatorsCanvas.width, elements.indicatorsCanvas.height);
 
@@ -999,11 +1021,13 @@
             // Dibujar cada indicador
             state.indicators.forEach((indicator, index) => {
                 const position = calculatePosition(indicator);
-                
+
                 // Normalizar el color según el estado
                 let color = indicator.estado;
-                console.log(`📍 Indicador ${indicator.id} (${index + 1}/${state.indicators.length}): estado original = "${color}"`);
-                
+                console.log(
+                    `📍 Indicador ${indicator.id} (${index + 1}/${state.indicators.length}): estado original = "${color}"`
+                );
+
                 // Si el estado es un color hexadecimal, usarlo directamente
                 if (color && color.startsWith('#')) {
                     console.log(`🎨 Indicador ${indicator.id}: usando color hexadecimal ${color}`);
@@ -1011,7 +1035,7 @@
                     // Convertir estados textuales a colores
                     const estadoLower = color ? color.toLowerCase() : '';
                     console.log(`🔍 Indicador ${indicator.id}: estado en minúsculas = "${estadoLower}"`);
-                    
+
                     switch (estadoLower) {
                         case 'disponible':
                         case 'available':
@@ -1045,7 +1069,7 @@
                             console.log(`🟢 Indicador ${indicator.id}: aplicando verde por defecto`);
                     }
                 }
-                
+
                 console.log(`✅ Indicador ${indicator.id}: color final = "${color}"`);
 
                 const isHovered = state.hoveredIndicator && state.hoveredIndicator.id === indicator.id;
@@ -1062,15 +1086,15 @@
                     null
                 );
             });
-            
+
             console.log('✅ Todos los indicadores han sido dibujados');
-            
+
             // Mostrar resumen de estados cada 10 actualizaciones para no saturar la consola
             if (!state.contadorActualizaciones) {
                 state.contadorActualizaciones = 0;
             }
             state.contadorActualizaciones++;
-            
+
             if (state.contadorActualizaciones % 10 === 0) {
                 mostrarResumenEstados();
             }
@@ -1121,24 +1145,25 @@
             // Agregar información del ocupante si está ocupado o reservado
             let usuarioOcupando = '';
             let informacionUsuario = '';
-            
+
             if ((estadoTexto === 'Ocupado' || estadoTexto === 'Reservado') && indicator.detalles?.usuario_ocupando) {
-                usuarioOcupando = `<br><span class='text-xs text-gray-700'>${estadoTexto === 'Ocupado' ? 'Ocupado por:' : 'Reservado por:'} <b>${indicator.detalles.usuario_ocupando}</b></span>`;
-                
+                usuarioOcupando =
+                    `<br><span class='text-xs text-gray-700'>${estadoTexto === 'Ocupado' ? 'Ocupado por:' : 'Reservado por:'} <b>${indicator.detalles.usuario_ocupando}</b></span>`;
+
                 // Agregar información adicional del usuario si está disponible
                 if (indicator.detalles?.reserva) {
                     const reserva = indicator.detalles.reserva;
                     const usuarioInfo = indicator.detalles.usuario_info;
-                    
+
                     informacionUsuario = `
                         <div class='p-3 mt-2 rounded-lg bg-gray-50'>
                             <h4 class='mb-2 text-sm font-semibold text-gray-800'>Información del Usuario</h4>
                             <div class='space-y-1 text-xs text-gray-600'>
                                 ${usuarioInfo ? `
-                                    <div><span class='font-medium'>Nombre:</span> ${usuarioInfo.nombre}</div>
-                                    <div><span class='font-medium'>Email:</span> ${usuarioInfo.email}</div>
-                                    <div><span class='font-medium'>RUN:</span> ${usuarioInfo.run}</div>
-                                ` : ''}
+                                                                    <div><span class='font-medium'>Nombre:</span> ${usuarioInfo.nombre}</div>
+                                                                    <div><span class='font-medium'>Email:</span> ${usuarioInfo.email}</div>
+                                                                    <div><span class='font-medium'>RUN:</span> ${usuarioInfo.run}</div>
+                                                                ` : ''}
                                 <div><span class='font-medium'>Fecha de reserva:</span> ${reserva.fecha_reserva || 'No especificada'}</div>
                                 <div><span class='font-medium'>Hora de entrada:</span> ${reserva.hora ? reserva.hora.substring(0, 5) : 'No especificada'}</div>
                                 ${reserva.hora_salida ? `<div><span class='font-medium'>Hora de salida:</span> ${reserva.hora_salida.substring(0, 5)}</div>` : ''}
@@ -1147,7 +1172,7 @@
                     `;
                 }
             }
-            
+
             modalEstado.innerHTML = `<span class="${estadoColor} font-semibold">${estadoTexto}</span>${usuarioOcupando}`;
 
             const detalles = indicator.detalles || {};
@@ -1158,7 +1183,8 @@
                 modalPlanificacionAsignatura.textContent = infoClaseActual.asignatura || '';
                 modalPlanificacionProfesor.textContent = infoClaseActual.profesor || '';
                 modalPlanificacionModulo.textContent = infoClaseActual.modulo || '';
-                modalPlanificacionHorario.textContent = `${infoClaseActual.hora_inicio} - ${infoClaseActual.hora_termino} hrs`;
+                modalPlanificacionHorario.textContent =
+                    `${infoClaseActual.hora_inicio} - ${infoClaseActual.hora_termino} hrs`;
             } else if (indicator.estado === '#FF0000') {
                 modalPlanificacionAsignatura.textContent = 'No hay información sobre la ocupación actual.';
                 modalPlanificacionProfesor.textContent = '';
@@ -1201,7 +1227,8 @@
                     if (!usuarioContainer) {
                         usuarioContainer = document.createElement('div');
                         usuarioContainer.id = 'usuarioContainer';
-                        planificacionContainer.parentNode.insertBefore(usuarioContainer, planificacionContainer.nextSibling);
+                        planificacionContainer.parentNode.insertBefore(usuarioContainer, planificacionContainer
+                            .nextSibling);
                     }
                     usuarioContainer.innerHTML = informacionUsuario;
                     usuarioContainer.style.display = '';
@@ -1223,9 +1250,12 @@
             const estadoPill = document.getElementById('estadoPill');
             const estadoIcon = document.getElementById('estadoIcon');
             const planificacionContainer = document.getElementById('planificacionContainer');
-            
+
             // Determinar color y texto según el estado
-            let pillColor = '', iconColor = '', texto = '', mostrarPlanificacion = true;
+            let pillColor = '',
+                iconColor = '',
+                texto = '',
+                mostrarPlanificacion = true;
             switch (estadoTexto) {
                 case 'Ocupado':
                     pillColor = 'border-red-500 bg-red-50 text-red-700';
@@ -1254,12 +1284,13 @@
                     iconColor = 'bg-gray-400';
                     texto = estadoTexto;
             }
-            
+
             // Aplicar estilos al pill de estado
-            estadoPill.className = `inline-flex items-center px-4 py-2 text-base font-bold border rounded-full ${pillColor}`;
+            estadoPill.className =
+                `inline-flex items-center px-4 py-2 text-base font-bold border rounded-full ${pillColor}`;
             estadoIcon.className = `w-3 h-3 mr-3 rounded-full ${iconColor}`;
             document.getElementById('modalEstado').textContent = texto;
-            
+
             // Mostrar/ocultar planificación según el estado
             if (planificacionContainer) {
                 planificacionContainer.style.display = mostrarPlanificacion ? '' : 'none';
@@ -1273,89 +1304,314 @@
         // Formato: {inicio: 'HH:MM:SS', fin: 'HH:MM:SS'}
         const horariosModulos = {
             lunes: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+                1: {
+                    inicio: '08:10:00',
+                    fin: '09:00:00'
+                },
+                2: {
+                    inicio: '09:10:00',
+                    fin: '10:00:00'
+                },
+                3: {
+                    inicio: '10:10:00',
+                    fin: '11:00:00'
+                },
+                4: {
+                    inicio: '11:10:00',
+                    fin: '12:00:00'
+                },
+                5: {
+                    inicio: '12:10:00',
+                    fin: '13:00:00'
+                },
+                6: {
+                    inicio: '13:10:00',
+                    fin: '14:00:00'
+                },
+                7: {
+                    inicio: '14:10:00',
+                    fin: '15:00:00'
+                },
+                8: {
+                    inicio: '15:10:00',
+                    fin: '16:00:00'
+                },
+                9: {
+                    inicio: '16:10:00',
+                    fin: '17:00:00'
+                },
+                10: {
+                    inicio: '17:10:00',
+                    fin: '18:00:00'
+                },
+                11: {
+                    inicio: '18:10:00',
+                    fin: '19:00:00'
+                },
+                12: {
+                    inicio: '19:10:00',
+                    fin: '20:00:00'
+                },
+                13: {
+                    inicio: '20:10:00',
+                    fin: '21:00:00'
+                },
+                14: {
+                    inicio: '21:10:00',
+                    fin: '22:00:00'
+                },
+                15: {
+                    inicio: '22:10:00',
+                    fin: '23:00:00'
+                }
             },
             martes: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+                1: {
+                    inicio: '08:10:00',
+                    fin: '09:00:00'
+                },
+                2: {
+                    inicio: '09:10:00',
+                    fin: '10:00:00'
+                },
+                3: {
+                    inicio: '10:10:00',
+                    fin: '11:00:00'
+                },
+                4: {
+                    inicio: '11:10:00',
+                    fin: '12:00:00'
+                },
+                5: {
+                    inicio: '12:10:00',
+                    fin: '13:00:00'
+                },
+                6: {
+                    inicio: '13:10:00',
+                    fin: '14:00:00'
+                },
+                7: {
+                    inicio: '14:10:00',
+                    fin: '15:00:00'
+                },
+                8: {
+                    inicio: '15:10:00',
+                    fin: '16:00:00'
+                },
+                9: {
+                    inicio: '16:10:00',
+                    fin: '17:00:00'
+                },
+                10: {
+                    inicio: '17:10:00',
+                    fin: '18:00:00'
+                },
+                11: {
+                    inicio: '18:10:00',
+                    fin: '19:00:00'
+                },
+                12: {
+                    inicio: '19:10:00',
+                    fin: '20:00:00'
+                },
+                13: {
+                    inicio: '20:10:00',
+                    fin: '21:00:00'
+                },
+                14: {
+                    inicio: '21:10:00',
+                    fin: '22:00:00'
+                },
+                15: {
+                    inicio: '22:10:00',
+                    fin: '23:00:00'
+                }
             },
             miercoles: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+                1: {
+                    inicio: '08:10:00',
+                    fin: '09:00:00'
+                },
+                2: {
+                    inicio: '09:10:00',
+                    fin: '10:00:00'
+                },
+                3: {
+                    inicio: '10:10:00',
+                    fin: '11:00:00'
+                },
+                4: {
+                    inicio: '11:10:00',
+                    fin: '12:00:00'
+                },
+                5: {
+                    inicio: '12:10:00',
+                    fin: '13:00:00'
+                },
+                6: {
+                    inicio: '13:10:00',
+                    fin: '14:00:00'
+                },
+                7: {
+                    inicio: '14:10:00',
+                    fin: '15:00:00'
+                },
+                8: {
+                    inicio: '15:10:00',
+                    fin: '16:00:00'
+                },
+                9: {
+                    inicio: '16:10:00',
+                    fin: '17:00:00'
+                },
+                10: {
+                    inicio: '17:10:00',
+                    fin: '18:00:00'
+                },
+                11: {
+                    inicio: '18:10:00',
+                    fin: '19:00:00'
+                },
+                12: {
+                    inicio: '19:10:00',
+                    fin: '20:00:00'
+                },
+                13: {
+                    inicio: '20:10:00',
+                    fin: '21:00:00'
+                },
+                14: {
+                    inicio: '21:10:00',
+                    fin: '22:00:00'
+                },
+                15: {
+                    inicio: '22:10:00',
+                    fin: '23:00:00'
+                }
             },
             jueves: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+                1: {
+                    inicio: '08:10:00',
+                    fin: '09:00:00'
+                },
+                2: {
+                    inicio: '09:10:00',
+                    fin: '10:00:00'
+                },
+                3: {
+                    inicio: '10:10:00',
+                    fin: '11:00:00'
+                },
+                4: {
+                    inicio: '11:10:00',
+                    fin: '12:00:00'
+                },
+                5: {
+                    inicio: '12:10:00',
+                    fin: '13:00:00'
+                },
+                6: {
+                    inicio: '13:10:00',
+                    fin: '14:00:00'
+                },
+                7: {
+                    inicio: '14:10:00',
+                    fin: '15:00:00'
+                },
+                8: {
+                    inicio: '15:10:00',
+                    fin: '16:00:00'
+                },
+                9: {
+                    inicio: '16:10:00',
+                    fin: '17:00:00'
+                },
+                10: {
+                    inicio: '17:10:00',
+                    fin: '18:00:00'
+                },
+                11: {
+                    inicio: '18:10:00',
+                    fin: '19:00:00'
+                },
+                12: {
+                    inicio: '19:10:00',
+                    fin: '20:00:00'
+                },
+                13: {
+                    inicio: '20:10:00',
+                    fin: '21:00:00'
+                },
+                14: {
+                    inicio: '21:10:00',
+                    fin: '22:00:00'
+                },
+                15: {
+                    inicio: '22:10:00',
+                    fin: '23:00:00'
+                }
             },
             viernes: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+                1: {
+                    inicio: '08:10:00',
+                    fin: '09:00:00'
+                },
+                2: {
+                    inicio: '09:10:00',
+                    fin: '10:00:00'
+                },
+                3: {
+                    inicio: '10:10:00',
+                    fin: '11:00:00'
+                },
+                4: {
+                    inicio: '11:10:00',
+                    fin: '12:00:00'
+                },
+                5: {
+                    inicio: '12:10:00',
+                    fin: '13:00:00'
+                },
+                6: {
+                    inicio: '13:10:00',
+                    fin: '14:00:00'
+                },
+                7: {
+                    inicio: '14:10:00',
+                    fin: '15:00:00'
+                },
+                8: {
+                    inicio: '15:10:00',
+                    fin: '16:00:00'
+                },
+                9: {
+                    inicio: '16:10:00',
+                    fin: '17:00:00'
+                },
+                10: {
+                    inicio: '17:10:00',
+                    fin: '18:00:00'
+                },
+                11: {
+                    inicio: '18:10:00',
+                    fin: '19:00:00'
+                },
+                12: {
+                    inicio: '19:10:00',
+                    fin: '20:00:00'
+                },
+                13: {
+                    inicio: '20:10:00',
+                    fin: '21:00:00'
+                },
+                14: {
+                    inicio: '21:10:00',
+                    fin: '22:00:00'
+                },
+                15: {
+                    inicio: '22:10:00',
+                    fin: '23:00:00'
+                }
             }
         };
 
@@ -1463,7 +1719,7 @@
         // ========================================
         // FUNCIONES FALTANTES PARA LA DEVOLUCIÓN Y COLORES
         // ========================================
-        
+
         // Función para procesar la devolución de llaves
         async function procesarDevolucion(run, idEspacio) {
             try {
@@ -1481,16 +1737,19 @@
                 return await response.json();
             } catch (error) {
                 console.error('Error al procesar devolución:', error);
-                return { success: false, mensaje: 'Error de conexión' };
+                return {
+                    success: false,
+                    mensaje: 'Error de conexión'
+                };
             }
         }
 
         // Función para resetear el estado de devolución
         function resetearEstadoDevolucion() {
-                    esperandoUsuarioDevolucion = true;
-                    usuarioEscaneadoDevolucion = null;
-                    espacioEscaneadoDevolucion = null;
-                    bufferQRDevolucion = '';
+            esperandoUsuarioDevolucion = true;
+            usuarioEscaneadoDevolucion = null;
+            espacioEscaneadoDevolucion = null;
+            bufferQRDevolucion = '';
         }
 
         // Función para iniciar el proceso de devolución
@@ -1499,23 +1758,23 @@
             window.dispatchEvent(new CustomEvent('close-modal', {
                 detail: 'data-space'
             }));
-            
+
             // Abrir el modal de devolución
             setTimeout(() => {
                 window.dispatchEvent(new CustomEvent('open-modal', {
                     detail: 'devolver-llaves'
                 }));
-                
+
                 // Resetear estado de devolución
                 resetearEstadoDevolucion();
-                
+
                 // Configurar el input de devolución
                 const inputDevolucion = document.getElementById('qr-input-devolucion');
                 if (inputDevolucion) {
                     inputDevolucion.value = '';
                     inputDevolucion.focus();
                 }
-                
+
                 // Actualizar el estado del QR
                 document.getElementById('qr-status-devolucion').innerHTML = 'Esperando escaneo del usuario...';
             }, 300);
@@ -1525,7 +1784,9 @@
         // AJUSTE: Cerrar modal de devolución de llaves al finalizar
         // ========================================
         function cerrarModalDevolverLlaves() {
-            window.dispatchEvent(new CustomEvent('close-modal', { detail: 'devolver-llaves' }));
+            window.dispatchEvent(new CustomEvent('close-modal', {
+                detail: 'devolver-llaves'
+            }));
         }
 
         // Función para manejar el escaneo de devolución
@@ -1539,11 +1800,13 @@
                         const usuarioInfo = await verificarUsuario(usuarioEscaneadoDevolucion);
 
                         if (usuarioInfo && usuarioInfo.verificado) {
-                            document.getElementById('qr-status-devolucion').innerHTML = 'Usuario verificado. Escanee el espacio para devolver.';
+                            document.getElementById('qr-status-devolucion').innerHTML =
+                                'Usuario verificado. Escanee el espacio para devolver.';
                             esperandoUsuarioDevolucion = false;
                         } else {
                             Swal.fire('Error', usuarioInfo?.mensaje || 'Error de verificación', 'error');
-                            document.getElementById('qr-status-devolucion').innerHTML = usuarioInfo?.mensaje || 'Error de verificación';
+                            document.getElementById('qr-status-devolucion').innerHTML = usuarioInfo?.mensaje ||
+                                'Error de verificación';
                         }
                     } else {
                         Swal.fire('Error', 'RUN inválido', 'error');
@@ -1556,10 +1819,10 @@
 
                     if (espacioInfo?.verificado) {
                         espacioEscaneadoDevolucion = espacioProcesado;
-                        
+
                         // Procesar devolución directamente
                         const resultado = await procesarDevolucion(usuarioEscaneadoDevolucion, espacioProcesado);
-                        
+
                         if (resultado.success) {
                             cerrarModalesDespuesDeSwal(['devolver-llaves', 'data-space']);
                             document.getElementById('qr-status-devolucion').innerHTML = 'Devolución exitosa';
@@ -1567,7 +1830,9 @@
                             const block = state.indicators.find(b => b.id === espacioProcesado);
                             if (block) {
                                 block.estado = '#059669'; // Verde
-                                state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                                state.originalCoordinates = state.indicators.map(i => ({
+                                    ...i
+                                }));
                                 drawIndicators();
                             }
                             // Cerrar el modal después de la devolución exitosa
@@ -1576,11 +1841,13 @@
                             }, 1000);
                         } else {
                             Swal.fire('Error', resultado.mensaje || 'Error al procesar la devolución', 'error');
-                            document.getElementById('qr-status-devolucion').innerHTML = resultado.mensaje || 'Error al procesar la devolución';
+                            document.getElementById('qr-status-devolucion').innerHTML = resultado.mensaje ||
+                                'Error al procesar la devolución';
                         }
                     } else {
                         Swal.fire('Error', espacioInfo?.mensaje || 'Error al verificar espacio', 'error');
-                        document.getElementById('qr-status-devolucion').innerHTML = espacioInfo?.mensaje || 'Error al verificar espacio';
+                        document.getElementById('qr-status-devolucion').innerHTML = espacioInfo?.mensaje ||
+                            'Error al verificar espacio';
                     }
                     // Resetear el estado de devolución
                     resetearEstadoDevolucion();
@@ -1597,9 +1864,12 @@
         function cerrarModalesDespuesDeSwal(modales = []) {
             return Swal.fire('¡Devolución exitosa!', 'Las llaves han sido devueltas correctamente.', 'success').then(() => {
                 modales.forEach(nombre => {
-                    window.dispatchEvent(new CustomEvent('close-modal', { detail: nombre }));
+                    window.dispatchEvent(new CustomEvent('close-modal', {
+                        detail: nombre
+                    }));
                     setTimeout(() => {
-                        document.querySelectorAll(`[data-modal="${nombre}"]`).forEach(el => el.classList.add('hidden'));
+                        document.querySelectorAll(`[data-modal="${nombre}"]`).forEach(el => el
+                            .classList.add('hidden'));
                     }, 200);
                 });
             });
@@ -1617,35 +1887,35 @@
         async function actualizarColoresEspacios() {
             try {
                 console.log('🔄 Iniciando actualización de colores para mapaId:', mapaId);
-                
+
                 // Verificar si hay cambios locales recientes (menos de 10 segundos)
                 if (state.lastLocalChange && (Date.now() - state.lastLocalChange) < 10000) {
                     console.log('⏭️ Ignorando actualización del servidor debido a cambios locales recientes');
                     return;
                 }
-                
+
                 // Obtener datos actualizados del servidor
                 const response = await fetch(`/plano/${encodeURIComponent(mapaId)}/bloques`);
                 console.log('📡 Respuesta del servidor:', response.status, response.statusText);
-                
+
                 if (response.ok) {
                     const data = await response.json();
                     console.log('📊 Datos recibidos del servidor:', data);
-                    
+
                     // Verificar que data.bloques existe y es un array
                     if (!data.bloques || !Array.isArray(data.bloques)) {
                         console.error('❌ La respuesta no contiene data.bloques válido:', data);
                         return;
                     }
-                    
+
                     // Verificar si hay cambios en los indicadores antes de actualizar
                     let hayCambios = false;
                     let cambiosDetectados = [];
-                    
+
                     if (state.indicators && state.indicators.length > 0) {
                         data.bloques.forEach((nuevoBloque, index) => {
                             const bloqueActual = state.indicators[index];
-                            if (!bloqueActual || 
+                            if (!bloqueActual ||
                                 bloqueActual.estado !== nuevoBloque.estado ||
                                 bloqueActual.nombre !== nuevoBloque.nombre) {
                                 hayCambios = true;
@@ -1665,16 +1935,16 @@
                     } else {
                         hayCambios = true; // Primera carga
                     }
-                    
+
                     if (hayCambios) {
                         // Actualizar los indicadores con los nuevos datos
                         state.indicators = data.bloques;
                         console.log('✅ Indicadores actualizados:', state.indicators);
-                        
+
                         // Redibujar los indicadores con los nuevos colores
                         drawIndicators();
                         console.log('🎨 Colores actualizados desde el servidor');
-                        
+
                         // Mostrar información sobre los cambios si es una actualización manual
                         if (cambiosDetectados.length > 0) {
                             console.log(`📊 Se actualizaron ${cambiosDetectados.length} espacios:`, cambiosDetectados);
@@ -1703,7 +1973,8 @@
             if (!estadoElement) {
                 estadoElement = document.createElement('div');
                 estadoElement.id = 'estado-actualizacion';
-                estadoElement.className = 'fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-white text-sm font-medium transition-all duration-300';
+                estadoElement.className =
+                    'fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-white text-sm font-medium transition-all duration-300';
                 document.body.appendChild(estadoElement);
             }
 
@@ -1715,7 +1986,8 @@
                 'error': 'bg-red-500'
             };
 
-            estadoElement.className = `fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-white text-sm font-medium transition-all duration-300 ${colores[tipo] || colores.info}`;
+            estadoElement.className =
+                `fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-white text-sm font-medium transition-all duration-300 ${colores[tipo] || colores.info}`;
             estadoElement.textContent = mensaje;
 
             // Ocultar después de 3 segundos
@@ -1735,10 +2007,10 @@
         async function forzarActualizacionEstados() {
             console.log('🚀 Forzando actualización de estados...');
             mostrarEstadoActualizacion('🔄 Actualizando estados de espacios...', 'info');
-            
+
             // Limpiar el timestamp de cambios locales para permitir actualización
             state.lastLocalChange = null;
-            
+
             try {
                 await actualizarColoresEspacios();
                 mostrarEstadoActualizacion('✅ Estados actualizados correctamente', 'success');
@@ -1763,10 +2035,10 @@
         // EVENT LISTENER PARA ACTUALIZAR MODAL
         // ========================================
         // Asegurarse de que el modal esté actualizado cuando se abre
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             const modal = document.getElementById('modal-solicitar-espacio');
             if (modal) {
-                modal.addEventListener('show.bs.modal', function () {
+                modal.addEventListener('show.bs.modal', function() {
                     actualizarHora();
                     actualizarModuloYColores();
                 });
@@ -1776,12 +2048,12 @@
         // ========================================
         // INICIALIZACIÓN PRINCIPAL UNIFICADA
         // ========================================
-        document.addEventListener("DOMContentLoaded", function () {
+        document.addEventListener("DOMContentLoaded", function() {
             // Configurar el input del escáner QR
             const inputEscanner = document.getElementById('qr-input');
             if (inputEscanner) {
                 inputEscanner.addEventListener('keydown', handleScan);
-                document.addEventListener('click', function () {
+                document.addEventListener('click', function() {
                     inputEscanner.focus();
                 });
                 inputEscanner.focus();
@@ -1797,7 +2069,7 @@
             }
             // Cargar la imagen del mapa
             const img = new Image();
-            img.onload = function () {
+            img.onload = function() {
                 state.mapImage = img;
                 state.originalImageSize = {
                     width: img.width,
@@ -1810,10 +2082,10 @@
                 state.updateInterval = setInterval(actualizarColoresEspacios, 5000);
             };
             img.src = "{{ asset('storage/' . $mapa->ruta_mapa) }}";
-            window.addEventListener('resize', function () {
+            window.addEventListener('resize', function() {
                 initCanvases();
             });
-            window.addEventListener('beforeunload', function () {
+            window.addEventListener('beforeunload', function() {
                 if (state.updateInterval) {
                     clearInterval(state.updateInterval);
                 }
@@ -1833,14 +2105,14 @@
                 document.addEventListener('click', () => inputSolicitud.focus());
                 inputSolicitud.focus();
             }
-            
+
             // Configurar el formulario de registro de usuario
             const formRegistro = document.getElementById('form-registro-usuario');
             if (formRegistro) {
                 formRegistro.addEventListener('submit', procesarRegistroUsuario);
             }
             // Resetear estado cada vez que se abre el modal
-            window.addEventListener('open-modal', function (e) {
+            window.addEventListener('open-modal', function(e) {
                 if (e.detail === 'devolver-llaves') {
                     resetearDevolucionQR();
                     setTimeout(() => {
@@ -1860,13 +2132,15 @@
             const inputQR = document.getElementById('qr-input-devolucion');
             const lineaDiv = document.getElementById('linea-divisoria-qr');
             if (btnDevolver && areaQR && inputQR && lineaDiv) {
-                btnDevolver.addEventListener('click', function () {
+                btnDevolver.addEventListener('click', function() {
                     areaQR.classList.remove('hidden');
                     lineaDiv.classList.remove('hidden');
-                    setTimeout(() => { inputQR.focus(); }, 200);
+                    setTimeout(() => {
+                        inputQR.focus();
+                    }, 200);
                 });
             }
-            
+
             // Configurar botón de actualización manual
             const refreshBtn = document.getElementById('refreshBtn');
             if (refreshBtn) {
@@ -1875,9 +2149,9 @@
                     const icon = refreshBtn.querySelector('svg');
                     icon.style.transform = 'rotate(360deg)';
                     icon.style.transition = 'transform 0.5s ease-in-out';
-                    
+
                     await forzarActualizacionEstados();
-                    
+
                     // Restaurar el ícono
                     setTimeout(() => {
                         icon.style.transform = 'rotate(0deg)';
@@ -1889,7 +2163,7 @@
             window.mostrarResumenEstados = mostrarResumenEstados;
             window.forzarActualizacionEstados = forzarActualizacionEstados;
             window.actualizarColoresEspacios = actualizarColoresEspacios;
-            
+
             console.log('🔧 Funciones de debugging disponibles:');
             console.log('  - window.mostrarResumenEstados() - Muestra resumen de estados');
             console.log('  - window.forzarActualizacionEstados() - Fuerza actualización');
@@ -1925,14 +2199,13 @@
                     nombreUsuario.textContent = '--';
                 }
             } else {
-                qrStatus.innerHTML =
-                    '<svg xmlns="http://www.w3.org/2000/svg" class="inline-block w-4 h-4 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> Esperando';
+                qrStatus.innerHTML = 'Esperando';
                 runEscaneado.textContent = '--';
                 nombreUsuario.textContent = '--';
             }
         }
 
-        
+
 
         // ========================================
         // FUNCIÓN PARA MANEJAR EL ESCANEO DE SALIDA
@@ -1978,27 +2251,27 @@
         function mostrarErrorEscaneoSalida(mensaje) {
             const errorMsg = document.getElementById('salida-profesor-error-msg');
             const cargandoMsg = document.getElementById('salida-profesor-cargando-msg');
-            
+
             if (errorMsg) {
                 errorMsg.textContent = mensaje;
                 errorMsg.classList.remove('hidden');
             }
             if (cargandoMsg) cargandoMsg.textContent = '';
         }
-     
+
         // ========================================
         // FUNCIONES PARA MANEJAR USUARIOS NO REGISTRADOS
         // ========================================
-        
+
         // Función para mostrar el modal de registro de usuario
         function mostrarModalRegistroUsuario(run) {
             document.getElementById('run-no-registrado').textContent = run;
-            
+
             // Cerrar modal actual y abrir modal de registro
             window.dispatchEvent(new CustomEvent('close-modal', {
                 detail: 'solicitar-llaves'
             }));
-            
+
             setTimeout(() => {
                 window.dispatchEvent(new CustomEvent('open-modal', {
                     detail: 'registro-usuario'
@@ -2012,28 +2285,28 @@
             window.dispatchEvent(new CustomEvent('close-modal', {
                 detail: 'registro-usuario'
             }));
-            
+
             // Resetear variables
             usuarioNoRegistrado = null;
             espacioPendiente = null;
             modoOperacionActual = null;
-            
+
             // Volver al modal de solicitud
             setTimeout(() => {
                 window.dispatchEvent(new CustomEvent('open-modal', {
                     detail: 'solicitar-llaves'
                 }));
-                
+
                 // Resetear estado de solicitud
                 resetearEstadoSolicitud();
-                
+
                 // Configurar el input de solicitud
                 const inputSolicitud = document.getElementById('qr-input-solicitud');
                 if (inputSolicitud) {
                     inputSolicitud.value = '';
                     inputSolicitud.focus();
                 }
-                
+
                 // Actualizar el estado del QR
                 document.getElementById('qr-status-solicitud').innerHTML = 'Esperando escaneo del usuario...';
             }, 300);
@@ -2042,7 +2315,7 @@
         // Función para procesar el formulario de registro
         async function procesarRegistroUsuario(event) {
             event.preventDefault();
-            
+
             const formData = new FormData(event.target);
             const datosUsuario = {
                 run: usuarioNoRegistrado.run,
@@ -2054,7 +2327,7 @@
 
             try {
                 const resultado = await registrarUsuarioNoRegistrado(datosUsuario);
-                
+
                 if (resultado && resultado.success) {
                     Swal.fire({
                         title: '¡Usuario registrado exitosamente!',
@@ -2066,7 +2339,7 @@
                         window.dispatchEvent(new CustomEvent('close-modal', {
                             detail: 'registro-usuario'
                         }));
-                        
+
                         // Continuar con el flujo original según el modo de operación
                         if (modoOperacionActual === 'solicitud') {
                             // Volver al modal de solicitud y continuar
@@ -2074,14 +2347,15 @@
                                 window.dispatchEvent(new CustomEvent('open-modal', {
                                     detail: 'solicitar-llaves'
                                 }));
-                                
+
                                 // Actualizar estado para continuar con el espacio
                                 esperandoUsuarioSolicitud = false;
                                 usuarioEscaneadoSolicitud = datosUsuario.run;
-                                
+
                                 // Actualizar el estado del QR
-                                document.getElementById('qr-status-solicitud').innerHTML = 'Usuario registrado. Escanee el espacio para solicitar.';
-                                
+                                document.getElementById('qr-status-solicitud').innerHTML =
+                                    'Usuario registrado. Escanee el espacio para solicitar.';
+
                                 // Configurar el input de solicitud
                                 const inputSolicitud = document.getElementById('qr-input-solicitud');
                                 if (inputSolicitud) {
@@ -2090,7 +2364,7 @@
                                 }
                             }, 300);
                         }
-                        
+
                         // Resetear variables
                         usuarioNoRegistrado = null;
                         espacioPendiente = null;
@@ -2112,7 +2386,7 @@
         // ========================================
         // FUNCIONES PARA CÁMARA Y PERMISOS
         // ========================================
-        
+
 
         // Función para obtener la primera cámara disponible
         async function getFirstCamera() {
@@ -2124,8 +2398,8 @@
                 return null;
             }
         }
-        
-              // Asegurar que indicators sea siempre un array
+
+        // Asegurar que indicators sea siempre un array
         if (!state.indicators || !Array.isArray(state.indicators)) {
             state.indicators = [];
         }
@@ -2154,7 +2428,7 @@
         // ========================================
         // FUNCIONES PARA EL FLUJO DE SOLICITUD
         // ========================================
-        
+
         // Función para resetear el estado de solicitud
         function resetearEstadoSolicitud() {
             esperandoUsuarioSolicitud = true;
@@ -2169,23 +2443,23 @@
             window.dispatchEvent(new CustomEvent('close-modal', {
                 detail: 'data-space'
             }));
-            
+
             // Abrir el modal de solicitud
             setTimeout(() => {
                 window.dispatchEvent(new CustomEvent('open-modal', {
                     detail: 'solicitar-llaves'
                 }));
-                
+
                 // Resetear estado de solicitud
                 resetearEstadoSolicitud();
-                
+
                 // Configurar el input de solicitud
                 const inputSolicitud = document.getElementById('qr-input-solicitud');
                 if (inputSolicitud) {
                     inputSolicitud.value = '';
                     inputSolicitud.focus();
                 }
-                
+
                 // Actualizar el estado del QR
                 document.getElementById('qr-status-solicitud').innerHTML = 'Esperando escaneo del usuario...';
             }, 300);
@@ -2203,12 +2477,15 @@
 
                         if (usuarioInfo && usuarioInfo.verificado) {
                             if (usuarioInfo.tipo_usuario === 'registrado') {
-                                document.getElementById('qr-status-solicitud').innerHTML = 'Usuario registrado verificado. Escanee el espacio para solicitar.';
+                                document.getElementById('qr-status-solicitud').innerHTML =
+                                    'Usuario registrado verificado. Escanee el espacio para solicitar.';
                             } else if (usuarioInfo.tipo_usuario === 'no_registrado') {
-                                document.getElementById('qr-status-solicitud').innerHTML = 'Usuario no registrado verificado. Escanee el espacio para solicitar.';
+                                document.getElementById('qr-status-solicitud').innerHTML =
+                                    'Usuario no registrado verificado. Escanee el espacio para solicitar.';
                             }
                             esperandoUsuarioSolicitud = false;
-                        } else if (usuarioInfo && usuarioInfo.usuario_no_registrado && usuarioInfo.tipo_usuario === 'nuevo') {
+                        } else if (usuarioInfo && usuarioInfo.usuario_no_registrado && usuarioInfo.tipo_usuario ===
+                            'nuevo') {
                             // Usuario completamente nuevo - mostrar modal de registro
                             usuarioNoRegistrado = {
                                 run: usuarioInfo.run_escaneado
@@ -2217,7 +2494,8 @@
                             mostrarModalRegistroUsuario(usuarioInfo.run_escaneado);
                         } else {
                             Swal.fire('Error', usuarioInfo?.mensaje || 'Error de verificación', 'error');
-                            document.getElementById('qr-status-solicitud').innerHTML = usuarioInfo?.mensaje || 'Error de verificación';
+                            document.getElementById('qr-status-solicitud').innerHTML = usuarioInfo?.mensaje ||
+                                'Error de verificación';
                         }
                     } else {
                         Swal.fire('Error', 'RUN inválido', 'error');
@@ -2234,13 +2512,15 @@
                             // Procesar solicitud directamente, sin confirmación
                             const reserva = await crearReserva(usuarioEscaneadoSolicitud, espacioProcesado);
                             if (reserva?.success) {
-                                Swal.fire('¡Solicitud exitosa!', 'Las llaves han sido asignadas correctamente.', 'success');
+                                Swal.fire('¡Solicitud exitosa!', 'Las llaves han sido asignadas correctamente.',
+                                    'success');
                                 document.getElementById('qr-status-solicitud').innerHTML = 'Solicitud exitosa';
                                 // Actualizar el color del indicador a 'Ocupado' (rojo)
                                 const block = state.indicators.find(b => b.id === espacioProcesado);
                                 if (block) {
                                     block.estado = '#FF0000'; // Rojo
-                                    const originalBlock = state.originalCoordinates.find(b => b.id === espacioProcesado);
+                                    const originalBlock = state.originalCoordinates.find(b => b.id ===
+                                        espacioProcesado);
                                     if (originalBlock) {
                                         originalBlock.estado = '#FF0000';
                                     }
@@ -2266,7 +2546,8 @@
                                             titulo = 'Reserva Activa';
                                             icono = 'warning';
                                             if (reserva.reserva_activa) {
-                                                mensaje = `Ya tienes una reserva activa en el espacio '${reserva.reserva_activa.espacio}' desde las ${reserva.reserva_activa.hora_inicio}. Debes finalizarla antes de solicitar una nueva.`;
+                                                mensaje =
+                                                    `Ya tienes una reserva activa en el espacio '${reserva.reserva_activa.espacio}' desde las ${reserva.reserva_activa.hora_inicio}. Debes finalizarla antes de solicitar una nueva.`;
                                             }
                                             break;
                                         case 'reserva_diaria':
@@ -2297,7 +2578,8 @@
                         }
                     } else {
                         Swal.fire('Error', espacioInfo?.mensaje || 'Error al verificar espacio', 'error');
-                        document.getElementById('qr-status-solicitud').innerHTML = espacioInfo?.mensaje || 'Error al verificar espacio';
+                        document.getElementById('qr-status-solicitud').innerHTML = espacioInfo?.mensaje ||
+                            'Error al verificar espacio';
                     }
                     resetearEstadoSolicitud();
                 }
@@ -2397,7 +2679,7 @@
         const moduloActual = moduloActualNum(); // o determinarModulo(horaActual)
         const moduloParaHora = moduloActualNum('08:30:00'); // o determinarModulo('08:30:00')
 
-   
+
         // ========================================
         // LÓGICA PARA RESERVA POR MÓDULOS
         // ========================================
@@ -2416,13 +2698,15 @@
                     second: '2-digit'
                 });
                 const diaActual = obtenerDiaActual();
-                
-                const response = await fetch(`/api/espacio/${idEspacio}/modulos-disponibles?hora_actual=${horaActual}&dia_actual=${diaActual}`);
-                
+
+                const response = await fetch(
+                    `/api/espacio/${idEspacio}/modulos-disponibles?hora_actual=${horaActual}&dia_actual=${diaActual}`
+                );
+
                 if (response.ok) {
                     const data = await response.json();
                     console.log('Respuesta del endpoint modulos-disponibles:', data);
-                    
+
                     if (data.success) {
                         return data.max_modulos || 1;
                     } else {
@@ -2448,14 +2732,16 @@
             inputModulos.value = 1;
             espacioParaReserva = idEspacio;
             runParaReserva = run;
-            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'seleccionar-modulos' }));
+            window.dispatchEvent(new CustomEvent('open-modal', {
+                detail: 'seleccionar-modulos'
+            }));
         }
 
         // Confirmar reserva con módulos
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
             const btnConfirmarModulos = document.getElementById('btn-confirmar-modulos');
             if (btnConfirmarModulos) {
-                btnConfirmarModulos.addEventListener('click', async function () {
+                btnConfirmarModulos.addEventListener('click', async function() {
                     const cantidad = parseInt(document.getElementById('input-cantidad-modulos').value);
                     if (!espacioParaReserva || !runParaReserva) return;
                     // Llama a crearReserva con la cantidad de módulos
@@ -2463,7 +2749,8 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
+                                .content
                         },
                         body: JSON.stringify({
                             run: runParaReserva,
@@ -2474,7 +2761,9 @@
                     const data = await response.json();
                     if (data.success) {
                         Swal.fire('¡Reserva exitosa!', data.mensaje, 'success');
-                        window.dispatchEvent(new CustomEvent('close-modal', { detail: 'seleccionar-modulos' }));
+                        window.dispatchEvent(new CustomEvent('close-modal', {
+                            detail: 'seleccionar-modulos'
+                        }));
                     } else {
                         Swal.fire('Error', data.mensaje || 'No se pudo reservar', 'error');
                     }

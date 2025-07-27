@@ -18,10 +18,9 @@ class EspacioController extends Controller
      */
     public function index(Request $request)
     {
-        $universidades = Universidad::all();
-        $espacios = Espacio::with('piso.facultad.universidad')->get();
+        $espacios = Espacio::with('piso.facultad')->get();
     
-        return view('layouts.spaces.spaces_index', compact('espacios', 'universidades'));
+        return view('layouts.spaces.spaces_index', compact('espacios'));
     }
 
     /**
@@ -33,16 +32,19 @@ class EspacioController extends Controller
     
         try {
             $validated = $request->validate([
+                'id_espacio' => 'required|string|max:50|unique:espacios,id_espacio',
+                'nombre_espacio' => 'required|string|max:255',
                 'id_universidad' => 'required|exists:universidades,id_universidad',
                 'id_facultad' => 'required|exists:facultades,id_facultad',
                 'piso_id' => 'required|exists:pisos,id',
                 'tipo_espacio' => 'required|in:Sala de Clases,Laboratorio,Biblioteca,Sala de Reuniones,Oficinas',
                 'estado' => 'required|in:Disponible,Ocupado,Reservado',
-                'puestos_disponibles' => 'required|integer|min:1',
+                'puestos_disponibles' => 'nullable|integer|min:1',
             ]);
     
             $espacio = Espacio::create([
-                'id_espacio' => 'ESP-'.uniqid(),
+                'id_espacio' => $validated['id_espacio'],
+                'nombre_espacio' => $validated['nombre_espacio'],
                 'piso_id' => $validated['piso_id'],
                 'tipo_espacio' => $validated['tipo_espacio'],
                 'estado' => $validated['estado'],
@@ -71,15 +73,16 @@ class EspacioController extends Controller
      */
     public function edit(string $id_espacio)
     {
-        $espacio = Espacio::with('piso.facultad.universidad')
+        $espacio = Espacio::with('piso.facultad')
             ->where('id_espacio', $id_espacio)
             ->firstOrFail();
 
-        $universidades = Universidad::all();
-        $facultades = Facultad::where('id_universidad', $espacio->piso->facultad->id_universidad)->get();
-        $pisos = Piso::where('id_facultad', $espacio->piso->id_facultad)->get();
+        // Cargar solo los pisos de la facultad IT_TH
+        $pisos = Piso::where('id_facultad', 'IT_TH')
+            ->orderBy('numero_piso')
+            ->get();
 
-        return view('layouts.spaces.spaces_edit', compact('espacio', 'universidades', 'facultades', 'pisos'));
+        return view('layouts.spaces.spaces_edit', compact('espacio', 'pisos'));
     }
 
     /**
@@ -89,16 +92,25 @@ class EspacioController extends Controller
     {
         try {
             $validated = $request->validate([
+                'id_espacio' => 'required|string|max:50|unique:espacios,id_espacio,' . $id_espacio . ',id_espacio',
+                'nombre_espacio' => 'required|string|max:255',
                 'id_universidad' => 'required|exists:universidades,id_universidad',
                 'id_facultad' => 'required|exists:facultades,id_facultad',
                 'piso_id' => 'required|exists:pisos,id',
                 'tipo_espacio' => 'required|in:Sala de Clases,Laboratorio,Biblioteca,Sala de Reuniones,Oficinas',
                 'estado' => 'required|in:Disponible,Ocupado,Reservado',
-                'puestos_disponibles' => 'nullable|integer|min:0',
+                'puestos_disponibles' => 'nullable|integer|min:1',
             ]);
     
             $espacio = Espacio::where('id_espacio', $id_espacio)->firstOrFail();
-            $espacio->update($validated);
+            $espacio->update([
+                'id_espacio' => $validated['id_espacio'],
+                'nombre_espacio' => $validated['nombre_espacio'],
+                'piso_id' => $validated['piso_id'],
+                'tipo_espacio' => $validated['tipo_espacio'],
+                'estado' => $validated['estado'],
+                'puestos_disponibles' => $validated['puestos_disponibles'],
+            ]);
     
             return redirect()
                 ->route('spaces_index')

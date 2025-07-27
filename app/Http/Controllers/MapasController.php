@@ -68,19 +68,17 @@ class MapasController extends Controller
             $nombreMapaSlug = Str::slug($request->nombre_mapa);
             $extension = $file->getClientOriginalExtension();
 
-            $fileName = "{$nombreMapaSlug}_" . date('Y-m-d_His') . "." . $extension;
+            $fileName = "{$nombreMapaSlug}.{$extension}";
             $path = $file->storeAs('mapas_subidos', $fileName, 'public');
 
-            // Crear el mapa usando el nombre completo como id_mapa
             $mapa = Mapa::create([
                 'id_mapa' => $request->nombre_mapa,
                 'nombre_mapa' => $request->nombre_mapa,
                 'ruta_mapa' => $path,
-                'ruta_canvas' => $path, // Por ahora usamos la misma imagen para el canvas
+                'ruta_canvas' => $path, 
                 'piso_id' => $request->piso_id
             ]);
 
-            // Guardar los bloques
             foreach ($bloques as $bloque) {
                 Bloque::create([
                     'id_bloque' => Str::uuid(),
@@ -190,6 +188,28 @@ class MapasController extends Controller
     }
 
     public function getBloquesPorMapa($mapaId)
+    {
+        try {
+            Log::info('Obteniendo bloques para mapa:', ['mapa_id' => $mapaId]);
+
+            $bloques = Bloque::with('espacio')
+                ->where('id_mapa', $mapaId)
+                ->get();
+
+            Log::info('Bloques encontrados:', ['bloques' => $bloques->toArray()]);
+
+            return response()->json($bloques);
+        } catch (\Exception $e) {
+            Log::error('Error al obtener bloques:', [
+                'mapa_id' => $mapaId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['error' => 'Error al obtener los bloques: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function getBloques($mapaId)
     {
         try {
             Log::info('Obteniendo bloques para mapa:', ['mapa_id' => $mapaId]);

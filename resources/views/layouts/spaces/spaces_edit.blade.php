@@ -1,93 +1,91 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <h2 class="text-xl font-semibold leading-tight" style="font-style: oblique;">
-                {{ __('Universidad / Espacio / Editar') }}
-            </h2>
+        <div class="flex flex-col gap-2 pr-6 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl bg-light-cloud-blue">
+                    <i class="text-2xl text-white fa-solid fa-building"></i>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl font-bold leading-tight">Espacios</h2>
+                    <p class="text-sm text-gray-500">Administra los espacios físicos disponibles en el sistema</p>
+                </div>
+            </div>
+
         </div>
     </x-slot>
+    <div class="p-6 bg-white rounded-lg shadow-lg">
 
-    <form id="edit-space-form" action="{{ route('spaces.update', $espacio->id_espacio) }}" method="POST">
-        @csrf
-        @method('PUT')
+        <form id="edit-space-form" action="{{ route('spaces.update', $espacio->id_espacio) }}" method="POST">
+            @csrf
+            @method('PUT')
 
-        <div class="grid gap-4 p-4">
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <!-- Campos hidden con valores por defecto -->
+            <input type="hidden" name="id_universidad" value="UCSC">
+            <input type="hidden" name="id_facultad" value="IT_TH">
+            <input type="hidden" name="estado" value="Disponible">
 
-                <div>
-                    <x-form.label for="universidad" :value="__('Universidad')" />
-                    <select name="id_universidad" id="id_universidad" class="block w-full" required>
-                        @foreach ($universidades as $uni)
-                            <option value="{{ $uni->id_universidad }}"
-                                {{ $espacio->piso->facultad->id_universidad == $uni->id_universidad ? 'selected' : '' }}>
-                                {{ $uni->nombre_universidad }}
-                            </option>
-                        @endforeach
-                    </select>
+            <div class="grid gap-4 p-4">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                        <x-form.label for="id_espacio" :value="__('ID del Espacio')" />
+                        <x-form.input id="id_espacio" class="block w-full" type="text" name="id_espacio"
+                            value="{{ old('id_espacio', $espacio->id_espacio) }}" required />
+                        <p class="text-xs text-gray-500 mt-1">Identificador único del espacio</p>
+                    </div>
+
+                    <div>
+                        <x-form.label for="nombre_espacio" :value="__('Nombre del Espacio')" />
+                        <x-form.input id="nombre_espacio" class="block w-full" type="text" name="nombre_espacio"
+                            value="{{ old('nombre_espacio', $espacio->nombre_espacio) }}" required />
+                        <p class="text-xs text-gray-500 mt-1">Nombre descriptivo del espacio</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                        <x-form.label for="piso_id" :value="__('Piso')" />
+                        <select name="piso_id" id="piso_id"
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            required>
+                            @foreach ($pisos as $piso)
+                                <option value="{{ $piso->id }}"
+                                    {{ $piso->id == $espacio->piso_id ? 'selected' : '' }}>
+                                    Piso {{ $piso->numero_piso }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div>
+                        <x-form.label for="tipo_espacio" :value="__('Tipo de Espacio')" />
+                        <select name="tipo_espacio" id="tipo_espacio"
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            required>
+                            @foreach (['Aula', 'Laboratorio', 'Biblioteca', 'Sala de Reuniones', 'Oficinas'] as $tipo)
+                                <option value="{{ $tipo }}"
+                                    {{ $espacio->tipo_espacio == $tipo ? 'selected' : '' }}>
+                                    {{ $tipo }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                 </div>
 
                 <div>
-                    <x-form.label for="facultad" :value="__('Facultad')" />
-                    <select name="id_facultad" id="id_facultad" class="block w-full" required>
-                        @foreach ($facultades as $fac)
-                            <option value="{{ $fac->id_facultad }}"
-                                {{ $espacio->piso->facultad->id_facultad == $fac->id_facultad ? 'selected' : '' }}>
-                                {{ $fac->nombre_facultad }}
-                            </option>
-                        @endforeach
-                    </select>
+                    <x-form.label for="puestos_disponibles" :value="__('Puestos Disponibles')" />
+                    <x-form.input id="puestos_disponibles" class="block w-full" type="number"
+                        name="puestos_disponibles"
+                        value="{{ old('puestos_disponibles', $espacio->puestos_disponibles) }}" min="1"
+                        step="1" />
                 </div>
 
-                <div>
-                    <x-form.label for="piso_id" :value="__('Piso')" />
-                    <select name="piso_id" id="piso_id" class="block w-full" required>
-                        @foreach ($pisos as $piso)
-                            <option value="{{ $piso->id }}" {{ $piso->id == $espacio->piso_id ? 'selected' : '' }}>
-                                {{ $piso->nombre ?? 'Piso ' . $piso->numero_piso }}
-                            </option>
-                        @endforeach
-                    </select>
+                <div class="flex justify-end mt-6">
+                    <x-button>{{ __('Guardar Cambios') }}</x-button>
                 </div>
-
             </div>
-
-            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                    <x-form.label for="tipo_espacio" :value="__('Tipo de Espacio')" />
-                    <select name="tipo_espacio" id="tipo_espacio" class="block w-full" required>
-                        @foreach (['Aula', 'Laboratorio', 'Biblioteca', 'Sala de Reuniones', 'Oficinas'] as $tipo)
-                            <option value="{{ $tipo }}"
-                                {{ $espacio->tipo_espacio == $tipo ? 'selected' : '' }}>
-                                {{ $tipo }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div>
-                    <x-form.label for="estado" :value="__('Estado')" />
-                    <select name="estado" id="estado" class="block w-full" required>
-                        @foreach (['Disponible', 'Ocupado', 'Reservado'] as $estado)
-                            <option value="{{ $estado }}" {{ $espacio->estado == $estado ? 'selected' : '' }}>
-                                {{ $estado }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-
-            <div>
-                <x-form.label for="puestos_disponibles" :value="__('Puestos Disponibles')" />
-                <x-form.input id="puestos_disponibles" class="block w-full" type="number" name="puestos_disponibles"
-                    value="{{ old('puestos_disponibles', $espacio->puestos_disponibles) }}" min="0" />
-            </div>
-
-            <div class="flex justify-end mt-6">
-                <x-button>{{ __('Guardar Cambios') }}</x-button>
-            </div>
-        </div>
-    </form>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        </form>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -112,71 +110,23 @@
                     });
                 });
             }
-        });
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const universidadSelect = document.getElementById('id_universidad');
-            const facultadSelect = document.getElementById('id_facultad');
-            const pisoSelect = document.getElementById('piso_id');
 
-            async function cargarFacultades(universidadId, facultadIdSeleccionada = null) {
-                const res = await fetch(`/api/facultades/${universidadId}`);
-                const data = await res.json();
-
-                facultadSelect.innerHTML = '';
-                data.forEach(fac => {
-                    const option = document.createElement('option');
-                    option.value = fac.id_facultad;
-                    option.textContent = fac.nombre_facultad;
-                    if (facultadIdSeleccionada && fac.id_facultad == facultadIdSeleccionada) {
-                        option.selected = true;
+            // Validación de puestos disponibles
+            const puestosInput = document.getElementById('puestos_disponibles');
+            if (puestosInput) {
+                puestosInput.addEventListener('input', function() {
+                    const value = parseInt(this.value);
+                    if (value < 1) {
+                        this.value = 1;
                     }
-                    facultadSelect.appendChild(option);
                 });
 
-                // Si hay una facultad seleccionada, cargar pisos
-                if (facultadIdSeleccionada) {
-                    await cargarPisos(facultadIdSeleccionada, pisoSelect.dataset.selected);
-                } else if (facultadSelect.value) {
-                    facultadSelect.dispatchEvent(new Event('change'));
-                }
-            }
-
-            // Función para cargar pisos
-            async function cargarPisos(facultadId, pisoIdSeleccionado = null) {
-                const res = await fetch(`/api/pisos/${facultadId}`);
-                const data = await res.json();
-
-                pisoSelect.innerHTML = '';
-                data.forEach(piso => {
-                    const option = document.createElement('option');
-                    option.value = piso.id;
-                    option.textContent = piso.nombre ?? 'Piso ' + piso.numero_piso;
-                    if (pisoIdSeleccionado && piso.id == pisoIdSeleccionado) {
-                        option.selected = true;
+                puestosInput.addEventListener('blur', function() {
+                    const value = parseInt(this.value);
+                    if (value < 1 || isNaN(value)) {
+                        this.value = 1;
                     }
-                    pisoSelect.appendChild(option);
                 });
-            }
-
-            // Evento change para universidad
-            universidadSelect.addEventListener('change', async () => {
-                await cargarFacultades(universidadSelect.value);
-            });
-
-            facultadSelect.addEventListener('change', async () => {
-                await cargarPisos(facultadSelect.value);
-            });
-
-            const universidadIdActual = universidadSelect.value;
-            const facultadIdActual = facultadSelect.value;
-            const pisoIdActual = pisoSelect.value;
-
-            pisoSelect.dataset.selected = pisoIdActual;
-
-            if (universidadIdActual) {
-                await cargarFacultades(universidadIdActual, facultadIdActual);
             }
         });
     </script>

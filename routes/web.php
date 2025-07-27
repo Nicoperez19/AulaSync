@@ -150,6 +150,7 @@ Route::group(['middleware' => ['permission:mantenedor de espacios']], function (
     Route::post('/spaces', [EspacioController::class, 'store'])->name(name: 'spaces.store');
     Route::put('spaces/{id_espacio}', [EspacioController::class, 'update'])->name('spaces.update');
     Route::delete('/spaces/{id}', [EspacioController::class, 'destroy'])->name('spaces.delete');
+    Route::get('/pisos/{facultadId}', [EspacioController::class, 'getPisos']);
 });
 
 

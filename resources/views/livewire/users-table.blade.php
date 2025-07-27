@@ -46,11 +46,14 @@
             </thead>
             <tbody>
                 @foreach ($users as $index => $user)
-                    <tr class="{{ $index % 2 === 0 ? 'bg-gray-200' : 'bg-gray-100' }}">
-                        <td class="p-3 dark:border-white whitespace-nowrap">{{ $user->run }}</td>
-                        <td class="p-3 dark:border-white whitespace-nowrap">{{ $user->name }}</td>
-                        <td class="p-3 dark:border-white whitespace-nowrap">{{ $user->email }}</td>
-                        <td class="p-3 dark:border-white whitespace-nowrap">
+                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
+                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
+                            {{ $user->run }}</td>
+                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
+                            {{ $user->name }}</td>
+                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
+                            {{ $user->email }}</td>
+                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
                             <div class="flex justify-center space-x-2">
                                 <x-button variant="view" href="{{ route('users.edit', $user->run) }}"
                                     class="inline-flex items-center px-4 py-2">

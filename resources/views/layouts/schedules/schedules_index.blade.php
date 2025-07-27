@@ -75,10 +75,9 @@
             <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4">
                 <p class="text-gray-500 text-sm">{{ $profesores->total() }} profesores encontrados</p>
                 @php
-                    $mesActual = date('n');
-                    $anioActual = date('Y');
-                    $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
-                    $periodoActual = $anioActual . '-' . $semestre;
+                    $anioActual = \App\Helpers\SemesterHelper::getCurrentAcademicYear();
+                    $semestre = \App\Helpers\SemesterHelper::getCurrentSemester();
+                    $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
                 @endphp
                 <p class="text-sm text-light-cloud-blue font-semibold">
                     <i class="fa-solid fa-calendar-days mr-1"></i>

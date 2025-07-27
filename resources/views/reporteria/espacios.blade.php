@@ -89,26 +89,6 @@
                 </div>
             </form>
             
-            <!-- Mostrar filtros activos -->
-            @if($tipoEspacioFiltro || $pisoFiltro || $estadoFiltro || $busqueda)
-                <div class="mt-4 p-3 bg-blue-50 rounded-md">
-                    <p class="text-sm text-blue-700 font-medium">Filtros activos:</p>
-                    <div class="flex flex-wrap gap-2 mt-2">
-                        @if($busqueda)
-                            <span class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">Búsqueda: "{{ $busqueda }}"</span>
-                        @endif
-                        @if($tipoEspacioFiltro)
-                            <span class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">Tipo: {{ $tipoEspacioFiltro }}</span>
-                        @endif
-                        @if($pisoFiltro)
-                            <span class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">Piso: {{ $pisoFiltro }}</span>
-                        @endif
-                        @if($estadoFiltro)
-                            <span class="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">Estado: {{ $estadoFiltro }}</span>
-                        @endif
-                    </div>
-                </div>
-            @endif
         </div>
 
         <!-- Nav Pills -->
