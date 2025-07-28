@@ -432,11 +432,6 @@ class DataLoadController extends Controller
                     'horarios_procesados' => $processedHorariosCount,
                     'filas_omitidas' => $skippedRows,
                     'errores' => $errors
-                ],
-                'swal' => [
-                    'title' => '¡Éxito!',
-                    'text' => $message,
-                    'icon' => 'success'
                 ]
             ]);
 

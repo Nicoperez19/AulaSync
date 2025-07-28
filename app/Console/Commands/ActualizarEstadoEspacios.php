@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use App\Models\Espacio;
 use App\Models\Reserva;
 use App\Models\Planificacion_Asignatura;
+use App\Helpers\SemesterHelper;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -20,11 +21,10 @@ class ActualizarEstadoEspacios extends Command
         $diaActual = strtolower($ahora->locale('es')->isoFormat('dddd'));
         $horaActual = $ahora->format('H:i:s');
 
-        // Determinar el período actual
-        $mesActual = date('n');
-        $anioActual = date('Y');
-        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
-        $periodo = $anioActual . '-' . $semestre;
+        // Determinar el período actual usando el helper
+        $anioActual = SemesterHelper::getCurrentAcademicYear();
+        $semestre = SemesterHelper::getCurrentSemester();
+        $periodo = SemesterHelper::getCurrentPeriod();
 
         $this->info('Iniciando actualización de estados de espacios...');
         $this->info("Hora actual: {$horaActual}");

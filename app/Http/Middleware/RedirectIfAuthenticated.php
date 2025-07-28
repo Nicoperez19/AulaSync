@@ -21,7 +21,25 @@ class RedirectIfAuthenticated
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
-                return redirect(RouteServiceProvider::HOME);
+                $user = Auth::guard($guard)->user();
+                
+                // Redirigir según el rol del usuario
+                if ($user->hasRole('Usuario')) {
+                    // Usuario va al monitoreo de espacios
+                    $primerMapa = \App\Models\Mapa::first();
+                    if ($primerMapa) {
+                        return redirect()->route('plano.show', $primerMapa->id_mapa);
+                    } else {
+                        // Si no hay mapas, ir al tablero académico
+                        return redirect()->route('modulos.actuales');
+                    }
+                } elseif ($user->hasRole('Supervisor')) {
+                    // Supervisor va al dashboard
+                    return redirect(RouteServiceProvider::HOME);
+                } else {
+                    // Administrador va al dashboard
+                    return redirect(RouteServiceProvider::HOME);
+                }
             }
         }
 

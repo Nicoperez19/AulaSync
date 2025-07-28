@@ -8,6 +8,7 @@ use App\Models\Planificacion_Asignatura;
 use App\Models\Modulo;
 use App\Models\Reserva;
 use App\Models\Sede;
+use App\Helpers\SemesterHelper;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -240,10 +241,9 @@ class PlanoDigitalController extends Controller
             return collect([]);
         }
 
-        $mesActual = date('n');
-        $anioActual = date('Y');
-        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
-        $periodo = $anioActual . '-' . $semestre;
+        $anioActual = SemesterHelper::getCurrentAcademicYear();
+        $semestre = SemesterHelper::getCurrentSemester();
+        $periodo = SemesterHelper::getCurrentPeriod();
 
         // Obtener la hora actual
         $horaActual = Carbon::now()->format('H:i:s');
@@ -267,10 +267,9 @@ class PlanoDigitalController extends Controller
         $horaActual = Carbon::parse($estadoActual['hora']);
         $diaActual = $estadoActual['dia'];
 
-        $mesActual = date('n');
-        $anioActual = date('Y');
-        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
-        $periodo = $anioActual . '-' . $semestre;
+        $anioActual = SemesterHelper::getCurrentAcademicYear();
+        $semestre = SemesterHelper::getCurrentSemester();
+        $periodo = SemesterHelper::getCurrentPeriod();
 
         // Calcular la hora límite (10 minutos después de la hora actual)
         $horaLimite = $horaActual->copy()->addMinutes(9)->format('H:i:s');
@@ -406,11 +405,10 @@ class PlanoDigitalController extends Controller
         $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
         $horaActualStr = $horaActual->format('H:i:s');
         
-        // Determinar el período actual
-        $mesActual = date('n');
-        $anioActual = date('Y');
-        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
-        $periodo = $anioActual . '-' . $semestre;
+        // Determinar el período actual usando el helper
+        $anioActual = SemesterHelper::getCurrentAcademicYear();
+        $semestre = SemesterHelper::getCurrentSemester();
+        $periodo = SemesterHelper::getCurrentPeriod();
 
         // Obtener todos los espacios
         $espacios = \App\Models\Espacio::all();

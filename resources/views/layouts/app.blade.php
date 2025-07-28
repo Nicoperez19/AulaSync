@@ -31,7 +31,7 @@
 </head>
 
 <body class="font-sans antialiased">
-    <div x-data="mainState" :class="{ dark: isDarkMode }" x-on:resize.window="handleWindowResize" x-cloak>
+    <div x-data="mainState" x-on:resize.window="handleWindowResize" x-cloak>
         <div class="min-h-screen ">
             <!-- Navbar -->
             <div class="fixed top-0 left-0 z-[100] w-full">

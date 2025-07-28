@@ -278,7 +278,7 @@
                 xhr.setRequestHeader('X-CSRF-TOKEN', '{{ csrf_token() }}');
 
                 xhr.onload = function () {
-                    loadingSpinner.classList.remove('hidden');
+                    loadingSpinner.classList.add('hidden');
 
                     if (xhr.status === 200) {
                         try {
@@ -293,28 +293,39 @@
                                         if (data.estado === 'completado' || data.estado === 'error') {
                                             clearInterval(progressInterval);
                                             if (data.estado === 'completado') {
-                                                // ✅ SweetAlert al cargar correctamente
+                                                // ✅ SweetAlert único al cargar correctamente
                                                 Swal.fire({
                                                     title: '¡Éxito!',
                                                     text: 'El archivo se cargó correctamente.',
                                                     icon: 'success',
-                                                    timer: 5000,
-                                                    showConfirmButton: true,
+                                                    timer: 2000,
+                                                    showConfirmButton: false,
                                                     allowOutsideClick: true,
                                                     timerProgressBar: true,
-                                                });
-
-                                                setTimeout(() => {
+                                                }).then(() => {
                                                     window.location.reload();
-                                                }, 2000);
+                                                });
+                                            } else if (data.estado === 'error') {
+                                                Swal.fire({
+                                                    title: 'Error',
+                                                    text: 'Error al procesar el archivo',
+                                                    icon: 'error',
+                                                    confirmButtonText: 'Aceptar',
+                                                });
                                             }
                                         }
                                     })
                                     .catch(error => {
                                         console.error('Error al consultar el progreso:', error);
                                         clearInterval(progressInterval);
+                                        Swal.fire({
+                                            title: 'Error',
+                                            text: 'Error al verificar el progreso del archivo',
+                                            icon: 'error',
+                                            confirmButtonText: 'Aceptar',
+                                        });
                                     });
-                            }, 500); // Consultar cada medio segundo
+                            }, 1000); // Consultar cada segundo
 
                         } catch (e) {
                             showError('Error al procesar la respuesta del servidor');
@@ -328,7 +339,6 @@
                                 icon: 'error',
                                 confirmButtonText: 'Aceptar',
                             });
-                            document.getElementById('loading-spinner').classList.add('hidden');
                         } catch (e) {
                             showError('Error al subir el archivo');
                         }

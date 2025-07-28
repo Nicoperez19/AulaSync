@@ -28,7 +28,7 @@
 </head>
 
 <body class="font-sans antialiased">
-    <div x-data="mainState" :class="{ dark: isDarkMode }" x-on:resize.window="handleWindowResize" x-cloak>
+    <div x-data="mainState"  x-on:resize.window="handleWindowResize" x-cloak>
         <div class="min-h-screen text-gray-900 bg-gray-100 dark:bg-dark-eval-0 dark:text-gray-200">
             <!-- Contenido principal -->
             <div class="flex flex-col min-h-screen transition-all duration-300 ease-in-out bg-cloud-light dark:bg-dark-eval-2">

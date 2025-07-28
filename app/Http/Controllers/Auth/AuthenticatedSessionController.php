@@ -44,8 +44,26 @@ class AuthenticatedSessionController extends Controller
             return redirect($formIntendedUrl);
         }
 
-        // Usar la funcionalidad estándar de Laravel para intended URL
-        return redirect()->intended(RouteServiceProvider::HOME);
+        // Redirigir según el rol del usuario
+        $user = Auth::user();
+        
+        if ($user->hasRole('Usuario')) {
+            // Usuario va al monitoreo de espacios
+            // Buscar el primer mapa disponible
+            $primerMapa = \App\Models\Mapa::first();
+            if ($primerMapa) {
+                return redirect()->route('plano.show', $primerMapa->id_mapa);
+            } else {
+                // Si no hay mapas, ir al tablero académico
+                return redirect()->route('modulos.actuales');
+            }
+        } elseif ($user->hasRole('Supervisor')) {
+            // Supervisor va al dashboard
+            return redirect(RouteServiceProvider::HOME);
+        } else {
+            // Administrador va al dashboard
+            return redirect(RouteServiceProvider::HOME);
+        }
     }
 
     /**

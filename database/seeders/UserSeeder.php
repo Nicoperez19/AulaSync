@@ -19,19 +19,27 @@ class UserSeeder extends Seeder
             'celular' => '987654321',
             'direccion' => 'Calle Falsa 123',
             'fecha_nacimiento' => '1985-05-20',
-            'anio_ingreso' => 2010,
         ])->assignRole('Administrador');
 
         User::create([
-            'run' => '19812524',
-            'name' => 'Nicolas Perez',
-            'email' => 'nperez@ucsc.cl',
+            'run' => '11111111',
+            'name' => 'Supervisor',
+            'email' => 'supervisor@ucsc.cl',
             'password' => bcrypt('password'),
             'celular' => '912345678',
             'direccion' => 'Avenida Siempreviva 742',
             'fecha_nacimiento' => '1992-08-15',
-            'anio_ingreso' => 2015,
-        ])->assignRole('Profesor');
+        ])->assignRole('Supervisor');
+
+             User::create([
+            'run' => '99999999',
+            'name' => 'Usuario',
+            'email' => 'Usuario@ucsc.cl',
+            'password' => bcrypt('password'),
+            'celular' => '912345678',
+            'direccion' => 'Avenida Siempreviva 742',
+            'fecha_nacimiento' => '1992-08-15',
+        ])->assignRole('Usuario');
 
        
     }

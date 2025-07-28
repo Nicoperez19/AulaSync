@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Carrera;
 use App\Models\Incidente;
 use App\Models\Acceso;
+use App\Helpers\SemesterHelper;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -1174,11 +1175,10 @@ class ReporteriaController extends Controller
         try {
             // Obtener código de espacio
             $codigoEspacio = $accesos->first()['id_espacio'] ?? 'sin_codigo';
-            // Obtener año y semestre
-            $anio = date('Y');
-            $mes = date('n');
-            $semestre = ($mes >= 3 && $mes <= 7) ? 1 : 2; 
-            $filename = 'accesos_registrados_' . $codigoEspacio . '_' . $anio . '_semestre_' . '.xlsx';
+            // Obtener año y semestre usando el helper
+            $anio = SemesterHelper::getCurrentAcademicYear();
+            $semestre = SemesterHelper::getCurrentSemester();
+            $filename = 'accesos_registrados_' . $codigoEspacio . '_' . $anio . '_semestre_' . $semestre . '.xlsx';
             return Excel::download(new AccesosExport($accesos), $filename);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Error al exportar a Excel: ' . $e->getMessage());
@@ -1202,11 +1202,10 @@ class ReporteriaController extends Controller
 
             // Obtener código de espacio
             $codigoEspacio = $accesos->first()['id_espacio'] ?? 'sin_codigo';
-            // Obtener año y semestre
-            $anio = date('Y');
-            $mes = date('n');
-            $semestre = ($mes >= 3 && $mes <= 7) ? 1 : 2; // Marzo-Julio = 1, Agosto-Febrero = 2
-            $filename = 'accesos_registrados_' . $codigoEspacio . '_' . $anio . '_semestre_' . '.pdf';
+            // Obtener año y semestre usando el helper
+            $anio = SemesterHelper::getCurrentAcademicYear();
+            $semestre = SemesterHelper::getCurrentSemester();
+            $filename = 'accesos_registrados_' . $codigoEspacio . '_' . $anio . '_semestre_' . $semestre . '.pdf';
             $pdf = Pdf::loadView('reporteria.pdf.accesos', $data);
             return $pdf->download($filename);
         } catch (\Exception $e) {

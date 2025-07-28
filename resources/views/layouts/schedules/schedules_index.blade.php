@@ -275,6 +275,15 @@
                     return response.json();
                 })
                 .then(data => {
+                    // Verificar si hay un mensaje de error
+                    if (data.mensaje) {
+                        document.getElementById('modalNombreProfesor').textContent = data.profesor.name;
+                        document.getElementById('modalCorreoProfesor').textContent = `Correo: ${data.profesor.email}`;
+                        const horarioBody = document.getElementById('horarioBody');
+                        horarioBody.innerHTML = `<tr><td colspan='7' class='text-center py-8'><div class='text-amber-600 bg-amber-50 p-4 rounded-lg'><i class='fa-solid fa-exclamation-triangle mr-2'></i>${data.mensaje}</div></td></tr>`;
+                        return;
+                    }
+                    
                     if (!data.horario || !data.horario.profesor) {
                         throw new Error('No se encontró el horario para el período seleccionado');
                     }
@@ -331,7 +340,18 @@
                     console.error('Error:', error);
                     document.getElementById('modalNombreProfesor').textContent = 'Error';
                     document.getElementById('modalCorreoProfesor').textContent = '';
-                    horarioBody.innerHTML = "<tr><td colspan='7' class='text-center py-8 text-red-500'>Error al cargar el horario: " + error.message + "</td></tr>";
+                    const horarioBody = document.getElementById('horarioBody');
+                    
+                    let errorMessage = 'Error al cargar el horario';
+                    if (error.message.includes('404')) {
+                        errorMessage = 'Profesor no encontrado';
+                    } else if (error.message.includes('HTTP error')) {
+                        errorMessage = 'Error de conexión al servidor';
+                    } else {
+                        errorMessage = error.message;
+                    }
+                    
+                    horarioBody.innerHTML = `<tr><td colspan='7' class='text-center py-8'><div class='text-red-600 bg-red-50 p-4 rounded-lg'><i class='fa-solid fa-times-circle mr-2'></i>${errorMessage}</div></td></tr>`;
                 });
         }
 

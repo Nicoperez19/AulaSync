@@ -7,6 +7,7 @@ use App\Models\Espacio;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Reserva;
 use App\Models\Modulo;
+use App\Helpers\SemesterHelper;
 use Carbon\Carbon;
 
 class TestEstadosEspacios extends Command
@@ -31,11 +32,10 @@ class TestEstadosEspacios extends Command
         
         $this->info("Día actual: {$diaActual}");
         
-        // Determinar el período actual
-        $mesActual = date('n');
-        $anioActual = date('Y');
-        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
-        $periodo = $anioActual . '-' . $semestre;
+        // Determinar el período actual usando el helper
+        $anioActual = SemesterHelper::getCurrentAcademicYear();
+        $semestre = SemesterHelper::getCurrentSemester();
+        $periodo = SemesterHelper::getCurrentPeriod();
         
         $this->info("Período: {$periodo}");
         

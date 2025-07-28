@@ -10,6 +10,7 @@ use App\Models\Asignatura;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Modulo;
 use App\Models\Piso;
+use App\Helpers\SemesterHelper;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -441,11 +442,10 @@ class DashboardController extends Controller
             return [];
         }
         
-        // Determinar el período actual
-        $mesActual = date('n');
-        $anioActual = date('Y');
-        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
-        $periodo = $anioActual . '-' . $semestre;
+        // Determinar el período actual usando el helper
+        $anioActual = SemesterHelper::getCurrentAcademicYear();
+        $semestre = SemesterHelper::getCurrentSemester();
+        $periodo = SemesterHelper::getCurrentPeriod();
         
         $planificaciones = Planificacion_Asignatura::with(['asignatura.profesor', 'espacio', 'modulo'])
             ->whereHas('modulo', function($query) use ($diaActual, $moduloActual) {
@@ -577,11 +577,10 @@ class DashboardController extends Controller
         $now = Carbon::now();
         $timeLimit = $now->copy()->addMinutes(10);
 
-        // Determinar el período actual
-        $mesActual = date('n');
-        $anioActual = date('Y');
-        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
-        $periodo = $anioActual . '-' . $semestre;
+        // Determinar el período actual usando el helper
+        $anioActual = SemesterHelper::getCurrentAcademicYear();
+        $semestre = SemesterHelper::getCurrentSemester();
+        $periodo = SemesterHelper::getCurrentPeriod();
         
         // Obtener planificaciones que terminan en los próximos 10 minutos
         $planificaciones = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.profesor'])
@@ -705,11 +704,10 @@ class DashboardController extends Controller
 
     private function obtenerOcupacionPorTipoDiaModulo($facultad, $piso)
     {
-        // Determinar el período actual
-        $mesActual = date('n');
-        $anioActual = date('Y');
-        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
-        $periodo = $anioActual . '-' . $semestre;
+        // Determinar el período actual usando el helper
+        $anioActual = SemesterHelper::getCurrentAcademicYear();
+        $semestre = SemesterHelper::getCurrentSemester();
+        $periodo = SemesterHelper::getCurrentPeriod();
         
         $diasSemana = [
             'Monday' => 'Lunes',
@@ -776,11 +774,10 @@ class DashboardController extends Controller
     {
         $fecha = $request->get('fecha', now()->toDateString());
         
-        // Determinar el período actual
-        $mesActual = date('n');
-        $anioActual = date('Y');
-        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
-        $periodo = $anioActual . '-' . $semestre;
+        // Determinar el período actual usando el helper
+        $anioActual = SemesterHelper::getCurrentAcademicYear();
+        $semestre = SemesterHelper::getCurrentSemester();
+        $periodo = SemesterHelper::getCurrentPeriod();
         
         $planificaciones = \App\Models\Planificacion_Asignatura::with(['asignatura.profesor', 'espacio', 'modulo'])
             ->whereHas('modulo', function($q) use ($fecha) {
@@ -926,11 +923,10 @@ class DashboardController extends Controller
                 }
             }
         }
-        // Determinar el período actual
-        $mesActual = date('n');
-        $anioActual = date('Y');
-        $semestre = ($mesActual >= 1 && $mesActual <= 7) ? 1 : 2;
-        $periodo = $anioActual . '-' . $semestre;
+        // Determinar el período actual usando el helper
+        $anioActual = SemesterHelper::getCurrentAcademicYear();
+        $semestre = SemesterHelper::getCurrentSemester();
+        $periodo = SemesterHelper::getCurrentPeriod();
         
         // Obtener los usuarios asignados por espacio para el módulo actual
         $asignaciones = \App\Models\Planificacion_Asignatura::with(['espacio.piso', 'asignatura.profesor'])
