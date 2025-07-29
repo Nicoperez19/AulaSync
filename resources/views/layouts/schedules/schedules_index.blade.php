@@ -17,7 +17,25 @@
         <!-- Tarjeta de filtros -->
         <div class="bg-white rounded-xl shadow-sm p-6 mb-6">
             <form id="filtro-letra-form" method="GET" action="" class="flex flex-col gap-4" onsubmit="return false;">
-                <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
+            <!-- Filtros por período -->
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
+                <div class="flex items-center gap-2">
+                    <span class="font-semibold text-light-cloud-blue">Año:</span>
+                    <span class="px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 font-medium">
+                        {{ \App\Helpers\SemesterHelper::getCurrentAcademicYear() }}
+                    </span>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <span class="font-semibold text-light-cloud-blue">Semestre:</span>
+                    <select name="semestre" id="semestre-filtro" class="px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-light-cloud-blue/30 focus:border-light-cloud-blue transition pr-8">
+                        @foreach($semestresDisponibles ?? [] as $semestre)
+                            <option value="{{ $semestre }}" {{ request('semestre', \App\Helpers\SemesterHelper::getCurrentSemester()) == $semestre ? 'selected' : '' }}>{{ $semestre }}° Semestre</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>    
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
                     <div class="flex-1 flex items-center gap-2">
                         <div class="relative w-full">
                             <input type="text" name="search" id="search-profesor" value="{{ request('search') }}"
@@ -27,31 +45,10 @@
                     </div>
                 </div>
                 
-                <!-- Filtros por período -->
-                <div class="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold text-light-cloud-blue">Año:</span>
-                        <select name="anio" id="anio-filtro" class="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-light-cloud-blue/30 focus:border-light-cloud-blue transition">
-                            <option value="">Todos los años</option>
-                            @foreach($aniosDisponibles ?? [] as $anio)
-                                <option value="{{ $anio }}" {{ request('anio') == $anio ? 'selected' : '' }}>{{ $anio }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    
-                    <div class="flex items-center gap-2">
-                        <span class="font-semibold text-light-cloud-blue">Semestre:</span>
-                        <select name="semestre" id="semestre-filtro" class="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-light-cloud-blue/30 focus:border-light-cloud-blue transition">
-                            <option value="">Todos los semestres</option>
-                            @foreach($semestresDisponibles ?? [] as $semestre)
-                                <option value="{{ $semestre }}" {{ request('semestre') == $semestre ? 'selected' : '' }}>{{ $semestre }}er Semestre</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
+                
                 
                 <div class="flex flex-col sm:flex-row sm:items-center gap-2 w-full">
-                    <span class="font-semibold text-light-cloud-blue mr-2">Usuario:</span>
+                    <span class="font-semibold text-light-cloud-blue mr-2">Profesor:</span>
                     <div class="flex flex-wrap gap-1 items-center">
                         @php
                             $letras = ['Todos','A','B','C','D','E','F','G','H','I','J','K','L','M','N','Ñ','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
@@ -78,10 +75,14 @@
                     $anioActual = \App\Helpers\SemesterHelper::getCurrentAcademicYear();
                     $semestre = \App\Helpers\SemesterHelper::getCurrentSemester();
                     $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
+                    
+                    // Usar el año actual y el semestre seleccionado o el actual
+                    $anioMostrar = $anioActual;
+                    $semestreMostrar = request('semestre', $semestre);
                 @endphp
                 <p class="text-sm text-light-cloud-blue font-semibold">
                     <i class="fa-solid fa-calendar-days mr-1"></i>
-                    Período actual: {{ $semestre }}er Semestre {{ $anioActual }}
+                    Período: {{ $semestreMostrar }}er Semestre {{ $anioMostrar }}
                 </p>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
@@ -111,7 +112,7 @@
 
         {{-- Modal --}}
         <div id="horarioModal"
-            class="fixed inset-0 z-50 flex items-center justify-center hidden bg-black bg-opacity-50">
+            class="fixed inset-0 z-[150] flex items-center justify-center hidden bg-black bg-opacity-50">
             <div class="w-full max-w-7xl mx-2 md:mx-8 bg-white rounded-lg shadow-lg overflow-hidden max-h-screen flex flex-col md:flex-row">
                 <!-- Columna izquierda: Información personal -->
                 <div class="bg-red-50 p-6 flex flex-col items-center justify-center md:w-1/5 w-full border-b md:border-b-0 md:border-r border-red-100">
@@ -122,7 +123,7 @@
                     <p class="text-xs text-gray-700 mb-1 text-center" id="modalCorreoProfesor">Correo: </p>
                     <p class="text-xs text-gray-600 mb-1 text-center" id="modalPeriodo">
                         <i class="fa-solid fa-calendar-days mr-1"></i>
-                        Período: {{ $semestre }}er Semestre {{ $anioActual }}
+                        Período: <span id="modalSemestre">{{ $semestreMostrar }}</span>er Semestre <span id="modalAnio">{{ $anioMostrar }}</span>
                     </p>
                 </div>
                 <!-- Columna derecha: Horario -->
@@ -254,14 +255,14 @@
             document.getElementById('modalNombreProfesor').textContent = 'Cargando...';
             document.getElementById('modalCorreoProfesor').textContent = '';
 
-            // Obtener los filtros actuales
-            const anioFiltro = document.getElementById('anio-filtro').value;
+            // Obtener el filtro de semestre actual
             const semestreFiltro = document.getElementById('semestre-filtro').value;
             
-            // Construir la URL con los parámetros de filtro
+            // Construir la URL con el año actual y el semestre seleccionado
             let url = `/horarios/${run}`;
             const params = new URLSearchParams();
-            if (anioFiltro) params.append('anio', anioFiltro);
+            // Usar el año actual (2025)
+            params.append('anio', '2025');
             if (semestreFiltro) params.append('semestre', semestreFiltro);
             if (params.toString()) {
                 url += '?' + params.toString();
@@ -275,10 +276,21 @@
                     return response.json();
                 })
                 .then(data => {
+                    // Debug logging para el modal
+                    console.log('Datos recibidos en modal:', {
+                        horario: data.horario,
+                        asignaturas: data.asignaturas,
+                        periodo: data.periodo,
+                        total_planificaciones: data.horario ? data.horario.planificaciones.length : 0
+                    });
+                    
                     // Verificar si hay un mensaje de error
                     if (data.mensaje) {
                         document.getElementById('modalNombreProfesor').textContent = data.profesor.name;
                         document.getElementById('modalCorreoProfesor').textContent = `Correo: ${data.profesor.email}`;
+                        // Actualizar el período mostrado en el modal
+                        document.getElementById('modalSemestre').textContent = semestreFiltro || '{{ \App\Helpers\SemesterHelper::getCurrentSemester() }}';
+                        document.getElementById('modalAnio').textContent = '2025';
                         const horarioBody = document.getElementById('horarioBody');
                         horarioBody.innerHTML = `<tr><td colspan='7' class='text-center py-8'><div class='text-amber-600 bg-amber-50 p-4 rounded-lg'><i class='fa-solid fa-exclamation-triangle mr-2'></i>${data.mensaje}</div></td></tr>`;
                         return;
@@ -289,6 +301,9 @@
                     }
                     document.getElementById('modalNombreProfesor').textContent = data.horario.profesor.name;
                     document.getElementById('modalCorreoProfesor').textContent = `Correo: ${data.horario.profesor.email}`;
+                    // Actualizar el período mostrado en el modal
+                    document.getElementById('modalSemestre').textContent = semestreFiltro || '{{ \App\Helpers\SemesterHelper::getCurrentSemester() }}';
+                    document.getElementById('modalAnio').textContent = '2025';
                     const horarioBody = document.getElementById('horarioBody');
                     horarioBody.innerHTML = '';
 
@@ -314,9 +329,16 @@
                         diasUnicos.forEach(dia => {
                             const td = document.createElement('td');
                             td.className = 'py-3 px-4 border-b text-center align-middle';
+                            // Filtrar planificaciones por día y módulo, y verificar que pertenezcan al horario del período correcto
                             const planificaciones = data.horario.planificaciones.filter(plan => {
                                 const [planDia, planModulo] = plan.id_modulo.split('.');
-                                return planDia === dia && planModulo === modulo;
+                                const coincideDiaModulo = planDia === dia && planModulo === modulo;
+                                
+                                // Verificar que la asignatura tenga el período correcto (si está disponible)
+                                const asignaturaPeriodo = plan.asignatura && plan.asignatura.periodo;
+                                const periodoCorrecto = !asignaturaPeriodo || asignaturaPeriodo === data.periodo;
+                                
+                                return coincideDiaModulo && periodoCorrecto;
                             });
 
                             if (planificaciones.length > 0) {
@@ -396,6 +418,8 @@
 
         function aplicarFiltros() {
             const formData = new FormData(filtroForm);
+            // Agregar el año actual automáticamente
+            formData.append('anio', '2025');
             const params = new URLSearchParams(formData).toString();
             mostrarSpinner();
             fetch(`?${params}`, {
@@ -432,11 +456,9 @@
         const buscarBtn = document.getElementById('buscar-btn');
         buscarBtn.addEventListener('click', aplicarFiltros);
 
-        // Aplicar filtros automáticamente cuando cambien los selectores de año y semestre
-        const anioFiltro = document.getElementById('anio-filtro');
+        // Aplicar filtros automáticamente cuando cambie el selector de semestre
         const semestreFiltro = document.getElementById('semestre-filtro');
         
-        anioFiltro.addEventListener('change', aplicarFiltros);
         semestreFiltro.addEventListener('change', aplicarFiltros);
 
         // Permitir que al hacer clic en la tarjeta completa se active el modal

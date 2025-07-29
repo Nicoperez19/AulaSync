@@ -14,7 +14,7 @@
             <div class="flex items-center gap-2">
                 <span class="text-sm text-light-cloud-blue font-semibold">
                     <i class="fa-solid fa-calendar-days mr-1"></i>
-                    Período: {{ $semestre }}er Semestre {{ $anioActual }}
+                    Período: {{ $semestre }}° Semestre {{ $anioActual }}
                 </span>
             </div>
         </div>
@@ -39,25 +39,18 @@
                         <div class="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
                             <div class="flex-1 flex items-center gap-4">
                                 <div class="flex items-center gap-2">
-                                    <label for="anio" class="text-sm font-semibold text-gray-700">Año:</label>
-                                    <select name="anio" id="anio"
-                                        class="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-light-cloud-blue/30 focus:border-light-cloud-blue transition">
-                                        <option value="">Todos los años</option>
-                                        @foreach($aniosDisponibles as $anio)
-                                            <option value="{{ $anio }}" {{ ($anioFiltro ?: '2025') == $anio ? 'selected' : '' }}>
-                                                {{ $anio }}
-                                            </option>
-                                        @endforeach
-                                    </select>
+                                    <label class="text-sm font-semibold text-gray-700">Año:</label>
+                                    <span class="px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 font-medium">
+                                        {{ \App\Helpers\SemesterHelper::getCurrentAcademicYear() }}
+                                    </span>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <label for="semestre" class="text-sm font-semibold text-gray-700">Semestre:</label>
                                     <select name="semestre" id="semestre"
-                                        class="px-3 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-light-cloud-blue/30 focus:border-light-cloud-blue transition">
-                                        <option value="">Todos los semestres</option>
+                                        class="px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-light-cloud-blue/30 focus:border-light-cloud-blue transition pr-8">
                                         @foreach($semestresDisponibles as $sem)
-                                            <option value="{{ $sem }}" {{ ($semestreFiltro ?: '1') == $sem ? 'selected' : '' }}>
-                                                {{ $sem }}er Semestre
+                                            <option value="{{ $sem }}" {{ ($semestreFiltro ?: \App\Helpers\SemesterHelper::getCurrentSemester()) == $sem ? 'selected' : '' }}>
+                                                {{ $sem }}° Semestre
                                             </option>
                                         @endforeach
                                     </select>
@@ -258,12 +251,12 @@
 
         // Aplicar filtros por AJAX
         function aplicarFiltros() {
-            const anioFiltro = document.getElementById('anio')?.value;
+            const anioFiltro = '2025'; // Año actual fijo
             const semestreFiltro = document.getElementById('semestre')?.value;
 
-            // Verificar que ambos filtros estén seleccionados
-            if (!anioFiltro || !semestreFiltro) {
-                alert('Por favor, selecciona tanto el año como el semestre para cargar los horarios.');
+            // Verificar que el semestre esté seleccionado
+            if (!semestreFiltro) {
+                alert('Por favor, selecciona el semestre para cargar los horarios.');
                 return;
             }
 
@@ -353,12 +346,10 @@
 
             // Aplicar filtros automáticamente al cargar la página si no hay horarios cargados
             if (Object.keys(horariosPorEspacio).length === 0) {
-                // Establecer valores por defecto en los selects
-                const anioSelect = document.getElementById('anio');
+                // Establecer valor por defecto en el select de semestre
                 const semestreSelect = document.getElementById('semestre');
 
-                if (anioSelect && semestreSelect) {
-                    anioSelect.value = '2025';
+                if (semestreSelect) {
                     semestreSelect.value = '1';
 
                     // Aplicar filtros automáticamente
@@ -499,14 +490,14 @@
                 return;
             }
 
-            // Obtener los filtros actuales
-            const anioFiltro = document.getElementById('anio')?.value || '';
+            // Obtener el filtro de semestre actual
+            const anioFiltro = '2025'; // Año actual fijo
             const semestreFiltro = document.getElementById('semestre')?.value || '';
 
             // Construir la URL con los filtros
             let url = `/espacios/${espacioActualId}/export-pdf`;
             const params = new URLSearchParams();
-            if (anioFiltro) params.append('anio', anioFiltro);
+            params.append('anio', anioFiltro);
             if (semestreFiltro) params.append('semestre', semestreFiltro);
             if (params.toString()) {
                 url += '?' + params.toString();

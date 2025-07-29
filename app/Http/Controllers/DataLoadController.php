@@ -100,7 +100,19 @@ class DataLoadController extends Controller
         Log::info('Iniciando proceso de carga de archivo');
 
         $request->validate([
-            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240'
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+            'semestre_selector' => 'required|in:1,2'
+        ]);
+
+        // Obtener el período seleccionado por el usuario
+        $semestreSeleccionado = $request->input('semestre_selector');
+        $anioActual = date('Y');
+        $periodoSeleccionado = $anioActual . '-' . $semestreSeleccionado;
+
+        Log::info('Período seleccionado por el usuario', [
+            'semestre' => $semestreSeleccionado,
+            'anio' => $anioActual,
+            'periodo' => $periodoSeleccionado
         ]);
 
         try {
@@ -267,17 +279,8 @@ class DataLoadController extends Controller
                                 'seccion_nueva' => $numeroSeccion,
                                 'seccion_guardada' => $existingAsignatura->fresh()->seccion
                             ]);
-                            
-                            // Verificar que la sección se actualizó correctamente
-                            $asignaturaActualizada = Asignatura::find($idAsignatura);
-                            if ($asignaturaActualizada && $asignaturaActualizada->seccion !== $numeroSeccion) {
-                                Log::error('Error: La sección no se actualizó correctamente', [
-                                    'id_asignatura' => $idAsignatura,
-                                    'seccion_esperada' => $numeroSeccion,
-                                    'seccion_guardada' => $asignaturaActualizada->seccion
-                                ]);
-                            }
                         }
+                        
                         $asignatura = $existingAsignatura;
                         Log::info('Asignatura ya existe', [
                             'id_asignatura' => $idAsignatura,
@@ -289,30 +292,72 @@ class DataLoadController extends Controller
                   
                     $processedAsignaturasCount++;
 
-                    $semestre = $row[5]; // Columna F
+                    // Procesar horario con período seleccionado por el usuario
                     $horarioProfesor = $row[20]; // Columna U
+                    
+                    // Usar el período seleccionado por el usuario
+                    $periodo = $periodoSeleccionado;
+                    
+                    Log::info('Procesando horario con período seleccionado por el usuario:', [
+                        'fila' => $index + 1,
+                        'run_profesor' => $run,
+                        'periodo_seleccionado' => $periodo,
+                        'semestre_usuario' => $semestreSeleccionado,
+                        'anio_actual' => $anioActual
+                    ]);
 
                     try {
-                        $idHorario = 'HOR_' . $run;
+                        // Crear ID del horario con el período
+                        $idHorario = 'HOR_' . $run . '_' . $periodo;
 
+                        // Buscar horario existente con el nuevo formato
                         $existingHorario = Horario::where('id_horario', $idHorario)->first();
+                        
+                        // Si no existe con el nuevo formato, buscar con el formato antiguo
+                        if (!$existingHorario) {
+                            $oldIdHorario = 'HOR_' . $run;
+                            $existingHorario = Horario::where('id_horario', $oldIdHorario)->first();
+                            
+                            if ($existingHorario) {
+                                Log::info('Horario encontrado con formato antiguo, actualizando ID', [
+                                    'id_antiguo' => $oldIdHorario,
+                                    'id_nuevo' => $idHorario,
+                                    'run_profesor' => $run
+                                ]);
+                                
+                                // Actualizar el ID del horario existente
+                                $existingHorario->id_horario = $idHorario;
+                                $existingHorario->periodo = $periodo;
+                                $existingHorario->save();
+                                
+                                // Actualizar todas las planificaciones asociadas
+                                \App\Models\Planificacion_Asignatura::where('id_horario', $oldIdHorario)
+                                    ->update(['id_horario' => $idHorario]);
+                                    
+                                Log::info('Horario y planificaciones actualizados al nuevo formato', [
+                                    'id_antiguo' => $oldIdHorario,
+                                    'id_nuevo' => $idHorario,
+                                    'planificaciones_actualizadas' => \App\Models\Planificacion_Asignatura::where('id_horario', $idHorario)->count()
+                                ]);
+                            }
+                        }
 
                         if ($existingHorario) {
                             $horario = $existingHorario;
                             // Actualizar el período del horario existente
-                            $horario->periodo = $semestre;
+                            $horario->periodo = $periodo;
                             $horario->save();
                             Log::info('Horario existente actualizado', [
                                 'id_horario' => $horario->id_horario,
                                 'nombre' => $horario->nombre,
-                                'periodo' => $semestre,
+                                'periodo' => $periodo,
                                 'run_profesor' => $run
                             ]);
                         } else {
                             $horario = new Horario();
                             $horario->id_horario = $idHorario;
                             $horario->nombre = "Horario de " . $name;
-                            $horario->periodo = $semestre;
+                            $horario->periodo = $periodo;
                             $horario->run_profesor = $run;
 
                             if (!$horario->save()) {
@@ -326,8 +371,9 @@ class DataLoadController extends Controller
                             Log::info('Nuevo horario creado', [
                                 'id_horario' => $horario->id_horario,
                                 'nombre' => $horario->nombre,
-                                'periodo' => $semestre,
-                                'run_profesor' => $run
+                                'periodo' => $periodo,
+                                'run_profesor' => $run,
+                                'formato_id' => 'HOR_RUN_PERIODO'
                             ]);
                         }
 
@@ -536,5 +582,232 @@ class DataLoadController extends Controller
             default:
                 return 'Estado desconocido';
         }
+    }
+
+    /**
+     * Busca información del semestre en múltiples columnas del Excel
+     */
+    private function buscarInformacionSemestre($row, $numeroFila, $runProfesor)
+    {
+        // Columnas donde buscar información del semestre (índices)
+        $columnasSemestre = [
+            5,   // Columna F (original)
+            6,   // Columna G
+            7,   // Columna H
+            8,   // Columna I
+            9,   // Columna J
+            10,  // Columna K
+            11,  // Columna L
+            12,  // Columna M
+            13,  // Columna N
+            14,  // Columna O
+            15,  // Columna P
+            16,  // Columna Q
+            17,  // Columna R
+            18,  // Columna S
+            19,  // Columna T
+        ];
+
+        $informacionEncontrada = [];
+
+        foreach ($columnasSemestre as $indice) {
+            if (isset($row[$indice])) {
+                $valor = $row[$indice];
+                
+                // Log de cada columna revisada
+                Log::info("Revisando columna para semestre:", [
+                    'fila' => $numeroFila,
+                    'run_profesor' => $runProfesor,
+                    'indice_columna' => $indice,
+                    'letra_columna' => $this->indiceALetra($indice),
+                    'valor' => $valor,
+                    'tipo' => gettype($valor),
+                    'vacio' => empty($valor)
+                ]);
+
+                // Buscar patrones que indiquen semestre
+                if ($this->esInformacionSemestre($valor)) {
+                    $informacionEncontrada[] = [
+                        'columna' => $indice,
+                        'letra' => $this->indiceALetra($indice),
+                        'valor' => $valor
+                    ];
+                }
+            }
+        }
+
+        // Si encontramos información, usar la primera
+        if (!empty($informacionEncontrada)) {
+            $primerResultado = $informacionEncontrada[0];
+            Log::info("Información de semestre encontrada:", [
+                'fila' => $numeroFila,
+                'run_profesor' => $runProfesor,
+                'columna' => $primerResultado['letra'],
+                'valor' => $primerResultado['valor']
+            ]);
+            return $primerResultado['valor'];
+        }
+
+        // Si no encontramos nada, usar el valor original de la columna F
+        $valorOriginal = $row[5] ?? null;
+        Log::warning("No se encontró información de semestre, usando valor original:", [
+            'fila' => $numeroFila,
+            'run_profesor' => $runProfesor,
+            'valor_original_columna_F' => $valorOriginal
+        ]);
+        
+        return $valorOriginal;
+    }
+
+    /**
+     * Convierte índice numérico a letra de columna Excel
+     */
+    private function indiceALetra($indice)
+    {
+        $letra = '';
+        while ($indice >= 0) {
+            $letra = chr(65 + ($indice % 26)) . $letra;
+            $indice = intval($indice / 26) - 1;
+        }
+        return $letra;
+    }
+
+    /**
+     * Verifica si un valor contiene información de semestre
+     */
+    private function esInformacionSemestre($valor)
+    {
+        if (empty($valor) || is_null($valor)) {
+            return false;
+        }
+
+        $valorString = (string) $valor;
+        $valorString = trim($valorString);
+
+        // Patrones que indican información de semestre
+        $patrones = [
+            '/^\d{4}-\d+$/',           // 2025-1, 2025-2
+            '/^\d{4}\/\d+$/',          // 2025/1, 2025/2
+            '/^\d{4}\.\d+$/',          // 2025.1, 2025.2
+            '/^\d{4}\s*\d+$/',         // 2025 1, 2025 2
+            '/^semestre\s*\d+$/i',     // Semestre 1, Semestre 2
+            '/^s\s*\d+$/i',            // S 1, S 2
+            '/^primer\s+semestre/i',   // Primer Semestre
+            '/^segundo\s+semestre/i',  // Segundo Semestre
+            '/^1er\s+semestre/i',      // 1er Semestre
+            '/^2do\s+semestre/i',      // 2do Semestre
+            '/^1$/i',                  // Solo 1
+            '/^2$/i',                  // Solo 2
+            '/^primer/i',              // Primer
+            '/^segundo/i',             // Segundo
+        ];
+
+        foreach ($patrones as $patron) {
+            if (preg_match($patron, $valorString)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Normaliza el período para asegurar formato YYYY-S
+     */
+    private function normalizarPeriodo($semestre)
+    {
+        // Log para debugging
+        Log::info('Normalizando período:', [
+            'valor_entrada' => $semestre,
+            'tipo' => gettype($semestre),
+            'vacio' => empty($semestre),
+            'null' => is_null($semestre)
+        ]);
+
+        // Si está vacío o es null, usar período actual
+        if (empty($semestre) || is_null($semestre)) {
+            $anioActual = date('Y');
+            $mesActual = date('n');
+            $semestreActual = ($mesActual >= 3 && $mesActual <= 7) ? 1 : 2;
+            
+            Log::warning('Período vacío o null, usando período actual', [
+                'valor_original' => $semestre,
+                'periodo_por_defecto' => $anioActual . '-' . $semestreActual
+            ]);
+            
+            return $anioActual . '-' . $semestreActual;
+        }
+
+        // Si ya está en formato YYYY-S, devolverlo tal como está
+        if (preg_match('/^\d{4}-\d+$/', $semestre)) {
+            Log::info('Período ya en formato correcto', ['periodo' => $semestre]);
+            return $semestre;
+        }
+
+        // Si es solo un número (semestre), usar el año actual
+        if (is_numeric($semestre) && $semestre >= 1 && $semestre <= 2) {
+            $anioActual = date('Y');
+            $resultado = $anioActual . '-' . $semestre;
+            Log::info('Período normalizado desde número', [
+                'numero_original' => $semestre,
+                'periodo_resultado' => $resultado
+            ]);
+            return $resultado;
+        }
+
+        // Si es un string que contiene año y semestre en otro formato
+        if (preg_match('/(\d{4})[^\d]*(\d+)/', $semestre, $matches)) {
+            $resultado = $matches[1] . '-' . $matches[2];
+            Log::info('Período extraído de string', [
+                'string_original' => $semestre,
+                'periodo_resultado' => $resultado
+            ]);
+            return $resultado;
+        }
+
+        // Si es texto que indica semestre (Primer, Segundo, etc.)
+        $semestreString = strtolower(trim($semestre));
+        if (in_array($semestreString, ['primer', '1er', '1', 'primero'])) {
+            $anioActual = date('Y');
+            $resultado = $anioActual . '-1';
+            Log::info('Período extraído de texto primer semestre', [
+                'texto_original' => $semestre,
+                'periodo_resultado' => $resultado
+            ]);
+            return $resultado;
+        }
+        
+        if (in_array($semestreString, ['segundo', '2do', '2', 'segundo'])) {
+            $anioActual = date('Y');
+            $resultado = $anioActual . '-2';
+            Log::info('Período extraído de texto segundo semestre', [
+                'texto_original' => $semestre,
+                'periodo_resultado' => $resultado
+            ]);
+            return $resultado;
+        }
+
+        // Si contiene la palabra "semestre" seguida de un número
+        if (preg_match('/semestre\s*(\d+)/i', $semestre, $matches)) {
+            $anioActual = date('Y');
+            $resultado = $anioActual . '-' . $matches[1];
+            Log::info('Período extraído de texto con palabra semestre', [
+                'texto_original' => $semestre,
+                'periodo_resultado' => $resultado
+            ]);
+            return $resultado;
+        }
+
+        // Si no se puede determinar, usar el período actual
+        $anioActual = date('Y');
+        $mesActual = date('n');
+        $semestreActual = ($mesActual >= 3 && $mesActual <= 7) ? 1 : 2;
+        
+        Log::warning('No se pudo normalizar el período, usando período actual', [
+            'valor_original' => $semestre,
+            'periodo_por_defecto' => $anioActual . '-' . $semestreActual
+        ]);
+        
+        return $anioActual . '-' . $semestreActual;
     }
 }

@@ -47,23 +47,40 @@
             </div>
         </div>
 
-        <x-modal name="add-data" :show="$errors->any()" focusable>
+        <x-modal name="add-data" :show="$errors->any()" focusable x-on:close="limpiarFormulario()">
             @slot('title')
-            <h2 class="text-lg font-medium text-white dark:text-gray-100">
-                Cargar Archivo de Datos
-            </h2>
+            <div class="relative bg-red-700 p-2 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="bg-red-100 rounded-full p-4">
+                        <i class="fa-solid fa-upload text-xl text-red-600"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white">
+                        Cargar Archivo de Datos
+                    </h2>
+                </div>
+                <button @click="show = false" class="text-2xl font-bold text-white hover:text-gray-200 ml-2">&times;</button>
+                <!-- Círculos decorativos -->
+                <span class="absolute left-0 top-0 w-32 h-32 bg-white bg-opacity-10 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none"></span>
+                <span class="absolute right-0 top-0 w-32 h-32 bg-white bg-opacity-10 rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none"></span>
+            </div>
             @endslot
             <form id="upload-form" action="{{ route('data.upload') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 <div class="grid gap-6 p-6">
                     <div class="space-y-4">
-
-
-                        <div class="p-4 mb-4 rounded-lg bg-gray-50 dark:bg-gray-800">
-                            <p class="text-sm text-gray-600 dark:text-gray-400">
-                                Seleccione un archivo Excel (.xlsx, .xls) o CSV para cargar los datos. El archivo debe
-                                tener un tamaño máximo de 10MB.
-                            </p>
+                        <div class="mb-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700">
+                            <div class="flex items-start gap-3">
+                                                               <div class="p-2">
+                                    <h4 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
+                                        Información Importante
+                                    </h4>
+                                    <p class="text-sm text-blue-700 dark:text-blue-300 text-justify">
+                                        Seleccione un archivo Excel (.xlsx, .xls) o CSV para cargar los datos. El archivo debe
+                                        tener un tamaño máximo de 10MB. <strong>Importante:</strong> Seleccione el semestre académico 
+                                        al que corresponden los datos del archivo. El año será automáticamente el actual. Esto asegurará que los horarios se creen con el período correcto.
+                                    </p>
+                                </div>
+                            </div>
                         </div>
 
                         <div>
@@ -96,6 +113,22 @@
                             </div>
                         </div>
 
+                        <!-- Selector de Semestre -->
+                        <div>
+                            <label for="semestre_selector" class="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                Semestre Académico
+                            </label>
+                            <select id="semestre_selector" name="semestre_selector" 
+                                    class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                                <option value="">Seleccionar semestre...</option>
+                                <option value="1">Primer Semestre</option>
+                                <option value="2">Segundo Semestre</option>
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                                Selecciona el semestre al que corresponden los datos del archivo. El año será automáticamente el actual ({{ date('Y') }}).
+                            </p>
+                        </div>
+
                         <!-- Spinner de carga -->
                         <div id="loading-spinner" class="hidden mt-4">
                             <div class="flex flex-col items-center justify-center">
@@ -111,9 +144,6 @@
                     </div>
 
                     <div class="flex justify-end gap-4">
-                        <x-button variant="primary" type="button" x-on:click="$dispatch('close')">
-                            Cancelar
-                        </x-button>
                         <x-button variant="success" type="button" id="load-button" class="hidden">
                             Cargar
                         </x-button>
@@ -236,7 +266,14 @@
 
                     selectedFileName.className = 'mt-2 text-sm font-medium text-green-600';
                     selectedFileName.textContent = `Archivo seleccionado: ${file.name}`;
-                    loadButton.classList.remove('hidden');
+                    
+                    // Verificar si se ha seleccionado semestre
+                    const semestreSelector = document.getElementById('semestre_selector');
+                    
+                    if (semestreSelector.value) {
+                        loadButton.classList.remove('hidden');
+                    }
+                    
                     hideMessages();
                 } else {
                     loadButton.classList.add('hidden');
@@ -260,10 +297,16 @@
                 const form = document.getElementById('upload-form');
                 const fileInput = document.getElementById('file-upload');
                 const file = fileInput.files[0];
+                const semestreSelector = document.getElementById('semestre_selector');
                 const loadingSpinner = document.getElementById('loading-spinner');
 
                 if (!file) {
                     showError('Por favor, seleccione un archivo primero.');
+                    return;
+                }
+
+                if (!semestreSelector.value) {
+                    showError('Por favor, seleccione un semestre.');
                     return;
                 }
 
@@ -272,6 +315,7 @@
 
                 const formData = new FormData();
                 formData.append('file', file);
+                formData.append('semestre_selector', semestreSelector.value);
 
                 const xhr = new XMLHttpRequest();
                 xhr.open('POST', form.action, true);
@@ -284,6 +328,7 @@
                         try {
                             const response = JSON.parse(xhr.responseText);
                             const dataLoad = response.data.nombre_archivo;
+                            let alertShown = false; // Bandera para evitar múltiples alerts
 
                             // Iniciar consulta periódica del progreso
                             const progressInterval = setInterval(() => {
@@ -292,7 +337,8 @@
                                     .then(data => {
                                         if (data.estado === 'completado' || data.estado === 'error') {
                                             clearInterval(progressInterval);
-                                            if (data.estado === 'completado') {
+                                            if (data.estado === 'completado' && !alertShown) {
+                                                alertShown = true; // Marcar como mostrado
                                                 // ✅ SweetAlert único al cargar correctamente
                                                 Swal.fire({
                                                     title: '¡Éxito!',
@@ -305,7 +351,8 @@
                                                 }).then(() => {
                                                     window.location.reload();
                                                 });
-                                            } else if (data.estado === 'error') {
+                                            } else if (data.estado === 'error' && !alertShown) {
+                                                alertShown = true; // Marcar como mostrado
                                                 Swal.fire({
                                                     title: 'Error',
                                                     text: 'Error al procesar el archivo',
@@ -318,12 +365,15 @@
                                     .catch(error => {
                                         console.error('Error al consultar el progreso:', error);
                                         clearInterval(progressInterval);
-                                        Swal.fire({
-                                            title: 'Error',
-                                            text: 'Error al verificar el progreso del archivo',
-                                            icon: 'error',
-                                            confirmButtonText: 'Aceptar',
-                                        });
+                                        if (!alertShown) {
+                                            alertShown = true; // Marcar como mostrado
+                                            Swal.fire({
+                                                title: 'Error',
+                                                text: 'Error al verificar el progreso del archivo',
+                                                icon: 'error',
+                                                confirmButtonText: 'Aceptar',
+                                            });
+                                        }
                                     });
                             }, 1000); // Consultar cada segundo
 
@@ -368,6 +418,24 @@
             // Inicialización cuando el DOM esté listo
             document.addEventListener('DOMContentLoaded', function() {
                 console.log('Página de carga de datos inicializada');
+                
+                // Event listeners para los selectores
+                const semestreSelector = document.getElementById('semestre_selector');
+                const loadButton = document.getElementById('load-button');
+                const fileInput = document.getElementById('file-upload');
+                
+                function checkFormComplete() {
+                    const file = fileInput.files[0];
+                    const semestre = semestreSelector.value;
+                    
+                    if (file && semestre) {
+                        loadButton.classList.remove('hidden');
+                    } else {
+                        loadButton.classList.add('hidden');
+                    }
+                }
+                
+                semestreSelector.addEventListener('change', checkFormComplete);
             });
 
             // Función para abrir el modal y cargar los datos
@@ -439,6 +507,31 @@
                 if (modal) {
                     modal.classList.add('hidden');
                 }
+            }
+
+            function limpiarFormulario() {
+                // Limpiar el formulario
+                const form = document.getElementById('upload-form');
+                if (form) {
+                    form.reset();
+                }
+                
+                // Ocultar el botón de cargar
+                const loadButton = document.getElementById('load-button');
+                if (loadButton) {
+                    loadButton.classList.add('hidden');
+                }
+                
+                // Limpiar mensajes
+                const errorMessage = document.getElementById('error-message');
+                const successMessage = document.getElementById('success-message');
+                const uploadedFileName = document.getElementById('uploaded-file-name');
+                const selectedFileName = document.getElementById('selected-file-name');
+                
+                if (errorMessage) errorMessage.classList.add('hidden');
+                if (successMessage) successMessage.classList.add('hidden');
+                if (uploadedFileName) uploadedFileName.classList.add('hidden');
+                if (selectedFileName) selectedFileName.textContent = '';
             }
         </script>
     </div>

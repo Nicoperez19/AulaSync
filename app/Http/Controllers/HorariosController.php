@@ -22,9 +22,9 @@ class HorariosController extends Controller
      */
     public function index(Request $request)
     {
-        // Obtener filtros de la request
+        // Obtener filtros de la request - usar año actual por defecto
         $semestreFiltro = $request->input('semestre');
-        $anioFiltro = $request->input('anio');
+        $anioFiltro = $request->input('anio', SemesterHelper::getCurrentAcademicYear());
         
         // Obtener todos los períodos únicos de los horarios para los filtros
         $periodosDisponibles = Horario::select('periodo')
@@ -79,14 +79,14 @@ class HorariosController extends Controller
             $query->whereRaw("UPPER(REPLACE(SUBSTRING_INDEX(name, ',', 1), 'Á', 'A')) LIKE ?", [strtoupper($letra) . '%']);
         }
         
-        // Filtro por período (semestre y año)
-        if ($semestreFiltro && $anioFiltro) {
+        // Filtro por período (siempre usar año actual)
+        if ($semestreFiltro) {
             $periodoFiltro = $anioFiltro . '-' . $semestreFiltro;
             $query->whereHas('horarios', function($q) use ($periodoFiltro) {
                 $q->where('periodo', $periodoFiltro);
             });
-        } elseif ($anioFiltro) {
-            // Filtrar solo por año
+        } else {
+            // Si no hay semestre seleccionado, filtrar por año actual
             $query->whereHas('horarios', function($q) use ($anioFiltro) {
                 $q->where('periodo', 'like', $anioFiltro . '-%');
             });
@@ -100,14 +100,17 @@ class HorariosController extends Controller
         
         $profesores = $query->orderBy('name')->paginate(27);
         
-        // Determinar el período actual para los horarios usando el helper
-        $anioActual = SemesterHelper::getCurrentAcademicYear();
-        $semestre = SemesterHelper::getCurrentSemester();
-        $periodo = SemesterHelper::getCurrentPeriod();
+        // Determinar el período para los horarios (siempre usar año actual)
+        if ($semestreFiltro) {
+            $periodo = $anioFiltro . '-' . $semestreFiltro;
+        } else {
+            $semestre = SemesterHelper::getCurrentSemester();
+            $periodo = $anioFiltro . '-' . $semestre;
+        }
         
-        Log::info('Período determinado por el helper en directorio de profesores:', [
-            'anioActual' => $anioActual,
-            'semestre' => $semestre,
+        Log::info('Período determinado para horarios en directorio de profesores:', [
+            'anioActual' => $anioActual ?? null,
+            'semestre' => $semestre ?? null,
             'periodo' => $periodo
         ]);
         
@@ -135,7 +138,6 @@ class HorariosController extends Controller
         return view('layouts.schedules.schedules_index', compact(
             'profesores', 
             'horarios', 
-            'aniosDisponibles', 
             'semestresDisponibles',
             'semestreFiltro',
             'anioFiltro'
@@ -205,17 +207,16 @@ class HorariosController extends Controller
                 'anioFiltro' => $request->input('anio')
             ]);
             
-            // Obtener el período de los filtros o usar el actual
+            // Obtener el período de los filtros (usar año actual por defecto)
             $semestreFiltro = $request->input('semestre');
-            $anioFiltro = $request->input('anio');
+            $anioFiltro = $request->input('anio', SemesterHelper::getCurrentAcademicYear());
             
-            if ($semestreFiltro && $anioFiltro) {
+            if ($semestreFiltro) {
                 $periodo = $anioFiltro . '-' . $semestreFiltro;
             } else {
-                // Determinar el período actual usando el helper
-                $anioActual = SemesterHelper::getCurrentAcademicYear();
+                // Si no hay semestre seleccionado, usar el semestre actual
                 $semestre = SemesterHelper::getCurrentSemester();
-                $periodo = SemesterHelper::getCurrentPeriod();
+                $periodo = $anioFiltro . '-' . $semestre;
             }
             
             Log::info('Período determinado para horario de profesor:', [
@@ -228,10 +229,48 @@ class HorariosController extends Controller
                 ->where('periodo', $periodo)
                 ->first();
 
+            // Si se encontró el horario, filtrar las planificaciones por período también
+            if ($horario) {
+                $totalAntes = $horario->planificaciones->count();
+                
+                // Filtrar planificaciones por período de la asignatura
+                $horario->planificaciones = $horario->planificaciones->filter(function($planificacion) use ($periodo) {
+                    // Verificar que la asignatura tenga el período correcto
+                    if (!$planificacion->asignatura) {
+                        return false;
+                    }
+                    
+                    $asignaturaPeriodo = $planificacion->asignatura->periodo;
+                    $coincide = $asignaturaPeriodo === $periodo;
+                    
+                    // Log para debugging específico
+                    if ($planificacion->asignatura->run_profesor == '10424736') {
+                        Log::info('Verificando planificación:', [
+                            'asignatura_codigo' => $planificacion->asignatura->codigo_asignatura,
+                            'asignatura_periodo' => $asignaturaPeriodo,
+                            'periodo_buscado' => $periodo,
+                            'coincide' => $coincide
+                        ]);
+                    }
+                    
+                    return $coincide;
+                });
+                
+                $totalDespues = $horario->planificaciones->count();
+                
+                Log::info('Filtrado de planificaciones:', [
+                    'periodo' => $periodo,
+                    'planificaciones_antes_filtro' => $totalAntes,
+                    'planificaciones_despues_filtro' => $totalDespues,
+                    'planificaciones_filtradas' => $horario->planificaciones->pluck('asignatura.periodo', 'asignatura.codigo_asignatura')->toArray()
+                ]);
+            }
+
             Log::info('Búsqueda de horario:', [
                 'run' => $run,
                 'periodo' => $periodo,
-                'horario_encontrado' => $horario ? 'Sí' : 'No'
+                'horario_encontrado' => $horario ? 'Sí' : 'No',
+                'total_planificaciones_antes_filtro' => $horario ? $horario->planificaciones->count() : 0
             ]);
 
             if (!$horario) {
@@ -256,22 +295,49 @@ class HorariosController extends Controller
                 ]);
             }
 
+            // Obtener asignaturas filtradas por período
             $asignaturas = Asignatura::where('run_profesor', $run)
+                ->where('periodo', $periodo)
                 ->with(['planificaciones.espacio', 'planificaciones.modulo'])
                 ->get();
+
+            // Obtener todas las asignaturas del profesor para comparar
+            $todasAsignaturas = Asignatura::where('run_profesor', $run)->get();
 
             $modulos = Modulo::orderBy('hora_inicio')->get();
 
             Log::info('Datos del horario:', [
+                'periodo_buscado' => $periodo,
+                'total_asignaturas_profesor' => $todasAsignaturas->count(),
+                'asignaturas_filtradas' => $asignaturas->count(),
+                'asignaturas_todas' => $todasAsignaturas->pluck('periodo', 'codigo_asignatura')->toArray(),
+                'asignaturas_filtradas_detalle' => $asignaturas->pluck('periodo', 'codigo_asignatura')->toArray(),
                 'horario' => $horario->toArray(),
-                'asignaturas' => $asignaturas->toArray(),
                 'modulos' => $modulos->toArray()
             ]);
+
+            // Logging específico para debugging del modal
+            if ($run == '10424736' || $run == '17844444') {
+                Log::info('DEBUG MODAL - Profesor:', [
+                    'run' => $run,
+                    'periodo' => $periodo,
+                    'total_planificaciones_horario' => $horario->planificaciones->count(),
+                    'planificaciones_detalle' => $horario->planificaciones->map(function($plan) {
+                        return [
+                            'asignatura_codigo' => $plan->asignatura->codigo_asignatura ?? 'N/A',
+                            'asignatura_nombre' => $plan->asignatura->nombre_asignatura ?? 'N/A',
+                            'asignatura_periodo' => $plan->asignatura->periodo ?? 'N/A',
+                            'modulo' => $plan->modulo->id_modulo ?? 'N/A'
+                        ];
+                    })->toArray()
+                ]);
+            }
 
             return response()->json([
                 'horario' => $horario,
                 'asignaturas' => $asignaturas,
-                'modulos' => $modulos
+                'modulos' => $modulos,
+                'periodo' => $periodo
             ]);
         } catch (\Exception $e) {
             Log::error('Error al obtener horario:', [
@@ -323,9 +389,9 @@ class HorariosController extends Controller
 
     public function showEspacios(Request $request)
     {
-        // Obtener filtros de la request
+        // Obtener filtros de la request - usar año actual por defecto
         $semestreFiltro = $request->input('semestre');
-        $anioFiltro = $request->input('anio');
+        $anioFiltro = $request->input('anio', SemesterHelper::getCurrentAcademicYear());
         
         // Obtener todos los períodos únicos de los horarios para los filtros
         $periodosDisponibles = Horario::select('periodo')
@@ -382,10 +448,9 @@ class HorariosController extends Controller
         // Cargar horarios por defecto para el primer semestre 2025 o para los filtros seleccionados
         $horariosPorEspacio = collect([]);
         
-        // Si no hay filtros específicos, usar el período actual
-        if (!$semestreFiltro && !$anioFiltro) {
+        // Si no hay semestre seleccionado, usar el semestre actual
+        if (!$semestreFiltro) {
             $semestreFiltro = SemesterHelper::getCurrentSemester();
-            $anioFiltro = SemesterHelper::getCurrentAcademicYear();
         }
         
         Log::info('Período determinado en showEspacios:', [
@@ -394,7 +459,7 @@ class HorariosController extends Controller
             'periodo_por_defecto' => $periodo
         ]);
         
-        if ($semestreFiltro && $anioFiltro) {
+        if ($semestreFiltro) {
             $periodo = $anioFiltro . '-' . $semestreFiltro;
             
             Log::info('Período final para búsqueda:', [
@@ -437,7 +502,6 @@ class HorariosController extends Controller
             'horariosPorEspacio', 
             'semestre', 
             'anioActual',
-            'aniosDisponibles',
             'semestresDisponibles',
             'semestreFiltro',
             'anioFiltro'
@@ -448,10 +512,10 @@ class HorariosController extends Controller
     {
         try {
             $semestreFiltro = $request->input('semestre');
-            $anioFiltro = $request->input('anio');
+            $anioFiltro = $request->input('anio', SemesterHelper::getCurrentAcademicYear());
             
-            if (!$semestreFiltro || !$anioFiltro) {
-                return response()->json(['error' => 'Se requieren semestre y año'], 400);
+            if (!$semestreFiltro) {
+                return response()->json(['error' => 'Se requiere semestre'], 400);
             }
             
             $periodo = $anioFiltro . '-' . $semestreFiltro;
