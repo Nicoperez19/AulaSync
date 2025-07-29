@@ -67,14 +67,6 @@ Route::get('/verificar-espacio/{profesorId}/{espacioId}', function ($profesorId,
         ]);
 
     } catch (\Exception $e) {
-        \Log::error('Error al verificar espacio:', [
-            'error' => $e->getMessage(),
-            'profesorId' => $profesorId,
-            'espacioId' => $espacioId,
-            'dia' => $dia,
-            'hora' => $hora
-        ]);
-
         return response()->json([
             'esValido' => false,
             'mensaje' => 'Error al verificar el espacio: ' . $e->getMessage()
@@ -182,7 +174,6 @@ Route::get('/espacio/{id}', function ($id) {
             ], 404);
         }
     } catch (\Exception $e) {
-        \Log::error('Error al buscar espacio: ' . $e->getMessage());
         return response()->json([
             'success' => false,
             'message' => 'Error interno del servidor'
@@ -209,7 +200,6 @@ Route::get('/verificar-planificacion/{id_espacio}/{id_modulo}', function ($id_es
             'ocupado' => $tienePlanificacion
         ]);
     } catch (\Exception $e) {
-        \Log::error('Error al verificar planificación: ' . $e->getMessage());
         return response()->json([
             'error' => 'Error al verificar la planificación',
             'ocupado' => false
@@ -240,7 +230,6 @@ Route::get('/verificar-planificacion-multiple', function (Request $request) {
             'espacios_ocupados' => $planificaciones
         ]);
     } catch (\Exception $e) {
-        \Log::error('Error al verificar planificación múltiple: ' . $e->getMessage());
         return response()->json([
             'error' => 'Error al verificar la planificación',
             'espacios_ocupados' => []
@@ -267,12 +256,6 @@ Route::get('/pisos/th/it', function () {
             'pisos' => $pisos
         ]);
     } catch (\Exception $e) {
-        \Log::error('Error al obtener pisos:', [
-            'error' => $e->getMessage(),
-            'sede' => 'TH',
-            'facultad' => 'IT_TH'
-        ]);
-
         return response()->json([
             'success' => false,
             'message' => 'Error al obtener los pisos: ' . $e->getMessage()
@@ -283,6 +266,7 @@ Route::get('/pisos/th/it', function () {
 Route::get('/verificar-horario/{run}', [HorarioController::class, 'verificarHorario']);
 
 Route::get('/verificar-usuario/{run}', [HorarioController::class, 'verificarUsuario']);
+Route::get('/verificar-profesor/{run}', [HorarioController::class, 'verificarProfesor']);
 Route::get('/verificar-usuario-no-registrado/{run}', [HorarioController::class, 'verificarUsuarioNoRegistrado']);
 Route::post('/registrar-usuario-no-registrado', [HorarioController::class, 'registrarUsuarioNoRegistrado']);
 Route::post('/convertir-usuario-no-registrado', [HorarioController::class, 'convertirUsuarioNoRegistrado']);
@@ -321,7 +305,6 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
             'tieneProgramacion' => $tieneProgramacion
         ]);
     } catch (\Exception $e) {
-        \Log::error('Error al verificar programación: ' . $e->getMessage());
         return response()->json([
             'success' => false,
             'message' => 'Error al verificar la programación: ' . $e->getMessage()
@@ -340,11 +323,6 @@ Route::get('/verificar-clases-programadas/{run}', function ($run) {
         
         return response()->json($resultado);
     } catch (\Exception $e) {
-        \Log::error('Error al verificar clases programadas:', [
-            'error' => $e->getMessage(),
-            'run' => $run
-        ]);
-        
         return response()->json([
             'tiene_clases' => false,
             'mensaje' => 'Error al verificar clases programadas: ' . $e->getMessage()

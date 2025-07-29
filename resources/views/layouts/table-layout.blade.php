@@ -17,6 +17,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap"
         rel="stylesheet">
 
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <!-- Vite -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -28,14 +31,17 @@
     </style>
 </head>
 
-<!-- VISTA PARA EL MAPA -->
+<!-- VISTA PARA TABLA DE ESPACIOS -->
 
 <body class="font-sans antialiased">
     <div x-data="mainState" x-on:resize.window="handleWindowResize" x-cloak>
         <div class="min-h-screen text-gray-900 bg-gray-100 dark:bg-dark-eval-0 dark:text-gray-200">
-            <!-- Contenido principal -->
-            <div
-                class="flex flex-col min-h-screen transition-all duration-300 ease-in-out bg-cloud-light dark:bg-dark-eval-2">
+            <header>
+                <div class="py-2 sm:px-6">
+                    {{ $header }}
+                </div>
+            </header>
+            <div class="flex flex-col transition-all duration-300 ease-in-out bg-cloud-light dark:bg-dark-eval-2">
                 <!-- Main content -->
                 <main class="flex-1 px-4 overflow-x-auto transition-all duration-300 ease-in-out sm:px-6">
                     {{ $slot }}

@@ -8,6 +8,7 @@ use App\Models\Planificacion_Asignatura;
 use App\Models\Modulo;
 use App\Models\Reserva;
 use App\Models\Sede;
+use App\Models\Piso;
 use App\Helpers\SemesterHelper;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -29,79 +30,37 @@ class PlanoDigitalController extends Controller
     public function show($id)
     {
         try {
-            // Verificar si hay mapas disponibles
-            $mapasDisponibles = Mapa::count();
-            if ($mapasDisponibles === 0) {
-                if (request()->wantsJson()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'No hay mapas disponibles en el sistema'
-                    ], 404);
-                }
-                
-                return redirect()->route('plano.index')->with('error', 'No hay mapas disponibles en el sistema');
-            }
-
-            $mapa = Mapa::with(['piso.facultad.sede'])->findOrFail($id);
+            $mapa = $this->obtenerMapa($id);
             $estadoActual = $this->obtenerEstadoActual(Carbon::now());
             $bloques = $this->prepararBloques($mapa, $estadoActual);
             
-            // Obtener todos los pisos de la sede TH y facultad IT_TH
-            $pisos = Mapa::with(['piso' => function($query) {
-                    $query->with(['facultad' => function($query) {
-                        $query->with('sede');
-                    }]);
-                }])
-                ->whereHas('piso.facultad.sede', function($query) {
-                    $query->where('id_sede', 'TH');
-                })
-                ->whereHas('piso.facultad', function($query) {
-                    $query->where('id_facultad', 'IT_TH');
-                })
-                ->join('pisos', 'mapas.piso_id', '=', 'pisos.id')
-                ->orderBy('pisos.numero_piso')
-                ->select('mapas.*', 'pisos.numero_piso')
+            // Obtener todos los pisos de la misma facultad con sus mapas
+            $pisos = Piso::with(['mapas'])
+                ->where('id_facultad', $mapa->piso->id_facultad)
+                ->orderBy('numero_piso')
                 ->get();
 
-            \Log::info('Pisos encontrados:', ['count' => $pisos->count(), 'pisos' => $pisos->toArray()]);
-
-            // Obtener la sede actual
             $sede = $mapa->piso->facultad->sede;
 
-            // Convertir los pisos a un formato más simple para la vista
-            $pisosFormateados = $pisos->map(function($piso) {
+            // Formatear los pisos con sus mapas
+            $pisosFormateados = $pisos->map(function ($piso) {
+                $primerMapa = $piso->mapas->first();
                 return [
-                    'id_mapa' => $piso->id_mapa,
-                    'numero_piso' => $piso->numero_piso,
-                    'nombre_piso' => "Piso {$piso->numero_piso}"
+                    'id' => $piso->id,
+                    'numero' => $piso->numero_piso,
+                    'nombre' => "Piso {$piso->numero_piso}",
+                    'id_mapa' => $primerMapa ? $primerMapa->id_mapa : null
                 ];
             });
-
-            if (request()->wantsJson()) {
-                return response()->json([
-                    'success' => true,
-                    'data' => [
-                        'pisos' => $pisosFormateados,
-                        'mapa' => $mapa,
-                        'bloques' => $bloques,
-                        'sede' => $sede
-                    ]
-                ]);
-            }
 
             return view('layouts.plano_digital.show', [
                 'mapa' => $mapa,
                 'bloques' => $bloques,
-                'pisos' => $pisos,
+                'pisos' => $pisosFormateados,
                 'sede' => $sede,
                 'pisosJson' => json_encode($pisosFormateados)
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error en PlanoDigitalController@show:', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
             if (request()->wantsJson()) {
                 return response()->json([
                     'success' => false,
@@ -116,25 +75,12 @@ class PlanoDigitalController extends Controller
     public function bloques($id)
     {
         try {
-            \Log::info('Solicitud de bloques recibida:', ['id' => $id]);
             $mapa = $this->obtenerMapa($id);
             $estadoActual = $this->obtenerEstadoActual(Carbon::now());
             $bloques = $this->prepararBloques($mapa, $estadoActual);
-            \Log::info('Bloques preparados:', ['count' => count($bloques)]);
-            
-            // Log detallado de cada bloque para debuggear
-            foreach ($bloques as $bloque) {
-                \Log::info('Bloque procesado:', [
-                    'id' => $bloque['id'],
-                    'nombre' => $bloque['nombre'],
-                    'estado' => $bloque['estado'],
-                    'detalles' => $bloque['detalles']
-                ]);
-            }
             
             return response()->json(['bloques' => $bloques]);
         } catch (\Exception $e) {
-            \Log::error('Error al obtener bloques: ' . $e->getMessage());
             return response()->json(['error' => 'Error al obtener los bloques'], 500);
         }
     }
@@ -151,12 +97,6 @@ class PlanoDigitalController extends Controller
         $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
         $horaActualStr = $horaActual->format('H:i:s');
         $fechaActual = $horaActual->format('Y-m-d');
-
-        \Log::info('Estado actual:', [
-            'hora' => $horaActualStr,
-            'dia' => $diaActual,
-            'fecha' => $fechaActual
-        ]);
 
         return [
             'hora' => $horaActualStr,
@@ -373,7 +313,6 @@ class PlanoDigitalController extends Controller
                 'modulo' => $modulo
             ]);
         } catch (\Exception $e) {
-            \Log::error('Error al obtener módulo actual: ' . $e->getMessage());
             return response()->json(['error' => 'Error al obtener el módulo actual'], 500);
         }
     }

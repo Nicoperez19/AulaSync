@@ -107,8 +107,8 @@
                         </div>
 
                         <input type="text" id="qr-input"
-                            class="absolute w-full px-1 py-1 border rounded opacity-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            placeholder="Escanea un código QR" autofocus>
+                            class="absolute w-full px-1 py-1 border-0 bg-transparent text-transparent focus:outline-none focus:border-0 focus:ring-0"
+                            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
                     </div>
                 </div>
             </div>
@@ -154,17 +154,19 @@
                     <div class="flex-1 bg-white shadow-md dark:bg-dark-eval-0">
                         <ul class="flex" id="pills-tab" role="tablist">
                             @foreach ($pisos as $piso)
-                                <li role="presentation">
-                                    <a href="{{ route('plano.show', $piso->id_mapa) }}"
-                                        class="px-4 py-2 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
-                                        {{ $piso->id_mapa === $mapa->id_mapa
-                                            ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
-                                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}"
-                                        role="tab"
-                                        aria-selected="{{ $piso->id_mapa === $mapa->id_mapa ? 'true' : 'false' }}">
-                                        Piso {{ $piso->piso->numero_piso }}
-                                    </a>
-                                </li>
+                                @if ($piso['id_mapa'])
+                                    <li role="presentation">
+                                        <a href="{{ route('plano.show', $piso['id_mapa']) }}"
+                                            class="px-4 py-2 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
+                                            {{ $piso['id_mapa'] === $mapa->id_mapa
+                                                ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
+                                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}"
+                                            role="tab"
+                                            aria-selected="{{ $piso['id_mapa'] === $mapa->id_mapa ? 'true' : 'false' }}">
+                                            Piso {{ $piso['numero'] }}
+                                        </a>
+                                    </li>
+                                @endif
                             @endforeach
                         </ul>
                         <!-- Card para el canvas y controles -->
@@ -187,26 +189,7 @@
                                 <canvas id="indicatorsCanvas"
                                     class="absolute inset-0 w-full h-full pointer-events-auto"></canvas>
 
-                                <!-- Botón de pantalla completa -->
-                                <button id="fullscreenBtn"
-                                    class="absolute z-10 p-2 text-white transition-colors duration-200 rounded-lg shadow-lg bottom-4 right-4 bg-light-cloud-blue hover:bg-blue-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
-                                    </svg>
-                                </button>
 
-                                <!-- Botón de actualización manual -->
-                                <button id="refreshBtn"
-                                    class="absolute z-10 p-2 text-white transition-colors duration-200 bg-green-600 rounded-lg shadow-lg bottom-4 right-16 hover:bg-green-700"
-                                    onclick="forzarActualizacionEstados()" title="Actualizar estados de espacios">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                    </svg>
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -534,8 +517,8 @@
         // VARIABLES GLOBALES PARA EL ESCÁNER QR
         // ========================================
         let bufferQR = ''; // Buffer para almacenar el código QR escaneado
-        let esperandoUsuario = true; // Flag para indicar si estamos esperando escanear usuario o espacio
-        let usuarioEscaneado = null; // Usuario que se escaneó
+        let esperandoProfesor = true; // Flag para indicar si estamos esperando escanear profesor o espacio
+        let profesorEscaneado = null; // Profesor que se escaneó
         let qrUsuario = null; // QR del usuario procesado
         let qrEspacio = null; // QR del espacio procesado
         let esperandoEspacio = false; // Flag para indicar si estamos esperando escanear el espacio
@@ -581,12 +564,7 @@
         let qrScanAttempts = 0; // Intentos de escaneo
         let qrScanMaxAttempts = 30; // Máximo de intentos (3 segundos si fps=10)
 
-        // ========================================
-        // VARIABLES PARA CONTROL DE PANTALLA COMPLETA
-        // ========================================
-        let isFullscreen = false; // Estado de pantalla completa
-        let originalSidebarDisplay = ''; // Estado original del sidebar
-        let originalMainContentMargin = ''; // Margen original del contenido principal
+
 
         // ========================================
         // OBTENER ID DEL MAPA DESDE EL CONTROLADOR
@@ -627,7 +605,8 @@
             currentDay: new Date().getDay(), // Día actual
             updateInterval: null, // Intervalo de actualización
             hoveredIndicator: null, // Indicador sobre el que está el mouse
-            lastLocalChange: null // Timestamp del último cambio local
+            lastLocalChange: null, // Timestamp del último cambio local
+            ultimoCambioLocal: null // Timestamp del último cambio local
         };
 
         // ========================================
@@ -648,7 +627,20 @@
         async function verificarUsuario(run) {
             try {
                 const response = await fetch(`/api/verificar-usuario/${run}`);
-                return await response.json();
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error('Error:', error);
+                return null;
+            }
+        }
+
+        // Función para verificar si un profesor existe en el sistema
+        async function verificarProfesor(run) {
+            try {
+                const response = await fetch(`/api/verificar-profesor/${run}`);
+                const result = await response.json();
+                return result;
             } catch (error) {
                 console.error('Error:', error);
                 return null;
@@ -659,7 +651,8 @@
         async function verificarEspacio(idEspacio) {
             try {
                 const response = await fetch(`/api/verificar-espacio/${idEspacio}`);
-                return await response.json();
+                const result = await response.json();
+                return result;
             } catch (error) {
                 console.error('Error:', error);
                 return null;
@@ -706,76 +699,136 @@
         }
 
         // ========================================
-        // FUNCIÓN PRINCIPAL PARA MANEJAR EL ESCANEO QR
+        // NUEVA LÓGICA DE ESCANEO QR
         // ========================================
-        // Esta función procesa los códigos QR escaneados y maneja la lógica de reservas
+        let lastBufferLength = 0;
+        let processingTimeout = null;
+        
         async function handleScan(event) {
-            if (event.key === 'Enter') {
-                if (esperandoUsuario) {
-                    // Procesar QR de usuario (formato: RUN¿12345678')
-                    const match = bufferQR.match(/RUN¿(\d+)/);
-                    if (match) {
-                        usuarioEscaneado = match[1];
-                        const usuarioInfo = await verificarUsuario(usuarioEscaneado);
-
-                        if (usuarioInfo && usuarioInfo.verificado) {
-                            document.getElementById('qr-status').innerHTML = 'Usuario verificado. Escanee el espacio.';
-                            document.getElementById('run-escaneado').textContent = usuarioInfo.usuario.run;
-                            document.getElementById('nombre-usuario').textContent = usuarioInfo.usuario.nombre;
-                            esperandoUsuario = false;
-                        } else {
-                            Swal.fire('Error', usuarioInfo?.mensaje || 'Error de verificación', 'error');
-                            document.getElementById('qr-status').innerHTML = usuarioInfo?.mensaje ||
-                                'Error de verificación';
+            // Solo procesar cuando se presiona Enter
+            if (event.key !== 'Enter') {
+                // Acumular caracteres en el buffer
+                if (event.key.length === 1) {
+                    bufferQR += event.key;
+                    
+                    // Detectar cuando el escaneo se completó (buffer dejó de crecer)
+                    if (bufferQR.length > lastBufferLength) {
+                        lastBufferLength = bufferQR.length;
+                        
+                        // Limpiar timeout anterior
+                        if (processingTimeout) {
+                            clearTimeout(processingTimeout);
                         }
-                    } else {
-                        Swal.fire('Error', 'RUN inválido', 'error');
-                        document.getElementById('qr-status').innerHTML = 'RUN inválido';
+                        
+                        // Procesar automáticamente después de 500ms sin nuevos caracteres
+                        processingTimeout = setTimeout(async () => {
+                            await procesarQRCompleto();
+                        }, 500);
                     }
-                } else {
-                    // Procesar QR de espacio (formato: TH'L01)
-                    const espacioProcesado = bufferQR.replace(/'/g, '-');
-                    const espacioInfo = await verificarEspacio(espacioProcesado);
-
-                    if (espacioInfo?.verificado) {
-                        if (espacioInfo.disponible) {
-                            // Reservar directamente, sin confirmación
-                            const reserva = await crearReserva(usuarioEscaneado, espacioProcesado);
-                            if (reserva?.success) {
-                                Swal.fire('¡Reserva exitosa!', '', 'success');
-                                document.getElementById('qr-status').innerHTML = 'Reserva exitosa';
-                                document.getElementById('nombre-espacio').textContent = espacioInfo.espacio.nombre;
-                                // Actualizar el color del indicador a 'Ocupado' (rojo)
-                                const block = state.indicators.find(b => b.id === espacioProcesado);
-                                if (block) {
-                                    block.estado = '#FF0000'; // Rojo
-                                    state.originalCoordinates = state.indicators.map(i => ({
-                                        ...i
-                                    }));
-                                    drawIndicators();
-                                }
-                            } else {
-                                Swal.fire('Error', reserva?.mensaje || 'Error en reserva', 'error');
-                                document.getElementById('qr-status').innerHTML = reserva?.mensaje || 'Error en reserva';
-                            }
-                        } else {
-                            // Espacio ocupado - mostrar mensaje informativo
-                            Swal.fire('Espacio Ocupado',
-                                `El espacio ${espacioInfo.espacio.nombre} está actualmente ocupado.`, 'info');
-                            document.getElementById('qr-status').innerHTML = 'Espacio ocupado';
-                        }
-                    } else {
-                        Swal.fire('Error', espacioInfo?.mensaje || 'Error al verificar espacio', 'error');
-                        document.getElementById('qr-status').innerHTML = espacioInfo?.mensaje ||
-                            'Error al verificar espacio';
-                    }
-                    esperandoUsuario = true;
                 }
-                bufferQR = '';
-                event.target.value = '';
-            } else if (event.key.length === 1) {
-                bufferQR += event.key;
+                return;
             }
+
+            await procesarQRCompleto();
+        }
+        
+        // Función para procesar el QR completo
+        async function procesarQRCompleto() {
+            // Procesar el QR escaneado
+            if (esperandoProfesor) {
+                // PASO 1: Escanear profesor
+                await procesarUsuario();
+            } else {
+                // PASO 2: Escanear espacio
+                await procesarEspacio();
+            }
+
+            // Limpiar buffer y input
+            bufferQR = '';
+            lastBufferLength = 0;
+            if (processingTimeout) {
+                clearTimeout(processingTimeout);
+                processingTimeout = null;
+            }
+            const inputEscanner = document.getElementById('qr-input');
+            if (inputEscanner) {
+                inputEscanner.value = '';
+            }
+        }
+
+        // Función para procesar QR de profesor
+        async function procesarUsuario() {
+            // Extraer RUN del QR (buscar "RUN" seguido de números)
+            const runMatch = bufferQR.match(/RUN[^0-9]*(\d+)/);
+            if (!runMatch) {
+                Swal.fire('Error', 'Formato de RUN no válido', 'error');
+                return;
+            }
+
+            const run = runMatch[1];
+
+            // Verificar profesor en la base de datos
+            const profesorInfo = await verificarProfesor(run);
+            if (!profesorInfo || !profesorInfo.verificado) {
+                Swal.fire('Error', profesorInfo?.mensaje || 'Profesor no encontrado', 'error');
+                return;
+            }
+
+            // Profesor verificado - mostrar información
+            document.getElementById('qr-status').innerHTML = 'Profesor verificado. Escanee el espacio.';
+            document.getElementById('run-escaneado').textContent = profesorInfo.profesor.run_profesor;
+            document.getElementById('nombre-usuario').textContent = profesorInfo.profesor.name;
+            profesorEscaneado = run;
+            esperandoProfesor = false;
+        }
+
+        // Función para procesar QR de espacio
+        async function procesarEspacio() {
+            // Extraer código de espacio (buscar "TH" seguido de letras/números)
+            const espacioMatch = bufferQR.match(/(TH[^A-Z0-9]*[A-Z0-9]+)/);
+            if (!espacioMatch) {
+                Swal.fire('Error', 'Código de espacio no válido', 'error');
+                return;
+            }
+
+            const espacio = espacioMatch[1].replace(/[^A-Z0-9]/g, '-');
+
+            // Verificar espacio
+            const espacioInfo = await verificarEspacio(espacio);
+            if (!espacioInfo || !espacioInfo.verificado) {
+                Swal.fire('Error', espacioInfo?.mensaje || 'Espacio no encontrado', 'error');
+                return;
+            }
+
+            // Verificar si está disponible
+            if (!espacioInfo.disponible) {
+                Swal.fire('Espacio Ocupado', `El espacio ${espacioInfo.espacio.nombre} está ocupado`, 'info');
+                esperandoProfesor = true;
+                return;
+            }
+
+            // Crear reserva
+            const reserva = await crearReserva(profesorEscaneado, espacio);
+            if (!reserva || !reserva.success) {
+                Swal.fire('Error', reserva?.mensaje || 'Error al crear reserva', 'error');
+                return;
+            }
+
+            // Reserva exitosa
+            Swal.fire('¡Reserva exitosa!', '', 'success');
+            document.getElementById('qr-status').innerHTML = 'Reserva exitosa';
+            document.getElementById('nombre-espacio').textContent = espacioInfo.espacio.nombre;
+
+            // Actualizar indicador en el mapa
+            const block = state.indicators.find(b => b.id === espacio);
+            if (block) {
+                block.estado = '#FF0000'; // Rojo = Ocupado
+                state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                drawIndicators();
+            }
+
+            // Volver a esperar profesor
+            esperandoProfesor = true;
         }
 
         // ========================================
@@ -1002,83 +1055,45 @@
         // FUNCIÓN PARA DIBUJAR TODOS LOS INDICADORES
         // ========================================
         function drawIndicators() {
-            if (!state.isImageLoaded) {
-                console.log('⚠️ Imagen no cargada, no se pueden dibujar indicadores');
+            if (!state.isImageLoaded || !elements.indicatorsCanvas) {
                 return;
             }
 
-            // Limpiar el canvas de indicadores
-            elements.indicatorsCtx.clearRect(0, 0, elements.indicatorsCanvas.width, elements.indicatorsCanvas.height);
+            const ctx = elements.indicatorsCanvas.getContext('2d');
+            ctx.clearRect(0, 0, elements.indicatorsCanvas.width, elements.indicatorsCanvas.height);
 
-            // Verificar que state.indicators existe y es un array
-            if (!state.indicators || !Array.isArray(state.indicators)) {
-                console.warn('⚠️ state.indicators no está definido o no es un array:', state.indicators);
-                return;
-            }
-
-            console.log(`🎨 Dibujando ${state.indicators.length} indicadores...`);
-
-            // Dibujar cada indicador
             state.indicators.forEach((indicator, index) => {
                 const position = calculatePosition(indicator);
+                
+                const size = config.indicatorSize;
 
-                // Normalizar el color según el estado
+                // Determinar color basado en el estado
                 let color = indicator.estado;
-                console.log(
-                    `📍 Indicador ${indicator.id} (${index + 1}/${state.indicators.length}): estado original = "${color}"`
-                );
 
-                // Si el estado es un color hexadecimal, usarlo directamente
-                if (color && color.startsWith('#')) {
-                    console.log(`🎨 Indicador ${indicator.id}: usando color hexadecimal ${color}`);
+                // Convertir estado a minúsculas para comparación
+                const estadoLower = indicator.estado.toLowerCase();
+
+                if (estadoLower === 'disponible' || estadoLower === 'libre') {
+                    color = '#059669'; // Verde
+                } else if (estadoLower === 'ocupado') {
+                    color = '#FF0000'; // Rojo
+                } else if (estadoLower === 'reservado') {
+                    color = '#F59E0B'; // Naranja
+                } else if (estadoLower === 'proximo') {
+                    color = '#3B82F6'; // Azul
                 } else {
-                    // Convertir estados textuales a colores
-                    const estadoLower = color ? color.toLowerCase() : '';
-                    console.log(`🔍 Indicador ${indicator.id}: estado en minúsculas = "${estadoLower}"`);
-
-                    switch (estadoLower) {
-                        case 'disponible':
-                        case 'available':
-                            color = '#059669'; // Verde
-                            console.log(`🟢 Indicador ${indicator.id}: aplicando verde (disponible)`);
-                            break;
-                        case 'ocupado':
-                        case 'rojo':
-                        case 'red':
-                        case 'occupied':
-                            color = '#FF0000'; // Rojo
-                            console.log(`🔴 Indicador ${indicator.id}: aplicando rojo (ocupado)`);
-                            break;
-                        case 'reservado':
-                        case 'amarillo':
-                        case 'yellow':
-                        case 'reserved':
-                            color = '#FFA500'; // Naranja
-                            console.log(`🟠 Indicador ${indicator.id}: aplicando naranja (reservado)`);
-                            break;
-                        case 'proximo':
-                        case 'azul':
-                        case 'blue':
-                        case 'next':
-                            color = '#3B82F6'; // Azul
-                            console.log(`🔵 Indicador ${indicator.id}: aplicando azul (próximo)`);
-                            break;
-                        default:
-                            // Si no hay estado o es desconocido, usar verde por defecto
-                            color = '#059669'; // Verde
-                            console.log(`🟢 Indicador ${indicator.id}: aplicando verde por defecto`);
-                    }
+                    color = '#059669'; // Verde por defecto
                 }
 
-                console.log(`✅ Indicador ${indicator.id}: color final = "${color}"`);
-
+                // Verificar si este indicador está siendo hover
                 const isHovered = state.hoveredIndicator && state.hoveredIndicator.id === indicator.id;
 
+                // Usar la función dibujarIndicador existente
                 dibujarIndicador(
                     elements,
                     position,
-                    config.indicatorWidth,
-                    config.indicatorHeight,
+                    size,
+                    size,
                     color,
                     indicator.id,
                     isHovered,
@@ -1086,18 +1101,6 @@
                     null
                 );
             });
-
-            console.log('✅ Todos los indicadores han sido dibujados');
-
-            // Mostrar resumen de estados cada 10 actualizaciones para no saturar la consola
-            if (!state.contadorActualizaciones) {
-                state.contadorActualizaciones = 0;
-            }
-            state.contadorActualizaciones++;
-
-            if (state.contadorActualizaciones % 10 === 0) {
-                mostrarResumenEstados();
-            }
         }
 
         // ========================================
@@ -1712,7 +1715,6 @@
             }
 
             // Actualizar colores de los indicadores desde el servidor
-            console.log('🔄 Actualizando módulo y colores de espacios...');
             await actualizarColoresEspacios();
         }
 
@@ -1876,91 +1878,46 @@
         }
 
         // ========================================
-        // Función para sincronizar colores después de cargar la imagen
-        async function sincronizarColoresDespuesCarga() {
-            // Obtener datos actualizados del servidor después de cargar la imagen
-            console.log('Sincronizando colores después de cargar la imagen');
-            await actualizarColoresEspacios();
-        }
-
-        // Función para actualizar colores de espacios
+        // FUNCIÓN PARA ACTUALIZAR COLORES DE ESPACIOS
+        // ========================================
         async function actualizarColoresEspacios() {
-            try {
-                console.log('🔄 Iniciando actualización de colores para mapaId:', mapaId);
+            // Verificar si ha habido cambios locales recientes
+            const tiempoTranscurrido = Date.now() - (state.ultimoCambioLocal || 0);
+            if (tiempoTranscurrido < 10000) { // 10 segundos
+                return;
+            }
 
-                // Verificar si hay cambios locales recientes (menos de 10 segundos)
-                if (state.lastLocalChange && (Date.now() - state.lastLocalChange) < 10000) {
-                    console.log('⏭️ Ignorando actualización del servidor debido a cambios locales recientes');
+            try {
+                const response = await fetch(`/plano/${mapaId}/bloques`);
+                if (!response.ok) {
                     return;
                 }
 
-                // Obtener datos actualizados del servidor
-                const response = await fetch(`/plano/${encodeURIComponent(mapaId)}/bloques`);
-                console.log('📡 Respuesta del servidor:', response.status, response.statusText);
+                const data = await response.json();
+                if (!data.bloques || !Array.isArray(data.bloques)) {
+                    return;
+                }
 
-                if (response.ok) {
-                    const data = await response.json();
-                    console.log('📊 Datos recibidos del servidor:', data);
+                let cambiosDetectados = [];
 
-                    // Verificar que data.bloques existe y es un array
-                    if (!data.bloques || !Array.isArray(data.bloques)) {
-                        console.error('❌ La respuesta no contiene data.bloques válido:', data);
-                        return;
-                    }
-
-                    // Verificar si hay cambios en los indicadores antes de actualizar
-                    let hayCambios = false;
-                    let cambiosDetectados = [];
-
-                    if (state.indicators && state.indicators.length > 0) {
-                        data.bloques.forEach((nuevoBloque, index) => {
-                            const bloqueActual = state.indicators[index];
-                            if (!bloqueActual ||
-                                bloqueActual.estado !== nuevoBloque.estado ||
-                                bloqueActual.nombre !== nuevoBloque.nombre) {
-                                hayCambios = true;
-                                cambiosDetectados.push({
-                                    id: nuevoBloque.id,
-                                    estadoAnterior: bloqueActual?.estado,
-                                    estadoNuevo: nuevoBloque.estado
-                                });
-                                console.log(`🔄 Cambio detectado en bloque ${nuevoBloque.id}:`, {
-                                    estadoAnterior: bloqueActual?.estado,
-                                    estadoNuevo: nuevoBloque.estado,
-                                    nombreAnterior: bloqueActual?.nombre,
-                                    nombreNuevo: nuevoBloque.nombre
-                                });
-                            }
+                data.bloques.forEach(nuevoBloque => {
+                    const bloqueExistente = state.indicators.find(b => b.id === nuevoBloque.id);
+                    if (bloqueExistente && bloqueExistente.estado !== nuevoBloque.estado) {
+                        bloqueExistente.estado = nuevoBloque.estado;
+                        cambiosDetectados.push({
+                            id: nuevoBloque.id,
+                            estadoAnterior: bloqueExistente.estado,
+                            estadoNuevo: nuevoBloque.estado
                         });
-                    } else {
-                        hayCambios = true; // Primera carga
                     }
+                });
 
-                    if (hayCambios) {
-                        // Actualizar los indicadores con los nuevos datos
-                        state.indicators = data.bloques;
-                        console.log('✅ Indicadores actualizados:', state.indicators);
-
-                        // Redibujar los indicadores con los nuevos colores
-                        drawIndicators();
-                        console.log('🎨 Colores actualizados desde el servidor');
-
-                        // Mostrar información sobre los cambios si es una actualización manual
-                        if (cambiosDetectados.length > 0) {
-                            console.log(`📊 Se actualizaron ${cambiosDetectados.length} espacios:`, cambiosDetectados);
-                        }
-                    } else {
-                        console.log('✅ No hay cambios en los estados de los espacios');
-                    }
-                } else {
-                    console.error('❌ Error en la respuesta del servidor:', response.status, response.statusText);
-                    const errorText = await response.text();
-                    console.error('📄 Detalles del error:', errorText);
-                    throw new Error(`Error del servidor: ${response.status} ${response.statusText}`);
+                if (cambiosDetectados.length > 0) {
+                    state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                    drawIndicators();
                 }
             } catch (error) {
-                console.error('💥 Error al actualizar colores de espacios:', error);
-                throw error; // Re-lanzar el error para que se maneje en la función llamadora
+                // Error silencioso para no saturar la consola
             }
         }
 
@@ -2003,21 +1960,14 @@
 
         // ========================================
         // FUNCIÓN PARA FORZAR ACTUALIZACIÓN DE ESTADOS
+
+
         // ========================================
-        async function forzarActualizacionEstados() {
-            console.log('🚀 Forzando actualización de estados...');
-            mostrarEstadoActualizacion('🔄 Actualizando estados de espacios...', 'info');
-
-            // Limpiar el timestamp de cambios locales para permitir actualización
-            state.lastLocalChange = null;
-
-            try {
-                await actualizarColoresEspacios();
-                mostrarEstadoActualizacion('✅ Estados actualizados correctamente', 'success');
-            } catch (error) {
-                console.error('Error al forzar actualización:', error);
-                mostrarEstadoActualizacion('❌ Error al actualizar estados', 'error');
-            }
+        // FUNCIÓN PARA SINCRONIZAR COLORES DESPUÉS DE CARGA
+        // ========================================
+        function sincronizarColoresDespuesCarga() {
+            // Esta función se ejecuta después de que la imagen se carga
+            // para asegurar que los colores estén sincronizados
         }
 
         // ========================================
@@ -2049,6 +1999,7 @@
         // INICIALIZACIÓN PRINCIPAL UNIFICADA
         // ========================================
         document.addEventListener("DOMContentLoaded", function() {
+            
             // Configurar el input del escáner QR
             const inputEscanner = document.getElementById('qr-input');
             if (inputEscanner) {
@@ -2061,6 +2012,7 @@
             }
             // Inicializar elementos del canvas
             initElements();
+            
             // Agregar event listeners para los eventos de mouse en el canvas
             if (elements.indicatorsCanvas) {
                 elements.indicatorsCanvas.addEventListener('mousemove', handleMouseMove);
@@ -2141,33 +2093,11 @@
                 });
             }
 
-            // Configurar botón de actualización manual
-            const refreshBtn = document.getElementById('refreshBtn');
-            if (refreshBtn) {
-                refreshBtn.addEventListener('click', async function() {
-                    // Agregar efecto visual de carga
-                    const icon = refreshBtn.querySelector('svg');
-                    icon.style.transform = 'rotate(360deg)';
-                    icon.style.transition = 'transform 0.5s ease-in-out';
 
-                    await forzarActualizacionEstados();
-
-                    // Restaurar el ícono
-                    setTimeout(() => {
-                        icon.style.transform = 'rotate(0deg)';
-                    }, 500);
-                });
-            }
 
             // Hacer funciones disponibles globalmente para debugging
             window.mostrarResumenEstados = mostrarResumenEstados;
-            window.forzarActualizacionEstados = forzarActualizacionEstados;
             window.actualizarColoresEspacios = actualizarColoresEspacios;
-
-            console.log('🔧 Funciones de debugging disponibles:');
-            console.log('  - window.mostrarResumenEstados() - Muestra resumen de estados');
-            console.log('  - window.forzarActualizacionEstados() - Fuerza actualización');
-            console.log('  - window.actualizarColoresEspacios() - Actualiza colores');
         });
 
         // ========================================
@@ -2211,7 +2141,6 @@
         // FUNCIÓN PARA MANEJAR EL ESCANEO DE SALIDA
         // ========================================
         function onSalidaProfesorScanSuccess(decodedText) {
-            console.log('QR Salida Profesor:', decodedText);
             if (html5QrcodeScanner) {
                 html5QrcodeScanner.stop();
                 html5QrcodeScanner = null;
@@ -2406,11 +2335,6 @@
         if (!state.originalCoordinates || !Array.isArray(state.originalCoordinates)) {
             state.originalCoordinates = [];
         }
-
-        // Log para debuggear la inicialización de indicators
-        console.log('Estado inicial de indicators:', state.indicators);
-        console.log('Tipo de indicators:', typeof state.indicators);
-        console.log('Es array:', Array.isArray(state.indicators));
 
         // ========================================
 
@@ -2631,7 +2555,6 @@
         // ========================================
         function mostrarResumenEstados() {
             if (!state.indicators || !Array.isArray(state.indicators)) {
-                console.log('⚠️ No hay indicadores disponibles para mostrar resumen');
                 return;
             }
 
@@ -2658,15 +2581,6 @@
                     resumen.sinEstado++;
                 }
             });
-
-            console.log('📊 RESUMEN DE ESTADOS DE ESPACIOS:');
-            console.log(`📈 Total de espacios: ${resumen.total}`);
-            console.log(`🟢 Disponibles: ${resumen.disponibles}`);
-            console.log(`🔴 Ocupados: ${resumen.ocupados}`);
-            console.log(`🟠 Reservados: ${resumen.reservados}`);
-            console.log(`🔵 Próximos: ${resumen.proximos}`);
-            console.log(`⚪ Sin estado: ${resumen.sinEstado}`);
-            console.log('📊 FIN RESUMEN');
 
             return resumen;
         }
@@ -2705,20 +2619,16 @@
 
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('Respuesta del endpoint modulos-disponibles:', data);
 
                     if (data.success) {
                         return data.max_modulos || 1;
                     } else {
-                        console.warn('No hay módulos disponibles:', data.mensaje);
                         return 1;
                     }
                 } else {
-                    console.error('Error en la respuesta del servidor:', response.status);
                     return 1;
                 }
             } catch (error) {
-                console.error('Error al calcular módulos disponibles:', error);
                 return 1;
             }
         }

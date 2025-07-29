@@ -167,4 +167,12 @@ class ModulosActualesTable extends Component
     {
         $this->actualizarDatos();
     }
+
+    public function getModuloActual()
+    {
+        if ($this->moduloActual) {
+            return $this->moduloActual->numero_modulo ?? 'N/A';
+        }
+        return null;
+    }
 } 

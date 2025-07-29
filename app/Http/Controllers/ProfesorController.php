@@ -10,11 +10,7 @@ class ProfesorController extends Controller
     public function getProfesor($run)
     {
         try {
-            $profesor = User::where('run', $run)
-                ->whereHas('roles', function($query) {
-                    $query->where('name', 'Profesor');
-                })
-                ->first();
+            $profesor = \App\Models\Profesor::where('run_profesor', $run)->first();
 
             if (!$profesor) {
                 return response()->json([
@@ -28,7 +24,7 @@ class ProfesorController extends Controller
                 'profesor' => [
                     'name' => $profesor->name,
                     'email' => $profesor->email,
-                    'run' => $profesor->run
+                    'run_profesor' => $profesor->run_profesor
                 ]
             ]);
         } catch (\Exception $e) {

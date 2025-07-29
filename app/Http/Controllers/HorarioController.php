@@ -72,6 +72,41 @@ class HorarioController extends Controller
         }
     }
 
+    public function verificarProfesor($run)
+    {
+        try {
+            // Verificar en la tabla de profesores
+            $profesor = \App\Models\Profesor::select('run_profesor', 'name', 'email', 'celular', 'tipo_profesor')->where('run_profesor', $run)->first();
+
+            if ($profesor) {
+                return response()->json([
+                    'verificado' => true,
+                    'profesor' => [
+                        'run_profesor' => $profesor->run_profesor,
+                        'name' => $profesor->name,
+                        'email' => $profesor->email,
+                        'telefono' => $profesor->celular,
+                        'tipo_profesor' => $profesor->tipo_profesor
+                    ],
+                    'mensaje' => 'Profesor verificado correctamente'
+                ]);
+            }
+
+            // Si no está en la tabla de profesores
+            return response()->json([
+                'verificado' => false,
+                'run_escaneado' => $run,
+                'mensaje' => 'Profesor no encontrado en la base de datos.'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'verificado' => false,
+                'mensaje' => 'Error al verificar profesor: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function verificarEspacio($idEspacio)
     {
         try {
@@ -213,10 +248,10 @@ class HorarioController extends Controller
                     
                     return response()->json([
                         'success' => false,
-                        'mensaje' => "Hola {$clasesProgramadas['usuario']['nombre']}, tienes clase de '{$clasesProgramadas['proxima_clase']['asignatura']}' programada en el espacio '{$clasesProgramadas['proxima_clase']['espacio']['nombre']}' a las {$clasesProgramadas['proxima_clase']['hora_inicio']}. ¿Desea solicitar las llaves de su espacio programado?",
+                        'mensaje' => "Hola {$clasesProgramadas['profesor']['nombre']}, tienes clase de '{$clasesProgramadas['proxima_clase']['asignatura']}' programada en el espacio '{$clasesProgramadas['proxima_clase']['espacio']['nombre']}' a las {$clasesProgramadas['proxima_clase']['hora_inicio']}. ¿Desea solicitar las llaves de su espacio programado?",
                         'tipo' => 'clase_programada',
                         'clase_programada' => $clasesProgramadas['proxima_clase'],
-                        'usuario' => $clasesProgramadas['usuario'],
+                        'profesor' => $clasesProgramadas['profesor'],
                         'espacio_correcto' => $espacioProgramado
                     ]);
                 } else {
@@ -234,15 +269,15 @@ class HorarioController extends Controller
             // ========================================
             
             // 1. Verificar si el usuario ya tiene una reserva activa en cualquier sala
-            $reservaActivaUsuario = Reserva::where('run', $request->run)
+            $reservaActivaUsuario = Reserva::where('run_profesor', $request->run)
                 ->where('estado', 'activa')
                 ->whereNull('hora_salida')
                 ->first();
 
             if ($reservaActivaUsuario) {
                 DB::rollBack();
-                \Log::warning('Usuario ya tiene reserva activa:', [
-                    'run' => $request->run,
+                \Log::warning('Profesor ya tiene reserva activa:', [
+                    'run_profesor' => $request->run,
                     'reserva_id' => $reservaActivaUsuario->id_reserva,
                     'espacio_actual' => $reservaActivaUsuario->id_espacio,
                     'fecha_reserva' => $reservaActivaUsuario->fecha_reserva
@@ -266,14 +301,14 @@ class HorarioController extends Controller
             }
 
             // 2. Verificar si el usuario ya tiene una reserva pendiente para el mismo día
-            $reservaPendienteHoy = Reserva::where('run', $request->run)
+            $reservaPendienteHoy = Reserva::where('run_profesor', $request->run)
                 ->where('fecha_reserva', $fechaActual)
                 ->where('estado', 'activa')
                 ->exists();
 
             if ($reservaPendienteHoy) {
                 DB::rollBack();
-                \Log::warning('Usuario ya tiene reserva pendiente para hoy:', ['run' => $request->run, 'fecha' => $fechaActual]);
+                \Log::warning('Profesor ya tiene reserva pendiente para hoy:', ['run_profesor' => $request->run, 'fecha' => $fechaActual]);
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'Ya tienes una reserva pendiente para hoy. Solo puedes tener una reserva por día.',
@@ -282,15 +317,15 @@ class HorarioController extends Controller
             }
 
             // 3. Verificar si el usuario ha excedido el límite de reservas diarias (opcional)
-            $reservasHoy = Reserva::where('run', $request->run)
+            $reservasHoy = Reserva::where('run_profesor', $request->run)
                 ->where('fecha_reserva', $fechaActual)
                 ->count();
 
             $limiteReservasDiarias = 3; // Puedes ajustar este límite según tus necesidades
             if ($reservasHoy >= $limiteReservasDiarias) {
                 DB::rollBack();
-                \Log::warning('Usuario ha excedido el límite de reservas diarias:', [
-                    'run' => $request->run, 
+                \Log::warning('Profesor ha excedido el límite de reservas diarias:', [
+                    'run_profesor' => $request->run, 
                     'reservas_hoy' => $reservasHoy,
                     'limite' => $limiteReservasDiarias
                 ]);
@@ -310,7 +345,7 @@ class HorarioController extends Controller
             ]);
 
             // 4. Verificar que el usuario no esté intentando reservar el mismo espacio que ya tiene reservado
-            $reservaMismoEspacio = Reserva::where('run', $request->run)
+            $reservaMismoEspacio = Reserva::where('run_profesor', $request->run)
                 ->where('id_espacio', $request->id_espacio)
                 ->where('fecha_reserva', $fechaActual)
                 ->where('estado', 'activa')
@@ -436,7 +471,7 @@ class HorarioController extends Controller
             $reserva->hora = $horaInicio;
             $reserva->fecha_reserva = $fechaActual;
             $reserva->id_espacio = $request->id_espacio;
-            $reserva->run = $request->run;
+            $reserva->run_profesor = $request->run;
             $reserva->tipo_reserva = 'directa';
             $reserva->estado = 'activa';
             $reserva->hora_salida = $horaFin;
@@ -445,7 +480,7 @@ class HorarioController extends Controller
             \Log::info('Reserva creada exitosamente:', [
                 'id_reserva' => $reserva->id_reserva,
                 'espacio_id' => $reserva->id_espacio,
-                'run' => $reserva->run
+                'run_profesor' => $reserva->run_profesor
             ]);
 
             \Log::info('Estado del espacio antes de actualizar:', ['estado' => $espacio->estado]);
@@ -841,11 +876,10 @@ class HorarioController extends Controller
                 ];
             }
 
-            // Obtener información del usuario
-            $usuario = User::where('run', $run)->first();
-            $usuarioNoRegistrado = UsuarioNoRegistrado::where('run', $run)->first();
+            // Obtener información del profesor
+            $profesor = \App\Models\Profesor::where('run_profesor', $run)->first();
             
-            $nombreUsuario = $usuario ? $usuario->name : ($usuarioNoRegistrado ? $usuarioNoRegistrado->nombre : 'Usuario');
+            $nombreProfesor = $profesor ? $profesor->name : 'Profesor';
 
             // Buscar la próxima clase (módulo más cercano)
             $proximaClase = $clasesProgramadas->sortBy(function($clase) {
@@ -858,10 +892,10 @@ class HorarioController extends Controller
 
             return [
                 'tiene_clases' => true,
-                'usuario' => [
-                    'run' => $run,
-                    'nombre' => $nombreUsuario,
-                    'tipo' => $usuario ? 'registrado' : 'no_registrado'
+                'profesor' => [
+                    'run_profesor' => $run,
+                    'nombre' => $nombreProfesor,
+                    'tipo' => 'profesor'
                 ],
                 'proxima_clase' => [
                     'modulo' => $proximaClase->id_modulo,

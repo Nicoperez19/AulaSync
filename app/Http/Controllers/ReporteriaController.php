@@ -1016,7 +1016,7 @@ class ReporteriaController extends Controller
      */
     public function obtenerAccesosRegistrados($fechaInicio, $fechaFin, $piso = null, $tipoUsuario = null, $espacio = null)
     {
-        $query = Reserva::with(['user', 'espacio.piso.facultad'])
+        $query = Reserva::with(['profesor', 'espacio.piso.facultad'])
             ->whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
             ->whereIn('estado', ['activa', 'finalizada']) // Mostrar activas y finalizadas
             ->whereNotNull('hora') // Solo las que tienen hora de entrada (escaneo QR)
@@ -1032,7 +1032,7 @@ class ReporteriaController extends Controller
 
         // Filtrar por tipo de usuario
         if (!empty($tipoUsuario)) {
-            $query->whereHas('user', function ($q) use ($tipoUsuario) {
+            $query->whereHas('profesor', function ($q) use ($tipoUsuario) {
                 if ($tipoUsuario === 'profesor') {
                     $q->whereNotNull('tipo_profesor');
                 } elseif ($tipoUsuario === 'estudiante') {
@@ -1055,10 +1055,10 @@ class ReporteriaController extends Controller
         return $query->get()->map(function ($reserva) {
             return [
                 'id' => $reserva->id_reserva,
-                'usuario' => $reserva->user->name ?? 'Usuario no encontrado',
-                'run' => $reserva->user->run ?? 'N/A',
-                'email' => $reserva->user->email ?? 'N/A',
-                'tipo_usuario' => $this->determinarTipoUsuario($reserva->user),
+                'usuario' => $reserva->profesor->name ?? 'Profesor no encontrado',
+                'run' => $reserva->profesor->run_profesor ?? 'N/A',
+                'email' => $reserva->profesor->email ?? 'N/A',
+                'tipo_usuario' => $this->determinarTipoUsuario($reserva->profesor),
                 'espacio' => $reserva->espacio->nombre_espacio ?? 'Espacio no encontrado',
                 'id_espacio' => $reserva->espacio->id_espacio ?? '',
                 'piso' => $reserva->espacio->piso->numero_piso ?? 'N/A',
@@ -1077,22 +1077,14 @@ class ReporteriaController extends Controller
     /**
      * Determinar el tipo de usuario basado en los campos del modelo
      */
-    private function determinarTipoUsuario($user)
+    private function determinarTipoUsuario($profesor)
     {
-        if (!$user) {
+        if (!$profesor) {
             return 'externo';
         }
 
-        if ($user->tipo_profesor) {
+        if ($profesor->tipo_profesor) {
             return 'profesor';
-        }
-
-        if ($user->id_carrera) {
-            return 'estudiante';
-        }
-
-        if ($user->id_facultad) {
-            return 'administrativo';
         }
 
         return 'externo';

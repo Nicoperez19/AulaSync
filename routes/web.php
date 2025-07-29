@@ -37,7 +37,7 @@ use Spatie\Permission\Middleware\RoleMiddleware;
 
 Route::get('/', function () {
     return view('auth/login');
-});
+})->middleware('guest');
 
 // Dashboard - Solo Administrador y Supervisor
 Route::middleware(['auth', 'permission:dashboard'])->group(function () {
