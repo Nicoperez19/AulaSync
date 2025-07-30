@@ -13,78 +13,95 @@
             </div>
         </div>
     </x-slot>
+
     <div class="p-6 bg-white rounded-lg shadow-lg">
-        <div class="flex justify-end mb-4">
-            <x-button variant="add" class="justify-end max-w-xs gap-2"
-                x-on:click.prevent="$dispatch('open-modal', 'add-permission')">
+        <div class="flex items-center justify-between mb-6">
+            <div class="w-2/3">
+                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Buscar por Nombre o ID"
+                    class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white">
+            </div>
+            <x-button variant="add" class="max-w-xs gap-2" x-on:click.prevent="$dispatch('open-modal', 'add-permission')">
                 <x-icons.add class="w-6 h-6" aria-hidden="true" />
+                Agregar Permiso
             </x-button>
         </div>
+
         <livewire:permissions-table />
 
-
         <x-modal name="add-permission" :show="$errors->any()" focusable>
-            <form method="POST" action="{{ route('permission.add') }}">
-                @csrf
-                @slot('title')
-                    <h1 class="text-lg font-medium text-white dark:text-gray-100">
-                        Agregar Permiso </h1>
-                @endslot
-                <div class="p-6 space-y-6">
-                    <div class="space-y-2">
-                        <x-form.label for="name_permission" :value="__('Nombre del Permiso')" class="text-left" />
-                        <x-form.input id="name_permission" class="block w-full" type="text" name="name" required
-                            autofocus placeholder="{{ __('Nombre del permiso') }}" />
+            @slot('title')
+                <div class="relative bg-red-700 p-2 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-red-100 rounded-full p-4">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl font-bold text-white">
+                            Agregar Permiso
+                        </h2>
                     </div>
-                    <div class="flex justify-end">
-                        <x-button class="justify-center w-full gap-2">
-                            <x-heroicon-o-user-add class="w-6 h-6" aria-hidden="true" />
-                            {{ __('Agregar Permiso') }}
-                        </x-button>
+                    <button @click="show = false" class="text-2xl font-bold text-white hover:text-gray-200 ml-2">&times;</button>
+                    <!-- Círculos decorativos -->
+                    <span class="absolute left-0 top-0 w-32 h-32 bg-white bg-opacity-10 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none"></span>
+                    <span class="absolute right-0 top-0 w-32 h-32 bg-white bg-opacity-10 rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none"></span>
+                </div>
+            @endslot
+
+            <form method="POST" action="{{ route('permission.add') }}" class="p-6">
+                @csrf
+                <div class="grid gap-4">
+                    <div class="space-y-2">
+                        <x-form.label for="name_permission" value="Nombre del Permiso *" />
+                        <x-form.input id="name_permission" name="name" type="text"
+                            class="w-full @error('name') border-red-500 @enderror" required maxlength="255"
+                            placeholder="Ej: mantenedor de usuarios" value="{{ old('name') }}" />
+                        @error('name')
+                            <p class="text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="flex justify-end mt-6">
+                        <x-button variant="success">{{ __('Crear Permiso') }}</x-button>
                     </div>
                 </div>
             </form>
         </x-modal>
     </div>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
-        @if (session('success'))
+        function searchTable() {
+            var input = document.getElementById("searchInput").value.toLowerCase();
+            var table = document.querySelector("table");
+            var rows = table.getElementsByTagName("tr");
+
+            for (var i = 1; i < rows.length; i++) {
+                var cells = rows[i].getElementsByTagName("td");
+                var id = cells[0].textContent.toLowerCase();
+                var name = cells[1].textContent.toLowerCase();
+
+                if (id.includes(input) || name.includes(input)) {
+                    rows[i].style.display = "";
+                } else {
+                    rows[i].style.display = "none";
+                }
+            }
+        }
+
+        function confirmDelete(id, name) {
             Swal.fire({
-                title: '¡Éxito!',
-                text: '{{ session('success') }}',
-                icon: 'success',
-                confirmButtonText: 'Aceptar'
-            });
-        @endif
-
-        @if (session('error'))
-            Swal.fire({
-                title: '¡Error!',
-                text: '{{ session('error') }}',
-                icon: 'error',
-                confirmButtonText: 'Aceptar'
-            });
-        @endif
-
-        const form = document.getElementById('edit-permission-form');
-
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-
-                Swal.fire({
-                    title: '¿Seguro de editar?',
-                    text: "Estás a punto de guardar los cambios.",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sí, editar',
-                    cancelButtonText: 'Cancelar',
-                    reverseButtons: true
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit();
-                    }
-                });
+                title: '¿Estás seguro?',
+                text: `Esta acción eliminará el permiso "${name}" y no se puede deshacer`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.getElementById('delete-form-' + id).submit();
+                }
             });
         }
     </script>

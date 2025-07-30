@@ -3,17 +3,17 @@
         <div class="flex flex-col gap-2 pr-6 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">
                 <div class="p-2 rounded-xl bg-light-cloud-blue">
-                    <i class="text-2xl text-white fa-solid fa-user-graduate"></i>
+                    <i class="text-2xl text-white fa-solid fa-building"></i>
                 </div>
 
                 <div>
-                    <h2 class="text-2xl font-bold leading-tight">Carreras</h2>
-                    <p class="text-sm text-gray-500">Administra las carreras disponibles en el sistema</p>
+                    <h2 class="text-2xl font-bold leading-tight">Campus</h2>
+                    <p class="text-sm text-gray-500">Administra los campus disponibles en el sistema</p>
                 </div>
             </div>
 
             <div class="flex items-center gap-2">
-                <x-button href="{{ route('careers.index') }}" 
+                <x-button href="{{ route('campus.index') }}" 
                    class="inline-flex items-center px-4 py-2 text-m font-medium border border-gray-300 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -25,35 +25,35 @@
     </x-slot>
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
-        <form id="edit-career-form" action="{{ route('careers.update', $carrera->id_carrera) }}" method="POST">
+        <form id="edit-campus-form" action="{{ route('campus.update', $campus->id_campus) }}" method="POST">
             @csrf
             @method('PUT')
 
             <div class="grid gap-4 p-4">
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                        <x-form.label for="id_carrera" :value="__('ID Carrera')" />
-                        <x-form.input id="id_carrera" class="block w-full" type="text" name="id_carrera"
-                            value="{{ old('id_carrera', $carrera->id_carrera) }}" required />
+                        <x-form.label for="id_campus" :value="__('ID Campus')" />
+                        <x-form.input id="id_campus" class="block w-full" type="text" name="id_campus"
+                            value="{{ old('id_campus', $campus->id_campus) }}" required />
                     </div>
 
                     <div>
-                        <x-form.label for="nombre" :value="__('Nombre Carrera')" />
-                        <x-form.input id="nombre" class="block w-full" type="text" name="nombre"
-                            value="{{ old('nombre', $carrera->nombre) }}" required />
+                        <x-form.label for="nombre_campus" :value="__('Nombre Campus')" />
+                        <x-form.input id="nombre_campus" class="block w-full" type="text" name="nombre_campus"
+                            value="{{ old('nombre_campus', $campus->nombre_campus) }}" required />
                     </div>
                 </div>
 
                 <div>
-                    <x-form.label for="id_area_academica" :value="__('Área Académica')" />
-                    <select name="id_area_academica" id="id_area_academica"
+                    <x-form.label for="id_sede" :value="__('Sede')" />
+                    <select name="id_sede" id="id_sede"
                         class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m"
                         required>
-                        <option value="" disabled>{{ __('Seleccionar Área Académica') }}</option>
-                        @foreach($areasAcademicas as $areaAcademica)
-                            <option value="{{ $areaAcademica->id_area_academica }}" 
-                                {{ $carrera->id_area_academica == $areaAcademica->id_area_academica ? 'selected' : '' }}>
-                                {{ $areaAcademica->nombre_area_academica }} - {{ $areaAcademica->facultad->nombre_facultad ?? 'Sin Facultad' }}
+                        <option value="" disabled>{{ __('Seleccionar Sede') }}</option>
+                        @foreach($sedes as $sede)
+                            <option value="{{ $sede->id_sede }}" 
+                                {{ $campus->id_sede == $sede->id_sede ? 'selected' : '' }}>
+                                {{ $sede->nombre_sede }} - {{ $sede->universidad->nombre_universidad }}
                             </option>
                         @endforeach
                     </select>
@@ -68,7 +68,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('edit-career-form');
+            const form = document.getElementById('edit-campus-form');
 
             if (form) {
                 form.addEventListener('submit', function(e) {
@@ -91,4 +91,4 @@
             }
         });
     </script>
-</x-app-layout>
+</x-app-layout> 

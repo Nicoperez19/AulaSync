@@ -38,7 +38,7 @@ class SpacesTable extends Component
     public function render()
     {
         $espacios = Espacio::query()
-            ->with('piso.facultad')
+            ->with('piso.facultad.sede')
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('id_espacio', 'like', '%' . $this->search . '%')
@@ -53,7 +53,27 @@ class SpacesTable extends Component
                       });
                 });
             })
-            ->orderBy($this->sortField, $this->sortDirection)
+            ->when($this->sortField, function ($query) {
+                switch ($this->sortField) {
+                    case 'id_espacio':
+                        $query->orderBy('id_espacio', $this->sortDirection);
+                        break;
+                    case 'nombre_espacio':
+                        $query->orderBy('nombre_espacio', $this->sortDirection);
+                        break;
+                    case 'tipo_espacio':
+                        $query->orderBy('tipo_espacio', $this->sortDirection);
+                        break;
+                    case 'estado':
+                        $query->orderBy('estado', $this->sortDirection);
+                        break;
+                    case 'puestos_disponibles':
+                        $query->orderBy('puestos_disponibles', $this->sortDirection);
+                        break;
+                    default:
+                        $query->orderBy('id_espacio', 'asc');
+                }
+            })
             ->paginate(10);  
 
         return view('livewire.spaces-table', compact('espacios'));

@@ -11,255 +11,129 @@
                     <p class="text-sm text-gray-500">Administra los usuarios registrados en el sistema</p>
                 </div>
             </div>
-
         </div>
     </x-slot>
 
-
     <div class="p-6 bg-white rounded-lg shadow-lg">
-        <div class="flex items-center justify-between mt-4">
-            <!-- Buscador pequeño a la izquierda -->
+        <div class="flex items-center justify-between mb-6">
             <div class="w-2/3">
                 <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Buscar por RUN o Nombre"
                     class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white">
             </div>
-            <x-button target="_blank" variant="add" class="max-w-xs gap-2"
-                x-on:click="$dispatch('open-modal', 'add-user')">
+            <x-button variant="add" class="max-w-xs gap-2" x-on:click="$dispatch('open-modal', 'add-user')">
                 <x-icons.add class="w-6 h-6" aria-hidden="true" />
+                Agregar Usuario
             </x-button>
-
         </div>
 
         <livewire:users-table />
 
         <x-modal name="add-user" :show="$errors->any()" focusable>
             @slot('title')
-            <h1 class="text-lg font-medium text-white dark:text-gray-100">
-                Agregar Usuario </h1>
+                <div class="relative bg-red-700 p-2 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-red-100 rounded-full p-4">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl font-bold text-white">
+                            Agregar Usuario
+                        </h2>
+                    </div>
+                    <button @click="show = false" class="text-2xl font-bold text-white hover:text-gray-200 ml-2">&times;</button>
+                    <!-- Círculos decorativos -->
+                    <span class="absolute left-0 top-0 w-32 h-32 bg-white bg-opacity-10 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none"></span>
+                    <span class="absolute right-0 top-0 w-32 h-32 bg-white bg-opacity-10 rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none"></span>
+                </div>
             @endslot
 
-            <form id="add-user-form" method="POST" action="{{ route('users.add') }}" class="needs-validation"
-                novalidate>
+            <form id="add-user-form" method="POST" action="{{ route('users.add') }}" class="needs-validation p-6" novalidate>
                 @csrf
-                <div class="grid gap-6 p-6">
-                    <!-- Campo RUN -->
-                    <div class="space-y-2">
-                        <x-form.label for="run_add" :value="__('RUN')" class="text-left" />
-                        <x-form.input id="run_add" class="block w-full" type="text" name="run"
-                            value="{{ old('run', '') }}" placeholder="RUN" maxlength="8" pattern="[0-9]*"
-                            oninput="this.value = this.value.replace(/[^0-9]/g, '')" required />
-                        <div id="run-error" class="mt-1 text-xs text-red-500"></div>
+                <div class="grid gap-4">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div class="space-y-2">
+                            <x-form.label for="run_add" value="RUN *" />
+                            <x-form.input id="run_add" name="run" type="text"
+                                class="w-full @error('run') border-red-500 @enderror" required maxlength="8" pattern="[0-9]*"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '')" placeholder="Ej: 12345678"
+                                value="{{ old('run', '') }}" />
+                            @error('run')
+                                <p class="text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="space-y-2">
+                            <x-form.label for="name_add" value="Nombre *" />
+                            <x-form.input id="name_add" name="name" type="text"
+                                class="w-full @error('name') border-red-500 @enderror" required
+                                placeholder="Ej: Juan Pérez" value="{{ old('name', '') }}" />
+                            @error('name')
+                                <p class="text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
 
-                    <!-- Campo Nombre -->
-                    <div class="space-y-2">
-                        <x-form.label for="name_add" :value="__('Nombre')" class="text-left" />
-                        <x-form.input id="name_add" class="block w-full" type="text" name="name"
-                            value="{{ old('name', '') }}" placeholder="Nombre" required />
-                        <div id="name-error" class="mt-1 text-xs text-red-500"></div>
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div class="space-y-2">
+                            <x-form.label for="email_add" value="Correo *" />
+                            <x-form.input id="email_add" name="email" type="email"
+                                class="w-full @error('email') border-red-500 @enderror" required
+                                placeholder="Ej: juan.perez@email.com" value="{{ old('email', '') }}" />
+                            @error('email')
+                                <p class="text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="space-y-2">
+                            <x-form.label for="celular_add" value="Celular" />
+                            <x-form.input id="celular_add" name="celular" type="text"
+                                class="w-full @error('celular') border-red-500 @enderror" maxlength="9"
+                                pattern="9[0-9]{8}" oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                placeholder="Ej: 912345678" value="{{ old('celular', '') }}" />
+                            @error('celular')
+                                <p class="text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
 
-                    <!-- Campo Correo -->
                     <div class="space-y-2">
-                        <x-form.label for="email_add" :value="__('Correo')" class="text-left" />
-                        <x-form.input id="email_add" class="block w-full" type="email" name="email"
-                            value="{{ old('email', '') }}" placeholder="Correo" required />
-                        <div id="email-error" class="mt-1 text-xs text-red-500"></div>
+                        <x-form.label for="password_add" value="Contraseña *" />
+                        <x-form.input id="password_add" name="password" type="password"
+                            class="w-full @error('password') border-red-500 @enderror" required minlength="8"
+                            placeholder="Mínimo 8 caracteres" />
+                        @error('password')
+                            <p class="text-sm text-red-600">{{ $message }}</p>
+                        @enderror
                     </div>
 
-                    <!-- Campo Celular -->
-                    <div class="space-y-2">
-                        <x-form.label for="celular_add" :value="__('Celular')" class="text-left" />
-                        <x-form.input id="celular_add" class="block w-full" type="text" name="celular"
-                            value="{{ old('celular', '') }}" placeholder="Celular (opcional)" maxlength="9"
-                            pattern="9[0-9]{8}" oninput="this.value = this.value.replace(/[^0-9]/g, '')" />
-                        <div id="celular-error" class="mt-1 text-xs text-red-500"></div>
-                    </div>
-
-                    <!-- Campo Dirección -->
-                    <div class="space-y-2">
-                        <x-form.label for="direccion_add" :value="__('Dirección')" class="text-left" />
-                        <x-form.input id="direccion_add" class="block w-full" type="text" name="direccion"
-                            value="{{ old('direccion', '') }}" placeholder="Dirección (opcional)" />
-                        <div id="direccion-error" class="mt-1 text-xs text-red-500"></div>
-                    </div>
-
-                    <!-- Campo Fecha de Nacimiento -->
-                    <div class="space-y-2">
-                        <x-form.label for="fecha_nacimiento_add" :value="__('Fecha de Nacimiento')" class="text-left" />
-                        <x-form.input id="fecha_nacimiento_add" class="block w-full" type="date" name="fecha_nacimiento"
-                            value="{{ old('fecha_nacimiento', '') }}" />
-                        <div id="fecha_nacimiento-error" class="mt-1 text-xs text-red-500"></div>
-                    </div>
-
-                    <!-- Año de Ingreso como select -->
-                    <div class="space-y-2">
-                        <x-form.label for="anio_ingreso_add" :value="__('Año de Ingreso')" class="text-left" />
-                        <select id="anio_ingreso_add" name="anio_ingreso"
-                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                            <option value="">Seleccione un año (opcional)</option>
-                            @foreach ($years as $year)
-                                <option value="{{ $year }}" {{ old('anio_ingreso') == $year ? 'selected' : '' }}>{{ $year }}
-                                </option>
-                            @endforeach
-                        </select>
-                        <div id="anio_ingreso-error" class="mt-1 text-xs text-red-500"></div>
-                    </div>
-
-                    <!-- Botón de Enviar -->
-                    <div>
-                        <x-button type="submit" variant="primary" class="justify-center w-full gap-2">
-                            <x-heroicon-o-user-add class="w-6 h-6" aria-hidden="true" />
-                            <span>{{ __('Agregar') }}</span>
-                        </x-button>
+                    <div class="flex justify-end mt-6">
+                        <x-button variant="success">{{ __('Crear Usuario') }}</x-button>
                     </div>
                 </div>
             </form>
         </x-modal>
-
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const form = document.getElementById('add-user-form');
-            const submitButton = form.querySelector('button[type="submit"]');
+        function searchTable() {
+            var input = document.getElementById("searchInput").value.toLowerCase();
+            var table = document.getElementById("user-table");
+            var rows = table.getElementsByTagName("tr");
 
-            // Función para validar el formulario
-            function validateForm() {
-                let isValid = true;
-                const requiredFields = ['run', 'name', 'email'];
+            for (var i = 1; i < rows.length; i++) {
+                var cells = rows[i].getElementsByTagName("td");
+                var run = cells[0].textContent.toLowerCase();
+                var name = cells[1].textContent.toLowerCase();
+                var email = cells[2].textContent.toLowerCase();
 
-                // Limpiar mensajes de error anteriores
-                document.querySelectorAll('.text-red-500').forEach(el => el.textContent = '');
-
-                // Validar campos requeridos
-                requiredFields.forEach(field => {
-                    const input = form.querySelector(`[name="${field}"]`);
-                    const errorElement = document.getElementById(`${field}-error`);
-
-                    if (!input.value.trim()) {
-                        errorElement.textContent = 'Este campo es obligatorio';
-                        isValid = false;
-                    }
-                });
-
-                // Validar RUN
-                const run = form.querySelector('input[name="run"]').value;
-                if (run && !/^\d{7,8}$/.test(run)) {
-                    document.getElementById('run-error').textContent = 'El RUN debe ser un número de 7 u 8 dígitos';
-                    isValid = false;
+                if (run.includes(input) || name.includes(input) || email.includes(input)) {
+                    rows[i].style.display = "";
+                } else {
+                    rows[i].style.display = "none";
                 }
-
-                // Validar email
-                const email = form.querySelector('input[name="email"]').value;
-                if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-                    document.getElementById('email-error').textContent = 'Ingrese un correo electrónico válido';
-                    isValid = false;
-                }
-
-                // Validar celular solo si se ingresa
-                const celular = form.querySelector('input[name="celular"]').value;
-                if (celular && !/^9\d{8}$/.test(celular)) {
-                    document.getElementById('celular-error').textContent =
-                        'El celular debe comenzar con 9 y tener 9 dígitos';
-                    isValid = false;
-                }
-
-                return isValid;
             }
-
-            form.addEventListener('submit', async function (e) {
-                e.preventDefault();
-
-                if (!validateForm()) {
-                    return;
-                }
-
-                submitButton.disabled = true;
-                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-
-                try {
-                    const formData = new FormData(form);
-                    const response = await fetch(form.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        Swal.fire({
-                            title: '¡Éxito!',
-                            text: data.message || 'Usuario creado exitosamente',
-                            icon: 'success'
-                        }).then(() => {
-                            window.location.reload();
-                        });
-                    } else {
-                        let errorMessage = 'Ha ocurrido un error';
-                        if (data.errors) {
-                            // Traducir mensajes de error comunes
-                            const errorTranslations = {
-                                'validation.required': 'Este campo es obligatorio',
-                                'validation.email': 'Ingrese un correo electrónico válido',
-                                'validation.unique': 'Este valor ya está registrado',
-                                'validation.min': 'El valor debe tener al menos :min caracteres',
-                                'validation.max': 'El valor no debe exceder :max caracteres',
-                                'validation.numeric': 'Este campo debe ser numérico'
-                            };
-
-                            // Procesar errores y traducirlos
-                            const translatedErrors = {};
-                            Object.keys(data.errors).forEach(field => {
-                                // Tomar solo el primer error para cada campo
-                                const firstError = data.errors[field][0];
-                                for (const [key, translation] of Object.entries(
-                                    errorTranslations)) {
-                                    if (firstError.includes(key)) {
-                                        translatedErrors[field] = translation;
-                                        break;
-                                    }
-                                }
-                                if (!translatedErrors[field]) {
-                                    translatedErrors[field] = firstError;
-                                }
-                            });
-
-                            // Mostrar errores en los campos correspondientes
-                            Object.keys(translatedErrors).forEach(field => {
-                                const errorElement = document.getElementById(`${field}-error`);
-                                if (errorElement) {
-                                    errorElement.textContent = translatedErrors[field];
-                                }
-                            });
-
-                            // Mostrar solo el primer error en el SweetAlert
-                            errorMessage = Object.values(translatedErrors)[0];
-                        } else if (data.message) {
-                            errorMessage = data.message;
-                        }
-
-                        Swal.fire({
-                            title: 'Error',
-                            text: errorMessage,
-                            icon: 'error'
-                        });
-                    }
-                } catch (error) {
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'Ha ocurrido un error al procesar la solicitud',
-                        icon: 'error'
-                    });
-                } finally {
-                    submitButton.disabled = false;
-                    submitButton.innerHTML = 'Guardar';
-                }
-            });
-        });
+        }
 
         function deleteUser(run) {
             Swal.fire({
@@ -267,8 +141,8 @@
                 text: "Esta acción no se puede deshacer",
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
                 confirmButtonText: 'Sí, eliminar',
                 cancelButtonText: 'Cancelar'
             }).then((result) => {
@@ -277,31 +151,5 @@
                 }
             });
         }
-
-        function searchTable() {
-            const input = document.getElementById('searchInput');
-            const filter = input.value.toUpperCase();
-            const table = document.querySelector('table');
-            const tr = table.getElementsByTagName('tr');
-
-            for (let i = 1; i < tr.length; i++) {
-                const td = tr[i].getElementsByTagName('td');
-                let found = false;
-
-                for (let j = 0; j < td.length; j++) {
-                    const cell = td[j];
-                    if (cell) {
-                        const txtValue = cell.textContent || cell.innerText;
-                        if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-
-                tr[i].style.display = found ? '' : 'none';
-            }
-        }
     </script>
-
 </x-app-layout>

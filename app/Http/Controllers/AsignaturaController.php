@@ -83,7 +83,17 @@ class AsignaturaController extends Controller
      */
     public function edit(string $id)
     {
-        //
+        try {
+            $asignatura = Asignatura::findOrFail($id);
+            $profesores = Profesor::all();
+            $carreras = Carrera::all();
+            
+            return view('layouts.subjects.subject_edit', compact('asignatura', 'profesores', 'carreras'));
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->route('asignaturas.index')->withErrors(['error' => 'Asignatura no encontrada.']);
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Error al cargar la asignatura: ' . $e->getMessage()]);
+        }
     }
 
     /**
@@ -91,7 +101,40 @@ class AsignaturaController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        try {
+            $request->validate([
+                'id_asignatura' => 'required|string|max:20|unique:asignaturas,id_asignatura,' . $id . ',id_asignatura',
+                'codigo_asignatura' => 'required|string|max:100',
+                'nombre_asignatura' => 'required|string|max:100',
+                'seccion' => 'required|string|max:50',
+                'horas_directas' => 'nullable|integer|min:0',
+                'horas_indirectas' => 'nullable|integer|min:0',
+                'area_conocimiento' => 'nullable|string|max:100',
+                'periodo' => 'nullable|string|max:20',
+                'run_profesor' => 'required|exists:profesors,run_profesor',
+                'id_carrera' => 'required|exists:carreras,id_carrera',
+            ]);
+
+            $asignatura = Asignatura::findOrFail($id);
+            $asignatura->update([
+                'id_asignatura' => $request->id_asignatura,
+                'codigo_asignatura' => $request->codigo_asignatura,
+                'nombre_asignatura' => $request->nombre_asignatura,
+                'seccion' => $request->seccion,
+                'horas_directas' => $request->horas_directas,
+                'horas_indirectas' => $request->horas_indirectas,
+                'area_conocimiento' => $request->area_conocimiento,
+                'periodo' => $request->periodo,
+                'run_profesor' => $request->run_profesor,
+                'id_carrera' => $request->id_carrera,
+            ]);
+
+            return redirect()->route('asignaturas.index')->with('success', 'Asignatura actualizada exitosamente.');
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return redirect()->route('asignaturas.index')->withErrors(['error' => 'Asignatura no encontrada.']);
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Error al actualizar la asignatura: ' . $e->getMessage()]);
+        }
     }
 
     /**

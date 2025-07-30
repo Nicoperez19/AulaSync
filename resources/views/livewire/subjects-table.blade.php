@@ -29,28 +29,6 @@
 </style>
 
 <div>
-    <div class="mb-4">
-        <div class="flex flex-col gap-4 sm:flex-row">
-            <div class="relative flex-1">
-                <input type="text" wire:model.live="search" placeholder="Buscar asignaturas..."
-                    class="w-full px-4 py-2 pl-10 pr-4 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                <div class="absolute inset-y-0 left-0 flex items-center pl-3">
-                    <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                </div>
-            </div>
-
-            <div class="flex justify-end ">
-                <x-button x-on:click.prevent="$dispatch('open-modal', 'add-asignatura')" variant="add"
-                    class="max-w-xs gap-2">
-                    <x-icons.add class="w-6 h-6" aria-hidden="true" />
-                </x-button>
-            </div>
-        </div>
-    </div>
-
     <div class="mt-4 mb-4">
         {{ $asignaturas->links('vendor.pagination.tailwind') }}
     </div>
@@ -66,7 +44,6 @@
                     <th class="p-3" onclick="sortTable(3)">Sección <span class="sort-icon">▼</span></th>
                     <th class="p-3" onclick="sortTable(4)">Docente <span class="sort-icon">▼</span></th>
                     <th class="p-3" onclick="sortTable(5)">Carrera <span class="sort-icon">▼</span></th>
-                    <th class="p-3" onclick="sortTable(6)">Período <span class="sort-icon">▼</span></th>
                     <th class="p-3">Acciones</th>
                 </tr>
             </thead>
@@ -74,30 +51,32 @@
                 @foreach ($asignaturas as $index => $asignatura)
                     <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50'  }}">
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ $asignatura->id_asignatura }}</td>
+                            {{ $asignatura->id_asignatura }}
+                        </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ $asignatura->codigo_asignatura }}</td>
+                            {{ $asignatura->codigo_asignatura }}
+                        </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ $asignatura->nombre_asignatura }}</td>
+                            {{ $asignatura->nombre_asignatura }}
+                        </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ $asignatura->seccion }}</td>
+                            {{ $asignatura->seccion }}
+                        </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ optional($asignatura->profesor)->name ?? 'No asignado' }}</td>
+                            {{ optional($asignatura->profesor)->name ?? 'No asignado' }}
+                        </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ optional($asignatura->carrera)->nombre ?? 'No asignada' }}</td>
-                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ $asignatura->periodo ?? 'No especificado' }}</td>
+                            {{ optional($asignatura->carrera)->nombre ?? 'No asignada' }}
+                        </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
                             <div class="flex justify-center space-x-2">
-                                <x-button variant="view"
-                                    href="{{ route('asignaturas.edit', $asignatura->id_asignatura) }}"
+                                <x-button variant="view" href="{{ route('asignaturas.edit', $asignatura->id_asignatura) }}"
                                     class="inline-flex items-center px-4 py-2">
                                     <x-icons.edit class="w-5 h-5 mr-1" aria-hidden="true" />
                                 </x-button>
 
                                 <form id="delete-form-{{ $asignatura->id_asignatura }}"
-                                    action="{{ route('asignaturas.destroy', $asignatura->id_asignatura) }}"
-                                    method="POST">
+                                    action="{{ route('asignaturas.destroy', $asignatura->id_asignatura) }}" method="POST">
                                     @csrf
                                     @method('DELETE')
                                     <x-button variant="danger" type="button"

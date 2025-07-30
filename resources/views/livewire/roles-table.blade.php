@@ -28,9 +28,12 @@
     }
 </style>
 
-<div class="w-full p-4">
-    <div
-        class="relative overflow-x-auto bg-white border border-gray-200 rounded-lg shadow-md dark:bg-gray-800 dark:border-gray-700">
+<div>
+    <div class="mt-4 mb-4">
+        {{ $roles->links('vendor.pagination.tailwind') }}
+    </div>
+
+    <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md dark:border-gray-700">
         <table id="role-table" class="w-full text-center border-collapse table-auto min-w-max">
             <thead class="text-white border-b border-white bg-light-cloud-blue dark:bg-black dark:text-white">
                 <tr>
@@ -45,8 +48,7 @@
             </thead>
             <tbody>
                 @foreach ($roles as $index => $role)
-                    <tr
-                        class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50'  }}">
+                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50'  }}">
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">{{ $role->id }}</td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">{{ $role->name }}</td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
@@ -59,8 +61,8 @@
                                     id="delete-form-{{ $role->id }}">
                                     @csrf
                                     @method('DELETE')
-                                    <x-button type="button" onclick="confirmDelete({{ $role->id }})"
-                                        variant="danger" class="px-4 py-2 ">
+                                    <x-button type="button" onclick="confirmDelete({{ $role->id }})" variant="danger"
+                                        class="px-4 py-2 ">
                                         <x-icons.delete class="w-5 h-5" aria-hidden="true" />
                                     </x-button>
                                 </form>
@@ -73,7 +75,9 @@
             </tbody>
         </table>
     </div>
-
+    <div class="mt-4 mb-4">
+        {{ $roles->links('vendor.pagination.tailwind') }}
+    </div>
     <script>
         function sortTable(columnIndex) {
             var table = document.getElementById("role-table");

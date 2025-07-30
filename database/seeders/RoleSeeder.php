@@ -39,26 +39,30 @@ class RoleSeeder extends Seeder
         $permission17 = Permission::firstOrCreate(['name' => 'horarios profesores']);
         $permission18 = Permission::firstOrCreate(['name' => 'tablero academico']);
         $permission19 = Permission::firstOrCreate(['name' => 'mantenedor de usuarios']);
-        $permission21 = Permission::firstOrCreate(['name' => 'visor de mapas']);
-        $permission22 = Permission::firstOrCreate(['name' => 'visor de usuarios']);
+        $permission20 = Permission::firstOrCreate(['name' => 'mantenedor de campus']);
+        $permission21 = Permission::firstOrCreate(['name' => 'mantenedor de sedes']);
+        $permission22 = Permission::firstOrCreate(['name' => 'visor de mapas']);
+        $permission23 = Permission::firstOrCreate(['name' => 'visor de usuarios']);
+        $permission24 = Permission::firstOrCreate(['name' => 'mantenedor de profesores']);
       
         // Limpiar permisos existentes y asignar nuevos
         $roleAdmin->syncPermissions([
             $permission1, $permission2, $permission3, $permission4, $permission5,
             $permission6, $permission7, $permission8, $permission9, $permission10,
             $permission11, $permission12, $permission13, $permission14, $permission15,
-            $permission16, $permission17, $permission18, $permission19, $permission21, $permission22
+            $permission16, $permission17, $permission18, $permission19, $permission20,
+            $permission21, $permission22, $permission23, $permission24
         ]);
 
         // Permisos para Supervisor (sin mantenedores)
         $roleSupervisor->syncPermissions([
             $permission1, $permission14, $permission15, $permission16, $permission17,
-            $permission18, $permission21, $permission22
+            $permission18, $permission22, $permission23
         ]);
 
         // Permisos para Usuario (monitoreo, tablero, horarios)
         $roleUsuario->syncPermissions([
-            $permission15, $permission16, $permission17, $permission18, $permission21, $permission22
+            $permission15, $permission16, $permission17, $permission18, $permission22, $permission23
         ]);
     }
 }

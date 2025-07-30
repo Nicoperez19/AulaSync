@@ -40,9 +40,7 @@ class QRService
 
     public function generateQRForEspacio(string $espacioId): string
     {
-        // Generamos una URL única para el espacio
-        $url = route('espacios.show', ['espacio' => $espacioId]);
-        
+        // Generamos el QR con el ID del espacio directamente
         return $this->generateQR($espacioId);
     }
 } 

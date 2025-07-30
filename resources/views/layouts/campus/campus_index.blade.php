@@ -3,12 +3,12 @@
         <div class="flex flex-col gap-2 pr-6 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">
                 <div class="p-2 rounded-xl bg-light-cloud-blue">
-                    <i class="text-2xl text-white fa-solid fa-user-graduate"></i>
+                    <i class="text-2xl text-white fa-solid fa-building"></i>
                 </div>
 
                 <div>
-                    <h2 class="text-2xl font-bold leading-tight">Carreras</h2>
-                    <p class="text-sm text-gray-500">Administra las carreras disponibles en el sistema</p>
+                    <h2 class="text-2xl font-bold leading-tight">Campus</h2>
+                    <p class="text-sm text-gray-500">Administra los campus disponibles en el sistema</p>
                 </div>
             </div>
         </div>
@@ -20,61 +20,53 @@
                 <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Buscar por Nombre o ID"
                     class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white">
             </div>
-            <x-button variant="add" class="max-w-xs gap-2" x-on:click.prevent="$dispatch('open-modal', 'add-career')">
+            <x-button variant="add" class="max-w-xs gap-2" x-on:click.prevent="$dispatch('open-modal', 'add-campus')">
                 <x-icons.add class="w-6 h-6" aria-hidden="true" />
-                Agregar Carrera
+
             </x-button>
         </div>
 
         <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md dark:border-gray-700">
-            <table id="career-table" class="w-full text-sm text-center border-collapse table-auto min-w-max">
+            <table id="campus-table" class="w-full text-sm text-center border-collapse table-auto min-w-max">
                 <thead class="text-white bg-light-cloud-blue dark:bg-black dark:text-white">
                     <tr>
-                        <th class="p-3" onclick="sortTable(0)">ID Carrera <span class="sort-icon">▼</span></th>
-                        <th class="p-3" onclick="sortTable(1)">Nombre Carrera <span class="sort-icon">▼</span></th>
-                        <th class="p-3" onclick="sortTable(2)">Área Académica <span class="sort-icon">▼</span></th>
-                        <th class="p-3" onclick="sortTable(3)">Facultad <span class="sort-icon">▼</span></th>
-                        <th class="p-3" onclick="sortTable(4)">Sede <span class="sort-icon">▼</span></th>
-                        <th class="p-3" onclick="sortTable(5)">Universidad <span class="sort-icon">▼</span></th>
+                        <th class="p-3" onclick="sortTable(0)">ID Campus <span class="sort-icon">▼</span></th>
+                        <th class="p-3" onclick="sortTable(1)">Nombre Campus <span class="sort-icon">▼</span></th>
+                        <th class="p-3" onclick="sortTable(2)">Sede <span class="sort-icon">▼</span></th>
+                        <th class="p-3" onclick="sortTable(3)">Universidad <span class="sort-icon">▼</span></th>
                         <th class="p-3">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach ($carreras as $index => $carrera)
+                    @foreach ($campus as $index => $campu)
                         <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
                             <td class="p-3 border border-white dark:border-white whitespace-nowrap">
                                 <span class="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
-                                    {{ $carrera->id_carrera }}
+                                    {{ $campu->id_campus }}
                                 </span>
                             </td>
                             <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                                {{ $carrera->nombre }}
+                                {{ $campu->nombre_campus }}
                             </td>
                             <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                                {{ $carrera->areaAcademica->nombre_area_academica ?? 'Sin Área Académica' }}
+                                {{ $campu->sede->nombre_sede ?? 'Sin Sede' }}
                             </td>
                             <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                                {{ $carrera->areaAcademica->facultad->nombre_facultad ?? 'Sin Facultad' }}
-                            </td>
-                            <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                                {{ $carrera->areaAcademica->facultad->sede->nombre_sede ?? 'Sin Sede' }}
-                            </td>
-                            <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                                {{ $carrera->areaAcademica->facultad->sede->universidad->nombre_universidad ?? 'Sin Universidad' }}
+                                {{ $campu->sede->universidad->nombre_universidad ?? 'Sin Universidad' }}
                             </td>
                             <td class="p-3 border border-white dark:border-white whitespace-nowrap">
                                 <div class="flex justify-center space-x-2">
-                                    <x-button variant="view" href="{{ route('careers.edit', $carrera->id_carrera) }}"
+                                    <x-button variant="view" href="{{ route('campus.edit', $campu->id_campus) }}"
                                         class="inline-flex items-center px-4 py-2">
                                         <x-icons.edit class="w-5 h-5 mr-1" aria-hidden="true" />
                                     </x-button>
 
-                                    <form id="delete-form-{{ $carrera->id_carrera }}"
-                                        action="{{ route('careers.delete', $carrera->id_carrera) }}" method="POST">
+                                    <form id="delete-form-{{ $campu->id_campus }}"
+                                        action="{{ route('campus.destroy', $campu->id_campus) }}" method="POST">
                                         @csrf
                                         @method('DELETE')
                                         <x-button variant="danger" type="button"
-                                            onclick="deleteCarrera('{{ $carrera->id_carrera }}')" class="px-4 py-2">
+                                            onclick="deleteCampus('{{ $campu->id_campus }}')" class="px-4 py-2">
                                             <x-icons.delete class="w-5 h-5" aria-hidden="true" />
                                         </x-button>
                                     </form>
@@ -87,8 +79,8 @@
         </div>
     </div>
 
-    <!-- Modal para agregar carrera -->
-    <x-modal name="add-career" :show="$errors->any()" focusable>
+    <!-- Modal para agregar campus -->
+    <x-modal name="add-campus" :show="$errors->any()" focusable>
         @slot('title')
             <div class="relative bg-red-700 p-2 flex items-center justify-between">
                 <div class="flex items-center gap-3">
@@ -98,7 +90,7 @@
                         </svg>
                     </div>
                     <h2 class="text-2xl font-bold text-white">
-                        Agregar Carrera
+                        Agregar Campus
                     </h2>
                 </div>
                 <button @click="show = false" class="text-2xl font-bold text-white hover:text-gray-200 ml-2">&times;</button>
@@ -108,51 +100,51 @@
             </div>
         @endslot
 
-        <form method="POST" action="{{ route('careers.add') }}" class="p-6">
+        <form method="POST" action="{{ route('campus.store') }}" class="p-6">
             @csrf
 
             <div class="grid gap-4">
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div class="space-y-2">
-                        <x-form.label for="id_carrera" value="ID Carrera *" />
-                        <x-form.input id="id_carrera" name="id_carrera" type="text"
-                            class="w-full @error('id_carrera') border-red-500 @enderror" required maxlength="20"
-                            placeholder="Ej: 1200" value="{{ old('id_carrera') }}" />
-                        @error('id_carrera')
+                        <x-form.label for="id_campus" value="ID Campus *" />
+                        <x-form.input id="id_campus" name="id_campus" type="text"
+                            class="w-full @error('id_campus') border-red-500 @enderror" required maxlength="20"
+                            placeholder="Ej: CSA" value="{{ old('id_campus') }}" />
+                        @error('id_campus')
                             <p class="text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
 
                     <div class="space-y-2">
-                        <x-form.label for="nombre" value="Nombre Carrera *" />
-                        <x-form.input id="nombre" name="nombre" type="text"
-                            class="w-full @error('nombre') border-red-500 @enderror" required maxlength="100"
-                            placeholder="Ej: Técnico Universitario en Construcción" value="{{ old('nombre') }}" />
-                        @error('nombre')
+                        <x-form.label for="nombre_campus" value="Nombre Campus *" />
+                        <x-form.input id="nombre_campus" name="nombre_campus" type="text"
+                            class="w-full @error('nombre_campus') border-red-500 @enderror" required maxlength="100"
+                            placeholder="Ej: Campus San Andrés" value="{{ old('nombre_campus') }}" />
+                        @error('nombre_campus')
                             <p class="text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
                 </div>
 
                 <div class="space-y-2">
-                    <x-form.label for="id_area_academica" value="Área Académica *" />
-                    <select name="id_area_academica" id="id_area_academica"
-                        class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m @error('id_area_academica') border-red-500 @enderror"
+                    <x-form.label for="id_sede" value="Sede *" />
+                    <select name="id_sede" id="id_sede"
+                        class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m @error('id_sede') border-red-500 @enderror"
                         required>
-                        <option value="" disabled selected>{{ __('Seleccionar Área Académica') }}</option>
-                        @foreach($areasAcademicas as $areaAcademica)
-                            <option value="{{ $areaAcademica->id_area_academica }}" {{ old('id_area_academica') == $areaAcademica->id_area_academica ? 'selected' : '' }}>
-                                {{ $areaAcademica->nombre_area_academica }} - {{ $areaAcademica->facultad->nombre_facultad ?? 'Sin Facultad' }}
+                        <option value="" disabled selected>{{ __('Seleccionar Sede') }}</option>
+                        @foreach($sedes as $sede)
+                            <option value="{{ $sede->id_sede }}" {{ old('id_sede') == $sede->id_sede ? 'selected' : '' }}>
+                                {{ $sede->nombre_sede }} - {{ $sede->universidad->nombre_universidad }}
                             </option>
                         @endforeach
                     </select>
-                    @error('id_area_academica')
+                    @error('id_sede')
                         <p class="text-sm text-red-600">{{ $message }}</p>
                     @enderror
                 </div>
 
                 <div class="flex justify-end mt-6">
-                    <x-button variant="success">{{ __('Crear Carrera') }}</x-button>
+                    <x-button variant="success">{{ __('Crear Campus') }}</x-button>
                 </div>
             </div>
         </form>
@@ -160,7 +152,7 @@
 
     <script>
         function sortTable(columnIndex) {
-            var table = document.getElementById("career-table");
+            var table = document.getElementById("campus-table");
             var rows = Array.from(table.rows).slice(1);
             var isAscending = table.rows[0].cells[columnIndex].classList.contains("asc");
 
@@ -189,19 +181,17 @@
 
         function searchTable() {
             var input = document.getElementById("searchInput").value.toLowerCase();
-            var table = document.getElementById("career-table");
+            var table = document.getElementById("campus-table");
             var rows = table.getElementsByTagName("tr");
 
             for (var i = 1; i < rows.length; i++) {
                 var cells = rows[i].getElementsByTagName("td");
                 var id = cells[0].textContent.toLowerCase();
                 var name = cells[1].textContent.toLowerCase();
-                var areaAcademica = cells[2].textContent.toLowerCase();
-                var facultad = cells[3].textContent.toLowerCase();
-                var sede = cells[4].textContent.toLowerCase();
-                var universidad = cells[5].textContent.toLowerCase();
+                var sede = cells[2].textContent.toLowerCase();
+                var universidad = cells[3].textContent.toLowerCase();
 
-                if (id.includes(input) || name.includes(input) || areaAcademica.includes(input) || facultad.includes(input) || sede.includes(input) || universidad.includes(input)) {
+                if (id.includes(input) || name.includes(input) || sede.includes(input) || universidad.includes(input)) {
                     rows[i].style.display = "";
                 } else {
                     rows[i].style.display = "none";
@@ -209,7 +199,7 @@
             }
         }
 
-        function deleteCarrera(id) {
+        function deleteCampus(id) {
             Swal.fire({
                 title: '¿Estás seguro?',
                 text: "Esta acción no se puede deshacer",
@@ -226,4 +216,4 @@
             });
         }
     </script>
-</x-app-layout>
+</x-app-layout> 

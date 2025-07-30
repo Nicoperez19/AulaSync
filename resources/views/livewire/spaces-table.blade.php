@@ -63,7 +63,7 @@
 
                         </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ $espacio->piso->facultad->nombre_facultad ?? 'Sin Facultad' }}
+                            {{ $espacio->piso->facultad->nombre_facultad ?? 'Sin Facultad' }}, Sede {{ $espacio->piso->facultad->sede->nombre_sede ?? 'Sin nombre' }}
                         </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
                             {{ $espacio->piso->numero_piso ?? 'Sin Piso' }}
@@ -90,6 +90,13 @@
                                     <x-icons.edit class="w-5 h-5 mr-1" aria-hidden="true" />
 
                                 </x-button>
+                                <a href="{{ route('spaces.download-qr', $espacio->id_espacio) }}" 
+                                   class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-orange-400 border border-transparent rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                                   title="Descargar QR">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                </a>
                                 <form action="{{ route('spaces.delete', $espacio->id_espacio) }}" method="POST"
                                     style="display: inline;" id="delete-form-{{ $espacio->id_espacio }}">
                                     @csrf
@@ -107,7 +114,7 @@
                     <tr>
                         <td colspan="8" class="p-8 text-center text-gray-500">
                             <div class="flex flex-col items-center">
-                                <svg class="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor"
+                                <svg class="w-12 h-12 mb-4 text-gray-400" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">

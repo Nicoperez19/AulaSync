@@ -17,6 +17,8 @@ use App\Http\Controllers\PlanoDigitalController;
 use App\Http\Controllers\ProfesorController;
 use App\Http\Controllers\ReporteriaController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\CampusController;
+use App\Http\Controllers\SedeController;
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
@@ -96,12 +98,28 @@ Route::group(['middleware' => ['permission:mantenedor de universidades']], funct
     Route::delete('/universities/{id}', [UniversidadController::class, 'destroy'])->name('universities.delete');
 });
 
+Route::group(['middleware' => ['permission:mantenedor de sedes']], function () {
+    Route::get('/sedes', [SedeController::class, 'index'])->name('sedes.index');
+    Route::post('/sedes', [SedeController::class, 'store'])->name('sedes.store');
+    Route::get('/sedes/{id}/edit', [SedeController::class, 'edit'])->name('sedes.edit');
+    Route::put('/sedes/{id}', [SedeController::class, 'update'])->name('sedes.update');
+    Route::delete('/sedes/{id}', [SedeController::class, 'destroy'])->name('sedes.destroy');
+});
+
 Route::group(['middleware' => ['permission:mantenedor de facultades']], function () {
     Route::get('/faculties', [FacultadController::class, 'index'])->name('faculties.index');
     Route::post('/faculties', [FacultadController::class, 'store'])->name('faculties.add');
     Route::get('/faculties/{id}/edit', [FacultadController::class, 'edit'])->name('faculties.edit');
     Route::put('/faculties/{id}', [FacultadController::class, 'update'])->name('faculties.update');
     Route::delete('/faculties/{id}', [FacultadController::class, 'destroy'])->name('faculties.delete');
+});
+
+Route::group(['middleware' => ['permission:mantenedor de campus']], function () {
+    Route::get('/campus', [CampusController::class, 'index'])->name('campus.index');
+    Route::post('/campus', [CampusController::class, 'store'])->name('campus.store');
+    Route::get('/campus/{id}/edit', [CampusController::class, 'edit'])->name('campus.edit');
+    Route::put('/campus/{id}', [CampusController::class, 'update'])->name('campus.update');
+    Route::delete('/campus/{id}', [CampusController::class, 'destroy'])->name('campus.destroy');
 });
 
 Route::group(['middleware' => ['permission:mantenedor de carreras']], function () {
@@ -118,6 +136,14 @@ Route::group(['middleware' => ['permission:mantenedor de areas academicas']], fu
     Route::get('/academic_areas/{id}/edit', [AreaAcademicaController::class, 'edit'])->name('academic_areas.edit');
     Route::put('/academic_areas/{id}', [AreaAcademicaController::class, 'update'])->name('academic_areas.update');
     Route::delete('/academic_areas/{id}', [AreaAcademicaController::class, 'destroy'])->name('academic_areas.delete');
+});
+
+Route::group(['middleware' => ['permission:mantenedor de profesores']], function () {
+    Route::get('/professors', [ProfesorController::class, 'index'])->name('professors.index');
+    Route::post('/professors', [ProfesorController::class, 'store'])->name('professors.add');
+    Route::get('/professors/{id}/edit', [ProfesorController::class, 'edit'])->name('professors.edit');
+    Route::put('/professors/{id}', [ProfesorController::class, 'update'])->name('professors.update');
+    Route::delete('/professors/{id}', [ProfesorController::class, 'destroy'])->name('professors.delete');
 });
 
 Route::group(['middleware' => ['permission:mantenedor de pisos']], function () {
@@ -144,6 +170,10 @@ Route::group(['middleware' => ['permission:mantenedor de espacios']], function (
     Route::put('spaces/{id_espacio}', [EspacioController::class, 'update'])->name('spaces.update');
     Route::delete('/spaces/{id}', [EspacioController::class, 'destroy'])->name('spaces.delete');
     Route::get('/pisos/{facultadId}', [EspacioController::class, 'getPisos']);
+    Route::get('/spaces/{id_espacio}/download-qr', [EspacioController::class, 'downloadQR'])->name('spaces.download-qr');
+    Route::get('/spaces/download-all-qr', [EspacioController::class, 'downloadAllQR'])->name('spaces.download-all-qr');
+    Route::get('/sedes/{universidadId}', [EspacioController::class, 'getSedes']);
+    Route::get('/facultades-por-sede/{sedeId}', [EspacioController::class, 'getFacultadesPorSede']);
 });
 
 Route::group(['middleware' => ['permission:mantenedor de reservas']], function () {

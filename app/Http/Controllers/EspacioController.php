@@ -10,6 +10,10 @@ use App\Models\Modulo;
 use App\Models\Planificacion_Asignatura;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Services\QRService;
+use Illuminate\Support\Facades\Storage;
+use ZipArchive;
+use App\Models\Sede;
 
 class EspacioController extends Controller
 {
@@ -19,8 +23,9 @@ class EspacioController extends Controller
     public function index(Request $request)
     {
         $espacios = Espacio::with('piso.facultad')->get();
+        $universidades = Universidad::all();
     
-        return view('layouts.spaces.spaces_index', compact('espacios'));
+        return view('layouts.spaces.spaces_index', compact('espacios', 'universidades'));
     }
 
     /**
@@ -73,16 +78,16 @@ class EspacioController extends Controller
      */
     public function edit(string $id_espacio)
     {
-        $espacio = Espacio::with('piso.facultad')
+        $espacio = Espacio::with('piso.facultad.sede.universidad')
             ->where('id_espacio', $id_espacio)
             ->firstOrFail();
 
-        // Cargar solo los pisos de la facultad IT_TH
-        $pisos = Piso::where('id_facultad', 'IT_TH')
-            ->orderBy('numero_piso')
-            ->get();
+        $universidades = Universidad::all();
+        $sedes = Sede::where('id_universidad', $espacio->piso->facultad->sede->id_universidad)->get();
+        $facultades = Facultad::where('id_sede', $espacio->piso->facultad->id_sede)->get();
+        $pisos = Piso::where('id_facultad', $espacio->piso->id_facultad)->get();
 
-        return view('layouts.spaces.spaces_edit', compact('espacio', 'pisos'));
+        return view('layouts.spaces.spaces_edit', compact('espacio', 'universidades', 'sedes', 'facultades', 'pisos'));
     }
 
     /**
@@ -175,6 +180,40 @@ class EspacioController extends Controller
     public function getEspacios($pisoId)
     {
         return Espacio::where('piso_id', $pisoId)->get();
+    }
+
+    /**
+     * Obtiene las sedes de una universidad
+     */
+    public function getSedes($universidadId)
+    {
+        try {
+            $sedes = Sede::where('id_universidad', $universidadId)->get();
+            return response()->json($sedes);
+        } catch (\Exception $e) {
+            Log::error('Error al obtener sedes:', [
+                'universidad_id' => $universidadId,
+                'error' => $e->getMessage()
+            ]);
+            return response()->json(['error' => 'Error al obtener las sedes'], 500);
+        }
+    }
+
+    /**
+     * Obtiene las facultades de una sede
+     */
+    public function getFacultadesPorSede($sedeId)
+    {
+        try {
+            $facultades = Facultad::where('id_sede', $sedeId)->get();
+            return response()->json($facultades);
+        } catch (\Exception $e) {
+            Log::error('Error al obtener facultades:', [
+                'sede_id' => $sedeId,
+                'error' => $e->getMessage()
+            ]);
+            return response()->json(['error' => 'Error al obtener las facultades'], 500);
+        }
     }
 
     /**
@@ -347,5 +386,83 @@ class EspacioController extends Controller
         }
         
         return null;
+    }
+
+    /**
+     * Descarga el código QR de un espacio individual
+     */
+    public function downloadQR($id_espacio)
+    {
+        try {
+            $espacio = Espacio::where('id_espacio', $id_espacio)->firstOrFail();
+            $qrService = new QRService();
+            
+            // Generar el código QR
+            $qrPath = $qrService->generateQRForEspacio($espacio->id_espacio);
+            
+            // Verificar si el archivo existe
+            if (!Storage::disk('public')->exists($qrPath)) {
+                return redirect()->back()->with('error', 'No se pudo generar el código QR.');
+            }
+            
+            // Descargar el archivo
+            return Storage::disk('public')->download($qrPath, 'QR_' . $espacio->id_espacio . '.png');
+            
+        } catch (\Exception $e) {
+            Log::error('Error al descargar QR individual:', [
+                'error' => $e->getMessage(),
+                'espacio_id' => $id_espacio
+            ]);
+            
+            return redirect()->back()->with('error', 'Error al descargar el código QR: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Descarga todos los códigos QR en un archivo ZIP
+     */
+    public function downloadAllQR()
+    {
+        try {
+            $espacios = Espacio::all();
+            $qrService = new QRService();
+            
+            // Crear archivo ZIP temporal
+            $zipName = 'QRs_Espacios_' . date('Y-m-d_H-i-s') . '.zip';
+            $zipPath = storage_path('app/temp/' . $zipName);
+            
+            // Crear directorio temporal si no existe
+            if (!file_exists(storage_path('app/temp'))) {
+                mkdir(storage_path('app/temp'), 0755, true);
+            }
+            
+            $zip = new ZipArchive();
+            if ($zip->open($zipPath, ZipArchive::CREATE) !== TRUE) {
+                return redirect()->back()->with('error', 'No se pudo crear el archivo ZIP.');
+            }
+            
+            foreach ($espacios as $espacio) {
+                // Generar QR para cada espacio
+                $qrPath = $qrService->generateQRForEspacio($espacio->id_espacio);
+                
+                // Verificar si el archivo existe
+                if (Storage::disk('public')->exists($qrPath)) {
+                    $qrContent = Storage::disk('public')->get($qrPath);
+                    $zip->addFromString('QR_' . $espacio->id_espacio . '.png', $qrContent);
+                }
+            }
+            
+            $zip->close();
+            
+            // Descargar el archivo ZIP
+            return response()->download($zipPath, $zipName)->deleteFileAfterSend();
+            
+        } catch (\Exception $e) {
+            Log::error('Error al descargar QRs en ZIP:', [
+                'error' => $e->getMessage()
+            ]);
+            
+            return redirect()->back()->with('error', 'Error al generar el archivo ZIP: ' . $e->getMessage());
+        }
     }
 }
