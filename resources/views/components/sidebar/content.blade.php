@@ -84,62 +84,77 @@
             <x-slot name="icon">
                 <x-icons.config class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
             </x-slot>
-            @can('mantenedor de asignaturas')
-                <x-sidebar.sublink title="Asignaturas" href="{{ route('asignaturas.index') }}"
-                    :isActive="request()->routeIs('asignaturas.index')" />
-            @endcan
-            @can('mantenedor de campus')
-                <x-sidebar.sublink title="Campus" href="{{ route('campus.index') }}"
-                    :isActive="request()->routeIs('campus.index')" />
-            @endcan
-            @can('mantenedor de universidades')
-                <x-sidebar.sublink title="Universidades" href="{{ route('universities.index') }}"
-                    :isActive="request()->routeIs('universities.index')" />
-            @endcan
-            @can('mantenedor de facultades')
-                <x-sidebar.sublink title="Facultades" href="{{ route('faculties.index') }}"
-                    :isActive="request()->routeIs('faculties.index')" />
-            @endcan
+
             @can('mantenedor de areas academicas')
                 <x-sidebar.sublink title="Áreas Académicas" href="{{ route('academic_areas.index') }}"
                     :isActive="request()->routeIs('academic_areas.index')" />
             @endcan
-            @can('mantenedor de profesores')
-                <x-sidebar.sublink title="Profesores" href="{{ route('professors.index') }}"
-                    :isActive="request()->routeIs('professors.index')" />
+
+            @can('mantenedor de asignaturas')
+                <x-sidebar.sublink title="Asignaturas" href="{{ route('asignaturas.index') }}"
+                    :isActive="request()->routeIs('asignaturas.index')" />
             @endcan
+
+            @can('mantenedor de campus')
+                <x-sidebar.sublink title="Campus" href="{{ route('campus.index') }}"
+                    :isActive="request()->routeIs('campus.index')" />
+            @endcan
+
             @can('mantenedor de carreras')
                 <x-sidebar.sublink title="Carreras" href="{{ route('careers.index') }}"
                     :isActive="request()->routeIs('careers.index')" />
             @endcan
+
             @can('mantenedor de espacios')
                 <x-sidebar.sublink title="Espacios" href="{{ route('spaces_index') }}"
                     :isActive="request()->routeIs('espacios.index')" />
             @endcan
+
+            @can('mantenedor de facultades')
+                <x-sidebar.sublink title="Facultades" href="{{ route('faculties.index') }}"
+                    :isActive="request()->routeIs('faculties.index')" />
+            @endcan
+
             @can('mantenedor de mapas')
                 <x-sidebar.sublink title="Mapa" href="{{ route('mapas.index') }}"
                     :isActive="request()->routeIs('maps.index')" />
             @endcan
+
             @can('mantenedor de permisos')
                 <x-sidebar.sublink title="Permisos" href="{{ route('permissions.index') }}"
                     :isActive="request()->routeIs('permissions.index')" />
             @endcan
+
             @can('mantenedor de pisos')
                 <x-sidebar.sublink title="Pisos" href="{{ route('floors_index') }}"
                     :isActive="request()->routeIs('floors_index')" />
             @endcan
+
+            @can('mantenedor de profesores')
+                <x-sidebar.sublink title="Profesores" href="{{ route('professors.index') }}"
+                    :isActive="request()->routeIs('professors.index')" />
+            @endcan
+
             @can('mantenedor de reservas')
                 <x-sidebar.sublink title="Reservas" href="{{ route('reservas.index') }}"
                     :isActive="request()->routeIs('reservas.index')" />
             @endcan
+
             @can('mantenedor de roles')
                 <x-sidebar.sublink title="Roles" href="{{ route('roles.index') }}"
                     :isActive="request()->routeIs('roles.index')" />
             @endcan
+
             @can('mantenedor de sedes')
                 <x-sidebar.sublink title="Sedes" href="{{ route('sedes.index') }}"
                     :isActive="request()->routeIs('sedes.index')" />
             @endcan
+
+            @can('mantenedor de universidades')
+                <x-sidebar.sublink title="Universidades" href="{{ route('universities.index') }}"
+                    :isActive="request()->routeIs('universities.index')" />
+            @endcan
+
             @can('mantenedor de usuarios')
                 <x-sidebar.sublink title="Usuarios" href="{{ route('users.index') }}"
                     :isActive="request()->routeIs('users.index')" />

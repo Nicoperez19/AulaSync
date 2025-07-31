@@ -68,8 +68,9 @@
                         <div class="space-y-2">
                             <x-form.label for="nombre_facultad" value="Nombre Facultad *" />
                             <x-form.input id="nombre_facultad" name="nombre_facultad" type="text"
-                                class="w-full @error('nombre_facultad') border-red-500 @enderror" required maxlength="100"
-                                placeholder="Ej: Instituto Tecnológico" value="{{ old('nombre_facultad') }}" />
+                                class="w-full @error('nombre_facultad') border-red-500 @enderror" required
+                                maxlength="100" placeholder="Ej: Instituto Tecnológico"
+                                value="{{ old('nombre_facultad') }}" />
                             @error('nombre_facultad')
                                 <p class="text-sm text-red-600">{{ $message }}</p>
                             @enderror
