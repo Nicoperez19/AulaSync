@@ -49,7 +49,9 @@
             <tbody>
                 @foreach ($roles as $index => $role)
                     <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50'  }}">
-                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">{{ $role->id }}</td>
+                        <td
+                            class="p-3 text-sm font-semibold text-blue-600 border border-white dark:border-white dark:text-blue-400">
+                            {{ $role->id }}</td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">{{ $role->name }}</td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
                             <div class="flex justify-center space-x-2">

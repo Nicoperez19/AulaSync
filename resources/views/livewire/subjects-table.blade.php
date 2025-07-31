@@ -50,7 +50,8 @@
             <tbody>
                 @foreach ($asignaturas as $index => $asignatura)
                     <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50'  }}">
-                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
+                        <td
+                            class="p-3 text-sm font-semibold text-blue-600 border border-white dark:border-white dark:text-blue-400">
                             {{ $asignatura->id_asignatura }}
                         </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
@@ -80,7 +81,8 @@
                                     @csrf
                                     @method('DELETE')
                                     <x-button variant="danger" type="button"
-                                        onclick="deleteSubject('{{ $asignatura->id_asignatura }}')" class="px-4 py-2 ">
+                                        onclick="deleteSubject('{{ $asignatura->id_asignatura }}', '{{ $asignatura->nombre_asignatura }}')"
+                                        class="px-4 py-2 ">
                                         <x-icons.delete class="w-5 h-5" aria-hidden="true" />
                                     </x-button>
                                 </form>
@@ -109,9 +111,17 @@
         });
 
         rows.sort((rowA, rowB) => {
-            var cellA = rowA.cells[columnIndex].textContent.trim();
-            var cellB = rowB.cells[columnIndex].textContent.trim();
+            var cellA = rowA.cells[columnIndex].textContent.trim().toLowerCase();
+            var cellB = rowB.cells[columnIndex].textContent.trim().toLowerCase();
 
+            // Para columnas numéricas (ID)
+            if (columnIndex === 0) {
+                var numA = parseInt(cellA) || 0;
+                var numB = parseInt(cellB) || 0;
+                return isAscending ? numA - numB : numB - numA;
+            }
+
+            // Para columnas de texto
             if (cellA < cellB) {
                 return isAscending ? -1 : 1;
             }
@@ -146,9 +156,29 @@
         }
     }
 
-    function deleteSubject(id) {
-        if (confirm('¿Estás seguro de que quieres eliminar esta asignatura?')) {
-            document.getElementById('delete-form-' + id).submit();
+    function deleteSubject(id, name) {
+        // Verificar si SweetAlert2 está disponible
+        if (typeof Swal === 'undefined') {
+            // Fallback si SweetAlert2 no está disponible
+            if (confirm(`¿Estás seguro de que quieres eliminar la asignatura "${name}"?`)) {
+                document.getElementById('delete-form-' + id).submit();
+            }
+            return;
         }
+
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: `Esta acción eliminará la asignatura "${name}" y no se puede deshacer`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('delete-form-' + id).submit();
+            }
+        });
     }
 </script>

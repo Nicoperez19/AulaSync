@@ -25,6 +25,7 @@
                 <x-button variant="add" class="justify-end max-w-xs gap-2"
                     x-on:click.prevent="$dispatch('open-modal', 'add-espacio')">
                     <x-icons.add class="w-6 h-6" aria-hidden="true" />
+                    Agregar Espacio
                 </x-button>
                 <a href="{{ route('spaces.download-all-qr') }}"
                     class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-400 border border-transparent rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500">
@@ -214,28 +215,22 @@
         document.addEventListener('DOMContentLoaded', function () {
             // No cargar pisos automáticamente, se cargarán cuando se seleccione facultad
         });
-         function searchTable() {
-            const input = document.getElementById('searchInput');
-            const filter = input.value.toUpperCase();
-            const table = document.querySelector('table');
-            const tr = table.getElementsByTagName('tr');
+        function searchTable() {
+            var input = document.getElementById("searchInput").value.toLowerCase();
+            var table = document.getElementById("spaces-table");
+            var rows = table.getElementsByTagName("tr");
 
-            for (let i = 1; i < tr.length; i++) {
-                const td = tr[i].getElementsByTagName('td');
-                let found = false;
+            for (var i = 1; i < rows.length; i++) {
+                var cells = rows[i].getElementsByTagName("td");
+                var run = cells[0].textContent.toLowerCase();
+                var name = cells[1].textContent.toLowerCase();
+                var email = cells[2].textContent.toLowerCase();
 
-                for (let j = 0; j < td.length; j++) {
-                    const cell = td[j];
-                    if (cell) {
-                        const txtValue = cell.textContent || cell.innerText;
-                        if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                            found = true;
-                            break;
-                        }
-                    }
+                if (run.includes(input) || name.includes(input) || email.includes(input)) {
+                    rows[i].style.display = "";
+                } else {
+                    rows[i].style.display = "none";
                 }
-
-                tr[i].style.display = found ? '' : 'none';
             }
         }
 

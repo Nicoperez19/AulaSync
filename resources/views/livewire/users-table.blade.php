@@ -29,7 +29,6 @@
 </style>
 
 <div>
-
     <div class="mt-4 mb-4">
         {{ $users->links('vendor.pagination.tailwind') }}
     </div>
@@ -47,12 +46,16 @@
             <tbody>
                 @foreach ($users as $index => $user)
                     <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
+                        <td
+                            class="p-3 text-sm font-semibold text-blue-600 border border-white dark:border-white dark:text-blue-400">
+                            {{ $user->run }}
+                        </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ $user->run }}</td>
+                            {{ $user->name }}
+                        </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ $user->name }}</td>
-                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ $user->email }}</td>
+                            {{ $user->email }}
+                        </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
                             <div class="flex justify-center space-x-2">
                                 <x-button variant="view" href="{{ route('users.edit', $user->run) }}"
@@ -60,12 +63,11 @@
                                     <x-icons.edit class="w-5 h-5 mr-1" aria-hidden="true" />
                                 </x-button>
 
-                                <form id="delete-form-{{ $user->run }}"
-                                    action="{{ route('users.delete', $user->run) }}" method="POST">
+                                <form id="delete-form-{{ $user->run }}" action="{{ route('users.delete', $user->run) }}"
+                                    method="POST">
                                     @csrf
                                     @method('DELETE')
-                                    <x-button variant="danger" type="button"
-                                        onclick="deleteUser('{{ $user->run }}')"
+                                    <x-button variant="danger" type="button" onclick="deleteUser('{{ $user->run }}')"
                                         class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700">
                                         <x-icons.delete class="w-5 h-5" aria-hidden="true" />
                                     </x-button>
@@ -115,22 +117,21 @@
 
         table.rows[0].cells[columnIndex].classList.add(isAscending ? "desc" : "asc");
     }
-
-    function searchTable() {
-        var input = document.getElementById("searchInput").value.toLowerCase();
-        var table = document.getElementById("user-table");
-        var rows = table.getElementsByTagName("tr");
-
-        for (var i = 1; i < rows.length; i++) {
-            var cells = rows[i].getElementsByTagName("td");
-            var run = cells[0].textContent.toLowerCase();
-            var name = cells[1].textContent.toLowerCase();
-
-            if (run.includes(input) || name.includes(input)) {
-                rows[i].style.display = "";
-            } else {
-                rows[i].style.display = "none";
+    function deleteUser(run, name) {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: `Esta acción eliminará al usuario "${name}" y no se puede deshacer`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('delete-form-' + run).submit();
             }
-        }
+        });
     }
+
 </script>

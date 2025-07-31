@@ -13,6 +13,7 @@ class Facultad extends Model
     public $incrementing = false;
     protected $keyType = 'string';
     protected $fillable = [
+        'id_facultad',
         'nombre_facultad',
         'id_universidad',
         'id_sede',

@@ -14,9 +14,8 @@ class AreaAcademicaController extends Controller
     public function index()
     {
         try {
-            $areasAcademicas = AreaAcademica::with('facultad.sede.universidad')->get();
             $facultades = Facultad::with('sede.universidad')->get();
-            return view('layouts.academic_area.academic_area_index', compact('areasAcademicas', 'facultades'));
+            return view('layouts.academic_area.academic_area_index', compact('facultades'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar las áreas académicas.'])->withInput();
         }

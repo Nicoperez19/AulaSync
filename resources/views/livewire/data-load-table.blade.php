@@ -28,17 +28,17 @@
     }
 </style>
 
-<div class="bg-white rounded-xl shadow border">
+<div class="bg-white border shadow rounded-xl">
     <div class="overflow-x-auto">
         <table class="w-full min-w-[900px] text-sm border-collapse">
             <thead>
-                <tr class="bg-red-600 text-white">
-                    <th class="px-4 py-3 text-center font-semibold">Documento</th>
-                    <th class="px-4 py-3 text-center font-semibold">Estado</th>
-                    <th class="px-4 py-3 text-center font-semibold">Fecha</th>
-                    <th class="px-4 py-3 text-center font-semibold">Usuario</th>
-                    <th class="px-4 py-3 text-center font-semibold">Registros</th>
-                    <th class="px-4 py-3 text-center font-semibold">Acciones</th>
+                <tr class="text-white bg-red-600">
+                    <th class="px-4 py-3 font-semibold text-center">Documento</th>
+                    <th class="px-4 py-3 font-semibold text-center">Estado</th>
+                    <th class="px-4 py-3 font-semibold text-center">Fecha</th>
+                    <th class="px-4 py-3 font-semibold text-center">Usuario</th>
+                    <th class="px-4 py-3 font-semibold text-center">Registros</th>
+                    <th class="px-4 py-3 font-semibold text-center">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -46,9 +46,9 @@
                     <tr class="border-b last:border-0 hover:bg-gray-100">
                         <td class="px-4 py-3">
                             <div class="flex flex-col items-center justify-center gap-2">
-                              
+
                                 <span
-                                    class="font-semibold text-gray-800 text-sm text-center">{{ $data->nombre_archivo }}</span>
+                                    class="text-sm font-semibold text-center text-gray-800">{{ $data->nombre_archivo }}</span>
                             </div>
                         </td>
                         <td class="px-4 py-3 text-center">
@@ -57,20 +57,20 @@
                             @endphp
                             @if($estado === 'procesado' || $estado === 'completado')
                                 <span
-                                    class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700">Procesado</span>
+                                    class="inline-block px-3 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full">Procesado</span>
                             @elseif($estado === 'en proceso' || $estado === 'procesando')
                                 <span
-                                    class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-700">En
+                                    class="inline-block px-3 py-1 text-xs font-semibold text-yellow-700 bg-yellow-100 rounded-full">En
                                     proceso</span>
                             @elseif($estado === 'error')
                                 <span
-                                    class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700">Error</span>
+                                    class="inline-block px-3 py-1 text-xs font-semibold text-red-700 bg-red-100 rounded-full">Error</span>
                             @else
                                 <span
-                                    class="inline-block px-3 py-1 text-xs font-semibold rounded-full bg-gray-200 text-gray-700">{{ ucfirst($estado) }}</span>
+                                    class="inline-block px-3 py-1 text-xs font-semibold text-gray-700 bg-gray-200 rounded-full">{{ ucfirst($estado) }}</span>
                             @endif
                         </td>
-                        <td class="px-4 py-3 whitespace-nowrap text-center">
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
                             <span class="inline-flex items-center gap-1">
                                 <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2"
                                     viewBox="0 0 24 24">
@@ -80,9 +80,9 @@
                                 <span>{{ $data->created_at->format('Y-m-d H:i') }}</span>
                             </span>
                         </td>
-                        <td class="px-4 py-3 whitespace-nowrap text-center">
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
                             <span class="inline-flex items-center gap-2">
-                                <span class="inline-flex items-center justify-center w-7 h-7 bg-blue-100 rounded-full">
+                                <span class="inline-flex items-center justify-center bg-blue-100 rounded-full w-7 h-7">
                                     <svg class="w-5 h-5 text-blue-500" fill="currentColor" viewBox="0 0 24 24">
                                         <path
                                             d="M12 12c2.7 0 8 1.34 8 4v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2c0-2.66 5.3-4 8-4zm0-2a4 4 0 100-8 4 4 0 000 8z" />
@@ -93,7 +93,7 @@
                         </td>
                         <td class="px-4 py-3 text-center">
                             @if(isset($data->registros_cargados) && is_numeric($data->registros_cargados))
-                                <span class="inline-flex items-center gap-1 text-green-600 font-semibold">
+                                <span class="inline-flex items-center gap-1 font-semibold text-green-600">
                                     {{$data->registros_cargados }}
                                 </span>
                             @else
@@ -102,7 +102,8 @@
                         </td>
                         <td class="px-4 py-3 text-center">
                             <div class="flex items-center justify-center gap-3">
-                                <button type="button" onclick="verDetalleCarga({{ $data->id }})" class="text-blue-600 hover:text-blue-800" title="Ver detalles">
+                                <button type="button" onclick="verDetalleCarga({{ $data->id }})"
+                                    class="text-blue-600 hover:text-blue-800" title="Ver detalles">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"
                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round"
@@ -111,11 +112,12 @@
                                             d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
                                 </button>
-                                <a href="{{ route('data.download', $data->id) }}" class="text-green-600 hover:text-green-800" title="Descargar archivo">
+                                <a href="{{ route('data.download', $data->id) }}"
+                                    class="text-green-600 hover:text-green-800" title="Descargar archivo">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2"
                                         viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 4v12"/>
+                                            d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 4v12" />
                                     </svg>
                                 </a>
                                 <form id="delete-form-{{ $data->id }}" action="{{ route('data.destroy', $data->id) }}"
@@ -142,7 +144,7 @@
             </tbody>
         </table>
     </div>
-    <div class="flex justify-end items-center mt-4">
+    <div class="flex items-center justify-end mt-4">
         {{ $dataLoads->links() }}
     </div>
 </div>

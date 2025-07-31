@@ -23,10 +23,16 @@ class FacultiesTable extends Component
 
     public function render()
     {
-        $facultades = Facultad::where('nombre_facultad', 'like', '%' . $this->search . '%')
-            ->orWhere('ubicacion_facultad', 'like', '%' . $this->search . '%')
-            ->orWhereHas('universidad', function ($query) {
-                $query->where('nombre_universidad', 'like', '%' . $this->search . '%');
+        $facultades = Facultad::with(['universidad', 'sede', 'campus'])
+            ->where(function ($query) {
+                $query->where('nombre_facultad', 'like', '%' . $this->search . '%')
+                    ->orWhere('id_facultad', 'like', '%' . $this->search . '%')
+                    ->orWhereHas('universidad', function ($subQuery) {
+                        $subQuery->where('nombre_universidad', 'like', '%' . $this->search . '%');
+                    })
+                    ->orWhereHas('sede', function ($subQuery) {
+                        $subQuery->where('nombre_sede', 'like', '%' . $this->search . '%');
+                    });
             })
             ->orderBy('nombre_facultad', 'asc')
             ->paginate($this->perPage);

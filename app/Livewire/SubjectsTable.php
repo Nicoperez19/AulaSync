@@ -11,15 +11,29 @@ class SubjectsTable extends Component
     use WithPagination;
 
     public $search = '';
+    public $sortField = 'id_asignatura';
+    public $sortDirection = 'asc';
     public $perPage = 10;
-    public $paginationOptions = [5, 10, 50];
 
-    // Sync query string with pagination and search
-    protected $updatesQueryString = ['search', 'perPage'];
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'sortField' => ['except' => 'id_asignatura'],
+        'sortDirection' => ['except' => 'asc'],
+    ];
 
     public function updatingSearch()
     {
-        $this->resetPage(); // Reset to the first page when search is updated
+        $this->resetPage();
+    }
+
+    public function sortBy($field)
+    {
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
     }
 
     public function render()
@@ -39,7 +53,7 @@ class SubjectsTable extends Component
                           $q->where('nombre', 'like', '%' . $this->search . '%');
                       });
             })
-            ->orderBy('nombre_asignatura', 'asc')
+            ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 
         return view('livewire.subjects-table', compact('asignaturas'));

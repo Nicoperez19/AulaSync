@@ -15,10 +15,9 @@ class CampusController extends Controller
     public function index()
     {
         try {
-            $campus = Campus::with('sede.universidad')->get();
             $sedes = Sede::with('universidad')->get();
             
-            return view('layouts.campus.campus_index', compact('campus', 'sedes'));
+            return view('layouts.campus.campus_index', compact('sedes'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar los campus.'])->withInput();
         }

@@ -24,6 +24,7 @@
             <x-button target="_blank" variant="add" class="max-w-xs gap-2"
                 x-on:click.prevent="$dispatch('open-modal', 'add-asignatura')" variant="add" class="max-w-xs gap-2">
                 <x-icons.add class="w-6 h-6" aria-hidden="true" />
+                Agregar Asignatura
             </x-button>
         </div>
 

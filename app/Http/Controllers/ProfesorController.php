@@ -18,13 +18,12 @@ class ProfesorController extends Controller
     public function index()
     {
         try {
-            $profesores = Profesor::with('universidad', 'facultad', 'carrera', 'areaAcademica')->get();
             $universidades = Universidad::all();
             $facultades = Facultad::with('sede.universidad')->get();
             $carreras = Carrera::with('areaAcademica.facultad.sede.universidad')->get();
             $areasAcademicas = AreaAcademica::with('facultad.sede.universidad')->get();
             
-            return view('layouts.professor.professor_index', compact('profesores', 'universidades', 'facultades', 'carreras', 'areasAcademicas'));
+            return view('layouts.professor.professor_index', compact('universidades', 'facultades', 'carreras', 'areasAcademicas'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar los profesores.'])->withInput();
         }

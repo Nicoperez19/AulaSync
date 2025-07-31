@@ -30,22 +30,26 @@
 
         <x-modal name="add-role" :show="$errors->any()" focusable>
             @slot('title')
-                <div class="relative bg-red-700 p-2 flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="bg-red-100 rounded-full p-4">
-                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                            </svg>
-                        </div>
-                        <h2 class="text-2xl font-bold text-white">
-                            Agregar Rol
-                        </h2>
+            <div class="relative flex items-center justify-between p-2 bg-red-700">
+                <div class="flex items-center gap-3">
+                    <div class="p-4 bg-red-100 rounded-full">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                        </svg>
                     </div>
-                    <button @click="show = false" class="text-2xl font-bold text-white hover:text-gray-200 ml-2">&times;</button>
-                    <!-- Círculos decorativos -->
-                    <span class="absolute left-0 top-0 w-32 h-32 bg-white bg-opacity-10 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none"></span>
-                    <span class="absolute right-0 top-0 w-32 h-32 bg-white bg-opacity-10 rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none"></span>
+                    <h2 class="text-2xl font-bold text-white">
+                        Agregar Rol
+                    </h2>
                 </div>
+                <button @click="show = false"
+                    class="ml-2 text-2xl font-bold text-white hover:text-gray-200">&times;</button>
+                <!-- Círculos decorativos -->
+                <span
+                    class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                <span
+                    class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+            </div>
             @endslot
 
             <form method="POST" action="{{ route('roles.add') }}" class="p-6">

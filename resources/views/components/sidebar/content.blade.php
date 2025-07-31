@@ -96,6 +96,10 @@
                 <x-sidebar.sublink title="Universidades" href="{{ route('universities.index') }}"
                     :isActive="request()->routeIs('universities.index')" />
             @endcan
+            @can('mantenedor de facultades')
+                <x-sidebar.sublink title="Facultades" href="{{ route('faculties.index') }}"
+                    :isActive="request()->routeIs('faculties.index')" />
+            @endcan
             @can('mantenedor de areas academicas')
                 <x-sidebar.sublink title="Áreas Académicas" href="{{ route('academic_areas.index') }}"
                     :isActive="request()->routeIs('academic_areas.index')" />

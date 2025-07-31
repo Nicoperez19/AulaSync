@@ -1,14 +1,31 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <h2 class="text-xl font-semibold leading-tight" style="font-style: oblique;">
-                {{ __('Usuarios / Edición') }}
-            </h2>
+        <div class="flex flex-col gap-2 pr-6 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl bg-light-cloud-blue">
+                    <i class="text-2xl text-white fa-solid fa-user-edit"></i>
+                </div>
+
+                <div>
+                    <h2 class="text-2xl font-bold leading-tight">Usuarios</h2>
+                    <p class="text-sm text-gray-500">Administra los usuarios del sistema</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <x-button href="{{ route('users.index') }}" 
+                   class="inline-flex items-center px-4 py-2 text-m font-medium border border-gray-300 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    Volver
+                </x-button>
+            </div>
         </div>
     </x-slot>
 
-    <div class="p-6 bg-gray-100 rounded-lg shadow-lg">
-        <form method="POST" action="{{ route('users.update', $user->run) }}">
+    <div class="p-6 bg-white rounded-lg shadow-lg">
+        <form id="edit-user-form" method="POST" action="{{ route('users.update', $user->run) }}">
             @csrf
             @method('PUT')
 
@@ -161,7 +178,7 @@
 
                 <!-- Botón de Guardar -->
                 <div class="flex justify-end mt-6">
-                    <x-button variant="add">
+                    <x-button variant="success">
                         <x-icons.ajust class="w-6 h-6" aria-hidden="true" />
                         <span>{{ __('Guardar Cambios') }}</span>
                     </x-button>
@@ -171,82 +188,50 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('edit-user-form');
-            const submitButton = form.querySelector('button[type="submit"]');
 
-            form.addEventListener('submit', async function(e) {
-                e.preventDefault();
-                
-                // Validación básica
-                const run = form.querySelector('input[name="run"]').value;
-                const celular = form.querySelector('input[name="celular"]').value;
-                
-                if (!/^\d{7,8}$/.test(run)) {
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'El RUN debe ser un número de 7 u 8 dígitos',
-                        icon: 'error'
-                    });
-                    return;
-                }
-                
-                if (celular && !/^9\d{8}$/.test(celular)) {
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'El celular debe comenzar con 9 y tener 9 dígitos',
-                        icon: 'error'
-                    });
-                    return;
-                }
-
-                submitButton.disabled = true;
-                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
-
-                try {
-                    const formData = new FormData(form);
-                    const response = await fetch(form.action, {
-                        method: 'POST',
-                        body: formData,
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
-                        }
-                    });
-
-                    const data = await response.json();
-
-                    if (response.ok) {
-                        Swal.fire({
-                            title: '¡Éxito!',
-                            text: data.message,
-                            icon: 'success'
-                        }).then(() => {
-                            window.location.href = '{{ route("users.index") }}';
-                        });
-                    } else {
-                        let errorMessage = 'Ha ocurrido un error';
-                        if (data.errors) {
-                            errorMessage = Object.values(data.errors).flat().join('\n');
-                        } else if (data.message) {
-                            errorMessage = data.message;
-                        }
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // Validación básica
+                    const run = form.querySelector('input[name="run"]').value;
+                    const celular = form.querySelector('input[name="celular"]').value;
+                    
+                    if (!/^\d{7,8}$/.test(run)) {
                         Swal.fire({
                             title: 'Error',
-                            text: errorMessage,
+                            text: 'El RUN debe ser un número de 7 u 8 dígitos',
                             icon: 'error'
                         });
+                        return;
                     }
-                } catch (error) {
+                    
+                    if (celular && !/^9\d{8}$/.test(celular)) {
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'El celular debe comenzar con 9 y tener 9 dígitos',
+                            icon: 'error'
+                        });
+                        return;
+                    }
+
                     Swal.fire({
-                        title: 'Error',
-                        text: 'Ha ocurrido un error al procesar la solicitud',
-                        icon: 'error'
+                        title: '¿Seguro de editar?',
+                        text: "Estás a punto de guardar los cambios.",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, editar',
+                        cancelButtonText: 'Cancelar',
+                        reverseButtons: true
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
                     });
-                } finally {
-                    submitButton.disabled = false;
-                    submitButton.innerHTML = 'Guardar';
-                }
-            });
+                });
+            }
         });
     </script>
 

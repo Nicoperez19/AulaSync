@@ -31,7 +31,7 @@
 <div>
 
 
-  <div class="mt-4 mb-4">
+    <div class="mt-4 mb-4">
         {{ $espacios->links('vendor.pagination.tailwind') }}
     </div>
 
@@ -53,17 +53,17 @@
                 @forelse ($espacios as $index => $espacio)
                     <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50'  }}">
 
-                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            <span class="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
-                                {{ $espacio->id_espacio }}
-                            </span>
+                        <td
+                            class="p-3 text-sm font-semibold text-blue-600 border border-white dark:border-white dark:text-blue-400">
+                            {{ $espacio->id_espacio }}
                         </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                        {{ $espacio->nombre_espacio ?? 'Sin nombre' }}
+                            {{ $espacio->nombre_espacio ?? 'Sin nombre' }}
 
                         </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ $espacio->piso->facultad->nombre_facultad ?? 'Sin Facultad' }}, Sede {{ $espacio->piso->facultad->sede->nombre_sede ?? 'Sin nombre' }}
+                            {{ $espacio->piso->facultad->nombre_facultad ?? 'Sin Facultad' }}, Sede
+                            {{ $espacio->piso->facultad->sede->nombre_sede ?? 'Sin nombre' }}
                         </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
                             {{ $espacio->piso->numero_piso ?? 'Sin Piso' }}
@@ -72,12 +72,11 @@
                             {{ $espacio->tipo_espacio }}
                         </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            <span
-                                class="px-2 py-1 text-xs font-semibold rounded-full 
-                                @if ($espacio->estado === 'Disponible') bg-green-100 text-green-800 
-                                @elseif($espacio->estado === 'Ocupado') bg-red-100 text-red-800 
-                                @else bg-yellow-100 text-yellow-800 @endif">
-                            {{ $espacio->estado }}
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                                    @if ($espacio->estado === 'Disponible') bg-green-100 text-green-800 
+                                    @elseif($espacio->estado === 'Ocupado') bg-red-100 text-red-800 
+                                    @else bg-yellow-100 text-yellow-800 @endif">
+                                {{ $espacio->estado }}
                             </span>
                         </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
@@ -90,11 +89,13 @@
                                     <x-icons.edit class="w-5 h-5 mr-1" aria-hidden="true" />
 
                                 </x-button>
-                                <a href="{{ route('spaces.download-qr', $espacio->id_espacio) }}" 
-                                   class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-orange-400 border border-transparent rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-                                   title="Descargar QR">
+                                <a href="{{ route('spaces.download-qr', $espacio->id_espacio) }}"
+                                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-orange-400 border border-transparent rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                                    title="Descargar QR">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
+                                        </path>
                                     </svg>
                                 </a>
                                 <form action="{{ route('spaces.delete', $espacio->id_espacio) }}" method="POST"
@@ -135,7 +136,7 @@
     </div>
 </div>
 
-    <script>
+<script>
     function sortTable(columnIndex) {
         var table = document.getElementById("spaces-table");
         var rows = Array.from(table.rows).slice(1);
@@ -150,10 +151,9 @@
             var cellA = rowA.cells[columnIndex].textContent.trim();
             var cellB = rowB.cells[columnIndex].textContent.trim();
 
-            // Para la columna de puestos (índice 6), convertir a número
-            if (columnIndex === 6) {
-                cellA = cellA === 'N/A' ? 0 : parseInt(cellA) || 0;
-                cellB = cellB === 'N/A' ? 0 : parseInt(cellB) || 0;
+            if (columnIndex === 5 || columnIndex === 6) {
+                cellA = new Date(cellA);
+                cellB = new Date(cellB);
             }
 
             if (cellA < cellB) {
@@ -172,38 +172,31 @@
 
     function confirmDelete(formId) {
         console.log('Función confirmDelete llamada para formulario:', formId);
-        
-            Swal.fire({
+
+        Swal.fire({
             title: '¿Estás seguro?',
             text: "Esta acción no se puede deshacer",
             icon: 'warning',
-                showCancelButton: true,
+            showCancelButton: true,
             confirmButtonColor: '#d33',
             cancelButtonColor: '#3085d6',
             confirmButtonText: 'Sí, eliminar',
             cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
+        }).then((result) => {
+            if (result.isConfirmed) {
                 console.log('Usuario confirmó eliminación');
                 const form = document.getElementById(formId);
                 console.log('Formulario encontrado:', form);
-                
+
                 if (form) {
                     console.log('Enviando formulario...');
                     form.submit();
                 } else {
                     console.error('No se encontró el formulario con ID:', formId);
                 }
-                }
-            });
-        }
-    
-    // Escuchar eventos de Livewire para actualizar la tabla después de acciones
-    document.addEventListener('livewire:load', function() {
-        // Escuchar eventos de eliminación exitosa
-        window.addEventListener('espacio-eliminado', function(event) {
-            // Recargar el componente Livewire
-            Livewire.emit('refresh');
+            }
         });
-    });
-    </script>
+    }
+
+
+</script>

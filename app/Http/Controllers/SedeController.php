@@ -16,11 +16,10 @@ class SedeController extends Controller
     public function index()
     {
         try {
-            $sedes = Sede::with('universidad', 'comuna')->get();
             $universidades = Universidad::all();
             $comunas = Comuna::all();
             
-            return view('layouts.sedes.sede_index', compact('sedes', 'universidades', 'comunas'));
+            return view('layouts.sedes.sede_index', compact('universidades', 'comunas'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar las sedes.'])->withInput();
         }

@@ -11,9 +11,8 @@ class UniversidadController extends Controller
 {
     public function index()
     {
-        $universidades = Universidad::all();
         $comunas = Comuna::all();
-        return view('layouts.university.university_index', compact('universidades', 'comunas'));
+        return view('layouts.university.university_index', compact('comunas'));
     }
 
     public function store(Request $request)

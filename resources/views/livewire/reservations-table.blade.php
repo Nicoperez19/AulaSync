@@ -48,8 +48,7 @@
                             <form method="POST" action="{{ route('reservas.delete', $reserva->id_reserva) }}">
                                 @csrf
                                 @method('DELETE')
-                                <x-button variant="danger"
-                                    class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700">
+                                <x-button variant="danger" class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700">
                                     Eliminar
                                 </x-button>
                             </form>
