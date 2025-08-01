@@ -129,19 +129,19 @@ class PlanoDigitalController extends Controller
             $idEspacio = $bloque->id_espacio;
             $espacio = $bloque->espacio;
 
-            // 1. Si el campo estado es "Ocupado", siempre rojo
+            // 1. Si el campo estado es "Ocupado", siempre ocupado
             if ($espacio->estado === 'Ocupado') {
-                $estadoFinal = '#FF0000';
+                $estadoFinal = 'Ocupado';
             } else {
                 // 2. Si el campo estado es "Disponible"
                 $planificacionActiva = $planificacionesActivas->firstWhere('id_espacio', $idEspacio);
                 $planificacionProxima = $planificacionesProximas->firstWhere('id_espacio', $idEspacio);
                 if ($planificacionActiva) {
-                    $estadoFinal = '#FFA500'; // Naranja (reservado)
+                    $estadoFinal = 'Reservado'; // Naranja (reservado)
                 } elseif ($planificacionProxima) {
-                    $estadoFinal = '#3B82F6'; // Azul (próximo)
+                    $estadoFinal = 'Proximo'; // Azul (próximo)
                 } else {
-                    $estadoFinal = '#059669'; // Verde (disponible)
+                    $estadoFinal = 'Disponible'; // Verde (disponible)
                 }
             }
 
@@ -368,6 +368,7 @@ class PlanoDigitalController extends Controller
             ->get();
 
         return response()->json([
+            'success' => true,
             'espacios' => $espacios->map(function($espacio) use ($horaActual, $horaActualStr, $diaActual, $planificacionesActivas, $reservasActivas) {
                 $estadoTabla = $espacio->estado; // Estado actual en la tabla espacios
                 
@@ -432,11 +433,83 @@ class PlanoDigitalController extends Controller
                 }
                 
                 return [
-                    'id' => $espacio->id_espacio,
+                    'id_espacio' => $espacio->id_espacio,
                     'estado' => $estado,
                     'informacion_clase_actual' => $informacionAdicional
                 ];
             })
         ]);
+    }
+
+    /**
+     * Devolver un espacio ocupado
+     */
+    public function devolverEspacio(Request $request)
+    {
+        try {
+            $request->validate([
+                'id_espacio' => 'required|string',
+                'run_usuario' => 'required|string'
+            ]);
+
+            $idEspacio = $request->input('id_espacio');
+            $runUsuario = $request->input('run_usuario');
+
+            // Buscar el espacio
+            $espacio = \App\Models\Espacio::where('id_espacio', $idEspacio)->first();
+            
+            if (!$espacio) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Espacio no encontrado'
+                ], 404);
+            }
+
+            // Verificar si el espacio está ocupado
+            if ($espacio->estado !== 'Ocupado') {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'El espacio no está ocupado'
+                ], 400);
+            }
+
+            // Buscar reservas activas para este espacio
+            $reservasActivas = \App\Models\Reserva::where('id_espacio', $idEspacio)
+                ->where('fecha_reserva', now()->toDateString())
+                ->where('estado', 'activa')
+                ->get();
+
+            // Marcar las reservas como finalizadas
+            foreach ($reservasActivas as $reserva) {
+                $reserva->estado = 'finalizada';
+                $reserva->hora_salida = now()->format('H:i:s');
+                $reserva->save();
+            }
+
+            // Cambiar el estado del espacio a disponible
+            $espacio->estado = 'Disponible';
+            $espacio->save();
+
+            // Registrar la devolución en un log o tabla de auditoría si es necesario
+            \Log::info("Espacio {$idEspacio} devuelto por usuario {$runUsuario}");
+
+            return response()->json([
+                'success' => true,
+                'mensaje' => 'Espacio devuelto exitosamente',
+                'espacio' => [
+                    'id' => $espacio->id_espacio,
+                    'nombre' => $espacio->nombre_espacio,
+                    'estado' => $espacio->estado
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al devolver espacio: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error al procesar la devolución: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

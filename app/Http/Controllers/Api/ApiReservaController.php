@@ -311,21 +311,23 @@ class ApiReservaController extends Controller
         }
     }
 
+    // Método duplicado - removido para evitar confusión
+    // Se usa HorarioController::devolverLlaves en su lugar
+    /*
     public function devolverLlaves(Request $request)
     {
         try {
             $request->validate([
-                'run' => 'required|exists:users,run',
-                'espacio_id' => 'required|exists:espacios,id_espacio'
+                'run' => 'required',
+                'id_espacio' => 'required|exists:espacios,id_espacio'
             ]);
 
-            $usuario = User::where('run', $request->run)->first();
-            $espacio = Espacio::where('id_espacio', $request->espacio_id)->first();
+            $espacio = Espacio::where('id_espacio', $request->id_espacio)->first();
 
-            if (!$usuario || !$espacio) {
+            if (!$espacio) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Usuario o espacio no encontrado'
+                    'message' => 'Espacio no encontrado'
                 ], 404);
             }
 
@@ -337,28 +339,49 @@ class ApiReservaController extends Controller
                 ], 400);
             }
 
-            // Buscar la reserva activa para este espacio
-            $reservaActiva = Reserva::where('id_espacio', $request->espacio_id)
+            // Buscar la reserva activa para este espacio y usuario (profesor o solicitante)
+            $reservaActiva = Reserva::where('id_espacio', $request->id_espacio)
                 ->where('estado', 'activa')
                 ->where('fecha_reserva', Carbon::today())
+                ->where(function($query) use ($request) {
+                    $query->where('run_profesor', $request->run)
+                          ->orWhere('run_solicitante', $request->run);
+                })
                 ->first();
 
-            if ($reservaActiva) {
-                // Actualizar la reserva
-                $reservaActiva->update([
-                    'estado' => 'finalizada',
-                    'hora_salida' => Carbon::now()->format('H:i:s')
-                ]);
+            if (!$reservaActiva) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró una reserva activa para este usuario y espacio'
+                ], 404);
             }
+
+            // Obtener información del usuario (profesor o solicitante)
+            $usuario = null;
+            $nombreUsuario = '';
+            
+            if ($reservaActiva->run_profesor) {
+                $usuario = User::where('run', $reservaActiva->run_profesor)->first();
+                $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
+            } elseif ($reservaActiva->run_solicitante) {
+                $solicitante = \App\Models\Solicitante::where('run_solicitante', $reservaActiva->run_solicitante)->first();
+                $nombreUsuario = $solicitante ? $solicitante->nombre : 'Solicitante no encontrado';
+            }
+
+            // Actualizar la reserva
+            $reservaActiva->update([
+                'estado' => 'finalizada',
+                'hora_salida' => Carbon::now()->format('H:i:s')
+            ]);
 
             // Cambiar el estado del espacio a disponible
             $espacio->update(['estado' => 'Disponible']);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Devolución exitosa',
+                'message' => 'Devolución completada',
                 'data' => [
-                    'usuario' => $usuario->name,
+                    'usuario' => $nombreUsuario,
                     'espacio' => $espacio->nombre_espacio,
                     'hora_devolucion' => Carbon::now()->format('H:i:s')
                 ]
@@ -372,6 +395,7 @@ class ApiReservaController extends Controller
             ], 500);
         }
     }
+    */
 
     // Método migrado desde App\Http\Controllers\ReservaController
     public function getReservaActiva($id)
@@ -396,12 +420,26 @@ class ApiReservaController extends Controller
                     ->first();
 
                 if ($ultimaReserva) {
+                    // Obtener información del usuario (profesor o solicitante)
+                    $nombreUsuario = '';
+                    $emailUsuario = '';
+                    
+                    if ($ultimaReserva->run_profesor) {
+                        $usuario = User::where('run', $ultimaReserva->run_profesor)->first();
+                        $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
+                        $emailUsuario = $usuario ? $usuario->email : 'Sin información';
+                    } elseif ($ultimaReserva->run_solicitante) {
+                        $solicitante = \App\Models\Solicitante::where('run_solicitante', $ultimaReserva->run_solicitante)->first();
+                        $nombreUsuario = $solicitante ? $solicitante->nombre : 'Solicitante no encontrado';
+                        $emailUsuario = $solicitante ? $solicitante->correo : 'Sin información';
+                    }
+                    
                     return response()->json([
                         'success' => true,
                         'reserva' => [
                             'id' => $ultimaReserva->id_reserva,
-                            'profesor_nombre' => $ultimaReserva->user->name,
-                            'profesor_email' => $ultimaReserva->user->email,
+                            'profesor_nombre' => $nombreUsuario,
+                            'profesor_email' => $emailUsuario,
                             'hora_inicio' => $ultimaReserva->hora,
                             'hora_termino' => $ultimaReserva->hora_salida,
                             'fecha' => $ultimaReserva->fecha_reserva,
@@ -443,12 +481,26 @@ class ApiReservaController extends Controller
                 ]);
             }
 
+            // Obtener información del usuario (profesor o solicitante)
+            $nombreUsuario = '';
+            $emailUsuario = '';
+            
+            if ($reserva->run_profesor) {
+                $usuario = User::where('run', $reserva->run_profesor)->first();
+                $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
+                $emailUsuario = $usuario ? $usuario->email : 'Sin información';
+            } elseif ($reserva->run_solicitante) {
+                $solicitante = \App\Models\Solicitante::where('run_solicitante', $reserva->run_solicitante)->first();
+                $nombreUsuario = $solicitante ? $solicitante->nombre : 'Solicitante no encontrado';
+                $emailUsuario = $solicitante ? $solicitante->correo : 'Sin información';
+            }
+
             return response()->json([
                 'success' => true,
                 'reserva' => [
                     'id' => $reserva->id_reserva,
-                    'profesor_nombre' => $reserva->user->name,
-                    'profesor_email' => $reserva->user->email,
+                    'profesor_nombre' => $nombreUsuario,
+                    'profesor_email' => $emailUsuario,
                     'hora_inicio' => $reserva->hora,
                     'hora_termino' => $reserva->hora_salida,
                     'fecha' => $reserva->fecha_reserva,

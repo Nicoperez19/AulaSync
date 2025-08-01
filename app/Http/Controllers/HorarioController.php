@@ -11,38 +11,120 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class HorarioController extends Controller
 {
+    /**
+     * Verificar si un usuario tiene una reserva activa en un espacio específico
+     */
+    public function verificarReservaActiva(Request $request)
+    {
+        try {
+            $request->validate([
+                'run_usuario' => 'required|string',
+                'id_espacio' => 'required|string'
+            ]);
+
+            $runUsuario = $request->input('run_usuario');
+            $idEspacio = $request->input('id_espacio');
+
+            // Buscar reserva activa para este usuario en este espacio
+            $reservaActiva = Reserva::where(function($query) use ($runUsuario) {
+                    $query->where('run_profesor', $runUsuario)
+                          ->orWhere('run_solicitante', $runUsuario);
+                })
+                ->where('id_espacio', $idEspacio)
+                ->where('estado', 'activa')
+                ->whereNull('hora_salida')
+                ->first();
+
+            return response()->json([
+                'success' => true,
+                'tiene_reserva_activa' => $reservaActiva ? true : false,
+                'reserva' => $reservaActiva ? [
+                    'id_reserva' => $reservaActiva->id_reserva,
+                    'hora_inicio' => $reservaActiva->hora,
+                    'hora_fin' => $reservaActiva->hora_salida,
+                    'fecha' => $reservaActiva->fecha_reserva
+                ] : null
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al verificar reserva activa: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'tiene_reserva_activa' => false,
+                'mensaje' => 'Error al verificar reserva activa: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Verificar usuario (profesor, solicitante o usuario no registrado)
+     * 
+     * Esta función determina el tipo de usuario que está escaneando el QR:
+     * 1. Profesor registrado
+     * 2. Solicitante registrado
+     * 3. Usuario no registrado (requiere registro)
+     */
     public function verificarUsuario($run)
     {
         try {
-            // Primero verificar en la tabla de usuarios registrados
-            $usuario = User::select('run', 'name', 'email', 'celular')->where('run', $run)->first();
+            // ========================================
+            // CASO 1: Verificar si es profesor registrado
+            // ========================================
+            $profesor = \App\Models\Profesor::select('run_profesor', 'name', 'email', 'celular', 'tipo_profesor')
+                ->where('run_profesor', $run)
+                ->first();
 
-            if ($usuario) {
+            if ($profesor) {
                 return response()->json([
                     'verificado' => true,
-                    'usuario_no_registrado' => false,
-                    'tipo_usuario' => 'registrado',
+                    'tipo_usuario' => 'profesor',
                     'usuario' => [
-                        'run' => $usuario->run,
-                        'nombre' => $usuario->name,
-                        'email' => $usuario->email,
-                        'telefono' => $usuario->celular
+                        'run' => $profesor->run_profesor,
+                        'nombre' => $profesor->name,
+                        'email' => $profesor->email,
+                        'telefono' => $profesor->celular,
+                        'tipo_profesor' => $profesor->tipo_profesor
                     ],
-                    'mensaje' => 'Usuario registrado verificado correctamente'
+                    'mensaje' => 'Profesor verificado correctamente'
                 ]);
             }
 
-            // Si no está en usuarios registrados, verificar en usuarios no registrados
+            // ========================================
+            // CASO 2: Verificar si es solicitante registrado
+            // ========================================
+            $solicitante = \App\Models\Solicitante::where('run_solicitante', $run)
+                ->where('activo', true)
+                ->first();
+
+            if ($solicitante) {
+                return response()->json([
+                    'verificado' => true,
+                    'tipo_usuario' => 'solicitante_registrado',
+                    'usuario' => [
+                        'run' => $solicitante->run_solicitante,
+                        'nombre' => $solicitante->nombre,
+                        'email' => $solicitante->correo,
+                        'telefono' => $solicitante->telefono,
+                        'tipo_solicitante' => $solicitante->tipo_solicitante,
+                        'institucion_origen' => $solicitante->institucion_origen
+                    ],
+                    'mensaje' => 'Solicitante verificado correctamente'
+                ]);
+            }
+
+            // ========================================
+            // CASO 3: Verificar si es usuario no registrado (legacy)
+            // ========================================
             $usuarioNoRegistrado = \App\Models\UsuarioNoRegistrado::where('run', $run)->first();
 
             if ($usuarioNoRegistrado) {
                 return response()->json([
                     'verificado' => true,
-                    'usuario_no_registrado' => true,
-                    'tipo_usuario' => 'no_registrado',
+                    'tipo_usuario' => 'usuario_no_registrado',
                     'usuario' => [
                         'run' => $usuarioNoRegistrado->run,
                         'nombre' => $usuarioNoRegistrado->nombre,
@@ -54,19 +136,20 @@ class HorarioController extends Controller
                 ]);
             }
 
-            // Si no está en ninguna tabla
+            // ========================================
+            // CASO 4: Usuario completamente nuevo
+            // ========================================
             return response()->json([
                 'verificado' => false,
-                'usuario_no_registrado' => true,
                 'tipo_usuario' => 'nuevo',
                 'run_escaneado' => $run,
                 'mensaje' => 'Usuario no encontrado en la base de datos. Se requiere registro previo.'
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Error al verificar usuario: ' . $e->getMessage());
             return response()->json([
                 'verificado' => false,
-                'usuario_no_registrado' => false,
                 'mensaje' => 'Error al verificar usuario: ' . $e->getMessage()
             ], 500);
         }
@@ -178,12 +261,20 @@ class HorarioController extends Controller
         }
     }
 
+    /**
+     * Crear reserva para profesor o solicitante
+     * 
+     * Esta función maneja la creación de reservas para:
+     * 1. Profesores con clases programadas
+     * 2. Profesores sin clases (reserva espontánea)
+     * 3. Solicitantes registrados
+     */
     public function crearReserva(Request $request)
     {
         DB::beginTransaction();
         try {
-            \Log::info('=== INICIO CREAR RESERVA ===');
-            \Log::info('Datos recibidos:', $request->all());
+            Log::info('=== INICIO CREAR RESERVA ===');
+            Log::info('Datos recibidos:', $request->all());
             
             // ========================================
             // DEFINIR VARIABLES DE FECHA Y HORA AL INICIO
@@ -192,23 +283,34 @@ class HorarioController extends Controller
             $horaActual = $ahora->format('H:i:s');
             $fechaActual = $ahora->toDateString();
             
-            \Log::info('Variables de tiempo definidas:', [
+            Log::info('Variables de tiempo definidas:', [
                 'hora_actual' => $horaActual,
                 'fecha_actual' => $fechaActual
+            ]);
+            
+            // ========================================
+            // DETERMINAR TIPO DE USUARIO
+            // ========================================
+            $tipoUsuario = $request->input('tipo_usuario', 'profesor'); // 'profesor' o 'solicitante'
+            $runUsuario = $request->input('run');
+            
+            Log::info('Tipo de usuario detectado:', [
+                'tipo_usuario' => $tipoUsuario,
+                'run_usuario' => $runUsuario
             ]);
             
             $espacio = Espacio::select('id_espacio', 'estado', 'nombre_espacio')->find($request->id_espacio);
             
             if (!$espacio) {
                 DB::rollBack();
-                \Log::error('Espacio no encontrado:', ['id_espacio' => $request->id_espacio]);
+                Log::error('Espacio no encontrado:', ['id_espacio' => $request->id_espacio]);
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'Espacio no encontrado'
                 ]);
             }
 
-            \Log::info('Espacio encontrado:', [
+            Log::info('Espacio encontrado:', [
                 'id_espacio' => $espacio->id_espacio,
                 'nombre' => $espacio->nombre_espacio,
                 'estado_actual' => $espacio->estado
@@ -216,7 +318,7 @@ class HorarioController extends Controller
 
             if ($espacio->estado === 'Ocupado') {
                 DB::rollBack();
-                \Log::warning('Espacio ya está ocupado');
+                Log::warning('Espacio ya está ocupado');
                 return response()->json([
                     'success' => false,
                     'mensaje' => '¿Desea devolver las llaves?',
@@ -226,11 +328,27 @@ class HorarioController extends Controller
             }
 
             // ========================================
+            // LÓGICA ESPECÍFICA POR TIPO DE USUARIO
+            // ========================================
+            
+            if ($tipoUsuario === 'profesor') {
+                return $this->crearReservaProfesor($request, $espacio, $horaActual, $fechaActual, $ahora);
+            } elseif ($tipoUsuario === 'solicitante') {
+                return $this->crearReservaSolicitante($request, $espacio, $horaActual, $fechaActual, $ahora);
+            } else {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Tipo de usuario no válido'
+                ], 400);
+            }
+
+            // ========================================
             // VALIDACIÓN DE CLASES PROGRAMADAS
             // ========================================
             $clasesProgramadas = $this->verificarClasesProgramadas($request->run, $horaActual, $ahora->dayOfWeek);
             
-            \Log::info('Resultado de verificación de clases programadas:', $clasesProgramadas);
+            Log::info('Resultado de verificación de clases programadas:', $clasesProgramadas);
             
             // Si el usuario tiene clases programadas, verificar que esté solicitando el espacio correcto
             if ($clasesProgramadas['tiene_clases']) {
@@ -239,7 +357,7 @@ class HorarioController extends Controller
                 // Si está solicitando un espacio diferente al programado, mostrar advertencia
                 if ($espacioProgramado !== $request->id_espacio) {
                     DB::rollBack();
-                    \Log::warning('Usuario solicita espacio diferente al programado:', [
+                    Log::warning('Usuario solicita espacio diferente al programado:', [
                         'run' => $request->run,
                         'espacio_solicitado' => $request->id_espacio,
                         'espacio_programado' => $espacioProgramado,
@@ -256,7 +374,7 @@ class HorarioController extends Controller
                     ]);
                 } else {
                     // Está solicitando el espacio correcto - continuar normalmente
-                    \Log::info('Usuario solicita su espacio programado correctamente:', [
+                    Log::info('Usuario solicita su espacio programado correctamente:', [
                         'run' => $request->run,
                         'espacio' => $request->id_espacio,
                         'clase' => $clasesProgramadas['proxima_clase']['asignatura']
@@ -513,7 +631,7 @@ class HorarioController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Error al crear reserva:', [
+            Log::error('Error al crear reserva:', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
@@ -524,31 +642,648 @@ class HorarioController extends Controller
         }
     }
 
+    /**
+     * Crear reserva específica para profesores
+     */
+    private function crearReservaProfesor($request, $espacio, $horaActual, $fechaActual, $ahora)
+    {
+        try {
+            // ========================================
+            // VALIDACIÓN DE CLASES PROGRAMADAS
+            // ========================================
+            $clasesProgramadas = $this->verificarClasesProgramadas($request->run, $horaActual, $ahora->dayOfWeek);
+            
+            Log::info('Resultado de verificación de clases programadas:', $clasesProgramadas);
+            
+            // Si el usuario tiene clases programadas, verificar que esté solicitando el espacio correcto
+            if ($clasesProgramadas['tiene_clases']) {
+                $espacioProgramado = $clasesProgramadas['proxima_clase']['espacio']['id'];
+                
+                // Si está solicitando un espacio diferente al programado, mostrar advertencia
+                if ($espacioProgramado !== $request->id_espacio) {
+                    DB::rollBack();
+                    Log::warning('Usuario solicita espacio diferente al programado:', [
+                        'run' => $request->run,
+                        'espacio_solicitado' => $request->id_espacio,
+                        'espacio_programado' => $espacioProgramado,
+                        'clase_programada' => $clasesProgramadas['proxima_clase']
+                    ]);
+                    
+                    return response()->json([
+                        'success' => false,
+                        'mensaje' => "Hola {$clasesProgramadas['profesor']['nombre']}, tienes clase de '{$clasesProgramadas['proxima_clase']['asignatura']}' programada en el espacio '{$clasesProgramadas['proxima_clase']['espacio']['nombre']}' a las {$clasesProgramadas['proxima_clase']['hora_inicio']}. ¿Desea solicitar las llaves de su espacio programado?",
+                        'tipo' => 'clase_programada',
+                        'clase_programada' => $clasesProgramadas['proxima_clase'],
+                        'profesor' => $clasesProgramadas['profesor'],
+                        'espacio_correcto' => $espacioProgramado
+                    ]);
+                } else {
+                    // Está solicitando el espacio correcto - continuar normalmente
+                    Log::info('Usuario solicita su espacio programado correctamente:', [
+                        'run' => $request->run,
+                        'espacio' => $request->id_espacio,
+                        'clase' => $clasesProgramadas['proxima_clase']['asignatura']
+                    ]);
+                }
+            }
+
+            // ========================================
+            // VALIDACIONES DE USUARIO Y RESERVAS
+            // ========================================
+            
+            // 1. Verificar si el usuario ya tiene una reserva activa en cualquier sala
+            $reservaActivaUsuario = Reserva::where('run_profesor', $request->run)
+                ->where('estado', 'activa')
+                ->whereNull('hora_salida')
+                ->first();
+
+            if ($reservaActivaUsuario) {
+                DB::rollBack();
+                Log::warning('Profesor ya tiene reserva activa:', [
+                    'run_profesor' => $request->run,
+                    'reserva_id' => $reservaActivaUsuario->id_reserva,
+                    'espacio_actual' => $reservaActivaUsuario->id_espacio,
+                    'fecha_reserva' => $reservaActivaUsuario->fecha_reserva
+                ]);
+                
+                // Obtener información del espacio donde tiene la reserva activa
+                $espacioReservaActiva = Espacio::select('nombre_espacio')->find($reservaActivaUsuario->id_espacio);
+                $nombreEspacioActivo = $espacioReservaActiva ? $espacioReservaActiva->nombre_espacio : 'Desconocido';
+                
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => "Ya tienes una reserva activa en el espacio '{$nombreEspacioActivo}'. Debes finalizarla antes de solicitar una nueva.",
+                    'tipo' => 'reserva_activa',
+                    'reserva_activa' => [
+                        'id_reserva' => $reservaActivaUsuario->id_reserva,
+                        'espacio' => $nombreEspacioActivo,
+                        'fecha' => $reservaActivaUsuario->fecha_reserva,
+                        'hora_inicio' => $reservaActivaUsuario->hora
+                    ]
+                ]);
+            }
+
+            // 2. Verificar si el usuario ya tiene una reserva pendiente para el mismo día
+            $reservaPendienteHoy = Reserva::where('run_profesor', $request->run)
+                ->where('fecha_reserva', $fechaActual)
+                ->where('estado', 'activa')
+                ->exists();
+
+            if ($reservaPendienteHoy) {
+                DB::rollBack();
+                Log::warning('Profesor ya tiene reserva pendiente para hoy:', ['run_profesor' => $request->run, 'fecha' => $fechaActual]);
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Ya tienes una reserva pendiente para hoy. Solo puedes tener una reserva por día.',
+                    'tipo' => 'reserva_diaria'
+                ]);
+            }
+
+            // 3. Verificar si el usuario ha excedido el límite de reservas diarias (opcional)
+            $reservasHoy = Reserva::where('run_profesor', $request->run)
+                ->where('fecha_reserva', $fechaActual)
+                ->count();
+
+            $limiteReservasDiarias = 3; // Puedes ajustar este límite según tus necesidades
+            if ($reservasHoy >= $limiteReservasDiarias) {
+                DB::rollBack();
+                Log::warning('Profesor ha excedido el límite de reservas diarias:', [
+                    'run_profesor' => $request->run, 
+                    'reservas_hoy' => $reservasHoy,
+                    'limite' => $limiteReservasDiarias
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => "Has excedido el límite de {$limiteReservasDiarias} reservas por día. Intenta mañana.",
+                    'tipo' => 'limite_excedido',
+                    'reservas_hoy' => $reservasHoy,
+                    'limite' => $limiteReservasDiarias
+                ]);
+            }
+
+            Log::info('Validaciones de usuario completadas exitosamente:', [
+                'run' => $request->run,
+                'reservas_hoy' => $reservasHoy,
+                'fecha' => $fechaActual
+            ]);
+
+            // 4. Verificar que el usuario no esté intentando reservar el mismo espacio que ya tiene reservado
+            $reservaMismoEspacio = Reserva::where('run_profesor', $request->run)
+                ->where('id_espacio', $request->id_espacio)
+                ->where('fecha_reserva', $fechaActual)
+                ->where('estado', 'activa')
+                ->exists();
+
+            if ($reservaMismoEspacio) {
+                DB::rollBack();
+                Log::warning('Usuario intenta reservar el mismo espacio:', [
+                    'run' => $request->run,
+                    'id_espacio' => $request->id_espacio,
+                    'fecha' => $fechaActual
+                ]);
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Ya tienes una reserva activa para este espacio hoy.',
+                    'tipo' => 'mismo_espacio'
+                ]);
+            }
+
+            // Validar módulos consecutivos usando la nueva lógica simplificada
+            $modulosSolicitados = $request->input('modulos', 1);
+            
+            // Obtener día actual en formato string
+            $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+            $diaActual = $diasSemana[$ahora->dayOfWeek];
+            
+            // Mapeo de días a códigos
+            $codigosDias = [
+                'lunes' => 'LU',
+                'martes' => 'MA', 
+                'miercoles' => 'MI',
+                'jueves' => 'JU',
+                'viernes' => 'VI',
+                'sabado' => 'SA',
+                'domingo' => 'DO'
+            ];
+            
+            $codigoDia = $codigosDias[$diaActual] ?? 'LU';
+            
+            // Determinar el módulo actual según la hora
+            $moduloActual = $this->determinarModuloActual($horaActual, $diaActual);
+            
+            Log::info('Información de validación:', [
+                'dia_actual' => $diaActual,
+                'codigo_dia' => $codigoDia,
+                'modulo_actual' => $moduloActual,
+                'modulos_solicitados' => $modulosSolicitados,
+                'hora_actual' => $horaActual
+            ]);
+            
+            if (!$moduloActual) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No hay módulo actual disponible.'
+                ]);
+            }
+            
+            // Obtener todas las planificaciones para este espacio en este día
+            $planificaciones = Planificacion_Asignatura::where('id_espacio', $request->id_espacio)
+                ->where('id_modulo', 'like', $codigoDia . '.%')
+                ->pluck('id_modulo')
+                ->toArray();
+            
+            Log::info('Planificaciones encontradas:', $planificaciones);
+            
+            // Contar módulos consecutivos disponibles desde el módulo actual
+            $modulosDisponibles = 0;
+            for ($i = $moduloActual; $i <= 15; $i++) {
+                $moduloCodigo = $codigoDia . '.' . $i;
+                
+                // Si existe planificación para este módulo, terminar
+                if (in_array($moduloCodigo, $planificaciones)) {
+                    Log::info("Módulo {$moduloCodigo} tiene planificación - terminando conteo");
+                    break;
+                }
+                
+                $modulosDisponibles++;
+                Log::info("Módulo {$moduloCodigo} disponible (conteo: {$modulosDisponibles})");
+                
+                // Si ya tenemos suficientes módulos, terminar
+                if ($modulosDisponibles >= $modulosSolicitados) {
+                    break;
+                }
+            }
+            
+            Log::info('Resultado de validación:', [
+                'modulos_disponibles' => $modulosDisponibles,
+                'modulos_solicitados' => $modulosSolicitados
+            ]);
+            
+            if ($modulosDisponibles < $modulosSolicitados) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No hay suficientes módulos consecutivos disponibles para la cantidad solicitada.'
+                ]);
+            }
+            
+            // Definir hora de inicio y fin de la reserva usando las constantes de horarios
+            $horariosModulos = [
+                'lunes' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
+                'martes' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
+                'miercoles' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
+                'jueves' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
+                'viernes' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']]
+            ];
+            
+            $horariosDia = $horariosModulos[$diaActual] ?? null;
+            $horaInicio = $horariosDia[$moduloActual]['inicio'] ?? $horaActual;
+            $horaFin = $horariosDia[$moduloActual + $modulosSolicitados - 1]['fin'] ?? null;
+
+            $lastReserva = Reserva::select('id_reserva')->orderByDesc('id_reserva')->first();
+            $newIdNumber = $lastReserva ? 
+                str_pad(intval(substr($lastReserva->id_reserva, 1)) + 1, 3, '0', STR_PAD_LEFT) : 
+                '001';
+            $newId = 'R' . $newIdNumber;
+
+            Log::info('Creando nueva reserva:', ['id_reserva' => $newId]);
+
+            $reserva = new Reserva();
+            $reserva->id_reserva = $newId;
+            $reserva->hora = $horaInicio;
+            $reserva->fecha_reserva = $fechaActual;
+            $reserva->id_espacio = $request->id_espacio;
+            $reserva->run_profesor = $request->run;
+            $reserva->run_solicitante = null; // No es solicitante
+            $reserva->tipo_reserva = $clasesProgramadas['tiene_clases'] ? 'clase' : 'espontanea';
+            $reserva->estado = 'activa';
+            $reserva->hora_salida = $horaFin;
+            $reserva->save();
+
+            Log::info('Reserva creada exitosamente:', [
+                'id_reserva' => $reserva->id_reserva,
+                'espacio_id' => $reserva->id_espacio,
+                'run_profesor' => $reserva->run_profesor
+            ]);
+
+            Log::info('Estado del espacio antes de actualizar:', ['estado' => $espacio->estado]);
+            $espacio->estado = 'Ocupado';
+            $espacio->save();
+            Log::info('Estado del espacio después de actualizar:', ['estado' => $espacio->estado]);
+
+            // Verificar que el cambio se guardó correctamente
+            $espacioVerificado = Espacio::select('id_espacio', 'estado', 'nombre_espacio')->find($request->id_espacio);
+            Log::info('Verificación del estado del espacio:', [
+                'id_espacio' => $espacioVerificado->id_espacio,
+                'estado_verificado' => $espacioVerificado->estado
+            ]);
+
+            DB::commit();
+            Log::info('=== RESERVA DE PROFESOR CREADA EXITOSAMENTE ===');
+            
+            return response()->json([
+                'success' => true,
+                'reserva' => [
+                    'id' => $reserva->id_reserva,
+                    'hora' => $reserva->hora,
+                    'hora_salida' => $reserva->hora_salida,
+                    'fecha' => $reserva->fecha_reserva,
+                    'espacio' => $espacio->nombre_espacio,
+                    'estado' => $espacio->estado,
+                    'tipo' => $reserva->tipo_reserva
+                ],
+                'mensaje' => 'Reserva creada exitosamente'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al crear reserva de profesor: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error al crear reserva: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Crear reserva específica para solicitantes
+     */
+    private function crearReservaSolicitante($request, $espacio, $horaActual, $fechaActual, $ahora)
+    {
+        try {
+            // Verificar que el solicitante existe y está activo
+            $solicitante = \App\Models\Solicitante::where('run_solicitante', $request->run)
+                ->where('activo', true)
+                ->first();
+
+            if (!$solicitante) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Solicitante no encontrado o inactivo'
+                ], 404);
+            }
+
+            // Verificar que el solicitante no tenga reservas activas
+            $reservaActiva = Reserva::where('run_solicitante', $request->run)
+                ->where('estado', 'activa')
+                ->whereNull('hora_salida')
+                ->first();
+
+            if ($reservaActiva) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Ya tienes una reserva activa. Debes finalizarla antes de solicitar una nueva.',
+                    'tipo' => 'reserva_activa'
+                ], 400);
+            }
+
+            // Verificar límite de reservas diarias (máximo 2)
+            $reservasHoy = Reserva::where('run_solicitante', $request->run)
+                ->whereDate('fecha_reserva', $fechaActual)
+                ->count();
+
+            if ($reservasHoy >= 2) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Has alcanzado el límite de 2 reservas por día.',
+                    'tipo' => 'limite_excedido'
+                ], 400);
+            }
+
+            // Validar módulos consecutivos disponibles (máximo 2 para solicitantes)
+            $modulosSolicitados = min($request->input('modulos', 1), 2);
+            
+            $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+            $diaActual = $diasSemana[$ahora->dayOfWeek];
+            
+            $codigosDias = [
+                'lunes' => 'LU', 'martes' => 'MA', 'miercoles' => 'MI',
+                'jueves' => 'JU', 'viernes' => 'VI', 'sabado' => 'SA', 'domingo' => 'DO'
+            ];
+            
+            $codigoDia = $codigosDias[$diaActual] ?? 'LU';
+            
+            // Determinar módulo actual
+            $moduloActual = $this->determinarModuloActual($horaActual, $diaActual);
+            
+            if (!$moduloActual) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No hay módulo actual disponible.'
+                ], 400);
+            }
+
+            // Verificar módulos consecutivos disponibles
+            $planificaciones = Planificacion_Asignatura::where('id_espacio', $request->id_espacio)
+                ->where('id_modulo', 'like', $codigoDia . '.%')
+                ->pluck('id_modulo')
+                ->toArray();
+
+            $modulosDisponibles = 0;
+            for ($i = $moduloActual; $i <= 15; $i++) {
+                $moduloCodigo = $codigoDia . '.' . $i;
+                
+                if (in_array($moduloCodigo, $planificaciones)) {
+                    break;
+                }
+                
+                $modulosDisponibles++;
+                
+                if ($modulosDisponibles >= $modulosSolicitados) {
+                    break;
+                }
+            }
+
+            if ($modulosDisponibles < $modulosSolicitados) {
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No hay suficientes módulos consecutivos disponibles.'
+                ], 400);
+            }
+
+            // Calcular horarios
+            $horariosModulos = [
+                'lunes' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
+                'martes' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
+                'miercoles' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
+                'jueves' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
+                'viernes' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']]
+            ];
+
+            $horariosDia = $horariosModulos[$diaActual] ?? null;
+            $horaInicio = $horariosDia[$moduloActual]['inicio'] ?? $horaActual;
+            $horaFin = $horariosDia[$moduloActual + $modulosSolicitados - 1]['fin'] ?? null;
+
+            // Generar ID de reserva
+            $lastReserva = Reserva::select('id_reserva')->orderByDesc('id_reserva')->first();
+            $newIdNumber = $lastReserva ? 
+                str_pad(intval(substr($lastReserva->id_reserva, 1)) + 1, 3, '0', STR_PAD_LEFT) : 
+                '001';
+            $newId = 'R' . $newIdNumber;
+
+            // Crear la reserva
+            $reserva = new Reserva();
+            $reserva->id_reserva = $newId;
+            $reserva->hora = $horaInicio;
+            $reserva->fecha_reserva = $fechaActual;
+            $reserva->id_espacio = $request->id_espacio;
+            $reserva->run_solicitante = $request->run;
+            $reserva->run_profesor = null; // No es profesor
+            $reserva->tipo_reserva = 'solicitante';
+            $reserva->estado = 'activa';
+            $reserva->hora_salida = $horaFin;
+            $reserva->save();
+
+            // Actualizar estado del espacio
+            $espacio->estado = 'Ocupado';
+            $espacio->save();
+
+            DB::commit();
+
+            Log::info('Reserva de solicitante creada exitosamente', [
+                'id_reserva' => $reserva->id_reserva,
+                'run_solicitante' => $reserva->run_solicitante,
+                'espacio' => $espacio->nombre_espacio
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'mensaje' => 'Reserva creada exitosamente',
+                'reserva' => [
+                    'id' => $reserva->id_reserva,
+                    'hora' => $reserva->hora,
+                    'hora_salida' => $reserva->hora_salida,
+                    'fecha' => $reserva->fecha_reserva,
+                    'espacio' => $espacio->nombre_espacio,
+                    'solicitante' => $solicitante->nombre,
+                    'tipo' => $reserva->tipo_reserva
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error al crear reserva de solicitante: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error al crear reserva: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function verificarEstadoEspacioYReserva(Request $request)
+    {
+        // Validar los datos de entrada
+        $request->validate([
+            'run' => 'required',
+            'id_espacio' => 'required|exists:espacios,id_espacio'
+        ]);
+
+        // Log para debugging
+        Log::info('=== INICIO VERIFICACIÓN ESTADO ESPACIO Y RESERVA ===');
+        Log::info('Datos recibidos:', $request->all());
+        
+        // Debug: Verificar si el espacio existe
+        $espacioExiste = Espacio::find($request->id_espacio);
+        Log::info('Espacio encontrado:', ['espacio' => $espacioExiste]);
+
+        try {
+            // 1. Verificar si el usuario tiene una reserva activa en este espacio específico
+            $hoy = Carbon::today();
+            Log::info('Fecha de hoy para comparación:', ['hoy' => $hoy->toDateString()]);
+            
+            $reservaEnEsteEspacio = Reserva::where('id_espacio', $request->id_espacio)
+                ->where('estado', 'activa')
+                ->where('fecha_reserva', $hoy)
+                ->where(function($query) use ($request) {
+                    $query->where('run_profesor', $request->run)
+                          ->orWhere('run_solicitante', $request->run);
+                })
+                ->first();
+
+            Log::info('Reserva en este espacio:', ['reserva' => $reservaEnEsteEspacio]);
+
+            // Debug: Buscar todas las reservas para este usuario y espacio (sin filtros de fecha/estado)
+            $todasLasReservas = Reserva::where('id_espacio', $request->id_espacio)
+                ->where(function($query) use ($request) {
+                    $query->where('run_profesor', $request->run)
+                          ->orWhere('run_solicitante', $request->run);
+                })
+                ->get();
+            Log::info('Todas las reservas para este usuario y espacio:', ['reservas' => $todasLasReservas]);
+
+            if ($reservaEnEsteEspacio) {
+                Log::info('Usuario tiene reserva activa en este espacio - proceder con devolución');
+                // El usuario tiene una reserva activa en este espacio - puede devolver
+                return response()->json([
+                    'tipo' => 'devolucion',
+                    'mensaje' => 'Puede proceder con la devolución de llaves'
+                ]);
+            }
+
+            // 2. Verificar si el usuario tiene reservas activas en otros espacios
+            $reservasActivasUsuario = Reserva::where('estado', 'activa')
+                ->where('fecha_reserva', $hoy)
+                ->where(function($query) use ($request) {
+                    $query->where('run_profesor', $request->run)
+                          ->orWhere('run_solicitante', $request->run);
+                })
+                ->get();
+
+            Log::info('Reservas activas del usuario en otros espacios:', ['reservas' => $reservasActivasUsuario]);
+
+            if ($reservasActivasUsuario->count() > 0) {
+                Log::info('Usuario tiene reservas activas en otros espacios');
+                // El usuario tiene reservas activas en otros espacios
+                return response()->json([
+                    'tipo' => 'reserva_existente',
+                    'mensaje' => 'Ya tiene una reserva activa en otro espacio. No puede agendar de nuevo.'
+                ]);
+            }
+
+            // 3. Verificar si el espacio está ocupado por otro usuario
+            $espacio = Espacio::find($request->id_espacio);
+            Log::info('Estado del espacio:', ['espacio' => $espacio]);
+
+            if ($espacio->estado === 'Ocupado') {
+                Log::info('Espacio está ocupado por otro usuario');
+                return response()->json([
+                    'tipo' => 'espacio_ocupado',
+                    'mensaje' => 'El espacio está ocupado por otro usuario'
+                ]);
+            }
+
+            // 4. El espacio está disponible y el usuario no tiene reservas activas
+            Log::info('Espacio está disponible y usuario no tiene reservas activas');
+            return response()->json([
+                'tipo' => 'disponible',
+                'mensaje' => 'El espacio está disponible para reservar'
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error al verificar estado del espacio y reserva: ' . $e->getMessage());
+            return response()->json([
+                'tipo' => 'error',
+                'mensaje' => 'Error al verificar el estado del espacio: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function devolverLlaves(Request $request)
     {
+        // Validar los datos de entrada
+        $request->validate([
+            'run' => 'required',
+            'id_espacio' => 'required|exists:espacios,id_espacio'
+        ]);
+
+        // Log para debugging
+        Log::info('=== INICIO DEVOLUCIÓN DE LLAVES ===');
+        Log::info('Datos recibidos:', $request->all());
+
         DB::beginTransaction();
         try {
             $espacio = Espacio::select('id_espacio', 'estado', 'nombre_espacio')->find($request->id_espacio);
             
+            Log::info('Espacio encontrado:', ['espacio' => $espacio]);
+            
             if (!$espacio) {
+                Log::info('Espacio no encontrado');
                 DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Espacio no encontrado'
+                    'message' => 'Espacio no encontrado'
                 ]);
             }
 
-            $reservaActiva = Reserva::select('id_reserva', 'estado', 'hora_salida', 'id_espacio')
-                ->where('id_espacio', $request->id_espacio)
-                ->where('estado', 'activa')
-                ->first();
-
-            if (!$reservaActiva) {
+            // Verificar si el espacio está ocupado
+            Log::info('Estado del espacio:', ['estado' => $espacio->estado]);
+            if ($espacio->estado !== 'Ocupado') {
+                Log::info('El espacio no está ocupado');
                 DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'No hay una reserva activa para este espacio'
+                    'message' => 'El espacio no está ocupado'
                 ]);
+            }
+
+            // Buscar la reserva activa para este espacio y usuario (profesor o solicitante)
+            $hoy = Carbon::today();
+            $reservaActiva = Reserva::select('id_reserva', 'estado', 'hora_salida', 'id_espacio', 'run_profesor', 'run_solicitante')
+                ->where('id_espacio', $request->id_espacio)
+                ->where('estado', 'activa')
+                ->where('fecha_reserva', $hoy)
+                ->where(function($query) use ($request) {
+                    $query->where('run_profesor', $request->run)
+                          ->orWhere('run_solicitante', $request->run);
+                })
+                ->first();
+
+            Log::info('Reserva activa encontrada:', ['reserva' => $reservaActiva]);
+
+            if (!$reservaActiva) {
+                Log::info('No se encontró reserva activa');
+                DB::rollBack();
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró una reserva activa para este usuario y espacio'
+                ]);
+            }
+
+            // Obtener información del usuario (profesor o solicitante)
+            $nombreUsuario = '';
+            
+            if ($reservaActiva->run_profesor) {
+                $usuario = User::where('run', $reservaActiva->run_profesor)->first();
+                $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
+            } elseif ($reservaActiva->run_solicitante) {
+                $solicitante = \App\Models\Solicitante::where('run_solicitante', $reservaActiva->run_solicitante)->first();
+                $nombreUsuario = $solicitante ? $solicitante->nombre : 'Solicitante no encontrado';
             }
 
             $reservaActiva->estado = 'finalizada';
@@ -559,14 +1294,16 @@ class HorarioController extends Controller
             $espacio->save();
 
             DB::commit();
+            Log::info('Devolución completada exitosamente');
             return response()->json([
                 'success' => true,
-                'mensaje' => 'Devolución de llaves registrada exitosamente',
+                'message' => 'Devolución completada',
                 'reserva' => [
                     'id' => $reservaActiva->id_reserva,
                     'hora_salida' => $reservaActiva->hora_salida,
                     'espacio' => $espacio->nombre_espacio,
-                    'estado' => $espacio->estado
+                    'estado' => $espacio->estado,
+                    'usuario' => $nombreUsuario
                 ]
             ]);
 
@@ -574,7 +1311,7 @@ class HorarioController extends Controller
             DB::rollBack();
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al registrar devolución: ' . $e->getMessage()
+                'message' => 'Error al registrar devolución: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -487,6 +487,75 @@
         </div>
     </x-modal>
 
+    <!-- Modal para registro de solicitante -->
+    <x-modal name="registro-solicitante" :show="false" focusable>
+        @slot('title')
+            <h2 class="text-lg font-medium text-white dark:text-gray-100">
+                Registro de Solicitante
+            </h2>
+        @endslot
+        <div class="p-6">
+            <div class="space-y-4">
+                <div class="text-center">
+                    <h3 class="text-lg font-medium text-gray-900">Usuario No Registrado</h3>
+                    <p class="mt-2 text-sm text-gray-600">
+                        El RUN <span id="run-solicitante-no-registrado" class="font-semibold"></span> no está registrado como profesor.
+                        Complete los siguientes datos para continuar con la solicitud como solicitante.
+                    </p>
+                </div>
+
+                <form id="form-registro-solicitante" class="space-y-4">
+                    <div>
+                        <label for="nombre-solicitante" class="block text-sm font-medium text-gray-700">Nombre Completo *</label>
+                        <input type="text" id="nombre-solicitante" name="nombre" required
+                            class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label for="email-solicitante" class="block text-sm font-medium text-gray-700">Correo Electrónico *</label>
+                        <input type="email" id="email-solicitante" name="email" required
+                            class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label for="telefono-solicitante" class="block text-sm font-medium text-gray-700">Teléfono *</label>
+                        <input type="tel" id="telefono-solicitante" name="telefono" required
+                            class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div>
+                        <label for="tipo-solicitante" class="block text-sm font-medium text-gray-700">Tipo de Solicitante *</label>
+                        <select id="tipo-solicitante" name="tipo_solicitante" required
+                            class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">Seleccione el tipo</option>
+                            <option value="estudiante">Estudiante</option>
+                            <option value="personal">Personal Administrativo</option>
+                            <option value="visitante">Visitante</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label for="institucion-origen" class="block text-sm font-medium text-gray-700">Institución de Origen *</label>
+                        <input type="text" id="institucion-origen" name="institucion_origen" required
+                            class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <div class="flex pt-4 space-x-3">
+                        <button type="button" onclick="cancelarRegistroSolicitante()"
+                            class="flex-1 px-4 py-2 text-gray-700 bg-gray-200 border border-gray-300 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">
+                            Cancelar
+                        </button>
+                        <button type="submit"
+                            class="flex-1 px-4 py-2 text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            Registrar y Continuar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </x-modal>
+
     <script>
         // ========================================
         // VARIABLE PHP PARA EL ID DEL MAPA
@@ -547,6 +616,13 @@
         let usuarioNoRegistrado = null; // Datos del usuario no registrado
         let espacioPendiente = null; // Espacio pendiente después del registro
         let modoOperacionActual = null; // 'solicitud' o 'devolucion'
+
+        // ========================================
+        // VARIABLES GLOBALES PARA SOLICITANTES
+        // ========================================
+        let solicitantePendiente = null; // Datos del solicitante pendiente de registro
+        let runSolicitantePendiente = null; // RUN del solicitante pendiente
+        let espacioSolicitantePendiente = null; // Espacio pendiente para solicitante
 
         // ========================================
         // VARIABLES GLOBALES PARA EL ESTADO DE LA SOLICITUD
@@ -698,6 +774,73 @@
             }
         }
 
+        // Función para registrar solicitante
+        async function registrarSolicitante(datosSolicitante) {
+            try {
+                const response = await fetch('/api/registrar-solicitante', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify(datosSolicitante)
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                return null;
+            }
+        }
+
+        // Función para crear reserva de solicitante
+        async function crearReservaSolicitante(runSolicitante, idEspacio) {
+            try {
+                const response = await fetch('/api/crear-reserva-solicitante', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        run_solicitante: runSolicitante,
+                        id_espacio: idEspacio,
+                        modulos: 1 // Por defecto 1 módulo para solicitantes
+                    })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                return null;
+            }
+        }
+
+        // Función para verificar el estado del espacio y las reservas del usuario
+        async function verificarEstadoEspacioYReserva(runUsuario, idEspacio) {
+            try {
+                console.log('Verificando estado del espacio y reserva:', { runUsuario, idEspacio });
+                const response = await fetch('/api/verificar-estado-espacio-reserva', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        run: runUsuario,
+                        id_espacio: idEspacio
+                    })
+                });
+                const result = await response.json();
+                console.log('Resultado de verificación:', result);
+                return result;
+            } catch (error) {
+                console.error('Error:', error);
+                return {
+                    tipo: 'error',
+                    mensaje: 'Error de conexión al verificar el estado del espacio'
+                };
+            }
+        }
+
         // ========================================
         // NUEVA LÓGICA DE ESCANEO QR
         // ========================================
@@ -756,7 +899,7 @@
             }
         }
 
-        // Función para procesar QR de profesor
+        // Función para procesar QR de usuario
         async function procesarUsuario() {
             // Extraer RUN del QR (buscar "RUN" seguido de números)
             const runMatch = bufferQR.match(/RUN[^0-9]*(\d+)/);
@@ -767,19 +910,50 @@
 
             const run = runMatch[1];
 
-            // Verificar profesor en la base de datos
-            const profesorInfo = await verificarProfesor(run);
-            if (!profesorInfo || !profesorInfo.verificado) {
-                Swal.fire('Error', profesorInfo?.mensaje || 'Profesor no encontrado', 'error');
+            // Verificar usuario en la base de datos
+            const usuarioInfo = await verificarUsuario(run);
+            
+            if (!usuarioInfo) {
+                Swal.fire('Error', 'Error al verificar usuario', 'error');
                 return;
             }
 
-            // Profesor verificado - mostrar información
-            document.getElementById('qr-status').innerHTML = 'Profesor verificado. Escanee el espacio.';
-            document.getElementById('run-escaneado').textContent = profesorInfo.profesor.run_profesor;
-            document.getElementById('nombre-usuario').textContent = profesorInfo.profesor.name;
-            profesorEscaneado = run;
-            esperandoProfesor = false;
+            if (usuarioInfo.verificado) {
+                if (usuarioInfo.tipo_usuario === 'profesor') {
+                    // Es profesor - continuar con el flujo normal
+                    document.getElementById('qr-status').innerHTML = 'Profesor verificado. Escanee el espacio.';
+                    document.getElementById('run-escaneado').textContent = usuarioInfo.usuario.run;
+                    document.getElementById('nombre-usuario').textContent = usuarioInfo.usuario.nombre;
+                    profesorEscaneado = run;
+                    esperandoProfesor = false;
+                } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
+                    // Es solicitante registrado - continuar con el flujo normal
+                    document.getElementById('qr-status').innerHTML = 'Solicitante verificado. Escanee el espacio.';
+                    document.getElementById('run-escaneado').textContent = usuarioInfo.usuario.run;
+                    document.getElementById('nombre-usuario').textContent = usuarioInfo.usuario.nombre;
+                    profesorEscaneado = run;
+                    esperandoProfesor = false;
+                } else {
+                    // Otro tipo de usuario - mostrar error
+                    Swal.fire('Error', 'Tipo de usuario no válido para solicitar espacios', 'error');
+                }
+            } else {
+                // Usuario no encontrado - mostrar modal de registro de solicitante
+                runSolicitantePendiente = run;
+                document.getElementById('run-solicitante-no-registrado').textContent = run;
+                
+                // Cerrar modal actual si está abierto
+                window.dispatchEvent(new CustomEvent('close-modal', {
+                    detail: 'data-space'
+                }));
+                
+                // Abrir modal de registro de solicitante
+                setTimeout(() => {
+                    window.dispatchEvent(new CustomEvent('open-modal', {
+                        detail: 'registro-solicitante'
+                    }));
+                }, 300);
+            }
         }
 
         // Función para procesar QR de espacio
@@ -807,8 +981,26 @@
                 return;
             }
 
-            // Crear reserva
-            const reserva = await crearReserva(profesorEscaneado, espacio);
+            // Verificar el tipo de usuario para crear la reserva apropiada
+            const usuarioInfo = await verificarUsuario(profesorEscaneado);
+            let reserva;
+
+            if (usuarioInfo && usuarioInfo.verificado) {
+                if (usuarioInfo.tipo_usuario === 'profesor') {
+                    // Crear reserva de profesor
+                    reserva = await crearReserva(profesorEscaneado, espacio);
+                } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
+                    // Crear reserva de solicitante
+                    reserva = await crearReservaSolicitante(profesorEscaneado, espacio);
+                } else {
+                    Swal.fire('Error', 'Tipo de usuario no válido para crear reserva', 'error');
+                    return;
+                }
+            } else {
+                Swal.fire('Error', 'Error al verificar usuario para crear reserva', 'error');
+                return;
+            }
+
             if (!reserva || !reserva.success) {
                 Swal.fire('Error', reserva?.mensaje || 'Error al crear reserva', 'error');
                 return;
@@ -827,7 +1019,7 @@
                 drawIndicators();
             }
 
-            // Volver a esperar profesor
+            // Volver a esperar usuario
             esperandoProfesor = true;
         }
 
@@ -1817,17 +2009,20 @@
                 } else {
                     // Procesar QR de espacio para devolución (formato: TH'L01)
                     const espacioProcesado = bufferQRDevolucion.replace(/'/g, '-');
-                    const espacioInfo = await verificarEspacio(espacioProcesado);
+                    espacioEscaneadoDevolucion = espacioProcesado;
 
-                    if (espacioInfo?.verificado) {
-                        espacioEscaneadoDevolucion = espacioProcesado;
+                    // Primero verificar el estado del espacio y si el usuario tiene reserva activa
+                    console.log('Verificando estado para devolución:', { usuarioEscaneadoDevolucion, espacioProcesado });
+                    const resultadoVerificacion = await verificarEstadoEspacioYReserva(usuarioEscaneadoDevolucion, espacioProcesado);
+                    console.log('Resultado de verificación para devolución:', resultadoVerificacion);
 
-                        // Procesar devolución directamente
+                    if (resultadoVerificacion.tipo === 'devolucion') {
+                        // El usuario tiene una reserva activa en este espacio, proceder con devolución
                         const resultado = await procesarDevolucion(usuarioEscaneadoDevolucion, espacioProcesado);
 
                         if (resultado.success) {
                             cerrarModalesDespuesDeSwal(['devolver-llaves', 'data-space']);
-                            document.getElementById('qr-status-devolucion').innerHTML = 'Devolución exitosa';
+                            document.getElementById('qr-status-devolucion').innerHTML = 'Devolución completada';
                             // Actualizar el color del indicador a 'Disponible' (verde)
                             const block = state.indicators.find(b => b.id === espacioProcesado);
                             if (block) {
@@ -1842,14 +2037,22 @@
                                 cerrarModalDevolverLlaves();
                             }, 1000);
                         } else {
-                            Swal.fire('Error', resultado.mensaje || 'Error al procesar la devolución', 'error');
-                            document.getElementById('qr-status-devolucion').innerHTML = resultado.mensaje ||
+                            Swal.fire('Error', resultado.message || resultado.mensaje || 'Error al procesar la devolución', 'error');
+                            document.getElementById('qr-status-devolucion').innerHTML = resultado.message || resultado.mensaje ||
                                 'Error al procesar la devolución';
                         }
+                    } else if (resultadoVerificacion.tipo === 'reserva_existente') {
+                        // El usuario ya tiene una reserva activa en otro espacio
+                        Swal.fire('Reserva Existente', resultadoVerificacion.mensaje, 'warning');
+                        document.getElementById('qr-status-devolucion').innerHTML = resultadoVerificacion.mensaje;
+                    } else if (resultadoVerificacion.tipo === 'espacio_ocupado') {
+                        // El espacio está ocupado por otro usuario
+                        Swal.fire('Espacio Ocupado', resultadoVerificacion.mensaje, 'info');
+                        document.getElementById('qr-status-devolucion').innerHTML = resultadoVerificacion.mensaje;
                     } else {
-                        Swal.fire('Error', espacioInfo?.mensaje || 'Error al verificar espacio', 'error');
-                        document.getElementById('qr-status-devolucion').innerHTML = espacioInfo?.mensaje ||
-                            'Error al verificar espacio';
+                        // Error en la verificación
+                        Swal.fire('Error', resultadoVerificacion.mensaje || 'Error al verificar el estado del espacio', 'error');
+                        document.getElementById('qr-status-devolucion').innerHTML = resultadoVerificacion.mensaje || 'Error al verificar el estado del espacio';
                     }
                     // Resetear el estado de devolución
                     resetearEstadoDevolucion();
@@ -1864,7 +2067,7 @@
         // ========================================
         // Función utilitaria para cerrar modales después de un SweetAlert
         function cerrarModalesDespuesDeSwal(modales = []) {
-            return Swal.fire('¡Devolución exitosa!', 'Las llaves han sido devueltas correctamente.', 'success').then(() => {
+            return Swal.fire('Devolución completada', 'Las llaves han sido devueltas correctamente.', 'success').then(() => {
                 modales.forEach(nombre => {
                     window.dispatchEvent(new CustomEvent('close-modal', {
                         detail: nombre
@@ -2063,6 +2266,12 @@
             if (formRegistro) {
                 formRegistro.addEventListener('submit', procesarRegistroUsuario);
             }
+
+            // Configurar el formulario de registro de solicitante
+            const formRegistroSolicitante = document.getElementById('form-registro-solicitante');
+            if (formRegistroSolicitante) {
+                formRegistroSolicitante.addEventListener('submit', procesarRegistroSolicitante);
+            }
             // Resetear estado cada vez que se abre el modal
             window.addEventListener('open-modal', function(e) {
                 if (e.detail === 'devolver-llaves') {
@@ -2099,6 +2308,72 @@
             window.mostrarResumenEstados = mostrarResumenEstados;
             window.actualizarColoresEspacios = actualizarColoresEspacios;
         });
+
+        // ========================================
+        // FUNCIONES PARA MANEJAR REGISTRO DE SOLICITANTE
+        // ========================================
+        
+        // Función para procesar el registro de solicitante
+        async function procesarRegistroSolicitante(event) {
+            event.preventDefault();
+            
+            const formData = new FormData(event.target);
+            const datosSolicitante = {
+                run_solicitante: runSolicitantePendiente,
+                nombre: formData.get('nombre'),
+                correo: formData.get('email'),
+                telefono: formData.get('telefono'),
+                tipo_solicitante: formData.get('tipo_solicitante'),
+                institucion_origen: formData.get('institucion_origen')
+            };
+
+            try {
+                const resultado = await registrarSolicitante(datosSolicitante);
+                
+                if (resultado && resultado.success) {
+                    // Cerrar modal de registro
+                    window.dispatchEvent(new CustomEvent('close-modal', {
+                        detail: 'registro-solicitante'
+                    }));
+                    
+                    // Mostrar mensaje de éxito
+                    Swal.fire('¡Registro exitoso!', 'Solicitante registrado correctamente', 'success');
+                    
+                    // Actualizar información en la interfaz
+                    document.getElementById('qr-status').innerHTML = 'Solicitante verificado. Escanee el espacio.';
+                    document.getElementById('run-escaneado').textContent = runSolicitantePendiente;
+                    document.getElementById('nombre-usuario').textContent = datosSolicitante.nombre;
+                    
+                    // Continuar con el flujo normal
+                    profesorEscaneado = runSolicitantePendiente;
+                    esperandoProfesor = false;
+                    
+                    // Limpiar variables
+                    runSolicitantePendiente = null;
+                    
+                } else {
+                    Swal.fire('Error', resultado?.mensaje || 'Error al registrar solicitante', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire('Error', 'Error al procesar el registro', 'error');
+            }
+        }
+
+        // Función para cancelar registro de solicitante
+        function cancelarRegistroSolicitante() {
+            // Cerrar modal de registro
+            window.dispatchEvent(new CustomEvent('close-modal', {
+                detail: 'registro-solicitante'
+            }));
+            
+            // Limpiar variables
+            runSolicitantePendiente = null;
+            
+            // Resetear estado
+            esperandoProfesor = true;
+            document.getElementById('qr-status').innerHTML = 'Por favor, escanee el código QR del usuario';
+        }
 
         // ========================================
         // FUNCIÓN PARA ACTUALIZAR EL ESTADO DEL QR

@@ -20,6 +20,7 @@ class Reserva extends Model
         'fecha_reserva',
         'id_espacio',
         'run_profesor',
+        'run_solicitante',
         'tipo_reserva',
         'estado',
         'hora_salida',
@@ -45,6 +46,53 @@ class Reserva extends Model
     public function usuarioNoRegistrado()
     {
         return $this->belongsTo(UsuarioNoRegistrado::class, 'run_profesor', 'run');
+    }
+
+    /**
+     * Relación con el solicitante (si la reserva es de un solicitante)
+     */
+    public function solicitante()
+    {
+        return $this->belongsTo(Solicitante::class, 'run_solicitante', 'run_solicitante');
+    }
+
+    /**
+     * Obtener el usuario que realizó la reserva (profesor o solicitante)
+     */
+    public function usuarioReserva()
+    {
+        if ($this->run_profesor) {
+            return $this->profesor();
+        } elseif ($this->run_solicitante) {
+            return $this->solicitante();
+        }
+        return null;
+    }
+
+    /**
+     * Obtener el nombre del usuario que realizó la reserva
+     */
+    public function getNombreUsuarioAttribute()
+    {
+        if ($this->run_profesor && $this->profesor) {
+            return $this->profesor->name;
+        } elseif ($this->run_solicitante && $this->solicitante) {
+            return $this->solicitante->nombre;
+        }
+        return 'Usuario desconocido';
+    }
+
+    /**
+     * Obtener el tipo de usuario que realizó la reserva
+     */
+    public function getTipoUsuarioAttribute()
+    {
+        if ($this->run_profesor) {
+            return 'profesor';
+        } elseif ($this->run_solicitante) {
+            return 'solicitante';
+        }
+        return 'desconocido';
     }
 
     public function asignatura()

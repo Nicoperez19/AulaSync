@@ -272,12 +272,22 @@ Route::post('/registrar-usuario-no-registrado', [HorarioController::class, 'regi
 Route::post('/convertir-usuario-no-registrado', [HorarioController::class, 'convertirUsuarioNoRegistrado']);
 Route::get('/verificar-espacio/{idEspacio}', [HorarioController::class, 'verificarEspacio']);
 Route::post('/crear-reserva', [HorarioController::class, 'crearReserva']);
+Route::post('/verificar-estado-espacio-reserva', [HorarioController::class, 'verificarEstadoEspacioYReserva']);
 Route::post('/devolver-llaves', [HorarioController::class, 'devolverLlaves']);
+Route::post('/verificar-reserva-activa', [HorarioController::class, 'verificarReservaActiva']);
+
+// Rutas para solicitantes
+Route::get('/verificar-solicitante/{run}', [App\Http\Controllers\SolicitanteController::class, 'verificarSolicitante']);
+Route::post('/registrar-solicitante', [App\Http\Controllers\SolicitanteController::class, 'registrarSolicitante']);
+Route::post('/crear-reserva-solicitante', [App\Http\Controllers\SolicitanteController::class, 'crearReservaSolicitante']);
 
 Route::get('/espacios/estados', [PlanoDigitalController::class, 'estadosEspacios']);
 
-// Ruta para devolver llaves
-Route::post('/reserva/devolver', [ApiReservaController::class, 'devolverLlaves']);
+// Ruta para devolver espacios
+Route::post('/devolver-espacio', [PlanoDigitalController::class, 'devolverEspacio']);
+
+// Ruta para devolver llaves (duplicada - removida)
+// Route::post('/reserva/devolver', [ApiReservaController::class, 'devolverLlaves']);
 
 // Ruta para verificar la programación de un usuario en un espacio específico
 Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $usuario) {
