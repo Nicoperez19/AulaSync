@@ -1,7 +1,26 @@
 <x-show-layout>
+    <style>
+        @keyframes parpadeo {
+            0% {
+                opacity: 0.3;
+            }
+
+            50% {
+                opacity: 1;
+            }
+
+            100% {
+                opacity: 0.3;
+            }
+        }
+
+        .parpadeo {
+            animation: parpadeo 2s ease-in-out infinite;
+        }
+    </style>
     <div class="flex h-screen overflow-hidden">
         <aside
-            class="fixed top-0 left-0 z-40 flex flex-col justify-between w-56 h-screen pt-2 text-base border-r border-gray-200 md:w-48 sm:w-40 bg-light-cloud-blue dark:border-gray-700 md:text-sm sm:text-xs">
+            class="fixed top-0 left-0 z-40 flex flex-col justify-between w-56 h-screen pt-2 text-base border-r border-gray-200 md:w-56 bg-light-cloud-blue dark:border-gray-700 md:text-sm sm:text-xs">
 
             <div class="flex flex-col items-center gap-2 md:gap-1">
                 <a href="{{ route('dashboard') }}" class="mb-1">
@@ -15,8 +34,8 @@
                         <div class="flex items-center justify-between pb-4">
                             <div
                                 class="flex items-center gap-1 bg-red-700 rounded shadow-[0_0_1px_1px_rgba(255,255,255,0.1)]">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
@@ -26,8 +45,8 @@
 
                         <div class="py-1">
                             <div class="flex items-center gap-1 mb-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                 </svg>
@@ -38,8 +57,8 @@
 
                         <div class="pt-1">
                             <div class="flex items-center gap-1 mb-1">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
@@ -62,16 +81,19 @@
                                 </svg>
                             </div>
                             <div>
-                                <span id="qr-status" class="block text-sm font-semibold">Esperando</span>
-                                <span class="text-xs text-white/80">Escanea el código QR</span>
+                                <span id="qr-status" class="block text-sm font-semibold parpadeo">Esperando</span>
+                                <span class="text-xs text-white/80 parpadeo">Escanea el código QR</span>
                             </div>
                         </div>
 
                         <hr class="pb-4 my-2 border-white/30">
-                        <h3 class="px-4 mb-2 text-xs font-semibold tracking-wide uppercase text-white/80">Información de
-                            usuario</h3>
 
-                        <div class="px-4 space-y-1 text-sm">
+
+                        <!-- Información del usuario (oculta inicialmente) -->
+                        <div id="info-usuario" class="hidden px-4 space-y-1 text-sm">
+                            <h3 class="mb-2 text-xs font-semibold tracking-wide uppercase text-white/80">Información de
+                                usuario</h3>
+
                             <div class="flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
@@ -91,6 +113,12 @@
                                 <span class="font-bold">Usuario:</span>
                                 <span id="nombre-usuario" class="ml-auto">--</span>
                             </div>
+                        </div>
+
+                        <!-- Información del espacio (oculta inicialmente) -->
+                        <div id="info-espacio" class="hidden px-4 space-y-1 text-sm">
+                            <h3 class="mb-2 text-xs font-semibold tracking-wide uppercase text-white/80">Información de
+                                espacio</h3>
 
                             <div class="flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" fill="none"
@@ -104,8 +132,9 @@
                         </div>
 
                         <input type="text" id="qr-input"
-                            class="absolute w-full px-1 py-1 border-0 bg-transparent text-transparent focus:outline-none focus:border-0 focus:ring-0"
+                            class="absolute w-full px-1 py-1 text-transparent bg-transparent border-0 focus:outline-none focus:border-0 focus:ring-0"
                             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+
                     </div>
                 </div>
             </div>
@@ -113,32 +142,36 @@
 
 
             <!-- Leyenda abajo del todo -->
-            <div class="w-full px-1 py-2 mt-auto bg-red-700 rounded-md shadow-sm">
-                <h3
-                    class="flex items-center justify-center gap-1 mb-2 text-sm font-semibold text-center text-white md:text-xs">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 md:w-3 md:h-3" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                        <circle cx="12" cy="10" r="3"></circle>
-                    </svg>
-                    LEYENDA DE ESTADO
-                </h3>
-                <div class="flex flex-col items-start gap-1">
-                    <div class="flex items-center w-full gap-1">
-                        <div class="w-3 h-3 bg-red-500 border-2 border-white rounded-full"></div>
-                        <span class="flex-1 text-xs text-white">Ocupado</span>
-                    </div>
-                    <div class="flex items-center w-full gap-1">
-                        <div class="w-3 h-3 bg-orange-500 border-2 border-white rounded-full "></div>
-                        <span class="flex-1 text-xs text-white">Reservado</span>
-                    </div>
-                    <div class="flex items-center w-full gap-1">
-                        <div class="w-3 h-3 bg-blue-500 border-2 border-white rounded-full"></div>
-                        <span class="flex-1 text-xs text-white">Próximo</span>
-                    </div>
-                    <div class="flex items-center w-full gap-1">
-                        <div class="w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
-                        <span class="flex-1 text-xs text-white">Disponible</span>
+            <div class="flex flex-col items-center justify-center w-full max-w-md p-1 mx-auto ">
+                <div class="w-full mt-6">
+                    <div class="p-4 text-white bg-red-700 rounded shadow-[0_0_10px_2px_rgba(255,255,255,0.4)]">
+                        <h3
+                            class="flex items-center justify-center gap-1 mb-2 text-sm font-semibold text-center text-white md:text-xs">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 md:w-3 md:h-3" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            LEYENDA DE ESTADO
+                        </h3>
+                        <div class="flex flex-col items-start gap-1">
+                            <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-red-500 border-2 border-white rounded-full"></div>
+                                <span class="flex-1 text-xs text-white">Ocupado</span>
+                            </div>
+                            <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-orange-500 border-2 border-white rounded-full "></div>
+                                <span class="flex-1 text-xs text-white">Reservado</span>
+                            </div>
+                            <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-blue-500 border-2 border-white rounded-full"></div>
+                                <span class="flex-1 text-xs text-white">Próximo</span>
+                            </div>
+                            <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                                <span class="flex-1 text-xs text-white">Disponible</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -152,17 +185,16 @@
                         <ul class="flex" id="pills-tab" role="tablist">
                             @foreach ($pisos as $piso)
                                 @if ($piso['id_mapa'])
-                                    <li role="presentation">
-                                        <a href="{{ route('plano.show', $piso['id_mapa']) }}"
-                                            class="px-4 py-2 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
-                                            {{ $piso['id_mapa'] === $mapa->id_mapa
-                                                ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
-                                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}"
-                                            role="tab"
-                                            aria-selected="{{ $piso['id_mapa'] === $mapa->id_mapa ? 'true' : 'false' }}">
-                                            Piso {{ $piso['numero'] }}
-                                        </a>
-                                    </li>
+                                                    <li role="presentation">
+                                                        <a href="{{ route('plano.show', $piso['id_mapa']) }}"
+                                                            class="px-4 py-2 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
+                                                                                                                                            {{ $piso['id_mapa'] === $mapa->id_mapa
+                                    ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
+                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}" role="tab"
+                                                            aria-selected="{{ $piso['id_mapa'] === $mapa->id_mapa ? 'true' : 'false' }}">
+                                                            Piso {{ $piso['numero'] }}
+                                                        </a>
+                                                    </li>
                                 @endif
                             @endforeach
                         </ul>
@@ -198,11 +230,11 @@
     <!-- Modal para mostrar información del espacio -->
     <x-modal name="data-space" :show="false" focusable>
         @slot('title')
-            <!-- Encabezado rojo -->
-            <div class="flex-1 p-4 text-center">
-                <h2 id="modalTitulo" class="text-2xl font-bold text-center text-white"></h2>
-                <div class="text-xs text-white/80" id="modalSubtitulo"></div>
-            </div>
+        <!-- Encabezado rojo -->
+        <div class="flex-1 p-4 text-center">
+            <h2 id="modalTitulo" class="text-2xl font-bold text-center text-white"></h2>
+            <div class="text-xs text-white/80" id="modalSubtitulo"></div>
+        </div>
         @endslot
         <!-- Estado visual destacado, separado y más grande -->
         <h3 class="pt-4 mb-2 text-lg font-semibold text-gray-900">Información del Espacio</h3>
@@ -299,9 +331,9 @@
     <!-- Modal para reconocimiento -->
     <x-modal name="reconocimiento" :show="false" focusable>
         @slot('title')
-            <h2 class="text-lg font-medium text-white dark:text-gray-100">
-                Reconocimiento
-            </h2>
+        <h2 class="text-lg font-medium text-white dark:text-gray-100">
+            Reconocimiento
+        </h2>
         @endslot
         <div class="p-6">
             <div class="flex flex-col items-center justify-center space-y-4">
@@ -321,9 +353,9 @@
     <!-- Modal para devolución de llaves (rediseñado) -->
     <x-modal name="devolver-llaves" :show="false" focusable>
         @slot('title')
-            <div class="px-6 py-3 text-white bg-red-700 rounded-t">
-                <h2 class="text-lg font-semibold text-center">Devolver Llaves</h2>
-            </div>
+        <div class="px-6 py-3 text-white bg-red-700 rounded-t">
+            <h2 class="text-lg font-semibold text-center">Devolver Llaves</h2>
+        </div>
         @endslot
         <div class="flex flex-col items-center justify-center p-8 bg-white">
             <div class="flex flex-col items-center mb-6">
@@ -345,9 +377,9 @@
     <!-- Modal para solicitud de llaves -->
     <x-modal name="solicitar-llaves" :show="false" focusable>
         @slot('title')
-            <h2 class="text-lg font-medium text-white dark:text-gray-100">
-                Solicitar Llaves
-            </h2>
+        <h2 class="text-lg font-medium text-white dark:text-gray-100">
+            Solicitar Llaves
+        </h2>
         @endslot
         <div class="p-6">
             <div class="flex flex-col items-center justify-center">
@@ -360,8 +392,8 @@
                         </div>
                         <div class="mt-1 mb-1 qr-placeholder">
                             <div class="flex items-center justify-center w-20 h-20 mx-auto rounded-md bg-white/20">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white/40"
-                                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-white/40" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
@@ -383,9 +415,9 @@
     <!-- Modal para registro de usuario no registrado -->
     <x-modal name="registro-usuario" :show="false" focusable>
         @slot('title')
-            <h2 class="text-lg font-medium text-white dark:text-gray-100">
-                Registro de Usuario
-            </h2>
+        <h2 class="text-lg font-medium text-white dark:text-gray-100">
+            Registro de Usuario
+        </h2>
         @endslot
         <div class="p-6">
             <div class="space-y-4">
@@ -401,11 +433,13 @@
 
                 <form id="form-registro-usuario" class="space-y-4">
                     <div>
-                        <label for="nombre-usuario-input" class="block text-sm font-medium text-gray-700">Nombre Completo
-                            *</label>
+                        <label for="nombre-usuario-input" class="block text-sm font-medium text-right text-gray-700">
+                            Nombre Completo *
+                        </label>
                         <input type="text" id="nombre-usuario-input" name="nombre" required autocomplete="name"
-                            class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            class="block w-full px-3 py-2 mt-1 text-right border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
+
 
                     <div>
                         <label for="email-usuario" class="block text-sm font-medium text-gray-700">Correo Electrónico
@@ -463,9 +497,9 @@
     <!-- Modal para seleccionar cantidad de módulos -->
     <x-modal name="seleccionar-modulos" :show="false" focusable>
         @slot('title')
-            <h2 class="text-lg font-medium text-center text-black">
-                Seleccionar Módulos
-            </h2>
+        <h2 class="text-lg font-medium text-center text-black">
+            Seleccionar Módulos
+        </h2>
         @endslot
         <div class="p-6 text-center">
             <p class="mb-4 text-base text-gray-800">¿Por cuántos módulos desea reservar?</p>
@@ -487,41 +521,46 @@
     <!-- Modal para registro de solicitante -->
     <x-modal name="registro-solicitante" :show="false" focusable>
         @slot('title')
-            <h2 class="text-lg font-medium text-white dark:text-gray-100">
-                Registro de Solicitante
-            </h2>
+        <h2 class="text-lg font-medium text-white dark:text-gray-100">
+            Registro de Solicitante
+        </h2>
         @endslot
         <div class="p-6">
             <div class="space-y-4">
                 <div class="text-center">
                     <h3 class="text-lg font-medium text-gray-900">Usuario No Registrado</h3>
                     <p class="mt-2 text-sm text-gray-600">
-                        El RUN <span id="run-solicitante-no-registrado" class="font-semibold"></span> no está registrado como profesor.
+                        El RUN <span id="run-solicitante-no-registrado" class="font-semibold"></span> no está registrado
+                        como profesor.
                         Complete los siguientes datos para continuar con la solicitud como solicitante.
                     </p>
                 </div>
 
                 <form id="form-registro-solicitante" class="space-y-4">
                     <div>
-                        <label for="nombre-solicitante" class="block text-sm font-medium text-gray-700">Nombre Completo *</label>
+                        <label for="nombre-solicitante" class="block text-sm font-medium text-gray-700">Nombre Completo
+                            *</label>
                         <input type="text" id="nombre-solicitante" name="nombre" required autocomplete="name"
                             class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
                     <div>
-                        <label for="email-solicitante" class="block text-sm font-medium text-gray-700">Correo Electrónico *</label>
+                        <label for="email-solicitante" class="block text-sm font-medium text-gray-700">Correo
+                            Electrónico *</label>
                         <input type="email" id="email-solicitante" name="email" required autocomplete="email"
                             class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
                     <div>
-                        <label for="telefono-solicitante" class="block text-sm font-medium text-gray-700">Teléfono *</label>
+                        <label for="telefono-solicitante" class="block text-sm font-medium text-gray-700">Teléfono
+                            *</label>
                         <input type="tel" id="telefono-solicitante" name="telefono" required autocomplete="tel"
                             class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
                     <div>
-                        <label for="tipo-solicitante" class="block text-sm font-medium text-gray-700">Tipo de Solicitante *</label>
+                        <label for="tipo-solicitante" class="block text-sm font-medium text-gray-700">Tipo de
+                            Solicitante *</label>
                         <select id="tipo-solicitante" name="tipo_solicitante" required
                             class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                             <option value="">Seleccione el tipo</option>
@@ -533,8 +572,10 @@
                     </div>
 
                     <div>
-                        <label for="institucion-origen" class="block text-sm font-medium text-gray-700">Institución de Origen *</label>
-                        <input type="text" id="institucion-origen" name="institucion_origen" required autocomplete="organization"
+                        <label for="institucion-origen" class="block text-sm font-medium text-gray-700">Institución de
+                            Origen *</label>
+                        <input type="text" id="institucion-origen" name="institucion_origen" required
+                            autocomplete="organization"
                             class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                     </div>
 
@@ -565,7 +606,7 @@
         // POLYFILL PARA ROUNDRECT (COMPATIBILIDAD)
         // ========================================
         if (!CanvasRenderingContext2D.prototype.roundRect) {
-            CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius) {
+            CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, radius) {
                 if (width < 2 * radius) radius = width / 2;
                 if (height < 2 * radius) radius = height / 2;
                 this.beginPath();
@@ -665,6 +706,73 @@
             indicatorsCanvas: null, // Canvas de los indicadores
             indicatorsCtx: null // Contexto del canvas de indicadores
         };
+
+        // ========================================
+        // FUNCIONES PARA MOSTRAR INFORMACIÓN PROGRESIVAMENTE
+        // ========================================
+
+        // Función para mostrar información del usuario
+        function mostrarInfoUsuario(run, nombre) {
+            // Ocultar mensaje inicial
+            const mensajeInicial = document.getElementById('mensaje-inicial');
+            if (mensajeInicial) {
+                mensajeInicial.classList.add('hidden');
+            }
+
+            // Mostrar información del usuario
+            const infoUsuario = document.getElementById('info-usuario');
+            if (infoUsuario) {
+                infoUsuario.classList.remove('hidden');
+            }
+
+            // Actualizar datos del usuario
+            document.getElementById('run-escaneado').textContent = run;
+            document.getElementById('nombre-usuario').textContent = nombre;
+
+            // Quitar parpadeo del estado QR cuando se procesa usuario
+            const qrStatus = document.getElementById('qr-status');
+            if (qrStatus) {
+                qrStatus.classList.remove('parpadeo');
+            }
+        }
+
+        // Función para mostrar información del espacio
+        function mostrarInfoEspacio(nombreEspacio) {
+            // Mostrar información del espacio
+            const infoEspacio = document.getElementById('info-espacio');
+            if (infoEspacio) {
+                infoEspacio.classList.remove('hidden');
+            }
+
+            // Actualizar datos del espacio
+            document.getElementById('nombre-espacio').textContent = nombreEspacio;
+        }
+
+        // Función para resetear la interfaz
+        function resetearInterfaz() {
+            // Ocultar información del usuario y espacio
+            const infoUsuario = document.getElementById('info-usuario');
+            const infoEspacio = document.getElementById('info-espacio');
+            if (infoUsuario) infoUsuario.classList.add('hidden');
+            if (infoEspacio) infoEspacio.classList.add('hidden');
+
+            // Mostrar mensaje inicial
+            const mensajeInicial = document.getElementById('mensaje-inicial');
+            if (mensajeInicial) {
+                mensajeInicial.classList.remove('hidden');
+            }
+
+            // Limpiar datos
+            document.getElementById('run-escaneado').textContent = '--';
+            document.getElementById('nombre-usuario').textContent = '--';
+            document.getElementById('nombre-espacio').textContent = '--';
+
+            // Restaurar parpadeo del estado QR
+            const qrStatus = document.getElementById('qr-status');
+            if (qrStatus) {
+                qrStatus.classList.add('parpadeo');
+            }
+        }
 
         // ========================================
         // FUNCIONES DE VERIFICACIÓN DE USUARIO Y ESPACIO
@@ -820,23 +928,23 @@
         let lastBufferLength = 0;
         let processingTimeout = null;
         let ordenEscaneo = 'usuario'; // Controla el orden: 'usuario' -> 'espacio'
-        
+
         async function handleScan(event) {
             // Solo procesar cuando se presiona Enter
             if (event.key !== 'Enter') {
                 // Acumular caracteres en el buffer
                 if (event.key.length === 1) {
                     bufferQR += event.key;
-                    
+
                     // Detectar cuando el escaneo se completó (buffer dejó de crecer)
                     if (bufferQR.length > lastBufferLength) {
                         lastBufferLength = bufferQR.length;
-                        
+
                         // Limpiar timeout anterior
                         if (processingTimeout) {
                             clearTimeout(processingTimeout);
                         }
-                        
+
                         // Procesar automáticamente después de 500ms sin nuevos caracteres
                         processingTimeout = setTimeout(async () => {
                             await procesarQRCompleto();
@@ -848,7 +956,7 @@
 
             await procesarQRCompleto();
         }
-        
+
         // Función para procesar el QR completo con validación de orden
         async function procesarQRCompleto() {
             // Validar orden de escaneo
@@ -889,7 +997,7 @@
 
             // Verificar usuario en la base de datos
             const usuarioInfo = await verificarUsuario(run);
-            
+
             if (!usuarioInfo) {
                 Swal.fire('Error', 'Error al verificar usuario', 'error');
                 return;
@@ -899,20 +1007,20 @@
                 if (usuarioInfo.tipo_usuario === 'profesor') {
                     // Es profesor - verificar si tiene clases programadas
                     const tieneClases = await verificarClasesProfesor(run);
-                    
+
                     if (tieneClases) {
                         // Profesor CON clases - solo registra solicitud
                         document.getElementById('qr-status').innerHTML = 'Profesor con clases verificado. Escanee el espacio para registrar asistencia.';
-                        document.getElementById('run-escaneado').textContent = usuarioInfo.usuario.run;
-                        document.getElementById('nombre-usuario').textContent = usuarioInfo.usuario.nombre;
+                        // Mostrar información del usuario
+                        mostrarInfoUsuario(usuarioInfo.usuario.run, usuarioInfo.usuario.nombre);
                         profesorEscaneado = run;
                         ordenEscaneo = 'espacio';
                         // No necesita devolución para volver a solicitar
                     } else {
                         // Profesor SIN clases - solicita con módulos
                         document.getElementById('qr-status').innerHTML = 'Profesor sin clases. Escanee el espacio para solicitar.';
-                        document.getElementById('run-escaneado').textContent = usuarioInfo.usuario.run;
-                        document.getElementById('nombre-usuario').textContent = usuarioInfo.usuario.nombre;
+                        // Mostrar información del usuario
+                        mostrarInfoUsuario(usuarioInfo.usuario.run, usuarioInfo.usuario.nombre);
                         profesorEscaneado = run;
                         ordenEscaneo = 'espacio';
                         // Necesitará especificar módulos (máx 2)
@@ -920,8 +1028,8 @@
                 } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
                     // Es solicitante registrado - solicita con módulos
                     document.getElementById('qr-status').innerHTML = 'Solicitante verificado. Escanee el espacio para solicitar.';
-                    document.getElementById('run-escaneado').textContent = usuarioInfo.usuario.run;
-                    document.getElementById('nombre-usuario').textContent = usuarioInfo.usuario.nombre;
+                    // Mostrar información del usuario
+                    mostrarInfoUsuario(usuarioInfo.usuario.run, usuarioInfo.usuario.nombre);
                     profesorEscaneado = run;
                     ordenEscaneo = 'espacio';
                     // Necesitará especificar módulos (máx 2)
@@ -933,12 +1041,12 @@
                 // Usuario no encontrado - mostrar modal de registro de solicitante
                 runSolicitantePendiente = run;
                 document.getElementById('run-solicitante-no-registrado').textContent = run;
-                
+
                 // Cerrar modal actual si está abierto
                 window.dispatchEvent(new CustomEvent('close-modal', {
                     detail: 'data-space'
                 }));
-                
+
                 // Abrir modal de registro de solicitante
                 setTimeout(() => {
                     window.dispatchEvent(new CustomEvent('open-modal', {
@@ -975,7 +1083,7 @@
 
             // Verificar el tipo de usuario para determinar el flujo
             const usuarioInfo = await verificarUsuario(profesorEscaneado);
-            
+
             if (!usuarioInfo || !usuarioInfo.verificado) {
                 Swal.fire('Error', 'Error al verificar usuario para crear reserva', 'error');
                 ordenEscaneo = 'usuario';
@@ -986,15 +1094,16 @@
             if (usuarioInfo.tipo_usuario === 'profesor') {
                 // Verificar si tiene clases programadas
                 const tieneClases = await verificarClasesProfesor(profesorEscaneado);
-                
+
                 if (tieneClases) {
                     // CASO 1: Profesor CON clases - solo registra asistencia
                     const reserva = await crearReserva(profesorEscaneado, espacio);
                     if (reserva && reserva.success) {
                         Swal.fire('¡Asistencia registrada!', 'El profesor ha registrado su asistencia a clase', 'success');
                         document.getElementById('qr-status').innerHTML = 'Asistencia registrada';
-                        document.getElementById('nombre-espacio').textContent = espacioInfo.espacio.nombre;
-                        
+                        // Mostrar información del espacio
+                        mostrarInfoEspacio(espacioInfo.espacio.nombre);
+
                         // Actualizar indicador en el mapa
                         const block = state.indicators.find(b => b.id === espacio);
                         if (block) {
@@ -1023,6 +1132,11 @@
             // Resetear para siguiente usuario
             ordenEscaneo = 'usuario';
             profesorEscaneado = null;
+
+            // Resetear interfaz después de un breve delay
+            setTimeout(() => {
+                resetearInterfaz();
+            }, 3000);
         }
 
         // ========================================
@@ -1258,7 +1372,7 @@
 
             state.indicators.forEach((indicator, index) => {
                 const position = calculatePosition(indicator);
-                
+
                 const size = config.indicatorSize;
 
                 // Determinar color basado en el estado
@@ -2020,6 +2134,10 @@
                             // Cerrar el modal después de la devolución exitosa
                             setTimeout(() => {
                                 cerrarModalDevolverLlaves();
+                                // Resetear interfaz después de cerrar modal
+                                setTimeout(() => {
+                                    resetearInterfaz();
+                                }, 500);
                             }, 1000);
                         } else {
                             Swal.fire('Error', resultado.message || resultado.mensaje || 'Error al procesar la devolución', 'error');
@@ -2124,10 +2242,10 @@
         // EVENT LISTENER PARA ACTUALIZAR MODAL
         // ========================================
         // Asegurarse de que el modal esté actualizado cuando se abre
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const modal = document.getElementById('modal-solicitar-espacio');
             if (modal) {
-                modal.addEventListener('show.bs.modal', function() {
+                modal.addEventListener('show.bs.modal', function () {
                     actualizarHora();
                     actualizarModuloYColores();
                 });
@@ -2137,21 +2255,23 @@
         // ========================================
         // INICIALIZACIÓN PRINCIPAL 
         // ========================================
-        document.addEventListener("DOMContentLoaded", function() {
-            
+        document.addEventListener("DOMContentLoaded", function () {
+
             // Configurar el input del escáner QR
             const inputEscanner = document.getElementById('qr-input');
             if (inputEscanner) {
                 inputEscanner.addEventListener('keydown', handleScan);
-                document.addEventListener('click', function() {
+                document.addEventListener('click', function () {
                     inputEscanner.focus();
                 });
                 inputEscanner.focus();
-                document.getElementById('qr-status').innerHTML = 'Por favor, escanee el código QR del usuario primero';
+                document.getElementById('qr-status').innerHTML = 'Esperando';
+                // Asegurar que la interfaz esté en estado inicial
+                resetearInterfaz();
             }
             // Inicializar elementos del canvas
             initElements();
-            
+
             // Agregar event listeners para los eventos de mouse en el canvas
             if (elements.indicatorsCanvas) {
                 elements.indicatorsCanvas.addEventListener('mousemove', handleMouseMove);
@@ -2160,7 +2280,7 @@
             }
             // Cargar la imagen del mapa
             const img = new Image();
-            img.onload = function() {
+            img.onload = function () {
                 state.mapImage = img;
                 state.originalImageSize = {
                     width: img.width,
@@ -2172,10 +2292,10 @@
                 state.updateInterval = setInterval(actualizarColoresEspacios, 5000);
             };
             img.src = "{{ asset('storage/' . $mapa->ruta_mapa) }}";
-            window.addEventListener('resize', function() {
+            window.addEventListener('resize', function () {
                 initCanvases();
             });
-            window.addEventListener('beforeunload', function() {
+            window.addEventListener('beforeunload', function () {
                 if (state.updateInterval) {
                     clearInterval(state.updateInterval);
                 }
@@ -2207,7 +2327,7 @@
                 formRegistroSolicitante.addEventListener('submit', procesarRegistroSolicitante);
             }
             // Resetear estado cada vez que se abre el modal
-            window.addEventListener('open-modal', function(e) {
+            window.addEventListener('open-modal', function (e) {
                 if (e.detail === 'devolver-llaves') {
                     resetearDevolucionQR();
                     setTimeout(() => {
@@ -2227,7 +2347,7 @@
             const inputQR = document.getElementById('qr-input-devolucion');
             const lineaDiv = document.getElementById('linea-divisoria-qr');
             if (btnDevolver && areaQR && inputQR && lineaDiv) {
-                btnDevolver.addEventListener('click', function() {
+                btnDevolver.addEventListener('click', function () {
                     areaQR.classList.remove('hidden');
                     lineaDiv.classList.remove('hidden');
                     setTimeout(() => {
@@ -2241,11 +2361,11 @@
         // ========================================
         // FUNCIONES PARA MANEJAR REGISTRO DE SOLICITANTE
         // ========================================
-        
+
         // Función para procesar el registro de solicitante
         async function procesarRegistroSolicitante(event) {
             event.preventDefault();
-            
+
             const formData = new FormData(event.target);
             const datosSolicitante = {
                 run_solicitante: runSolicitantePendiente,
@@ -2258,28 +2378,27 @@
 
             try {
                 const resultado = await registrarSolicitante(datosSolicitante);
-                
+
                 if (resultado && resultado.success) {
                     // Cerrar modal de registro
                     window.dispatchEvent(new CustomEvent('close-modal', {
                         detail: 'registro-solicitante'
                     }));
-                    
+
                     // Mostrar mensaje de éxito
                     Swal.fire('¡Registro exitoso!', 'Solicitante registrado correctamente. Ahora escanee el QR del espacio.', 'success');
-                    
+
                     // Actualizar información en la interfaz
                     document.getElementById('qr-status').innerHTML = 'Solicitante registrado. Escanee el QR del espacio.';
-                    document.getElementById('run-escaneado').textContent = runSolicitantePendiente;
-                    document.getElementById('nombre-usuario').textContent = datosSolicitante.nombre;
-                    
+                    mostrarInfoUsuario(runSolicitantePendiente, datosSolicitante.nombre);
+
                     // Continuar con el flujo - solo necesita escanear espacio
                     profesorEscaneado = runSolicitantePendiente;
                     ordenEscaneo = 'espacio'; // Ya no necesita escanear usuario
-                    
+
                     // Limpiar variables
                     runSolicitantePendiente = null;
-                    
+
                 } else {
                     Swal.fire('Error', resultado?.mensaje || 'Error al registrar solicitante', 'error');
                 }
@@ -2295,13 +2414,14 @@
             window.dispatchEvent(new CustomEvent('close-modal', {
                 detail: 'registro-solicitante'
             }));
-            
+
             // Limpiar variables
             runSolicitantePendiente = null;
-            
+
             // Resetear estado
             esperandoProfesor = true;
-            document.getElementById('qr-status').innerHTML = 'Por favor, escanee el código QR del usuario';
+            document.getElementById('qr-status').innerHTML = 'Esperando';
+            resetearInterfaz();
         }
 
         // ========================================
@@ -2331,9 +2451,9 @@
                 detail: 'registro-usuario'
             }));
 
-                                    // Resetear variables
-                        usuarioNoRegistrado = null;
-                        modoOperacionActual = null;
+            // Resetear variables
+            usuarioNoRegistrado = null;
+            modoOperacionActual = null;
 
             // Volver al modal de solicitud
             setTimeout(() => {
@@ -2422,7 +2542,7 @@
             }
         }
 
-     
+
         // Asegurar que indicators sea siempre un array
         if (!state.indicators || !Array.isArray(state.indicators)) {
             state.indicators = [];
@@ -2552,6 +2672,10 @@
                                     window.dispatchEvent(new CustomEvent('close-modal', {
                                         detail: 'solicitar-llaves'
                                     }));
+                                    // Resetear interfaz después de cerrar modal
+                                    setTimeout(() => {
+                                        resetearInterfaz();
+                                    }, 500);
                                 }, 2000);
                             } else {
                                 // Manejar diferentes tipos de errores con mensajes específicos
@@ -2654,7 +2778,7 @@
             const modulosDisponibles = await calcularModulosDisponibles(idEspacio);
             // Limitar a máximo 2 módulos según la lógica del negocio
             maxModulosDisponibles = Math.min(modulosDisponibles, maxModulos);
-            
+
             document.getElementById('max-modulos-disponibles').textContent = maxModulosDisponibles;
             const inputModulos = document.getElementById('input-cantidad-modulos');
             inputModulos.max = maxModulosDisponibles;
@@ -2667,10 +2791,10 @@
         }
 
         // Confirmar reserva con módulos
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const btnConfirmarModulos = document.getElementById('btn-confirmar-modulos');
             if (btnConfirmarModulos) {
-                btnConfirmarModulos.addEventListener('click', async function() {
+                btnConfirmarModulos.addEventListener('click', async function () {
                     const cantidad = parseInt(document.getElementById('input-cantidad-modulos').value);
                     if (!espacioParaReserva || !runParaReserva) return;
                     // Llama a crearReserva con la cantidad de módulos

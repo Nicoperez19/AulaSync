@@ -3,87 +3,87 @@
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">
                 <div class="p-2 rounded-xl bg-light-cloud-blue">
-                    <i class="fa-solid fa-clock text-white text-2xl"></i>
+                    <i class="text-2xl text-white fa-solid fa-clock"></i>
                 </div>
                 <div>
                     <h2 class="text-2xl font-bold leading-tight">Horarios por Espacio</h2>
-                    <p class="text-gray-500 text-sm">Visualiza y gestiona la programación de espacios por bloques y días
+                    <p class="text-sm text-gray-500">Visualiza y gestiona la programación de espacios por bloques y días
                     </p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <span class="text-sm text-light-cloud-blue font-semibold">
-                    <i class="fa-solid fa-calendar-days mr-1"></i>
+                <span class="text-sm font-semibold text-light-cloud-blue">
+                    <i class="mr-1 fa-solid fa-calendar-days"></i>
                     Período: {{ $semestre }}° Semestre {{ $anioActual }}
                 </span>
             </div>
         </div>
     </x-slot>
 
-    <div class="p-6 min-h-[80vh] w-full">
+    <div class="px-6 min-h-[80vh] w-full">
         <!-- Indicador de carga inicial -->
         <div id="loadingIndicator" class="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-90">
             <div class="text-center">
-                <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-red-700 mx-auto mb-4"></div>
+                <div class="w-16 h-16 mx-auto mb-4 border-b-2 border-red-700 rounded-full animate-spin"></div>
                 <p class="text-lg font-semibold text-gray-700">Cargando horarios...</p>
                 <p class="text-sm text-gray-500">Preparando datos para una experiencia más rápida</p>
             </div>
         </div>
 
-        <div class="p-6 space-y-6 flex flex-col items-center justify-center w-full"
+        <div class="flex flex-col items-center justify-center w-full px-6 space-y-6"
             x-data="{ selectedPiso: '{{ $pisos->first()->id ?? 1 }}' }">
             <!-- Tarjeta de filtros -->
-            <div class="w-full mb-6">
-                <div class="bg-white rounded-xl shadow-sm p-6 w-full">
-                    <form id="filtro-periodo-form" method="GET" action="" class="flex flex-col gap-4 w-full" onsubmit="return false;">
-                        <div class="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
-                            <div class="flex-1 flex items-center gap-4">
-                                <div class="flex items-center gap-2">
-                                    <label class="text-sm font-semibold text-gray-700">Año:</label>
-                                    <span class="px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 font-medium">
-                                        {{ \App\Helpers\SemesterHelper::getCurrentAcademicYear() }}
-                                    </span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <label for="semestre" class="text-sm font-semibold text-gray-700">Semestre:</label>
-                                    <select name="semestre" id="semestre"
-                                        class="px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-light-cloud-blue/30 focus:border-light-cloud-blue transition pr-8">
-                                        @foreach($semestresDisponibles as $sem)
-                                            <option value="{{ $sem }}" {{ ($semestreFiltro ?: \App\Helpers\SemesterHelper::getCurrentSemester()) == $sem ? 'selected' : '' }}>
-                                                {{ $sem }}° Semestre
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
+            <div class="w-full p-6 bg-white shadow-sm rounded-xl">
+                <form id="filtro-periodo-form" method="GET" action="" class="flex flex-col w-full gap-4"
+                    onsubmit="return false;">
+                    <div class="flex flex-col w-full gap-4 sm:flex-row sm:items-center">
+                        <div class="flex items-center flex-1 gap-4">
+                            <div class="flex items-center gap-2">
+                                <label class="text-sm font-semibold text-gray-700">Año:</label>
+                                <span
+                                    class="px-3 py-2 font-medium text-gray-700 border border-gray-300 rounded-lg bg-gray-50">
+                                    {{ \App\Helpers\SemesterHelper::getCurrentAcademicYear() }}
+                                </span>
                             </div>
-                            <button id="aplicar-filtro-btn" type="button"
-                                class="px-6 py-2 bg-light-cloud-blue text-white rounded-lg font-semibold hover:bg-red-800 transition flex items-center gap-2">
-                                <i class="fa-solid fa-filter"></i>
-                                Aplicar Filtros
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <label for="semestre" class="text-sm font-semibold text-gray-700">Semestre:</label>
+                                <select name="semestre" id="semestre"
+                                    class="px-4 py-2 pr-8 transition bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-cloud-blue/30 focus:border-light-cloud-blue">
+                                    @foreach($semestresDisponibles as $sem)
+                                        <option value="{{ $sem }}" {{ ($semestreFiltro ?: \App\Helpers\SemesterHelper::getCurrentSemester()) == $sem ? 'selected' : '' }}>
+                                            {{ $sem }}° Semestre
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
-                    </form>
-                </div>
+                        <button id="aplicar-filtro-btn" type="button"
+                            class="flex items-center gap-2 px-6 py-2 font-semibold text-white transition rounded-lg bg-light-cloud-blue hover:bg-red-800">
+                            <i class="fa-solid fa-filter"></i>
+                            Aplicar Filtros
+                        </button>
+                    </div>
+                </form>
             </div>
 
             <!-- Nav Pills de Pisos - Arriba alineados a la izquierda -->
             <div class="w-full">
                 <div class="">
-                    <ul class="flex border-b border-gray-200 justify-start w-full" role="tablist">
+                    <ul class="flex justify-start w-full border-b border-gray-200" role="tablist">
                         @foreach ($pisos as $piso)
                             <li role="presentation">
                                 <button type="button" @click="selectedPiso = '{{ $piso->id }}'"
                                     class="px-8 py-3 text-base font-semibold transition-all duration-300 border border-b-0 rounded-t-xl focus:outline-none"
                                     :class="selectedPiso == '{{ $piso->id }}' 
-                                                ? 'bg-red-700 text-white border-red-700 shadow-md'
-                                                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-red-700'">
+                                                            ? 'bg-red-700 text-white border-red-700 shadow-md'
+                                                            : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-red-700'">
                                     Piso {{ $piso->numero_piso }}
                                 </button>
                             </li>
                         @endforeach
                     </ul>
                     <!-- Cards de espacios por piso -->
-                    <div class="p-6 bg-white shadow-md rounded-b-xl w-full">
+                    <div class="w-full p-6 bg-white shadow-md rounded-b-xl">
                         @foreach ($pisos as $piso)
                             <div x-show="selectedPiso == '{{ $piso->id }}'"
                                 x-transition:enter="transition ease-out duration-300"
@@ -116,9 +116,9 @@
                                             $icono = $iconos[$tipo] ?? 'fa-solid fa-door-closed';
                                             $badgeTipo = $badgeColores[$tipo] ?? 'bg-gray-100 text-gray-700';
                                         @endphp
-                                        <div class="mb-8 w-full flex flex-col items-center">
-                                            <div class="flex flex-col items-center justify-center mb-3 w-full">
-                                                <div class="flex items-center gap-3 justify-center w-full">
+                                        <div class="flex flex-col items-center w-full mb-8">
+                                            <div class="flex flex-col items-center justify-center w-full mb-3">
+                                                <div class="flex items-center justify-center w-full gap-3">
                                                     <i class="{{ $icono }} text-2xl text-gray-700"></i>
                                                     <h3 class="text-xl font-bold text-gray-900">{{ $tipo }}</h3>
                                                     <span
@@ -127,7 +127,7 @@
                                                 </div>
                                             </div>
                                             <div
-                                                class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 justify-center justify-items-center w-full">
+                                                class="grid justify-center w-full grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 justify-items-center">
                                                 @foreach ($espacios as $espacio)
                                                     @php
                                                         $estado = $espacio->esta_ocupado ? 'Ocupado' : 'Disponible';
@@ -142,7 +142,7 @@
                                                             <span class="font-bold text-gray-800">{{ $espacio->id_espacio }}</span>
                                                         </div>
                                                         <span
-                                                            class="flex items-center justify-center gap-1 text-xs font-semibold mb-1">
+                                                            class="flex items-center justify-center gap-1 mb-1 text-xs font-semibold">
                                                             <span
                                                                 class="inline-block w-2 h-2 rounded-full {{ $puntoEstado }}"></span>
                                                             {{ $estado }}
@@ -161,7 +161,6 @@
                                                         <span
                                                             class="flex items-center justify-center gap-1 text-xs font-medium text-violet-700 group-hover:underline">
                                                             <i class="fa-solid fa-calendar-days"></i>
-                                                            Ver horarios
                                                             <span
                                                                 class="ml-1 px-1.5 py-0.5 bg-violet-100 text-violet-700 rounded-full text-xs font-semibold"
                                                                 x-text="(horariosPorEspacio['{{ $espacio->id_espacio }}'] || []).length + ' clases'">
@@ -184,46 +183,46 @@
         <div id="horarioEspacioModal"
             class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
             <div
-                class="w-full max-w-7xl mx-2 md:mx-8 bg-white rounded-lg shadow-lg overflow-hidden max-h-screen flex flex-col">
+                class="flex flex-col w-full max-h-screen mx-2 overflow-hidden bg-white rounded-lg shadow-lg max-w-7xl md:mx-8">
                 <!-- Encabezado rojo con diseño tipo banner -->
                 <div id="modalHeader"
-                    class="relative bg-red-700 p-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                    class="relative flex flex-col gap-6 p-8 bg-red-700 md:flex-row md:items-center md:justify-between">
                     <!-- Círculos decorativos -->
                     <span
-                        class="absolute left-0 top-0 w-32 h-32 bg-white bg-opacity-10 rounded-full -translate-x-1/2 -translate-y-1/2 pointer-events-none"></span>
+                        class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
                     <span
-                        class="absolute right-0 top-0 w-32 h-32 bg-white bg-opacity-10 rounded-full translate-x-1/2 -translate-y-1/2 pointer-events-none"></span>
-                    <div class="flex items-center gap-5 flex-1 min-w-0">
-                        <div class="flex-shrink-0 flex flex-col items-center justify-center">
-                            <div class="bg-white bg-opacity-20 rounded-full p-4 mb-2">
-                                <i class="fa-solid fa-calendar-days text-3xl text-white"></i>
+                        class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                    <div class="flex items-center flex-1 min-w-0 gap-5">
+                        <div class="flex flex-col items-center justify-center flex-shrink-0">
+                            <div class="p-4 mb-2 bg-white rounded-full bg-opacity-20">
+                                <i class="text-3xl text-white fa-solid fa-calendar-days"></i>
                             </div>
                         </div>
                         <div class="flex flex-col min-w-0">
                             <h1 id="modalEspacioTitle" class="text-3xl font-bold text-white truncate"></h1>
                             <div class="flex items-center gap-2 mt-1">
-                                <span id="modalEspacioTipo" class="text-lg text-white/80 truncate"></span>
+                                <span id="modalEspacioTipo" class="text-lg truncate text-white/80"></span>
                                 <span class="text-lg text-white/80">•</span>
-                                <span id="modalPeriodo" class="text-lg text-white/80 font-semibold">{{ $semestre }}er
+                                <span id="modalPeriodo" class="text-lg font-semibold text-white/80">{{ $semestre }}er
                                     semestre - {{ $anioActual }}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-3 flex-shrink-0 self-start md:self-center">
+                    <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
                         <button id="exportPdfBtn"
                             class="border border-white text-white px-4 py-1.5 rounded-lg font-semibold hover:bg-white hover:text-red-700 transition">Exportar
                             PDF</button>
                         <button onclick="cerrarModalEspacio()"
-                            class="text-3xl font-bold text-white hover:text-gray-200 ml-2">&times;</button>
+                            class="ml-2 text-3xl font-bold text-white hover:text-gray-200">&times;</button>
                     </div>
                 </div>
                 <div class="p-6 bg-gray-50 overflow-y-auto max-h-[70vh] flex-1">
                     <div class="overflow-x-auto">
-                        <table class="min-w-full bg-white rounded-lg overflow-hidden">
+                        <table class="min-w-full overflow-hidden bg-white rounded-lg">
                             <thead>
                                 <tr class="bg-gray-100">
-                                    <th class="px-4 py-3 font-semibold text-center border-b text-gray-600"><i
-                                            class="fa-regular fa-clock mr-1"></i>Hora</th>
+                                    <th class="px-4 py-3 font-semibold text-center text-gray-600 border-b"><i
+                                            class="mr-1 fa-regular fa-clock"></i>Hora</th>
                                     <th class="px-4 py-3 font-semibold text-center border-b">Lunes</th>
                                     <th class="px-4 py-3 font-semibold text-center border-b">Martes</th>
                                     <th class="px-4 py-3 font-semibold text-center border-b">Miércoles</th>
@@ -241,20 +240,16 @@
     </div>
 
     <script>
-        // Variable global para almacenar los horarios
         let horariosPorEspacio = @json($horariosPorEspacio);
-        let espacioActualId = null; // Variable global para el ID del espacio actual
+        let espacioActualId = null;
 
-        // Elementos del formulario de filtros
         const filtroForm = document.getElementById('filtro-periodo-form');
         const aplicarFiltroBtn = document.getElementById('aplicar-filtro-btn');
 
-        // Aplicar filtros por AJAX
         function aplicarFiltros() {
-            const anioFiltro = '2025'; // Año actual fijo
+            const anioFiltro = new Date().getFullYear();
             const semestreFiltro = document.getElementById('semestre')?.value;
 
-            // Verificar que el semestre esté seleccionado
             if (!semestreFiltro) {
                 alert('Por favor, selecciona el semestre para cargar los horarios.');
                 return;
@@ -362,7 +357,6 @@
             }
         });
 
-        // Diccionario de colores pastel muy claros para bloques de clase
         const coloresClases = [
             'bg-pink-50', 'bg-blue-50', 'bg-yellow-50', 'bg-green-50', 'bg-purple-50', 'bg-orange-50', 'bg-cyan-50', 'bg-lime-50'
         ];
@@ -373,10 +367,8 @@
         }
 
         function mostrarHorarioEspacio(idEspacio, nombreEspacio) {
-            // Guardar el ID del espacio actual para la exportación
             espacioActualId = idEspacio;
 
-            // Buscar tipo de espacio y nombre desde la tarjeta
             let tipoEspacio = '';
             let nombreCompleto = '';
             const card = document.querySelector(`[data-id='${idEspacio}']`);
@@ -388,7 +380,6 @@
                 if (nombreSpan) nombreCompleto = nombreSpan.textContent;
             }
 
-            // Obtener el período del horario del espacio específico
             let periodoEspacio = '';
             const horariosEspacio = horariosPorEspacio[idEspacio] || [];
             if (horariosEspacio.length > 0 && horariosEspacio[0].periodo) {
@@ -400,12 +391,10 @@
                 }
             }
 
-            // Formatear el título como "Horario sala de clases TH-50"
             const tituloFormateado = `Horario ${tipoEspacio.toLowerCase()} ${nombreCompleto} (${idEspacio})`;
             document.getElementById('modalEspacioTitle').textContent = tituloFormateado;
             document.getElementById('modalEspacioTipo').textContent = tipoEspacio;
 
-            // Actualizar el período en el modal
             const periodoElement = document.getElementById('modalPeriodo');
             if (periodoElement && periodoEspacio) {
                 periodoElement.textContent = periodoEspacio;
@@ -419,8 +408,7 @@
             const tbody = document.getElementById('horarioEspacioBody');
             tbody.innerHTML = '';
 
-            // Definir todos los módulos disponibles desde las 8:10 hasta las 22:10
-            const todosLosModulos = [
+            const Modulos = [
                 { hora_inicio: '08:10:00', hora_termino: '09:00:00' },
                 { hora_inicio: '09:10:00', hora_termino: '10:00:00' },
                 { hora_inicio: '10:10:00', hora_termino: '11:00:00' },
@@ -440,9 +428,8 @@
 
             const diasUnicos = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
-            todosLosModulos.forEach(modulo => {
+            Modulos.forEach(modulo => {
                 const tr = document.createElement('tr');
-                // Celda de la hora
                 const tdHora = document.createElement('td');
                 tdHora.className = 'py-3 px-4 border-b text-center text-sm text-gray-600 leading-tight';
                 tdHora.innerHTML = `<div class='flex flex-col items-center justify-center'><span class='font-semibold text-gray-800'>${formatearHora(modulo.hora_inicio)} a ${formatearHora(modulo.hora_termino)}</span></div>`;
@@ -456,8 +443,8 @@
                     if (clases.length > 0) {
                         td.innerHTML = clases.map(h => `
                             <div class='p-2 rounded-lg min-h-[90px] w-[150px] mx-auto flex flex-col items-center justify-center text-center break-words text-black font-semibold ${getColorClase(h.asignatura)} shadow-md'>
-                                <div class='text-xs uppercase tracking-wide mb-1'>${h.asignatura} (${h.codigo_asignatura || 'N/A'})</div>
-                                <div class='text-xs font-normal mb-1'><i class='fa-solid fa-user mr-1'></i>${h.profesor ? h.profesor.name : 'Sin profesor asignado'}</div>
+                                <div class='mb-1 text-xs tracking-wide uppercase'>${h.asignatura} (${h.codigo_asignatura || 'N/A'})</div>
+                                <div class='mb-1 text-xs font-normal'><i class='mr-1 fa-solid fa-user'></i>${h.profesor ? h.profesor.name : 'Sin profesor asignado'}</div>
                             </div>
                         `).join('');
                     } else {
@@ -470,7 +457,6 @@
         }
 
         function formatearHora(hora) {
-            // Convierte "08:10:00" a "8:10" y "09:00:00" a "9:00"
             if (!hora) return '';
             const [h, m] = hora.split(':');
             return `${parseInt(h)}:${m}`;
@@ -480,21 +466,18 @@
             document.getElementById('horarioEspacioModal').classList.add('hidden');
             document.body.classList.remove('overflow-hidden');
             document.documentElement.classList.remove('overflow-hidden');
-            espacioActualId = null; // Limpiar el ID del espacio actual
+            espacioActualId = null; 
         }
 
-        // Función para exportar PDF
         function exportarHorarioPDF() {
             if (!espacioActualId) {
                 alert('Error: No se ha seleccionado ningún espacio');
                 return;
             }
 
-            // Obtener el filtro de semestre actual
-            const anioFiltro = '2025'; // Año actual fijo
+            const anioFiltro = new Date().getFullYear();
             const semestreFiltro = document.getElementById('semestre')?.value || '';
 
-            // Construir la URL con los filtros
             let url = `/espacios/${espacioActualId}/export-pdf`;
             const params = new URLSearchParams();
             params.append('anio', anioFiltro);
@@ -503,13 +486,11 @@
                 url += '?' + params.toString();
             }
 
-            // Mostrar indicador de carga
             const exportBtn = document.getElementById('exportPdfBtn');
             const originalText = exportBtn.innerHTML;
-            exportBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i>Generando PDF...';
+            exportBtn.innerHTML = '<i class="mr-2 fa-solid fa-spinner fa-spin"></i>Generando PDF...';
             exportBtn.disabled = true;
 
-            // Realizar la petición para descargar el PDF
             fetch(url, {
                 method: 'GET',
                 headers: {
@@ -523,19 +504,16 @@
                     return response.blob();
                 })
                 .then(blob => {
-                    // Crear un enlace temporal para descargar el archivo
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.style.display = 'none';
                     a.href = url;
 
-                    // Determinar el período para el nombre del archivo
                     const fecha = new Date();
-                    const mes = fecha.getMonth() + 1; // getMonth() devuelve 0-11
+                    const mes = fecha.getMonth() + 1; 
                     const dia = fecha.getDate();
                     let anio = fecha.getFullYear();
-                    
-                    // Nueva lógica: segundo semestre comienza el 21 de julio
+
                     let semestre;
                     if (mes >= 7 && dia >= 21) {
                         semestre = 2;
@@ -545,13 +523,11 @@
                         semestre = 1;
                     }
 
-                    // Usar los filtros si están disponibles
                     if (anioFiltro) anio = anioFiltro;
                     if (semestreFiltro) semestre = semestreFiltro;
 
                     const periodo = `${anio}_${semestre}`;
 
-                    // Formato del nombre: espacio_horario_2025_1.pdf
                     a.download = `${espacioActualId}_horario_${periodo}.pdf`;
 
                     document.body.appendChild(a);
@@ -564,13 +540,11 @@
                     alert('Error al generar el PDF: ' + error.message);
                 })
                 .finally(() => {
-                    // Restaurar el botón
                     exportBtn.innerHTML = originalText;
                     exportBtn.disabled = false;
                 });
         }
 
-        // Agregar event listener al botón de exportar
         document.addEventListener('DOMContentLoaded', function () {
             const exportBtn = document.getElementById('exportPdfBtn');
             if (exportBtn) {
