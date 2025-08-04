@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Providers\RouteServiceProvider;
+use App\Traits\RedirectByRole;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -10,6 +11,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RedirectIfAuthenticated
 {
+    use RedirectByRole;
+
     /**
      * Handle an incoming request.
      *
@@ -23,22 +26,9 @@ class RedirectIfAuthenticated
             if (Auth::guard($guard)->check()) {
                 $user = Auth::guard($guard)->user();
                 
-                // Redirigir según el rol del usuario
-                if ($user->hasRole('Usuario')) {
-                    // Usuario va al monitoreo de espacios
-                    $primerMapa = \App\Models\Mapa::first();
-                    if ($primerMapa) {
-                        return redirect()->route('plano.show', $primerMapa->id_mapa);
-                    } else {
-                        // Si no hay mapas, ir al tablero académico
-                        return redirect()->route('modulos.actuales');
-                    }
-                } elseif ($user->hasRole('Supervisor')) {
-                    // Supervisor va al dashboard
-                    return redirect(RouteServiceProvider::HOME);
-                } else {
-                    // Administrador va al dashboard
-                    return redirect(RouteServiceProvider::HOME);
+                // Solo redirigir si es una petición GET (no POST)
+                if ($request->method() === 'GET') {
+                    return $this->redirectByRole();
                 }
             }
         }

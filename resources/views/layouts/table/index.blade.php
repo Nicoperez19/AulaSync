@@ -3,7 +3,9 @@
         <div class="flex flex-col gap-2 pr-6 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-3">
                 <div class="p-2 rounded-xl bg-light-cloud-blue">
-                    <i class="text-2xl text-white fa-solid fa-table"></i>
+                    <a href="" target="_blank" rel="noopener noreferrer">
+                        <i class="text-2xl text-white fa-solid fa-table"></i>
+                    </a>
                 </div>
                 <div>
                     <h2 class="text-2xl font-bold leading-tight">Estado de Espacios</h2>
@@ -335,7 +337,7 @@
             }
         };
 
-        
+
         function obtenerDiaActual() {
             const dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
             return dias[new Date().getDay()];

@@ -150,7 +150,44 @@ class ModulosActualesTable extends Component
 
     public function render()
     {
-        return view('livewire.modulos-actuales-table');
+        // Verificar si estamos en un espacio entre módulos (break)
+        $esBreak = false;
+        $tiempoRestante = 0;
+        $minutosRestantes = 0;
+        $segundosRestantes = 0;
+        $siguienteModulo = null;
+        
+        if ($this->moduloActual) {
+            $horaActual = Carbon::now();
+            $horaActualStr = $horaActual->format('H:i:s');
+            
+            // Buscar el siguiente módulo para determinar si estamos en un break
+            $siguienteModulo = \App\Models\Modulo::where('dia', $this->moduloActual->dia)
+                ->where('hora_inicio', '>', $horaActualStr)
+                ->orderBy('hora_inicio')
+                ->first();
+            
+            if ($siguienteModulo) {
+                $horaInicioSiguiente = Carbon::createFromFormat('H:i:s', $siguienteModulo->hora_inicio);
+                $tiempoRestante = $horaInicioSiguiente->diffInSeconds($horaActual);
+                
+                // Es break si estamos a menos de 10 minutos del siguiente módulo
+                $esBreak = $tiempoRestante <= 600; // 10 minutos = 600 segundos
+                
+                if ($esBreak) {
+                    $minutosRestantes = floor($tiempoRestante / 60);
+                    $segundosRestantes = $tiempoRestante % 60;
+                }
+            }
+        }
+        
+        return view('livewire.modulos-actuales-table', [
+            'tiempoRestante' => $tiempoRestante,
+            'esBreak' => $esBreak,
+            'siguienteModulo' => $siguienteModulo,
+            'minutosRestantes' => $minutosRestantes,
+            'segundosRestantes' => $segundosRestantes
+        ]);
     }
 
     public function getHoraActualProperty()

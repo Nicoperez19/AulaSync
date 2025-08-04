@@ -30,7 +30,7 @@
             </div>
         </div>
 
-        <div class="flex flex-col items-center justify-center w-full px-6 space-y-6"
+        <div class="flex flex-col items-center justify-center w-full space-y-6"
             x-data="{ selectedPiso: '{{ $pisos->first()->id ?? 1 }}' }">
             <!-- Tarjeta de filtros -->
             <div class="w-full p-6 bg-white shadow-sm rounded-xl">
@@ -39,14 +39,14 @@
                     <div class="flex flex-col w-full gap-4 sm:flex-row sm:items-center">
                         <div class="flex items-center flex-1 gap-4">
                             <div class="flex items-center gap-2">
-                                <label class="text-sm font-semibold text-gray-700">Año:</label>
+                                <span class="font-semibold text-light-cloud-blue">Año:</span>
                                 <span
                                     class="px-3 py-2 font-medium text-gray-700 border border-gray-300 rounded-lg bg-gray-50">
                                     {{ \App\Helpers\SemesterHelper::getCurrentAcademicYear() }}
                                 </span>
                             </div>
                             <div class="flex items-center gap-2">
-                                <label for="semestre" class="text-sm font-semibold text-gray-700">Semestre:</label>
+                                <span class="font-semibold text-light-cloud-blue">Semestre:</span>
                                 <select name="semestre" id="semestre"
                                     class="px-4 py-2 pr-8 transition bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-cloud-blue/30 focus:border-light-cloud-blue">
                                     @foreach($semestresDisponibles as $sem)
@@ -75,8 +75,8 @@
                                 <button type="button" @click="selectedPiso = '{{ $piso->id }}'"
                                     class="px-8 py-3 text-base font-semibold transition-all duration-300 border border-b-0 rounded-t-xl focus:outline-none"
                                     :class="selectedPiso == '{{ $piso->id }}' 
-                                                            ? 'bg-red-700 text-white border-red-700 shadow-md'
-                                                            : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-red-700'">
+                                                                    ? 'bg-red-700 text-white border-red-700 shadow-md'
+                                                                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-red-700'">
                                     Piso {{ $piso->numero_piso }}
                                 </button>
                             </li>
@@ -466,7 +466,7 @@
             document.getElementById('horarioEspacioModal').classList.add('hidden');
             document.body.classList.remove('overflow-hidden');
             document.documentElement.classList.remove('overflow-hidden');
-            espacioActualId = null; 
+            espacioActualId = null;
         }
 
         function exportarHorarioPDF() {
@@ -510,7 +510,7 @@
                     a.href = url;
 
                     const fecha = new Date();
-                    const mes = fecha.getMonth() + 1; 
+                    const mes = fecha.getMonth() + 1;
                     const dia = fecha.getDate();
                     let anio = fecha.getFullYear();
 

@@ -10,7 +10,7 @@
         </x-button>
 
         <!-- Logo -->
-        <a href="{{ route('dashboard') }}" class="flex items-center">
+        <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}" class="flex items-center">
             <x-application-logo-navbar />
         </a>
     </div>
@@ -71,7 +71,7 @@
         <x-heroicon-o-search aria-hidden="true" class="w-6 h-6" />
     </x-button>
 
-    <a href="{{ route('dashboard') }}">
+    <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}">
         <x-application-logo-navbar-bot aria-hidden="true" class="w-10 h-10" />
         <span class="sr-only">Dashboard</span>
     </a>

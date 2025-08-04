@@ -20,8 +20,8 @@
         <div class="mt-1 text-sm font-bold text-center text-white" id="modal-modulo-actual">Módulo actual: 12</div>
     </div>
 
-    <div class="w-full p-6">
-        <div class="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-5">
+    <div class="w-full px-8 pb-6">
+        <div class="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
             <!-- Total de reservas hoy -->
             <div
                 class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
@@ -34,18 +34,7 @@
                     <span class="text-3xl font-bold text-blue-600">{{ $totalReservasHoy }}</span>
                 </div>
             </div>
-            <!-- % No Presentación -->
-            <div
-                class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="font-semibold text-gray-500">% No Presentación</span>
-                    <span class="p-2 text-green-500 bg-green-100 rounded-full"><i
-                            class="text-xl fa-solid fa-user-xmark"></i></span>
-                </div>
-                <div class="flex items-end gap-2">
-                    <span class="text-3xl font-bold text-green-600">{{ $porcentajeNoShow }}%</span>
-                </div>
-            </div>
+
             <!-- % Ocupación Semanal -->
             <div
                 class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
@@ -97,18 +86,15 @@
         <!-- Gráfico de barras: Uso por Día -->
         <div
             class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition w-full">
-            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Gráfico de Barras: Uso por Día <span
-                    class="ml-2 cursor-pointer"
-                    title="Muestra la cantidad de horas ocupadas por día de la semana">ℹ️</span></h4>
+            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Gráfico de Barras: Uso por Día </h4>
+            <p class="text-sm text-gray-500 mb-4 rango-fechas-grafico">Semana del {{ $usoPorDia['rango_fechas']['inicio'] }} al {{ $usoPorDia['rango_fechas']['fin'] }}</p>
             <canvas id="grafico-barras" width="500" height="300"></canvas>
         </div>
 
         <!-- Gráfico de línea: Promedio mensual -->
         <div
             class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition w-full">
-            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Evolución semanal de ocupación <span
-                    class="ml-2 cursor-pointer"
-                    title="Tendencia del promedio de ocupación de la semana actual">ℹ️</span></h4>
+            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Evolución semanal de ocupación </h4>
             <canvas id="grafico-mensual" width="500" height="300"></canvas>
         </div>
     </div>
@@ -122,7 +108,7 @@
                         Utilización de Espacios por Tipo
                     </h1>
                     <x-button class="inline-flex items-center gap-2 px-4 py-2 mt-3 text-sm font-medium hover:bg-red-700"
-                        variant="primary" href="{{ route('reporteria.tipo-espacio') }}">
+                        variant="primary" href="{{ route('reportes.tipo-espacio') }}">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
                             <path fill-rule="evenodd"
                                 d="M12.97 3.97a.75.75 0 0 1 1.06 0l7.5 7.5a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06l6.22-6.22H3a.75.75 0 0 1 0-1.5h16.19l-6.22-6.22a.75.75 0 0 1 0-1.06Z"
@@ -182,7 +168,7 @@
     </div>
 
     <!-- Tablas -->
-    <div class="w-full gap-8 px-4  md:px-8">
+    <div class="w-full gap-8 px-4 md:px-8">
         <div class="flex flex-col gap-6 md:flex-row">
             <!-- Reservas Pendientes -->
             <div class="w-full p-8 mb-8 bg-white shadow-lg rounded-xl md:w-1/2">
@@ -191,40 +177,64 @@
                         <span
                             class="inline-flex items-center justify-center w-6 h-6 text-orange-600 bg-orange-100 rounded-full"><i
                                 class="fas fa-exclamation-triangle"></i></span>
-                        <h3 class="text-lg font-bold text-gray-700">Reservas Pendientes</h3>
+                        <h3 class="text-lg font-bold text-gray-700">Reservas Activas Pendientes</h3>
                     </div>
                     <span
                         class="px-3 py-1 text-xs font-semibold text-orange-700 bg-orange-100 rounded-full">{{ $reservasSinDevolucion->count() }}
-                        activa</span>
+                        pendiente</span>
                 </div>
-                <div class="mb-4 text-xs text-gray-500">Sin devolución de espacio</div>
+                <div class="mb-4 text-xs text-gray-500">Reservas activas que requieren atención (sin devolver)</div>
                 <div class="flex flex-col gap-4">
                     @forelse($reservasSinDevolucion as $reserva)
-                        <div class="flex flex-col gap-2 p-4 bg-white border border-gray-100 rounded-lg shadow-sm">
-                            <div class="flex items-center gap-3 mb-2">
+                        <div
+                            class="flex flex-row items-center gap-6 p-4 bg-white border border-gray-100 rounded-lg shadow-sm">
+                            <div class="flex items-center gap-3">
                                 <span
-                                    class="inline-flex items-center justify-center w-8 h-8 text-gray-400 bg-gray-100 rounded-full"><i
-                                        class="fas fa-user"></i></span>
+                                    class="inline-flex items-center justify-center w-8 h-8 text-gray-400 bg-gray-100 rounded-full">
+                                    <i class="fas fa-user"></i>
+                                </span>
                                 <div>
-                                    <div class="font-semibold text-gray-800">{{ $reserva->user->name }}</div>
-                                    <div class="text-xs text-gray-500">RUN: {{ $reserva->user->run }}</div>
+                                    @if($reserva->run_profesor)
+                                        <div class="font-semibold text-gray-800">
+                                            {{ $reserva->profesor->name ?? 'Profesor no encontrado' }}</div>
+                                        <div class="text-xs text-gray-500">RUN: {{ $reserva->profesor->run_profesor ?? 'N/A' }}
+                                        </div>
+                                        <div class="text-xs text-blue-600">Tipo: Profesor</div>
+                                    @elseif($reserva->run_solicitante)
+                                        <div class="font-semibold text-gray-800">
+                                            {{ $reserva->solicitante->nombre ?? 'Solicitante no encontrado' }}</div>
+                                        <div class="text-xs text-gray-500">RUN:
+                                            {{ $reserva->solicitante->run_solicitante ?? 'N/A' }}</div>
+                                        <div class="text-xs text-green-600">Tipo: Solicitante</div>
+                                    @else
+                                        <div class="font-semibold text-gray-800">Usuario no identificado</div>
+                                        <div class="text-xs text-gray-500">RUN: N/A</div>
+                                    @endif
                                 </div>
-                                <span
-                                    class="px-3 py-1 ml-auto text-xs font-semibold text-blue-700 rounded-full bg-blue-50">Activa</span>
                             </div>
-                            <div class="flex flex-wrap gap-4 mb-2 text-xs text-gray-600">
-                                <div class="flex items-center gap-1"><i class="fas fa-map-marker-alt"></i>
-                                    {{ $reserva->espacio->id_espacio }}<span
-                                        class="ml-1 text-gray-400">{{ $reserva->espacio->nombre_espacio }}</span></div>
-                                <div class="flex items-center gap-1"><i class="fas fa-calendar-alt"></i>
-                                    {{ \Carbon\Carbon::parse($reserva->fecha_reserva)->format('d/m/Y') }} <span
-                                        class="ml-1 text-gray-400">Fecha reserva</span></div>
-                                <div class="flex items-center gap-1"><i class="fas fa-clock"></i> {{ $reserva->hora }} <span
-                                        class="ml-1 text-gray-400">Hora ingreso</span></div>
+
+                            <!-- Detalles de la reserva -->
+                            <div class="flex flex-wrap gap-6 text-xs text-gray-600">
+                                <div class="flex items-center gap-1">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    {{ $reserva->espacio->id_espacio }}
+                                    <span class="ml-1 text-gray-400">{{ $reserva->espacio->nombre_espacio }}</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    {{ \Carbon\Carbon::parse($reserva->fecha_reserva)->format('d/m/Y') }}
+                                    <span class="ml-1 text-gray-400">Fecha reserva</span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <i class="fas fa-clock"></i>
+                                    {{ $reserva->hora }}
+                                    <span class="ml-1 text-gray-400">Hora ingreso</span>
+                                </div>
                             </div>
                         </div>
+
                     @empty
-                        <div class="py-8 text-center text-gray-500">No hay reservas activas sin devolución en este momento.
+                        <div class="py-8 text-center text-gray-500">No hay reservas activas que requieran atención.
                         </div>
                     @endforelse
                 </div>
@@ -239,7 +249,7 @@
                         <h3 class="text-lg font-bold text-gray-700">Registro de Accesos</h3>
                     </div>
                     <x-button class="inline-flex items-center gap-2 px-4 py-2 mt-3 text-sm font-medium hover:bg-red-700"
-                        variant="primary" href="{{ route('reporteria.accesos') }}">
+                        variant="primary" href="{{ route('reportes.accesos') }}">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
                             <path fill-rule="evenodd"
                                 d="M12.97 3.97a.75.75 0 0 1 1.06 0l7.5 7.5a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06l6.22-6.22H3a.75.75 0 0 1 0-1.5h16.19l-6.22-6.22a.75.75 0 0 1 0-1.06Z"
@@ -256,9 +266,23 @@
                                     class="inline-flex items-center justify-center w-8 h-8 text-gray-400 bg-gray-100 rounded-full"><i
                                         class="fas fa-user"></i></span>
                                 <div>
-                                    <div class="font-semibold text-gray-800">{{ $acceso->user->name }}</div>
-                                    <div class="text-xs text-gray-500"><span class="mx-1">•</span> <span
-                                            class="text-blue-700">{{ $acceso->user->email }}</span></div>
+                                    @if($acceso->run_profesor)
+                                        <div class="font-semibold text-gray-800">
+                                            {{ $acceso->profesor->name ?? 'Profesor no encontrado' }}</div>
+                                        <div class="text-xs text-gray-500"><span class="mx-1">•</span> <span
+                                                class="text-blue-700">{{ $acceso->profesor->email ?? 'N/A' }}</span></div>
+                                        <div class="text-xs text-blue-600">Tipo: Profesor</div>
+                                    @elseif($acceso->run_solicitante)
+                                        <div class="font-semibold text-gray-800">
+                                            {{ $acceso->solicitante->nombre ?? 'Solicitante no encontrado' }}</div>
+                                        <div class="text-xs text-gray-500"><span class="mx-1">•</span> <span
+                                                class="text-blue-700">{{ $acceso->solicitante->correo ?? 'N/A' }}</span></div>
+                                        <div class="text-xs text-green-600">Tipo: Solicitante</div>
+                                    @else
+                                        <div class="font-semibold text-gray-800">Usuario no identificado</div>
+                                        <div class="text-xs text-gray-500"><span class="mx-1">•</span> <span
+                                                class="text-blue-700">N/A</span></div>
+                                    @endif
                                 </div>
                                 <span class="flex items-center gap-1 ml-auto text-xs text-green-600"><span
                                         class="w-2 h-2 bg-green-400 rounded-full"></span> En curso</span>
@@ -295,12 +319,20 @@
                                         <span
                                             class="font-semibold text-gray-800">{{ $acceso->hora_salida ?? 'En curso' }}</span>
                                     </div>
+                                    <div>
+                                        <span class="block text-gray-400">Tipo</span>
+                                        <span
+                                            class="font-semibold text-gray-800">{{ ucfirst($acceso->tipo_reserva) }}</span>
+                                    </div>
                                 </div>
                             </div>
 
                         </div>
                     @empty
-                        <div class="py-8 text-center text-gray-500">No hay accesos actuales.</div>
+                        <div class="py-8 text-center text-gray-500 bg-white ">
+                            <i class="fas fa-info-circle text-blue-500 mb-2"></i>
+                            <p class="font-medium">No hay usuarios actualmente en espacios.</p>
+                        </div>
                     @endforelse
                 </div>
             </div>
@@ -309,8 +341,7 @@
         {{-- <div class="w-full p-8 mb-8 bg-white shadow-lg rounded-xl">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="flex items-center gap-2 text-lg font-bold text-gray-700">Reservas canceladas o no utilizadas
-                    <span class="ml-2 cursor-pointer"
-                        title="Reservas que no fueron utilizadas o se cancelaron">ℹ️</span>
+                  
                 </h3>
                 <div>
                     <label for="filtro_fecha_no_utilizadas" class="mr-2 font-semibold">Fecha:</label>
@@ -331,7 +362,7 @@
         <div id="horarios-semana-container" class="p-6 mb-8 bg-white shadow-lg rounded-xl">
             <!-- Horarios de la semana -->
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-bold text-gray-700">Horarios de la semana - Usuarios asignados por espacio</h3>
+                <h3 class="text-lg font-bold text-gray-700">Horarios de la semana - Profesores asignados por espacio</h3>
                 <x-button class="inline-flex items-center gap-2 px-4 py-2 mt-3 text-sm font-medium hover:bg-red-700"
                     variant="primary" href="{{ route('espacios.show') }}">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
@@ -666,10 +697,18 @@
     function actualizarGraficoBarras(usoPorDia) {
         if (window.graficoBarras && usoPorDia) {
             const dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-            const datos = dias.map(dia => usoPorDia[dia] || 0);
+            const datos = dias.map(dia => usoPorDia.datos[dia] || 0);
 
             window.graficoBarras.data.datasets[0].data = datos;
             window.graficoBarras.update('active');
+            
+            // Actualizar el rango de fechas si está disponible
+            if (usoPorDia.rango_fechas) {
+                const rangoElement = document.querySelector('.rango-fechas-grafico');
+                if (rangoElement) {
+                    rangoElement.textContent = `Semana del ${usoPorDia.rango_fechas.inicio} al ${usoPorDia.rango_fechas.fin}`;
+                }
+            }
         }
     }
 
@@ -797,7 +836,7 @@
             labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
             datasets: [{
                 label: 'Horas ocupadas',
-                data: {!! json_encode(array_values($usoPorDia)) !!},
+                data: {!! json_encode(array_values($usoPorDia['datos'])) !!},
                 backgroundColor: 'rgba(59, 130, 246, 0.7)'
             }]
         },

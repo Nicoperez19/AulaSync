@@ -12,7 +12,7 @@
             </div>
         </div>
     </x-slot>
-    <div class="p-6 min-h-[80vh]" x-data="{ activeTab: 'resumen' }">
+    <div class="px-6 min-h-[80vh]" x-data="{ activeTab: 'resumen' }">
         <!-- KPIs -->
         <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
             <div class="flex flex-col justify-between p-4 bg-white rounded-lg shadow">
@@ -43,12 +43,12 @@
         <div class="p-4 mb-6 bg-white rounded-lg shadow">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="font-semibold text-gray-700">Filtros</h3>
-                <a href="{{ route('reporteria.espacios') }}" 
-                   class="px-3 py-1 text-sm text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200 transition">
+                <a href="{{ route('reportes.espacios') }}" 
+                   class="px-3 py-1 text-sm text-gray-600 transition bg-gray-100 rounded-md hover:bg-gray-200">
                     Limpiar filtros
                 </a>
             </div>
-            <form method="GET" action="{{ route('reporteria.espacios') }}" class="grid grid-cols-1 gap-4 md:grid-cols-5">
+            <form method="GET" action="{{ route('reportes.espacios') }}" class="grid grid-cols-1 gap-4 md:grid-cols-5">
                 <div>
                     <label class="block mb-1 text-xs font-semibold text-gray-500">Buscar espacio</label>
                     <input type="text" name="busqueda" value="{{ $busqueda }}" 
@@ -137,12 +137,12 @@
                 <div class="p-4 bg-white rounded-lg shadow">
                     <h2 class="mb-4 font-semibold text-gray-700">Resumen Detallado por Espacio</h2>
                     <div class="flex gap-2 mb-4">
-                        <a href="{{ route('reporteria.espacios.export', 'excel') }}?{{ http_build_query(request()->all()) }}" 
-                           class="px-4 py-2 text-white bg-green-600 rounded-md hover:bg-green-700 text-sm">
+                        <a href="{{ route('reportes.espacios.export', 'excel') }}?{{ http_build_query(request()->all()) }}" 
+                           class="px-4 py-2 text-sm text-white bg-green-600 rounded-md hover:bg-green-700">
                             Exportar Excel
                         </a>
-                        <a href="{{ route('reporteria.espacios.export', 'pdf') }}?{{ http_build_query(request()->all()) }}" 
-                           class="px-4 py-2 text-white bg-red-600 rounded-md hover:bg-red-700 text-sm">
+                        <a href="{{ route('reportes.espacios.export', 'pdf') }}?{{ http_build_query(request()->all()) }}" 
+                           class="px-4 py-2 text-sm text-white bg-red-600 rounded-md hover:bg-red-700">
                             Exportar PDF
                         </a>
                     </div>

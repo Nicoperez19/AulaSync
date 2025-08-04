@@ -61,13 +61,13 @@ class DashboardController extends Controller
         $horariosPorTipoDiaModulo = $this->obtenerOcupacionPorTipoDiaModulo($facultad, $piso);
 
         // Obtener módulo actual
-        $moduloActual = \App\Models\Modulo::where('dia', Carbon::now()->format('l'))
+        $moduloActual = Modulo::where('dia', Carbon::now()->format('l'))
             ->where('hora_inicio', '<=', Carbon::now()->format('H:i:s'))
             ->where('hora_termino', '>=', Carbon::now()->format('H:i:s'))
             ->first();
 
         // Accesos registrados del día (sin exportar, solo para mostrar)
-        $accesosRegistrados = app('App\\Http\\Controllers\\ReporteriaController')->obtenerAccesosRegistrados(
+        $accesosRegistrados = app('App\\Http\\Controllers\\ReportController')->obtenerAccesosRegistrados(
             Carbon::now()->toDateString(),
             Carbon::now()->toDateString()
         );
@@ -77,31 +77,39 @@ class DashboardController extends Controller
         $diaFiltro = Carbon::parse($fechaFiltro)->format('l');
 
         // Tipos de espacio disponibles
-        $tiposEspacioDisponibles = \App\Models\Espacio::select('tipo_espacio')->distinct()->pluck('tipo_espacio');
+        $tiposEspacioDisponibles = Espacio::select('tipo_espacio')->distinct()->pluck('tipo_espacio');
 
         // Módulos disponibles para el día seleccionado
-        $modulosDisponibles = \App\Models\Modulo::where('dia', $diaFiltro)->orderBy('hora_inicio')->get();
+        $modulosDisponibles = Modulo::where('dia', $diaFiltro)->orderBy('hora_inicio')->get();
 
         // Accesos actuales (reservas activas sin hora de salida)
-        $accesosActuales = \App\Models\Reserva::with(['profesor', 'espacio.piso.facultad'])
+        $accesosActuales = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
             ->where('estado', 'activa')
             ->whereNull('hora_salida')
+            ->whereHas('espacio', function($query) use ($facultad, $piso) {
+                $query->whereHas('piso', function($q) use ($facultad, $piso) {
+                    $q->where('id_facultad', $facultad);
+                    if ($piso) {
+                        $q->where('numero_piso', $piso);
+                    }
+                });
+            })
             ->orderBy('fecha_reserva', 'desc')
             ->orderBy('hora', 'desc')
             ->get();
 
         // Reservas no utilizadas (No Show): reservas finalizadas sin hora de ingreso
-        $reservasNoUtilizadas = \App\Models\Reserva::with(['profesor', 'espacio'])
+        $reservasNoUtilizadas = Reserva::with(['profesor', 'espacio'])
             ->where('estado', 'finalizada')
             ->whereNull('hora') // No escanearon QR, no ingresaron
             ->orderBy('fecha_reserva', 'desc')
             ->get();
 
         // Total de reservas hoy
-        $totalReservasHoy = \App\Models\Reserva::whereDate('fecha_reserva', today())->count();
+        $totalReservasHoy =Reserva::whereDate('fecha_reserva', today())->count();
 
         // KPI: Sala más utilizada
-        $salaMasUtilizada = \App\Models\Reserva::select('id_espacio', DB::raw('count(*) as total'))
+        $salaMasUtilizada =Reserva::select('id_espacio', DB::raw('count(*) as total'))
             ->groupBy('id_espacio')
             ->orderByDesc('total')
             ->with('espacio')
@@ -264,6 +272,7 @@ class DashboardController extends Controller
     private function obtenerUsoPorDia($facultad, $piso)
     {
         $inicioSemana = Carbon::now()->startOfWeek();
+        $finSemana = Carbon::now()->endOfWeek();
         $diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
         $usoPorDia = [];
         
@@ -281,7 +290,13 @@ class DashboardController extends Controller
                 ->count();
         }
         
-        return $usoPorDia;
+        return [
+            'datos' => $usoPorDia,
+            'rango_fechas' => [
+                'inicio' => $inicioSemana->format('d/m/Y'),
+                'fin' => $finSemana->format('d/m/Y')
+            ]
+        ];
     }
 
     private function obtenerComparativaTipos($facultad, $piso)
@@ -433,7 +448,7 @@ class DashboardController extends Controller
         $horaActual = now()->format('H:i:s');
         
         // Buscar el módulo actual
-        $moduloActual = \App\Models\Modulo::where('dia', $diaActual)
+        $moduloActual = Modulo::where('dia', $diaActual)
             ->where('hora_inicio', '<=', $horaActual)
             ->where('hora_termino', '>', $horaActual)
             ->first();
@@ -552,21 +567,8 @@ class DashboardController extends Controller
 
     private function obtenerReservasActivasSinDevolucion($facultad, $piso)
     {
-        $inicioSemana = Carbon::now()->startOfWeek();
-        $finSemana = Carbon::now()->endOfWeek();
-        
-        return Reserva::with(['profesor', 'espacio'])
-            ->where('estado', 'activa')
-            ->whereNull('hora_salida')
-            ->whereBetween('fecha_reserva', [$inicioSemana, $finSemana])
-            ->whereHas('espacio', function ($query) use ($facultad, $piso) {
-                $query->whereHas('piso', function ($q) use ($facultad, $piso) {
-                    $q->where('id_facultad', $facultad);
-                    if ($piso) {
-                        $q->where('numero_piso', $piso);
-                    }
-                });
-            })
+        return Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
+            ->where('estado', 'activa')           // Solo reservas activas
             ->latest('fecha_reserva')
             ->latest('hora')
             ->get();
@@ -717,21 +719,19 @@ class DashboardController extends Controller
             'Friday' => 'Viernes',
             'Saturday' => 'Sábado',
         ];
-        $tiposEspacio = \App\Models\Espacio::whereHas('piso', function($q) use ($facultad, $piso) {
+        $tiposEspacio = Espacio::whereHas('piso', function($q) use ($facultad, $piso) {
             $q->where('id_facultad', $facultad);
             if ($piso) $q->where('numero_piso', $piso);
         })->select('tipo_espacio')->distinct()->pluck('tipo_espacio');
 
-        $modulos = \App\Models\Modulo::all()->groupBy('dia');
+        $modulos = Modulo::all()->groupBy('dia');
         $resultado = [];
 
         foreach ($tiposEspacio as $tipo) {
             foreach ($diasSemana as $diaEN => $diaES) {
-                // Obtener todos los módulos de ese día
                 $modulosDia = $modulos->get($diaEN, collect());
                 foreach ($modulosDia as $modulo) {
-                    // Total de espacios de este tipo
-                    $totalEspacios = \App\Models\Espacio::where('tipo_espacio', $tipo)
+                    $totalEspacios = Espacio::where('tipo_espacio', $tipo)
                         ->whereHas('piso', function($q) use ($facultad, $piso) {
                             $q->where('id_facultad', $facultad);
                             if ($piso) $q->where('numero_piso', $piso);
@@ -740,8 +740,7 @@ class DashboardController extends Controller
                         $resultado[$tipo][$diaES][$modulo->id_modulo] = 0;
                         continue;
                     }
-                    // Planificaciones activas para ese tipo, día y módulo
-                    $ocupados = \App\Models\Planificacion_Asignatura::where('id_modulo', $modulo->id_modulo)
+                    $ocupados = Planificacion_Asignatura::where('id_modulo', $modulo->id_modulo)
                         ->whereHas('horario', function($q) use ($periodo) {
                             $q->where('periodo', $periodo);
                         })
@@ -779,9 +778,9 @@ class DashboardController extends Controller
         $semestre = SemesterHelper::getCurrentSemester();
         $periodo = SemesterHelper::getCurrentPeriod();
         
-        $planificaciones = \App\Models\Planificacion_Asignatura::with(['asignatura.profesor', 'espacio', 'modulo'])
+        $planificaciones = Planificacion_Asignatura::with(['asignatura.profesor', 'espacio', 'modulo'])
             ->whereHas('modulo', function($q) use ($fecha) {
-                $dia = \Carbon\Carbon::parse($fecha)->locale('es')->isoFormat('dddd');
+                $dia = Carbon::parse($fecha)->locale('es')->isoFormat('dddd');
                 $q->where('dia', strtolower($dia));
             })
             ->whereHas('horario', function($q) use ($periodo) {
@@ -797,7 +796,7 @@ class DashboardController extends Controller
             $fechaPlan = $fecha;
             if (!$usuario || !$espacio) continue;
 
-            $reservaOcupada = \App\Models\Reserva::where('id_espacio', $plan->espacio->id_espacio)
+            $reservaOcupada = Reserva::where('id_espacio', $plan->espacio->id_espacio)
                 ->where('id_usuario', $plan->asignatura->profesor->run_profesor ?? null)
                 ->whereDate('fecha_reserva', $fecha)
                 ->where('hora_planificada', $plan->modulo->hora_inicio)
@@ -811,7 +810,7 @@ class DashboardController extends Controller
                 $noUtilizadasDia[] = [
                     'usuario' => $usuario,
                     'espacio' => $espacio,
-                    'fecha' => \Carbon\Carbon::parse($fechaPlan)->format('d/m/Y'),
+                    'fecha' =>Carbon ::parse($fechaPlan)->format('d/m/Y'),
                     'modulo' => $modulo,
                 ];
             }
@@ -929,7 +928,7 @@ class DashboardController extends Controller
         $periodo = SemesterHelper::getCurrentPeriod();
         
         // Obtener los usuarios asignados por espacio para el módulo actual
-        $asignaciones = \App\Models\Planificacion_Asignatura::with(['espacio.piso', 'asignatura.profesor'])
+        $asignaciones = Planificacion_Asignatura::with(['espacio.piso', 'asignatura.profesor'])
             ->whereHas('modulo', function($q) use ($diaActual, $moduloActualNum) {
                 $q->where('dia', $diaActual)->where('numero_modulo', $moduloActualNum);
             })

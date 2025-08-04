@@ -15,7 +15,7 @@ use App\Http\Controllers\AsignaturaController;
 use App\Http\Controllers\DataLoadController;
 use App\Http\Controllers\PlanoDigitalController;
 use App\Http\Controllers\ProfesorController;
-use App\Http\Controllers\ReporteriaController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\CampusController;
 use App\Http\Controllers\SedeController;
@@ -62,7 +62,7 @@ Route::middleware(['auth'])->group(function () {
 
 // Horarios por espacios - Solo Administrador y Supervisor
 Route::middleware(['auth', 'permission:horarios por espacios'])->group(function () {
-    Route::get('/spacetime/spacetime_index', [HorariosController::class, 'mostrarHorarios'])->name('horarios_espacios.index');
+    Route::get('/spacetime/spacetime_index', [HorariosController::class, 'showEspacios'])->name('horarios_espacios.index');
     Route::get('/horarios-espacios', [HorariosController::class, 'getHorariosEspacios'])->name('horarios.espacios.get');
     Route::get('/espacios', action: [HorariosController::class, 'showEspacios'])->name('espacios.show');
     Route::get('/espacios/{idEspacio}/export-pdf', [HorariosController::class, 'exportHorarioEspacioPDF'])->name('espacios.export-pdf');
@@ -231,23 +231,23 @@ Route::group(['middleware' => ['auth', 'session.timeout', 'permission:monitoreo 
 });
 
 // Reportes - Solo Administrador y Supervisor
-Route::prefix('reporteria')->middleware(['auth', 'permission:reportes'])->group(function () {
-    Route::get('utilizacion_por_espacio', [ReporteriaController::class, 'utilizacion'])->name('reporteria.utilizacion_por_espacio');
-    Route::get('tipo-espacio', [ReporteriaController::class, 'tipoEspacio'])->name('reporteria.tipo-espacio');
-    Route::get('espacios', [ReporteriaController::class, 'espacios'])->name('reporteria.espacios');
-    Route::get('tipo-espacio/historico-ajax', [ReporteriaController::class, 'historicoAjax'])->name('reporteria.tipo-espacio.historico-ajax');
-    Route::get('accesos', [ReporteriaController::class, 'accesos'])->name('reporteria.accesos');
-    Route::get('accesos/limpiar', [ReporteriaController::class, 'limpiarFiltrosAccesos'])->name('reporteria.accesos.limpiar');
-    Route::get('accesos/{id}/detalles', [ReporteriaController::class, 'getDetallesAcceso'])->name('reporteria.accesos.detalles');
-    Route::get('unidad-academica', [ReporteriaController::class, 'unidadAcademica'])->name('reporteria.unidad-academica');
+Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(function () {
+    Route::get('utilizacion_por_espacio', [ReportController::class, 'utilizacion'])->name('reportes.utilizacion_por_espacio');
+    Route::get('tipo-espacio', [ReportController::class, 'tipoEspacio'])->name('reportes.tipo-espacio');
+    Route::get('espacios', [ReportController::class, 'espacios'])->name('reportes.espacios');
+    Route::get('tipo-espacio/historico-ajax', [ReportController::class, 'historicoAjax'])->name('reportes.tipo-espacio.historico-ajax');
+    Route::get('accesos', [ReportController::class, 'accesos'])->name('reportes.accesos');
+    Route::get('accesos/limpiar', [ReportController::class, 'limpiarFiltrosAccesos'])->name('reportes.accesos.limpiar');
+    Route::get('accesos/{id}/detalles', [ReportController::class, 'getDetallesAcceso'])->name('reportes.accesos.detalles');
+    Route::get('unidad-academica', [ReportController::class, 'unidadAcademica'])->name('reportes.unidad-academica');
     // Rutas para exportar a Excel y PDF
-    Route::get('utilizacion/export/{format}', [ReporteriaController::class, 'exportUtilizacion'])->name('reporteria.utilizacion.export');
-    Route::get('tipo-espacio/export/{format}', [ReporteriaController::class, 'exportTipoEspacio'])->name('reporteria.tipo-espacio.export');
-    Route::get('espacios/export/{format}', [ReporteriaController::class, 'exportEspacios'])->name('reporteria.espacios.export');
-    Route::get('historico-espacios/export/{format}', [ReporteriaController::class, 'exportHistoricoEspacios'])->name('reporteria.tipo-espacio.export');
-    Route::get('accesos/export/{format}', [ReporteriaController::class, 'exportAccesos'])->name('reporteria.accesos.export');
-    Route::post('accesos/export/{format}', [ReporteriaController::class, 'exportAccesosConFiltros'])->name('reporteria.accesos.export.filtros');
-    Route::get('unidad-academica/export/{format}', [ReporteriaController::class, 'exportUnidadAcademica'])->name('reporteria.unidad-academica.export');
+    Route::get('utilizacion/export/{format}', [ReportController::class, 'exportUtilizacion'])->name('reportes.utilizacion.export');
+    Route::get('tipo-espacio/export/{format}', [ReportController::class, 'exportTipoEspacio'])->name('reportes.tipo-espacio.export');
+    Route::get('espacios/export/{format}', [ReportController::class, 'exportEspacios'])->name('reportes.espacios.export');
+    Route::get('historico-espacios/export/{format}', [ReportController::class, 'exportHistoricoEspacios'])->name('reportes.tipo-espacio.export');
+    Route::get('accesos/export/{format}', [ReportController::class, 'exportAccesos'])->name('reportes.accesos.export');
+    Route::post('accesos/export/{format}', [ReportController::class, 'exportAccesosConFiltros'])->name('reportes.accesos.export.filtros');
+    Route::get('unidad-academica/export/{format}', [ReportController::class, 'exportUnidadAcademica'])->name('reportes.unidad-academica.export');
 });
 
 // Dashboard widgets - Solo Administrador y Supervisor

@@ -14,12 +14,10 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        // Crear roles (usar firstOrCreate para evitar errores si ya existen)
         $roleAdmin = Role::firstOrCreate(['name' => 'Administrador']);
         $roleSupervisor = Role::firstOrCreate(['name' => 'Supervisor']);
         $roleUsuario = Role::firstOrCreate(['name' => 'Usuario']);
         
-        // Crear permisos (usar firstOrCreate para evitar errores si ya existen)
         $permission1 = Permission::firstOrCreate(['name' => 'dashboard']);
         $permission2 = Permission::firstOrCreate(['name' => 'mantenedor de roles']);
         $permission3 = Permission::firstOrCreate(['name' => 'mantenedor de permisos']);
@@ -45,7 +43,6 @@ class RoleSeeder extends Seeder
         $permission23 = Permission::firstOrCreate(['name' => 'visor de usuarios']);
         $permission24 = Permission::firstOrCreate(['name' => 'mantenedor de profesores']);
       
-        // Limpiar permisos existentes y asignar nuevos
         $roleAdmin->syncPermissions([
             $permission1, $permission2, $permission3, $permission4, $permission5,
             $permission6, $permission7, $permission8, $permission9, $permission10,
@@ -54,13 +51,11 @@ class RoleSeeder extends Seeder
             $permission21, $permission22, $permission23, $permission24
         ]);
 
-        // Permisos para Supervisor (sin mantenedores)
         $roleSupervisor->syncPermissions([
             $permission1, $permission14, $permission15, $permission16, $permission17,
             $permission18, $permission22, $permission23
         ]);
 
-        // Permisos para Usuario (monitoreo, tablero, horarios)
         $roleUsuario->syncPermissions([
             $permission15, $permission16, $permission17, $permission18, $permission22, $permission23
         ]);

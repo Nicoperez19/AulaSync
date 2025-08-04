@@ -7,7 +7,6 @@ use App\Models\User;
 use App\Http\Controllers\EspacioController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\HorarioController;
 use App\Http\Controllers\PlanoDigitalController;
 use App\Http\Controllers\DashboardController;
 
@@ -263,18 +262,18 @@ Route::get('/pisos/th/it', function () {
     }
 });
 
-Route::get('/verificar-horario/{run}', [HorarioController::class, 'verificarHorario']);
+Route::get('/verificar-horario/{run}', [PlanoDigitalController::class, 'verificarHorario']);
 
-Route::get('/verificar-usuario/{run}', [HorarioController::class, 'verificarUsuario']);
-Route::get('/verificar-profesor/{run}', [HorarioController::class, 'verificarProfesor']);
-Route::get('/verificar-usuario-no-registrado/{run}', [HorarioController::class, 'verificarUsuarioNoRegistrado']);
-Route::post('/registrar-usuario-no-registrado', [HorarioController::class, 'registrarUsuarioNoRegistrado']);
-Route::post('/convertir-usuario-no-registrado', [HorarioController::class, 'convertirUsuarioNoRegistrado']);
-Route::get('/verificar-espacio/{idEspacio}', [HorarioController::class, 'verificarEspacio']);
-Route::post('/crear-reserva', [HorarioController::class, 'crearReserva']);
-Route::post('/verificar-estado-espacio-reserva', [HorarioController::class, 'verificarEstadoEspacioYReserva']);
-Route::post('/devolver-llaves', [HorarioController::class, 'devolverLlaves']);
-Route::post('/verificar-reserva-activa', [HorarioController::class, 'verificarReservaActiva']);
+Route::get('/verificar-usuario/{run}', [PlanoDigitalController::class, 'verificarUsuario']);
+Route::get('/verificar-profesor/{run}', [PlanoDigitalController::class, 'verificarProfesor']);
+Route::get('/verificar-usuario-no-registrado/{run}', [PlanoDigitalController::class, 'verificarUsuarioNoRegistrado']);
+Route::post('/registrar-usuario-no-registrado', [PlanoDigitalController::class, 'registrarUsuarioNoRegistrado']);
+Route::post('/convertir-usuario-no-registrado', [PlanoDigitalController::class, 'convertirUsuarioNoRegistrado']);
+Route::get('/verificar-espacio/{idEspacio}', [PlanoDigitalController::class, 'verificarEspacio']);
+Route::post('/crear-reserva', [PlanoDigitalController::class, 'crearReserva']);
+Route::post('/verificar-estado-espacio-reserva', [PlanoDigitalController::class, 'verificarEstadoEspacioYReserva']);
+Route::post('/devolver-llaves', [PlanoDigitalController::class, 'devolverLlaves']);
+Route::post('/verificar-reserva-activa', [PlanoDigitalController::class, 'verificarReservaActiva']);
 
 // Rutas para solicitantes
 Route::get('/verificar-solicitante/{run}', [App\Http\Controllers\SolicitanteController::class, 'verificarSolicitante']);
@@ -328,7 +327,7 @@ Route::get('/verificar-clases-programadas/{run}', function ($run) {
         $horaActual = now()->format('H:i:s');
         $diaActual = now()->dayOfWeek; // 0 = domingo, 1 = lunes, etc.
         
-        $controller = new HorarioController();
+        $controller = new PlanoDigitalController();
         $resultado = $controller->verificarClasesProgramadas($run, $horaActual, $diaActual);
         
         return response()->json($resultado);

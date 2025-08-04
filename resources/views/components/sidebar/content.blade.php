@@ -23,7 +23,7 @@
     <!-- Horarios Espacios - Solo Administrador y Supervisor -->
     @can('horarios por espacios')
         <x-sidebar.link title="Horarios por Espacios"
-            href="{{ $sede ? route('espacios.show', $sede->id_sede) : route('dashboard') }}"
+            href="{{ $sede ? route('espacios.show', $sede->id_sede) : (auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard')) }}"
             :isActive="request()->routeIs('espacios.show')">
             <x-slot name="icon">
                 <x-icons.clock class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
@@ -62,19 +62,19 @@
 
     <!-- Reportería - Solo Administrador y Supervisor -->
     @can('reportes')
-        <x-sidebar.dropdown title="Reportes" :active="Str::startsWith(request()->route()->uri(), 'reporteria')">
+        <x-sidebar.dropdown title="Reportes" :active="Str::startsWith(request()->route()->uri(), 'reportes')">
             <x-slot name="icon">
                 <x-icons.chart-bar class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
             </x-slot>
 
-            <x-sidebar.sublink title="Accesos registrados" href="{{ route('reporteria.accesos') }}"
-                :isActive="request()->routeIs('reporteria.accesos')" />
-            <x-sidebar.sublink title="Análisis por tipo de espacio" href="{{ route('reporteria.tipo-espacio') }}"
-                :isActive="request()->routeIs('reporteria.tipo-espacio')" />
-            <x-sidebar.sublink title="Análisis por espacios" href="{{ route('reporteria.espacios') }}"
-                :isActive="request()->routeIs('reporteria.espacios')" />
-            {{-- <x-sidebar.sublink title="Por unidad académica" href="{{ route('reporteria.unidad-academica') }}"
-                :isActive="request()->routeIs('reporteria.unidad-academica')" /> --}}
+            <x-sidebar.sublink title="Accesos registrados" href="{{ route('reportes.accesos') }}"
+                :isActive="request()->routeIs('reportes.accesos')" />
+            <x-sidebar.sublink title="Análisis por tipo de espacio" href="{{ route('reportes.tipo-espacio') }}"
+                :isActive="request()->routeIs('reportes.tipo-espacio')" />
+            <x-sidebar.sublink title="Análisis por espacios" href="{{ route('reportes.espacios') }}"
+                :isActive="request()->routeIs('reportes.espacios')" />
+            {{-- <x-sidebar.sublink title="Por unidad académica" href="{{ route('reportes.unidad-academica') }}"
+                :isActive="request()->routeIs('reportes.unidad-academica')" /> --}}
         </x-sidebar.dropdown>
     @endcan
 

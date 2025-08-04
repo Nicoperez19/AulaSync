@@ -126,7 +126,7 @@ class OccupancyHistory extends Component
             ->whereRaw('DATE_FORMAT(COALESCE(r.fecha_reserva, p.created_at), "%Y-%m") = ?', [$mes])
             ->get();
         $periodo = $mes;
-        $pdf = Pdf::loadView('reporteria.pdf.historico-espacios', [
+        $pdf = Pdf::loadView('reportes.pdf.historico-espacios', [
             'datos' => $datos,
             'fecha_generacion' => now()->format('d/m/Y H:i:s'),
             'total_registros' => count($datos),
@@ -187,7 +187,7 @@ class OccupancyHistory extends Component
             ->orderByDesc('p.id')
             ->get();
         $periodo = 'Todos los registros';
-        $pdf = Pdf::loadView('reporteria.pdf.historico-espacios', [
+        $pdf = Pdf::loadView('reportes.pdf.historico-espacios', [
             'datos' => $datos,
             'fecha_generacion' => now()->format('d/m/Y H:i:s'),
             'total_registros' => count($datos),

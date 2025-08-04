@@ -12,7 +12,7 @@
             </div>
         </div>
     </x-slot>
-    <div class="p-6 min-h-[80vh]" x-data="{ activeTab: 'resumen' }">
+    <div class="px-6 min-h-[80vh]" x-data="{ activeTab: 'resumen' }">
         <!-- KPIs -->
         <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
             <div class="flex flex-col justify-between p-4 bg-white rounded-lg shadow">
@@ -857,7 +857,7 @@
             
             console.log('Filtros:', { fecha_inicio, fecha_fin, tipo_espacio });
             
-            const url = `/reporteria/tipo-espacio/historico-ajax?page=${page}&fecha_inicio=${fecha_inicio}&fecha_fin=${fecha_fin}&tipo_espacio=${tipo_espacio}`;
+            const url = `/reportes/tipo-espacio/historico-ajax?page=${page}&fecha_inicio=${fecha_inicio}&fecha_fin=${fecha_fin}&tipo_espacio=${tipo_espacio}`;
             console.log('URL de la petición:', url);
             
             fetch(url)

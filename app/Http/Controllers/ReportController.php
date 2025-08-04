@@ -5,80 +5,72 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Espacio;
 use App\Models\Reserva;
-use App\Models\User;
-use App\Models\Carrera;
-use App\Models\Incidente;
-use App\Models\Acceso;
+use App\Models\Planificacion_Asignatura;
+use App\Models\Piso;
+use App\Models\AreaAcademica;
+use App\Models\Asignatura;
 use App\Helpers\SemesterHelper;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use App\Exports\AccesosExport;
 
-class ReporteriaController extends Controller
+class ReportController extends Controller
 {
-    // 1. Utilización de espacios
     public function utilizacion(Request $request)
     {
-        // Lógica para obtener datos de utilización de espacios
-        return view('reporteria.utilizacion');
+        return view('reportes.utilizacion');
     }
     public function exportUtilizacion($format)
     {
-        // Lógica para exportar a Excel o PDF
     }
 
-    // 2. Análisis por tipo de espacio
     public function tipoEspacio(Request $request)
     {
         $mes = now()->month;
         $anio = now()->year;
 
         // KPIs
-        $total_tipos = \App\Models\Espacio::distinct('tipo_espacio')->count('tipo_espacio');
-        $total_espacios = \App\Models\Espacio::count();
-        $espacios_ocupados = \App\Models\Espacio::where('estado', 'Ocupado')->count();
+        $total_tipos = Espacio::distinct('tipo_espacio')->count('tipo_espacio');
+        $total_espacios = Espacio::count();
+        $espacios_ocupados = Espacio::where('estado', 'Ocupado')->count();
 
-        $total_reservas = \App\Models\Reserva::whereMonth('fecha_reserva', $mes)
+        $total_reservas = Reserva::whereMonth('fecha_reserva', $mes)
             ->whereYear('fecha_reserva', $anio)
             ->count();
 
-        // Días laborales del mes actual (lunes a viernes)
         $dias_laborales = collect(range(1, now()->daysInMonth))
             ->map(function($day) use ($anio, $mes) {
-                return \Carbon\Carbon::create($anio, $mes, $day);
+                return Carbon::create($anio, $mes, $day);
             })
             ->filter(function($date) {
                 return $date->isWeekday();
             })->count();
 
-        // Promedio utilización (porcentaje de módulos reservados sobre el total de módulos posibles en el mes)
         $modulos_posibles = $total_espacios * $dias_laborales * 15;
-        $modulos_reservados = \App\Models\Reserva::whereMonth('fecha_reserva', $mes)
+        $modulos_reservados = Reserva::whereMonth('fecha_reserva', $mes)
             ->whereYear('fecha_reserva', $anio)
             ->count();
         $promedio_utilizacion = $modulos_posibles > 0 ? round(($modulos_reservados / $modulos_posibles) * 100) : 0;
 
-        // Resumen por tipo de espacio
-        $tipos = \App\Models\Espacio::distinct()->pluck('tipo_espacio');
+        $tipos = Espacio::distinct()->pluck('tipo_espacio');
         $resumen = [];
         $labels_grafico = [];
         $data_grafico = [];
         $data_reservas_grafico = [];
         foreach ($tipos as $tipo) {
-            $espacios = \App\Models\Espacio::where('tipo_espacio', $tipo)->pluck('id_espacio');
+            $espacios = Espacio::where('tipo_espacio', $tipo)->pluck('id_espacio');
             $total_espacios_tipo = $espacios->count();
-            $reservas_tipo = \App\Models\Reserva::whereIn('id_espacio', $espacios)
+            $reservas_tipo = Reserva::whereIn('id_espacio', $espacios)
                 ->whereMonth('fecha_reserva', $mes)
                 ->whereYear('fecha_reserva', $anio)
                 ->get();
             $total_reservas_tipo = $reservas_tipo->count();
             $horas_utilizadas = $reservas_tipo->sum(function($r) {
-                return $r->hora && $r->hora_salida ? \Carbon\Carbon::parse($r->hora)->diffInMinutes(\Carbon\Carbon::parse($r->hora_salida))/60 : 0;
+                return $r->hora && $r->hora_salida ? Carbon::parse($r->hora)->diffInMinutes(Carbon::parse($r->hora_salida))/60 : 0;
             });
             
-            // Cálculo simplificado: porcentaje de espacios que tienen al menos una reserva
-            $espacios_con_reservas = \App\Models\Reserva::whereIn('id_espacio', $espacios)
+            $espacios_con_reservas = Reserva::whereIn('id_espacio', $espacios)
                 ->whereMonth('fecha_reserva', $mes)
                 ->whereYear('fecha_reserva', $anio)
                 ->distinct('id_espacio')
@@ -99,24 +91,21 @@ class ReporteriaController extends Controller
             $data_reservas_grafico[] = $total_reservas_tipo;
         }
 
-        // --- POR HORARIOS ---
-        $diasDisponibles = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
+        $diasDisponibles = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes','sabado'];
         $tiposEspacioDisponibles = $tipos;
         $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
         if (!in_array($diaActual, $diasDisponibles)) $diaActual = 'lunes';
 
-        // Ocupación por horarios: [tipo][dia][modulo] = porcentaje
         $ocupacionHorarios = [];
         foreach ($tiposEspacioDisponibles as $tipo) {
             foreach ($diasDisponibles as $dia) {
-                // Definir módulos para cada día (1-15)
                 for ($moduloNum = 1; $moduloNum <= 15; $moduloNum++) {
-                    $totalEspacios = \App\Models\Espacio::where('tipo_espacio', $tipo)->count();
+                    $totalEspacios = Espacio::where('tipo_espacio', $tipo)->count();
                     if ($totalEspacios === 0) {
                         $ocupacionHorarios[$tipo][$dia][$moduloNum] = 0;
                         continue;
                     }
-                    $ocupados = \App\Models\Planificacion_Asignatura::where('id_modulo', $dia.'.'.$moduloNum)
+                    $ocupados = Planificacion_Asignatura::where('id_modulo', $dia.'.'.$moduloNum)
                         ->whereHas('espacio', function($q) use ($tipo) {
                             $q->where('tipo_espacio', $tipo);
                         })
@@ -126,7 +115,7 @@ class ReporteriaController extends Controller
             }
         }
 
-        return view('reporteria.tipo-espacio', compact(
+        return view('reportes.tipo-espacio', compact(
             'total_tipos',
             'total_espacios',
             'espacios_ocupados',
@@ -154,8 +143,7 @@ class ReporteriaController extends Controller
         $estadoFiltro = $request->get('estado', '');
         $busqueda = $request->get('busqueda', '');
 
-        // Query base optimizada - solo cargar relaciones necesarias
-        $espaciosQuery = \App\Models\Espacio::with(['piso.facultad']);
+        $espaciosQuery = Espacio::with(['piso.facultad']);
 
         // Aplicar filtros
         if (!empty($tipoEspacioFiltro)) {
@@ -181,7 +169,7 @@ class ReporteriaController extends Controller
         $espacios_ocupados = $espacios->where('estado', 'Ocupado')->count();
         
         // Obtener estadísticas de reservas en una sola consulta
-        $reservasStats = \App\Models\Reserva::whereIn('id_espacio', $espaciosIds)
+        $reservasStats = Reserva::whereIn('id_espacio', $espaciosIds)
             ->whereMonth('fecha_reserva', $mes)
             ->whereYear('fecha_reserva', $anio)
             ->selectRaw('
@@ -200,7 +188,7 @@ class ReporteriaController extends Controller
         // Días laborales simplificado
         $dias_laborales = collect(range(1, now()->daysInMonth))
             ->map(function($day) use ($anio, $mes) {
-                return \Carbon\Carbon::create($anio, $mes, $day);
+                return Carbon::create($anio, $mes, $day);
             })
             ->filter(function($date) {
                 return $date->isWeekday();
@@ -244,8 +232,8 @@ class ReporteriaController extends Controller
         }
 
         // Datos para filtros - consultas optimizadas
-        $tiposEspacioDisponibles = \App\Models\Espacio::distinct()->pluck('tipo_espacio');
-        $pisosDisponibles = \App\Models\Piso::whereHas('facultad', function($q) {
+        $tiposEspacioDisponibles = Espacio::distinct()->pluck('tipo_espacio');
+        $pisosDisponibles = Piso::whereHas('facultad', function($q) {
             $q->where('id_facultad', 'IT_TH');
         })->orderBy('numero_piso')->pluck('numero_piso', 'numero_piso');
         $estadosDisponibles = ['Disponible', 'Ocupado', 'Mantenimiento'];
@@ -258,7 +246,7 @@ class ReporteriaController extends Controller
         // Ocupación por horarios - solo para espacios con reservas
         $ocupacionHorarios = [];
         if ($espaciosIds->isNotEmpty()) {
-            $ocupacionData = \App\Models\Reserva::whereIn('id_espacio', $espaciosIds)
+            $ocupacionData = Reserva::whereIn('id_espacio', $espaciosIds)
                 ->whereMonth('fecha_reserva', $mes)
                 ->whereYear('fecha_reserva', $anio)
                 ->selectRaw('
@@ -290,7 +278,7 @@ class ReporteriaController extends Controller
             }
         }
 
-        return view('reporteria.espacios', compact(
+        return view('reportes.espacios', compact(
             'total_espacios',
             'espacios_ocupados',
             'total_reservas',
@@ -324,7 +312,7 @@ class ReporteriaController extends Controller
         $busqueda = $request->get('busqueda', '');
 
         // Query base optimizada
-        $espaciosQuery = \App\Models\Espacio::with(['piso.facultad']);
+        $espaciosQuery = Espacio::with(['piso.facultad']);
 
         // Aplicar filtros
         if (!empty($tipoEspacioFiltro)) {
@@ -348,14 +336,14 @@ class ReporteriaController extends Controller
         // Días laborales simplificado
         $dias_laborales = collect(range(1, now()->daysInMonth))
             ->map(function($day) use ($anio, $mes) {
-                return \Carbon\Carbon::create($anio, $mes, $day);
+                return Carbon::create($anio, $mes, $day);
             })
             ->filter(function($date) {
                 return $date->isWeekday();
             })->count();
 
         // Obtener estadísticas de reservas en una sola consulta
-        $reservasStats = \App\Models\Reserva::whereIn('id_espacio', $espaciosIds)
+        $reservasStats = Reserva::whereIn('id_espacio', $espaciosIds)
             ->whereMonth('fecha_reserva', $mes)
             ->whereYear('fecha_reserva', $anio)
             ->selectRaw('
@@ -410,7 +398,7 @@ class ReporteriaController extends Controller
             ];
 
             $filename = 'analisis_espacios_' . date('Y-m-d_H-i-s') . '.pdf';
-            $pdf = Pdf::loadView('reporteria.pdf.espacios', $data);
+            $pdf = Pdf::loadView('reportes.pdf.espacios', $data);
             return $pdf->download($filename);
         } else {
             // Exportar a Excel
@@ -453,16 +441,16 @@ class ReporteriaController extends Controller
     public function exportTipoEspacio($format)
     {
         // Obtener todos los tipos de espacio distintos
-        $tipos = \App\Models\Espacio::select('tipo_espacio')->distinct()->pluck('tipo_espacio');
-        $totalReservas = \App\Models\Reserva::where('estado', 'activa')->count();
+        $tipos = Espacio::select('tipo_espacio')->distinct()->pluck('tipo_espacio');
+        $totalReservas = Reserva::where('estado', 'activa')->count();
         $tiposEspacio = [];
         foreach ($tipos as $tipo) {
-            $reservasTipo = \App\Models\Reserva::whereHas('espacio', function ($q) use ($tipo) {
+            $reservasTipo = Reserva::whereHas('espacio', function ($q) use ($tipo) {
                 $q->where('tipo_espacio', $tipo);
             })->where('estado', 'activa')->count();
             $utilizacion = $totalReservas > 0 ? round(($reservasTipo / $totalReservas) * 100) : 0;
             $mesAnterior = now()->subMonth();
-            $reservasTipoMesAnterior = \App\Models\Reserva::whereHas('espacio', function ($q) use ($tipo) {
+            $reservasTipoMesAnterior = Reserva::whereHas('espacio', function ($q) use ($tipo) {
                 $q->where('tipo_espacio', $tipo);
             })->where('estado', 'activa')
               ->whereMonth('fecha_reserva', $mesAnterior->month)
@@ -478,19 +466,19 @@ class ReporteriaController extends Controller
             ];
         }
         $total_tipos = count($tipos);
-        $total_espacios = \App\Models\Espacio::count();
-        $espacios_ocupados = \App\Models\Espacio::where('estado', 'Ocupado')->count();
-        $total_reservas = \App\Models\Reserva::where('estado', 'activa')->count();
+        $total_espacios = Espacio::count();
+        $espacios_ocupados = Espacio::where('estado', 'Ocupado')->count();
+        $total_reservas = Reserva::where('estado', 'activa')->count();
         $promedio_utilizacion = $total_espacios > 0 ? round(($espacios_ocupados / $total_espacios) * 100) : 0;
 
         // Resumen detallado por tipo de espacio
         $resumen = [];
         foreach ($tipos as $tipo) {
-            $total_espacios_tipo = \App\Models\Espacio::where('tipo_espacio', $tipo)->count();
-            $total_reservas_tipo = \App\Models\Reserva::whereHas('espacio', function ($q) use ($tipo) {
+            $total_espacios_tipo = Espacio::where('tipo_espacio', $tipo)->count();
+            $total_reservas_tipo = Reserva::whereHas('espacio', function ($q) use ($tipo) {
                 $q->where('tipo_espacio', $tipo);
             })->where('estado', 'activa')->count();
-            $horas_utilizadas = \App\Models\Reserva::whereHas('espacio', function ($q) use ($tipo) {
+            $horas_utilizadas = Reserva::whereHas('espacio', function ($q) use ($tipo) {
                 $q->where('tipo_espacio', $tipo);
             })->where('estado', 'activa')->sum('duracion_minutos') / 60;
             $promedio = $total_espacios_tipo > 0 ? round(($total_reservas_tipo / $total_espacios_tipo) * 100) : 0;
@@ -510,8 +498,8 @@ class ReporteriaController extends Controller
         $data_grafico = [];
         $data_reservas_grafico = [];
         foreach ($tipos as $tipo) {
-            $espacios_tipo = \App\Models\Espacio::where('tipo_espacio', $tipo)->count();
-            $reservas_tipo = \App\Models\Reserva::whereHas('espacio', function ($q) use ($tipo) {
+            $espacios_tipo = Espacio::where('tipo_espacio', $tipo)->count();
+            $reservas_tipo = Reserva::whereHas('espacio', function ($q) use ($tipo) {
                 $q->where('tipo_espacio', $tipo);
             })->where('estado', 'activa')->count();
             $data_grafico[] = $espacios_tipo > 0 ? round(($reservas_tipo / $espacios_tipo) * 100) : 0;
@@ -530,12 +518,12 @@ class ReporteriaController extends Controller
             foreach ($diasDisponibles as $dia) {
                 // Definir módulos para cada día (1-15)
                 for ($moduloNum = 1; $moduloNum <= 15; $moduloNum++) {
-                    $totalEspacios = \App\Models\Espacio::where('tipo_espacio', $tipo)->count();
+                    $totalEspacios = Espacio::where('tipo_espacio', $tipo)->count();
                     if ($totalEspacios === 0) {
                         $ocupacionHorarios[$tipo][$dia][$moduloNum] = 0;
                         continue;
                     }
-                    $ocupados = \App\Models\Planificacion_Asignatura::where('id_modulo', $dia.'.'.$moduloNum)
+                    $ocupados = Planificacion_Asignatura::where('id_modulo', $dia.'.'.$moduloNum)
                         ->whereHas('espacio', function($q) use ($tipo) {
                             $q->where('tipo_espacio', $tipo);
                         })
@@ -546,7 +534,7 @@ class ReporteriaController extends Controller
         }
 
         if ($format === 'pdf') {
-            $pdf = Pdf::loadView('reporteria.pdf.tipo-espacio', compact('tiposEspacio', 'total_tipos', 'total_espacios', 'espacios_ocupados', 'total_reservas', 'promedio_utilizacion', 'resumen', 'labels_grafico', 'data_grafico', 'data_reservas_grafico', 'diasDisponibles', 'tiposEspacioDisponibles', 'diaActual', 'ocupacionHorarios'));
+            $pdf = Pdf::loadView('reportes.pdf.tipo-espacio', compact('tiposEspacio', 'total_tipos', 'total_espacios', 'espacios_ocupados', 'total_reservas', 'promedio_utilizacion', 'resumen', 'labels_grafico', 'data_grafico', 'data_reservas_grafico', 'diasDisponibles', 'tiposEspacioDisponibles', 'diaActual', 'ocupacionHorarios'));
             $filename = 'tipo_espacio_qr_' . date('Y-m-d_H-i-s') . '.pdf';
             return $pdf->download($filename);
         }
@@ -704,7 +692,7 @@ class ReporteriaController extends Controller
             ];
 
             $filename = 'historico_espacios_' . $fechaInicio . '_' . $fechaFin . '.pdf';
-            $pdf = Pdf::loadView('reporteria.pdf.historico-espacios', $data);
+            $pdf = Pdf::loadView('reportes.pdf.historico-espacios', $data);
             return $pdf->download($filename);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Error al exportar a PDF: ' . $e->getMessage());
@@ -729,7 +717,7 @@ class ReporteriaController extends Controller
         // Obtener accesos registrados (reservas activas)
         $accesos = $this->obtenerAccesosRegistrados($fechaInicio, $fechaFin, $piso, $tipoUsuario, $espacio);
 
-        return view('reporteria.accesos', compact(
+        return view('reportes.accesos', compact(
             'accesos',
             'fechaInicio',
             'fechaFin',
@@ -745,7 +733,7 @@ class ReporteriaController extends Controller
     // Método para limpiar filtros
     public function limpiarFiltrosAccesos()
     {
-        return redirect()->route('reporteria.accesos')->with('success', 'Filtros limpiados correctamente');
+        return redirect()->route('reportes.accesos')->with('success', 'Filtros limpiados correctamente');
     }
 
     public function exportAccesos($format)
@@ -851,22 +839,22 @@ class ReporteriaController extends Controller
     public function unidadAcademica(Request $request)
     {
         // Obtener todas las áreas académicas con sus carreras
-        $areasAcademicas = \App\Models\AreaAcademica::with(['carreras', 'facultad'])->get();
+        $areasAcademicas = AreaAcademica::with(['carreras', 'facultad'])->get();
         
         $datosUnidadAcademica = [];
         
         foreach ($areasAcademicas as $areaAcademica) {
             // Obtener asignaturas de todas las carreras de esta área académica
             $carrerasIds = $areaAcademica->carreras->pluck('id_carrera');
-            $asignaturas = \App\Models\Asignatura::whereIn('id_carrera', $carrerasIds)->get();
+            $asignaturas = Asignatura::whereIn('id_carrera', $carrerasIds)->get();
             
             // Obtener planificaciones de estas asignaturas
             $asignaturasIds = $asignaturas->pluck('id_asignatura');
-            $planificaciones = \App\Models\Planificacion_Asignatura::whereIn('id_asignatura', $asignaturasIds)->get();
+            $planificaciones = Planificacion_Asignatura::whereIn('id_asignatura', $asignaturasIds)->get();
             
             // Obtener espacios utilizados por esta área académica
             $espaciosUtilizados = $planificaciones->pluck('id_espacio')->unique();
-            $totalEspacios = \App\Models\Espacio::whereHas('piso.facultad', function($q) use ($areaAcademica) {
+            $totalEspacios = Espacio::whereHas('piso.facultad', function($q) use ($areaAcademica) {
                 $q->where('id_facultad', $areaAcademica->id_facultad);
             })->count();
             
@@ -874,10 +862,10 @@ class ReporteriaController extends Controller
             $porcentajeUtilizacion = $totalEspacios > 0 ? round(($espaciosUtilizados->count() / $totalEspacios) * 100, 2) : 0;
             
             // Obtener reservas rechazadas (estado = 'rechazada') - solo reservas generales
-            $reservasRechazadas = \App\Models\Reserva::where('estado', 'rechazada')->count();
+            $reservasRechazadas = Reserva::where('estado', 'rechazada')->count();
             
             // Obtener espacios no utilizados
-            $espaciosNoUtilizados = \App\Models\Espacio::whereHas('piso.facultad', function($q) use ($areaAcademica) {
+            $espaciosNoUtilizados = Espacio::whereHas('piso.facultad', function($q) use ($areaAcademica) {
                 $q->where('id_facultad', $areaAcademica->id_facultad);
             })->whereNotIn('id_espacio', $espaciosUtilizados)->get();
             
@@ -906,32 +894,32 @@ class ReporteriaController extends Controller
             ];
         }
         
-        return view('reporteria.unidad-academica', compact('datosUnidadAcademica'));
+        return view('reportes.unidad-academica', compact('datosUnidadAcademica'));
     }
     
     public function exportUnidadAcademica($format)
     {
         // Obtener los mismos datos que en unidadAcademica
-        $areasAcademicas = \App\Models\AreaAcademica::with(['carreras', 'facultad'])->get();
+        $areasAcademicas = AreaAcademica::with(['carreras', 'facultad'])->get();
         
         $datosUnidadAcademica = [];
         
         foreach ($areasAcademicas as $areaAcademica) {
             $carrerasIds = $areaAcademica->carreras->pluck('id_carrera');
-            $asignaturas = \App\Models\Asignatura::whereIn('id_carrera', $carrerasIds)->get();
+            $asignaturas = Asignatura::whereIn('id_carrera', $carrerasIds)->get();
             $asignaturasIds = $asignaturas->pluck('id_asignatura');
-            $planificaciones = \App\Models\Planificacion_Asignatura::whereIn('id_asignatura', $asignaturasIds)->get();
+            $planificaciones = Planificacion_Asignatura::whereIn('id_asignatura', $asignaturasIds)->get();
             
             $espaciosUtilizados = $planificaciones->pluck('id_espacio')->unique();
-            $totalEspacios = \App\Models\Espacio::whereHas('piso.facultad', function($q) use ($areaAcademica) {
+            $totalEspacios = Espacio::whereHas('piso.facultad', function($q) use ($areaAcademica) {
                 $q->where('id_facultad', $areaAcademica->id_facultad);
             })->count();
             
             $porcentajeUtilizacion = $totalEspacios > 0 ? round(($espaciosUtilizados->count() / $totalEspacios) * 100, 2) : 0;
             
-            $reservasRechazadas = \App\Models\Reserva::where('estado', 'rechazada')->count();
+            $reservasRechazadas = Reserva::where('estado', 'rechazada')->count();
             
-            $espaciosNoUtilizados = \App\Models\Espacio::whereHas('piso.facultad', function($q) use ($areaAcademica) {
+            $espaciosNoUtilizados = Espacio::whereHas('piso.facultad', function($q) use ($areaAcademica) {
                 $q->where('id_facultad', $areaAcademica->id_facultad);
             })->whereNotIn('id_espacio', $espaciosUtilizados)->get();
             
@@ -949,7 +937,7 @@ class ReporteriaController extends Controller
         }
         
         if ($format === 'pdf') {
-            $pdf = Pdf::loadView('reporteria.pdf.unidad-academica', compact('datosUnidadAcademica'));
+            $pdf = Pdf::loadView('reportes.pdf.unidad-academica', compact('datosUnidadAcademica'));
             $filename = 'unidad_academica_' . date('Y-m-d_H-i-s') . '.pdf';
             return $pdf->download($filename);
         }
@@ -993,7 +981,7 @@ class ReporteriaController extends Controller
         }
         
         // Problema 4: Baja utilización de espacios
-        $totalEspacios = \App\Models\Espacio::whereHas('piso.facultad', function($q) use ($areaAcademica) {
+        $totalEspacios = Espacio::whereHas('piso.facultad', function($q) use ($areaAcademica) {
             $q->where('id_facultad', $areaAcademica->id_facultad);
         })->count();
         
@@ -1127,7 +1115,7 @@ class ReporteriaController extends Controller
      */
     private function obtenerPisosDisponibles()
     {
-        return \App\Models\Piso::whereHas('facultad', function ($query) {
+        return Piso::whereHas('facultad', function ($query) {
             $query->where('id_facultad', 'IT_TH');
         })
         ->orderBy('numero_piso')
@@ -1139,7 +1127,7 @@ class ReporteriaController extends Controller
      */
     private function obtenerEspaciosDisponibles()
     {
-        return \App\Models\Espacio::whereHas('piso.facultad', function ($query) {
+        return Espacio::whereHas('piso.facultad', function ($query) {
             $query->where('id_facultad', 'IT_TH');
         })
         ->orderBy('nombre_espacio')
@@ -1198,7 +1186,7 @@ class ReporteriaController extends Controller
             $anio = SemesterHelper::getCurrentAcademicYear();
             $semestre = SemesterHelper::getCurrentSemester();
             $filename = 'accesos_registrados_' . $codigoEspacio . '_' . $anio . '_semestre_' . $semestre . '.pdf';
-            $pdf = Pdf::loadView('reporteria.pdf.accesos', $data);
+            $pdf = Pdf::loadView('reportes.pdf.accesos', $data);
             return $pdf->download($filename);
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Error al exportar a PDF: ' . $e->getMessage());
@@ -1210,7 +1198,7 @@ class ReporteriaController extends Controller
      */
     private function obtenerTiposEspacioDisponibles()
     {
-        return \App\Models\Espacio::select('tipo_espacio')
+        return Espacio::select('tipo_espacio')
             ->distinct()
             ->orderBy('tipo_espacio')
             ->pluck('tipo_espacio', 'tipo_espacio');
@@ -1231,12 +1219,9 @@ class ReporteriaController extends Controller
         ];
     }
 
-    /**
-     * Generar datos dinámicos de ocupación por horarios basados en reservas reales
-     */
+ 
     private function generarDatosOcupacionHorarios($fechaInicio, $fechaFin, $piso = null, $tipoUsuario = null, $tipoEspacioFiltro = null, $diaFiltro = null)
     {
-        // Definir los módulos y sus rangos horarios
         $modulosHorarios = [
             1 => ['inicio' => '08:10', 'fin' => '09:00'],
             2 => ['inicio' => '09:10', 'fin' => '10:00'],
@@ -1263,7 +1248,7 @@ class ReporteriaController extends Controller
         }
 
         // Obtener tipos de espacio
-        $tiposQuery = \App\Models\Espacio::query();
+        $tiposQuery = Espacio::query();
         if (!empty($piso)) {
             $tiposQuery->whereHas('piso', function ($q) use ($piso) {
                 $q->where('numero_piso', $piso);
@@ -1317,7 +1302,7 @@ class ReporteriaController extends Controller
                     $totalReservas = $reservasQuery->count();
                     
                     // Calcular capacidad máxima para este módulo
-                    $espaciosDelTipo = \App\Models\Espacio::where('tipo_espacio', $tipo);
+                    $espaciosDelTipo = Espacio::where('tipo_espacio', $tipo);
                     if (!empty($piso)) {
                         $espaciosDelTipo->whereHas('piso', function ($q) use ($piso) {
                             $q->where('numero_piso', $piso);
@@ -1494,7 +1479,7 @@ class ReporteriaController extends Controller
         $tipoEspacio = $request->input('tipo_espacio', '');
         $perPage = 10;
 
-        $query = \App\Models\Reserva::with(['espacio', 'user'])
+        $query = Reserva::with(['espacio', 'user'])
             ->whereBetween('fecha_reserva', [$fechaInicio, $fechaFin]);
         if ($tipoEspacio) {
             $query->whereHas('espacio', function($q) use ($tipoEspacio) {
@@ -1507,8 +1492,8 @@ class ReporteriaController extends Controller
         $data = $paginator->getCollection()->map(function($reserva) {
             return [
                 'fecha' => $reserva->fecha_reserva,
-                'hora_inicio' => $reserva->hora ? \Carbon\Carbon::parse($reserva->hora)->format('H:i') : '',
-                'hora_termino' => $reserva->hora_salida ? \Carbon\Carbon::parse($reserva->hora_salida)->format('H:i') : '',
+                'hora_inicio' => $reserva->hora ? Carbon::parse($reserva->hora)->format('H:i') : '',
+                'hora_termino' => $reserva->hora_salida ? Carbon::parse($reserva->hora_salida)->format('H:i') : '',
                 'espacio' => $reserva->espacio->nombre_espacio ?? '',
                 'tipo_espacio' => $reserva->espacio->tipo_espacio ?? '',
                 'usuario' => $reserva->user->name ?? '',

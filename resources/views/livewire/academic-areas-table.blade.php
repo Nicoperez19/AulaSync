@@ -42,7 +42,6 @@
                     <th class="p-3" onclick="sortTable(2)">Tipo <span class="sort-icon">▼</span></th>
                     <th class="p-3" onclick="sortTable(3)">Facultad <span class="sort-icon">▼</span></th>
                     <th class="p-3" onclick="sortTable(4)">Sede <span class="sort-icon">▼</span></th>
-                    <th class="p-3" onclick="sortTable(5)">Universidad <span class="sort-icon">▼</span></th>
                     <th class="p-3">Acciones</th>
                 </tr>
             </thead>
@@ -68,9 +67,6 @@
                         </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
                             {{ $areaAcademica->facultad->sede->nombre_sede ?? 'Sin Sede' }}
-                        </td>
-                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            {{ $areaAcademica->facultad->sede->universidad->nombre_universidad ?? 'Sin Universidad' }}
                         </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
                             <div class="flex justify-center space-x-2">

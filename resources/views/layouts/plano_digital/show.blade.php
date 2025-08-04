@@ -23,7 +23,7 @@
             class="fixed top-0 left-0 z-40 flex flex-col justify-between w-56 h-screen pt-2 text-base border-r border-gray-200 md:w-56 bg-light-cloud-blue dark:border-gray-700 md:text-sm sm:text-xs">
 
             <div class="flex flex-col items-center gap-2 md:gap-1">
-                <a href="{{ route('dashboard') }}" class="mb-1">
+                <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}" class="mb-1">
                     <x-application-logo-navbar class="w-10 h-10 md:w-8 md:h-8 sm:w-6 sm:h-6" />
                 </a>
             </div>
@@ -90,50 +90,50 @@
 
 
                         <!-- Información del usuario (oculta inicialmente) -->
-                        <div id="info-usuario" class="hidden px-4 space-y-1 text-sm">
-                            <h3 class="mb-2 text-xs font-semibold tracking-wide uppercase text-white/80">Información de
-                                usuario</h3>
+                        <div id="info-usuario" class="hidden px-4 py-3 space-y-2 text-sm bg-white rounded-lg shadow-md">
+                            <h3 class="mb-2 text-xs font-semibold tracking-wide uppercase text-gray-800">Información de
+                            usuario</h3>
 
                             <div class="flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" fill="none"
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-600" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
-                                <span class="font-bold">RUN:</span>
-                                <span id="run-escaneado" class="ml-auto">--</span>
+                                <span class="font-bold text-gray-800">RUN:</span>
+                                <span id="run-escaneado" class="ml-auto text-gray-700">--</span>
                             </div>
 
                             <div class="flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" fill="none"
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-600" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
-                                <span class="font-bold">Usuario:</span>
-                                <span id="nombre-usuario" class="ml-auto">--</span>
+                                <span class="font-bold text-gray-800">Usuario:</span>
+                                <span id="nombre-usuario" class="ml-auto text-gray-700">--</span>
                             </div>
                         </div>
 
                         <!-- Información del espacio (oculta inicialmente) -->
-                        <div id="info-espacio" class="hidden px-4 space-y-1 text-sm">
-                            <h3 class="mb-2 text-xs font-semibold tracking-wide uppercase text-white/80">Información de
+                        <div id="info-espacio" class="hidden px-4 py-3 space-y-2 text-sm bg-white rounded-lg shadow-md">
+                            <h3 class="mb-2 text-xs font-semibold tracking-wide uppercase text-gray-800">Información de
                                 espacio</h3>
 
                             <div class="flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-white" fill="none"
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-600" fill="none"
                                     viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M17.657 16.657L13.414 12 17.657 7.757M6.343 7.757L10.586 12 6.343 16.243" />
                                 </svg>
-                                <span class="font-bold">Espacio:</span>
-                                <span id="nombre-espacio" class="ml-auto">--</span>
+                                <span class="font-bold text-gray-800">Espacio:</span>
+                                <span id="nombre-espacio" class="ml-auto text-gray-700">--</span>
                             </div>
                         </div>
 
                         <input type="text" id="qr-input"
                             class="absolute w-full px-1 py-1 text-transparent bg-transparent border-0 focus:outline-none focus:border-0 focus:ring-0"
-                            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
 
                     </div>
                 </div>
@@ -145,31 +145,31 @@
             <div class="flex flex-col items-center justify-center w-full max-w-md p-1 mx-auto ">
                 <div class="w-full mt-6">
                     <div class="p-4 text-white bg-red-700 rounded shadow-[0_0_10px_2px_rgba(255,255,255,0.4)]">
-                        <h3
-                            class="flex items-center justify-center gap-1 mb-2 text-sm font-semibold text-center text-white md:text-xs">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 md:w-3 md:h-3" viewBox="0 0 24 24"
-                                fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                                <circle cx="12" cy="10" r="3"></circle>
-                            </svg>
-                            LEYENDA DE ESTADO
-                        </h3>
-                        <div class="flex flex-col items-start gap-1">
-                            <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-red-500 border-2 border-white rounded-full"></div>
-                                <span class="flex-1 text-xs text-white">Ocupado</span>
-                            </div>
-                            <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-orange-500 border-2 border-white rounded-full "></div>
-                                <span class="flex-1 text-xs text-white">Reservado</span>
-                            </div>
-                            <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-blue-500 border-2 border-white rounded-full"></div>
-                                <span class="flex-1 text-xs text-white">Próximo</span>
-                            </div>
-                            <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
-                                <span class="flex-1 text-xs text-white">Disponible</span>
+                <h3
+                    class="flex items-center justify-center gap-1 mb-2 text-sm font-semibold text-center text-white md:text-xs">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 md:w-3 md:h-3" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                    LEYENDA DE ESTADO
+                </h3>
+                <div class="flex flex-col items-start gap-1">
+                    <div class="flex items-center w-full gap-1">
+                        <div class="w-3 h-3 bg-red-500 border-2 border-white rounded-full"></div>
+                        <span class="flex-1 text-xs text-white">Ocupado</span>
+                    </div>
+                    <div class="flex items-center w-full gap-1">
+                        <div class="w-3 h-3 bg-orange-500 border-2 border-white rounded-full "></div>
+                        <span class="flex-1 text-xs text-white">Reservado</span>
+                    </div>
+                    <div class="flex items-center w-full gap-1">
+                        <div class="w-3 h-3 bg-blue-500 border-2 border-white rounded-full"></div>
+                        <span class="flex-1 text-xs text-white">Próximo</span>
+                    </div>
+                    <div class="flex items-center w-full gap-1">
+                        <div class="w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                        <span class="flex-1 text-xs text-white">Disponible</span>
                             </div>
                         </div>
                     </div>
@@ -185,16 +185,16 @@
                         <ul class="flex" id="pills-tab" role="tablist">
                             @foreach ($pisos as $piso)
                                 @if ($piso['id_mapa'])
-                                                    <li role="presentation">
-                                                        <a href="{{ route('plano.show', $piso['id_mapa']) }}"
-                                                            class="px-4 py-2 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
-                                                                                                                                            {{ $piso['id_mapa'] === $mapa->id_mapa
-                                    ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
+                                    <li role="presentation">
+                                        <a href="{{ route('plano.show', $piso['id_mapa']) }}"
+                                            class="px-4 py-2 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
+                                            {{ $piso['id_mapa'] === $mapa->id_mapa
+                                                ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
                                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}" role="tab"
-                                                            aria-selected="{{ $piso['id_mapa'] === $mapa->id_mapa ? 'true' : 'false' }}">
-                                                            Piso {{ $piso['numero'] }}
-                                                        </a>
-                                                    </li>
+                                            aria-selected="{{ $piso['id_mapa'] === $mapa->id_mapa ? 'true' : 'false' }}">
+                                            Piso {{ $piso['numero'] }}
+                                        </a>
+                                    </li>
                                 @endif
                             @endforeach
                         </ul>
@@ -230,11 +230,11 @@
     <!-- Modal para mostrar información del espacio -->
     <x-modal name="data-space" :show="false" focusable>
         @slot('title')
-        <!-- Encabezado rojo -->
-        <div class="flex-1 p-4 text-center">
-            <h2 id="modalTitulo" class="text-2xl font-bold text-center text-white"></h2>
-            <div class="text-xs text-white/80" id="modalSubtitulo"></div>
-        </div>
+            <!-- Encabezado rojo -->
+            <div class="flex-1 p-4 text-center">
+                <h2 id="modalTitulo" class="text-2xl font-bold text-center text-white"></h2>
+                <div class="text-xs text-white/80" id="modalSubtitulo"></div>
+            </div>
         @endslot
         <!-- Estado visual destacado, separado y más grande -->
         <h3 class="pt-4 mb-2 text-lg font-semibold text-gray-900">Información del Espacio</h3>
@@ -331,9 +331,9 @@
     <!-- Modal para reconocimiento -->
     <x-modal name="reconocimiento" :show="false" focusable>
         @slot('title')
-        <h2 class="text-lg font-medium text-white dark:text-gray-100">
-            Reconocimiento
-        </h2>
+            <h2 class="text-lg font-medium text-white dark:text-gray-100">
+                Reconocimiento
+            </h2>
         @endslot
         <div class="p-6">
             <div class="flex flex-col items-center justify-center space-y-4">
@@ -353,9 +353,9 @@
     <!-- Modal para devolución de llaves (rediseñado) -->
     <x-modal name="devolver-llaves" :show="false" focusable>
         @slot('title')
-        <div class="px-6 py-3 text-white bg-red-700 rounded-t">
-            <h2 class="text-lg font-semibold text-center">Devolver Llaves</h2>
-        </div>
+            <div class="px-6 py-3 text-white bg-red-700 rounded-t">
+                <h2 class="text-lg font-semibold text-center">Devolver Llaves</h2>
+            </div>
         @endslot
         <div class="flex flex-col items-center justify-center p-8 bg-white">
             <div class="flex flex-col items-center mb-6">
@@ -377,9 +377,9 @@
     <!-- Modal para solicitud de llaves -->
     <x-modal name="solicitar-llaves" :show="false" focusable>
         @slot('title')
-        <h2 class="text-lg font-medium text-white dark:text-gray-100">
-            Solicitar Llaves
-        </h2>
+            <h2 class="text-lg font-medium text-white dark:text-gray-100">
+                Solicitar Llaves
+            </h2>
         @endslot
         <div class="p-6">
             <div class="flex flex-col items-center justify-center">
@@ -415,9 +415,9 @@
     <!-- Modal para registro de usuario no registrado -->
     <x-modal name="registro-usuario" :show="false" focusable>
         @slot('title')
-        <h2 class="text-lg font-medium text-white dark:text-gray-100">
-            Registro de Usuario
-        </h2>
+            <h2 class="text-lg font-medium text-white dark:text-gray-100">
+                Registro de Usuario
+            </h2>
         @endslot
         <div class="p-6">
             <div class="space-y-4">
@@ -497,9 +497,9 @@
     <!-- Modal para seleccionar cantidad de módulos -->
     <x-modal name="seleccionar-modulos" :show="false" focusable>
         @slot('title')
-        <h2 class="text-lg font-medium text-center text-black">
-            Seleccionar Módulos
-        </h2>
+            <h2 class="text-lg font-medium text-center text-black">
+                Seleccionar Módulos
+            </h2>
         @endslot
         <div class="p-6 text-center">
             <p class="mb-4 text-base text-gray-800">¿Por cuántos módulos desea reservar?</p>
@@ -521,9 +521,9 @@
     <!-- Modal para registro de solicitante -->
     <x-modal name="registro-solicitante" :show="false" focusable>
         @slot('title')
-        <h2 class="text-lg font-medium text-white dark:text-gray-100">
-            Registro de Solicitante
-        </h2>
+            <h2 class="text-lg font-medium text-white dark:text-gray-100">
+                Registro de Solicitante
+            </h2>
         @endslot
         <div class="p-6">
             <div class="space-y-4">
@@ -771,6 +771,50 @@
             const qrStatus = document.getElementById('qr-status');
             if (qrStatus) {
                 qrStatus.classList.add('parpadeo');
+                qrStatus.innerHTML = 'Esperando... Escanea el código QR';
+            }
+            
+            // Limpiar cualquier input de QR que pueda tener datos
+            const qrInput = document.getElementById('qr-input');
+            if (qrInput) {
+                qrInput.value = '';
+            }
+            
+            // Limpiar buffer de QR si existe
+            if (typeof bufferQR !== 'undefined') {
+                bufferQR = '';
+            }
+            
+            // Limpiar buffer de solicitud QR si existe
+            if (typeof bufferQRSolicitud !== 'undefined') {
+                bufferQRSolicitud = '';
+            }
+        }
+        
+        // Función para limpiar completamente el estado de la aplicación
+        function limpiarEstadoCompleto() {
+            // Resetear variables globales
+            ordenEscaneo = 'usuario';
+            profesorEscaneado = null;
+            espacioParaReserva = null;
+            runParaReserva = null;
+            
+            // Limpiar buffers
+            if (typeof bufferQR !== 'undefined') {
+                bufferQR = '';
+            }
+            if (typeof bufferQRSolicitud !== 'undefined') {
+                bufferQRSolicitud = '';
+            }
+            
+            // Resetear interfaz visual
+            resetearInterfaz();
+            
+            // Restaurar parpadeo del estado QR
+            const qrStatus = document.getElementById('qr-status');
+            if (qrStatus) {
+                qrStatus.classList.add('parpadeo');
+                qrStatus.innerHTML = 'Esperando... Escanea el código QR';
             }
         }
 
@@ -807,9 +851,24 @@
         // Función para verificar si un profesor tiene clases programadas
         async function verificarClasesProfesor(run) {
             try {
+                console.log('Verificando clases para profesor:', run);
                 const response = await fetch(`/api/verificar-clases-programadas/${run}`);
                 const result = await response.json();
-                return result.tiene_clases || false;
+                console.log('Respuesta de verificar clases:', result);
+                console.log('result.success:', result.success);
+                console.log('result.tiene_clases:', result.tiene_clases);
+                console.log('typeof result.tiene_clases:', typeof result.tiene_clases);
+                
+                // Verificar si la respuesta es exitosa y tiene clases
+                if (result.success && result.tiene_clases) {
+                    console.log('✅ Profesor tiene clases programadas');
+                    return true;
+                } else {
+                    console.log('❌ Profesor no tiene clases programadas');
+                    console.log('result.success es:', result.success);
+                    console.log('result.tiene_clases es:', result.tiene_clases);
+                    return false;
+                }
             } catch (error) {
                 console.error('Error:', error);
                 return false;
@@ -817,7 +876,7 @@
         }
 
         // Función para crear una reserva
-        async function crearReserva(run, idEspacio) {
+        async function crearReserva(run, idEspacio, tipoUsuario = 'profesor') {
             try {
                 const response = await fetch('/api/crear-reserva', {
                     method: 'POST',
@@ -826,8 +885,9 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
                     body: JSON.stringify({
-                        run,
-                        id_espacio: idEspacio
+                        run_usuario: run,
+                        id_espacio: idEspacio,
+                        tipo_usuario: tipoUsuario
                     })
                 });
                 return await response.json();
@@ -895,6 +955,27 @@
             }
         }
 
+        // Función para devolver espacio
+        async function devolverEspacio(runUsuario, idEspacio) {
+            try {
+                const response = await fetch('/api/devolver-espacio', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        run_usuario: runUsuario,
+                        id_espacio: idEspacio
+                    })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                return null;
+            }
+        }
+
         // Función para verificar el estado del espacio y las reservas del usuario
         async function verificarEstadoEspacioYReserva(runUsuario, idEspacio) {
             try {
@@ -928,23 +1009,23 @@
         let lastBufferLength = 0;
         let processingTimeout = null;
         let ordenEscaneo = 'usuario'; // Controla el orden: 'usuario' -> 'espacio'
-
+        
         async function handleScan(event) {
             // Solo procesar cuando se presiona Enter
             if (event.key !== 'Enter') {
                 // Acumular caracteres en el buffer
                 if (event.key.length === 1) {
                     bufferQR += event.key;
-
+                    
                     // Detectar cuando el escaneo se completó (buffer dejó de crecer)
                     if (bufferQR.length > lastBufferLength) {
                         lastBufferLength = bufferQR.length;
-
+                        
                         // Limpiar timeout anterior
                         if (processingTimeout) {
                             clearTimeout(processingTimeout);
                         }
-
+                        
                         // Procesar automáticamente después de 500ms sin nuevos caracteres
                         processingTimeout = setTimeout(async () => {
                             await procesarQRCompleto();
@@ -956,7 +1037,7 @@
 
             await procesarQRCompleto();
         }
-
+        
         // Función para procesar el QR completo con validación de orden
         async function procesarQRCompleto() {
             // Validar orden de escaneo
@@ -997,7 +1078,7 @@
 
             // Verificar usuario en la base de datos
             const usuarioInfo = await verificarUsuario(run);
-
+            
             if (!usuarioInfo) {
                 Swal.fire('Error', 'Error al verificar usuario', 'error');
                 return;
@@ -1007,7 +1088,7 @@
                 if (usuarioInfo.tipo_usuario === 'profesor') {
                     // Es profesor - verificar si tiene clases programadas
                     const tieneClases = await verificarClasesProfesor(run);
-
+                    
                     if (tieneClases) {
                         // Profesor CON clases - solo registra solicitud
                         document.getElementById('qr-status').innerHTML = 'Profesor con clases verificado. Escanee el espacio para registrar asistencia.';
@@ -1041,12 +1122,12 @@
                 // Usuario no encontrado - mostrar modal de registro de solicitante
                 runSolicitantePendiente = run;
                 document.getElementById('run-solicitante-no-registrado').textContent = run;
-
+                
                 // Cerrar modal actual si está abierto
                 window.dispatchEvent(new CustomEvent('close-modal', {
                     detail: 'data-space'
                 }));
-
+                
                 // Abrir modal de registro de solicitante
                 setTimeout(() => {
                     window.dispatchEvent(new CustomEvent('open-modal', {
@@ -1067,23 +1148,84 @@
 
             const espacio = espacioMatch[1].replace(/[^A-Z0-9]/g, '-');
 
-            // Verificar espacio
-            const espacioInfo = await verificarEspacio(espacio);
-            if (!espacioInfo || !espacioInfo.verificado) {
-                Swal.fire('Error', espacioInfo?.mensaje || 'Espacio no encontrado', 'error');
-                return;
-            }
-
-            // Verificar si está disponible
-            if (!espacioInfo.disponible) {
-                Swal.fire('Espacio Ocupado', `El espacio ${espacioInfo.espacio.nombre} está ocupado`, 'info');
+            // Verificar estado del espacio y reservas del usuario
+            const resultadoVerificacion = await verificarEstadoEspacioYReserva(profesorEscaneado, espacio);
+            
+            if (resultadoVerificacion.tipo === 'error') {
+                Swal.fire('Error', resultadoVerificacion.mensaje, 'error');
                 ordenEscaneo = 'usuario';
                 return;
             }
 
+            if (resultadoVerificacion.tipo === 'devolucion') {
+                // El usuario tiene una reserva activa en este espacio - procesar devolución automáticamente
+                const devolucion = await devolverEspacio(profesorEscaneado, espacio);
+                if (devolucion && devolucion.success) {
+                    // Mostrar mensaje de devolución en proceso
+                    document.getElementById('qr-status').innerHTML = 'Procesando devolución...';
+                    
+                    // Actualizar indicador en el mapa
+                    const block = state.indicators.find(b => b.id === espacio);
+                    if (block) {
+                        block.estado = '#00FF00'; // Verde = Disponible
+                        state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                        drawIndicators();
+                    }
+                    
+                    // Después de 1.5 segundos, mostrar SweetAlert de devolución exitosa
+                    setTimeout(() => {
+                        Swal.fire({
+                            title: '¡Devolución exitosa!',
+                            text: 'Las llaves han sido devueltas correctamente',
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false,
+                            allowOutsideClick: false
+                        });
+                        
+                        // Limpiar completamente la interfaz después de que desaparezca el SweetAlert
+                        setTimeout(() => {
+                            limpiarEstadoCompleto();
+                        }, 1500);
+                    }, 1500);
+                } else {
+                    Swal.fire('Error', devolucion?.mensaje || 'Error al devolver las llaves', 'error');
+                }
+                return;
+            }
+
+            if (resultadoVerificacion.tipo === 'espacio_ocupado') {
+                let mensajeDetallado = resultadoVerificacion.mensaje;
+                if (resultadoVerificacion.ocupante) {
+                    const ocupante = resultadoVerificacion.ocupante;
+                    const tipoUsuario = ocupante.tipo === 'profesor' ? 'Profesor' : 'Solicitante';
+                    mensajeDetallado = `
+                        <div class="text-left">
+                            <p class="mb-2"><strong>${resultadoVerificacion.mensaje}</strong></p>
+                            <div class="bg-gray-100 p-3 rounded-lg">
+                                <p><strong>${tipoUsuario}:</strong> ${ocupante.nombre}</p>
+                                <p><strong>RUN:</strong> ${ocupante.run}</p>
+                                <p><strong>Hora de inicio:</strong> ${ocupante.hora_inicio}</p>
+                                <p><strong>Fecha:</strong> ${ocupante.fecha}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                Swal.fire({
+                    title: 'Espacio Ocupado',
+                    html: mensajeDetallado,
+                    icon: 'info',
+                    confirmButtonText: 'Entendido'
+                });
+                ordenEscaneo = 'usuario';
+                return;
+            }
+
+            // Si llegamos aquí, el espacio está disponible para crear una nueva reserva
             // Verificar el tipo de usuario para determinar el flujo
             const usuarioInfo = await verificarUsuario(profesorEscaneado);
-
+            
             if (!usuarioInfo || !usuarioInfo.verificado) {
                 Swal.fire('Error', 'Error al verificar usuario para crear reserva', 'error');
                 ordenEscaneo = 'usuario';
@@ -1091,19 +1233,25 @@
             }
 
             // Determinar el flujo según el tipo de usuario
+            console.log('Usuario info completa:', usuarioInfo);
+            console.log('Tipo usuario detectado:', usuarioInfo.tipo_usuario);
+            
             if (usuarioInfo.tipo_usuario === 'profesor') {
+                console.log('✅ Usuario es profesor, verificando clases...');
                 // Verificar si tiene clases programadas
                 const tieneClases = await verificarClasesProfesor(profesorEscaneado);
-
-                if (tieneClases) {
+                console.log('Tipo usuario:', usuarioInfo.tipo_usuario);
+                console.log('Tiene clases:', tieneClases);
+                console.log('Tipo de dato tieneClases:', typeof tieneClases);
+                
+                if (tieneClases === true) {
+                    console.log('✅ Profesor CON clases - procesando reserva automática');
                     // CASO 1: Profesor CON clases - solo registra asistencia
-                    const reserva = await crearReserva(profesorEscaneado, espacio);
+                    const reserva = await crearReserva(profesorEscaneado, espacio, 'profesor');
                     if (reserva && reserva.success) {
-                        Swal.fire('¡Asistencia registrada!', 'El profesor ha registrado su asistencia a clase', 'success');
-                        document.getElementById('qr-status').innerHTML = 'Asistencia registrada';
-                        // Mostrar información del espacio
-                        mostrarInfoEspacio(espacioInfo.espacio.nombre);
-
+                        // Mostrar mensaje de proceso
+                        document.getElementById('qr-status').innerHTML = 'Registrando asistencia...';
+                        
                         // Actualizar indicador en el mapa
                         const block = state.indicators.find(b => b.id === espacio);
                         if (block) {
@@ -1111,10 +1259,25 @@
                             state.originalCoordinates = state.indicators.map(i => ({ ...i }));
                             drawIndicators();
                         }
+                        
+                        // Después de 1.5 segundos, mostrar mensaje de completado
+                        setTimeout(() => {
+                            document.getElementById('qr-status').innerHTML = 'Asistencia registrada';
+                            document.getElementById('qr-status').classList.remove('parpadeo');
+                            
+                            // Limpiar completamente la interfaz después de 1 segundo más
+                            setTimeout(() => {
+                                limpiarEstadoCompleto();
+                            }, 1000);
+                        }, 1500);
                     } else {
                         Swal.fire('Error', reserva?.mensaje || 'Error al registrar asistencia', 'error');
                     }
                 } else {
+                    console.log('⚠️ Profesor SIN clases - mostrando modal de módulos');
+                    console.log('Valor exacto de tieneClases:', tieneClases);
+                    console.log('Comparación tieneClases === true:', tieneClases === true);
+                    console.log('Comparación tieneClases == true:', tieneClases == true);
                     // CASO 2: Profesor SIN clases - solicita con módulos (máx 2)
                     await mostrarModalSeleccionarModulos(espacio, profesorEscaneado, 2); // Máximo 2 módulos
                     return; // No continuar, esperar selección de módulos
@@ -1130,12 +1293,8 @@
             }
 
             // Resetear para siguiente usuario
-            ordenEscaneo = 'usuario';
-            profesorEscaneado = null;
-
-            // Resetear interfaz después de un breve delay
             setTimeout(() => {
-                resetearInterfaz();
+                limpiarEstadoCompleto();
             }, 3000);
         }
 
@@ -1372,7 +1531,7 @@
 
             state.indicators.forEach((indicator, index) => {
                 const position = calculatePosition(indicator);
-
+                
                 const size = config.indicatorSize;
 
                 // Determinar color basado en el estado
@@ -1414,7 +1573,7 @@
         // ========================================
         // FUNCIÓN PARA MOSTRAR EL MODAL CON LA INFORMACIÓN DEL ESPACIO
         // ========================================
-        function mostrarModalEspacio(indicator) {
+        async function mostrarModalEspacio(indicator) {
             // Obtener elementos del modal
             const modalTitulo = document.getElementById('modalTitulo');
             const modalEstado = document.getElementById('modalEstado');
@@ -1457,9 +1616,75 @@
             let usuarioOcupando = '';
             let informacionUsuario = '';
 
-            if ((estadoTexto === 'Ocupado' || estadoTexto === 'Reservado') && indicator.detalles?.usuario_ocupando) {
-                usuarioOcupando =
-                    `<br><span class='text-xs text-gray-700'>${estadoTexto === 'Ocupado' ? 'Ocupado por:' : 'Reservado por:'} <b>${indicator.detalles.usuario_ocupando}</b></span>`;
+            // Si el espacio está ocupado, obtener información del ocupante
+            if (estadoTexto === 'Ocupado') {
+                try {
+                    const response = await fetch('/api/verificar-estado-espacio-reserva', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({
+                            run: '00000000', // RUN dummy para verificar ocupación
+                            id_espacio: indicator.id
+                        })
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.tipo === 'espacio_ocupado' && result.ocupante) {
+                        const ocupante = result.ocupante;
+                        const tipoUsuario = ocupante.tipo === 'profesor' ? 'Profesor' : 'Solicitante';
+                        
+                        usuarioOcupando = `<br><span class='text-xs text-gray-700'>Ocupado por: <b>${ocupante.nombre}</b></span>`;
+                        
+                        informacionUsuario = `
+                            <div class='p-3 mt-2 rounded-lg bg-gray-50'>
+                                <h4 class='mb-2 text-sm font-semibold text-gray-800'>Información del Ocupante</h4>
+                                <div class='space-y-1 text-xs text-gray-600'>
+                                    <div><span class='font-medium'>Tipo:</span> ${tipoUsuario}</div>
+                                    <div><span class='font-medium'>Nombre:</span> ${ocupante.nombre}</div>
+                                    <div><span class='font-medium'>RUN:</span> ${ocupante.run}</div>
+                                    <div><span class='font-medium'>Hora de inicio:</span> ${ocupante.hora_inicio}</div>
+                                    <div><span class='font-medium'>Fecha:</span> ${ocupante.fecha}</div>
+                                </div>
+                            </div>
+                        `;
+                    } else if (indicator.detalles?.usuario_ocupando) {
+                        // Fallback a información existente si no se puede obtener del servidor
+                        usuarioOcupando = `<br><span class='text-xs text-gray-700'>Ocupado por: <b>${indicator.detalles.usuario_ocupando}</b></span>`;
+                        
+                        if (indicator.detalles?.reserva) {
+                            const reserva = indicator.detalles.reserva;
+                            const usuarioInfo = indicator.detalles.usuario_info;
+
+                            informacionUsuario = `
+                                <div class='p-3 mt-2 rounded-lg bg-gray-50'>
+                                    <h4 class='mb-2 text-sm font-semibold text-gray-800'>Información del Usuario</h4>
+                                    <div class='space-y-1 text-xs text-gray-600'>
+                                        ${usuarioInfo ? `
+                                            <div><span class='font-medium'>Nombre:</span> ${usuarioInfo.nombre}</div>
+                                            <div><span class='font-medium'>Email:</span> ${usuarioInfo.email}</div>
+                                            <div><span class='font-medium'>RUN:</span> ${usuarioInfo.run}</div>
+                                        ` : ''}
+                                        <div><span class='font-medium'>Fecha de reserva:</span> ${reserva.fecha_reserva || 'No especificada'}</div>
+                                        <div><span class='font-medium'>Hora de entrada:</span> ${reserva.hora ? reserva.hora.substring(0, 5) : 'No especificada'}</div>
+                                        ${reserva.hora_salida ? `<div><span class='font-medium'>Hora de salida:</span> ${reserva.hora_salida.substring(0, 5)}</div>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error al obtener información del ocupante:', error);
+                    // Fallback a información existente
+                    if (indicator.detalles?.usuario_ocupando) {
+                        usuarioOcupando = `<br><span class='text-xs text-gray-700'>Ocupado por: <b>${indicator.detalles.usuario_ocupando}</b></span>`;
+                    }
+                }
+            } else if (estadoTexto === 'Reservado' && indicator.detalles?.usuario_ocupando) {
+                usuarioOcupando = `<br><span class='text-xs text-gray-700'>Reservado por: <b>${indicator.detalles.usuario_ocupando}</b></span>`;
 
                 // Agregar información adicional del usuario si está disponible
                 if (indicator.detalles?.reserva) {
@@ -1471,10 +1696,10 @@
                             <h4 class='mb-2 text-sm font-semibold text-gray-800'>Información del Usuario</h4>
                             <div class='space-y-1 text-xs text-gray-600'>
                                 ${usuarioInfo ? `
-                                                                    <div><span class='font-medium'>Nombre:</span> ${usuarioInfo.nombre}</div>
-                                                                    <div><span class='font-medium'>Email:</span> ${usuarioInfo.email}</div>
-                                                                    <div><span class='font-medium'>RUN:</span> ${usuarioInfo.run}</div>
-                                                                ` : ''}
+                                    <div><span class='font-medium'>Nombre:</span> ${usuarioInfo.nombre}</div>
+                                    <div><span class='font-medium'>Email:</span> ${usuarioInfo.email}</div>
+                                    <div><span class='font-medium'>RUN:</span> ${usuarioInfo.run}</div>
+                                ` : ''}
                                 <div><span class='font-medium'>Fecha de reserva:</span> ${reserva.fecha_reserva || 'No especificada'}</div>
                                 <div><span class='font-medium'>Hora de entrada:</span> ${reserva.hora ? reserva.hora.substring(0, 5) : 'No especificada'}</div>
                                 ${reserva.hora_salida ? `<div><span class='font-medium'>Hora de salida:</span> ${reserva.hora_salida.substring(0, 5)}</div>` : ''}
@@ -2150,7 +2375,29 @@
                         document.getElementById('qr-status-devolucion').innerHTML = resultadoVerificacion.mensaje;
                     } else if (resultadoVerificacion.tipo === 'espacio_ocupado') {
                         // El espacio está ocupado por otro usuario
-                        Swal.fire('Espacio Ocupado', resultadoVerificacion.mensaje, 'info');
+                        let mensajeDetallado = resultadoVerificacion.mensaje;
+                        if (resultadoVerificacion.ocupante) {
+                            const ocupante = resultadoVerificacion.ocupante;
+                            const tipoUsuario = ocupante.tipo === 'profesor' ? 'Profesor' : 'Solicitante';
+                            mensajeDetallado = `
+                                <div class="text-left">
+                                    <p class="mb-2"><strong>${resultadoVerificacion.mensaje}</strong></p>
+                                    <div class="bg-gray-100 p-3 rounded-lg">
+                                        <p><strong>${tipoUsuario}:</strong> ${ocupante.nombre}</p>
+                                        <p><strong>RUN:</strong> ${ocupante.run}</p>
+                                        <p><strong>Hora de inicio:</strong> ${ocupante.hora_inicio}</p>
+                                        <p><strong>Fecha:</strong> ${ocupante.fecha}</p>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        
+                        Swal.fire({
+                            title: 'Espacio Ocupado',
+                            html: mensajeDetallado,
+                            icon: 'info',
+                            confirmButtonText: 'Entendido'
+                        });
                         document.getElementById('qr-status-devolucion').innerHTML = resultadoVerificacion.mensaje;
                     } else {
                         // Error en la verificación
@@ -2256,7 +2503,7 @@
         // INICIALIZACIÓN PRINCIPAL 
         // ========================================
         document.addEventListener("DOMContentLoaded", function () {
-
+            
             // Configurar el input del escáner QR
             const inputEscanner = document.getElementById('qr-input');
             if (inputEscanner) {
@@ -2271,7 +2518,7 @@
             }
             // Inicializar elementos del canvas
             initElements();
-
+            
             // Agregar event listeners para los eventos de mouse en el canvas
             if (elements.indicatorsCanvas) {
                 elements.indicatorsCanvas.addEventListener('mousemove', handleMouseMove);
@@ -2361,11 +2608,11 @@
         // ========================================
         // FUNCIONES PARA MANEJAR REGISTRO DE SOLICITANTE
         // ========================================
-
+        
         // Función para procesar el registro de solicitante
         async function procesarRegistroSolicitante(event) {
             event.preventDefault();
-
+            
             const formData = new FormData(event.target);
             const datosSolicitante = {
                 run_solicitante: runSolicitantePendiente,
@@ -2378,27 +2625,27 @@
 
             try {
                 const resultado = await registrarSolicitante(datosSolicitante);
-
+                
                 if (resultado && resultado.success) {
                     // Cerrar modal de registro
                     window.dispatchEvent(new CustomEvent('close-modal', {
                         detail: 'registro-solicitante'
                     }));
-
+                    
                     // Mostrar mensaje de éxito
                     Swal.fire('¡Registro exitoso!', 'Solicitante registrado correctamente. Ahora escanee el QR del espacio.', 'success');
-
+                    
                     // Actualizar información en la interfaz
                     document.getElementById('qr-status').innerHTML = 'Solicitante registrado. Escanee el QR del espacio.';
                     mostrarInfoUsuario(runSolicitantePendiente, datosSolicitante.nombre);
-
+                    
                     // Continuar con el flujo - solo necesita escanear espacio
                     profesorEscaneado = runSolicitantePendiente;
                     ordenEscaneo = 'espacio'; // Ya no necesita escanear usuario
-
+                    
                     // Limpiar variables
                     runSolicitantePendiente = null;
-
+                    
                 } else {
                     Swal.fire('Error', resultado?.mensaje || 'Error al registrar solicitante', 'error');
                 }
@@ -2414,10 +2661,10 @@
             window.dispatchEvent(new CustomEvent('close-modal', {
                 detail: 'registro-solicitante'
             }));
-
+            
             // Limpiar variables
             runSolicitantePendiente = null;
-
+            
             // Resetear estado
             esperandoProfesor = true;
             document.getElementById('qr-status').innerHTML = 'Esperando';
@@ -2451,9 +2698,9 @@
                 detail: 'registro-usuario'
             }));
 
-            // Resetear variables
-            usuarioNoRegistrado = null;
-            modoOperacionActual = null;
+                                    // Resetear variables
+                        usuarioNoRegistrado = null;
+                        modoOperacionActual = null;
 
             // Volver al modal de solicitud
             setTimeout(() => {
@@ -2542,7 +2789,7 @@
             }
         }
 
-
+     
         // Asegurar que indicators sea siempre un array
         if (!state.indicators || !Array.isArray(state.indicators)) {
             state.indicators = [];
@@ -2649,7 +2896,7 @@
                         espacioEscaneadoSolicitud = espacioProcesado;
                         if (espacioInfo.disponible) {
                             // Procesar solicitud directamente, sin confirmación
-                            const reserva = await crearReserva(usuarioEscaneadoSolicitud, espacioProcesado);
+                            const reserva = await crearReservaSolicitante(usuarioEscaneadoSolicitud, espacioProcesado);
                             if (reserva?.success) {
                                 Swal.fire('¡Solicitud exitosa!', 'Las llaves han sido asignadas correctamente.',
                                     'success');
@@ -2683,15 +2930,26 @@
                                 let mensaje = reserva?.mensaje || 'Error al procesar la solicitud';
                                 let icono = 'error';
 
-                                if (reserva?.tipo) {
+                                // Verificar si es un error de módulos no disponibles
+                                if (reserva?.mensaje && reserva.mensaje.includes('módulo actual disponible')) {
+                                    titulo = 'Horario No Disponible';
+                                    icono = 'info';
+                                    mensaje = 'El sistema de reservas solo está disponible durante el horario de clases (08:10 - 23:00). Por favor, intenta durante el horario habilitado.';
+                                } else if (reserva?.mensaje && reserva.mensaje.includes('módulos consecutivos disponibles')) {
+                                    titulo = 'Módulos No Disponibles';
+                                    icono = 'warning';
+                                    mensaje = 'No hay suficientes módulos consecutivos disponibles en este espacio. Intenta con menos módulos o en otro espacio.';
+                                } else if (reserva?.tipo) {
                                     switch (reserva.tipo) {
                                         case 'reserva_activa':
                                             titulo = 'Reserva Activa';
                                             icono = 'warning';
-                                            if (reserva.reserva_activa) {
-                                                mensaje =
-                                                    `Ya tienes una reserva activa en el espacio '${reserva.reserva_activa.espacio}' desde las ${reserva.reserva_activa.hora_inicio}. Debes finalizarla antes de solicitar una nueva.`;
-                                            }
+                                            mensaje = 'Ya tienes una reserva activa. Debes finalizarla antes de solicitar una nueva.';
+                                            break;
+                                        case 'reserva_simultanea':
+                                            titulo = 'Reserva Simultánea';
+                                            icono = 'warning';
+                                            mensaje = 'Ya tienes una reserva activa en ese horario. Debes finalizarla antes de solicitar una nueva.';
                                             break;
                                         case 'reserva_diaria':
                                             titulo = 'Límite Diario';
@@ -2778,7 +3036,7 @@
             const modulosDisponibles = await calcularModulosDisponibles(idEspacio);
             // Limitar a máximo 2 módulos según la lógica del negocio
             maxModulosDisponibles = Math.min(modulosDisponibles, maxModulos);
-
+            
             document.getElementById('max-modulos-disponibles').textContent = maxModulosDisponibles;
             const inputModulos = document.getElementById('input-cantidad-modulos');
             inputModulos.max = maxModulosDisponibles;
@@ -2806,19 +3064,51 @@
                                 .content
                         },
                         body: JSON.stringify({
-                            run: runParaReserva,
+                            run_usuario: runParaReserva,
                             id_espacio: espacioParaReserva,
-                            modulos: cantidad
+                            tipo_usuario: 'solicitante'
                         })
                     });
                     const data = await response.json();
                     if (data.success) {
-                        Swal.fire('¡Reserva exitosa!', data.mensaje, 'success');
+                        // Cerrar modal
                         window.dispatchEvent(new CustomEvent('close-modal', {
                             detail: 'seleccionar-modulos'
                         }));
+                        
+                        // Mostrar mensaje de proceso
+                        document.getElementById('qr-status').innerHTML = 'Creando reserva...';
+                        
+                        // Después de 1.5 segundos, mostrar mensaje de completado
+                        setTimeout(() => {
+                            document.getElementById('qr-status').innerHTML = 'Reserva creada';
+                            document.getElementById('qr-status').classList.remove('parpadeo');
+                            
+                            // Limpiar completamente la interfaz después de 1 segundo más
+                            setTimeout(() => {
+                                limpiarEstadoCompleto();
+                            }, 1000);
+                        }, 1500);
                     } else {
-                        Swal.fire('Error', data.mensaje || 'No se pudo reservar', 'error');
+                        // Mostrar error detallado
+                        let mensajeError = data.mensaje || 'No se pudo reservar';
+                        
+                        // Si hay errores de validación, mostrarlos
+                        if (data.errors) {
+                            mensajeError = 'Errores de validación:\n';
+                            Object.keys(data.errors).forEach(field => {
+                                data.errors[field].forEach(error => {
+                                    mensajeError += `• ${field}: ${error}\n`;
+                                });
+                            });
+                        }
+                        
+                        Swal.fire({
+                            title: 'Error al crear reserva',
+                            text: mensajeError,
+                            icon: 'error',
+                            confirmButtonText: 'Entendido'
+                        });
                     }
                 });
             }
