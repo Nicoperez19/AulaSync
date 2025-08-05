@@ -1174,20 +1174,13 @@
                         drawIndicators();
                     }
                     
-                    // Mostrar SweetAlert de devolución exitosa inmediatamente
-                    Swal.fire({
-                        title: '¡Devolución exitosa!',
-                        text: devolucion.mensaje || 'Las llaves han sido devueltas correctamente',
-                        icon: 'success',
-                        timer: 1500,
-                        showConfirmButton: false,
-                        timerProgressBar: true
-                    });
+                    // Mostrar mensaje de éxito sin SweetAlert (para evitar duplicidad)
+                    document.getElementById('qr-status').innerHTML = 'Devolución exitosa';
                     
-                    // Limpiar completamente la interfaz después de que desaparezca el SweetAlert
+                    // Limpiar completamente la interfaz después de un delay
                     setTimeout(() => {
                         limpiarEstadoCompleto();
-                    }, 1500);
+                    }, 2000);
                     
                     // IMPORTANTE: Detener completamente el procesamiento aquí
                     procesandoDevolucion = false;
