@@ -18,7 +18,6 @@ return new class extends Migration
             $table->string('correo'); // Correo electrónico
             $table->string('telefono'); // Teléfono de contacto
             $table->enum('tipo_solicitante', ['estudiante', 'personal', 'visitante', 'otro'])->default('otro');
-            $table->string('institucion_origen')->nullable(); // Universidad, empresa, etc.
             $table->boolean('activo')->default(true); // Si el solicitante está activo
             $table->timestamp('fecha_registro')->useCurrent(); // Fecha de registro
             $table->timestamps();

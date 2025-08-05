@@ -129,10 +129,12 @@
                                 <span class="font-bold text-gray-800">Espacio:</span>
                                 <span id="nombre-espacio" class="ml-auto text-gray-700">--</span>
                             </div>
+                            
+
                         </div>
 
                         <input type="text" id="qr-input"
-                            class="absolute w-full px-1 py-1 text-transparent bg-transparent border-0 focus:outline-none focus:border-0 focus:ring-0"
+                            class="absolute w-full px-1 py-1 text-transparent bg-transparent border-0 focus:outline-none focus:border-0 focus:ring-0 opacity-0"
     autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
 
                     </div>
@@ -571,13 +573,7 @@
                         </select>
                     </div>
 
-                    <div>
-                        <label for="institucion-origen" class="block text-sm font-medium text-gray-700">Institución de
-                            Origen *</label>
-                        <input type="text" id="institucion-origen" name="institucion_origen" required
-                            autocomplete="organization"
-                            class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
+
 
                     <div class="flex pt-4 space-x-3">
                         <button type="button" onclick="cancelarRegistroSolicitante()"
@@ -646,7 +642,7 @@
         // ========================================
         // VARIABLES GLOBALES PARA USUARIOS NO REGISTRADOS
         // ========================================
-        let usuarioNoRegistrado = null; // Datos del usuario no registrado
+
         let modoOperacionActual = null; // 'solicitud' o 'devolucion'
 
         // ========================================
@@ -897,23 +893,7 @@
             }
         }
 
-        // Función para registrar usuario no registrado
-        async function registrarUsuarioNoRegistrado(datosUsuario) {
-            try {
-                const response = await fetch('/api/registrar-usuario-no-registrado', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify(datosUsuario)
-                });
-                return await response.json();
-            } catch (error) {
-                console.error('Error:', error);
-                return null;
-            }
-        }
+
 
         // Función para registrar solicitante
         async function registrarSolicitante(datosSolicitante) {
@@ -1009,6 +989,7 @@
         let lastBufferLength = 0;
         let processingTimeout = null;
         let ordenEscaneo = 'usuario'; // Controla el orden: 'usuario' -> 'espacio'
+        let procesandoDevolucion = false; // Flag para evitar procesamiento múltiple
         
         async function handleScan(event) {
             // Solo procesar cuando se presiona Enter
@@ -1046,7 +1027,13 @@
                 await procesarUsuario();
             } else if (ordenEscaneo === 'espacio') {
                 // PASO 2: Escanear espacio (solo después del usuario)
-                await procesarEspacio();
+                const resultado = await procesarEspacio();
+                
+                // Si la devolución fue exitosa, no continuar con más procesamiento
+                if (resultado === 'devolucion_exitosa') {
+                    console.log('Devolución exitosa - deteniendo procesamiento adicional');
+                    return;
+                }
             } else {
                 // Error: orden incorrecto
                 Swal.fire('Error', 'Debe escanear primero el QR del usuario', 'error');
@@ -1149,21 +1136,36 @@
             const espacio = espacioMatch[1].replace(/[^A-Z0-9]/g, '-');
 
             // Verificar estado del espacio y reservas del usuario
+            console.log('Verificando estado para usuario:', profesorEscaneado, 'espacio:', espacio);
             const resultadoVerificacion = await verificarEstadoEspacioYReserva(profesorEscaneado, espacio);
+            console.log('Resultado de verificación completo:', resultadoVerificacion);
             
             if (resultadoVerificacion.tipo === 'error') {
+                console.error('Error en verificación:', resultadoVerificacion.mensaje);
                 Swal.fire('Error', resultadoVerificacion.mensaje, 'error');
                 ordenEscaneo = 'usuario';
                 return;
             }
 
             if (resultadoVerificacion.tipo === 'devolucion') {
+                // Evitar procesamiento múltiple
+                if (procesandoDevolucion) {
+                    console.log('Devolución ya en proceso, ignorando...');
+                    return 'devolucion_en_proceso';
+                }
+                
+                procesandoDevolucion = true;
+                
                 // El usuario tiene una reserva activa en este espacio - procesar devolución automáticamente
+                console.log('Procesando devolución automática para usuario:', profesorEscaneado, 'espacio:', espacio);
+                
+                // Mostrar mensaje de devolución en proceso
+                document.getElementById('qr-status').innerHTML = 'Procesando devolución...';
+                
                 const devolucion = await devolverEspacio(profesorEscaneado, espacio);
+                console.log('Resultado de devolución:', devolucion);
+                
                 if (devolucion && devolucion.success) {
-                    // Mostrar mensaje de devolución en proceso
-                    document.getElementById('qr-status').innerHTML = 'Procesando devolución...';
-                    
                     // Actualizar indicador en el mapa
                     const block = state.indicators.find(b => b.id === espacio);
                     if (block) {
@@ -1172,26 +1174,41 @@
                         drawIndicators();
                     }
                     
-                    // Después de 1.5 segundos, mostrar SweetAlert de devolución exitosa
+                    // Mostrar SweetAlert de devolución exitosa inmediatamente
+                    Swal.fire({
+                        title: '¡Devolución exitosa!',
+                        text: devolucion.mensaje || 'Las llaves han sido devueltas correctamente',
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        timerProgressBar: true
+                    });
+                    
+                    // Limpiar completamente la interfaz después de que desaparezca el SweetAlert
                     setTimeout(() => {
-                        Swal.fire({
-                            title: '¡Devolución exitosa!',
-                            text: 'Las llaves han sido devueltas correctamente',
-                            icon: 'success',
-                            timer: 1500,
-                            showConfirmButton: false,
-                            allowOutsideClick: false
-                        });
-                        
-                        // Limpiar completamente la interfaz después de que desaparezca el SweetAlert
-                        setTimeout(() => {
-                            limpiarEstadoCompleto();
-                        }, 1500);
+                        limpiarEstadoCompleto();
                     }, 1500);
+                    
+                    // IMPORTANTE: Detener completamente el procesamiento aquí
+                    procesandoDevolucion = false;
+                    return 'devolucion_exitosa';
                 } else {
-                    Swal.fire('Error', devolucion?.mensaje || 'Error al devolver las llaves', 'error');
+                    // Mostrar error específico de devolución
+                    const mensajeError = devolucion?.mensaje || 'Error al devolver las llaves';
+                    console.error('Error en devolución:', mensajeError);
+                    
+                    Swal.fire({
+                        title: 'Error en Devolución',
+                        text: mensajeError,
+                        icon: 'error',
+                        confirmButtonText: 'Entendido'
+                    });
+                    
+                    // Resetear el estado para permitir nuevo escaneo
+                    procesandoDevolucion = false;
+                    ordenEscaneo = 'usuario';
+                    return;
                 }
-                return;
             }
 
             if (resultadoVerificacion.tipo === 'espacio_ocupado') {
@@ -1260,16 +1277,25 @@
                             drawIndicators();
                         }
                         
-                        // Después de 1.5 segundos, mostrar mensaje de completado
+                        // Después de 300ms, mostrar SweetAlert de asistencia registrada
                         setTimeout(() => {
+                            Swal.fire({
+                                title: '¡Asistencia registrada!',
+                                text: 'La asistencia ha sido registrada correctamente',
+                                icon: 'success',
+                                timer: 1500,
+                                showConfirmButton: false,
+                                timerProgressBar: true
+                            });
+                            
                             document.getElementById('qr-status').innerHTML = 'Asistencia registrada';
                             document.getElementById('qr-status').classList.remove('parpadeo');
                             
-                            // Limpiar completamente la interfaz después de 1 segundo más
+                            // Limpiar completamente la interfaz después de que desaparezca el SweetAlert
                             setTimeout(() => {
                                 limpiarEstadoCompleto();
-                            }, 1000);
-                        }, 1500);
+                            }, 1500);
+                        }, 300);
                     } else {
                         Swal.fire('Error', reserva?.mensaje || 'Error al registrar asistencia', 'error');
                     }
@@ -1296,6 +1322,8 @@
             setTimeout(() => {
                 limpiarEstadoCompleto();
             }, 3000);
+            
+            return 'procesamiento_completado';
         }
 
         // ========================================
@@ -2345,6 +2373,17 @@
                         const resultado = await procesarDevolucion(usuarioEscaneadoDevolucion, espacioProcesado);
 
                         if (resultado.success) {
+                            // Mostrar SweetAlert de devolución exitosa
+                            Swal.fire({
+                                title: '¡Devolución exitosa!',
+                                text: 'Las llaves han sido devueltas correctamente',
+                                icon: 'success',
+                                timer: 1500,
+                                showConfirmButton: false,
+                                timerProgressBar: true
+                            });
+                            
+                            // Cerrar modales
                             cerrarModalesDespuesDeSwal(['devolver-llaves', 'data-space']);
                             document.getElementById('qr-status-devolucion').innerHTML = 'Devolución completada';
                             // Actualizar el color del indicador a 'Disponible' (verde)
@@ -2417,16 +2456,15 @@
         // ========================================
         // Función utilitaria para cerrar modales después de un SweetAlert
         function cerrarModalesDespuesDeSwal(modales = []) {
-            return Swal.fire('Devolución completada', 'Las llaves han sido devueltas correctamente.', 'success').then(() => {
-                modales.forEach(nombre => {
-                    window.dispatchEvent(new CustomEvent('close-modal', {
-                        detail: nombre
-                    }));
-                    setTimeout(() => {
-                        document.querySelectorAll(`[data-modal="${nombre}"]`).forEach(el => el
-                            .classList.add('hidden'));
-                    }, 200);
-                });
+            // Solo cerrar modales sin mostrar SweetAlert (ya se muestra en otro lugar)
+            modales.forEach(nombre => {
+                window.dispatchEvent(new CustomEvent('close-modal', {
+                    detail: nombre
+                }));
+                setTimeout(() => {
+                    document.querySelectorAll(`[data-modal="${nombre}"]`).forEach(el => el
+                        .classList.add('hidden'));
+                }, 200);
             });
         }
 
@@ -2619,21 +2657,17 @@
                 nombre: formData.get('nombre'),
                 correo: formData.get('email'),
                 telefono: formData.get('telefono'),
-                tipo_solicitante: formData.get('tipo_solicitante'),
-                institucion_origen: formData.get('institucion_origen')
+                tipo_solicitante: formData.get('tipo_solicitante')
             };
 
             try {
                 const resultado = await registrarSolicitante(datosSolicitante);
                 
                 if (resultado && resultado.success) {
-                    // Cerrar modal de registro
+                    // Cerrar modal de registro inmediatamente
                     window.dispatchEvent(new CustomEvent('close-modal', {
                         detail: 'registro-solicitante'
                     }));
-                    
-                    // Mostrar mensaje de éxito
-                    Swal.fire('¡Registro exitoso!', 'Solicitante registrado correctamente. Ahora escanee el QR del espacio.', 'success');
                     
                     // Actualizar información en la interfaz
                     document.getElementById('qr-status').innerHTML = 'Solicitante registrado. Escanee el QR del espacio.';
@@ -2645,6 +2679,18 @@
                     
                     // Limpiar variables
                     runSolicitantePendiente = null;
+                    
+                    // Mostrar mensaje de éxito por 1.5 segundos después de cerrar el modal
+                    setTimeout(() => {
+                        Swal.fire({
+                            title: '¡Registro exitoso!',
+                            text: 'Solicitante registrado correctamente. Ahora escanee el QR del espacio.',
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false,
+                            timerProgressBar: true
+                        });
+                    }, 300);
                     
                 } else {
                     Swal.fire('Error', resultado?.mensaje || 'Error al registrar solicitante', 'error');
@@ -2699,7 +2745,6 @@
             }));
 
                                     // Resetear variables
-                        usuarioNoRegistrado = null;
                         modoOperacionActual = null;
 
             // Volver al modal de solicitud
@@ -2729,7 +2774,6 @@
 
             const formData = new FormData(event.target);
             const datosUsuario = {
-                run: usuarioNoRegistrado.run,
                 nombre: formData.get('nombre'),
                 email: formData.get('email'),
                 telefono: formData.get('telefono'),
@@ -2737,7 +2781,7 @@
             };
 
             try {
-                const resultado = await registrarUsuarioNoRegistrado(datosUsuario);
+                const resultado = await registrarSolicitante(datosUsuario);
 
                 if (resultado && resultado.success) {
                     Swal.fire({
@@ -2777,7 +2821,6 @@
                         }
 
                         // Resetear variables
-                        usuarioNoRegistrado = null;
                         modoOperacionActual = null;
                     });
                 } else {
@@ -2872,12 +2915,21 @@
                             esperandoUsuarioSolicitud = false;
                         } else if (usuarioInfo && usuarioInfo.usuario_no_registrado && usuarioInfo.tipo_usuario ===
                             'nuevo') {
-                            // Usuario completamente nuevo - mostrar modal de registro
-                            usuarioNoRegistrado = {
-                                run: usuarioInfo.run_escaneado
-                            };
-                            modoOperacionActual = 'solicitud';
-                            mostrarModalRegistroUsuario(usuarioInfo.run_escaneado);
+                            // Usuario completamente nuevo - mostrar modal de registro como solicitante
+                            runSolicitantePendiente = usuarioInfo.run_escaneado;
+                            document.getElementById('run-solicitante-no-registrado').textContent = usuarioInfo.run_escaneado;
+                            
+                            // Cerrar modal actual si está abierto
+                            window.dispatchEvent(new CustomEvent('close-modal', {
+                                detail: 'solicitar-llaves'
+                            }));
+                            
+                            // Abrir modal de registro de solicitante
+                            setTimeout(() => {
+                                window.dispatchEvent(new CustomEvent('open-modal', {
+                                    detail: 'registro-solicitante'
+                                }));
+                            }, 300);
                         } else {
                             Swal.fire('Error', usuarioInfo?.mensaje || 'Error de verificación', 'error');
                             document.getElementById('qr-status-solicitud').innerHTML = usuarioInfo?.mensaje ||
@@ -2898,9 +2950,11 @@
                             // Procesar solicitud directamente, sin confirmación
                             const reserva = await crearReservaSolicitante(usuarioEscaneadoSolicitud, espacioProcesado);
                             if (reserva?.success) {
-                                Swal.fire('¡Solicitud exitosa!', 'Las llaves han sido asignadas correctamente.',
-                                    'success');
-                                document.getElementById('qr-status-solicitud').innerHTML = 'Solicitud exitosa';
+                                // Cerrar modal inmediatamente
+                                window.dispatchEvent(new CustomEvent('close-modal', {
+                                    detail: 'solicitar-llaves'
+                                }));
+                                
                                 // Actualizar el color del indicador a 'Ocupado' (rojo)
                                 const block = state.indicators.find(b => b.id === espacioProcesado);
                                 if (block) {
@@ -2915,15 +2969,23 @@
                                         drawIndicators();
                                     }, 100);
                                 }
+                                
+                                // Mostrar SweetAlert de éxito por 1.5 segundos después de cerrar el modal
                                 setTimeout(() => {
-                                    window.dispatchEvent(new CustomEvent('close-modal', {
-                                        detail: 'solicitar-llaves'
-                                    }));
-                                    // Resetear interfaz después de cerrar modal
+                                    Swal.fire({
+                                        title: '¡Solicitud exitosa!',
+                                        text: 'Las llaves han sido asignadas correctamente.',
+                                        icon: 'success',
+                                        timer: 1500,
+                                        showConfirmButton: false,
+                                        timerProgressBar: true
+                                    });
+                                    
+                                    // Resetear interfaz después de que desaparezca el SweetAlert
                                     setTimeout(() => {
                                         resetearInterfaz();
-                                    }, 500);
-                                }, 2000);
+                                    }, 1500);
+                                }, 300);
                             } else {
                                 // Manejar diferentes tipos de errores con mensajes específicos
                                 let titulo = 'Error';
@@ -3048,69 +3110,158 @@
             }));
         }
 
-        // Confirmar reserva con módulos
-        document.addEventListener('DOMContentLoaded', function () {
-            const btnConfirmarModulos = document.getElementById('btn-confirmar-modulos');
-            if (btnConfirmarModulos) {
-                btnConfirmarModulos.addEventListener('click', async function () {
-                    const cantidad = parseInt(document.getElementById('input-cantidad-modulos').value);
-                    if (!espacioParaReserva || !runParaReserva) return;
-                    // Llama a crearReserva con la cantidad de módulos
-                    const response = await fetch('/api/crear-reserva', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')
-                                .content
-                        },
-                        body: JSON.stringify({
-                            run_usuario: runParaReserva,
-                            id_espacio: espacioParaReserva,
-                            tipo_usuario: 'solicitante'
-                        })
-                    });
-                    const data = await response.json();
-                    if (data.success) {
-                        // Cerrar modal
+       document.addEventListener('DOMContentLoaded', function () {
+    const btnConfirmarModulos = document.getElementById('btn-confirmar-modulos');
+
+    if (btnConfirmarModulos) {
+        btnConfirmarModulos.addEventListener('click', async function () {
+            const cantidad = parseInt(document.getElementById('input-cantidad-modulos').value);
+
+            if (!espacioParaReserva || !runParaReserva) {
+                return;
+            }
+
+            // Mostrar mensaje de proceso
+            document.getElementById('qr-status').innerHTML = 'Creando reserva...';
+
+            const response = await fetch('/api/crear-reserva', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    run_usuario: runParaReserva,
+                    id_espacio: espacioParaReserva,
+                    tipo_usuario: 'solicitante'
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setTimeout(() => {
+                    // Cerrar el modal justo antes de mostrar la alerta
+                    try {
                         window.dispatchEvent(new CustomEvent('close-modal', {
-                            detail: 'seleccionar-modulos'
+                            detail: { name: 'seleccionar-modulos' }
                         }));
+                    } catch (error) {
+                        // Error al cerrar el modal
+                    }
+
+                    Swal.fire({
+                        title: '¡Reserva creada!',
+                        text: 'La reserva ha sido creada exitosamente',
+                        icon: 'success',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        timerProgressBar: true
+                    });
+
+                    document.getElementById('qr-status').innerHTML = 'Reserva creada';
+                    document.getElementById('qr-status').classList.remove('parpadeo');
+
+                    setTimeout(() => {
+                        limpiarEstadoCompleto();
+                    }, 1500);
+                }, 300);
+            } else {
+                let mensajeError = data.mensaje || 'No se pudo reservar';
+
+                if (data.errors) {
+                    mensajeError = 'Errores de validación:\n';
+                    Object.keys(data.errors).forEach(field => {
+                        data.errors[field].forEach(error => {
+                            mensajeError += `• ${field}: ${error}\n`;
+                        });
+                    });
+                }
+
+                Swal.fire({
+                    title: 'Error al crear reserva',
+                    text: mensajeError,
+                    icon: 'error',
+                    confirmButtonText: 'Entendido'
+                });
+            }
+        });
+    }
+});
+
+        // ========================================
+        // MANEJO SIMPLIFICADO DEL ESCÁNER QR
+        // ========================================
+        
+        let inputBuffer = '';
+        let scannerTimeout = null;
+        
+        // Función para procesar el código escaneado
+        function processScannedCode(code) {
+            console.log('Código escaneado:', code);
+            
+            // Simular el evento de presionar Enter con el código escaneado
+            const event = new KeyboardEvent('keydown', {
+                key: 'Enter',
+                code: 'Enter',
+                keyCode: 13,
+                which: 13,
+                bubbles: true
+            });
+            
+            // Establecer el valor del input y disparar el evento
+            const qrInput = document.getElementById('qr-input');
+            if (qrInput) {
+                qrInput.value = code;
+                qrInput.dispatchEvent(event);
+                
+                // Limpiar el input después de procesar
+                setTimeout(() => {
+                    qrInput.value = '';
+                    qrInput.focus();
+                }, 100);
+            }
+        }
+        
+        // Event listener para capturar input del escáner QR
+        document.addEventListener('DOMContentLoaded', function() {
+            const qrInput = document.getElementById('qr-input');
+            if (qrInput) {
+                // Asegurar que el input siempre tenga focus
+                qrInput.focus();
+                
+                // Escuchar cualquier input en el documento
+                document.addEventListener('keydown', function(event) {
+                    // Solo procesar caracteres normales (no teclas especiales)
+                    if (event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
+                        inputBuffer += event.key;
                         
-                        // Mostrar mensaje de proceso
-                        document.getElementById('qr-status').innerHTML = 'Creando reserva...';
-                        
-                        // Después de 1.5 segundos, mostrar mensaje de completado
-                        setTimeout(() => {
-                            document.getElementById('qr-status').innerHTML = 'Reserva creada';
-                            document.getElementById('qr-status').classList.remove('parpadeo');
-                            
-                            // Limpiar completamente la interfaz después de 1 segundo más
-                            setTimeout(() => {
-                                limpiarEstadoCompleto();
-                            }, 1000);
-                        }, 1500);
-                    } else {
-                        // Mostrar error detallado
-                        let mensajeError = data.mensaje || 'No se pudo reservar';
-                        
-                        // Si hay errores de validación, mostrarlos
-                        if (data.errors) {
-                            mensajeError = 'Errores de validación:\n';
-                            Object.keys(data.errors).forEach(field => {
-                                data.errors[field].forEach(error => {
-                                    mensajeError += `• ${field}: ${error}\n`;
-                                });
-                            });
+                        // Limpiar timeout anterior
+                        if (scannerTimeout) {
+                            clearTimeout(scannerTimeout);
                         }
                         
-                        Swal.fire({
-                            title: 'Error al crear reserva',
-                            text: mensajeError,
-                            icon: 'error',
-                            confirmButtonText: 'Entendido'
-                        });
+                        // Si no hay más input en 100ms, procesar el código completo
+                        scannerTimeout = setTimeout(() => {
+                            if (inputBuffer.length > 0) {
+                                processScannedCode(inputBuffer);
+                                inputBuffer = '';
+                            }
+                        }, 100);
                     }
                 });
+                
+                // Mantener el focus en el input
+                document.addEventListener('click', function() {
+                    qrInput.focus();
+                });
+                
+                // Asegurar que el input mantenga el focus
+                setInterval(() => {
+                    if (document.activeElement !== qrInput) {
+                        qrInput.focus();
+                    }
+                }, 1000);
             }
         });
     </script>

@@ -23,7 +23,6 @@ class Solicitante extends Model
         'correo',
         'telefono',
         'tipo_solicitante', // 'estudiante', 'personal', 'visitante', etc.
-        'institucion_origen', // Universidad, empresa, etc.
         'activo',
         'fecha_registro'
     ];

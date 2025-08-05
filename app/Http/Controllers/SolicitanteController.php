@@ -37,8 +37,7 @@ class SolicitanteController extends Controller
                         'nombre' => $solicitante->nombre,
                         'correo' => $solicitante->correo,
                         'telefono' => $solicitante->telefono,
-                        'tipo_solicitante' => $solicitante->tipo_solicitante,
-                        'institucion_origen' => $solicitante->institucion_origen
+                        'tipo_solicitante' => $solicitante->tipo_solicitante
                     ],
                     'mensaje' => 'Solicitante verificado correctamente'
                 ]);
@@ -72,8 +71,7 @@ class SolicitanteController extends Controller
                 'nombre' => 'required|string|max:255',
                 'correo' => 'required|email|unique:solicitantes,correo',
                 'telefono' => 'required|string|max:20',
-                'tipo_solicitante' => 'required|in:estudiante,personal,visitante,otro',
-                'institucion_origen' => 'nullable|string|max:255'
+                'tipo_solicitante' => 'required|in:estudiante,personal,visitante,otro'
             ]);
 
             $solicitante = new Solicitante();
@@ -82,7 +80,6 @@ class SolicitanteController extends Controller
             $solicitante->correo = $request->correo;
             $solicitante->telefono = $request->telefono;
             $solicitante->tipo_solicitante = $request->tipo_solicitante;
-            $solicitante->institucion_origen = $request->institucion_origen;
             $solicitante->activo = true;
             $solicitante->fecha_registro = now();
             $solicitante->save();

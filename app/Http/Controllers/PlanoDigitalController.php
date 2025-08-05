@@ -493,6 +493,21 @@ class PlanoDigitalController extends Controller
                 ->first();
 
             if (!$reservaActiva) {
+                \Log::warning("Intento de devolución sin reserva activa - Usuario: {$runUsuario}, Espacio: {$idEspacio}");
+                
+                // Verificar si el espacio ya está disponible (puede que ya se haya devuelto)
+                if ($espacio->estado === 'Disponible') {
+                    return response()->json([
+                        'success' => true,
+                        'mensaje' => 'El espacio ya está disponible',
+                        'espacio' => [
+                            'id' => $espacio->id_espacio,
+                            'nombre' => $espacio->nombre_espacio,
+                            'estado' => $espacio->estado
+                        ]
+                    ]);
+                }
+                
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'No tienes una reserva activa en este espacio'
@@ -516,7 +531,7 @@ class PlanoDigitalController extends Controller
             $espacio->save();
 
             // Registrar la devolución en un log o tabla de auditoría si es necesario
-            \Log::info("Espacio {$idEspacio} devuelto por usuario {$runUsuario}");
+            \Log::info("Espacio {$idEspacio} devuelto exitosamente por usuario {$runUsuario} - Reserva ID: {$reservaActiva->id_reserva}");
 
             return response()->json([
                 'success' => true,
@@ -623,6 +638,7 @@ class PlanoDigitalController extends Controller
 
             if ($reservaActiva) {
                 // El usuario tiene una reserva activa en este espacio
+                \Log::info("Reserva activa encontrada para devolución - Usuario: {$runUsuario}, Espacio: {$idEspacio}, Reserva ID: {$reservaActiva->id_reserva}");
                 return response()->json([
                     'tipo' => 'devolucion',
                     'mensaje' => 'Tienes una reserva activa en este espacio. ¿Deseas devolver las llaves?',
@@ -743,30 +759,13 @@ class PlanoDigitalController extends Controller
                 ]);
             }
 
-            // CASO 3: Verificar si es usuario no registrado
-            $usuarioNoRegistrado = \App\Models\UsuarioNoRegistrado::where('run', $run)
-                ->where('convertido_a_usuario', false)
-                ->first();
-
-            if ($usuarioNoRegistrado) {
-                return response()->json([
-                    'verificado' => true,
-                    'tipo_usuario' => 'usuario_no_registrado',
-                    'usuario' => [
-                        'run' => $usuarioNoRegistrado->run,
-                        'nombre' => $usuarioNoRegistrado->nombre,
-                        'email' => $usuarioNoRegistrado->email,
-                        'telefono' => $usuarioNoRegistrado->telefono
-                    ],
-                    'mensaje' => 'Usuario no registrado verificado correctamente'
-                ]);
-            }
-
-            // CASO 4: Usuario no encontrado
+            // CASO 3: Usuario no encontrado - Mostrar modal de registro como solicitante
             return response()->json([
                 'verificado' => false,
-                'tipo_usuario' => 'no_encontrado',
-                'mensaje' => 'Usuario no encontrado en el sistema'
+                'tipo_usuario' => 'solicitante_nuevo',
+                'run_escaneado' => $run,
+                'mensaje' => 'Usuario no encontrado. Se requiere registro como solicitante.',
+                'requiere_registro' => true
             ]);
 
         } catch (\Exception $e) {
@@ -832,7 +831,7 @@ class PlanoDigitalController extends Controller
             $request->validate([
                 'run_usuario' => 'required|string',
                 'id_espacio' => 'required|string',
-                'tipo_usuario' => 'required|in:profesor,solicitante,solicitante_registrado,usuario_no_registrado'
+                'tipo_usuario' => 'required|in:profesor,solicitante,solicitante_registrado'
             ]);
 
             $runUsuario = $request->input('run_usuario');
@@ -1009,148 +1008,7 @@ class PlanoDigitalController extends Controller
         return $this->devolverEspacio($request);
     }
 
-    /**
-     * Registrar usuario no registrado
-     */
-    public function registrarUsuarioNoRegistrado(Request $request)
-    {
-        try {
-            $request->validate([
-                'run_usuario' => 'required|string',
-                'nombre_usuario' => 'required|string',
-                'email_usuario' => 'required|email',
-                'telefono_usuario' => 'required|string'
-            ]);
 
-            // Verificar si ya existe
-            $existente = \App\Models\UsuarioNoRegistrado::where('run_usuario', $request->run_usuario)
-                ->where('activo', true)
-                ->first();
-
-            if ($existente) {
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'El usuario ya está registrado'
-                ], 400);
-            }
-
-            // Crear nuevo usuario no registrado
-            $usuario = new \App\Models\UsuarioNoRegistrado();
-            $usuario->run_usuario = $request->run_usuario;
-            $usuario->nombre_usuario = $request->nombre_usuario;
-            $usuario->email_usuario = $request->email_usuario;
-            $usuario->telefono_usuario = $request->telefono_usuario;
-            $usuario->activo = true;
-            $usuario->save();
-
-            return response()->json([
-                'success' => true,
-                'mensaje' => 'Usuario registrado exitosamente',
-                'usuario' => [
-                    'run' => $usuario->run_usuario,
-                    'nombre' => $usuario->nombre_usuario,
-                    'email' => $usuario->email_usuario
-                ]
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('Error al registrar usuario: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'mensaje' => 'Error al registrar usuario: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Verificar usuario no registrado
-     */
-    public function verificarUsuarioNoRegistrado($run)
-    {
-        try {
-            $usuario = \App\Models\UsuarioNoRegistrado::where('run_usuario', $run)
-                ->where('activo', true)
-                ->first();
-
-            if ($usuario) {
-                return response()->json([
-                    'verificado' => true,
-                    'usuario' => [
-                        'run' => $usuario->run_usuario,
-                        'nombre' => $usuario->nombre_usuario,
-                        'email' => $usuario->email_usuario,
-                        'telefono' => $usuario->telefono_usuario
-                    ],
-                    'mensaje' => 'Usuario no registrado verificado'
-                ]);
-            }
-
-            return response()->json([
-                'verificado' => false,
-                'mensaje' => 'Usuario no registrado no encontrado'
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('Error al verificar usuario no registrado: ' . $e->getMessage());
-            return response()->json([
-                'verificado' => false,
-                'mensaje' => 'Error al verificar usuario: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Convertir usuario no registrado a solicitante
-     */
-    public function convertirUsuarioNoRegistrado(Request $request)
-    {
-        try {
-            $request->validate([
-                'run_usuario' => 'required|string'
-            ]);
-
-            $usuario = \App\Models\UsuarioNoRegistrado::where('run_usuario', $request->run_usuario)
-                ->where('activo', true)
-                ->first();
-
-            if (!$usuario) {
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'Usuario no registrado no encontrado'
-                ], 404);
-            }
-
-            // Crear solicitante
-            $solicitante = new \App\Models\Solicitante();
-            $solicitante->run_solicitante = $usuario->run_usuario;
-            $solicitante->nombre_solicitante = $usuario->nombre_usuario;
-            $solicitante->email_solicitante = $usuario->email_usuario;
-            $solicitante->telefono_solicitante = $usuario->telefono_usuario;
-            $solicitante->activo = true;
-            $solicitante->save();
-
-            // Desactivar usuario no registrado
-            $usuario->activo = false;
-            $usuario->save();
-
-            return response()->json([
-                'success' => true,
-                'mensaje' => 'Usuario convertido a solicitante exitosamente',
-                'solicitante' => [
-                    'run' => $solicitante->run_solicitante,
-                    'nombre' => $solicitante->nombre_solicitante,
-                    'email' => $solicitante->email_solicitante
-                ]
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('Error al convertir usuario: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'mensaje' => 'Error al convertir usuario: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 
     /**
      * Verificar clases programadas
@@ -1259,5 +1117,85 @@ class PlanoDigitalController extends Controller
             ->where('hora_inicio', '<=', $horaActual)
             ->where('hora_termino', '>=', $horaActual)
             ->first();
+    }
+
+    /**
+     * Verificar horario de un usuario
+     */
+    public function verificarHorario($run)
+    {
+        try {
+            // Obtener la hora actual
+            $horaActual = \Carbon\Carbon::now();
+            $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
+            $horaActualStr = $horaActual->format('H:i:s');
+
+            // Verificar si el usuario tiene clases programadas
+            $planificaciones = \App\Models\Planificacion_Asignatura::with(['asignatura', 'modulo', 'espacio'])
+                ->whereHas('asignatura', function($query) use ($run) {
+                    $query->where('run_profesor', $run);
+                })
+                ->whereHas('modulo', function($query) use ($diaActual, $horaActualStr) {
+                    $query->where('dia', $diaActual)
+                          ->where('hora_inicio', '<=', $horaActualStr)
+                          ->where('hora_termino', '>=', $horaActualStr);
+                })
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'tiene_horario' => $planificaciones->count() > 0,
+                'planificaciones' => $planificaciones->map(function($plan) {
+                    return [
+                        'asignatura' => $plan->asignatura->nombre_asignatura,
+                        'espacio' => $plan->espacio->nombre_espacio,
+                        'hora_inicio' => $plan->modulo->hora_inicio,
+                        'hora_termino' => $plan->modulo->hora_termino
+                    ];
+                })
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al verificar horario: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error al verificar horario: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Verificar si un usuario es profesor
+     */
+    public function verificarProfesor($run)
+    {
+        try {
+            $profesor = \App\Models\Profesor::where('run_profesor', $run)->first();
+
+            if ($profesor) {
+                return response()->json([
+                    'success' => true,
+                    'es_profesor' => true,
+                    'profesor' => [
+                        'run' => $profesor->run_profesor,
+                        'nombre' => $profesor->name,
+                        'email' => $profesor->email
+                    ]
+                ]);
+            } else {
+                return response()->json([
+                    'success' => true,
+                    'es_profesor' => false,
+                    'mensaje' => 'El usuario no es profesor'
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Error al verificar profesor: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error al verificar profesor: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

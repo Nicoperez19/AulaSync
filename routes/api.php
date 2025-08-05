@@ -266,9 +266,7 @@ Route::get('/verificar-horario/{run}', [PlanoDigitalController::class, 'verifica
 
 Route::get('/verificar-usuario/{run}', [PlanoDigitalController::class, 'verificarUsuario']);
 Route::get('/verificar-profesor/{run}', [PlanoDigitalController::class, 'verificarProfesor']);
-Route::get('/verificar-usuario-no-registrado/{run}', [PlanoDigitalController::class, 'verificarUsuarioNoRegistrado']);
-Route::post('/registrar-usuario-no-registrado', [PlanoDigitalController::class, 'registrarUsuarioNoRegistrado']);
-Route::post('/convertir-usuario-no-registrado', [PlanoDigitalController::class, 'convertirUsuarioNoRegistrado']);
+
 Route::get('/verificar-espacio/{idEspacio}', [PlanoDigitalController::class, 'verificarEspacio']);
 Route::post('/crear-reserva', [PlanoDigitalController::class, 'crearReserva']);
 Route::post('/verificar-estado-espacio-reserva', [PlanoDigitalController::class, 'verificarEstadoEspacioYReserva']);
