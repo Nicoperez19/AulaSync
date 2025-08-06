@@ -62,12 +62,12 @@ class ApiReservaController extends Controller
         }
     }
 
-    public function registrarIngresoClase(Request $request)
+    public function registrarUsoEspacio(Request $request)
     {
         try {
             // Validar datos de entrada
             $request->validate([
-                'run' => 'required|exists:users,run',
+                'run' => 'required|exists:profesors,run_profesor',
                 'espacio_id' => 'required|exists:espacios,id_espacio'
             ]);
 
@@ -91,7 +91,7 @@ class ApiReservaController extends Controller
                 ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                 ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
                 ->where('pa.id_espacio', $request->espacio_id)
-                ->where('h.run', $request->run)
+                ->where('h.run_profesor', $request->run)
                 ->where('m.dia', $diaActual)
                 ->where(function($query) use ($horaActualStr) {
                     $query->where('m.hora_inicio', '<=', $horaActualStr)
@@ -121,7 +121,7 @@ class ApiReservaController extends Controller
                 // Crear la reserva
                 $reserva = new Reserva();
                 $reserva->id_reserva = $newId;
-                $reserva->run = $request->run;
+                $reserva->run_profesor = $request->run;
                 $reserva->id_espacio = $request->espacio_id;
                 $reserva->fecha_reserva = $horaActual->format('Y-m-d');
                 $reserva->hora = $horaActualStr;
@@ -140,7 +140,7 @@ class ApiReservaController extends Controller
 
                 return response()->json([
                     'success' => true,
-                    'message' => 'Ingreso registrado correctamente',
+                    'message' => 'Uso del espacio registrado correctamente',
                     'espacio_nombre' => $espacio->nombre_espacio,
                     'hora_termino' => $tieneClase->hora_termino,
                     'asignatura' => $tieneClase->nombre_asignatura
@@ -152,10 +152,10 @@ class ApiReservaController extends Controller
             }
 
         } catch (\Exception $e) {
-            \Log::error('Error en registrarIngresoClase: ' . $e->getMessage());
+            \Log::error('Error en registrarUsoEspacio: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Error al registrar el ingreso: ' . $e->getMessage()
+                'message' => 'Error al registrar el uso del espacio: ' . $e->getMessage()
             ], 500);
         }
     }

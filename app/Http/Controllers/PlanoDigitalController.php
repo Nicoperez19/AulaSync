@@ -624,6 +624,25 @@ class PlanoDigitalController extends Controller
                 ], 404);
             }
 
+            // Verificar si el usuario tiene una reserva activa en otro espacio (prioridad alta)
+            $reservaExistente = \App\Models\Reserva::where(function($query) use ($runUsuario) {
+                    $query->where('run_profesor', $runUsuario)
+                          ->orWhere('run_solicitante', $runUsuario);
+                })
+                ->where('id_espacio', '!=', $idEspacio)
+                ->where('estado', 'activa')
+                ->whereNull('hora_salida')
+                ->first();
+
+            if ($reservaExistente) {
+                // El usuario ya tiene una reserva activa en otro espacio
+                return response()->json([
+                    'tipo' => 'reserva_existente',
+                    'mensaje' => 'Ya tienes una reserva activa en otro espacio. Debes finalizarla antes de solicitar una nueva.',
+                    'espacio_disponible' => false
+                ]);
+            }
+
             // Verificar si el usuario tiene una reserva activa en este espacio
             $reservaActiva = \App\Models\Reserva::where(function($query) use ($runUsuario) {
                     $query->where('run_profesor', $runUsuario)
@@ -1047,6 +1066,14 @@ class PlanoDigitalController extends Controller
                 })
                 ->get();
 
+            // Verificar si la hora actual está dentro del rango del horario del profesor (20:10-22:00)
+            $horaActualTime = \Carbon\Carbon::createFromFormat('H:i:s', $horaActual);
+            $inicioHorario = \Carbon\Carbon::createFromFormat('H:i:s', '20:10:00');
+            $finHorario = \Carbon\Carbon::createFromFormat('H:i:s', '22:00:00');
+            
+            $tieneClasesEnHorario = $planificaciones->count() > 0 && 
+                                   $horaActualTime->between($inicioHorario, $finHorario);
+
             // Agrupar por asignatura y detectar módulos consecutivos
             $clasesConModulosConsecutivos = [];
             $planificacionesAgrupadas = $planificaciones->groupBy('asignatura.nombre_asignatura');
@@ -1086,7 +1113,7 @@ class PlanoDigitalController extends Controller
 
             return response()->json([
                 'success' => true,
-                'tiene_clases' => $planificaciones->count() > 0,
+                'tiene_clases' => $tieneClasesEnHorario,
                 'planificaciones' => $planificaciones->map(function($plan) {
                     return [
                         'asignatura' => $plan->asignatura->nombre_asignatura,

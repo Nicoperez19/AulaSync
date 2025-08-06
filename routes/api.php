@@ -75,10 +75,10 @@ Route::get('/verificar-espacio/{profesorId}/{espacioId}', function ($profesorId,
 
 // Rutas para reservas
 Route::get('/verificar-espacio/{userId}/{espacioId}', [ApiReservaController::class, 'verificarEspacio']);
-Route::post('/registrar-ingreso-clase', [ApiReservaController::class, 'registrarIngresoClase']);
+Route::post('/registrar-uso-espacio', [ApiReservaController::class, 'registrarUsoEspacio']);
 Route::post('/registrar-salida-clase', [ApiReservaController::class, 'registrarSalidaClase']);
 Route::post('/registrar-reserva-espontanea', [ApiReservaController::class, 'registrarReservaEspontanea']);
-Route::post('/registrar-entrada-clase', [ApiReservaController::class, 'registrarIngresoClase']);
+Route::post('/registrar-entrada-clase', [ApiReservaController::class, 'registrarUsoEspacio']);
 Route::get('/reserva-activa/{id}', [App\Http\Controllers\Api\ApiReservaController::class, 'getReservaActiva']);
 
 Route::get('/user/{run}', function ($run) {

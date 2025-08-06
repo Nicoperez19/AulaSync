@@ -497,28 +497,50 @@
     </x-modal>
 
     <!-- Modal para seleccionar cantidad de módulos -->
-    <x-modal name="seleccionar-modulos" :show="false" focusable>
-        @slot('title')
-            <h2 class="text-lg font-medium text-center text-black">
-                Seleccionar Módulos
-            </h2>
-        @endslot
-        <div class="p-6 text-center">
-            <p class="mb-4 text-base text-gray-800">¿Por cuántos módulos desea reservar?</p>
-            <div class="mb-2">
-                <input type="number" id="input-cantidad-modulos" min="1" max="1" value="1"
-                    class="w-24 px-2 py-1 text-lg text-center border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+    <div id="modal-seleccionar-modulos" class="fixed inset-0 z-50 hidden" data-modal="seleccionar-modulos">
+        <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
+        
+        <div class="fixed inset-0 z-10 overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                        <div class="sm:flex sm:items-start">
+                            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
+                                <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
+                                <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">
+                                    Seleccionar Módulos
+                                </h3>
+                                <div class="text-center">
+                                    <p class="mb-4 text-base text-gray-800">¿Por cuántos módulos desea reservar?</p>
+                                    <div class="mb-4">
+                                        <input type="number" id="input-cantidad-modulos" min="1" max="1" value="1"
+                                            class="w-24 px-3 py-2 text-lg text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
+                                    <div class="mb-6 text-sm text-gray-600">
+                                        Disponibles: <span id="max-modulos-disponibles" class="font-semibold text-blue-600">1</span> módulos consecutivos antes de la próxima clase/reserva.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button id="btn-confirmar-modulos" type="button"
+                            class="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:ml-3 sm:w-auto">
+                            Reservar
+                        </button>
+                        <button type="button" onclick="cerrarModalModulos()"
+                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="mb-4 text-sm text-gray-600">
-                Disponibles: <span id="max-modulos-disponibles">1</span> módulos consecutivos antes de la próxima
-                clase/reserva.
-            </div>
-            <button id="btn-confirmar-modulos"
-                class="px-6 py-2 text-white bg-blue-600 rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                Reservar
-            </button>
         </div>
-    </x-modal>
+    </div>
 
     <!-- Modal para registro de solicitante -->
     <x-modal name="registro-solicitante" :show="false" focusable>
@@ -847,26 +869,34 @@
         // Función para verificar si un profesor tiene clases programadas
         async function verificarClasesProfesor(run) {
             try {
-                console.log('Verificando clases para profesor:', run);
+                console.log('🔍 Verificando clases para profesor:', run);
                 const response = await fetch(`/api/verificar-clases-programadas/${run}`);
                 const result = await response.json();
-                console.log('Respuesta de verificar clases:', result);
-                console.log('result.success:', result.success);
-                console.log('result.tiene_clases:', result.tiene_clases);
-                console.log('typeof result.tiene_clases:', typeof result.tiene_clases);
+                console.log('📡 Respuesta completa del endpoint:', result);
+                
+                // La respuesta tiene una estructura extraña, necesitamos acceder a result.original
+                const data = result.original || result;
+                console.log('📊 Datos extraídos:', data);
+                console.log('✅ data.success:', data.success, 'tipo:', typeof data.success);
+                console.log('📚 data.tiene_clases:', data.tiene_clases, 'tipo:', typeof data.tiene_clases);
                 
                 // Verificar si la respuesta es exitosa y tiene clases
-                if (result.success && result.tiene_clases) {
-                    console.log('✅ Profesor tiene clases programadas');
+                const tieneClases = data.success && data.tiene_clases;
+                console.log('🔍 Condición evaluada: data.success && data.tiene_clases =', tieneClases);
+                
+                if (tieneClases) {
+                    console.log('✅ Profesor TIENE clases programadas - retornando TRUE');
                     return true;
                 } else {
-                    console.log('❌ Profesor no tiene clases programadas');
-                    console.log('result.success es:', result.success);
-                    console.log('result.tiene_clases es:', result.tiene_clases);
+                    console.log('❌ Profesor NO tiene clases programadas - retornando FALSE');
+                    console.log('   Detalles:');
+                    console.log('     - data.success:', data.success);
+                    console.log('     - data.tiene_clases:', data.tiene_clases);
+                    console.log('     - data.success && data.tiene_clases:', data.success && data.tiene_clases);
                     return false;
                 }
             } catch (error) {
-                console.error('Error:', error);
+                console.error('💥 Error en verificarClasesProfesor:', error);
                 return false;
             }
         }
@@ -889,6 +919,27 @@
                 return await response.json();
             } catch (error) {
                 console.error('Error:', error);
+                return null;
+            }
+        }
+
+        // Función para registrar asistencia de profesor con clases programadas
+        async function registrarAsistenciaProfesor(run, idEspacio) {
+            try {
+                const response = await fetch('/api/registrar-uso-espacio', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        run: run,
+                        espacio_id: idEspacio
+                    })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error al registrar asistencia:', error);
                 return null;
             }
         }
@@ -1036,7 +1087,7 @@
                 }
             } else {
                 // Error: orden incorrecto
-                Swal.fire('Error', 'Debe escanear primero el QR del usuario', 'error');
+                console.error('Error: Debe escanear primero el QR del usuario');
             }
 
             // Limpiar buffer y input
@@ -1057,7 +1108,7 @@
             // Extraer RUN del QR (buscar "RUN" seguido de números)
             const runMatch = bufferQR.match(/RUN[^0-9]*(\d+)/);
             if (!runMatch) {
-                Swal.fire('Error', 'Formato de RUN no válido', 'error');
+                console.error('Error: Formato de RUN no válido');
                 return;
             }
 
@@ -1067,16 +1118,19 @@
             const usuarioInfo = await verificarUsuario(run);
             
             if (!usuarioInfo) {
-                Swal.fire('Error', 'Error al verificar usuario', 'error');
+                console.error('Error: Error al verificar usuario');
                 return;
             }
 
             if (usuarioInfo.verificado) {
                 if (usuarioInfo.tipo_usuario === 'profesor') {
                     // Es profesor - verificar si tiene clases programadas
+                    console.log('👨‍🏫 Usuario es profesor, verificando clases...');
                     const tieneClases = await verificarClasesProfesor(run);
+                    console.log('🎯 Resultado de verificarClasesProfesor:', tieneClases, 'tipo:', typeof tieneClases);
                     
-                    if (tieneClases) {
+                    if (tieneClases === true) {
+                        console.log('✅ Profesor CON clases - mostrando mensaje de asistencia');
                         // Profesor CON clases - solo registra solicitud
                         document.getElementById('qr-status').innerHTML = 'Profesor con clases verificado. Escanee el espacio para registrar asistencia.';
                         // Mostrar información del usuario
@@ -1085,6 +1139,10 @@
                         ordenEscaneo = 'espacio';
                         // No necesita devolución para volver a solicitar
                     } else {
+                        console.log('❌ Profesor SIN clases - mostrando mensaje de solicitud');
+                        console.log('   Valor exacto de tieneClases:', tieneClases);
+                        console.log('   Comparación tieneClases === true:', tieneClases === true);
+                        console.log('   Comparación tieneClases == true:', tieneClases == true);
                         // Profesor SIN clases - solicita con módulos
                         document.getElementById('qr-status').innerHTML = 'Profesor sin clases. Escanee el espacio para solicitar.';
                         // Mostrar información del usuario
@@ -1103,7 +1161,7 @@
                     // Necesitará especificar módulos (máx 2)
                 } else {
                     // Otro tipo de usuario - mostrar error
-                    Swal.fire('Error', 'Tipo de usuario no válido para solicitar espacios', 'error');
+                    console.error('Error: Tipo de usuario no válido para solicitar espacios');
                 }
             } else {
                 // Usuario no encontrado - mostrar modal de registro de solicitante
@@ -1129,7 +1187,7 @@
             // Extraer código de espacio (buscar "TH" seguido de letras/números)
             const espacioMatch = bufferQR.match(/(TH[^A-Z0-9]*[A-Z0-9]+)/);
             if (!espacioMatch) {
-                Swal.fire('Error', 'Código de espacio no válido', 'error');
+                console.error('Error: Código de espacio no válido');
                 return;
             }
 
@@ -1142,7 +1200,6 @@
             
             if (resultadoVerificacion.tipo === 'error') {
                 console.error('Error en verificación:', resultadoVerificacion.mensaje);
-                Swal.fire('Error', resultadoVerificacion.mensaje, 'error');
                 ordenEscaneo = 'usuario';
                 return;
             }
@@ -1165,17 +1222,29 @@
                 const devolucion = await devolverEspacio(profesorEscaneado, espacio);
                 console.log('Resultado de devolución:', devolucion);
                 
-                if (devolucion && devolucion.success) {
-                    // Actualizar indicador en el mapa
-                    const block = state.indicators.find(b => b.id === espacio);
-                    if (block) {
-                        block.estado = '#00FF00'; // Verde = Disponible
-                        state.originalCoordinates = state.indicators.map(i => ({ ...i }));
-                        drawIndicators();
-                    }
-                    
-                    // Mostrar mensaje de éxito sin SweetAlert (para evitar duplicidad)
-                    document.getElementById('qr-status').innerHTML = 'Devolución exitosa';
+                                    if (devolucion && devolucion.success) {
+                        // Actualizar indicador en el mapa
+                        const block = state.indicators.find(b => b.id === espacio);
+                        if (block) {
+                            block.estado = '#00FF00'; // Verde = Disponible
+                            state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                            drawIndicators();
+                        }
+                        
+                        // Mostrar Sweet Alert de éxito para devolución
+                        Swal.fire({
+                            title: '¡Devolución Exitosa!',
+                            text: 'Las llaves han sido devueltas correctamente.',
+                            icon: 'success',
+                            confirmButtonText: 'Aceptar',
+                            confirmButtonColor: '#059669',
+                            timer: 1500,
+                            timerProgressBar: true,
+                            showConfirmButton: false
+                        });
+                        
+                        // Mostrar mensaje de éxito
+                        document.getElementById('qr-status').innerHTML = 'Devolución exitosa';
                     
                     // Limpiar completamente la interfaz después de un delay
                     setTimeout(() => {
@@ -1190,13 +1259,6 @@
                     const mensajeError = devolucion?.mensaje || 'Error al devolver las llaves';
                     console.error('Error en devolución:', mensajeError);
                     
-                    Swal.fire({
-                        title: 'Error en Devolución',
-                        text: mensajeError,
-                        icon: 'error',
-                        confirmButtonText: 'Entendido'
-                    });
-                    
                     // Resetear el estado para permitir nuevo escaneo
                     procesandoDevolucion = false;
                     ordenEscaneo = 'usuario';
@@ -1204,7 +1266,47 @@
                 }
             }
 
+            if (resultadoVerificacion.tipo === 'reserva_existente') {
+                console.log('🔍 DEBUG: Usuario ya tiene reserva activa en otro espacio');
+                console.log('   - profesorEscaneado:', profesorEscaneado);
+                console.log('   - mensaje:', resultadoVerificacion.mensaje);
+                
+                // Mostrar Sweet Alert de reserva existente
+                Swal.fire({
+                    title: 'Reserva Activa',
+                    text: resultadoVerificacion.mensaje,
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#F59E0B',
+                    timer: 2000,
+                    timerProgressBar: true,
+                    showConfirmButton: false
+                });
+                
+                // Limpiar estado después del Sweet Alert
+                setTimeout(() => {
+                    limpiarEstadoCompleto();
+                }, 2500);
+                
+                ordenEscaneo = 'usuario';
+                return;
+            }
+
             if (resultadoVerificacion.tipo === 'espacio_ocupado') {
+                console.log('🔍 DEBUG: Espacio ocupado detectado');
+                console.log('   - profesorEscaneado:', profesorEscaneado);
+                console.log('   - resultadoVerificacion.ocupante:', resultadoVerificacion.ocupante);
+                console.log('   - resultadoVerificacion.ocupante?.run:', resultadoVerificacion.ocupante?.run);
+                console.log('   - Comparación run:', resultadoVerificacion.ocupante?.run === profesorEscaneado);
+                
+                // Verificar si el ocupante es el mismo usuario que acaba de escanear
+                if (resultadoVerificacion.ocupante && resultadoVerificacion.ocupante.run === profesorEscaneado) {
+                    // Es el mismo usuario, no mostrar mensaje de ocupado
+                    console.log('✅ Usuario escaneó su propio espacio ocupado, no mostrar mensaje');
+                    ordenEscaneo = 'usuario';
+                    return;
+                }
+                
                 let mensajeDetallado = resultadoVerificacion.mensaje;
                 if (resultadoVerificacion.ocupante) {
                     const ocupante = resultadoVerificacion.ocupante;
@@ -1222,12 +1324,14 @@
                     `;
                 }
                 
-                Swal.fire({
-                    title: 'Espacio Ocupado',
-                    html: mensajeDetallado,
-                    icon: 'info',
-                    confirmButtonText: 'Entendido'
-                });
+                // Mostrar mensaje de espacio ocupado en consola
+                console.log('Espacio Ocupado:', mensajeDetallado);
+                
+                // Limpiar estado después de mostrar el mensaje
+                setTimeout(() => {
+                    limpiarEstadoCompleto();
+                }, 1000);
+                
                 ordenEscaneo = 'usuario';
                 return;
             }
@@ -1237,7 +1341,7 @@
             const usuarioInfo = await verificarUsuario(profesorEscaneado);
             
             if (!usuarioInfo || !usuarioInfo.verificado) {
-                Swal.fire('Error', 'Error al verificar usuario para crear reserva', 'error');
+                console.error('Error: Error al verificar usuario para crear reserva');
                 ordenEscaneo = 'usuario';
                 return;
             }
@@ -1255,10 +1359,10 @@
                 console.log('Tipo de dato tieneClases:', typeof tieneClases);
                 
                 if (tieneClases === true) {
-                    console.log('✅ Profesor CON clases - procesando reserva automática');
-                    // CASO 1: Profesor CON clases - solo registra asistencia
-                    const reserva = await crearReserva(profesorEscaneado, espacio, 'profesor');
-                    if (reserva && reserva.success) {
+                    console.log('✅ Profesor CON clases - registrando asistencia automática');
+                    // CASO 1: Profesor CON clases - registrar asistencia usando endpoint específico
+                    const resultado = await registrarAsistenciaProfesor(profesorEscaneado, espacio);
+                    if (resultado && resultado.success) {
                         // Mostrar mensaje de proceso
                         document.getElementById('qr-status').innerHTML = 'Registrando asistencia...';
                         
@@ -1270,27 +1374,54 @@
                             drawIndicators();
                         }
                         
-                        // Después de 300ms, mostrar SweetAlert de asistencia registrada
+                        // Mostrar Sweet Alert de éxito para asistencia registrada
+                        Swal.fire({
+                            title: '¡Asistencia Registrada!',
+                            text: 'El profesor ha registrado su asistencia correctamente.',
+                            icon: 'success',
+                            confirmButtonText: 'Aceptar',
+                            confirmButtonColor: '#059669',
+                            timer: 1500,
+                            timerProgressBar: true,
+                            showConfirmButton: false
+                        });
+                        
+                        // Mostrar mensaje de asistencia registrada
+                        document.getElementById('qr-status').innerHTML = 'Asistencia registrada';
+                        document.getElementById('qr-status').classList.remove('parpadeo');
+                        
+                        // Limpiar completamente la interfaz después de un delay
                         setTimeout(() => {
-                            Swal.fire({
-                                title: '¡Asistencia registrada!',
-                                text: 'La asistencia ha sido registrada correctamente',
-                                icon: 'success',
-                                timer: 1500,
-                                showConfirmButton: false,
-                                timerProgressBar: true
-                            });
+                            // Limpiar todo excepto profesorEscaneado
+                            ordenEscaneo = 'usuario';
+                            espacioParaReserva = null;
+                            runParaReserva = null;
                             
-                            document.getElementById('qr-status').innerHTML = 'Asistencia registrada';
-                            document.getElementById('qr-status').classList.remove('parpadeo');
+                            // Limpiar buffers
+                            if (typeof bufferQR !== 'undefined') {
+                                bufferQR = '';
+                            }
+                            if (typeof bufferQRSolicitud !== 'undefined') {
+                                bufferQRSolicitud = '';
+                            }
                             
-                            // Limpiar completamente la interfaz después de que desaparezca el SweetAlert
+                            // Resetear interfaz visual
+                            resetearInterfaz();
+                            
+                            // Restaurar parpadeo del estado QR
+                            const qrStatus = document.getElementById('qr-status');
+                            if (qrStatus) {
+                                qrStatus.classList.add('parpadeo');
+                                qrStatus.innerHTML = 'Esperando... Escanea el código QR';
+                            }
+                            
+                            // Limpiar profesorEscaneado después de 5 segundos
                             setTimeout(() => {
-                                limpiarEstadoCompleto();
-                            }, 1500);
-                        }, 300);
+                                profesorEscaneado = null;
+                            }, 5000);
+                        }, 2000);
                     } else {
-                        Swal.fire('Error', reserva?.mensaje || 'Error al registrar asistencia', 'error');
+                        console.error('Error al registrar asistencia:', resultado?.mensaje || 'Error desconocido');
                     }
                 } else {
                     console.log('⚠️ Profesor SIN clases - mostrando modal de módulos');
@@ -1306,7 +1437,7 @@
                 await mostrarModalSeleccionarModulos(espacio, profesorEscaneado, 2); // Máximo 2 módulos
                 return; // No continuar, esperar selección de módulos
             } else {
-                Swal.fire('Error', 'Tipo de usuario no válido para crear reserva', 'error');
+                console.error('Error: Tipo de usuario no válido para crear reserva');
                 ordenEscaneo = 'usuario';
                 return;
             }
@@ -2343,12 +2474,12 @@
                                 'Usuario verificado. Escanee el espacio para devolver.';
                             esperandoUsuarioDevolucion = false;
                         } else {
-                            Swal.fire('Error', usuarioInfo?.mensaje || 'Error de verificación', 'error');
+                            console.error('Error de verificación:', usuarioInfo?.mensaje || 'Error desconocido');
                             document.getElementById('qr-status-devolucion').innerHTML = usuarioInfo?.mensaje ||
                                 'Error de verificación';
                         }
                     } else {
-                        Swal.fire('Error', 'RUN inválido', 'error');
+                        console.error('Error: RUN inválido');
                         document.getElementById('qr-status-devolucion').innerHTML = 'RUN inválido';
                     }
                 } else {
@@ -2366,15 +2497,8 @@
                         const resultado = await procesarDevolucion(usuarioEscaneadoDevolucion, espacioProcesado);
 
                         if (resultado.success) {
-                            // Mostrar SweetAlert de devolución exitosa
-                            Swal.fire({
-                                title: '¡Devolución exitosa!',
-                                text: 'Las llaves han sido devueltas correctamente',
-                                icon: 'success',
-                                timer: 1500,
-                                showConfirmButton: false,
-                                timerProgressBar: true
-                            });
+                            // Mostrar mensaje de devolución exitosa
+                            console.log('¡Devolución exitosa! Las llaves han sido devueltas correctamente');
                             
                             // Cerrar modales
                             cerrarModalesDespuesDeSwal(['devolver-llaves', 'data-space']);
@@ -2397,13 +2521,13 @@
                                 }, 500);
                             }, 1000);
                         } else {
-                            Swal.fire('Error', resultado.message || resultado.mensaje || 'Error al procesar la devolución', 'error');
+                            console.error('Error al procesar la devolución:', resultado.message || resultado.mensaje || 'Error desconocido');
                             document.getElementById('qr-status-devolucion').innerHTML = resultado.message || resultado.mensaje ||
                                 'Error al procesar la devolución';
                         }
                     } else if (resultadoVerificacion.tipo === 'reserva_existente') {
                         // El usuario ya tiene una reserva activa en otro espacio
-                        Swal.fire('Reserva Existente', resultadoVerificacion.mensaje, 'warning');
+                        console.log('Reserva Existente:', resultadoVerificacion.mensaje);
                         document.getElementById('qr-status-devolucion').innerHTML = resultadoVerificacion.mensaje;
                     } else if (resultadoVerificacion.tipo === 'espacio_ocupado') {
                         // El espacio está ocupado por otro usuario
@@ -2424,16 +2548,11 @@
                             `;
                         }
                         
-                        Swal.fire({
-                            title: 'Espacio Ocupado',
-                            html: mensajeDetallado,
-                            icon: 'info',
-                            confirmButtonText: 'Entendido'
-                        });
+                        console.log('Espacio Ocupado:', mensajeDetallado);
                         document.getElementById('qr-status-devolucion').innerHTML = resultadoVerificacion.mensaje;
                     } else {
                         // Error en la verificación
-                        Swal.fire('Error', resultadoVerificacion.mensaje || 'Error al verificar el estado del espacio', 'error');
+                        console.error('Error al verificar el estado del espacio:', resultadoVerificacion.mensaje || 'Error desconocido');
                         document.getElementById('qr-status-devolucion').innerHTML = resultadoVerificacion.mensaje || 'Error al verificar el estado del espacio';
                     }
                     // Resetear el estado de devolución
@@ -2673,24 +2792,15 @@
                     // Limpiar variables
                     runSolicitantePendiente = null;
                     
-                    // Mostrar mensaje de éxito por 1.5 segundos después de cerrar el modal
-                    setTimeout(() => {
-                        Swal.fire({
-                            title: '¡Registro exitoso!',
-                            text: 'Solicitante registrado correctamente. Ahora escanee el QR del espacio.',
-                            icon: 'success',
-                            timer: 1500,
-                            showConfirmButton: false,
-                            timerProgressBar: true
-                        });
-                    }, 300);
+                    // Mostrar mensaje de éxito
+                    console.log('¡Registro exitoso! Solicitante registrado correctamente. Ahora escanee el QR del espacio.');
                     
                 } else {
-                    Swal.fire('Error', resultado?.mensaje || 'Error al registrar solicitante', 'error');
+                    console.error('Error al registrar solicitante:', resultado?.mensaje || 'Error desconocido');
                 }
             } catch (error) {
                 console.error('Error:', error);
-                Swal.fire('Error', 'Error al procesar el registro', 'error');
+                console.error('Error al procesar el registro');
             }
         }
 
@@ -2777,51 +2887,46 @@
                 const resultado = await registrarSolicitante(datosUsuario);
 
                 if (resultado && resultado.success) {
-                    Swal.fire({
-                        title: '¡Usuario registrado exitosamente!',
-                        text: 'El usuario ha sido registrado y puede continuar con la solicitud.',
-                        icon: 'success',
-                        confirmButtonText: 'Continuar'
-                    }).then(() => {
-                        // Cerrar modal de registro
-                        window.dispatchEvent(new CustomEvent('close-modal', {
-                            detail: 'registro-usuario'
-                        }));
+                    console.log('¡Usuario registrado exitosamente! El usuario ha sido registrado y puede continuar con la solicitud.');
+                    
+                    // Cerrar modal de registro
+                    window.dispatchEvent(new CustomEvent('close-modal', {
+                        detail: 'registro-usuario'
+                    }));
 
-                        // Continuar con el flujo original según el modo de operación
-                        if (modoOperacionActual === 'solicitud') {
-                            // Volver al modal de solicitud y continuar
-                            setTimeout(() => {
-                                window.dispatchEvent(new CustomEvent('open-modal', {
-                                    detail: 'solicitar-llaves'
-                                }));
+                    // Continuar con el flujo original según el modo de operación
+                    if (modoOperacionActual === 'solicitud') {
+                        // Volver al modal de solicitud y continuar
+                        setTimeout(() => {
+                            window.dispatchEvent(new CustomEvent('open-modal', {
+                                detail: 'solicitar-llaves'
+                            }));
 
-                                // Actualizar estado para continuar con el espacio
-                                esperandoUsuarioSolicitud = false;
-                                usuarioEscaneadoSolicitud = datosUsuario.run;
+                            // Actualizar estado para continuar con el espacio
+                            esperandoUsuarioSolicitud = false;
+                            usuarioEscaneadoSolicitud = datosUsuario.run;
 
-                                // Actualizar el estado del QR
-                                document.getElementById('qr-status-solicitud').innerHTML =
-                                    'Usuario registrado. Escanee el espacio para solicitar.';
+                            // Actualizar el estado del QR
+                            document.getElementById('qr-status-solicitud').innerHTML =
+                                'Usuario registrado. Escanee el espacio para solicitar.';
 
-                                // Configurar el input de solicitud
-                                const inputSolicitud = document.getElementById('qr-input-solicitud');
-                                if (inputSolicitud) {
-                                    inputSolicitud.value = '';
-                                    inputSolicitud.focus();
-                                }
-                            }, 300);
-                        }
+                            // Configurar el input de solicitud
+                            const inputSolicitud = document.getElementById('qr-input-solicitud');
+                            if (inputSolicitud) {
+                                inputSolicitud.value = '';
+                                inputSolicitud.focus();
+                            }
+                        }, 300);
+                    }
 
-                        // Resetear variables
-                        modoOperacionActual = null;
-                    });
+                    // Resetear variables
+                    modoOperacionActual = null;
                 } else {
-                    Swal.fire('Error', resultado?.mensaje || 'Error al registrar usuario', 'error');
+                    console.error('Error al registrar usuario:', resultado?.mensaje || 'Error desconocido');
                 }
             } catch (error) {
                 console.error('Error al procesar registro:', error);
-                Swal.fire('Error', 'Error al procesar el registro', 'error');
+                console.error('Error al procesar el registro');
             }
         }
 
@@ -2924,12 +3029,12 @@
                                 }));
                             }, 300);
                         } else {
-                            Swal.fire('Error', usuarioInfo?.mensaje || 'Error de verificación', 'error');
+                            console.error('Error de verificación:', usuarioInfo?.mensaje || 'Error desconocido');
                             document.getElementById('qr-status-solicitud').innerHTML = usuarioInfo?.mensaje ||
                                 'Error de verificación';
                         }
                     } else {
-                        Swal.fire('Error', 'RUN inválido', 'error');
+                        console.error('Error: RUN inválido');
                         document.getElementById('qr-status-solicitud').innerHTML = 'RUN inválido';
                     }
                 } else {
@@ -2963,22 +3068,25 @@
                                     }, 100);
                                 }
                                 
-                                // Mostrar SweetAlert de éxito por 1.5 segundos después de cerrar el modal
+                                // Mostrar Sweet Alert de éxito para solicitud
+                                Swal.fire({
+                                    title: '¡Solicitud Exitosa!',
+                                    text: 'Las llaves han sido asignadas correctamente.',
+                                    icon: 'success',
+                                    confirmButtonText: 'Aceptar',
+                                    confirmButtonColor: '#059669',
+                                    timer: 1500,
+                                    timerProgressBar: true,
+                                    showConfirmButton: false
+                                });
+                                
+                                // Mostrar mensaje de éxito
+                                console.log('¡Solicitud exitosa! Las llaves han sido asignadas correctamente.');
+                                
+                                // Resetear interfaz después de un delay
                                 setTimeout(() => {
-                                    Swal.fire({
-                                        title: '¡Solicitud exitosa!',
-                                        text: 'Las llaves han sido asignadas correctamente.',
-                                        icon: 'success',
-                                        timer: 1500,
-                                        showConfirmButton: false,
-                                        timerProgressBar: true
-                                    });
-                                    
-                                    // Resetear interfaz después de que desaparezca el SweetAlert
-                                    setTimeout(() => {
-                                        resetearInterfaz();
-                                    }, 1500);
-                                }, 300);
+                                    resetearInterfaz();
+                                }, 2000);
                             } else {
                                 // Manejar diferentes tipos de errores con mensajes específicos
                                 let titulo = 'Error';
@@ -3025,15 +3133,15 @@
                                             break;
                                     }
                                 }
-                                Swal.fire(titulo, mensaje, icono);
+                                console.log(titulo + ':', mensaje);
                                 document.getElementById('qr-status-solicitud').innerHTML = mensaje;
                             }
                         } else {
-                            Swal.fire('Error', 'El espacio no está disponible para solicitar.', 'error');
+                            console.error('Error: El espacio no está disponible para solicitar.');
                             document.getElementById('qr-status-solicitud').innerHTML = 'Espacio no disponible';
                         }
                     } else {
-                        Swal.fire('Error', espacioInfo?.mensaje || 'Error al verificar espacio', 'error');
+                        console.error('Error al verificar espacio:', espacioInfo?.mensaje || 'Error desconocido');
                         document.getElementById('qr-status-solicitud').innerHTML = espacioInfo?.mensaje ||
                             'Error al verificar espacio';
                     }
@@ -3053,6 +3161,28 @@
                 inputSolicitud.value = '';
             }
             resetearEstadoSolicitud();
+        }
+
+        // Función para cerrar modal de selección de módulos
+        function cerrarModalModulos() {
+            // Ocultar directamente el modal
+            const modal = document.getElementById('modal-seleccionar-modulos');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+            
+            // También intentar con el selector de data-modal
+            const modalAlt = document.querySelector('[data-modal="seleccionar-modulos"]');
+            if (modalAlt) {
+                modalAlt.classList.add('hidden');
+            }
+            
+            // Limpiar variables
+            espacioParaReserva = null;
+            runParaReserva = null;
+            
+            // Resetear interfaz
+            resetearInterfaz();
         }
 
         // Función para calcular módulos disponibles consecutivos
@@ -3098,9 +3228,16 @@
             inputModulos.value = 1;
             espacioParaReserva = idEspacio;
             runParaReserva = run;
-            window.dispatchEvent(new CustomEvent('open-modal', {
-                detail: 'seleccionar-modulos'
-            }));
+            
+            // Mostrar el modal directamente
+            const modal = document.getElementById('modal-seleccionar-modulos');
+            if (modal) {
+                modal.classList.remove('hidden');
+                // Enfocar el input
+                setTimeout(() => {
+                    inputModulos.focus();
+                }, 100);
+            }
         }
 
        document.addEventListener('DOMContentLoaded', function () {
@@ -3132,34 +3269,32 @@
 
             const data = await response.json();
 
-            if (data.success) {
-                setTimeout(() => {
-                    // Cerrar el modal justo antes de mostrar la alerta
-                    try {
-                        window.dispatchEvent(new CustomEvent('close-modal', {
-                            detail: { name: 'seleccionar-modulos' }
-                        }));
-                    } catch (error) {
-                        // Error al cerrar el modal
-                    }
+                                if (data.success) {
+                        // Cerrar el modal inmediatamente
+                        cerrarModalModulos();
 
-                    Swal.fire({
-                        title: '¡Reserva creada!',
-                        text: 'La reserva ha sido creada exitosamente',
-                        icon: 'success',
-                        timer: 1500,
-                        showConfirmButton: false,
-                        timerProgressBar: true
-                    });
+                        // Mostrar Sweet Alert de éxito para reserva creada
+                        Swal.fire({
+                            title: '¡Reserva Creada!',
+                            text: 'La reserva ha sido creada exitosamente.',
+                            icon: 'success',
+                            confirmButtonText: 'Aceptar',
+                            confirmButtonColor: '#059669',
+                            timer: 1500,
+                            timerProgressBar: true,
+                            showConfirmButton: false
+                        });
 
-                    document.getElementById('qr-status').innerHTML = 'Reserva creada';
-                    document.getElementById('qr-status').classList.remove('parpadeo');
+                        console.log('¡Reserva creada! La reserva ha sido creada exitosamente');
 
-                    setTimeout(() => {
-                        limpiarEstadoCompleto();
-                    }, 1500);
-                }, 300);
-            } else {
+                        document.getElementById('qr-status').innerHTML = 'Reserva creada';
+                        document.getElementById('qr-status').classList.remove('parpadeo');
+
+                        // Limpiar estado después del Sweet Alert
+                        setTimeout(() => {
+                            limpiarEstadoCompleto();
+                        }, 2000);
+                } else {
                 let mensajeError = data.mensaje || 'No se pudo reservar';
 
                 if (data.errors) {
@@ -3171,91 +3306,15 @@
                     });
                 }
 
-                Swal.fire({
-                    title: 'Error al crear reserva',
-                    text: mensajeError,
-                    icon: 'error',
-                    confirmButtonText: 'Entendido'
-                });
+                console.error('Error al crear reserva:', mensajeError);
+                
+                // Cerrar modal en caso de error
+                cerrarModalModulos();
             }
         });
     }
 });
 
-        // ========================================
-        // MANEJO SIMPLIFICADO DEL ESCÁNER QR
-        // ========================================
-        
-        let inputBuffer = '';
-        let scannerTimeout = null;
-        
-        // Función para procesar el código escaneado
-        function processScannedCode(code) {
-            console.log('Código escaneado:', code);
-            
-            // Simular el evento de presionar Enter con el código escaneado
-            const event = new KeyboardEvent('keydown', {
-                key: 'Enter',
-                code: 'Enter',
-                keyCode: 13,
-                which: 13,
-                bubbles: true
-            });
-            
-            // Establecer el valor del input y disparar el evento
-            const qrInput = document.getElementById('qr-input');
-            if (qrInput) {
-                qrInput.value = code;
-                qrInput.dispatchEvent(event);
-                
-                // Limpiar el input después de procesar
-                setTimeout(() => {
-                    qrInput.value = '';
-                    qrInput.focus();
-                }, 100);
-            }
-        }
-        
-        // Event listener para capturar input del escáner QR
-        document.addEventListener('DOMContentLoaded', function() {
-            const qrInput = document.getElementById('qr-input');
-            if (qrInput) {
-                // Asegurar que el input siempre tenga focus
-                qrInput.focus();
-                
-                // Escuchar cualquier input en el documento
-                document.addEventListener('keydown', function(event) {
-                    // Solo procesar caracteres normales (no teclas especiales)
-                    if (event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
-                        inputBuffer += event.key;
-                        
-                        // Limpiar timeout anterior
-                        if (scannerTimeout) {
-                            clearTimeout(scannerTimeout);
-                        }
-                        
-                        // Si no hay más input en 100ms, procesar el código completo
-                        scannerTimeout = setTimeout(() => {
-                            if (inputBuffer.length > 0) {
-                                processScannedCode(inputBuffer);
-                                inputBuffer = '';
-                            }
-                        }, 100);
-                    }
-                });
-                
-                // Mantener el focus en el input
-                document.addEventListener('click', function() {
-                    qrInput.focus();
-                });
-                
-                // Asegurar que el input mantenga el focus
-                setInterval(() => {
-                    if (document.activeElement !== qrInput) {
-                        qrInput.focus();
-                    }
-                }, 1000);
-            }
-        });
+
     </script>
 </x-show-layout>
