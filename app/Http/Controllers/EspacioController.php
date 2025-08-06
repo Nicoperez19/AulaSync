@@ -246,7 +246,11 @@ class EspacioController extends Controller
             return response()->json([
                 'success' => false,
                 'mensaje' => 'No hay módulo actual disponible.',
-                'max_modulos' => 0
+                'max_modulos' => 0,
+                'detalles' => [
+                    'razon' => 'fuera_horario',
+                    'descripcion' => 'El sistema de reservas solo está disponible durante el horario de clases (08:10 - 23:00)'
+                ]
             ]);
         }
         
@@ -256,17 +260,64 @@ class EspacioController extends Controller
             ->pluck('id_modulo')
             ->toArray();
         
+        // Obtener reservas activas para este espacio en este día
+        $fechaActual = now()->toDateString();
+        $reservasActivas = \App\Models\Reserva::where('id_espacio', $espacioId)
+            ->where('fecha_reserva', $fechaActual)
+            ->where('estado', 'activa')
+            ->get();
+        
+        // Crear array de módulos ocupados por reservas
+        $modulosOcupadosPorReservas = [];
+        foreach ($reservasActivas as $reserva) {
+            $horaInicio = $reserva->hora;
+            $horaFin = $reserva->hora_salida;
+            
+            // Determinar qué módulos cubre esta reserva
+            for ($i = 1; $i <= 15; $i++) {
+                $moduloCodigo = $codigoDia . '.' . $i;
+                $horarioModulo = $this->obtenerHorarioModulo($i, $diaActual);
+                
+                if ($horarioModulo && 
+                    $horaInicio <= $horarioModulo['fin'] && 
+                    $horaFin >= $horarioModulo['inicio']) {
+                    $modulosOcupadosPorReservas[] = $moduloCodigo;
+                }
+            }
+        }
+        
+        // Combinar planificaciones y reservas activas
+        $modulosOcupados = array_merge($planificaciones, $modulosOcupadosPorReservas);
+        $modulosOcupados = array_unique($modulosOcupados);
+        
         // Contar módulos consecutivos disponibles desde el módulo actual
         $maxModulos = 0;
+        $modulosDisponibles = [];
+        $proximaClase = null;
+        
         for ($i = $moduloActual; $i <= 15; $i++) {
             $moduloCodigo = $codigoDia . '.' . $i;
             
-            // Si existe planificación para este módulo, terminar
-            if (in_array($moduloCodigo, $planificaciones)) {
+            // Si existe planificación o reserva para este módulo, terminar
+            if (in_array($moduloCodigo, $modulosOcupados)) {
+                // Encontrar información de la próxima clase
+                if (in_array($moduloCodigo, $planificaciones)) {
+                    $proximaClase = $this->obtenerInfoProximaClase($moduloCodigo, $espacioId);
+                }
                 break;
             }
             
+            $modulosDisponibles[] = $i;
             $maxModulos++;
+        }
+        
+        // Verificar si hay clases próximas (dentro de 2 módulos)
+        $clasesProximas = [];
+        for ($i = $moduloActual + $maxModulos; $i <= min(15, $moduloActual + $maxModulos + 2); $i++) {
+            $moduloCodigo = $codigoDia . '.' . $i;
+            if (in_array($moduloCodigo, $planificaciones)) {
+                $clasesProximas[] = $this->obtenerInfoProximaClase($moduloCodigo, $espacioId);
+            }
         }
         
         return response()->json([
@@ -274,7 +325,14 @@ class EspacioController extends Controller
             'max_modulos' => $maxModulos,
             'modulo_actual' => $moduloActual,
             'codigo_dia' => $codigoDia,
-            'planificaciones_encontradas' => $planificaciones
+            'modulos_disponibles' => $modulosDisponibles,
+            'proxima_clase' => $proximaClase,
+            'clases_proximas' => $clasesProximas,
+            'detalles' => [
+                'planificaciones_encontradas' => count($planificaciones),
+                'reservas_activas' => count($reservasActivas),
+                'modulos_ocupados' => count($modulosOcupados)
+            ]
         ]);
     }
     
@@ -383,6 +441,125 @@ class EspacioController extends Controller
             if ($horaActual >= $horario['inicio'] && $horaActual < $horario['fin']) {
                 return $modulo;
             }
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Obtiene el horario de un módulo específico
+     */
+    private function obtenerHorarioModulo($modulo, $diaActual)
+    {
+        $horariosModulos = [
+            'lunes' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ],
+            'martes' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ],
+            'miercoles' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ],
+            'jueves' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ],
+            'viernes' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ]
+        ];
+        
+        return $horariosModulos[$diaActual][$modulo] ?? null;
+    }
+    
+    /**
+     * Obtiene información de la próxima clase programada
+     */
+    private function obtenerInfoProximaClase($moduloCodigo, $espacioId)
+    {
+        $planificacion = Planificacion_Asignatura::with(['asignatura', 'modulo', 'profesor'])
+            ->where('id_espacio', $espacioId)
+            ->where('id_modulo', $moduloCodigo)
+            ->first();
+            
+        if ($planificacion) {
+            return [
+                'modulo' => $moduloCodigo,
+                'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'No especificada',
+                'profesor' => $planificacion->profesor->name ?? 'No especificado',
+                'hora_inicio' => $planificacion->modulo->hora_inicio ?? '',
+                'hora_termino' => $planificacion->modulo->hora_termino ?? ''
+            ];
         }
         
         return null;

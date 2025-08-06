@@ -3101,7 +3101,12 @@
                                 } else if (reserva?.mensaje && reserva.mensaje.includes('módulos consecutivos disponibles')) {
                                     titulo = 'Módulos No Disponibles';
                                     icono = 'warning';
-                                    mensaje = 'No hay suficientes módulos consecutivos disponibles en este espacio. Intenta con menos módulos o en otro espacio.';
+                                    mensaje = reserva.mensaje;
+                                    
+                                    // Mostrar información detallada si está disponible
+                                    if (reserva.detalles && reserva.detalles.proxima_clase) {
+                                        mensaje += `\n\nPróxima clase: ${reserva.detalles.proxima_clase.asignatura} (Módulo ${reserva.detalles.proxima_clase.modulo})`;
+                                    }
                                 } else if (reserva?.tipo) {
                                     switch (reserva.tipo) {
                                         case 'reserva_activa':
@@ -3204,14 +3209,29 @@
                     const data = await response.json();
 
                     if (data.success) {
+                        // Guardar información adicional para mostrar en el modal
+                        window.modulosInfo = {
+                            max_modulos: data.max_modulos || 1,
+                            modulo_actual: data.modulo_actual,
+                            modulos_disponibles: data.modulos_disponibles || [],
+                            proxima_clase: data.proxima_clase,
+                            clases_proximas: data.clases_proximas || [],
+                            detalles: data.detalles
+                        };
+                        
                         return data.max_modulos || 1;
                     } else {
+                        // Mostrar información detallada del error
+                        if (data.detalles && data.detalles.razon === 'fuera_horario') {
+                            console.log('Horario no disponible:', data.detalles.descripcion);
+                        }
                         return 1;
                     }
                 } else {
                     return 1;
                 }
             } catch (error) {
+                console.error('Error al calcular módulos disponibles:', error);
                 return 1;
             }
         }
@@ -3229,6 +3249,11 @@
             espacioParaReserva = idEspacio;
             runParaReserva = run;
             
+            // Mostrar información detallada si está disponible
+            if (window.modulosInfo) {
+                mostrarInformacionModulos(window.modulosInfo);
+            }
+            
             // Mostrar el modal directamente
             const modal = document.getElementById('modal-seleccionar-modulos');
             if (modal) {
@@ -3238,6 +3263,44 @@
                     inputModulos.focus();
                 }, 100);
             }
+        }
+        
+        // Función para mostrar información detallada de módulos
+        function mostrarInformacionModulos(info) {
+            const infoContainer = document.getElementById('info-modulos-disponibles');
+            if (!infoContainer) return;
+            
+            let html = '<div class="text-sm text-gray-600 mb-3">';
+            
+            // Información básica
+            html += `<p><strong>Módulo actual:</strong> ${info.modulo_actual}</p>`;
+            html += `<p><strong>Módulos disponibles:</strong> ${info.max_modulos}</p>`;
+            
+            // Módulos específicos disponibles
+            if (info.modulos_disponibles && info.modulos_disponibles.length > 0) {
+                html += `<p><strong>Módulos:</strong> ${info.modulos_disponibles.join(', ')}</p>`;
+            }
+            
+            // Próxima clase
+            if (info.proxima_clase) {
+                html += `<p class="text-orange-600"><strong>Próxima clase:</strong> ${info.proxima_clase.asignatura} (Módulo ${info.proxima_clase.modulo})</p>`;
+            }
+            
+            // Clases próximas
+            if (info.clases_proximas && info.clases_proximas.length > 0) {
+                html += '<p class="text-blue-600"><strong>Clases próximas:</strong></p>';
+                info.clases_proximas.forEach(clase => {
+                    html += `<p class="ml-2">• ${clase.asignatura} (Módulo ${clase.modulo})</p>`;
+                });
+            }
+            
+            // Detalles adicionales
+            if (info.detalles) {
+                html += `<p class="text-xs text-gray-500 mt-2">Planificaciones: ${info.detalles.planificaciones_encontradas}, Reservas activas: ${info.detalles.reservas_activas}</p>`;
+            }
+            
+            html += '</div>';
+            infoContainer.innerHTML = html;
         }
 
        document.addEventListener('DOMContentLoaded', function () {

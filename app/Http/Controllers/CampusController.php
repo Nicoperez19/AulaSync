@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Campus;
 use App\Models\Sede;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -69,7 +70,7 @@ class CampusController extends Controller
             $sedes = Sede::with('universidad')->get();
             
             return view('layouts.campus.campus_edit', compact('campus', 'sedes'));
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return redirect()->route('campus.index')->withErrors(['error' => 'Campus no encontrado.']);
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Error al cargar el campus: ' . $e->getMessage()]);
@@ -96,7 +97,7 @@ class CampusController extends Controller
             ]);
 
             return redirect()->route('campus.index')->with('success', 'Campus actualizado exitosamente.');
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return redirect()->route('campus.index')->withErrors(['error' => 'Campus no encontrado.']);
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Error al actualizar el campus: ' . $e->getMessage()]);
@@ -113,7 +114,7 @@ class CampusController extends Controller
             $campus->delete();
             return redirect()->route('campus.index')->with('success', 'Campus eliminado exitosamente.');
 
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Campus no encontrado.'], 404);
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Error al borrar el campus: ' . $e->getMessage()], 500);
