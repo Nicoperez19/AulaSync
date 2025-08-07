@@ -554,7 +554,7 @@
                 console.error('Errores detallados:', errores);
             }
         } else {
-            console.log('Dashboard actualizado exitosamente:', new Date().toLocaleTimeString());
+    
         }
     }
 
@@ -584,7 +584,7 @@
 
         if (nuevoModulo !== moduloActual) {
             if (moduloActual !== null) {
-                console.log(`Cambio de módulo detectado: ${moduloActual} → ${nuevoModulo}`);
+        
                 actualizarHorariosSemana();
                 actualizarIndicadorModuloInfo(nuevoModulo);
             }
@@ -633,14 +633,14 @@
 
         // Verificar cada 30 segundos
         moduloCheckInterval = setInterval(verificarCambioModulo, 30000);
-        console.log('Verificación de módulos iniciada');
+
     }
 
     function detenerVerificacionModulo() {
         if (moduloCheckInterval) {
             clearInterval(moduloCheckInterval);
             moduloCheckInterval = null;
-            console.log('Verificación de módulos detenida');
+    
         }
     }
 
@@ -660,7 +660,7 @@
             })
             .then(html => {
                 contenedor.innerHTML = html;
-                console.log('Horarios de la semana actualizados');
+        
             })
             .catch(error => {
                 console.error('Error al actualizar horarios:', error);
@@ -673,7 +673,7 @@
         if (!contenedor) return;
 
         // Actualizar el contenido con los datos recibidos
-        console.log('Datos de horarios recibidos:', horariosAgrupados);
+
 
         // Por ahora, llamamos a la función que hace fetch para obtener el HTML actualizado
         actualizarHorariosSemana();
@@ -752,14 +752,14 @@
             actualizarDashboard();
         }, 30000);
 
-        console.log('Auto-refresh iniciado cada 30 segundos');
+
     }
 
     function detenerAutoRefresh() {
         if (autoRefreshInterval) {
             clearInterval(autoRefreshInterval);
             autoRefreshInterval = null;
-            console.log('Auto-refresh detenido');
+    
         }
     }
 

@@ -163,99 +163,102 @@
     </x-modal>
 
     <!-- Modal de Detalles de Carga -->
-    <div id="modal-detalle-carga"
-        class="fixed inset-0 z-50 flex items-center justify-center hidden bg-black bg-opacity-40"
-        style="padding-top: 80px;">
-        <div class="relative w-full max-w-6xl p-8 bg-white shadow-lg rounded-xl">
-            <button class="absolute text-gray-400 top-6 right-6 hover:text-gray-600" onclick="cerrarModal()">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-            <h2 class="mb-6 text-2xl font-bold text-gray-900">Detalles de Carga de Datos</h2>
-
-
-            <!-- Información principal en 2 columnas -->
-            <div class="grid grid-cols-1 gap-8 mb-8 lg:grid-cols-2">
-                <!-- Información del archivo -->
-                <div class="p-6 border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="p-3 bg-blue-200 rounded-lg">
-                            <svg class="text-blue-700 w-7 h-7" fill="none" stroke="currentColor" stroke-width="2"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M9 17v-6a2 2 0 012-2h2a2 2 0 012 2v6" />
-                            </svg>
+    <div id="modal-detalle-carga" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="flex flex-col w-full max-h-screen mx-2 overflow-hidden bg-white rounded-lg shadow-lg max-w-6xl md:mx-8">
+            <!-- Encabezado azul con diseño tipo banner -->
+            <div class="relative flex flex-col gap-6 p-8 bg-blue-700 md:flex-row md:items-center md:justify-between">
+                <!-- Círculos decorativos -->
+                <span class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                <span class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                
+                <div class="flex items-center flex-1 min-w-0 gap-5">
+                    <div class="flex flex-col items-center justify-center flex-shrink-0">
+                        <div class="p-4 mb-2 bg-white rounded-full bg-opacity-20">
+                            <i class="text-3xl text-white fa-solid fa-file-excel"></i>
                         </div>
-                        <h3 class="text-xl font-bold text-gray-900">Información del Archivo</h3>
                     </div>
-
-                    <div class="space-y-4">
-                        <div class="p-4 bg-white border border-blue-200 rounded-lg">
-                            <div class="mb-1 text-sm font-medium text-gray-500">Nombre del Archivo</div>
-                            <div id="archivo-nombre" class="font-semibold text-gray-900 break-words"></div>
-                        </div>
-                        <div class="p-4 bg-white border border-blue-200 rounded-lg">
-                            <div class="mb-1 text-sm font-medium text-gray-500">Tipo de Archivo</div>
-                            <div class="font-semibold text-gray-900">XLSX</div>
-                        </div>
-                        <div class="p-4 bg-white border border-blue-200 rounded-lg">
-                            <div class="mb-1 text-sm font-medium text-gray-500">Tamaño</div>
-                            <div id="archivo-tamano" class="font-semibold text-gray-900"></div>
-                        </div>
-                        <div class="p-4 bg-white border border-blue-200 rounded-lg">
-                            <div class="mb-1 text-sm font-medium text-gray-500">Registros Procesados</div>
-                            <div id="archivo-registros" class="text-lg font-bold text-green-600"></div>
-                        </div>
-                        <div class="p-4 bg-white border border-blue-200 rounded-lg">
-                            <div class="mb-1 text-sm font-medium text-gray-500">Estado</div>
-                            <span id="archivo-estado"
-                                class="inline-block px-3 py-1 text-sm font-semibold rounded-full"></span>
+                    <div class="flex flex-col min-w-0">
+                        <h1 class="text-3xl font-bold text-white truncate">Detalles de Carga de Datos</h1>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-lg truncate text-white/80">Información del Proceso</span>
                         </div>
                     </div>
                 </div>
-
-                <!-- Información del usuario -->
-                <div class="p-6 border border-green-200 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
-                    <div class="flex items-center gap-3 mb-6">
-                        <div class="p-3 bg-green-200 rounded-lg">
-                            <svg class="text-green-700 w-7 h-7" fill="none" stroke="currentColor" stroke-width="2"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804" />
-                            </svg>
+                
+                <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
+                    <button onclick="cerrarModal()" class="ml-2 text-3xl font-bold text-white hover:text-gray-200">&times;</button>
+                </div>
+            </div>
+            
+            <!-- Contenido del modal -->
+            <div class="p-6 bg-gray-50 overflow-y-auto max-h-[70vh] flex-1">
+                <!-- Información principal en 2 columnas -->
+                <div class="grid grid-cols-1 gap-8 mb-8 lg:grid-cols-2">
+                    <!-- Información del archivo -->
+                    <div class="p-6 bg-white rounded-lg shadow-sm border-l-4 border-blue-500">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="p-3 bg-blue-100 rounded-lg">
+                                <i class="text-blue-700 fa-solid fa-file-excel text-xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900">Información del Archivo</h3>
                         </div>
-                        <h3 class="text-xl font-bold text-gray-900">Información del Usuario</h3>
-                    </div>
 
-                    <div class="space-y-4">
-                        <div class="p-4 bg-white border border-green-200 rounded-lg">
-                            <div class="flex items-center gap-3">
-                                <span
-                                    class="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full">
-                                    <svg class="text-green-600 w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
-                                        <path
-                                            d="M12 12c2.7 0 8 1.34 8 4v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2c0-2.66 5.3-4 8-4zm0-2a4 4 0 100-8 4 4 0 000 8z" />
-                                    </svg>
-                                </span>
-                                <div>
-                                    <div id="usuario-nombre" class="text-lg font-semibold text-gray-900"></div>
-                                </div>
+                        <div class="space-y-4">
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <div class="mb-1 text-sm font-medium text-gray-500">Nombre del Archivo</div>
+                                <div id="archivo-nombre" class="font-semibold text-gray-900 break-words"></div>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <div class="mb-1 text-sm font-medium text-gray-500">Tipo de Archivo</div>
+                                <div class="font-semibold text-gray-900">XLSX</div>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <div class="mb-1 text-sm font-medium text-gray-500">Tamaño</div>
+                                <div id="archivo-tamano" class="font-semibold text-gray-900"></div>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <div class="mb-1 text-sm font-medium text-gray-500">Registros Procesados</div>
+                                <div id="archivo-registros" class="text-lg font-bold text-green-600"></div>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <div class="mb-1 text-sm font-medium text-gray-500">Estado</div>
+                                <span id="archivo-estado" class="inline-block px-3 py-1 text-sm font-semibold rounded-full"></span>
                             </div>
                         </div>
-                        <div class="p-4 bg-white border border-green-200 rounded-lg">
-                            <div class="mb-1 text-sm font-medium text-gray-500">Fecha de Carga</div>
-                            <div id="fecha-carga" class="font-semibold text-gray-900"></div>
+                    </div>
+
+                    <!-- Información del usuario -->
+                    <div class="p-6 bg-white rounded-lg shadow-sm border-l-4 border-green-500">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="p-3 bg-green-100 rounded-lg">
+                                <i class="text-green-700 fa-solid fa-user text-xl"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-900">Información del Usuario</h3>
                         </div>
-                        <div class="p-4 bg-white border border-green-200 rounded-lg">
-                            <div class="mb-1 text-sm font-medium text-gray-500">Última Actualización</div>
-                            <div id="fecha-actualizacion" class="font-semibold text-gray-900"></div>
+
+                        <div class="space-y-4">
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <div class="flex items-center gap-3">
+                                    <span class="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full">
+                                        <i class="text-green-600 fa-solid fa-user text-xl"></i>
+                                    </span>
+                                    <div>
+                                        <div id="usuario-nombre" class="text-lg font-semibold text-gray-900"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <div class="mb-1 text-sm font-medium text-gray-500">Fecha de Carga</div>
+                                <div id="fecha-carga" class="font-semibold text-gray-900"></div>
+                            </div>
+                            <div class="p-4 bg-gray-50 rounded-lg">
+                                <div class="mb-1 text-sm font-medium text-gray-500">Última Actualización</div>
+                                <div id="fecha-actualizacion" class="font-semibold text-gray-900"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-
-
         </div>
     </div>
 

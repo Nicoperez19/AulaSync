@@ -115,63 +115,42 @@
                             </div>
                         </div>
 
-                        <!-- Información del espacio (oculta inicialmente) -->
-                        <div id="info-espacio" class="hidden px-4 py-3 space-y-2 text-sm bg-white rounded-lg shadow-md">
-                            <h3 class="mb-2 text-xs font-semibold tracking-wide uppercase text-gray-800">Información de
-                                espacio</h3>
-
-                            <div class="flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-600" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M17.657 16.657L13.414 12 17.657 7.757M6.343 7.757L10.586 12 6.343 16.243" />
-                                </svg>
-                                <span class="font-bold text-gray-800">Espacio:</span>
-                                <span id="nombre-espacio" class="ml-auto text-gray-700">--</span>
-                            </div>
-                            
-
-                        </div>
-
                         <input type="text" id="qr-input"
                             class="absolute w-full px-1 py-1 text-transparent bg-transparent border-0 focus:outline-none focus:border-0 focus:ring-0 opacity-0"
-    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+                            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
 
                     </div>
                 </div>
             </div>
 
-
-
             <!-- Leyenda abajo del todo -->
-            <div class="flex flex-col items-center justify-center w-full max-w-md p-1 mx-auto ">
+            <div class="flex flex-col items-center justify-center w-full max-w-md p-1 mx-auto">
                 <div class="w-full mt-6">
                     <div class="p-4 text-white bg-red-700 rounded shadow-[0_0_10px_2px_rgba(255,255,255,0.4)]">
-                <h3
-                    class="flex items-center justify-center gap-1 mb-2 text-sm font-semibold text-center text-white md:text-xs">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 md:w-3 md:h-3" viewBox="0 0 24 24"
-                        fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                        <circle cx="12" cy="10" r="3"></circle>
-                    </svg>
-                    LEYENDA DE ESTADO
-                </h3>
-                <div class="flex flex-col items-start gap-1">
-                    <div class="flex items-center w-full gap-1">
-                        <div class="w-3 h-3 bg-red-500 border-2 border-white rounded-full"></div>
-                        <span class="flex-1 text-xs text-white">Ocupado</span>
-                    </div>
-                    <div class="flex items-center w-full gap-1">
-                        <div class="w-3 h-3 bg-orange-500 border-2 border-white rounded-full "></div>
-                        <span class="flex-1 text-xs text-white">Reservado</span>
-                    </div>
-                    <div class="flex items-center w-full gap-1">
-                        <div class="w-3 h-3 bg-blue-500 border-2 border-white rounded-full"></div>
-                        <span class="flex-1 text-xs text-white">Próximo</span>
-                    </div>
-                    <div class="flex items-center w-full gap-1">
-                        <div class="w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
-                        <span class="flex-1 text-xs text-white">Disponible</span>
+                        <h3 class="flex items-center justify-center gap-1 mb-2 text-sm font-semibold text-center text-white md:text-xs">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 md:w-3 md:h-3" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            LEYENDA DE ESTADO
+                        </h3>
+                        <div class="flex flex-col items-start gap-1">
+                            <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-red-500 border-2 border-white rounded-full"></div>
+                                <span class="flex-1 text-xs text-white">Ocupado</span>
+                            </div>
+                            <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-orange-500 border-2 border-white rounded-full"></div>
+                                <span class="flex-1 text-xs text-white">Reservado</span>
+                            </div>
+                            <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-blue-500 border-2 border-white rounded-full"></div>
+                                <span class="flex-1 text-xs text-white">Próximo</span>
+                            </div>
+                            <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                                <span class="flex-1 text-xs text-white">Disponible</span>
                             </div>
                         </div>
                     </div>
@@ -230,105 +209,87 @@
     </div>
 
     <!-- Modal para mostrar información del espacio -->
-    <x-modal name="data-space" :show="false" focusable>
-        @slot('title')
-            <!-- Encabezado rojo -->
-            <div class="flex-1 p-4 text-center">
-                <h2 id="modalTitulo" class="text-2xl font-bold text-center text-white"></h2>
-                <div class="text-xs text-white/80" id="modalSubtitulo"></div>
-            </div>
-        @endslot
-        <!-- Estado visual destacado, separado y más grande -->
-        <h3 class="pt-4 mb-2 text-lg font-semibold text-gray-900">Información del Espacio</h3>
-
-        <div class="flex flex-col gap-2 p-5 mb-4 bg-gray-100 shadow rounded-xl">
-            <div id="estadoContainer" class="flex items-center justify-between mb-4 ">
-                <span class="py-1 text-lg font-medium text-gray-700">Estado actual: </span>
-                <span id="estadoPill"
-                    class="inline-flex items-center px-4 py-2 text-base font-bold border rounded-full">
-                    <span id="estadoIcon" class="w-3 h-3 mr-3 rounded-full"></span>
-                    <span id="modalEstado" class="font-semibold"></span>
-                </span>
-            </div>
-        </div>
-        <!-- Planificación Actual -->
-        <div id="planificacionContainer">
-            <h3 class="mb-2 text-lg font-semibold text-gray-900">Planificación Actual</h3>
-            <div class="flex flex-col gap-2 p-5 mb-4 bg-gray-100 shadow rounded-xl">
-                <div class="flex items-center gap-2">
-                    <span class="p-2 text-red-500 bg-red-100 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12h6m2 0a2 2 0 100-4 2 2 0 000 4zm-8 0a2 2 0 100-4 2 2 0 000 4z" />
-                        </svg>
-                    </span>
-                    <div class="flex flex-col text-left">
-                        <span class="text-xs text-gray-400">Asignatura</span>
-                        <span id="modalPlanificacionAsignatura" class="font-medium text-gray-900"></span>
+    <div id="modal-espacio-info" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="flex flex-col w-full max-h-screen mx-2 overflow-hidden bg-white rounded-lg shadow-lg max-w-4xl md:mx-8">
+            <!-- Encabezado con diseño tipo banner -->
+            <div class="relative flex flex-col gap-6 p-8 bg-gradient-to-r bg-light-cloud-blue md:flex-row md:items-center md:justify-between">
+                <!-- Círculos decorativos -->
+                <span class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                <span class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                
+                <div class="flex items-center flex-1 min-w-0 gap-5">
+                    <div class="flex flex-col items-center justify-center flex-shrink-0">
+                        <div class="p-4 mb-2 bg-white rounded-full bg-opacity-20">
+                            <i class="text-3xl text-white fa-solid fa-building"></i>
+                        </div>
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                        <h1 id="modalTitulo" class="text-3xl font-bold text-white truncate">Información del Espacio</h1>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span id="modalSubtitulo" class="text-lg truncate text-white/80">Estado y detalles</span>
+                        </div>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <span class="p-2 text-red-500 bg-red-100 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M5.121 17.804A13.937 13.937 0 0112 15c2.5 0 4.847.655 6.879 1.804M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                    </span>
-                    <div class="flex flex-col text-left">
-                        <span class="text-xs text-gray-400">Profesor</span>
-                        <span id="modalPlanificacionProfesor" class="font-medium text-gray-900"></span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <span class="p-2 text-red-500 bg-red-100 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 10h1m2 0h1m2 0h1m2 0h1m2 0h1m2 0h1" />
-                        </svg>
-                    </span>
-                    <div class="flex flex-col text-left">
-                        <span class="text-xs text-gray-400">Módulo</span>
-                        <span id="modalPlanificacionModulo" class="font-medium text-gray-900"></span>
-                    </div>
-                    <span class="p-2 ml-4 text-red-500 bg-red-100 rounded-full">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3" />
-                        </svg>
-                    </span>
-                    <div class="flex flex-col text-left">
-                        <span class="text-xs text-gray-400">Horario</span>
-                        <span id="modalPlanificacionHorario" class="font-medium text-gray-900"></span>
-                    </div>
+                
+                <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
+                    <button onclick="cerrarModalEspacio()" class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors">&times;</button>
                 </div>
             </div>
-        </div>
-        <!-- Próxima clase -->
-        <div id="modalProxima" class="hidden mt-4">
-            <h4 class="mb-2 text-sm font-medium text-gray-700">Próxima Clase</h4>
-            <div id="modalProximaDetalles" class="p-4 bg-gray-100 shadow rounded-xl"></div>
-        </div>
-
-        <!-- Botón de solicitud (solo visible cuando el espacio está disponible) -->
-        <div id="btnSolicitarContainer" class="hidden mt-6">
-            <button id="btnSolicitarLlaves"
-                class="w-full px-4 py-3 text-white transition-colors duration-200 bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-                onclick="iniciarSolicitud()">
-                <div class="flex items-center justify-center space-x-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                    </svg>
-                    <span class="font-medium">Solicitar Llaves</span>
+            
+            <!-- Contenido del modal -->
+            <div class="p-6 bg-gray-50 overflow-y-auto max-h-[70vh] flex-1">
+                <!-- Estado del espacio -->
+                <div class="mb-6 p-6 bg-white rounded-xl shadow-sm border-l-4 border-blue-500">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-semibold text-gray-800">
+                            <i class="fas fa-info-circle mr-2 text-blue-500"></i>
+                            Estado Actual
+                        </h3>
+                        <span id="estadoPill" class="inline-flex items-center px-4 py-2 text-sm font-bold border rounded-full">
+                            <span id="estadoIcon" class="w-3 h-3 mr-2 rounded-full"></span>
+                            <span id="modalEstado" class="font-semibold"></span>
+                        </span>
+                    </div>
+                    <div id="estadoDetalles" class="text-sm text-gray-600">
+                        <!-- Información adicional del estado se insertará aquí -->
+                    </div>
                 </div>
-            </button>
+                
+                <!-- Información del ocupante actual -->
+                <div id="ocupanteContainer" class="mb-6 p-6 bg-white rounded-xl shadow-sm border-l-4 border-green-500" style="display: none;">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-user mr-2 text-green-500"></i>
+                        Ocupante Actual
+                    </h3>
+                    <div id="ocupanteInfo" class="space-y-3">
+                        <!-- La información se insertará dinámicamente -->
+                    </div>
+                </div>
+                
+                <!-- Información de la clase actual -->
+                <div id="claseActualContainer" class="mb-6 p-6 bg-white rounded-xl shadow-sm border-l-4 border-orange-500" style="display: none;">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-chalkboard-teacher mr-2 text-orange-500"></i>
+                        Clase Actual
+                    </h3>
+                    <div id="claseActualInfo" class="space-y-3">
+                        <!-- La información se insertará dinámicamente -->
+                    </div>
+                </div>
+                
+                <!-- Próxima clase programada -->
+                <div id="proximaClaseContainer" class="mb-6 p-6 bg-white rounded-xl shadow-sm border-l-4 border-purple-500" style="display: none;">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-clock mr-2 text-purple-500"></i>
+                        Próxima Clase
+                    </h3>
+                    <div id="proximaClaseInfo" class="space-y-3">
+                        <!-- La información se insertará dinámicamente -->
+                    </div>
+                </div>
+            </div>
         </div>
-        </div>
-    </x-modal>
+    </div>
 
     <!-- Modal para reconocimiento -->
     <x-modal name="reconocimiento" :show="false" focusable>
@@ -468,21 +429,11 @@
                             <option value="3">3 módulos</option>
                             <option value="4">4 módulos</option>
                             <option value="5">5 módulos</option>
-                            <option value="6">6 módulos</option>
-                            <option value="7">7 módulos</option>
-                            <option value="8">8 módulos</option>
-                            <option value="9">9 módulos</option>
-                            <option value="10">10 módulos</option>
-                            <option value="11">11 módulos</option>
-                            <option value="12">12 módulos</option>
-                            <option value="13">13 módulos</option>
-                            <option value="14">14 módulos</option>
-                            <option value="15">15 módulos</option>
                         </select>
                     </div>
 
                     <div class="flex pt-4 space-x-3">
-                        <button type="button" onclick="cancelarRegistro()"
+                        <button type="button" onclick="cancelarRegistroSolicitante()"
                             class="flex-1 px-4 py-2 text-gray-700 bg-gray-200 border border-gray-300 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">
                             Cancelar
                         </button>
@@ -497,46 +448,62 @@
     </x-modal>
 
     <!-- Modal para seleccionar cantidad de módulos -->
-    <div id="modal-seleccionar-modulos" class="fixed inset-0 z-50 hidden" data-modal="seleccionar-modulos">
-        <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"></div>
-        
-        <div class="fixed inset-0 z-10 overflow-y-auto">
-            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-                    <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                        <div class="sm:flex sm:items-start">
-                            <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-blue-100 sm:mx-0 sm:h-10 sm:w-10">
-                                <svg class="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left w-full">
-                                <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">
-                                    Seleccionar Módulos
-                                </h3>
-                                <div class="text-center">
-                                    <p class="mb-4 text-base text-gray-800">¿Por cuántos módulos desea reservar?</p>
-                                    <div class="mb-4">
-                                        <input type="number" id="input-cantidad-modulos" min="1" max="1" value="1"
-                                            class="w-24 px-3 py-2 text-lg text-center border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                    </div>
-                                    <div class="mb-6 text-sm text-gray-600">
-                                        Disponibles: <span id="max-modulos-disponibles" class="font-semibold text-blue-600">1</span> módulos consecutivos antes de la próxima clase/reserva.
-                                    </div>
-                                </div>
-                            </div>
+    <div id="modal-seleccionar-modulos" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="flex flex-col w-full max-h-screen mx-2 overflow-hidden bg-white rounded-lg shadow-lg max-w-2xl md:mx-8">
+            <!-- Encabezado azul con diseño tipo banner -->
+            <div class="relative flex flex-col gap-6 p-8 bg-light-cloud-blue md:flex-row md:items-center md:justify-between">
+                <!-- Círculos decorativos -->
+                <span class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                <span class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                
+                <div class="flex items-center flex-1 min-w-0 gap-5">
+                    <div class="flex flex-col items-center justify-center flex-shrink-0">
+                        <div class="p-4 mb-2 bg-white rounded-full bg-opacity-20">
+                            <i class="text-3xl text-white fa-solid fa-clock"></i>
                         </div>
                     </div>
-                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
-                        <button id="btn-confirmar-modulos" type="button"
-                            class="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:ml-3 sm:w-auto">
-                            Reservar
-                        </button>
-                        <button type="button" onclick="cerrarModalModulos()"
-                            class="mt-3 inline-flex w-full justify-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto">
+                    <div class="flex flex-col min-w-0">
+                        <h1 class="text-3xl font-bold text-white truncate">Seleccionar Módulos</h1>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-lg truncate text-white/80">Reserva de Espacio</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
+                    <button onclick="cerrarModalModulos()" class="ml-2 text-3xl font-bold text-white hover:text-gray-200">&times;</button>
+                </div>
+            </div>
+            
+            <!-- Contenido del modal -->
+            <div class="p-6 bg-gray-50 overflow-y-auto max-h-[70vh] flex-1">
+              <!-- Selección de módulos -->
+                <div class="mb-6 p-4 bg-white rounded-lg shadow-sm">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Configuración de Reserva</h3>
+                    <div class="text-center mb-4">
+                        <p class="text-base text-gray-700 mb-4">¿Por cuántos módulos desea reservar?</p>
+                        <div class="flex items-center justify-center gap-4">
+                            <input type="number" id="input-cantidad-modulos" min="1" max="1" value="1"
+                                class="w-24 px-4 py-3 text-xl text-center border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-semibold">
+                            <span class="text-sm text-gray-600">
+                                de <span id="max-modulos-disponibles" class="font-semibold text-blue-600">1</span> disponibles
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Información detallada de módulos -->
+                <div id="info-modulos-disponibles" class="mb-6"></div>
+                
+                <!-- Botones de acción -->
+                <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                    <button onclick="cerrarModalModulos()"
+                        class="px-6 py-2 text-sm font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition">
                             Cancelar
                         </button>
-                    </div>
+                    <x-button id="btn-confirmar-modulos" variant='add'>
+                        Confirmar Reserva
+                    </x-button>
                 </div>
             </div>
         </div>
@@ -613,16 +580,10 @@
     </x-modal>
 
     <script>
-        // ========================================
-        // VARIABLE PHP PARA EL ID DEL MAPA
-        // ========================================
         @php
             $mapaIdValue = $mapa->id_mapa ?? 1;
         @endphp
 
-        // ========================================
-        // POLYFILL PARA ROUNDRECT (COMPATIBILIDAD)
-        // ========================================
         if (!CanvasRenderingContext2D.prototype.roundRect) {
             CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, radius) {
                 if (width < 2 * radius) radius = width / 2;
@@ -638,144 +599,191 @@
             };
         }
 
-        // ========================================
-        // VARIABLES GLOBALES PARA EL ESCÁNER QR
-        // ========================================
-        let bufferQR = ''; // Buffer para almacenar el código QR escaneado
-        let esperandoProfesor = true; // Flag para indicar si estamos esperando escanear profesor o espacio
-        let profesorEscaneado = null; // Profesor que se escaneó
+        // Definición de horarios de módulos (debe ir antes de las funciones que lo usan)
+        const horariosModulos = {
+            lunes: {
+                1: { inicio: '08:10:00', fin: '09:00:00' },
+                2: { inicio: '09:10:00', fin: '10:00:00' },
+                3: { inicio: '10:10:00', fin: '11:00:00' },
+                4: { inicio: '11:10:00', fin: '12:00:00' },
+                5: { inicio: '12:10:00', fin: '13:00:00' },
+                6: { inicio: '13:10:00', fin: '14:00:00' },
+                7: { inicio: '14:10:00', fin: '15:00:00' },
+                8: { inicio: '15:10:00', fin: '16:00:00' },
+                9: { inicio: '16:10:00', fin: '17:00:00' },
+                10: { inicio: '17:10:00', fin: '18:00:00' },
+                11: { inicio: '18:10:00', fin: '19:00:00' },
+                12: { inicio: '19:10:00', fin: '20:00:00' },
+                13: { inicio: '20:10:00', fin: '21:00:00' },
+                14: { inicio: '21:10:00', fin: '22:00:00' },
+                15: { inicio: '22:10:00', fin: '23:00:00' }
+            },
+            martes: {
+                1: { inicio: '08:10:00', fin: '09:00:00' },
+                2: { inicio: '09:10:00', fin: '10:00:00' },
+                3: { inicio: '10:10:00', fin: '11:00:00' },
+                4: { inicio: '11:10:00', fin: '12:00:00' },
+                5: { inicio: '12:10:00', fin: '13:00:00' },
+                6: { inicio: '13:10:00', fin: '14:00:00' },
+                7: { inicio: '14:10:00', fin: '15:00:00' },
+                8: { inicio: '15:10:00', fin: '16:00:00' },
+                9: { inicio: '16:10:00', fin: '17:00:00' },
+                10: { inicio: '17:10:00', fin: '18:00:00' },
+                11: { inicio: '18:10:00', fin: '19:00:00' },
+                12: { inicio: '19:10:00', fin: '20:00:00' },
+                13: { inicio: '20:10:00', fin: '21:00:00' },
+                14: { inicio: '21:10:00', fin: '22:00:00' },
+                15: { inicio: '22:10:00', fin: '23:00:00' }
+            },
+            miercoles: {
+                1: { inicio: '08:10:00', fin: '09:00:00' },
+                2: { inicio: '09:10:00', fin: '10:00:00' },
+                3: { inicio: '10:10:00', fin: '11:00:00' },
+                4: { inicio: '11:10:00', fin: '12:00:00' },
+                5: { inicio: '12:10:00', fin: '13:00:00' },
+                6: { inicio: '13:10:00', fin: '14:00:00' },
+                7: { inicio: '14:10:00', fin: '15:00:00' },
+                8: { inicio: '15:10:00', fin: '16:00:00' },
+                9: { inicio: '16:10:00', fin: '17:00:00' },
+                10: { inicio: '17:10:00', fin: '18:00:00' },
+                11: { inicio: '18:10:00', fin: '19:00:00' },
+                12: { inicio: '19:10:00', fin: '20:00:00' },
+                13: { inicio: '20:10:00', fin: '21:00:00' },
+                14: { inicio: '21:10:00', fin: '22:00:00' },
+                15: { inicio: '22:10:00', fin: '23:00:00' }
+            },
+            jueves: {
+                1: { inicio: '08:10:00', fin: '09:00:00' },
+                2: { inicio: '09:10:00', fin: '10:00:00' },
+                3: { inicio: '10:10:00', fin: '11:00:00' },
+                4: { inicio: '11:10:00', fin: '12:00:00' },
+                5: { inicio: '12:10:00', fin: '13:00:00' },
+                6: { inicio: '13:10:00', fin: '14:00:00' },
+                7: { inicio: '14:10:00', fin: '15:00:00' },
+                8: { inicio: '15:10:00', fin: '16:00:00' },
+                9: { inicio: '16:10:00', fin: '17:00:00' },
+                10: { inicio: '17:10:00', fin: '18:00:00' },
+                11: { inicio: '18:10:00', fin: '19:00:00' },
+                12: { inicio: '19:10:00', fin: '20:00:00' },
+                13: { inicio: '20:10:00', fin: '21:00:00' },
+                14: { inicio: '21:10:00', fin: '22:00:00' },
+                15: { inicio: '22:10:00', fin: '23:00:00' }
+            },
+            viernes: {
+                1: { inicio: '08:10:00', fin: '09:00:00' },
+                2: { inicio: '09:10:00', fin: '10:00:00' },
+                3: { inicio: '10:10:00', fin: '11:00:00' },
+                4: { inicio: '11:10:00', fin: '12:00:00' },
+                5: { inicio: '12:10:00', fin: '13:00:00' },
+                6: { inicio: '13:10:00', fin: '14:00:00' },
+                7: { inicio: '14:10:00', fin: '15:00:00' },
+                8: { inicio: '15:10:00', fin: '16:00:00' },
+                9: { inicio: '16:10:00', fin: '17:00:00' },
+                10: { inicio: '17:10:00', fin: '18:00:00' },
+                11: { inicio: '18:10:00', fin: '19:00:00' },
+                12: { inicio: '19:10:00', fin: '20:00:00' },
+                13: { inicio: '20:10:00', fin: '21:00:00' },
+                14: { inicio: '21:10:00', fin: '22:00:00' },
+                15: { inicio: '22:10:00', fin: '23:00:00' }
+            }
+        };
 
-        // ========================================
-        // VARIABLES GLOBALES PARA EL MODO DE OPERACIÓN
-        // ========================================
-        let bufferQRDevolucion = ''; // Buffer específico para devolución
-        let esperandoUsuarioDevolucion = true; // Flag para devolución
-        let usuarioEscaneadoDevolucion = null; // Usuario escaneado para devolución
-        let espacioEscaneadoDevolucion = null; // Espacio escaneado para devolución
-
-        // ========================================
-        // VARIABLES GLOBALES PARA EL FLUJO DE SOLICITUD
-        // ========================================
-        let bufferQRSolicitud = ''; // Buffer específico para solicitud
-        let esperandoUsuarioSolicitud = true; // Flag para solicitud
-        let usuarioEscaneadoSolicitud = null; // Usuario escaneado para solicitud
-        let espacioEscaneadoSolicitud = null; // Espacio escaneado para solicitud
-
-        // ========================================
-        // VARIABLES GLOBALES PARA USUARIOS NO REGISTRADOS
-        // ========================================
-
-        let modoOperacionActual = null; // 'solicitud' o 'devolucion'
-
-        // ========================================
-        // VARIABLES GLOBALES PARA SOLICITANTES
-        // ========================================
-        let runSolicitantePendiente = null; // RUN del solicitante pendiente
-
-
-
-        // ========================================
-        // LÓGICA PARA RESERVA POR MÓDULOS
-        // ========================================
+        let bufferQR = '';
+        let ordenEscaneo = 'usuario';
+        let usuarioEscaneado = null;
+        let espacioEscaneado = null;
+        let procesandoDevolucion = false;
+        let runSolicitantePendiente = null;
         let maxModulosDisponibles = 1;
         let espacioParaReserva = null;
         let runParaReserva = null;
-
-        // ========================================
-        // OBTENER ID DEL MAPA DESDE EL CONTROLADOR
-        // ========================================
         const mapaId = @json($mapaIdValue);
 
-        // ========================================
-        // CONFIGURACIÓN GLOBAL PARA LOS INDICADORES
-        // ========================================
         const config = {
-            indicatorSize: 35, // Tamaño del indicador
-            indicatorWidth: 37, // Ancho del indicador
-            indicatorHeight: 37, // Alto del indicador
-            indicatorBorder: '#FFFFFF', // Color del borde
-            indicatorTextColor: '#FFFFFF', // Color del texto
-            fontSize: 12 // Tamaño de fuente
+            indicatorSize: 35,
+            indicatorWidth: 37,
+            indicatorHeight: 37,
+            indicatorBorder: '#FFFFFF',
+            indicatorTextColor: '#FFFFFF',
+            fontSize: 12
         };
 
-        // ========================================
-        // VARIABLES GLOBALES PARA EL ESTADO DEL MAPA
-        // ========================================
         const state = {
-            mapImage: null, // Imagen del mapa
-            originalImageSize: null, // Tamaño original de la imagen
-            indicators: @json($bloques) || [], // Indicadores/bloques del mapa
-            originalCoordinates: @json($bloques) || [], // Coordenadas originales
-            isImageLoaded: false, // Si la imagen está cargada
-            mouseX: 0, // Posición X del mouse
-            mouseY: 0, // Posición Y del mouse
-            updateInterval: null, // Intervalo de actualización
-            hoveredIndicator: null, // Indicador sobre el que está el mouse
-            lastLocalChange: null, // Timestamp del último cambio local
-            ultimoCambioLocal: null // Timestamp del último cambio local
+            mapImage: null,
+            originalImageSize: null,
+            indicators: @json($bloques) || [],
+            originalCoordinates: @json($bloques) || [],
+            isImageLoaded: false,
+            mouseX: 0,
+            mouseY: 0,
+            updateInterval: null,
+            hoveredIndicator: null,
+            lastLocalChange: null,
+            ultimoCambioLocal: null
         };
 
-        // ========================================
-        // VARIABLES GLOBALES PARA LOS ELEMENTOS DEL CANVAS
-        // ========================================
         let elements = {
-            mapCanvas: null, // Canvas del mapa
-            mapCtx: null, // Contexto del canvas del mapa
-            indicatorsCanvas: null, // Canvas de los indicadores
-            indicatorsCtx: null // Contexto del canvas de indicadores
+            mapCanvas: null,
+            mapCtx: null,
+            indicatorsCanvas: null,
+            indicatorsCtx: null
         };
 
-        // ========================================
-        // FUNCIONES PARA MOSTRAR INFORMACIÓN PROGRESIVAMENTE
-        // ========================================
+        function getQrStatus() {
+            return document.getElementById('qr-status');
+        }
 
-        // Función para mostrar información del usuario
-        function mostrarInfoUsuario(run, nombre) {
+        function getInfoUsuario() {
+            return document.getElementById('info-usuario');
+        }
+
+        function getMensajeInicial() {
+            return document.getElementById('mensaje-inicial');
+        }
+
+        function mostrarInfo(tipo, nombre, run = null) {
             // Ocultar mensaje inicial
-            const mensajeInicial = document.getElementById('mensaje-inicial');
+            const mensajeInicial = getMensajeInicial();
             if (mensajeInicial) {
                 mensajeInicial.classList.add('hidden');
             }
 
-            // Mostrar información del usuario
-            const infoUsuario = document.getElementById('info-usuario');
-            if (infoUsuario) {
-                infoUsuario.classList.remove('hidden');
-            }
+            if (tipo === 'usuario') {
+                // Mostrar información del usuario
+                const infoUsuario = getInfoUsuario();
+                if (infoUsuario) {
+                    infoUsuario.classList.remove('hidden');
+                }
 
-            // Actualizar datos del usuario
-            document.getElementById('run-escaneado').textContent = run;
-            document.getElementById('nombre-usuario').textContent = nombre;
+                // Actualizar datos del usuario
+                document.getElementById('run-escaneado').textContent = run;
+                document.getElementById('nombre-usuario').textContent = nombre;
 
-            // Quitar parpadeo del estado QR cuando se procesa usuario
-            const qrStatus = document.getElementById('qr-status');
-            if (qrStatus) {
-                qrStatus.classList.remove('parpadeo');
+                // Quitar parpadeo del estado QR cuando se procesa usuario
+                const qrStatus = getQrStatus();
+                if (qrStatus) {
+                    qrStatus.classList.remove('parpadeo');
+                }
             }
         }
 
-        // Función para mostrar información del espacio
-        function mostrarInfoEspacio(nombreEspacio) {
-            // Mostrar información del espacio
-            const infoEspacio = document.getElementById('info-espacio');
-            if (infoEspacio) {
-                infoEspacio.classList.remove('hidden');
-            }
-
-            // Actualizar datos del espacio
-            document.getElementById('nombre-espacio').textContent = nombreEspacio;
-        }
-
-        // Función para resetear la interfaz
-        function resetearInterfaz() {
-            // Ocultar información del usuario y espacio
-            const infoUsuario = document.getElementById('info-usuario');
-            const infoEspacio = document.getElementById('info-espacio');
+        function limpiarEstadoCompleto() {
+            // Resetear variables globales
+            ordenEscaneo = 'usuario';
+            usuarioEscaneado = null;
+            espacioEscaneado = null;
+            espacioParaReserva = null;
+            runParaReserva = null;
+            
+            // Limpiar buffers
+            bufferQR = '';
+            
+            // Ocultar información del usuario
+            const infoUsuario = getInfoUsuario();
             if (infoUsuario) infoUsuario.classList.add('hidden');
-            if (infoEspacio) infoEspacio.classList.add('hidden');
 
             // Mostrar mensaje inicial
-            const mensajeInicial = document.getElementById('mensaje-inicial');
+            const mensajeInicial = getMensajeInicial();
             if (mensajeInicial) {
                 mensajeInicial.classList.remove('hidden');
             }
@@ -783,10 +791,9 @@
             // Limpiar datos
             document.getElementById('run-escaneado').textContent = '--';
             document.getElementById('nombre-usuario').textContent = '--';
-            document.getElementById('nombre-espacio').textContent = '--';
 
             // Restaurar parpadeo del estado QR
-            const qrStatus = document.getElementById('qr-status');
+            const qrStatus = getQrStatus();
             if (qrStatus) {
                 qrStatus.classList.add('parpadeo');
                 qrStatus.innerHTML = 'Esperando... Escanea el código QR';
@@ -797,50 +804,8 @@
             if (qrInput) {
                 qrInput.value = '';
             }
-            
-            // Limpiar buffer de QR si existe
-            if (typeof bufferQR !== 'undefined') {
-                bufferQR = '';
-            }
-            
-            // Limpiar buffer de solicitud QR si existe
-            if (typeof bufferQRSolicitud !== 'undefined') {
-                bufferQRSolicitud = '';
-            }
-        }
-        
-        // Función para limpiar completamente el estado de la aplicación
-        function limpiarEstadoCompleto() {
-            // Resetear variables globales
-            ordenEscaneo = 'usuario';
-            profesorEscaneado = null;
-            espacioParaReserva = null;
-            runParaReserva = null;
-            
-            // Limpiar buffers
-            if (typeof bufferQR !== 'undefined') {
-                bufferQR = '';
-            }
-            if (typeof bufferQRSolicitud !== 'undefined') {
-                bufferQRSolicitud = '';
-            }
-            
-            // Resetear interfaz visual
-            resetearInterfaz();
-            
-            // Restaurar parpadeo del estado QR
-            const qrStatus = document.getElementById('qr-status');
-            if (qrStatus) {
-                qrStatus.classList.add('parpadeo');
-                qrStatus.innerHTML = 'Esperando... Escanea el código QR';
-            }
         }
 
-        // ========================================
-        // FUNCIONES DE VERIFICACIÓN DE USUARIO Y ESPACIO
-        // ========================================
-
-        // Función para verificar si un usuario existe en el sistema
         async function verificarUsuario(run) {
             try {
                 const response = await fetch(`/api/verificar-usuario/${run}`);
@@ -854,7 +819,6 @@
 
 
 
-        // Función para verificar si un espacio existe y está disponible
         async function verificarEspacio(idEspacio) {
             try {
                 const response = await fetch(`/api/verificar-espacio/${idEspacio}`);
@@ -866,42 +830,20 @@
             }
         }
 
-        // Función para verificar si un profesor tiene clases programadas
         async function verificarClasesProfesor(run) {
             try {
-                console.log('🔍 Verificando clases para profesor:', run);
                 const response = await fetch(`/api/verificar-clases-programadas/${run}`);
                 const result = await response.json();
-                console.log('📡 Respuesta completa del endpoint:', result);
                 
-                // La respuesta tiene una estructura extraña, necesitamos acceder a result.original
                 const data = result.original || result;
-                console.log('📊 Datos extraídos:', data);
-                console.log('✅ data.success:', data.success, 'tipo:', typeof data.success);
-                console.log('📚 data.tiene_clases:', data.tiene_clases, 'tipo:', typeof data.tiene_clases);
-                
-                // Verificar si la respuesta es exitosa y tiene clases
                 const tieneClases = data.success && data.tiene_clases;
-                console.log('🔍 Condición evaluada: data.success && data.tiene_clases =', tieneClases);
                 
-                if (tieneClases) {
-                    console.log('✅ Profesor TIENE clases programadas - retornando TRUE');
-                    return true;
-                } else {
-                    console.log('❌ Profesor NO tiene clases programadas - retornando FALSE');
-                    console.log('   Detalles:');
-                    console.log('     - data.success:', data.success);
-                    console.log('     - data.tiene_clases:', data.tiene_clases);
-                    console.log('     - data.success && data.tiene_clases:', data.success && data.tiene_clases);
-                    return false;
-                }
+                return tieneClases;
             } catch (error) {
-                console.error('💥 Error en verificarClasesProfesor:', error);
                 return false;
             }
         }
 
-        // Función para crear una reserva
         async function crearReserva(run, idEspacio, tipoUsuario = 'profesor') {
             try {
                 const response = await fetch('/api/crear-reserva', {
@@ -923,7 +865,6 @@
             }
         }
 
-        // Función para registrar asistencia de profesor con clases programadas
         async function registrarAsistenciaProfesor(run, idEspacio) {
             try {
                 const response = await fetch('/api/registrar-uso-espacio', {
@@ -946,7 +887,6 @@
 
 
 
-        // Función para registrar solicitante
         async function registrarSolicitante(datosSolicitante) {
             try {
                 const response = await fetch('/api/registrar-solicitante', {
@@ -964,7 +904,6 @@
             }
         }
 
-        // Función para crear reserva de solicitante
         async function crearReservaSolicitante(runSolicitante, idEspacio) {
             try {
                 const response = await fetch('/api/crear-reserva-solicitante', {
@@ -986,7 +925,6 @@
             }
         }
 
-        // Función para devolver espacio
         async function devolverEspacio(runUsuario, idEspacio) {
             try {
                 const response = await fetch('/api/devolver-espacio', {
@@ -1007,10 +945,8 @@
             }
         }
 
-        // Función para verificar el estado del espacio y las reservas del usuario
         async function verificarEstadoEspacioYReserva(runUsuario, idEspacio) {
             try {
-                console.log('Verificando estado del espacio y reserva:', { runUsuario, idEspacio });
                 const response = await fetch('/api/verificar-estado-espacio-reserva', {
                     method: 'POST',
                     headers: {
@@ -1023,10 +959,8 @@
                     })
                 });
                 const result = await response.json();
-                console.log('Resultado de verificación:', result);
                 return result;
             } catch (error) {
-                console.error('Error:', error);
                 return {
                     tipo: 'error',
                     mensaje: 'Error de conexión al verificar el estado del espacio'
@@ -1034,13 +968,8 @@
             }
         }
 
-        // ========================================
-        // NUEVA LÓGICA DE ESCANEO QR CON VALIDACIÓN DE ORDEN
-        // ========================================
         let lastBufferLength = 0;
         let processingTimeout = null;
-        let ordenEscaneo = 'usuario'; // Controla el orden: 'usuario' -> 'espacio'
-        let procesandoDevolucion = false; // Flag para evitar procesamiento múltiple
         
         async function handleScan(event) {
             // Solo procesar cuando se presiona Enter
@@ -1070,7 +999,6 @@
             await procesarQRCompleto();
         }
         
-        // Función para procesar el QR completo con validación de orden
         async function procesarQRCompleto() {
             // Validar orden de escaneo
             if (ordenEscaneo === 'usuario') {
@@ -1082,7 +1010,6 @@
                 
                 // Si la devolución fue exitosa, no continuar con más procesamiento
                 if (resultado === 'devolucion_exitosa') {
-                    console.log('Devolución exitosa - deteniendo procesamiento adicional');
                     return;
                 }
             } else {
@@ -1103,12 +1030,10 @@
             }
         }
 
-        // Función para procesar QR de usuario con diferenciación de tipos
         async function procesarUsuario() {
             // Extraer RUN del QR (buscar "RUN" seguido de números)
             const runMatch = bufferQR.match(/RUN[^0-9]*(\d+)/);
             if (!runMatch) {
-                console.error('Error: Formato de RUN no válido');
                 return;
             }
 
@@ -1118,36 +1043,28 @@
             const usuarioInfo = await verificarUsuario(run);
             
             if (!usuarioInfo) {
-                console.error('Error: Error al verificar usuario');
                 return;
             }
 
             if (usuarioInfo.verificado) {
                 if (usuarioInfo.tipo_usuario === 'profesor') {
                     // Es profesor - verificar si tiene clases programadas
-                    console.log('👨‍🏫 Usuario es profesor, verificando clases...');
                     const tieneClases = await verificarClasesProfesor(run);
-                    console.log('🎯 Resultado de verificarClasesProfesor:', tieneClases, 'tipo:', typeof tieneClases);
                     
                     if (tieneClases === true) {
-                        console.log('✅ Profesor CON clases - mostrando mensaje de asistencia');
                         // Profesor CON clases - solo registra solicitud
                         document.getElementById('qr-status').innerHTML = 'Profesor con clases verificado. Escanee el espacio para registrar asistencia.';
                         // Mostrar información del usuario
-                        mostrarInfoUsuario(usuarioInfo.usuario.run, usuarioInfo.usuario.nombre);
-                        profesorEscaneado = run;
+                        mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
+                        usuarioEscaneado = run;
                         ordenEscaneo = 'espacio';
                         // No necesita devolución para volver a solicitar
                     } else {
-                        console.log('❌ Profesor SIN clases - mostrando mensaje de solicitud');
-                        console.log('   Valor exacto de tieneClases:', tieneClases);
-                        console.log('   Comparación tieneClases === true:', tieneClases === true);
-                        console.log('   Comparación tieneClases == true:', tieneClases == true);
                         // Profesor SIN clases - solicita con módulos
                         document.getElementById('qr-status').innerHTML = 'Profesor sin clases. Escanee el espacio para solicitar.';
                         // Mostrar información del usuario
-                        mostrarInfoUsuario(usuarioInfo.usuario.run, usuarioInfo.usuario.nombre);
-                        profesorEscaneado = run;
+                        mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
+                        usuarioEscaneado = run;
                         ordenEscaneo = 'espacio';
                         // Necesitará especificar módulos (máx 2)
                     }
@@ -1155,13 +1072,12 @@
                     // Es solicitante registrado - solicita con módulos
                     document.getElementById('qr-status').innerHTML = 'Solicitante verificado. Escanee el espacio para solicitar.';
                     // Mostrar información del usuario
-                    mostrarInfoUsuario(usuarioInfo.usuario.run, usuarioInfo.usuario.nombre);
-                    profesorEscaneado = run;
+                    mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
+                    usuarioEscaneado = run;
                     ordenEscaneo = 'espacio';
                     // Necesitará especificar módulos (máx 2)
                 } else {
                     // Otro tipo de usuario - mostrar error
-                    console.error('Error: Tipo de usuario no válido para solicitar espacios');
                 }
             } else {
                 // Usuario no encontrado - mostrar modal de registro de solicitante
@@ -1182,24 +1098,19 @@
             }
         }
 
-        // Función para procesar QR de espacio con manejo de diferentes casos
         async function procesarEspacio() {
             // Extraer código de espacio (buscar "TH" seguido de letras/números)
             const espacioMatch = bufferQR.match(/(TH[^A-Z0-9]*[A-Z0-9]+)/);
             if (!espacioMatch) {
-                console.error('Error: Código de espacio no válido');
                 return;
             }
 
             const espacio = espacioMatch[1].replace(/[^A-Z0-9]/g, '-');
 
             // Verificar estado del espacio y reservas del usuario
-            console.log('Verificando estado para usuario:', profesorEscaneado, 'espacio:', espacio);
-            const resultadoVerificacion = await verificarEstadoEspacioYReserva(profesorEscaneado, espacio);
-            console.log('Resultado de verificación completo:', resultadoVerificacion);
+            const resultadoVerificacion = await verificarEstadoEspacioYReserva(usuarioEscaneado, espacio);
             
             if (resultadoVerificacion.tipo === 'error') {
-                console.error('Error en verificación:', resultadoVerificacion.mensaje);
                 ordenEscaneo = 'usuario';
                 return;
             }
@@ -1207,20 +1118,17 @@
             if (resultadoVerificacion.tipo === 'devolucion') {
                 // Evitar procesamiento múltiple
                 if (procesandoDevolucion) {
-                    console.log('Devolución ya en proceso, ignorando...');
                     return 'devolucion_en_proceso';
                 }
                 
                 procesandoDevolucion = true;
                 
                 // El usuario tiene una reserva activa en este espacio - procesar devolución automáticamente
-                console.log('Procesando devolución automática para usuario:', profesorEscaneado, 'espacio:', espacio);
                 
                 // Mostrar mensaje de devolución en proceso
                 document.getElementById('qr-status').innerHTML = 'Procesando devolución...';
                 
-                const devolucion = await devolverEspacio(profesorEscaneado, espacio);
-                console.log('Resultado de devolución:', devolucion);
+                const devolucion = await devolverEspacio(usuarioEscaneado, espacio);
                 
                                     if (devolucion && devolucion.success) {
                         // Actualizar indicador en el mapa
@@ -1267,9 +1175,6 @@
             }
 
             if (resultadoVerificacion.tipo === 'reserva_existente') {
-                console.log('🔍 DEBUG: Usuario ya tiene reserva activa en otro espacio');
-                console.log('   - profesorEscaneado:', profesorEscaneado);
-                console.log('   - mensaje:', resultadoVerificacion.mensaje);
                 
                 // Mostrar Sweet Alert de reserva existente
                 Swal.fire({
@@ -1293,16 +1198,9 @@
             }
 
             if (resultadoVerificacion.tipo === 'espacio_ocupado') {
-                console.log('🔍 DEBUG: Espacio ocupado detectado');
-                console.log('   - profesorEscaneado:', profesorEscaneado);
-                console.log('   - resultadoVerificacion.ocupante:', resultadoVerificacion.ocupante);
-                console.log('   - resultadoVerificacion.ocupante?.run:', resultadoVerificacion.ocupante?.run);
-                console.log('   - Comparación run:', resultadoVerificacion.ocupante?.run === profesorEscaneado);
-                
                 // Verificar si el ocupante es el mismo usuario que acaba de escanear
-                if (resultadoVerificacion.ocupante && resultadoVerificacion.ocupante.run === profesorEscaneado) {
+                if (resultadoVerificacion.ocupante && resultadoVerificacion.ocupante.run === usuarioEscaneado) {
                     // Es el mismo usuario, no mostrar mensaje de ocupado
-                    console.log('✅ Usuario escaneó su propio espacio ocupado, no mostrar mensaje');
                     ordenEscaneo = 'usuario';
                     return;
                 }
@@ -1324,8 +1222,7 @@
                     `;
                 }
                 
-                // Mostrar mensaje de espacio ocupado en consola
-                console.log('Espacio Ocupado:', mensajeDetallado);
+
                 
                 // Limpiar estado después de mostrar el mensaje
                 setTimeout(() => {
@@ -1338,30 +1235,21 @@
 
             // Si llegamos aquí, el espacio está disponible para crear una nueva reserva
             // Verificar el tipo de usuario para determinar el flujo
-            const usuarioInfo = await verificarUsuario(profesorEscaneado);
+            const usuarioInfo = await verificarUsuario(usuarioEscaneado);
             
             if (!usuarioInfo || !usuarioInfo.verificado) {
-                console.error('Error: Error al verificar usuario para crear reserva');
                 ordenEscaneo = 'usuario';
                 return;
             }
 
             // Determinar el flujo según el tipo de usuario
-            console.log('Usuario info completa:', usuarioInfo);
-            console.log('Tipo usuario detectado:', usuarioInfo.tipo_usuario);
-            
             if (usuarioInfo.tipo_usuario === 'profesor') {
-                console.log('✅ Usuario es profesor, verificando clases...');
                 // Verificar si tiene clases programadas
-                const tieneClases = await verificarClasesProfesor(profesorEscaneado);
-                console.log('Tipo usuario:', usuarioInfo.tipo_usuario);
-                console.log('Tiene clases:', tieneClases);
-                console.log('Tipo de dato tieneClases:', typeof tieneClases);
+                const tieneClases = await verificarClasesProfesor(usuarioEscaneado);
                 
                 if (tieneClases === true) {
-                    console.log('✅ Profesor CON clases - registrando asistencia automática');
                     // CASO 1: Profesor CON clases - registrar asistencia usando endpoint específico
-                    const resultado = await registrarAsistenciaProfesor(profesorEscaneado, espacio);
+                    const resultado = await registrarAsistenciaProfesor(usuarioEscaneado, espacio);
                     if (resultado && resultado.success) {
                         // Mostrar mensaje de proceso
                         document.getElementById('qr-status').innerHTML = 'Registrando asistencia...';
@@ -1392,21 +1280,16 @@
                         
                         // Limpiar completamente la interfaz después de un delay
                         setTimeout(() => {
-                            // Limpiar todo excepto profesorEscaneado
+                            // Limpiar todo excepto usuarioEscaneado
                             ordenEscaneo = 'usuario';
                             espacioParaReserva = null;
                             runParaReserva = null;
                             
                             // Limpiar buffers
-                            if (typeof bufferQR !== 'undefined') {
                                 bufferQR = '';
-                            }
-                            if (typeof bufferQRSolicitud !== 'undefined') {
-                                bufferQRSolicitud = '';
-                            }
                             
                             // Resetear interfaz visual
-                            resetearInterfaz();
+                            limpiarEstadoCompleto();
                             
                             // Restaurar parpadeo del estado QR
                             const qrStatus = document.getElementById('qr-status');
@@ -1415,9 +1298,9 @@
                                 qrStatus.innerHTML = 'Esperando... Escanea el código QR';
                             }
                             
-                            // Limpiar profesorEscaneado después de 5 segundos
+                            // Limpiar usuarioEscaneado después de 5 segundos
                             setTimeout(() => {
-                                profesorEscaneado = null;
+                                usuarioEscaneado = null;
                             }, 5000);
                         }, 2000);
                     } else {
@@ -1429,18 +1312,17 @@
                     console.log('Comparación tieneClases === true:', tieneClases === true);
                     console.log('Comparación tieneClases == true:', tieneClases == true);
                     // CASO 2: Profesor SIN clases - solicita con módulos (máx 2)
-                    await mostrarModalSeleccionarModulos(espacio, profesorEscaneado, 2); // Máximo 2 módulos
+                    await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado, 2); // Máximo 2 módulos
                     return; // No continuar, esperar selección de módulos
                 }
             } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
                 // CASO 3: Solicitante registrado - solicita con módulos (máx 2)
-                await mostrarModalSeleccionarModulos(espacio, profesorEscaneado, 2); // Máximo 2 módulos
+                await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado, 2); // Máximo 2 módulos
                 return; // No continuar, esperar selección de módulos
-            } else {
-                console.error('Error: Tipo de usuario no válido para crear reserva');
-                ordenEscaneo = 'usuario';
-                return;
-            }
+                            } else {
+                    ordenEscaneo = 'usuario';
+                    return;
+                }
 
             // Resetear para siguiente usuario
             setTimeout(() => {
@@ -1450,9 +1332,6 @@
             return 'procesamiento_completado';
         }
 
-        // ========================================
-        // FUNCIÓN PARA INICIALIZAR LOS ELEMENTOS DEL CANVAS
-        // ========================================
         function initElements() {
             elements.mapCanvas = document.getElementById('mapCanvas');
             elements.mapCtx = elements.mapCanvas.getContext('2d');
@@ -1460,9 +1339,6 @@
             elements.indicatorsCtx = elements.indicatorsCanvas.getContext('2d');
         }
 
-        // ========================================
-        // FUNCIÓN PARA DETECTAR QUÉ INDICADOR ESTÁ SIENDO HOVER
-        // ========================================
         function getHoveredIndicator(mouseX, mouseY) {
             if (!state.isImageLoaded) return null;
 
@@ -1486,9 +1362,6 @@
             return null;
         }
 
-        // ========================================
-        // FUNCIÓN PARA MANEJAR EL MOVIMIENTO DEL MOUSE
-        // ========================================
         function handleMouseMove(event) {
             const rect = elements.indicatorsCanvas.getBoundingClientRect();
             const mouseX = event.clientX - rect.left;
@@ -1506,9 +1379,6 @@
             }
         }
 
-        // ========================================
-        // FUNCIÓN PARA MANEJAR EL CLIC DEL MOUSE
-        // ========================================
         function handleMouseClick(event) {
             const rect = elements.indicatorsCanvas.getBoundingClientRect();
             const mouseX = event.clientX - rect.left;
@@ -1521,9 +1391,6 @@
             }
         }
 
-        // ========================================
-        // FUNCIÓN PARA MANEJAR CUANDO EL MOUSE SALE DEL CANVAS
-        // ========================================
         function handleMouseLeave() {
             if (state.hoveredIndicator) {
                 state.hoveredIndicator = null;
@@ -1532,9 +1399,6 @@
             }
         }
 
-        // ========================================
-        // FUNCIÓN PARA INICIALIZAR LOS CANVAS
-        // ========================================
         function initCanvases() {
             const container = elements.mapCanvas.parentElement;
             const width = container.clientWidth;
@@ -1550,9 +1414,6 @@
             drawIndicators(); // Dibujar indicadores inmediatamente
         }
 
-        // ========================================
-        // FUNCIÓN PARA DIBUJAR EL CANVAS DEL MAPA
-        // ========================================
         function drawCanvas() {
             elements.mapCtx.clearRect(0, 0, elements.mapCanvas.width, elements.mapCanvas.height);
             if (!state.mapImage) return;
@@ -1579,9 +1440,6 @@
             elements.mapCtx.drawImage(state.mapImage, offsetX, offsetY, drawWidth, drawHeight);
         }
 
-        // ========================================
-        // FUNCIÓN PARA CALCULAR LA POSICIÓN DE LOS INDICADORES
-        // ========================================
         function calculatePosition(indicator) {
             if (!state.isImageLoaded || !state.mapImage) return {
                 x: 0,
@@ -1622,9 +1480,6 @@
             };
         }
 
-        // ========================================
-        // FUNCIÓN PARA DIBUJAR UN INDICADOR
-        // ========================================
         function dibujarIndicador(elements, position, finalWidth, finalHeight, color, id, isHovered, detalles,
             moduloActual) {
             // Calcular el factor de escala para el efecto hover
@@ -1670,9 +1525,6 @@
             });
         }
 
-        // ========================================
-        // FUNCIÓN PARA DIBUJAR TODOS LOS INDICADORES
-        // ========================================
         function drawIndicators() {
             if (!state.isImageLoaded || !elements.indicatorsCanvas) {
                 return;
@@ -1722,851 +1574,483 @@
             });
         }
 
-        // ========================================
-        // FUNCIÓN PARA MOSTRAR EL MODAL CON LA INFORMACIÓN DEL ESPACIO
-        // ========================================
         async function mostrarModalEspacio(indicator) {
-            // Obtener elementos del modal
-            const modalTitulo = document.getElementById('modalTitulo');
-            const modalEstado = document.getElementById('modalEstado');
-            const modalPlanificacionAsignatura = document.getElementById('modalPlanificacionAsignatura');
-            const modalPlanificacionProfesor = document.getElementById('modalPlanificacionProfesor');
-            const modalPlanificacionModulo = document.getElementById('modalPlanificacionModulo');
-            const modalPlanificacionHorario = document.getElementById('modalPlanificacionHorario');
-            const modalProxima = document.getElementById('modalProxima');
-            const modalProximaDetalles = document.getElementById('modalProximaDetalles');
+            console.log('Mostrando modal para espacio:', indicator);
+            
+            // Mostrar el modal inmediatamente
+            const modal = document.getElementById('modal-espacio-info');
+            if (modal) {
+                modal.classList.remove('hidden');
+                console.log('Modal de espacio mostrado inmediatamente');
+            } else {
+                console.error('No se encontró el modal de espacio');
+                return;
+            }
+            
+            // Obtener elementos del modal una sola vez
+            const elements = {
+                modalTitulo: document.getElementById('modalTitulo'),
+                modalSubtitulo: document.getElementById('modalSubtitulo'),
+                modalEstado: document.getElementById('modalEstado'),
+                estadoDetalles: document.getElementById('estadoDetalles'),
+                ocupanteContainer: document.getElementById('ocupanteContainer'),
+                ocupanteInfo: document.getElementById('ocupanteInfo'),
+                claseActualContainer: document.getElementById('claseActualContainer'),
+                claseActualInfo: document.getElementById('claseActualInfo'),
+                proximaClaseContainer: document.getElementById('proximaClaseContainer'),
+                proximaClaseInfo: document.getElementById('proximaClaseInfo'),
+                tipoEspacio: document.getElementById('tipoEspacio'),
+                capacidadEspacio: document.getElementById('capacidadEspacio'),
+                pisoEspacio: document.getElementById('pisoEspacio'),
+                ultimaActualizacion: document.getElementById('ultimaActualizacion'),
+                estadoPill: document.getElementById('estadoPill'),
+                estadoIcon: document.getElementById('estadoIcon')
+            };
 
-            // Configurar el título del modal
-            modalTitulo.textContent = `${indicator.nombre} (${indicator.id}) `;
+            // Configurar información básica del modal inmediatamente (sin esperar)
+            configurarInformacionBasica(elements, indicator);
+            
+            // Configurar estado inmediatamente
+            configurarEstado(elements, indicator);
+            
+            // Mostrar loading optimizado
+            mostrarLoadingOptimizado(elements);
 
-            // Configurar el estado del espacio
-            let estadoTexto = '';
-            let estadoColor = '';
-            switch (indicator.estado) {
-                case '#FF0000':
-                    estadoTexto = 'Ocupado';
-                    estadoColor = 'text-red-600';
-                    break;
-                case '#3B82F6':
-                    estadoTexto = 'Próximo a ocuparse';
-                    estadoColor = 'text-blue-600';
-                    break;
-                case '#FFA500':
-                    estadoTexto = 'Reservado';
-                    estadoColor = 'text-yellow-500';
-                    break;
-                case '#059669':
-                    estadoTexto = 'Disponible';
-                    estadoColor = 'text-green-600';
-                    break;
-                default:
-                    estadoTexto = 'Sin estado';
-                    estadoColor = 'text-gray-600';
+            // Cargar información detallada en paralelo con timeout
+            const dataPromise = cargarInformacionDetallada(indicator.id);
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout')), 5000)
+            );
+
+            try {
+                const data = await Promise.race([dataPromise, timeoutPromise]);
+                console.log('Información detallada del espacio:', data);
+
+                if (data.success) {
+                    // Renderizar información optimizada
+                    renderizarInformacionOcupante(elements, data);
+                } else {
+                    mostrarErrorCarga(elements, 'No se pudo cargar la información');
+                }
+            } catch (error) {
+                console.error('Error al cargar información:', error);
+                mostrarErrorCarga(elements, 'Error de conexión');
+            }
+        }
+
+        // Función para configurar información básica
+        function configurarInformacionBasica(elements, indicator) {
+            if (elements.modalTitulo) {
+                elements.modalTitulo.textContent = `${indicator.nombre} (${indicator.id})`;
+            }
+            
+            if (elements.modalSubtitulo) {
+                elements.modalSubtitulo.textContent = `${indicator.tipo || 'Espacio'}`;
             }
 
-            // Agregar información del ocupante si está ocupado o reservado
-            let usuarioOcupando = '';
-            let informacionUsuario = '';
+            if (elements.tipoEspacio) {
+                elements.tipoEspacio.textContent = indicator.tipo || 'No especificado';
+            }
+            if (elements.capacidadEspacio) {
+                elements.capacidadEspacio.textContent = indicator.capacidad || 'No especificada';
+            }
+            if (elements.pisoEspacio) {
+                elements.pisoEspacio.textContent = indicator.piso || 'No especificado';
+            }
+            if (elements.ultimaActualizacion) {
+                elements.ultimaActualizacion.textContent = new Date().toLocaleString('es-CL');
+            }
+        }
 
-            // Si el espacio está ocupado, obtener información del ocupante
-            if (estadoTexto === 'Ocupado') {
-                try {
-                    const response = await fetch('/api/verificar-estado-espacio-reserva', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                        },
-                        body: JSON.stringify({
-                            run: '00000000', // RUN dummy para verificar ocupación
-                            id_espacio: indicator.id
-                        })
-                    });
+        // Función para configurar estado
+        function configurarEstado(elements, indicator) {
+            const estadoReal = indicator.estado;
+            console.log('Estado real del espacio:', estadoReal);
+            
+            const estadoConfig = {
+                'disponible': { texto: 'Disponible', pill: 'border-green-500 bg-green-50 text-green-700', icon: 'bg-green-500' },
+                'Disponible': { texto: 'Disponible', pill: 'border-green-500 bg-green-50 text-green-700', icon: 'bg-green-500' },
+                '#059669': { texto: 'Disponible', pill: 'border-green-500 bg-green-50 text-green-700', icon: 'bg-green-500' },
+                'ocupado': { texto: 'Ocupado', pill: 'border-red-500 bg-red-50 text-red-700', icon: 'bg-red-500' },
+                'Ocupado': { texto: 'Ocupado', pill: 'border-red-500 bg-red-50 text-red-700', icon: 'bg-red-500' },
+                '#FF0000': { texto: 'Ocupado', pill: 'border-red-500 bg-red-50 text-red-700', icon: 'bg-red-500' },
+                'reservado': { texto: 'Reservado', pill: 'border-yellow-400 bg-yellow-50 text-yellow-700', icon: 'bg-yellow-400' },
+                'Reservado': { texto: 'Reservado', pill: 'border-yellow-400 bg-yellow-50 text-yellow-700', icon: 'bg-yellow-400' },
+                '#FFA500': { texto: 'Reservado', pill: 'border-yellow-400 bg-yellow-50 text-yellow-700', icon: 'bg-yellow-400' },
+                '#F59E0B': { texto: 'Reservado', pill: 'border-yellow-400 bg-yellow-50 text-yellow-700', icon: 'bg-yellow-400' },
+                'proximo': { texto: 'Próximo a ocuparse', pill: 'border-blue-500 bg-blue-50 text-blue-700', icon: 'bg-blue-500' },
+                'Próximo': { texto: 'Próximo a ocuparse', pill: 'border-blue-500 bg-blue-50 text-blue-700', icon: 'bg-blue-500' },
+                '#3B82F6': { texto: 'Próximo a ocuparse', pill: 'border-blue-500 bg-blue-50 text-blue-700', icon: 'bg-blue-500' }
+            };
 
-                    const result = await response.json();
-                    
-                    if (result.tipo === 'espacio_ocupado' && result.ocupante) {
-                        const ocupante = result.ocupante;
-                        const tipoUsuario = ocupante.tipo === 'profesor' ? 'Profesor' : 'Solicitante';
-                        
-                        usuarioOcupando = `<br><span class='text-xs text-gray-700'>Ocupado por: <b>${ocupante.nombre}</b></span>`;
-                        
-                        informacionUsuario = `
-                            <div class='p-3 mt-2 rounded-lg bg-gray-50'>
-                                <h4 class='mb-2 text-sm font-semibold text-gray-800'>Información del Ocupante</h4>
-                                <div class='space-y-1 text-xs text-gray-600'>
-                                    <div><span class='font-medium'>Tipo:</span> ${tipoUsuario}</div>
-                                    <div><span class='font-medium'>Nombre:</span> ${ocupante.nombre}</div>
-                                    <div><span class='font-medium'>RUN:</span> ${ocupante.run}</div>
-                                    <div><span class='font-medium'>Hora de inicio:</span> ${ocupante.hora_inicio}</div>
-                                    <div><span class='font-medium'>Fecha:</span> ${ocupante.fecha}</div>
-                                </div>
-                            </div>
-                        `;
-                    } else if (indicator.detalles?.usuario_ocupando) {
-                        // Fallback a información existente si no se puede obtener del servidor
-                        usuarioOcupando = `<br><span class='text-xs text-gray-700'>Ocupado por: <b>${indicator.detalles.usuario_ocupando}</b></span>`;
-                        
-                        if (indicator.detalles?.reserva) {
-                            const reserva = indicator.detalles.reserva;
-                            const usuarioInfo = indicator.detalles.usuario_info;
+            const config = estadoConfig[estadoReal] || { 
+                texto: 'Sin estado', 
+                pill: 'border-gray-400 bg-gray-50 text-gray-700', 
+                icon: 'bg-gray-400' 
+            };
 
-                            informacionUsuario = `
-                                <div class='p-3 mt-2 rounded-lg bg-gray-50'>
-                                    <h4 class='mb-2 text-sm font-semibold text-gray-800'>Información del Usuario</h4>
-                                    <div class='space-y-1 text-xs text-gray-600'>
-                                        ${usuarioInfo ? `
-                                            <div><span class='font-medium'>Nombre:</span> ${usuarioInfo.nombre}</div>
-                                            <div><span class='font-medium'>Email:</span> ${usuarioInfo.email}</div>
-                                            <div><span class='font-medium'>RUN:</span> ${usuarioInfo.run}</div>
-                                        ` : ''}
-                                        <div><span class='font-medium'>Fecha de reserva:</span> ${reserva.fecha_reserva || 'No especificada'}</div>
-                                        <div><span class='font-medium'>Hora de entrada:</span> ${reserva.hora ? reserva.hora.substring(0, 5) : 'No especificada'}</div>
-                                        ${reserva.hora_salida ? `<div><span class='font-medium'>Hora de salida:</span> ${reserva.hora_salida.substring(0, 5)}</div>` : ''}
-                                    </div>
-                                </div>
-                            `;
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error al obtener información del ocupante:', error);
-                    // Fallback a información existente
-                    if (indicator.detalles?.usuario_ocupando) {
-                        usuarioOcupando = `<br><span class='text-xs text-gray-700'>Ocupado por: <b>${indicator.detalles.usuario_ocupando}</b></span>`;
-                    }
-                }
-            } else if (estadoTexto === 'Reservado' && indicator.detalles?.usuario_ocupando) {
-                usuarioOcupando = `<br><span class='text-xs text-gray-700'>Reservado por: <b>${indicator.detalles.usuario_ocupando}</b></span>`;
+            if (elements.estadoPill) {
+                elements.estadoPill.className = `inline-flex items-center px-4 py-2 text-sm font-bold border rounded-full ${config.pill}`;
+            }
+            
+            if (elements.estadoIcon) {
+                elements.estadoIcon.className = `w-3 h-3 mr-2 rounded-full ${config.icon}`;
+            }
+            
+            if (elements.modalEstado) {
+                elements.modalEstado.textContent = config.texto;
+            }
+        }
 
-                // Agregar información adicional del usuario si está disponible
-                if (indicator.detalles?.reserva) {
-                    const reserva = indicator.detalles.reserva;
-                    const usuarioInfo = indicator.detalles.usuario_info;
-
-                    informacionUsuario = `
-                        <div class='p-3 mt-2 rounded-lg bg-gray-50'>
-                            <h4 class='mb-2 text-sm font-semibold text-gray-800'>Información del Usuario</h4>
-                            <div class='space-y-1 text-xs text-gray-600'>
-                                ${usuarioInfo ? `
-                                    <div><span class='font-medium'>Nombre:</span> ${usuarioInfo.nombre}</div>
-                                    <div><span class='font-medium'>Email:</span> ${usuarioInfo.email}</div>
-                                    <div><span class='font-medium'>RUN:</span> ${usuarioInfo.run}</div>
-                                ` : ''}
-                                <div><span class='font-medium'>Fecha de reserva:</span> ${reserva.fecha_reserva || 'No especificada'}</div>
-                                <div><span class='font-medium'>Hora de entrada:</span> ${reserva.hora ? reserva.hora.substring(0, 5) : 'No especificada'}</div>
-                                ${reserva.hora_salida ? `<div><span class='font-medium'>Hora de salida:</span> ${reserva.hora_salida.substring(0, 5)}</div>` : ''}
-                            </div>
+        // Función para mostrar loading optimizado
+        function mostrarLoadingOptimizado(elements) {
+            if (elements.ocupanteContainer) {
+                elements.ocupanteContainer.style.display = 'block';
+                if (elements.ocupanteInfo) {
+                    elements.ocupanteInfo.innerHTML = `
+                        <div class="flex items-center justify-center py-4">
+                            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                            <span class="ml-2 text-sm text-gray-600">Cargando...</span>
                         </div>
                     `;
                 }
             }
+        }
 
-            modalEstado.innerHTML = `<span class="${estadoColor} font-semibold">${estadoTexto}</span>${usuarioOcupando}`;
-
-            const detalles = indicator.detalles || {};
-            const infoClaseActual = indicator.informacion_clase_actual;
-
-            // Mostrar la planificación actual en los campos del modal
-            if (infoClaseActual && (indicator.estado === '#FF0000' || indicator.estado === '#FFA500')) {
-                modalPlanificacionAsignatura.textContent = infoClaseActual.asignatura || '';
-                modalPlanificacionProfesor.textContent = infoClaseActual.profesor || '';
-                modalPlanificacionModulo.textContent = infoClaseActual.modulo || '';
-                modalPlanificacionHorario.textContent =
-                    `${infoClaseActual.hora_inicio} - ${infoClaseActual.hora_termino} hrs`;
-            } else if (indicator.estado === '#FF0000') {
-                modalPlanificacionAsignatura.textContent = 'No hay información sobre la ocupación actual.';
-                modalPlanificacionProfesor.textContent = '';
-                modalPlanificacionModulo.textContent = '';
-                modalPlanificacionHorario.textContent = '';
-            } else if (detalles.planificacion) {
-                modalPlanificacionAsignatura.textContent = detalles.planificacion.asignatura || 'No especificada';
-                modalPlanificacionProfesor.textContent = detalles.planificacion.profesor || 'No especificado';
-                modalPlanificacionModulo.textContent = detalles.planificacion.modulo || 'No especificado';
-                modalPlanificacionHorario.textContent = '';
-            } else {
-                modalPlanificacionAsignatura.textContent = '';
-                modalPlanificacionProfesor.textContent = '';
-                modalPlanificacionModulo.textContent = '';
-                modalPlanificacionHorario.textContent = '';
+        // Función para cargar información detallada con cache optimizado para solicitantes
+        async function cargarInformacionDetallada(espacioId) {
+            // Cache específico para espacios con solicitantes
+            const cacheKey = `espacio_${espacioId}`;
+            const solicitanteCacheKey = `solicitante_espacio_${espacioId}`;
+            
+            const cached = sessionStorage.getItem(cacheKey);
+            const cacheTime = sessionStorage.getItem(`${cacheKey}_time`);
+            const solicitanteCached = sessionStorage.getItem(solicitanteCacheKey);
+            const solicitanteCacheTime = sessionStorage.getItem(`${solicitanteCacheKey}_time`);
+            
+            // Cache válido por 30 segundos para espacios normales
+            if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 30000) {
+                console.log('Usando cache para espacio:', espacioId);
+                return JSON.parse(cached);
+            }
+            
+            // Cache específico para solicitantes (válido por 5 minutos)
+            if (solicitanteCached && solicitanteCacheTime && (Date.now() - parseInt(solicitanteCacheTime)) < 300000) {
+                console.log('Usando cache específico para solicitante en espacio:', espacioId);
+                return JSON.parse(solicitanteCached);
             }
 
-            // Configurar la próxima clase si existe
-            if (detalles.planificacion_proxima) {
-                modalProxima.classList.remove('hidden');
-                modalProximaDetalles.innerHTML = `
-                    <div class='flex flex-col gap-1'>
-                        <div><span class='font-semibold'>Asignatura:</span> ${detalles.planificacion_proxima.asignatura || 'No especificada'}</div>
-                        <div><span class='font-semibold'>Profesor:</span> ${detalles.planificacion_proxima.profesor || 'No especificado'}</div>
-                        <div><span class='font-semibold'>Módulo:</span> ${detalles.planificacion_proxima.modulo || 'No especificado'}</div>
-                        <div><span class='font-semibold'>Horario:</span> ${detalles.planificacion_proxima.hora_inicio} - ${detalles.planificacion_proxima.hora_termino} hrs.</div>
+            const response = await fetch(`/api/espacio/${espacioId}/informacion-detallada`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+
+            const data = await response.json();
+            
+            // Guardar en cache según el tipo de ocupación
+            if (data.success && data.tipo_ocupacion === 'solicitante') {
+                // Cache específico para solicitantes (5 minutos)
+                sessionStorage.setItem(solicitanteCacheKey, JSON.stringify(data));
+                sessionStorage.setItem(`${solicitanteCacheKey}_time`, Date.now().toString());
+                console.log('Cache de solicitante guardado para espacio:', espacioId);
+            } else {
+                // Cache normal para otros tipos (30 segundos)
+                sessionStorage.setItem(cacheKey, JSON.stringify(data));
+                sessionStorage.setItem(`${cacheKey}_time`, Date.now().toString());
+            }
+            
+            return data;
+        }
+
+        // Función para mostrar error de carga
+        function mostrarErrorCarga(elements, mensaje) {
+            if (elements.ocupanteInfo) {
+                elements.ocupanteInfo.innerHTML = `
+                    <div class="flex items-center justify-center py-4">
+                        <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+                        <span class="text-sm text-red-600">${mensaje}</span>
                     </div>
                 `;
+            }
+        }
+
+        // Función para renderizar información del ocupante optimizada
+        function renderizarInformacionOcupante(elements, data) {
+            // Mostrar información según el tipo de ocupación
+            if (data.tipo_ocupacion === 'profesor') {
+                renderizarInformacionProfesor(elements, data);
+            } else if (data.tipo_ocupacion === 'solicitante') {
+                renderizarInformacionSolicitante(elements, data);
+            } else if (data.tipo_ocupacion === 'ocupado_sin_info') {
+                renderizarInformacionOcupadoSinInfo(elements, data);
             } else {
-                modalProxima.classList.add('hidden');
-            }
-
-            // Agregar información del usuario si está ocupado o reservado
-            if (informacionUsuario) {
-                // Buscar el contenedor de planificación para insertar después
-                const planificacionContainer = document.getElementById('planificacionContainer');
-                if (planificacionContainer) {
-                    // Crear un contenedor para la información del usuario si no existe
-                    let usuarioContainer = document.getElementById('usuarioContainer');
-                    if (!usuarioContainer) {
-                        usuarioContainer = document.createElement('div');
-                        usuarioContainer.id = 'usuarioContainer';
-                        planificacionContainer.parentNode.insertBefore(usuarioContainer, planificacionContainer
-                            .nextSibling);
-                    }
-                    usuarioContainer.innerHTML = informacionUsuario;
-                    usuarioContainer.style.display = '';
-                }
-            } else {
-                // Ocultar el contenedor de usuario si no hay información
-                const usuarioContainer = document.getElementById('usuarioContainer');
-                if (usuarioContainer) {
-                    usuarioContainer.style.display = 'none';
-                }
-            }
-
-            // Mostrar el modal usando Alpine.js
-            window.dispatchEvent(new CustomEvent('open-modal', {
-                detail: 'data-space'
-            }));
-
-            // Configurar el estado visual del modal
-            const estadoPill = document.getElementById('estadoPill');
-            const estadoIcon = document.getElementById('estadoIcon');
-            const planificacionContainer = document.getElementById('planificacionContainer');
-
-            // Determinar color y texto según el estado
-            let pillColor = '',
-                iconColor = '',
-                texto = '',
-                mostrarPlanificacion = true;
-            switch (estadoTexto) {
-                case 'Ocupado':
-                    pillColor = 'border-red-500 bg-red-50 text-red-700';
-                    iconColor = 'bg-red-500';
-                    texto = 'Ocupado';
-                    break;
-                case 'Disponible':
-                    pillColor = 'border-green-500 bg-green-50 text-green-700';
-                    iconColor = 'bg-green-500';
-                    texto = 'Disponible';
-                    mostrarPlanificacion = false;
-                    break;
-                case 'Próximo a ocuparse':
-                    pillColor = 'border-blue-500 bg-blue-50 text-blue-700';
-                    iconColor = 'bg-blue-500';
-                    texto = 'Previsto';
-                    mostrarPlanificacion = false;
-                    break;
-                case 'Reservado':
-                    pillColor = 'border-yellow-400 bg-yellow-50 text-yellow-700';
-                    iconColor = 'bg-yellow-400';
-                    texto = 'Reservado';
-                    break;
-                default:
-                    pillColor = 'border-gray-400 bg-gray-50 text-gray-700';
-                    iconColor = 'bg-gray-400';
-                    texto = estadoTexto;
-            }
-
-            // Aplicar estilos al pill de estado
-            estadoPill.className =
-                `inline-flex items-center px-4 py-2 text-base font-bold border rounded-full ${pillColor}`;
-            estadoIcon.className = `w-3 h-3 mr-3 rounded-full ${iconColor}`;
-            document.getElementById('modalEstado').textContent = texto;
-
-            // Mostrar/ocultar planificación según el estado
-            if (planificacionContainer) {
-                planificacionContainer.style.display = mostrarPlanificacion ? '' : 'none';
+                renderizarInformacionLibre(elements, data);
             }
         }
 
-        // ========================================
-        // DEFINICIÓN DE HORARIOS POR DÍA Y MÓDULO
-        // ========================================
-        // Esta estructura define los horarios de cada módulo para cada día de la semana
-        // Formato: {inicio: 'HH:MM:SS', fin: 'HH:MM:SS'}
-        const horariosModulos = {
-            lunes: {
-                1: {
-                    inicio: '08:10:00',
-                    fin: '09:00:00'
-                },
-                2: {
-                    inicio: '09:10:00',
-                    fin: '10:00:00'
-                },
-                3: {
-                    inicio: '10:10:00',
-                    fin: '11:00:00'
-                },
-                4: {
-                    inicio: '11:10:00',
-                    fin: '12:00:00'
-                },
-                5: {
-                    inicio: '12:10:00',
-                    fin: '13:00:00'
-                },
-                6: {
-                    inicio: '13:10:00',
-                    fin: '14:00:00'
-                },
-                7: {
-                    inicio: '14:10:00',
-                    fin: '15:00:00'
-                },
-                8: {
-                    inicio: '15:10:00',
-                    fin: '16:00:00'
-                },
-                9: {
-                    inicio: '16:10:00',
-                    fin: '17:00:00'
-                },
-                10: {
-                    inicio: '17:10:00',
-                    fin: '18:00:00'
-                },
-                11: {
-                    inicio: '18:10:00',
-                    fin: '19:00:00'
-                },
-                12: {
-                    inicio: '19:10:00',
-                    fin: '20:00:00'
-                },
-                13: {
-                    inicio: '20:10:00',
-                    fin: '21:00:00'
-                },
-                14: {
-                    inicio: '21:10:00',
-                    fin: '22:00:00'
-                },
-                15: {
-                    inicio: '22:10:00',
-                    fin: '23:00:00'
-                }
-            },
-            martes: {
-                1: {
-                    inicio: '08:10:00',
-                    fin: '09:00:00'
-                },
-                2: {
-                    inicio: '09:10:00',
-                    fin: '10:00:00'
-                },
-                3: {
-                    inicio: '10:10:00',
-                    fin: '11:00:00'
-                },
-                4: {
-                    inicio: '11:10:00',
-                    fin: '12:00:00'
-                },
-                5: {
-                    inicio: '12:10:00',
-                    fin: '13:00:00'
-                },
-                6: {
-                    inicio: '13:10:00',
-                    fin: '14:00:00'
-                },
-                7: {
-                    inicio: '14:10:00',
-                    fin: '15:00:00'
-                },
-                8: {
-                    inicio: '15:10:00',
-                    fin: '16:00:00'
-                },
-                9: {
-                    inicio: '16:10:00',
-                    fin: '17:00:00'
-                },
-                10: {
-                    inicio: '17:10:00',
-                    fin: '18:00:00'
-                },
-                11: {
-                    inicio: '18:10:00',
-                    fin: '19:00:00'
-                },
-                12: {
-                    inicio: '19:10:00',
-                    fin: '20:00:00'
-                },
-                13: {
-                    inicio: '20:10:00',
-                    fin: '21:00:00'
-                },
-                14: {
-                    inicio: '21:10:00',
-                    fin: '22:00:00'
-                },
-                15: {
-                    inicio: '22:10:00',
-                    fin: '23:00:00'
-                }
-            },
-            miercoles: {
-                1: {
-                    inicio: '08:10:00',
-                    fin: '09:00:00'
-                },
-                2: {
-                    inicio: '09:10:00',
-                    fin: '10:00:00'
-                },
-                3: {
-                    inicio: '10:10:00',
-                    fin: '11:00:00'
-                },
-                4: {
-                    inicio: '11:10:00',
-                    fin: '12:00:00'
-                },
-                5: {
-                    inicio: '12:10:00',
-                    fin: '13:00:00'
-                },
-                6: {
-                    inicio: '13:10:00',
-                    fin: '14:00:00'
-                },
-                7: {
-                    inicio: '14:10:00',
-                    fin: '15:00:00'
-                },
-                8: {
-                    inicio: '15:10:00',
-                    fin: '16:00:00'
-                },
-                9: {
-                    inicio: '16:10:00',
-                    fin: '17:00:00'
-                },
-                10: {
-                    inicio: '17:10:00',
-                    fin: '18:00:00'
-                },
-                11: {
-                    inicio: '18:10:00',
-                    fin: '19:00:00'
-                },
-                12: {
-                    inicio: '19:10:00',
-                    fin: '20:00:00'
-                },
-                13: {
-                    inicio: '20:10:00',
-                    fin: '21:00:00'
-                },
-                14: {
-                    inicio: '21:10:00',
-                    fin: '22:00:00'
-                },
-                15: {
-                    inicio: '22:10:00',
-                    fin: '23:00:00'
-                }
-            },
-            jueves: {
-                1: {
-                    inicio: '08:10:00',
-                    fin: '09:00:00'
-                },
-                2: {
-                    inicio: '09:10:00',
-                    fin: '10:00:00'
-                },
-                3: {
-                    inicio: '10:10:00',
-                    fin: '11:00:00'
-                },
-                4: {
-                    inicio: '11:10:00',
-                    fin: '12:00:00'
-                },
-                5: {
-                    inicio: '12:10:00',
-                    fin: '13:00:00'
-                },
-                6: {
-                    inicio: '13:10:00',
-                    fin: '14:00:00'
-                },
-                7: {
-                    inicio: '14:10:00',
-                    fin: '15:00:00'
-                },
-                8: {
-                    inicio: '15:10:00',
-                    fin: '16:00:00'
-                },
-                9: {
-                    inicio: '16:10:00',
-                    fin: '17:00:00'
-                },
-                10: {
-                    inicio: '17:10:00',
-                    fin: '18:00:00'
-                },
-                11: {
-                    inicio: '18:10:00',
-                    fin: '19:00:00'
-                },
-                12: {
-                    inicio: '19:10:00',
-                    fin: '20:00:00'
-                },
-                13: {
-                    inicio: '20:10:00',
-                    fin: '21:00:00'
-                },
-                14: {
-                    inicio: '21:10:00',
-                    fin: '22:00:00'
-                },
-                15: {
-                    inicio: '22:10:00',
-                    fin: '23:00:00'
-                }
-            },
-            viernes: {
-                1: {
-                    inicio: '08:10:00',
-                    fin: '09:00:00'
-                },
-                2: {
-                    inicio: '09:10:00',
-                    fin: '10:00:00'
-                },
-                3: {
-                    inicio: '10:10:00',
-                    fin: '11:00:00'
-                },
-                4: {
-                    inicio: '11:10:00',
-                    fin: '12:00:00'
-                },
-                5: {
-                    inicio: '12:10:00',
-                    fin: '13:00:00'
-                },
-                6: {
-                    inicio: '13:10:00',
-                    fin: '14:00:00'
-                },
-                7: {
-                    inicio: '14:10:00',
-                    fin: '15:00:00'
-                },
-                8: {
-                    inicio: '15:10:00',
-                    fin: '16:00:00'
-                },
-                9: {
-                    inicio: '16:10:00',
-                    fin: '17:00:00'
-                },
-                10: {
-                    inicio: '17:10:00',
-                    fin: '18:00:00'
-                },
-                11: {
-                    inicio: '18:10:00',
-                    fin: '19:00:00'
-                },
-                12: {
-                    inicio: '19:10:00',
-                    fin: '20:00:00'
-                },
-                13: {
-                    inicio: '20:10:00',
-                    fin: '21:00:00'
-                },
-                14: {
-                    inicio: '21:10:00',
-                    fin: '22:00:00'
-                },
-                15: {
-                    inicio: '22:10:00',
-                    fin: '23:00:00'
-                }
+        // Función para renderizar información de profesor
+        function renderizarInformacionProfesor(elements, data) {
+            if (elements.ocupanteContainer && elements.ocupanteInfo) {
+                elements.ocupanteInfo.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-user-tie mr-3 text-blue-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.nombre || 'No especificado'}</div>
+                                <div class="text-sm text-gray-600">Profesor</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-book mr-3 text-green-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.asignatura || 'No especificada'}</div>
+                                <div class="text-sm text-gray-600">Asignatura</div>
+                            </div>
+                        </div>
+                        ${data.hora_inicio ? `
+                        <div class="flex items-center">
+                            <i class="fas fa-clock mr-3 text-orange-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.hora_inicio}</div>
+                                <div class="text-sm text-gray-600">Hora inicio</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${data.hora_salida ? `
+                        <div class="flex items-center">
+                            <i class="fas fa-clock mr-3 text-red-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.hora_salida}</div>
+                                <div class="text-sm text-gray-600">Hora salida</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
             }
-        };
-
-        // ========================================
-        // FUNCIÓN PARA OBTENER EL DÍA ACTUAL
-        // ========================================
-        function obtenerDiaActual() {
-            const dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
-            return dias[new Date().getDay()];
-        }
-
-
-        function moduloActualNum(hora) {
-            const diaActual = obtenerDiaActual();
-            const horariosDia = horariosModulos[diaActual];
-
-            if (!horariosDia) return null;
-
-            // Buscar en qué módulo estamos según la hora actual
-            for (const [modulo, horario] of Object.entries(horariosDia)) {
-                if (hora >= horario.inicio && hora < horario.fin) {
-                    return parseInt(modulo);
-                }
+            
+            // Mostrar información de la clase actual
+            if (elements.claseActualContainer && elements.claseActualInfo) {
+                elements.claseActualContainer.style.display = 'block';
+                elements.claseActualInfo.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-chalkboard mr-3 text-blue-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.asignatura || 'No especificada'}</div>
+                                <div class="text-sm text-gray-600">Asignatura actual</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-user-tie mr-3 text-green-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.nombre || 'No especificado'}</div>
+                                <div class="text-sm text-gray-600">Profesor a cargo</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
             }
-            return null;
-        }
 
-        // ========================================
-        // FUNCIÓN PARA ACTUALIZAR SOLO LA HORA
-        // ========================================
-        function actualizarHora() {
-            const ahora = new Date();
-            const horaActual = ahora.toLocaleTimeString('es-ES', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-
-            const horaActualElement = document.getElementById('hora-actual');
-            if (horaActualElement) {
-                horaActualElement.textContent = horaActual;
+            // Mostrar próxima clase si existe
+            if (data.proxima_clase && elements.proximaClaseContainer && elements.proximaClaseInfo) {
+                elements.proximaClaseContainer.style.display = 'block';
+                elements.proximaClaseInfo.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-calendar mr-3 text-purple-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.proxima_clase.asignatura || 'No especificada'}</div>
+                                <div class="text-sm text-gray-600">Próxima asignatura</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-user-tie mr-3 text-purple-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.proxima_clase.profesor || 'No especificado'}</div>
+                                <div class="text-sm text-gray-600">Próximo profesor</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
             }
         }
 
-        // ========================================
-        // FUNCIÓN PARA FORMATEAR HORA A HH:MM
-        // ========================================
-        function formatearHora(horaCompleta) {
-            return horaCompleta.slice(0, 5);
-        }
-
-        // ========================================
-        // FUNCIÓN PARA ACTUALIZAR EL MÓDULO Y LOS COLORES
-        // ========================================
-        async function actualizarModuloYColores() {
-            const ahora = new Date();
-            const horaActual = ahora.toLocaleTimeString('es-ES', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-
-            // Determinar el módulo actual
-            const moduloActual = moduloActualNum(horaActual);
-            const moduloActualElement = document.getElementById('modulo-actual');
-            const moduloHorarioElement = document.getElementById('horario-actual');
-
-            if (moduloActual && moduloActualElement && moduloHorarioElement) {
-                moduloActualElement.textContent = moduloActual;
-
-                // Obtener el horario del módulo actual
-                const diaActual = obtenerDiaActual();
-                const horarioModulo = horariosModulos[diaActual][moduloActual];
-
-                // Mostrar solo horas y minutos
-                const horarioTexto = `${formatearHora(horarioModulo.inicio)} - ${formatearHora(horarioModulo.fin)}`;
-                moduloHorarioElement.textContent = horarioTexto;
-            } else {
-                if (moduloActualElement) moduloActualElement.textContent = 'No hay módulo programado';
-                if (moduloHorarioElement) moduloHorarioElement.textContent = '-';
+        // Función para renderizar información de solicitante optimizada
+        function renderizarInformacionSolicitante(elements, data) {
+            if (elements.ocupanteContainer && elements.ocupanteInfo) {
+                // Crear HTML optimizado usando template literal
+                const html = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-user mr-3 text-green-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">Solicitante</div>
+                                <div class="text-sm text-gray-600">${data.nombre || 'No especificado'}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-id-card mr-3 text-blue-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">RUN</div>
+                                <div class="text-sm text-gray-600">${data.run_solicitante || 'No especificado'}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-envelope mr-3 text-orange-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">Correo</div>
+                                <div class="text-sm text-gray-600">${data.correo || 'No especificado'}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-phone mr-3 text-red-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">Teléfono</div>
+                                <div class="text-sm text-gray-600">${data.telefono || 'No especificado'}</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-tag mr-3 text-purple-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">Tipo solicitante</div>
+                                <div class="text-sm text-gray-600">${data.tipo_solicitante || 'No especificado'}</div>
+                            </div>
+                        </div>
+                        ${data.activo !== undefined ? `
+                        <div class="flex items-center">
+                            <i class="fas fa-check-circle mr-3 ${data.activo ? 'text-green-500' : 'text-red-500'}"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">Estado</div>
+                                <div class="text-sm text-gray-600">${data.activo ? 'Activo' : 'Inactivo'}</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${data.fecha_registro ? `
+                        <div class="flex items-center">
+                            <i class="fas fa-calendar mr-3 text-indigo-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">Fecha registro</div>
+                                <div class="text-sm text-gray-600">${new Date(data.fecha_registro).toLocaleDateString('es-CL')}</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                // Aplicar HTML de una sola vez
+                elements.ocupanteInfo.innerHTML = html;
+                
+                // Mostrar el contenedor
+                elements.ocupanteContainer.style.display = 'block';
             }
 
-            // Actualizar colores de los indicadores desde el servidor
-            await actualizarColoresEspacios();
-        }
-
-        // ========================================
-        // FUNCIONES FALTANTES PARA LA DEVOLUCIÓN Y COLORES
-        // ========================================
-
-        // Función para procesar la devolución de llaves
-        async function procesarDevolucion(run, idEspacio) {
-            try {
-                const response = await fetch('/api/devolver-llaves', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({
-                        id_espacio: idEspacio,
-                        run: run
-                    })
-                });
-                return await response.json();
-            } catch (error) {
-                console.error('Error al procesar devolución:', error);
-                return {
-                    success: false,
-                    mensaje: 'Error de conexión'
-                };
+            // Ocultar secciones de planificación para solicitantes
+            if (elements.proximaClaseContainer) {
+                elements.proximaClaseContainer.style.display = 'none';
             }
-        }
-
-        // Función para resetear el estado de devolución
-        function resetearEstadoDevolucion() {
-            esperandoUsuarioDevolucion = true;
-            usuarioEscaneadoDevolucion = null;
-            espacioEscaneadoDevolucion = null;
-            bufferQRDevolucion = '';
-        }
-
-        // Función para iniciar el proceso de devolución
-        function iniciarDevolucion() {
-            // Cerrar el modal actual
-            window.dispatchEvent(new CustomEvent('close-modal', {
-                detail: 'data-space'
-            }));
-
-            // Abrir el modal de devolución
-            setTimeout(() => {
-                window.dispatchEvent(new CustomEvent('open-modal', {
-                    detail: 'devolver-llaves'
-                }));
-
-                // Resetear estado de devolución
-                resetearEstadoDevolucion();
-
-                // Configurar el input de devolución
-                const inputDevolucion = document.getElementById('qr-input-devolucion');
-                if (inputDevolucion) {
-                    inputDevolucion.value = '';
-                    inputDevolucion.focus();
-                }
-
-                // Actualizar el estado del QR
-                document.getElementById('qr-status-devolucion').innerHTML = 'Esperando escaneo del usuario...';
-            }, 300);
-        }
-
-        // ========================================
-        // AJUSTE: Cerrar modal de devolución de llaves al finalizar
-        // ========================================
-        function cerrarModalDevolverLlaves() {
-            window.dispatchEvent(new CustomEvent('close-modal', {
-                detail: 'devolver-llaves'
-            }));
-        }
-
-        // Función para manejar el escaneo de devolución
-        async function handleScanDevolucion(event) {
-            if (event.key === 'Enter') {
-                if (esperandoUsuarioDevolucion) {
-                    // Procesar QR de usuario para devolución (formato: RUN¿12345678')
-                    const match = bufferQRDevolucion.match(/RUN¿(\d+)/);
-                    if (match) {
-                        usuarioEscaneadoDevolucion = match[1];
-                        const usuarioInfo = await verificarUsuario(usuarioEscaneadoDevolucion);
-
-                        if (usuarioInfo && usuarioInfo.verificado) {
-                            document.getElementById('qr-status-devolucion').innerHTML =
-                                'Usuario verificado. Escanee el espacio para devolver.';
-                            esperandoUsuarioDevolucion = false;
-                        } else {
-                            console.error('Error de verificación:', usuarioInfo?.mensaje || 'Error desconocido');
-                            document.getElementById('qr-status-devolucion').innerHTML = usuarioInfo?.mensaje ||
-                                'Error de verificación';
-                        }
-                    } else {
-                        console.error('Error: RUN inválido');
-                        document.getElementById('qr-status-devolucion').innerHTML = 'RUN inválido';
-                    }
-                } else {
-                    // Procesar QR de espacio para devolución (formato: TH'L01)
-                    const espacioProcesado = bufferQRDevolucion.replace(/'/g, '-');
-                    espacioEscaneadoDevolucion = espacioProcesado;
-
-                    // Primero verificar el estado del espacio y si el usuario tiene reserva activa
-                    console.log('Verificando estado para devolución:', { usuarioEscaneadoDevolucion, espacioProcesado });
-                    const resultadoVerificacion = await verificarEstadoEspacioYReserva(usuarioEscaneadoDevolucion, espacioProcesado);
-                    console.log('Resultado de verificación para devolución:', resultadoVerificacion);
-
-                    if (resultadoVerificacion.tipo === 'devolucion') {
-                        // El usuario tiene una reserva activa en este espacio, proceder con devolución
-                        const resultado = await procesarDevolucion(usuarioEscaneadoDevolucion, espacioProcesado);
-
-                        if (resultado.success) {
-                            // Mostrar mensaje de devolución exitosa
-                            console.log('¡Devolución exitosa! Las llaves han sido devueltas correctamente');
-                            
-                            // Cerrar modales
-                            cerrarModalesDespuesDeSwal(['devolver-llaves', 'data-space']);
-                            document.getElementById('qr-status-devolucion').innerHTML = 'Devolución completada';
-                            // Actualizar el color del indicador a 'Disponible' (verde)
-                            const block = state.indicators.find(b => b.id === espacioProcesado);
-                            if (block) {
-                                block.estado = '#059669'; // Verde
-                                state.originalCoordinates = state.indicators.map(i => ({
-                                    ...i
-                                }));
-                                drawIndicators();
-                            }
-                            // Cerrar el modal después de la devolución exitosa
-                            setTimeout(() => {
-                                cerrarModalDevolverLlaves();
-                                // Resetear interfaz después de cerrar modal
-                                setTimeout(() => {
-                                    resetearInterfaz();
-                                }, 500);
-                            }, 1000);
-                        } else {
-                            console.error('Error al procesar la devolución:', resultado.message || resultado.mensaje || 'Error desconocido');
-                            document.getElementById('qr-status-devolucion').innerHTML = resultado.message || resultado.mensaje ||
-                                'Error al procesar la devolución';
-                        }
-                    } else if (resultadoVerificacion.tipo === 'reserva_existente') {
-                        // El usuario ya tiene una reserva activa en otro espacio
-                        console.log('Reserva Existente:', resultadoVerificacion.mensaje);
-                        document.getElementById('qr-status-devolucion').innerHTML = resultadoVerificacion.mensaje;
-                    } else if (resultadoVerificacion.tipo === 'espacio_ocupado') {
-                        // El espacio está ocupado por otro usuario
-                        let mensajeDetallado = resultadoVerificacion.mensaje;
-                        if (resultadoVerificacion.ocupante) {
-                            const ocupante = resultadoVerificacion.ocupante;
-                            const tipoUsuario = ocupante.tipo === 'profesor' ? 'Profesor' : 'Solicitante';
-                            mensajeDetallado = `
-                                <div class="text-left">
-                                    <p class="mb-2"><strong>${resultadoVerificacion.mensaje}</strong></p>
-                                    <div class="bg-gray-100 p-3 rounded-lg">
-                                        <p><strong>${tipoUsuario}:</strong> ${ocupante.nombre}</p>
-                                        <p><strong>RUN:</strong> ${ocupante.run}</p>
-                                        <p><strong>Hora de inicio:</strong> ${ocupante.hora_inicio}</p>
-                                        <p><strong>Fecha:</strong> ${ocupante.fecha}</p>
-                                    </div>
-                                </div>
-                            `;
-                        }
-                        
-                        console.log('Espacio Ocupado:', mensajeDetallado);
-                        document.getElementById('qr-status-devolucion').innerHTML = resultadoVerificacion.mensaje;
-                    } else {
-                        // Error en la verificación
-                        console.error('Error al verificar el estado del espacio:', resultadoVerificacion.mensaje || 'Error desconocido');
-                        document.getElementById('qr-status-devolucion').innerHTML = resultadoVerificacion.mensaje || 'Error al verificar el estado del espacio';
-                    }
-                    // Resetear el estado de devolución
-                    resetearEstadoDevolucion();
-                }
-                bufferQRDevolucion = '';
-                event.target.value = '';
-            } else if (event.key.length === 1) {
-                bufferQRDevolucion += event.key;
+            if (elements.claseActualContainer) {
+                elements.claseActualContainer.style.display = 'none';
             }
         }
 
-        // ========================================
-        // Función utilitaria para cerrar modales después de un SweetAlert
+        // Función para renderizar información ocupado sin info
+        function renderizarInformacionOcupadoSinInfo(elements, data) {
+            if (elements.ocupanteContainer && elements.ocupanteInfo) {
+                elements.ocupanteInfo.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-user mr-3 text-gray-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.nombre || 'No especificado'}</div>
+                                <div class="text-sm text-gray-600">Ocupante</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-info-circle mr-3 text-gray-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.tipo_reserva || 'Ocupado'}</div>
+                                <div class="text-sm text-gray-600">Tipo</div>
+                            </div>
+                        </div>
+                        ${data.hora_inicio ? `
+                        <div class="flex items-center">
+                            <i class="fas fa-clock mr-3 text-gray-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.hora_inicio}</div>
+                                <div class="text-sm text-gray-600">Hora inicio</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${data.hora_salida ? `
+                        <div class="flex items-center">
+                            <i class="fas fa-clock mr-3 text-gray-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.hora_salida}</div>
+                                <div class="text-sm text-gray-600">Hora salida</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${data.detalles ? `
+                        <div class="flex items-center">
+                            <i class="fas fa-info mr-3 text-gray-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.detalles}</div>
+                                <div class="text-sm text-gray-600">Detalles</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            }
+
+            // Ocultar secciones de planificación
+            if (elements.proximaClaseContainer) {
+                elements.proximaClaseContainer.style.display = 'none';
+            }
+        }
+
+        // Función para renderizar información libre
+        function renderizarInformacionLibre(elements, data) {
+            // Ocultar sección de ocupante
+            if (elements.ocupanteContainer) {
+                elements.ocupanteContainer.style.display = 'none';
+            }
+
+            // Mostrar próxima clase si existe
+            if (data.proxima_clase && elements.proximaClaseContainer && elements.proximaClaseInfo) {
+                elements.proximaClaseContainer.style.display = 'block';
+                elements.proximaClaseInfo.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-center">
+                            <i class="fas fa-calendar mr-3 text-purple-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.proxima_clase.asignatura || 'No especificada'}</div>
+                                <div class="text-sm text-gray-600">Próxima asignatura</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-user-tie mr-3 text-purple-500"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.proxima_clase.profesor || 'No especificado'}</div>
+                                <div class="text-sm text-gray-600">Próximo profesor</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function cerrarModalEspacio() {
+            const modal = document.getElementById('modal-espacio-info');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
+
         function cerrarModalesDespuesDeSwal(modales = []) {
             // Solo cerrar modales sin mostrar SweetAlert (ya se muestra en otro lugar)
             modales.forEach(nombre => {
@@ -2580,9 +2064,6 @@
             });
         }
 
-        // ========================================
-        // FUNCIÓN PARA ACTUALIZAR COLORES DE ESPACIOS
-        // ========================================
         async function actualizarColoresEspacios() {
             // Verificar si ha habido cambios locales recientes
             const tiempoTranscurrido = Date.now() - (state.ultimoCambioLocal || 0);
@@ -2624,21 +2105,6 @@
             }
         }
 
-        // ========================================
-        // CONFIGURACIÓN DE INTERVALOS DE ACTUALIZACIÓN
-        // ========================================
-        // Actualizar la hora cada segundo
-        setInterval(actualizarHora, 1000);
-        actualizarHora(); // Actualizar inmediatamente al cargar
-
-        // Actualizar módulo y colores cada 5 segundos (casi inmediato)
-        setInterval(actualizarModuloYColores, 5000);
-        actualizarModuloYColores(); // Actualizar inmediatamente al cargar
-
-        // ========================================
-        // EVENT LISTENER PARA ACTUALIZAR MODAL
-        // ========================================
-        // Asegurarse de que el modal esté actualizado cuando se abre
         document.addEventListener('DOMContentLoaded', function () {
             const modal = document.getElementById('modal-solicitar-espacio');
             if (modal) {
@@ -2649,9 +2115,6 @@
             }
         });
 
-        // ========================================
-        // INICIALIZACIÓN PRINCIPAL 
-        // ========================================
         document.addEventListener("DOMContentLoaded", function () {
             
             // Configurar el input del escáner QR
@@ -2664,7 +2127,7 @@
                 inputEscanner.focus();
                 document.getElementById('qr-status').innerHTML = 'Esperando';
                 // Asegurar que la interfaz esté en estado inicial
-                resetearInterfaz();
+                limpiarEstadoCompleto();
             }
             // Inicializar elementos del canvas
             initElements();
@@ -2697,47 +2160,11 @@
                     clearInterval(state.updateInterval);
                 }
             });
-            // Configurar el input de devolución
-            const inputDevolucion = document.getElementById('qr-input-devolucion');
-            if (inputDevolucion) {
-                inputDevolucion.addEventListener('keydown', handleScanDevolucion);
-                document.addEventListener('click', () => inputDevolucion.focus());
-                inputDevolucion.focus();
-            }
-            // Configurar el input de solicitud
-            const inputSolicitud = document.getElementById('qr-input-solicitud');
-            if (inputSolicitud) {
-                inputSolicitud.addEventListener('keydown', handleScanSolicitud);
-                document.addEventListener('click', () => inputSolicitud.focus());
-                inputSolicitud.focus();
-            }
-
-            // Configurar el formulario de registro de usuario
-            const formRegistro = document.getElementById('form-registro-usuario');
-            if (formRegistro) {
-                formRegistro.addEventListener('submit', procesarRegistroUsuario);
-            }
-
             // Configurar el formulario de registro de solicitante
             const formRegistroSolicitante = document.getElementById('form-registro-solicitante');
             if (formRegistroSolicitante) {
                 formRegistroSolicitante.addEventListener('submit', procesarRegistroSolicitante);
             }
-            // Resetear estado cada vez que se abre el modal
-            window.addEventListener('open-modal', function (e) {
-                if (e.detail === 'devolver-llaves') {
-                    resetearDevolucionQR();
-                    setTimeout(() => {
-                        if (inputDevolucion) inputDevolucion.focus();
-                    }, 300);
-                }
-                if (e.detail === 'solicitar-llaves') {
-                    resetearSolicitudQR();
-                    setTimeout(() => {
-                        if (inputSolicitud) inputSolicitud.focus();
-                    }, 300);
-                }
-            });
             // Configurar botón devolver
             const btnDevolver = document.getElementById('btnDevolver');
             const areaQR = document.getElementById('area-qr-devolucion');
@@ -2753,13 +2180,15 @@
                 });
             }
             window.actualizarColoresEspacios = actualizarColoresEspacios;
+            
+            // Configurar intervalos para actualizar hora y módulo
+            setInterval(actualizarHora, 1000);
+            actualizarHora();
+
+            setInterval(actualizarModuloYColores, 5000);
+            actualizarModuloYColores();
         });
 
-        // ========================================
-        // FUNCIONES PARA MANEJAR REGISTRO DE SOLICITANTE
-        // ========================================
-        
-        // Función para procesar el registro de solicitante
         async function procesarRegistroSolicitante(event) {
             event.preventDefault();
             
@@ -2783,10 +2212,10 @@
                     
                     // Actualizar información en la interfaz
                     document.getElementById('qr-status').innerHTML = 'Solicitante registrado. Escanee el QR del espacio.';
-                    mostrarInfoUsuario(runSolicitantePendiente, datosSolicitante.nombre);
+                    mostrarInfo('usuario', datosSolicitante.nombre, runSolicitantePendiente);
                     
                     // Continuar con el flujo - solo necesita escanear espacio
-                    profesorEscaneado = runSolicitantePendiente;
+                    usuarioEscaneado = runSolicitantePendiente;
                     ordenEscaneo = 'espacio'; // Ya no necesita escanear usuario
                     
                     // Limpiar variables
@@ -2804,7 +2233,6 @@
             }
         }
 
-        // Función para cancelar registro de solicitante
         function cancelarRegistroSolicitante() {
             // Cerrar modal de registro
             window.dispatchEvent(new CustomEvent('close-modal', {
@@ -2815,120 +2243,11 @@
             runSolicitantePendiente = null;
             
             // Resetear estado
-            esperandoProfesor = true;
             document.getElementById('qr-status').innerHTML = 'Esperando';
-            resetearInterfaz();
+            limpiarEstadoCompleto();
         }
 
-        // ========================================
-        // FUNCIONES PARA MANEJAR USUARIOS NO REGISTRADOS
-        // ========================================
 
-        // Función para mostrar el modal de registro de usuario
-        function mostrarModalRegistroUsuario(run) {
-            document.getElementById('run-no-registrado').textContent = run;
-
-            // Cerrar modal actual y abrir modal de registro
-            window.dispatchEvent(new CustomEvent('close-modal', {
-                detail: 'solicitar-llaves'
-            }));
-
-            setTimeout(() => {
-                window.dispatchEvent(new CustomEvent('open-modal', {
-                    detail: 'registro-usuario'
-                }));
-            }, 300);
-        }
-
-        // Función para cancelar el registro
-        function cancelarRegistro() {
-            // Cerrar modal de registro
-            window.dispatchEvent(new CustomEvent('close-modal', {
-                detail: 'registro-usuario'
-            }));
-
-                                    // Resetear variables
-                        modoOperacionActual = null;
-
-            // Volver al modal de solicitud
-            setTimeout(() => {
-                window.dispatchEvent(new CustomEvent('open-modal', {
-                    detail: 'solicitar-llaves'
-                }));
-
-                // Resetear estado de solicitud
-                resetearEstadoSolicitud();
-
-                // Configurar el input de solicitud
-                const inputSolicitud = document.getElementById('qr-input-solicitud');
-                if (inputSolicitud) {
-                    inputSolicitud.value = '';
-                    inputSolicitud.focus();
-                }
-
-                // Actualizar el estado del QR
-                document.getElementById('qr-status-solicitud').innerHTML = 'Esperando escaneo del usuario...';
-            }, 300);
-        }
-
-        // Función para procesar el formulario de registro
-        async function procesarRegistroUsuario(event) {
-            event.preventDefault();
-
-            const formData = new FormData(event.target);
-            const datosUsuario = {
-                nombre: formData.get('nombre'),
-                email: formData.get('email'),
-                telefono: formData.get('telefono'),
-                modulos_utilizacion: parseInt(formData.get('modulos_utilizacion'))
-            };
-
-            try {
-                const resultado = await registrarSolicitante(datosUsuario);
-
-                if (resultado && resultado.success) {
-                    console.log('¡Usuario registrado exitosamente! El usuario ha sido registrado y puede continuar con la solicitud.');
-                    
-                    // Cerrar modal de registro
-                    window.dispatchEvent(new CustomEvent('close-modal', {
-                        detail: 'registro-usuario'
-                    }));
-
-                    // Continuar con el flujo original según el modo de operación
-                    if (modoOperacionActual === 'solicitud') {
-                        // Volver al modal de solicitud y continuar
-                        setTimeout(() => {
-                            window.dispatchEvent(new CustomEvent('open-modal', {
-                                detail: 'solicitar-llaves'
-                            }));
-
-                            // Actualizar estado para continuar con el espacio
-                            esperandoUsuarioSolicitud = false;
-                            usuarioEscaneadoSolicitud = datosUsuario.run;
-
-                            // Actualizar el estado del QR
-                            document.getElementById('qr-status-solicitud').innerHTML =
-                                'Usuario registrado. Escanee el espacio para solicitar.';
-
-                            // Configurar el input de solicitud
-                            const inputSolicitud = document.getElementById('qr-input-solicitud');
-                            if (inputSolicitud) {
-                                inputSolicitud.value = '';
-                                inputSolicitud.focus();
-                            }
-                        }, 300);
-                    }
-
-                    // Resetear variables
-                    modoOperacionActual = null;
-                } else {
-                    console.error('Error al registrar usuario:', resultado?.mensaje || 'Error desconocido');
-                }
-            } catch (error) {
-                console.error('Error al procesar registro:', error);
-                console.error('Error al procesar el registro');
-            }
-        }
 
      
         // Asegurar que indicators sea siempre un array
@@ -2939,236 +2258,6 @@
             state.originalCoordinates = [];
         }
 
-        // ========================================
-
-        // Función para resetear el estado de devolución QR
-        function resetearDevolucionQR() {
-            const inputDevolucion = document.getElementById('qr-input-devolucion');
-            if (inputDevolucion) {
-                inputDevolucion.value = '';
-            }
-            resetearEstadoDevolucion();
-        }
-
-        // ========================================
-
-        // ========================================
-        // FUNCIONES PARA EL FLUJO DE SOLICITUD
-        // ========================================
-
-        // Función para resetear el estado de solicitud
-        function resetearEstadoSolicitud() {
-            esperandoUsuarioSolicitud = true;
-            usuarioEscaneadoSolicitud = null;
-            espacioEscaneadoSolicitud = null;
-            bufferQRSolicitud = '';
-        }
-
-        // Función para iniciar el proceso de solicitud
-        function iniciarSolicitud() {
-            // Cerrar el modal actual
-            window.dispatchEvent(new CustomEvent('close-modal', {
-                detail: 'data-space'
-            }));
-
-            // Abrir el modal de solicitud
-            setTimeout(() => {
-                window.dispatchEvent(new CustomEvent('open-modal', {
-                    detail: 'solicitar-llaves'
-                }));
-
-                // Resetear estado de solicitud
-                resetearEstadoSolicitud();
-
-                // Configurar el input de solicitud
-                const inputSolicitud = document.getElementById('qr-input-solicitud');
-                if (inputSolicitud) {
-                    inputSolicitud.value = '';
-                    inputSolicitud.focus();
-                }
-
-                // Actualizar el estado del QR
-                document.getElementById('qr-status-solicitud').innerHTML = 'Esperando escaneo del usuario...';
-            }, 300);
-        }
-
-        // Función para manejar el escaneo de solicitud
-        async function handleScanSolicitud(event) {
-            if (event.key === 'Enter') {
-                if (esperandoUsuarioSolicitud) {
-                    // Procesar QR de usuario para solicitud (formato: RUN¿12345678')
-                    const match = bufferQRSolicitud.match(/RUN¿(\d+)/);
-                    if (match) {
-                        usuarioEscaneadoSolicitud = match[1];
-                        const usuarioInfo = await verificarUsuario(usuarioEscaneadoSolicitud);
-
-                        if (usuarioInfo && usuarioInfo.verificado) {
-                            if (usuarioInfo.tipo_usuario === 'registrado') {
-                                document.getElementById('qr-status-solicitud').innerHTML =
-                                    'Usuario registrado verificado. Escanee el espacio para solicitar.';
-                            } else if (usuarioInfo.tipo_usuario === 'no_registrado') {
-                                document.getElementById('qr-status-solicitud').innerHTML =
-                                    'Usuario no registrado verificado. Escanee el espacio para solicitar.';
-                            }
-                            esperandoUsuarioSolicitud = false;
-                        } else if (usuarioInfo && usuarioInfo.usuario_no_registrado && usuarioInfo.tipo_usuario ===
-                            'nuevo') {
-                            // Usuario completamente nuevo - mostrar modal de registro como solicitante
-                            runSolicitantePendiente = usuarioInfo.run_escaneado;
-                            document.getElementById('run-solicitante-no-registrado').textContent = usuarioInfo.run_escaneado;
-                            
-                            // Cerrar modal actual si está abierto
-                            window.dispatchEvent(new CustomEvent('close-modal', {
-                                detail: 'solicitar-llaves'
-                            }));
-                            
-                            // Abrir modal de registro de solicitante
-                            setTimeout(() => {
-                                window.dispatchEvent(new CustomEvent('open-modal', {
-                                    detail: 'registro-solicitante'
-                                }));
-                            }, 300);
-                        } else {
-                            console.error('Error de verificación:', usuarioInfo?.mensaje || 'Error desconocido');
-                            document.getElementById('qr-status-solicitud').innerHTML = usuarioInfo?.mensaje ||
-                                'Error de verificación';
-                        }
-                    } else {
-                        console.error('Error: RUN inválido');
-                        document.getElementById('qr-status-solicitud').innerHTML = 'RUN inválido';
-                    }
-                } else {
-                    // Procesar QR de espacio para solicitud (formato: TH'L01)
-                    const espacioProcesado = bufferQRSolicitud.replace(/'/g, '-');
-                    const espacioInfo = await verificarEspacio(espacioProcesado);
-
-                    if (espacioInfo?.verificado) {
-                        espacioEscaneadoSolicitud = espacioProcesado;
-                        if (espacioInfo.disponible) {
-                            // Procesar solicitud directamente, sin confirmación
-                            const reserva = await crearReservaSolicitante(usuarioEscaneadoSolicitud, espacioProcesado);
-                            if (reserva?.success) {
-                                // Cerrar modal inmediatamente
-                                window.dispatchEvent(new CustomEvent('close-modal', {
-                                    detail: 'solicitar-llaves'
-                                }));
-                                
-                                // Actualizar el color del indicador a 'Ocupado' (rojo)
-                                const block = state.indicators.find(b => b.id === espacioProcesado);
-                                if (block) {
-                                    block.estado = '#FF0000'; // Rojo
-                                    const originalBlock = state.originalCoordinates.find(b => b.id ===
-                                        espacioProcesado);
-                                    if (originalBlock) {
-                                        originalBlock.estado = '#FF0000';
-                                    }
-                                    state.lastLocalChange = Date.now();
-                                    setTimeout(() => {
-                                        drawIndicators();
-                                    }, 100);
-                                }
-                                
-                                // Mostrar Sweet Alert de éxito para solicitud
-                                Swal.fire({
-                                    title: '¡Solicitud Exitosa!',
-                                    text: 'Las llaves han sido asignadas correctamente.',
-                                    icon: 'success',
-                                    confirmButtonText: 'Aceptar',
-                                    confirmButtonColor: '#059669',
-                                    timer: 1500,
-                                    timerProgressBar: true,
-                                    showConfirmButton: false
-                                });
-                                
-                                // Mostrar mensaje de éxito
-                                console.log('¡Solicitud exitosa! Las llaves han sido asignadas correctamente.');
-                                
-                                // Resetear interfaz después de un delay
-                                setTimeout(() => {
-                                    resetearInterfaz();
-                                }, 2000);
-                            } else {
-                                // Manejar diferentes tipos de errores con mensajes específicos
-                                let titulo = 'Error';
-                                let mensaje = reserva?.mensaje || 'Error al procesar la solicitud';
-                                let icono = 'error';
-
-                                // Verificar si es un error de módulos no disponibles
-                                if (reserva?.mensaje && reserva.mensaje.includes('módulo actual disponible')) {
-                                    titulo = 'Horario No Disponible';
-                                    icono = 'info';
-                                    mensaje = 'El sistema de reservas solo está disponible durante el horario de clases (08:10 - 23:00). Por favor, intenta durante el horario habilitado.';
-                                } else if (reserva?.mensaje && reserva.mensaje.includes('módulos consecutivos disponibles')) {
-                                    titulo = 'Módulos No Disponibles';
-                                    icono = 'warning';
-                                    mensaje = reserva.mensaje;
-                                    
-                                    // Mostrar información detallada si está disponible
-                                    if (reserva.detalles && reserva.detalles.proxima_clase) {
-                                        mensaje += `\n\nPróxima clase: ${reserva.detalles.proxima_clase.asignatura} (Módulo ${reserva.detalles.proxima_clase.modulo})`;
-                                    }
-                                } else if (reserva?.tipo) {
-                                    switch (reserva.tipo) {
-                                        case 'reserva_activa':
-                                            titulo = 'Reserva Activa';
-                                            icono = 'warning';
-                                            mensaje = 'Ya tienes una reserva activa. Debes finalizarla antes de solicitar una nueva.';
-                                            break;
-                                        case 'reserva_simultanea':
-                                            titulo = 'Reserva Simultánea';
-                                            icono = 'warning';
-                                            mensaje = 'Ya tienes una reserva activa en ese horario. Debes finalizarla antes de solicitar una nueva.';
-                                            break;
-                                        case 'reserva_diaria':
-                                            titulo = 'Límite Diario';
-                                            icono = 'warning';
-                                            break;
-                                        case 'limite_excedido':
-                                            titulo = 'Límite Excedido';
-                                            icono = 'warning';
-                                            break;
-                                        case 'mismo_espacio':
-                                            titulo = 'Espacio Ya Reservado';
-                                            icono = 'warning';
-                                            break;
-                                        case 'devolucion':
-                                            titulo = 'Espacio Ocupado';
-                                            icono = 'question';
-                                            mensaje = `¿Desea devolver las llaves del espacio '${reserva.espacio}'?`;
-                                            break;
-                                    }
-                                }
-                                console.log(titulo + ':', mensaje);
-                                document.getElementById('qr-status-solicitud').innerHTML = mensaje;
-                            }
-                        } else {
-                            console.error('Error: El espacio no está disponible para solicitar.');
-                            document.getElementById('qr-status-solicitud').innerHTML = 'Espacio no disponible';
-                        }
-                    } else {
-                        console.error('Error al verificar espacio:', espacioInfo?.mensaje || 'Error desconocido');
-                        document.getElementById('qr-status-solicitud').innerHTML = espacioInfo?.mensaje ||
-                            'Error al verificar espacio';
-                    }
-                    resetearEstadoSolicitud();
-                }
-                bufferQRSolicitud = '';
-                event.target.value = '';
-            } else if (event.key.length === 1) {
-                bufferQRSolicitud += event.key;
-            }
-        }
-
-        // Función para resetear el estado de solicitud QR
-        function resetearSolicitudQR() {
-            const inputSolicitud = document.getElementById('qr-input-solicitud');
-            if (inputSolicitud) {
-                inputSolicitud.value = '';
-            }
-            resetearEstadoSolicitud();
-        }
-
-        // Función para cerrar modal de selección de módulos
         function cerrarModalModulos() {
             // Ocultar directamente el modal
             const modal = document.getElementById('modal-seleccionar-modulos');
@@ -3187,19 +2276,25 @@
             runParaReserva = null;
             
             // Resetear interfaz
-            resetearInterfaz();
+            limpiarEstadoCompleto();
         }
 
-        // Función para calcular módulos disponibles consecutivos
         async function calcularModulosDisponibles(idEspacio) {
             try {
                 // Obtener hora y día actual
                 const ahora = new Date();
                 const horaActual = ahora.toLocaleTimeString('es-ES', {
                     hour: '2-digit',
-                    minute: '2-digit'
+                    minute: '2-digit',
+                    second: '2-digit'
                 });
                 const diaActual = obtenerDiaActual();
+
+                console.log('Enviando parámetros al servidor:', {
+                    horaActual,
+                    diaActual,
+                    idEspacio
+                });
 
                 const response = await fetch(
                     `/api/espacio/${idEspacio}/modulos-disponibles?hora_actual=${horaActual}&dia_actual=${diaActual}`
@@ -3207,6 +2302,8 @@
 
                 if (response.ok) {
                     const data = await response.json();
+                    
+                    console.log('Respuesta completa del servidor:', data);
 
                     if (data.success) {
                         // Guardar información adicional para mostrar en el modal
@@ -3219,6 +2316,8 @@
                             detalles: data.detalles
                         };
                         
+                        console.log('Información guardada en window.modulosInfo:', window.modulosInfo);
+                        
                         return data.max_modulos || 1;
                     } else {
                         // Mostrar información detallada del error
@@ -3228,6 +2327,7 @@
                         return 1;
                     }
                 } else {
+                    console.error('Error en la respuesta del servidor:', response.status, response.statusText);
                     return 1;
                 }
             } catch (error) {
@@ -3236,68 +2336,93 @@
             }
         }
 
-        // Mostrar modal de módulos con límite máximo
         async function mostrarModalSeleccionarModulos(idEspacio, run, maxModulos = 2) {
+            console.log('Iniciando mostrarModalSeleccionarModulos:', { idEspacio, run, maxModulos });
+            
             const modulosDisponibles = await calcularModulosDisponibles(idEspacio);
+            console.log('Módulos disponibles calculados:', modulosDisponibles);
+            
             // Limitar a máximo 2 módulos según la lógica del negocio
             maxModulosDisponibles = Math.min(modulosDisponibles, maxModulos);
             
-            document.getElementById('max-modulos-disponibles').textContent = maxModulosDisponibles;
+            // Actualizar elementos del modal si existen
+            const maxModulosElement = document.getElementById('max-modulos-disponibles');
             const inputModulos = document.getElementById('input-cantidad-modulos');
+            
+            if (maxModulosElement) {
+                maxModulosElement.textContent = maxModulosDisponibles;
+            }
+            
+            if (inputModulos) {
             inputModulos.max = maxModulosDisponibles;
             inputModulos.value = 1;
+            }
+            
             espacioParaReserva = idEspacio;
             runParaReserva = run;
             
             // Mostrar información detallada si está disponible
+            console.log('Verificando window.modulosInfo:', window.modulosInfo);
             if (window.modulosInfo) {
+                console.log('Llamando a mostrarInformacionModulos con:', window.modulosInfo);
                 mostrarInformacionModulos(window.modulosInfo);
+            } else {
+                console.log('No hay información de módulos disponible');
             }
             
             // Mostrar el modal directamente
             const modal = document.getElementById('modal-seleccionar-modulos');
             if (modal) {
                 modal.classList.remove('hidden');
+                console.log('Modal mostrado correctamente');
                 // Enfocar el input
                 setTimeout(() => {
+                    if (inputModulos) {
                     inputModulos.focus();
+                    }
                 }, 100);
+            } else {
+                console.error('No se encontró el modal');
             }
         }
         
-        // Función para mostrar información detallada de módulos
         function mostrarInformacionModulos(info) {
             const infoContainer = document.getElementById('info-modulos-disponibles');
             if (!infoContainer) return;
             
-            let html = '<div class="text-sm text-gray-600 mb-3">';
+            // Debug: mostrar información recibida
+            console.log('Información de módulos recibida:', info);
             
-            // Información básica
-            html += `<p><strong>Módulo actual:</strong> ${info.modulo_actual}</p>`;
-            html += `<p><strong>Módulos disponibles:</strong> ${info.max_modulos}</p>`;
+            let html = '<div class="p-4 bg-white rounded-lg shadow-sm border-l-4 border-green-500">';
+            html += '<h3 class="text-lg font-semibold text-gray-800 mb-3">Información de Disponibilidad</h3>';
             
-            // Módulos específicos disponibles
-            if (info.modulos_disponibles && info.modulos_disponibles.length > 0) {
-                html += `<p><strong>Módulos:</strong> ${info.modulos_disponibles.join(', ')}</p>`;
-            }
+            // Información básica con validación
+            const moduloActual = info.modulo_actual !== null && info.modulo_actual !== undefined ? info.modulo_actual : 'No disponible';
+            const maxModulos = info.max_modulos || 0;
             
-            // Próxima clase
-            if (info.proxima_clase) {
-                html += `<p class="text-orange-600"><strong>Próxima clase:</strong> ${info.proxima_clase.asignatura} (Módulo ${info.proxima_clase.modulo})</p>`;
-            }
+            html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">';
+            html += `<div class="text-sm"><p class="font-medium text-gray-600">Módulo actual:</p><p class="text-gray-800 font-semibold">${moduloActual}</p></div>`;
+            html += `<div class="text-sm"><p class="font-medium text-gray-600">Módulos disponibles:</p><p class="text-gray-800 font-semibold">${maxModulos}</p></div>`;
+            html += '</div>';
             
-            // Clases próximas
+         
+        
+            
+            // Clases próximas con información básica
             if (info.clases_proximas && info.clases_proximas.length > 0) {
-                html += '<p class="text-blue-600"><strong>Clases próximas:</strong></p>';
-                info.clases_proximas.forEach(clase => {
-                    html += `<p class="ml-2">• ${clase.asignatura} (Módulo ${clase.modulo})</p>`;
+                html += '<div class="mb-4 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">';
+                html += '<h4 class="text-sm font-semibold text-blue-800 mb-3">Clases próximas:</h4>';
+                info.clases_proximas.forEach((clase, index) => {
+                    html += `<div class="mb-3 p-3 bg-white rounded border">`;
+                    html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">';
+                    html += `<div class="text-sm"><p class="font-medium text-blue-700">Asignatura:</p><p class="text-blue-800">${clase.asignatura || 'No especificada'}</p></div>`;
+                    html += `<div class="text-sm"><p class="font-medium text-blue-700">Profesor:</p><p class="text-blue-800">${clase.profesor || 'No especificado'}</p></div>`;
+                    html += '</div>';
+                    html += '</div>';
                 });
+                html += '</div>';
             }
             
-            // Detalles adicionales
-            if (info.detalles) {
-                html += `<p class="text-xs text-gray-500 mt-2">Planificaciones: ${info.detalles.planificaciones_encontradas}, Reservas activas: ${info.detalles.reservas_activas}</p>`;
-            }
             
             html += '</div>';
             infoContainer.innerHTML = html;
@@ -3333,7 +2458,7 @@
             const data = await response.json();
 
                                 if (data.success) {
-                        // Cerrar el modal inmediatamente
+                                    // Cerrar el modal inmediatamente
                         cerrarModalModulos();
 
                         // Mostrar Sweet Alert de éxito para reserva creada
@@ -3348,7 +2473,7 @@
                             showConfirmButton: false
                         });
 
-                        console.log('¡Reserva creada! La reserva ha sido creada exitosamente');
+
 
                         document.getElementById('qr-status').innerHTML = 'Reserva creada';
                         document.getElementById('qr-status').classList.remove('parpadeo');
@@ -3377,6 +2502,79 @@
         });
     }
 });
+
+
+
+        function obtenerDiaActual() {
+            const dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+            return dias[new Date().getDay()];
+        }
+
+        function moduloActualNum(hora) {
+            const diaActual = obtenerDiaActual();
+            const horariosDia = horariosModulos[diaActual];
+
+            if (!horariosDia) return null;
+
+            // Buscar en qué módulo estamos según la hora actual
+            for (const [modulo, horario] of Object.entries(horariosDia)) {
+                if (hora >= horario.inicio && hora < horario.fin) {
+                    return parseInt(modulo);
+                }
+            }
+            return null;
+        }
+
+        function actualizarHora() {
+            const ahora = new Date();
+            const horaActual = ahora.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+
+            const horaActualElement = document.getElementById('hora-actual');
+            if (horaActualElement) {
+                horaActualElement.textContent = horaActual;
+            }
+        }
+
+        function formatearHora(horaCompleta) {
+            return horaCompleta.slice(0, 5);
+        }
+
+        async function actualizarModuloYColores() {
+            const ahora = new Date();
+            const horaActual = ahora.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+
+            // Determinar el módulo actual
+            const moduloActual = moduloActualNum(horaActual);
+            const moduloActualElement = document.getElementById('modulo-actual');
+            const moduloHorarioElement = document.getElementById('horario-actual');
+
+            if (moduloActual && moduloActualElement && moduloHorarioElement) {
+                moduloActualElement.textContent = moduloActual;
+
+                // Obtener el horario del módulo actual
+                const diaActual = obtenerDiaActual();
+                const horarioModulo = horariosModulos[diaActual][moduloActual];
+
+                // Mostrar solo horas y minutos
+                const horarioTexto = `${formatearHora(horarioModulo.inicio)} - ${formatearHora(horarioModulo.fin)}`;
+                moduloHorarioElement.textContent = horarioTexto;
+            } else {
+                if (moduloActualElement) moduloActualElement.textContent = 'No hay módulo programado';
+                if (moduloHorarioElement) moduloHorarioElement.textContent = '-';
+            }
+
+            // Actualizar colores de los indicadores desde el servidor
+            await actualizarColoresEspacios();
+        }
+
 
 
     </script>

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Modelo Solicitante
@@ -54,6 +55,59 @@ class Solicitante extends Model
     public function scopePorTipo($query, $tipo)
     {
         return $query->where('tipo_solicitante', $tipo);
+    }
+
+    /**
+     * Buscar solicitante por RUN con cache optimizado
+     */
+    public static function buscarPorRun($runSolicitante)
+    {
+        $cacheKey = "solicitante_run_{$runSolicitante}";
+        
+        return Cache::remember($cacheKey, 300, function () use ($runSolicitante) {
+            return static::select(
+                'nombre', 
+                'run_solicitante', 
+                'correo', 
+                'telefono', 
+                'tipo_solicitante',
+                'activo',
+                'fecha_registro'
+            )
+            ->where('run_solicitante', $runSolicitante)
+            ->where('activo', true)
+            ->first();
+        });
+    }
+
+    /**
+     * Buscar solicitante activo por RUN (método rápido)
+     */
+    public static function buscarActivoPorRun($runSolicitante)
+    {
+        $cacheKey = "solicitante_activo_{$runSolicitante}";
+        
+        return Cache::remember($cacheKey, 300, function () use ($runSolicitante) {
+            return static::select(
+                'nombre', 
+                'run_solicitante', 
+                'correo', 
+                'telefono', 
+                'tipo_solicitante'
+            )
+            ->where('run_solicitante', $runSolicitante)
+            ->where('activo', true)
+            ->first();
+        });
+    }
+
+    /**
+     * Limpiar cache de un solicitante específico
+     */
+    public static function limpiarCache($runSolicitante)
+    {
+        Cache::forget("solicitante_run_{$runSolicitante}");
+        Cache::forget("solicitante_activo_{$runSolicitante}");
     }
 
     /**

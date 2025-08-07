@@ -183,6 +183,10 @@ Route::get('/espacio/{id}', function ($id) {
 // Endpoint para consultar módulos disponibles para reserva en un espacio
 Route::get('/espacio/{espacio}/modulos-disponibles', [EspacioController::class, 'modulosDisponibles']);
 
+// Endpoint para obtener asignaturas de un profesor en el día actual
+Route::get('/profesor/{run}/asignaturas-hoy', [EspacioController::class, 'getAsignaturasProfesorHoy']);
+Route::get('/espacio/{id}/informacion-detallada', [EspacioController::class, 'getInformacionDetalladaEspacio']);
+
 // Ruta para verificar si un espacio está ocupado en un módulo específico
 Route::get('/verificar-planificacion/{id_espacio}/{id_modulo}', function ($id_espacio, $id_modulo) {
     try {

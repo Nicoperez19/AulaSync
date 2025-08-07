@@ -40,8 +40,6 @@ class PlanoDigitalController extends Controller
                 ->orderBy('numero_piso')
                 ->get();
 
-            $sede = $mapa->piso->facultad->sede;
-
             // Formatear los pisos con sus mapas
             $pisosFormateados = $pisos->map(function ($piso) {
                 $primerMapa = $piso->mapas->first();
@@ -56,9 +54,7 @@ class PlanoDigitalController extends Controller
             return view('layouts.plano_digital.show', [
                 'mapa' => $mapa,
                 'bloques' => $bloques,
-                'pisos' => $pisosFormateados,
-                'sede' => $sede,
-                'pisosJson' => json_encode($pisosFormateados)
+                'pisos' => $pisosFormateados
             ]);
         } catch (\Exception $e) {
             if (request()->wantsJson()) {
@@ -181,8 +177,6 @@ class PlanoDigitalController extends Controller
             return collect([]);
         }
 
-        $anioActual = SemesterHelper::getCurrentAcademicYear();
-        $semestre = SemesterHelper::getCurrentSemester();
         $periodo = SemesterHelper::getCurrentPeriod();
 
         // Obtener la hora actual
@@ -207,8 +201,6 @@ class PlanoDigitalController extends Controller
         $horaActual = Carbon::parse($estadoActual['hora']);
         $diaActual = $estadoActual['dia'];
 
-        $anioActual = SemesterHelper::getCurrentAcademicYear();
-        $semestre = SemesterHelper::getCurrentSemester();
         $periodo = SemesterHelper::getCurrentPeriod();
 
         // Verificar si estamos en el rango especial de 05:00 a 05:10
@@ -363,8 +355,6 @@ class PlanoDigitalController extends Controller
         $horaActualStr = $horaActual->format('H:i:s');
         
         // Determinar el período actual usando el helper
-        $anioActual = SemesterHelper::getCurrentAcademicYear();
-        $semestre = SemesterHelper::getCurrentSemester();
         $periodo = SemesterHelper::getCurrentPeriod();
 
         // Obtener todos los espacios
@@ -514,10 +504,7 @@ class PlanoDigitalController extends Controller
                 ], 400);
             }
 
-            // Buscar reservas activas para este espacio (sin restricción de fecha)
-            $reservasActivas = \App\Models\Reserva::where('id_espacio', $idEspacio)
-                ->where('estado', 'activa')
-                ->get();
+            
 
             // Actualizar la reserva activa del usuario: establecer hora_salida y cambiar estado a finalizada
             if ($reservaActiva) {
@@ -553,53 +540,7 @@ class PlanoDigitalController extends Controller
         }
     }
 
-    // ========================================
-    // MÉTODOS DE QR Y RESERVAS (MOVIDOS DESDE HorarioController)
-    // ========================================
 
-    /**
-     * Verificar si un usuario tiene una reserva activa en un espacio específico
-     */
-    public function verificarReservaActiva(Request $request)
-    {
-        try {
-            $request->validate([
-                'run_usuario' => 'required|string',
-                'id_espacio' => 'required|string'
-            ]);
-
-            $runUsuario = $request->input('run_usuario');
-            $idEspacio = $request->input('id_espacio');
-
-            // Buscar reserva activa para este usuario en este espacio
-            $reservaActiva = \App\Models\Reserva::where(function($query) use ($runUsuario) {
-                    $query->where('run_profesor', $runUsuario)
-                          ->orWhere('run_solicitante', $runUsuario);
-                })
-                ->where('id_espacio', $idEspacio)
-                ->where('estado', 'activa')
-                ->first();
-
-            return response()->json([
-                'success' => true,
-                'tiene_reserva_activa' => $reservaActiva ? true : false,
-                'reserva' => $reservaActiva ? [
-                    'id_reserva' => $reservaActiva->id_reserva,
-                    'hora_inicio' => $reservaActiva->hora,
-                    'hora_fin' => $reservaActiva->hora_salida,
-                    'fecha' => $reservaActiva->fecha_reserva
-                ] : null
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('Error al verificar reserva activa: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'tiene_reserva_activa' => false,
-                'mensaje' => 'Error al verificar reserva activa: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 
     /**
      * Verificar estado del espacio y reservas del usuario
@@ -678,7 +619,7 @@ class PlanoDigitalController extends Controller
                 ]);
             } else {
                 // El espacio está ocupado por otro usuario - buscar información de la reserva activa más reciente
-                $reservaOcupante = \App\Models\Reserva::where('id_espacio', $idEspacio)
+                $reservaOcupante = Reserva::where('id_espacio', $idEspacio)
                     ->where('estado', 'activa')
                     ->orderBy('created_at', 'desc')
                     ->first();
@@ -702,7 +643,7 @@ class PlanoDigitalController extends Controller
                         }
                     } elseif ($reservaOcupante->run_solicitante) {
                         // Es un solicitante
-                        $solicitante = \App\Models\Solicitante::where('run_solicitante', $reservaOcupante->run_solicitante)->first();
+                        $solicitante = Solicitante::where('run_solicitante', $reservaOcupante->run_solicitante)->first();
                         if ($solicitante) {
                             $mensaje = "El espacio está ocupado por el solicitante {$solicitante->nombre}";
                             $informacionOcupante = [
@@ -1019,13 +960,7 @@ class PlanoDigitalController extends Controller
         ]);
     }
 
-    /**
-     * Devolver llaves (alias de devolverEspacio)
-     */
-    public function devolverLlaves(Request $request)
-    {
-        return $this->devolverEspacio($request);
-    }
+
 
 
 
@@ -1049,8 +984,6 @@ class PlanoDigitalController extends Controller
             $nombreDia = $diasSemana[$diaActual] ?? 'lunes';
             
             // Obtener período actual
-            $anioActual = \App\Helpers\SemesterHelper::getCurrentAcademicYear();
-            $semestre = \App\Helpers\SemesterHelper::getCurrentSemester();
             $periodo = \App\Helpers\SemesterHelper::getCurrentPeriod();
 
             // Buscar planificaciones del profesor para el día actual
@@ -1135,94 +1068,7 @@ class PlanoDigitalController extends Controller
         }
     }
 
-    /**
-     * Determinar módulo actual (método auxiliar)
-     */
-    private function determinarModuloActual($horaActual, $diaActual)
-    {
-        return \App\Models\Modulo::where('dia', $diaActual)
-            ->where('hora_inicio', '<=', $horaActual)
-            ->where('hora_termino', '>=', $horaActual)
-            ->first();
-    }
 
-    /**
-     * Verificar horario de un usuario
-     */
-    public function verificarHorario($run)
-    {
-        try {
-            // Obtener la hora actual
-            $horaActual = \Carbon\Carbon::now();
-            $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
-            $horaActualStr = $horaActual->format('H:i:s');
 
-            // Verificar si el usuario tiene clases programadas
-            $planificaciones = \App\Models\Planificacion_Asignatura::with(['asignatura', 'modulo', 'espacio'])
-                ->whereHas('asignatura', function($query) use ($run) {
-                    $query->where('run_profesor', $run);
-                })
-                ->whereHas('modulo', function($query) use ($diaActual, $horaActualStr) {
-                    $query->where('dia', $diaActual)
-                          ->where('hora_inicio', '<=', $horaActualStr)
-                          ->where('hora_termino', '>=', $horaActualStr);
-                })
-                ->get();
 
-            return response()->json([
-                'success' => true,
-                'tiene_horario' => $planificaciones->count() > 0,
-                'planificaciones' => $planificaciones->map(function($plan) {
-                    return [
-                        'asignatura' => $plan->asignatura->nombre_asignatura,
-                        'espacio' => $plan->espacio->nombre_espacio,
-                        'hora_inicio' => $plan->modulo->hora_inicio,
-                        'hora_termino' => $plan->modulo->hora_termino
-                    ];
-                })
-            ]);
-
-        } catch (\Exception $e) {
-            \Log::error('Error al verificar horario: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'mensaje' => 'Error al verificar horario: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Verificar si un usuario es profesor
-     */
-    public function verificarProfesor($run)
-    {
-        try {
-            $profesor = \App\Models\Profesor::where('run_profesor', $run)->first();
-
-            if ($profesor) {
-                return response()->json([
-                    'success' => true,
-                    'es_profesor' => true,
-                    'profesor' => [
-                        'run' => $profesor->run_profesor,
-                        'nombre' => $profesor->name,
-                        'email' => $profesor->email
-                    ]
-                ]);
-            } else {
-                return response()->json([
-                    'success' => true,
-                    'es_profesor' => false,
-                    'mensaje' => 'El usuario no es profesor'
-                ]);
-            }
-
-        } catch (\Exception $e) {
-            \Log::error('Error al verificar profesor: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'mensaje' => 'Error al verificar profesor: ' . $e->getMessage()
-            ], 500);
-        }
-    }
 }

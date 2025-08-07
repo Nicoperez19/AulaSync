@@ -14,6 +14,9 @@ use App\Services\QRService;
 use Illuminate\Support\Facades\Storage;
 use ZipArchive;
 use App\Models\Sede;
+use App\Models\User;
+use App\Models\Profesor;
+use App\Models\Reserva;
 
 class EspacioController extends Controller
 {
@@ -226,6 +229,13 @@ class EspacioController extends Controller
         $horaActual = $request->input('hora_actual', now()->format('H:i:s'));
         $diaActual = $request->input('dia_actual', strtolower(now()->locale('es')->isoFormat('dddd')));
         
+        // Log para debugging
+        Log::info('modulosDisponibles - Parámetros recibidos:', [
+            'espacioId' => $espacioId,
+            'horaActual' => $horaActual,
+            'diaActual' => $diaActual
+        ]);
+        
         // Mapeo de días a códigos
         $codigosDias = [
             'lunes' => 'LU',
@@ -242,11 +252,24 @@ class EspacioController extends Controller
         // Determinar el módulo actual según la hora
         $moduloActual = $this->determinarModuloActual($horaActual, $diaActual);
         
+        // Log para debugging del módulo actual
+        Log::info('modulosDisponibles - Módulo actual determinado:', [
+            'moduloActual' => $moduloActual,
+            'horaActual' => $horaActual,
+            'diaActual' => $diaActual
+        ]);
+        
         if (!$moduloActual) {
+            Log::warning('modulosDisponibles - No se pudo determinar el módulo actual', [
+                'horaActual' => $horaActual,
+                'diaActual' => $diaActual
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'mensaje' => 'No hay módulo actual disponible.',
                 'max_modulos' => 0,
+                'modulo_actual' => null,
                 'detalles' => [
                     'razon' => 'fuera_horario',
                     'descripcion' => 'El sistema de reservas solo está disponible durante el horario de clases (08:10 - 23:00)'
@@ -334,6 +357,15 @@ class EspacioController extends Controller
                 'modulos_ocupados' => count($modulosOcupados)
             ]
         ]);
+        
+        // Log final para debugging
+        Log::info('modulosDisponibles - Respuesta enviada:', [
+            'success' => true,
+            'max_modulos' => $maxModulos,
+            'modulo_actual' => $moduloActual,
+            'codigo_dia' => $codigoDia,
+            'modulos_disponibles_count' => count($modulosDisponibles)
+        ]);
     }
     
     /**
@@ -341,6 +373,12 @@ class EspacioController extends Controller
      */
     private function determinarModuloActual($horaActual, $diaActual)
     {
+        // Log para debugging
+        Log::info('determinarModuloActual - Iniciando:', [
+            'horaActual' => $horaActual,
+            'diaActual' => $diaActual
+        ]);
+        
         // Definir horarios de módulos (mismo formato que en el frontend)
         $horariosModulos = [
             'lunes' => [
@@ -432,16 +470,36 @@ class EspacioController extends Controller
         
         $horariosDia = $horariosModulos[$diaActual] ?? null;
         
+        // Log para debugging de horarios del día
+        Log::info('determinarModuloActual - Horarios del día:', [
+            'diaActual' => $diaActual,
+            'horariosDia' => $horariosDia ? 'encontrado' : 'no encontrado'
+        ]);
+        
         if (!$horariosDia) {
+            Log::warning('determinarModuloActual - No se encontraron horarios para el día:', [
+                'diaActual' => $diaActual
+            ]);
             return null;
         }
         
         // Buscar en qué módulo estamos según la hora actual
         foreach ($horariosDia as $modulo => $horario) {
             if ($horaActual >= $horario['inicio'] && $horaActual < $horario['fin']) {
+                Log::info('determinarModuloActual - Módulo encontrado:', [
+                    'modulo' => $modulo,
+                    'horaActual' => $horaActual,
+                    'horarioInicio' => $horario['inicio'],
+                    'horarioFin' => $horario['fin']
+                ]);
                 return $modulo;
             }
         }
+        
+        Log::warning('determinarModuloActual - No se encontró módulo para la hora:', [
+            'horaActual' => $horaActual,
+            'diaActual' => $diaActual
+        ]);
         
         return null;
     }
@@ -641,5 +699,307 @@ class EspacioController extends Controller
             
             return redirect()->back()->with('error', 'Error al generar el archivo ZIP: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Obtiene las asignaturas de un profesor para el día actual
+     */
+    public function getAsignaturasProfesorHoy(Request $request, $runProfesor)
+    {
+        try {
+            $codigoDia = $request->input('codigo_dia', 'LU');
+            
+            // Obtener las asignaturas del profesor para el día especificado
+            $asignaturas = Planificacion_Asignatura::with(['asignatura', 'modulo'])
+                ->whereHas('asignatura', function($query) use ($runProfesor) {
+                    $query->where('run_profesor', $runProfesor);
+                })
+                ->where('id_modulo', 'like', $codigoDia . '.%')
+                ->get()
+                ->map(function($planificacion) {
+                    return [
+                        'nombre_asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'No especificada',
+                        'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? 'No especificado',
+                        'modulo' => $planificacion->modulo->id_modulo ?? 'No especificado',
+                        'hora_inicio' => $planificacion->modulo->hora_inicio ?? '',
+                        'hora_termino' => $planificacion->modulo->hora_termino ?? ''
+                    ];
+                });
+            
+            return response()->json([
+                'success' => true,
+                'asignaturas' => $asignaturas,
+                'total' => $asignaturas->count()
+            ]);
+            
+        } catch (\Exception $e) {
+            Log::error('Error al obtener asignaturas del profesor:', [
+                'run_profesor' => $runProfesor,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error al obtener las asignaturas del profesor',
+                'asignaturas' => []
+            ], 500);
+        }
+    }
+
+    public function getInformacionDetalladaEspacio($idEspacio)
+    {
+        try {
+            // Cache key para este espacio
+            $cacheKey = "espacio_info_{$idEspacio}";
+            
+            // Verificar cache (válido por 30 segundos)
+            if (cache()->has($cacheKey)) {
+                $cachedData = cache()->get($cacheKey);
+                $cacheTime = cache()->get("{$cacheKey}_time", 0);
+                
+                if ((time() - $cacheTime) < 30) {
+                    Log::info("Retornando información desde cache para espacio: {$idEspacio}");
+                    return response()->json($cachedData);
+                }
+            }
+            
+            Log::info("Obteniendo información detallada para espacio: {$idEspacio}");
+            
+            // Buscar el espacio con eager loading
+            $espacio = Espacio::where('id_espacio', $idEspacio)->first();
+            
+            if (!$espacio) {
+                Log::warning("Espacio no encontrado: {$idEspacio}");
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Espacio no encontrado'
+                ], 404);
+            }
+            
+            $horaActual = now()->format('H:i:s');
+            $fechaActual = now()->format('Y-m-d');
+            
+            // Preparar respuesta base
+            $response = [
+                'success' => true,
+                'tipo_ocupacion' => 'libre',
+                'nombre' => null,
+                'asignatura' => null,
+                'hora_inicio' => null,
+                'hora_salida' => null,
+                'tipo_reserva' => null,
+                'detalles' => null,
+                'proxima_clase' => null
+            ];
+            
+            // Si el espacio está ocupado, revisar tabla Reservas con consulta optimizada
+            if (in_array($espacio->estado, ['Ocupado', 'ocupado', '#FF0000'])) {
+                Log::info("Espacio ocupado, revisando tabla Reservas");
+                
+                // Consulta optimizada para reserva activa
+                $reservaActiva = Reserva::select('id_reserva', 'run_profesor', 'run_solicitante', 'hora', 'hora_salida', 'estado', 'tipo_reserva')
+                    ->where('id_espacio', $idEspacio)
+                    ->where('fecha_reserva', $fechaActual)
+                    ->where('hora', '<=', $horaActual)
+                    ->where(function($query) use ($horaActual) {
+                        $query->where('hora_salida', '>', $horaActual)
+                              ->orWhereNull('hora_salida');
+                    })
+                    ->where('estado', 'activa')
+                    ->first();
+                
+                if ($reservaActiva) {
+                    Log::info("Reserva activa encontrada", ['reserva_id' => $reservaActiva->id_reserva]);
+                    
+                    // Determinar tipo de usuario y obtener información
+                    if ($reservaActiva->run_profesor) {
+                        $response = $this->obtenerInformacionProfesor($reservaActiva, $horaActual);
+                    } elseif ($reservaActiva->run_solicitante) {
+                        $response = $this->obtenerInformacionSolicitante($reservaActiva);
+                    } else {
+                        $response = [
+                            'success' => true,
+                            'tipo_ocupacion' => 'ocupado_sin_info',
+                            'nombre' => 'No especificado',
+                            'tipo_reserva' => 'Reserva sin usuario',
+                            'asignatura' => null,
+                            'hora_inicio' => $reservaActiva->hora,
+                            'hora_salida' => $reservaActiva->hora_salida
+                        ];
+                    }
+                } else {
+                    // Buscar cualquier reserva para el día actual
+                    $reservaCualquiera = Reserva::select('id_reserva', 'run_profesor', 'run_solicitante', 'hora', 'hora_salida', 'estado', 'tipo_reserva')
+                        ->where('id_espacio', $idEspacio)
+                        ->where('fecha_reserva', $fechaActual)
+                        ->first();
+                    
+                    if ($reservaCualquiera) {
+                        $response = [
+                            'success' => true,
+                            'tipo_ocupacion' => 'ocupado_sin_info',
+                            'nombre' => 'No especificado',
+                            'tipo_reserva' => $reservaCualquiera->tipo_reserva,
+                            'asignatura' => null,
+                            'hora_inicio' => $reservaCualquiera->hora,
+                            'hora_salida' => $reservaCualquiera->hora_salida,
+                            'detalles' => 'Reserva no activa',
+                            'estado_reserva' => $reservaCualquiera->estado
+                        ];
+                    }
+                }
+            } else {
+                // Espacio libre, buscar próxima clase
+                $response['proxima_clase'] = $this->obtenerProximaClase($idEspacio, $horaActual);
+            }
+            
+            // Guardar en cache
+            cache()->put($cacheKey, $response, 30);
+            cache()->put("{$cacheKey}_time", time(), 30);
+            
+            return response()->json($response);
+            
+        } catch (\Exception $e) {
+            Log::error("Error al obtener información del espacio {$idEspacio}:", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error interno del servidor'
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtiene información de un profesor
+     */
+    private function obtenerInformacionProfesor($reserva, $horaActual)
+    {
+        $runProfesor = $reserva->run_profesor;
+        
+        // Consulta optimizada para profesor
+        $profesor = User::select('name', 'run')
+            ->where('run', $runProfesor)
+            ->first();
+        
+        if (!$profesor) {
+            return [
+                'success' => true,
+                'tipo_ocupacion' => 'ocupado_sin_info',
+                'nombre' => 'Profesor no encontrado',
+                'tipo_reserva' => $reserva->tipo_reserva,
+                'asignatura' => null,
+                'hora_inicio' => $reserva->hora,
+                'hora_salida' => $reserva->hora_salida
+            ];
+        }
+        
+        // Buscar planificación actual
+        $diaActual = strtolower(now()->format('l'));
+        $codigosDias = [
+            'monday' => 'LU', 'tuesday' => 'MA', 'wednesday' => 'MI', 
+            'thursday' => 'JU', 'friday' => 'VI', 'saturday' => 'SA', 'sunday' => 'DO'
+        ];
+        $codigoDia = $codigosDias[$diaActual] ?? 'LU';
+        
+        $planificacion = Planificacion_Asignatura::select('asignatura_id', 'hora_inicio', 'hora_termino')
+            ->where('run_profesor', $runProfesor)
+            ->where('codigo_dia', $codigoDia)
+            ->where('hora_inicio', '<=', $horaActual)
+            ->where('hora_termino', '>', $horaActual)
+            ->with('asignatura:id,nombre_asignatura')
+            ->first();
+        
+        $asignatura = $planificacion ? $planificacion->asignatura->nombre_asignatura : null;
+        
+        return [
+            'success' => true,
+            'tipo_ocupacion' => 'profesor',
+            'nombre' => $profesor->name,
+            'asignatura' => $asignatura,
+            'hora_inicio' => $reserva->hora,
+            'hora_salida' => $reserva->hora_salida,
+            'tipo_reserva' => $reserva->tipo_reserva
+        ];
+    }
+
+    /**
+     * Obtiene información de un solicitante con cache optimizado
+     */
+    private function obtenerInformacionSolicitante($reserva)
+    {
+        $runSolicitante = $reserva->run_solicitante;
+        
+        // Usar el método optimizado del modelo Solicitante
+        $solicitante = \App\Models\Solicitante::buscarActivoPorRun($runSolicitante);
+        
+        if (!$solicitante) {
+            return [
+                'success' => true,
+                'tipo_ocupacion' => 'ocupado_sin_info',
+                'nombre' => 'Solicitante no encontrado',
+                'tipo_reserva' => $reserva->tipo_reserva,
+                'asignatura' => null,
+                'hora_inicio' => $reserva->hora,
+                'hora_salida' => $reserva->hora_salida
+            ];
+        }
+        
+        return $this->construirRespuestaSolicitante($solicitante, $reserva);
+    }
+
+    /**
+     * Construye la respuesta para solicitantes
+     */
+    private function construirRespuestaSolicitante($solicitante, $reserva)
+    {
+        return [
+            'success' => true,
+            'tipo_ocupacion' => 'solicitante',
+            'nombre' => $solicitante->nombre ?? 'No especificado',
+            'run_solicitante' => $solicitante->run_solicitante ?? 'No especificado',
+            'correo' => $solicitante->correo ?? 'No especificado',
+            'telefono' => $solicitante->telefono ?? 'No especificado',
+            'tipo_solicitante' => $solicitante->tipo_solicitante ?? 'No especificado',
+            'activo' => $solicitante->activo ?? false,
+            'fecha_registro' => $solicitante->fecha_registro ?? null,
+            'hora_inicio' => $reserva->hora,
+            'hora_salida' => $reserva->hora_salida,
+            'tipo_reserva' => $reserva->tipo_reserva
+        ];
+    }
+
+    /**
+     * Obtiene información de la próxima clase
+     */
+    private function obtenerProximaClase($idEspacio, $horaActual)
+    {
+        $diaActual = strtolower(now()->format('l'));
+        $codigosDias = [
+            'monday' => 'LU', 'tuesday' => 'MA', 'wednesday' => 'MI', 
+            'thursday' => 'JU', 'friday' => 'VI', 'saturday' => 'SA', 'sunday' => 'DO'
+        ];
+        $codigoDia = $codigosDias[$diaActual] ?? 'LU';
+        
+        $proximaClase = Planificacion_Asignatura::select('hora_inicio', 'hora_termino')
+            ->where('id_espacio', $idEspacio)
+            ->where('codigo_dia', $codigoDia)
+            ->where('hora_inicio', '>', $horaActual)
+            ->orderBy('hora_inicio')
+            ->with(['asignatura:id,nombre_asignatura', 'profesor:run,name'])
+            ->first();
+        
+        if (!$proximaClase) {
+            return null;
+        }
+        
+        return [
+            'asignatura' => $proximaClase->asignatura->nombre_asignatura ?? 'No especificada',
+            'profesor' => $proximaClase->profesor->name ?? 'No especificado',
+            'hora_inicio' => $proximaClase->hora_inicio,
+            'hora_termino' => $proximaClase->hora_termino
+        ];
     }
 }
