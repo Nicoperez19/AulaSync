@@ -52,12 +52,12 @@ Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::delete('/user/user_delete/{run}', [UserController::class, 'destroy'])->name('users.delete');
     Route::get('/user/user_edit/{run}', [UserController::class, 'edit'])->name('users.edit');
     Route::put('user/user_update/{run}', [UserController::class, 'update'])->name('users.update');
-    Route::get('/horarios/horarios_index', [HorariosController::class, 'index'])->name('horarios.index');
 });
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/horarios/{run}', [HorariosController::class, 'getHorarioProfesor'])->name('horarios.get');
     Route::get('/modulos-actuales', [\App\Http\Controllers\TableController::class, 'index'])->name('modulos.actuales');
+    Route::get('/modulos-actuales/actualizar-datos', [\App\Http\Controllers\TableController::class, 'actualizarDatos'])->name('modulos.actuales.datos');
 });
 
 // Horarios por espacios - Solo Administrador y Supervisor
@@ -208,18 +208,6 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
 });
 
-Route::get('/buttons/text', function () {
-    return view('buttons-showcase.text');
-})->middleware(['auth'])->name('buttons.text');
-
-Route::get('/buttons/icon', function () {
-    return view('buttons-showcase.icon');
-})->middleware(['auth'])->name('buttons.icon');
-
-Route::get('/buttons/text-icon', function () {
-    return view('buttons-showcase.text-icon');
-})->middleware(['auth'])->name('buttons.text-icon');
-
 // Monitoreo de espacios - Todos los roles
 Route::group(['middleware' => ['auth', 'session.timeout', 'permission:monitoreo de espacios']], function () {
     Route::get('/plano-digital', [PlanoDigitalController::class, 'index'])->name('plano.index');
@@ -232,32 +220,15 @@ Route::group(['middleware' => ['auth', 'session.timeout', 'permission:monitoreo 
 
 // Reportes - Solo Administrador y Supervisor
 Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(function () {
-    Route::get('utilizacion_por_espacio', [ReportController::class, 'utilizacion'])->name('reportes.utilizacion_por_espacio');
     Route::get('tipo-espacio', [ReportController::class, 'tipoEspacio'])->name('reportes.tipo-espacio');
     Route::get('espacios', [ReportController::class, 'espacios'])->name('reportes.espacios');
-    Route::get('tipo-espacio/historico-ajax', [ReportController::class, 'historicoAjax'])->name('reportes.tipo-espacio.historico-ajax');
     Route::get('accesos', [ReportController::class, 'accesos'])->name('reportes.accesos');
     Route::get('accesos/limpiar', [ReportController::class, 'limpiarFiltrosAccesos'])->name('reportes.accesos.limpiar');
     Route::get('accesos/{id}/detalles', [ReportController::class, 'getDetallesAcceso'])->name('reportes.accesos.detalles');
-    Route::get('unidad-academica', [ReportController::class, 'unidadAcademica'])->name('reportes.unidad-academica');
     // Rutas para exportar a Excel y PDF
-    Route::get('utilizacion/export/{format}', [ReportController::class, 'exportUtilizacion'])->name('reportes.utilizacion.export');
-    Route::get('tipo-espacio/export/{format}', [ReportController::class, 'exportTipoEspacio'])->name('reportes.tipo-espacio.export');
     Route::get('espacios/export/{format}', [ReportController::class, 'exportEspacios'])->name('reportes.espacios.export');
-    Route::get('historico-espacios/export/{format}', [ReportController::class, 'exportHistoricoEspacios'])->name('reportes.tipo-espacio.export');
     Route::get('accesos/export/{format}', [ReportController::class, 'exportAccesos'])->name('reportes.accesos.export');
     Route::post('accesos/export/{format}', [ReportController::class, 'exportAccesosConFiltros'])->name('reportes.accesos.export.filtros');
-    Route::get('unidad-academica/export/{format}', [ReportController::class, 'exportUnidadAcademica'])->name('reportes.unidad-academica.export');
-});
-
-// Dashboard widgets - Solo Administrador y Supervisor
-Route::middleware(['auth', 'permission:dashboard'])->group(function () {
-    Route::post('/dashboard/set-piso', [DashboardController::class, 'setPiso'])->name('dashboard.setPiso');
-    Route::get('/dashboard/widget-data', [DashboardController::class, 'getWidgetData'])->name('dashboard.widgetData');
-    Route::get('/dashboard/utilizacion-tipo-espacio', [App\Http\Controllers\DashboardController::class, 'utilizacionTipoEspacioAjax'])->name('dashboard.utilizacion_tipo_espacio');
-    Route::get('/dashboard/no-utilizadas-dia', [App\Http\Controllers\DashboardController::class, 'noUtilizadasDiaAjax']);
-    Route::get('/dashboard/horarios-actual', [App\Http\Controllers\DashboardController::class, 'horariosActualAjax'])->name('dashboard.horarios-actual');
-    Route::get('/dashboard/horarios-semana', [App\Http\Controllers\DashboardController::class, 'horariosSemana'])->name('dashboard.horarios-semana');
 });
 
 require __DIR__ . '/auth.php';
