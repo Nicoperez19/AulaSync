@@ -104,19 +104,7 @@
                                                 <th class="w-1/4 px-3 py-3 text-xs font-medium text-left text-white uppercase">
                                                     PROFESOR</th>
                                             </tr>
-                                            @if ($esBreak)
-                                                <tr class="bg-yellow-500">
-                                                    <th colspan="3" class="px-3 py-2 text-center">
-                                                        <div class="flex items-center justify-center space-x-4">
-                                                            <span class="text-lg font-bold text-white">BREAK</span>
-                                                            <i class="fas fa-coffee text-white text-lg"></i>
-                                                            <span class="text-lg font-bold text-white" id="cuenta-regresiva-2">
-                                                                {{ sprintf('%02d:%02d', $minutosRestantes, $segundosRestantes) }}
-                                                            </span>
-                                                        </div>
-                                                    </th>
-                                                </tr>
-                                            @endif
+                                            
                                         </thead>
                                         <tbody class="bg-white divide-y divide-gray-200">
                                             @foreach (array_slice($todosLosEspacios, ceil(count($todosLosEspacios) / 2)) as $index => $espacio)
