@@ -36,6 +36,61 @@
     @endif
 
     <div class="px-6 min-h-[80vh]">
+        <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
+            <div class="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+                <div class="flex items-center">
+                    <div class="p-2 bg-blue-100 rounded-lg dark:bg-blue-900">
+                        <i class="text-blue-600 fas fa-users dark:text-blue-400"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total de accesos</p>
+                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $accesos->count() }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+                <div class="flex items-center">
+                    <div class="p-2 bg-green-100 rounded-lg dark:bg-green-900">
+                        <i class="text-green-600 fas fa-user-check dark:text-green-400"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Usuarios únicos</p>
+                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">
+                            {{ $accesos->unique('run')->count() }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+                <div class="flex items-center">
+                    <div class="p-2 bg-yellow-100 rounded-lg dark:bg-yellow-900">
+                        <i class="text-yellow-600 fas fa-building dark:text-yellow-400"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Espacios utilizados</p>
+                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">
+                            {{ $accesos->unique('espacio')->count() }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+                <div class="flex items-center">
+                    <div class="p-2 bg-purple-100 rounded-lg dark:bg-purple-900">
+                        <i class="text-purple-600 fas fa-clock dark:text-purple-400"></i>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">En curso</p>
+                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">
+                            {{ $accesos->where('hora_salida', 'En curso')->count() }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
         <!-- Filtros -->
         <div class="p-6 mb-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
             <h3 class="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-700 dark:text-gray-300">
@@ -127,61 +182,7 @@
         </div>
 
         <!-- Estadísticas -->
-        <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
-            <div class="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
-                <div class="flex items-center">
-                    <div class="p-2 bg-blue-100 rounded-lg dark:bg-blue-900">
-                        <i class="text-blue-600 fas fa-users dark:text-blue-400"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total de accesos</p>
-                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $accesos->count() }}</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
-                <div class="flex items-center">
-                    <div class="p-2 bg-green-100 rounded-lg dark:bg-green-900">
-                        <i class="text-green-600 fas fa-user-check dark:text-green-400"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Usuarios únicos</p>
-                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">
-                            {{ $accesos->unique('run')->count() }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
-                <div class="flex items-center">
-                    <div class="p-2 bg-yellow-100 rounded-lg dark:bg-yellow-900">
-                        <i class="text-yellow-600 fas fa-building dark:text-yellow-400"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Espacios utilizados</p>
-                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">
-                            {{ $accesos->unique('espacio')->count() }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
-                <div class="flex items-center">
-                    <div class="p-2 bg-purple-100 rounded-lg dark:bg-purple-900">
-                        <i class="text-purple-600 fas fa-clock dark:text-purple-400"></i>
-                    </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">En curso</p>
-                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">
-                            {{ $accesos->where('hora_salida', 'En curso')->count() }}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
+        
 
         <!-- Tabla de accesos -->
         <div class="p-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
@@ -225,7 +226,7 @@
                         <tr>
                             <th
                                 class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
-                                Usuario
+                                Profesor/Solicitante
                             </th>
                             <th
                                 class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
@@ -304,7 +305,7 @@
                                                 </td>
                                                 <td class="px-4 py-3 whitespace-nowrap">
                                                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
-                                                                                                                                                                                                {{ $acceso['tipo_usuario'] == 'profesor' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                                                                                                                                                                                                                    {{ $acceso['tipo_usuario'] == 'profesor' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
                             ($acceso['tipo_usuario'] == 'estudiante' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
                                 ($acceso['tipo_usuario'] == 'administrativo' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
                                     'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200')) }}">
@@ -313,7 +314,7 @@
                                                 </td>
                                                 <td class="px-4 py-3 whitespace-nowrap">
                                                     <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
-                                                                                                                                                                                                {{ $acceso['estado'] == 'activa' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                                                                                                                                                                                                                    {{ $acceso['estado'] == 'activa' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
                             ($acceso['estado'] == 'finalizada' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' :
                                 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200') }}">
                                                         {{ ucfirst($acceso['estado']) }}

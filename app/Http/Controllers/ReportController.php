@@ -43,7 +43,25 @@ class ReportController extends Controller
         $modulos_reservados = Reserva::whereMonth('fecha_reserva', $mes)
             ->whereYear('fecha_reserva', $anio)
             ->count();
-        $promedio_utilizacion = $modulos_posibles > 0 ? round(($modulos_reservados / $modulos_posibles) * 100) : 0;
+        
+        // Calcular horas reales utilizadas para el promedio
+        $reservas_mes = Reserva::whereMonth('fecha_reserva', $mes)
+            ->whereYear('fecha_reserva', $anio)
+            ->get();
+        
+        $horas_utilizadas = $reservas_mes->sum(function($reserva) {
+            if ($reserva->hora && $reserva->hora_salida) {
+                $inicio = Carbon::parse($reserva->hora);
+                $fin = Carbon::parse($reserva->hora_salida);
+                return $inicio->diffInHours($fin);
+            }
+            return 1; // Si no hay hora de salida, asumir 1 hora
+        });
+        
+        // Calcular promedio basado en horas disponibles vs horas utilizadas
+        $horas_totales_disponibles = $total_espacios * $dias_laborales * 8; // 8 horas por día laboral
+        $promedio_utilizacion = $horas_totales_disponibles > 0 ? 
+            round(($horas_utilizadas / $horas_totales_disponibles) * 100) : 0;
 
         $tipos = Espacio::distinct()->pluck('tipo_espacio');
         $resumen = [];
@@ -170,9 +188,25 @@ class ReportController extends Controller
 
         // Calcular promedio de utilización basado en días laborales del mes
         $dias_laborales = $this->calcularDiasLaborales($anio, $mes);
-        $horas_totales_disponibles = $total_espacios * $dias_laborales * 15; // 15 módulos por día
+        $horas_totales_disponibles = $total_espacios * $dias_laborales * 8; // 8 horas por día laboral
+        
+        // Calcular horas reales utilizadas
+        $reservas_mes = Reserva::whereMonth('fecha_reserva', $mes)
+            ->whereYear('fecha_reserva', $anio)
+            ->get();
+        
+        $horas_utilizadas = $reservas_mes->sum(function($reserva) {
+            if ($reserva->hora && $reserva->hora_salida) {
+                $inicio = Carbon::parse($reserva->hora);
+                $fin = Carbon::parse($reserva->hora_salida);
+                return $inicio->diffInHours($fin);
+            }
+            return 1; // Si no hay hora de salida, asumir 1 hora
+        });
+        
+        // Calcular promedio de utilización basado en horas reales
         $promedio_utilizacion = $horas_totales_disponibles > 0 ? 
-            round(($total_reservas / $horas_totales_disponibles) * 100, 1) : 0;
+            round(($horas_utilizadas / $horas_totales_disponibles) * 100) : 0;
 
         // Calcular estadísticas detalladas por espacio
         $resumen = [];
@@ -235,13 +269,12 @@ class ReportController extends Controller
         $ocupacionHorarios = $this->calcularOcupacionHorarios($espacios, $mes, $anio, $diasDisponibles);
 
         // Obtener datos del histórico de reservas
-        $fechaInicio = Carbon::now()->startOfMonth()->format('Y-m-d');
-        $fechaFin = Carbon::now()->endOfMonth()->format('Y-m-d');
+        $fechaInicio = $request->get('fecha_inicio', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $fechaFin = $request->get('fecha_fin', Carbon::now()->endOfMonth()->format('Y-m-d'));
         
-        // Obtener reservas del mes actual con información completa
-        $reservasQuery = Reserva::with(['espacio.piso.facultad', 'user'])
+        // Obtener reservas del rango de fechas con información completa
+        $reservasQuery = Reserva::with(['espacio.piso.facultad', 'profesor', 'solicitante'])
             ->whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
-            ->where('estado', 'activa')
             ->whereHas('espacio', function($q) use ($espacios) {
                 $q->whereIn('id_espacio', $espacios->pluck('id_espacio'));
             });
@@ -256,6 +289,9 @@ class ReportController extends Controller
             $reservasQuery->whereHas('espacio.piso', function($q) use ($pisoFiltro) {
                 $q->where('numero_piso', $pisoFiltro);
             });
+        }
+        if (!empty($estadoFiltro)) {
+            $reservasQuery->where('estado', $estadoFiltro);
         }
         if (!empty($busqueda)) {
             $reservasQuery->whereHas('espacio', function($q) use ($busqueda) {
@@ -294,8 +330,8 @@ class ReportController extends Controller
                 'piso' => $reserva->espacio->piso ? $reserva->espacio->piso->numero_piso : 'N/A',
                 'facultad' => $reserva->espacio->piso && $reserva->espacio->piso->facultad ? 
                     $reserva->espacio->piso->facultad->nombre_facultad : 'N/A',
-                'usuario' => $reserva->user->name ?? 'Usuario no encontrado',
-                'tipo_usuario' => ucfirst($this->determinarTipoUsuario($reserva->user)),
+                'usuario' => $this->obtenerNombreUsuario($reserva),
+                'tipo_usuario' => $this->obtenerTipoUsuario($reserva),
                 'horas_utilizadas' => round($horasUtilizadas, 1),
                 'duracion' => $duracionFormateada,
                 'estado' => ucfirst($reserva->estado)
@@ -357,45 +393,54 @@ class ReportController extends Controller
     }
 
     /**
-     * Calcular ocupación por horarios de forma optimizada
+     * Calcular ocupación por horarios por espacio individual
      */
     private function calcularOcupacionHorarios($espacios, $mes, $anio, $diasDisponibles)
     {
         $ocupacionHorarios = [];
         
-        // Obtener todas las reservas del mes de una vez
-        $espaciosIds = $espacios->pluck('id_espacio');
-        $reservas = Reserva::whereIn('id_espacio', $espaciosIds)
-            ->whereMonth('fecha_reserva', $mes)
-            ->whereYear('fecha_reserva', $anio)
-            ->get();
-
+        // Calcular ocupación por espacio individual
         foreach ($espacios as $espacio) {
-            $ocupacionHorarios[$espacio->id_espacio] = [];
+            $espacioId = $espacio->id_espacio;
+            $ocupacionHorarios[$espacioId] = [];
             
             foreach ($diasDisponibles as $dia) {
-                $ocupacionHorarios[$espacio->id_espacio][$dia] = [];
+                $ocupacionHorarios[$espacioId][$dia] = [];
                 
                 // Inicializar todos los módulos en 0
                 for ($moduloNum = 1; $moduloNum <= 15; $moduloNum++) {
-                    $ocupacionHorarios[$espacio->id_espacio][$dia][$moduloNum] = 0;
+                    $ocupacionHorarios[$espacioId][$dia][$moduloNum] = 0;
                 }
                 
-                // Calcular ocupación real para este día
-                $reservasDelDia = $reservas->where('id_espacio', $espacio->id_espacio)
+                // Obtener reservas para este espacio específico en este día
+                $reservasDelDia = Reserva::where('id_espacio', $espacioId)
+                    ->whereMonth('fecha_reserva', $mes)
+                    ->whereYear('fecha_reserva', $anio)
+                    ->get()
                     ->filter(function($reserva) use ($dia) {
                         $diaSemana = strtolower(\Carbon\Carbon::parse($reserva->fecha_reserva)->locale('es')->isoFormat('dddd'));
                         return $diaSemana === $dia;
                     });
                 
+                // Contar reservas por módulo
+                $ocupadosPorModulo = [];
+                for ($moduloNum = 1; $moduloNum <= 15; $moduloNum++) {
+                    $ocupadosPorModulo[$moduloNum] = 0;
+                }
+                
                 foreach ($reservasDelDia as $reserva) {
                     if ($reserva->hora) {
                         $hora = \Carbon\Carbon::parse($reserva->hora);
                         $modulo = $this->obtenerModuloPorHora($hora->hour);
-                        if (isset($ocupacionHorarios[$espacio->id_espacio][$dia][$modulo])) {
-                            $ocupacionHorarios[$espacio->id_espacio][$dia][$modulo] = 100;
+                        if (isset($ocupadosPorModulo[$modulo])) {
+                            $ocupadosPorModulo[$modulo]++;
                         }
                     }
+                }
+                
+                // Calcular porcentaje de ocupación por módulo (1 espacio = 100% si está ocupado)
+                for ($moduloNum = 1; $moduloNum <= 15; $moduloNum++) {
+                    $ocupacionHorarios[$espacioId][$dia][$moduloNum] = $ocupadosPorModulo[$moduloNum] > 0 ? 100 : 0;
                 }
             }
         }
@@ -503,7 +548,7 @@ class ReportController extends Controller
         if ($format === 'excel') {
             return $this->exportarResumenExcel($datos);
         } elseif ($format === 'pdf') {
-            return $this->exportarResumenPDF($datos);
+            return $this->exportarResumenPDF($datos, $tipoEspacioFiltro, $pisoFiltro, $estadoFiltro, $busqueda);
         }
 
         return redirect()->back()->with('error', 'Formato de exportación no válido');
@@ -537,7 +582,7 @@ class ReportController extends Controller
             $espacios = $espaciosQuery->get();
 
             // Obtener reservas filtradas
-            $reservasQuery = Reserva::with(['espacio', 'user'])
+            $reservasQuery = Reserva::with(['espacio', 'profesor', 'solicitante'])
                 ->whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
                 ->where('estado', 'activa')
                 ->whereHas('espacio', function($q) use ($espacios) {
@@ -550,17 +595,11 @@ class ReportController extends Controller
             }
             
             if (!empty($tipoUsuario)) {
-                $reservasQuery->whereHas('user', function($q) use ($tipoUsuario) {
-                    if ($tipoUsuario === 'profesor') {
-                        $q->whereNotNull('tipo_profesor');
-                    } elseif ($tipoUsuario === 'estudiante') {
-                        $q->whereNull('tipo_profesor')->whereNotNull('id_carrera');
-                    } elseif ($tipoUsuario === 'administrativo') {
-                        $q->whereNull('tipo_profesor')->whereNull('id_carrera')->whereNotNull('id_facultad');
-                    } else {
-                        $q->whereNull('tipo_profesor')->whereNull('id_carrera')->whereNull('id_facultad');
-                    }
-                });
+                if ($tipoUsuario === 'profesor') {
+                    $reservasQuery->whereNotNull('run_profesor');
+                } elseif ($tipoUsuario === 'solicitante') {
+                    $reservasQuery->whereNotNull('run_solicitante');
+                }
             }
             
             $reservas = $reservasQuery->orderBy('fecha_reserva', 'desc')
@@ -584,13 +623,28 @@ class ReportController extends Controller
                     (floor($duracionMinutos / 60) > 0 ? floor($duracionMinutos / 60) . 'h ' : '') . 
                     ($duracionMinutos % 60) . ' min' : '0 min';
 
+                // Determinar si es profesor o solicitante
+                $usuario = 'N/A';
+                $tipoUsuario = 'N/A';
+                
+                if ($reserva->profesor) {
+                    $usuario = $reserva->profesor->name ?? 'Profesor no encontrado';
+                    $tipoUsuario = 'Profesor';
+                } elseif ($reserva->solicitante) {
+                    $usuario = $reserva->solicitante->nombre ?? 'Solicitante no encontrado';
+                    $tipoUsuario = ucfirst($reserva->solicitante->tipo_solicitante ?? 'Solicitante');
+                }
+
                 $datosExport[] = [
                     'fecha' => Carbon::parse($reserva->fecha_reserva)->format('d/m/Y'),
                     'hora_inicio' => $reserva->hora ? Carbon::parse($reserva->hora)->format('H:i') : 'N/A',
                     'hora_fin' => $reserva->hora_salida ? Carbon::parse($reserva->hora_salida)->format('H:i') : 'N/A',
                     'espacio' => $reserva->espacio->nombre_espacio . ' (' . $reserva->espacio->id_espacio . ')',
-                    'usuario' => $reserva->user->name ?? 'Usuario no encontrado',
-                    'tipo_usuario' => ucfirst($this->determinarTipoUsuario($reserva->user)),
+                    'tipo_espacio' => $reserva->espacio->tipo_espacio,
+                    'piso' => $reserva->espacio->piso->numero_piso,
+                    'facultad' => $reserva->espacio->piso->facultad->nombre_facultad,
+                    'usuario' => $usuario,
+                    'tipo_usuario' => $tipoUsuario,
                     'horas_utilizadas' => round($horasUtilizadas, 1),
                     'duracion' => $duracionFormateada,
                     'estado' => ucfirst($reserva->estado)
@@ -600,7 +654,7 @@ class ReportController extends Controller
             if ($format === 'excel') {
                 return $this->exportarHistoricoExcel($datosExport, $fechaInicio, $fechaFin);
             } elseif ($format === 'pdf') {
-                return $this->exportarHistoricoPDF($datosExport, $fechaInicio, $fechaFin);
+                return $this->exportarHistoricoPDF($datosExport, $fechaInicio, $fechaFin, $piso, $tipoUsuario, $tipoEspacioFiltro);
             }
 
             return redirect()->back()->with('error', 'Formato de exportación no válido');
@@ -650,14 +704,34 @@ class ReportController extends Controller
         }
     }
 
-    private function exportarHistoricoPDF($datos, $fechaInicio, $fechaFin)
+    private function exportarHistoricoPDF($datos, $fechaInicio, $fechaFin, $piso = '', $tipoUsuario = '', $tipoEspacioFiltro = '')
     {
         try {
+            // Calcular resumen
+            $total = count($datos);
+            $completadas = collect($datos)->where('estado', 'Finalizada')->count();
+            $canceladas = collect($datos)->where('estado', 'Cancelada')->count();
+            $enProgreso = collect($datos)->where('estado', 'En progreso')->count();
+            $activas = collect($datos)->where('estado', 'Activa')->count();
+
             $data = [
                 'datos' => $datos,
+                'fecha_inicio' => Carbon::parse($fechaInicio)->format('d/m/Y'),
+                'fecha_fin' => Carbon::parse($fechaFin)->format('d/m/Y'),
                 'fecha_generacion' => Carbon::now()->format('d/m/Y H:i:s'),
-                'periodo' => Carbon::parse($fechaInicio)->format('d/m/Y') . ' - ' . Carbon::parse($fechaFin)->format('d/m/Y'),
-                'total_registros' => count($datos)
+                'total_registros' => $total,
+                'filtros_aplicados' => [
+                    'tipo_espacio' => $tipoEspacioFiltro,
+                    'piso' => $piso,
+                    'estado' => '',
+                    'busqueda' => ''
+                ],
+                'resumen' => [
+                    'total' => $total,
+                    'completadas' => $completadas,
+                    'canceladas' => $canceladas,
+                    'en_progreso' => $enProgreso + $activas
+                ]
             ];
 
             $filename = 'historico_espacios_' . $fechaInicio . '_' . $fechaFin . '.pdf';
@@ -973,7 +1047,7 @@ class ReportController extends Controller
      */
     public function obtenerAccesosRegistrados($fechaInicio, $fechaFin, $piso = null, $tipoUsuario = null, $espacio = null)
     {
-        $query = Reserva::with(['profesor', 'espacio.piso.facultad'])
+        $query = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
             ->whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
             ->whereIn('estado', ['activa', 'finalizada']) // Mostrar activas y finalizadas
             ->whereNotNull('hora') // Solo las que tienen hora de entrada (escaneo QR)
@@ -989,17 +1063,19 @@ class ReportController extends Controller
 
         // Filtrar por tipo de usuario
         if (!empty($tipoUsuario)) {
-            $query->whereHas('profesor', function ($q) use ($tipoUsuario) {
-                if ($tipoUsuario === 'profesor') {
-                    $q->whereNotNull('tipo_profesor');
-                } elseif ($tipoUsuario === 'estudiante') {
-                    $q->whereNull('tipo_profesor')->whereNotNull('id_carrera');
-                } elseif ($tipoUsuario === 'administrativo') {
-                    $q->whereNull('tipo_profesor')->whereNull('id_carrera')->whereNotNull('id_facultad');
-                } else {
-                    $q->whereNull('tipo_profesor')->whereNull('id_carrera')->whereNull('id_facultad');
-                }
-            });
+            if ($tipoUsuario === 'profesor') {
+                $query->whereNotNull('run_profesor');
+            } elseif ($tipoUsuario === 'solicitante') {
+                $query->whereNotNull('run_solicitante');
+            } elseif ($tipoUsuario === 'estudiante') {
+                $query->whereHas('solicitante', function ($q) use ($tipoUsuario) {
+                    $q->where('tipo_solicitante', 'estudiante');
+                });
+            } elseif ($tipoUsuario === 'administrativo') {
+                $query->whereHas('solicitante', function ($q) use ($tipoUsuario) {
+                    $q->where('tipo_solicitante', 'personal');
+                });
+            }
         }
 
         // Filtrar por espacio
@@ -1010,12 +1086,36 @@ class ReportController extends Controller
         }
 
         return $query->get()->map(function ($reserva) {
+            // Determinar si es profesor o solicitante
+            $esProfesor = !empty($reserva->run_profesor);
+            $esSolicitante = !empty($reserva->run_solicitante);
+            
+            if ($esProfesor) {
+                // Es una reserva de profesor
+                $usuario = $reserva->profesor->name ?? 'Profesor no encontrado';
+                $run = $reserva->profesor->run_profesor ?? 'N/A';
+                $email = $reserva->profesor->email ?? 'N/A';
+                $tipoUsuario = 'profesor';
+            } elseif ($esSolicitante) {
+                // Es una reserva de solicitante
+                $usuario = $reserva->solicitante->nombre ?? 'Solicitante no encontrado';
+                $tipoUsuario = ucfirst($reserva->solicitante->tipo_solicitante ?? 'Solicitante');
+                $run = $reserva->solicitante->run_solicitante ?? 'N/A';
+                $email = $reserva->solicitante->correo ?? 'N/A';
+            } else {
+                // Caso por defecto (no debería ocurrir)
+                $usuario = 'Usuario no identificado';
+                $run = 'N/A';
+                $email = 'N/A';
+                $tipoUsuario = 'desconocido';
+            }
+
             return [
                 'id' => $reserva->id_reserva,
-                'usuario' => $reserva->profesor->name ?? 'Profesor no encontrado',
-                'run' => $reserva->profesor->run_profesor ?? 'N/A',
-                'email' => $reserva->profesor->email ?? 'N/A',
-                'tipo_usuario' => $this->determinarTipoUsuario($reserva->profesor),
+                'usuario' => $usuario,
+                'run' => $run,
+                'email' => $email,
+                'tipo_usuario' => $tipoUsuario,
                 'espacio' => $reserva->espacio->nombre_espacio ?? 'Espacio no encontrado',
                 'id_espacio' => $reserva->espacio->id_espacio ?? '',
                 'piso' => $reserva->espacio->piso->numero_piso ?? 'N/A',
@@ -1110,9 +1210,9 @@ class ReportController extends Controller
     {
         return [
             'profesor' => 'Profesor',
+            'solicitante' => 'Solicitante',
             'estudiante' => 'Estudiante',
-            'administrativo' => 'Administrativo',
-            'externo' => 'Externo'
+            'administrativo' => 'Personal Administrativo'
         ];
     }
 
@@ -1616,17 +1716,354 @@ class ReportController extends Controller
         }, $filename);
     }
 
-    private function exportarResumenPDF($datos)
+    private function exportarResumenPDF($datos, $tipoEspacioFiltro = '', $pisoFiltro = '', $estadoFiltro = '', $busqueda = '')
     {
         $data = [
             'datos' => $datos,
             'fecha_generacion' => Carbon::now()->format('d/m/Y H:i:s'),
             'periodo' => Carbon::now()->format('m/Y'),
-            'total_registros' => count($datos)
+            'total_registros' => count($datos),
+            'filtros_aplicados' => [
+                'tipo_espacio' => $tipoEspacioFiltro,
+                'piso' => $pisoFiltro,
+                'estado' => $estadoFiltro,
+                'busqueda' => $busqueda
+            ]
         ];
 
         $filename = 'analisis_espacios_' . date('Y-m-d_H-i-s') . '.pdf';
         $pdf = Pdf::loadView('reportes.pdf.espacios', $data);
         return $pdf->download($filename);
+    }
+
+    /**
+     * Obtiene el histórico de reservas por tipo de espacio
+     */
+    public function getHistoricoTipoEspacio(Request $request)
+    {
+        try {
+            $request->validate([
+                'fecha_inicio' => 'required|date',
+                'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
+                'tipo_espacio' => 'nullable|string',
+                'page' => 'nullable|integer|min:1'
+            ]);
+
+            $query = Reserva::with(['espacio.piso.facultad', 'solicitante', 'profesor'])
+                ->whereBetween('fecha_reserva', [
+                    $request->fecha_inicio,
+                    $request->fecha_fin
+                ]);
+
+            // Filtrar por tipo de espacio si se especifica
+            if ($request->filled('tipo_espacio')) {
+                $query->whereHas('espacio', function($q) use ($request) {
+                    $q->where('tipo_espacio', $request->tipo_espacio);
+                });
+            }
+
+            // Obtener datos paginados
+            $reservas = $query->orderBy('fecha_reserva', 'desc')
+                ->orderBy('hora', 'asc')
+                ->paginate(15);
+                
+
+
+            // Calcular KPIs con estados correctos
+            $total = $query->count();
+            $finalizadas = $query->where('estado', 'finalizada')->count();
+            $activas = $query->where('estado', 'activa')->count();
+
+            // Formatear datos para la respuesta
+            $data = $reservas->getCollection()->map(function($reserva) {
+                
+                
+                // Determinar si es profesor o solicitante
+                $usuario = 'N/A';
+                $tipoUsuario = 'N/A';
+                $run = 'N/A';
+                $email = 'N/A';
+                
+                if ($reserva->profesor) {
+                    $usuario = $reserva->profesor->name ?? 'Profesor no encontrado';
+                    $tipoUsuario = 'Profesor';
+                    $run = $reserva->profesor->run_profesor ?? 'N/A';
+                    $email = $reserva->profesor->email ?? 'N/A';
+                } elseif ($reserva->solicitante) {
+                    $usuario = $reserva->solicitante->nombre ?? 'Solicitante no encontrado';
+                    $tipoUsuario = ucfirst($reserva->solicitante->tipo_solicitante ?? 'Solicitante');
+                    $run = $reserva->solicitante->run_solicitante ?? 'N/A';
+                    $email = $reserva->solicitante->correo ?? 'N/A';
+                }
+
+                // Calcular duración
+                $duracion = 'N/A';
+                if ($reserva->hora && $reserva->hora_salida) {
+                    $inicio = \Carbon\Carbon::parse($reserva->hora);
+                    $fin = \Carbon\Carbon::parse($reserva->hora_salida);
+                    $diff = $inicio->diffInMinutes($fin);
+                    
+                    if ($diff >= 60) {
+                        $horas = floor($diff / 60);
+                        $minutos = $diff % 60;
+                        $duracion = $minutos > 0 ? "{$horas}h {$minutos}min" : "{$horas}h";
+                    } else {
+                        $duracion = "{$diff} min";
+                    }
+                } elseif ($reserva->hora && $reserva->estado === 'activa') {
+                    $duracion = 'En curso';
+                }
+
+                // Formatear hora de salida
+                $horaSalida = 'N/A';
+                if ($reserva->hora_salida) {
+                    $horaSalida = \Carbon\Carbon::parse($reserva->hora_salida)->format('H:i:s');
+                } elseif ($reserva->estado === 'activa') {
+                    $horaSalida = 'En curso';
+                }
+
+                return [
+                    'profesor_solicitante' => $usuario,
+                    'run' => $run,
+                    'email' => $email,
+                    'espacio' => ($reserva->espacio->nombre_espacio ?? 'N/A') . ' (' . ($reserva->espacio->id_espacio ?? 'N/A') . ', Piso ' . ($reserva->espacio->piso->numero_piso ?? 'N/A') . ')',
+                    'facultad' => $reserva->espacio->piso->facultad->nombre_facultad ?? 'N/A',
+                    'fecha' => \Carbon\Carbon::parse($reserva->fecha_reserva)->format('d/m/Y'),
+                    'hora_inicio' => $reserva->hora ? \Carbon\Carbon::parse($reserva->hora)->format('H:i:s') : 'N/A',
+                    'hora_termino' => $horaSalida,
+                    'duracion' => $duracion,
+                    'tipo_usuario' => $tipoUsuario,
+                    'estado' => $reserva->estado
+                ];
+            });
+
+            return response()->json([
+                'data' => $data,
+                'current_page' => $reservas->currentPage(),
+                'last_page' => $reservas->lastPage(),
+                'per_page' => $reservas->perPage(),
+                'total' => $total,
+                'finalizadas' => $finalizadas,
+                'activas' => $activas
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error en getHistoricoTipoEspacio: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Error interno del servidor',
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Exportar datos del histórico por tipo de espacio
+     */
+    public function exportTipoEspacio(Request $request, $format)
+    {
+        try {
+            // Obtener parámetros de filtro
+            $fechaInicio = $request->get('fecha_inicio', now()->startOfMonth()->format('Y-m-d'));
+            $fechaFin = $request->get('fecha_fin', now()->endOfMonth()->format('Y-m-d'));
+            $tipoEspacio = $request->get('tipo_espacio', '');
+
+            // Obtener datos del histórico
+            $query = Reserva::with(['espacio.piso.facultad', 'solicitante', 'profesor'])
+                ->whereBetween('fecha_reserva', [$fechaInicio, $fechaFin]);
+
+            // Filtrar por tipo de espacio si se especifica
+            if (!empty($tipoEspacio)) {
+                $query->whereHas('espacio', function($q) use ($tipoEspacio) {
+                    $q->where('tipo_espacio', $tipoEspacio);
+                });
+            }
+
+            $reservas = $query->orderBy('fecha_reserva', 'desc')
+                ->orderBy('hora', 'asc')
+                ->get();
+
+            // Formatear datos para exportación
+            $datos = $reservas->map(function($reserva) {
+                // Determinar si es profesor o solicitante
+                $usuario = 'N/A';
+                $tipoUsuario = 'N/A';
+                $run = 'N/A';
+                $email = 'N/A';
+                
+                if ($reserva->profesor) {
+                    $usuario = $reserva->profesor->name ?? 'Profesor no encontrado';
+                    $tipoUsuario = 'Profesor';
+                    $run = $reserva->profesor->run_profesor ?? 'N/A';
+                    $email = $reserva->profesor->email ?? 'N/A';
+                } elseif ($reserva->solicitante) {
+                    $usuario = $reserva->solicitante->nombre ?? 'Solicitante no encontrado';
+                    $tipoUsuario = ucfirst($reserva->solicitante->tipo_solicitante ?? 'Solicitante');
+                    $run = $reserva->solicitante->run_solicitante ?? 'N/A';
+                    $email = $reserva->solicitante->correo ?? 'N/A';
+                }
+
+                // Calcular duración
+                $duracion = 'N/A';
+                if ($reserva->hora && $reserva->hora_salida) {
+                    $inicio = \Carbon\Carbon::parse($reserva->hora);
+                    $fin = \Carbon\Carbon::parse($reserva->hora_salida);
+                    $diff = $inicio->diffInMinutes($fin);
+                    
+                    if ($diff >= 60) {
+                        $horas = floor($diff / 60);
+                        $minutos = $diff % 60;
+                        $duracion = $minutos > 0 ? "{$horas}h {$minutos}min" : "{$horas}h";
+                    } else {
+                        $duracion = "{$diff} min";
+                    }
+                } elseif ($reserva->hora && $reserva->estado === 'activa') {
+                    $duracion = 'En curso';
+                }
+
+                // Formatear hora de salida
+                $horaSalida = 'N/A';
+                if ($reserva->hora_salida) {
+                    $horaSalida = \Carbon\Carbon::parse($reserva->hora_salida)->format('H:i:s');
+                } elseif ($reserva->estado === 'activa') {
+                    $horaSalida = 'En curso';
+                }
+
+                return [
+                    'profesor_solicitante' => $usuario,
+                    'run' => $run,
+                    'email' => $email,
+                    'espacio' => ($reserva->espacio->nombre_espacio ?? 'N/A') . ' (' . ($reserva->espacio->id_espacio ?? 'N/A') . ', Piso ' . ($reserva->espacio->piso->numero_piso ?? 'N/A') . ')',
+                    'facultad' => $reserva->espacio->piso->facultad->nombre_facultad ?? 'N/A',
+                    'fecha' => \Carbon\Carbon::parse($reserva->fecha_reserva)->format('d/m/Y'),
+                    'hora_inicio' => $reserva->hora ? \Carbon\Carbon::parse($reserva->hora)->format('H:i:s') : 'N/A',
+                    'hora_termino' => $horaSalida,
+                    'duracion' => $duracion,
+                    'tipo_usuario' => $tipoUsuario,
+                    'estado' => $reserva->estado
+                ];
+            });
+
+            if ($format === 'excel') {
+                return $this->exportarHistoricoTipoEspacioExcel($datos, $fechaInicio, $fechaFin, $tipoEspacio);
+            } elseif ($format === 'pdf') {
+                return $this->exportarHistoricoTipoEspacioPDF($datos, $fechaInicio, $fechaFin, $tipoEspacio);
+            }
+
+            return redirect()->back()->with('error', 'Formato de exportación no válido');
+
+        } catch (\Exception $e) {
+            \Log::error('Error en exportTipoEspacio: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Exportar histórico a Excel
+     */
+    private function exportarHistoricoTipoEspacioExcel($datos, $fechaInicio, $fechaFin, $tipoEspacio)
+    {
+        try {
+            $filename = 'historico_tipo_espacio_' . date('Y-m-d_H-i-s') . '.xlsx';
+            
+            return Excel::download(new class($datos, $fechaInicio, $fechaFin, $tipoEspacio) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\WithStyles {
+                private $datos;
+                private $fechaInicio;
+                private $fechaFin;
+                private $tipoEspacio;
+
+                public function __construct($datos, $fechaInicio, $fechaFin, $tipoEspacio) {
+                    $this->datos = $datos;
+                    $this->fechaInicio = $fechaInicio;
+                    $this->fechaFin = $fechaFin;
+                    $this->tipoEspacio = $tipoEspacio;
+                }
+
+                public function array(): array {
+                    return $this->datos->toArray();
+                }
+
+                public function headings(): array {
+                    return [
+                        'Profesor/Solicitante',
+                        'RUN',
+                        'Email',
+                        'Espacio',
+                        'Facultad',
+                        'Fecha',
+                        'Hora Entrada',
+                        'Hora Salida',
+                        'Duración',
+                        'Tipo Usuario',
+                        'Estado'
+                    ];
+                }
+
+                public function styles(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet) {
+                    $sheet->getStyle('A1:K1')->getFont()->setBold(true);
+                    $sheet->getStyle('A1:K1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('E2E8F0');
+                    
+                    foreach (range('A', 'K') as $col) {
+                        $sheet->getColumnDimension($col)->setAutoSize(true);
+                    }
+                    
+                    return $sheet;
+                }
+            }, $filename);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al exportar a Excel: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Exportar histórico a PDF
+     */
+    private function exportarHistoricoTipoEspacioPDF($datos, $fechaInicio, $fechaFin, $tipoEspacio)
+    {
+        try {
+            $data = [
+                'datos' => $datos,
+                'fecha_generacion' => Carbon::now()->format('d/m/Y H:i:s'),
+                'fecha_inicio' => Carbon::parse($fechaInicio)->format('d/m/Y'),
+                'fecha_fin' => Carbon::parse($fechaFin)->format('d/m/Y'),
+                'tipo_espacio' => $tipoEspacio ?: 'Todos',
+                'total_registros' => count($datos)
+            ];
+
+            $filename = 'historico_tipo_espacio_' . date('Y-m-d_H-i-s') . '.pdf';
+            $pdf = Pdf::loadView('reportes.pdf.historico-tipo-espacio', $data);
+            return $pdf->download($filename);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al exportar a PDF: ' . $e->getMessage());
+            throw $e;
+        }
+    }
+
+    /**
+     * Obtener el nombre del usuario (profesor o solicitante) de una reserva
+     */
+    private function obtenerNombreUsuario($reserva)
+    {
+        if ($reserva->profesor) {
+            return $reserva->profesor->name ?? 'Profesor no encontrado';
+        } elseif ($reserva->solicitante) {
+            return $reserva->solicitante->nombre ?? 'Solicitante no encontrado';
+        }
+        return 'Usuario no encontrado';
+    }
+
+    /**
+     * Obtener el tipo de usuario (profesor o solicitante) de una reserva
+     */
+    private function obtenerTipoUsuario($reserva)
+    {
+        if ($reserva->profesor) {
+            return 'Profesor';
+        } elseif ($reserva->solicitante) {
+            return ucfirst($reserva->solicitante->tipo_solicitante ?? 'Solicitante');
+        }
+        return 'N/A';
     }
 } 

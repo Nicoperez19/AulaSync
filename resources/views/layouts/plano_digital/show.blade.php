@@ -1091,6 +1091,13 @@
                 
                 // Abrir modal de registro de solicitante
                 setTimeout(() => {
+                    // Desactivar autofocus del qr-input para permitir escribir cómodamente
+                    const qrInput = document.getElementById('qr-input');
+                    if (qrInput) {
+                        qrInput.blur(); // Quitar el foco del qr-input
+                        qrInput.removeAttribute('autofocus'); // Remover autofocus
+                    }
+                    
                     window.dispatchEvent(new CustomEvent('open-modal', {
                         detail: 'registro-solicitante'
                     }));
@@ -2165,6 +2172,61 @@
             if (formRegistroSolicitante) {
                 formRegistroSolicitante.addEventListener('submit', procesarRegistroSolicitante);
             }
+            // Configurar event listener para el modal de registro de solicitante
+            document.addEventListener('show.bs.modal', function (event) {
+                const modal = event.target;
+                if (modal.getAttribute('data-modal') === 'registro-solicitante') {
+                    // Desactivar autofocus del qr-input cuando se abre el modal
+                    const qrInput = document.getElementById('qr-input');
+                    if (qrInput) {
+                        qrInput.blur();
+                        qrInput.removeAttribute('autofocus');
+                    }
+                }
+            });
+            
+            // Configurar event listener para cuando se cierre el modal de registro de solicitante
+            document.addEventListener('hide.bs.modal', function (event) {
+                const modal = event.target;
+                if (modal.getAttribute('data-modal') === 'registro-solicitante') {
+                    // Restaurar autofocus del qr-input cuando se cierre el modal
+                    const qrInput = document.getElementById('qr-input');
+                    if (qrInput) {
+                        qrInput.setAttribute('autofocus', '');
+                        setTimeout(() => {
+                            qrInput.focus();
+                        }, 100);
+                    }
+                }
+            });
+            // Configurar event listeners para los campos del formulario de registro de solicitante
+            const camposSolicitante = [
+                'nombre-solicitante',
+                'email-solicitante', 
+                'telefono-solicitante',
+                'tipo-solicitante'
+            ];
+            
+            camposSolicitante.forEach(campoId => {
+                const campo = document.getElementById(campoId);
+                if (campo) {
+                    // Cuando se haga clic en un campo, asegurar que el qr-input no robe el foco
+                    campo.addEventListener('click', function() {
+                        const qrInput = document.getElementById('qr-input');
+                        if (qrInput) {
+                            qrInput.blur();
+                        }
+                    });
+                    
+                    // Cuando se haga foco en un campo, desactivar el autofocus del qr-input
+                    campo.addEventListener('focus', function() {
+                        const qrInput = document.getElementById('qr-input');
+                        if (qrInput) {
+                            qrInput.removeAttribute('autofocus');
+                        }
+                    });
+                }
+            });
             // Configurar botón devolver
             const btnDevolver = document.getElementById('btnDevolver');
             const areaQR = document.getElementById('area-qr-devolucion');
@@ -2210,6 +2272,15 @@
                         detail: 'registro-solicitante'
                     }));
                     
+                    // Restaurar autofocus del qr-input para continuar con el escaneo
+                    const qrInput = document.getElementById('qr-input');
+                    if (qrInput) {
+                        qrInput.setAttribute('autofocus', ''); // Restaurar autofocus
+                        setTimeout(() => {
+                            qrInput.focus(); // Volver a dar foco al qr-input
+                        }, 100);
+                    }
+                    
                     // Actualizar información en la interfaz
                     document.getElementById('qr-status').innerHTML = 'Solicitante registrado. Escanee el QR del espacio.';
                     mostrarInfo('usuario', datosSolicitante.nombre, runSolicitantePendiente);
@@ -2238,6 +2309,15 @@
             window.dispatchEvent(new CustomEvent('close-modal', {
                 detail: 'registro-solicitante'
             }));
+            
+            // Restaurar autofocus del qr-input
+            const qrInput = document.getElementById('qr-input');
+            if (qrInput) {
+                qrInput.setAttribute('autofocus', ''); // Restaurar autofocus
+                setTimeout(() => {
+                    qrInput.focus(); // Volver a dar foco al qr-input
+                }, 100);
+            }
             
             // Limpiar variables
             runSolicitantePendiente = null;

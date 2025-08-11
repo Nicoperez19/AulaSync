@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análisis de Espacios</title>
+    <title>Histórico de Reservas de Espacios</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -91,7 +91,7 @@
             page-break-before: always;
         }
         
-        .estado-optimo {
+        .estado-activa {
             background-color: #27ae60;
             color: white;
             padding: 2px 6px;
@@ -100,8 +100,8 @@
             font-weight: bold;
         }
         
-        .estado-medio {
-            background-color: #f39c12;
+        .estado-finalizada {
+            background-color: #7f8c8d;
             color: white;
             padding: 2px 6px;
             border-radius: 3px;
@@ -109,7 +109,7 @@
             font-weight: bold;
         }
         
-        .estado-bajo {
+        .estado-cancelada {
             background-color: #e74c3c;
             color: white;
             padding: 2px 6px;
@@ -117,14 +117,47 @@
             font-size: 8px;
             font-weight: bold;
         }
+        
+        .estado-en-progreso {
+            background-color: #3498db;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 8px;
+            font-weight: bold;
+        }
+        
+        .tipo-profesor {
+            background-color: #3498db;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 8px;
+        }
+        
+        .tipo-estudiante {
+            background-color: #2ecc71;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 8px;
+        }
+        
+        .tipo-solicitante {
+            background-color: #9b59b6;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 8px;
+        }
     </style>
 </head>
 <body>
     <div class="header">
         <img src="{{ public_path('images/logo_instituto_tecnologico-01.png') }}" alt="Logo Instituto Tecnológico" style="height: 60px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
-        <h1>Análisis de Espacios</h1>
+        <h1>Histórico de Reservas de Espacios</h1>
         <p>Sistema AulaSync - Instituto Tecnológico</p>
-        <p>Período: {{ $periodo }}</p>
+        <p>Período: {{ $fecha_inicio }} - {{ $fecha_fin }}</p>
         <p>Generado el: {{ $fecha_generacion }}</p>
     </div>
 
@@ -149,42 +182,48 @@
     <table>
         <thead>
             <tr>
-                <th>ID</th>
-                <th>Nombre</th>
+                <th>Fecha</th>
+                <th>Hora Inicio</th>
+                <th>Hora Fin</th>
+                <th>Espacio</th>
                 <th>Tipo</th>
                 <th>Piso</th>
                 <th>Facultad</th>
-                <th>Estado</th>
-                <th>Puestos</th>
-                <th>Reservas</th>
+                <th>Profesor/Solicitante</th>
+                <th>Tipo Usuario</th>
                 <th>Horas</th>
-                <th>Utilización</th>
+                <th>Duración</th>
                 <th>Estado</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($datos as $espacio)
+            @forelse($datos as $reserva)
                 <tr>
-                    <td>{{ $espacio['id_espacio'] }}</td>
-                    <td>{{ $espacio['nombre'] }}</td>
-                    <td>{{ $espacio['tipo_espacio'] }}</td>
-                    <td>{{ $espacio['piso'] }}</td>
-                    <td>{{ $espacio['facultad'] }}</td>
-                    <td>{{ $espacio['estado'] }}</td>
-                    <td>{{ $espacio['puestos_disponibles'] }}</td>
-                    <td>{{ $espacio['total_reservas'] }}</td>
-                    <td>{{ $espacio['horas_utilizadas'] }}h</td>
-                    <td>{{ $espacio['promedio_utilizacion'] }}</td>
+                    <td>{{ $reserva['fecha'] }}</td>
+                    <td>{{ $reserva['hora_inicio'] }}</td>
+                    <td>{{ $reserva['hora_fin'] }}</td>
+                    <td>{{ $reserva['espacio'] }}</td>
+                    <td>{{ $reserva['tipo_espacio'] }}</td>
+                    <td>{{ $reserva['piso'] }}</td>
+                    <td>{{ $reserva['facultad'] }}</td>
+                    <td>{{ $reserva['usuario'] }}</td>
                     <td>
-                        <span class="estado-{{ strtolower(str_replace(' ', '-', $espacio['estado_utilizacion'])) }}">
-                            {{ $espacio['estado_utilizacion'] }}
+                        <span class="tipo-{{ strtolower($reserva['tipo_usuario']) }}">
+                            {{ $reserva['tipo_usuario'] }}
+                        </span>
+                    </td>
+                    <td>{{ $reserva['horas_utilizadas'] }}h</td>
+                    <td>{{ $reserva['duracion'] }}</td>
+                    <td>
+                        <span class="estado-{{ strtolower(str_replace(' ', '-', $reserva['estado'])) }}">
+                            {{ $reserva['estado'] }}
                         </span>
                     </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="11" style="text-align: center; padding: 20px; color: #7f8c8d;">
-                        No se encontraron espacios registrados
+                    <td colspan="12" style="text-align: center; padding: 20px; color: #7f8c8d;">
+                        No se encontraron reservas registradas
                     </td>
                 </tr>
             @endforelse
@@ -196,4 +235,4 @@
         <p>Página 1 de 1</p>
     </div>
 </body>
-</html> 
+</html>

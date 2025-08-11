@@ -221,11 +221,13 @@ Route::group(['middleware' => ['auth', 'session.timeout', 'permission:monitoreo 
 // Reportes - Solo Administrador y Supervisor
 Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(function () {
     Route::get('tipo-espacio', [ReportController::class, 'tipoEspacio'])->name('reportes.tipo-espacio');
+    Route::get('tipo-espacio/datos-historicos', [ReportController::class, 'getHistoricoTipoEspacio'])->name('reportes.tipo-espacio.historico');
+    Route::get('tipo-espacio/debug-planificacion', [ReportController::class, 'debugPlanificacion'])->name('reportes.tipo-espacio.debug');
+    Route::get('tipo-espacio/export/{format}', [ReportController::class, 'exportTipoEspacio'])->name('reportes.tipo-espacio.export');
     Route::get('espacios', [ReportController::class, 'espacios'])->name('reportes.espacios');
     Route::get('accesos', [ReportController::class, 'accesos'])->name('reportes.accesos');
     Route::get('accesos/limpiar', [ReportController::class, 'limpiarFiltrosAccesos'])->name('reportes.accesos.limpiar');
     Route::get('accesos/{id}/detalles', [ReportController::class, 'getDetallesAcceso'])->name('reportes.accesos.detalles');
-    // Rutas para exportar a Excel y PDF
     Route::get('espacios/export/{format}', [ReportController::class, 'exportEspacios'])->name('reportes.espacios.export');
     Route::get('accesos/export/{format}', [ReportController::class, 'exportAccesos'])->name('reportes.accesos.export');
     Route::post('accesos/export/{format}', [ReportController::class, 'exportAccesosConFiltros'])->name('reportes.accesos.export.filtros');

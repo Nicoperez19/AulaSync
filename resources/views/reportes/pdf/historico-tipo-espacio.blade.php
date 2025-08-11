@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análisis de Horarios por Espacio</title>
+    <title>Histórico por Tipo de Espacio</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -30,6 +30,32 @@
         .header p {
             margin: 5px 0;
             color: #7f8c8d;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .stat-number {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .stat-label {
+            font-size: 10px;
+            color: #7f8c8d;
+            margin-top: 5px;
         }
         
         .info-filtros {
@@ -80,25 +106,7 @@
             page-break-before: always;
         }
         
-        .ocupacion-alta {
-            background-color: #e74c3c;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 8px;
-            font-weight: bold;
-        }
-        
-        .ocupacion-media {
-            background-color: #f39c12;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 8px;
-            font-weight: bold;
-        }
-        
-        .ocupacion-baja {
+        .estado-activa {
             background-color: #27ae60;
             color: white;
             padding: 2px 6px;
@@ -107,8 +115,8 @@
             font-weight: bold;
         }
         
-        .ocupacion-0 {
-            background-color: #27ae60;
+        .estado-finalizada {
+            background-color: #7f8c8d;
             color: white;
             padding: 2px 6px;
             border-radius: 3px;
@@ -116,81 +124,127 @@
             font-weight: bold;
         }
         
-        .ocupacion-1-40 {
-            background-color: #f39c12;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 8px;
-            font-weight: bold;
-        }
-        
-        .ocupacion-41-80 {
-            background-color: #e67e22;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 8px;
-            font-weight: bold;
-        }
-        
-        .ocupacion-81-100 {
+        .estado-cancelada {
             background-color: #e74c3c;
             color: white;
             padding: 2px 6px;
             border-radius: 3px;
             font-size: 8px;
             font-weight: bold;
+        }
+        
+        .estado-en-progreso {
+            background-color: #3498db;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 8px;
+            font-weight: bold;
+        }
+        
+        .tipo-profesor {
+            background-color: #3498db;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 8px;
+        }
+        
+        .tipo-estudiante {
+            background-color: #2ecc71;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 8px;
+        }
+        
+        .tipo-solicitante {
+            background-color: #9b59b6;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 8px;
         }
     </style>
 </head>
 <body>
     <div class="header">
         <img src="{{ public_path('images/logo_instituto_tecnologico-01.png') }}" alt="Logo Instituto Tecnológico" style="height: 60px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
-        <h1>Análisis de Horarios por Espacio</h1>
+        <h1>Histórico por Tipo de Espacio</h1>
         <p>Sistema AulaSync - Instituto Tecnológico</p>
-        <p>Fecha: {{ $fecha }}</p>
+        <p>Período: {{ $fecha_inicio }} - {{ $fecha_fin }}</p>
         <p>Generado el: {{ $fecha_generacion }}</p>
     </div>
 
-    <div class="info-filtros">
-        <strong>Rango de Módulos:</strong> {{ $moduloInicio }} - {{ $moduloFin }}<br>
-        <strong>Total de Módulos:</strong> {{ $modulosDia }}
+    @if($tipo_espacio)
+        <div class="info-filtros">
+            <strong>Tipo de Espacio:</strong> {{ $tipo_espacio }}
+        </div>
+    @endif
+
+    <div class="stats">
+        <div class="stat-item">
+            <div class="stat-number">{{ $total }}</div>
+            <div class="stat-label">Total Registros</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ $completadas }}</div>
+            <div class="stat-label">Completadas</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ $canceladas }}</div>
+            <div class="stat-label">Canceladas</div>
+        </div>
+        <div class="stat-item">
+            <div class="stat-number">{{ $en_progreso }}</div>
+            <div class="stat-label">En Progreso</div>
+        </div>
     </div>
 
     <table>
         <thead>
             <tr>
+                <th>Profesor/Solicitante</th>
                 <th>Espacio</th>
-                <th>Tipo</th>
-                <th>Piso</th>
-                <th>Facultad</th>
-                @for ($i = $moduloInicio; $i <= $moduloFin; $i++)
-                    <th>Módulo {{ $i }}</th>
-                @endfor
+                <th>Fecha</th>
+                <th>Hora Entrada</th>
+                <th>Hora Salida</th>
+                <th>Duración</th>
+                <th>Tipo Usuario</th>
+                <th>Estado</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($datos as $fila)
+            @forelse($datos as $registro)
                 <tr>
-                    <td>{{ $fila['espacio'] }}</td>
-                    <td>{{ $fila['tipo'] }}</td>
-                    <td>{{ $fila['piso'] }}</td>
-                    <td>{{ $fila['facultad'] }}</td>
-                    @for ($i = $moduloInicio; $i <= $moduloFin; $i++)
-                        @php
-                            $ocupacion = isset($fila['modulo_' . $i]) ? (int)str_replace('%', '', $fila['modulo_' . $i]) : 0;
-                            $clase = $ocupacion == 0 ? 'ocupacion-0' : 
-                                   ($ocupacion <= 40 ? 'ocupacion-1-40' : 
-                                   ($ocupacion <= 80 ? 'ocupacion-41-80' : 'ocupacion-81-100'));
-                        @endphp
-                        <td class="{{ $clase }}">{{ $ocupacion }}%</td>
-                    @endfor
+                    <td>
+                        <div>{{ $registro['profesor_solicitante'] }}</div>
+                        <div style="font-size: 9px; color: #7f8c8d;">{{ $registro['run'] }}</div>
+                        <div style="font-size: 9px; color: #7f8c8d;">{{ $registro['email'] }}</div>
+                    </td>
+                    <td>
+                        <div>{{ $registro['espacio'] }}</div>
+                        <div style="font-size: 9px; color: #7f8c8d;">{{ $registro['facultad'] }}</div>
+                    </td>
+                    <td>{{ $registro['fecha'] }}</td>
+                    <td>{{ $registro['hora_inicio'] }}</td>
+                    <td>{{ $registro['hora_termino'] }}</td>
+                    <td>{{ $registro['duracion'] }}</td>
+                    <td>
+                        <span class="tipo-{{ strtolower($registro['tipo_usuario']) }}">
+                            {{ $registro['tipo_usuario'] }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="estado-{{ strtolower(str_replace(' ', '-', $registro['estado'])) }}">
+                            {{ $registro['estado'] }}
+                        </span>
+                    </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="{{ 4 + ($moduloFin - $moduloInicio + 1) }}" style="text-align: center; padding: 20px; color: #7f8c8d;">
-                        No se encontraron datos de horarios por espacio
+                    <td colspan="8" style="text-align: center; padding: 20px; color: #7f8c8d;">
+                        No se encontraron registros
                     </td>
                 </tr>
             @endforelse
@@ -198,15 +252,8 @@
     </table>
 
     <div class="footer">
-        <p><strong>Leyenda de Colores:</strong></p>
-        <p>
-            <span style="background-color: #27ae60; color: white; padding: 2px 6px; margin-right: 10px;">0%</span>
-            <span style="background-color: #f39c12; color: white; padding: 2px 6px; margin-right: 10px;">1-40%</span>
-            <span style="background-color: #e67e22; color: white; padding: 2px 6px; margin-right: 10px;">41-80%</span>
-            <span style="background-color: #e74c3c; color: white; padding: 2px 6px;">81-100%</span>
-        </p>
         <p>Este reporte fue generado automáticamente por el Sistema AulaSync</p>
         <p>Página 1 de 1</p>
     </div>
 </body>
-</html> 
+</html>

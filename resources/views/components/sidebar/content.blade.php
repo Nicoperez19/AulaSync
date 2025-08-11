@@ -69,12 +69,11 @@
 
             <x-sidebar.sublink title="Accesos registrados" href="{{ route('reportes.accesos') }}"
                 :isActive="request()->routeIs('reportes.accesos')" />
-            <x-sidebar.sublink title="Análisis por tipo de espacio" href="{{ route('reportes.tipo-espacio') }}"
-                :isActive="request()->routeIs('reportes.tipo-espacio')" />
             <x-sidebar.sublink title="Análisis por espacios" href="{{ route('reportes.espacios') }}"
                 :isActive="request()->routeIs('reportes.espacios')" />
-            {{-- <x-sidebar.sublink title="Por unidad académica" href="{{ route('reportes.unidad-academica') }}"
-                :isActive="request()->routeIs('reportes.unidad-academica')" /> --}}
+            <x-sidebar.sublink title="Análisis por tipo de espacio" href="{{ route('reportes.tipo-espacio') }}"
+                :isActive="request()->routeIs('reportes.tipo-espacio')" />
+
         </x-sidebar.dropdown>
     @endcan
 
