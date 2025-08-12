@@ -63,6 +63,13 @@ class ModulosActualesTable extends Component
             })
             ->get();
 
+            // Obtener reservas activas de solicitantes para el día actual
+            $reservasSolicitantes = \App\Models\Reserva::with(['solicitante'])
+                ->where('fecha_reserva', Carbon::now()->toDateString())
+                ->where('estado', 'activa')
+                ->whereNotNull('run_solicitante')
+                ->get();
+
             // Procesar espacios por piso
             $this->espacios = [];
             foreach ($this->pisos as $piso) {
@@ -71,13 +78,17 @@ class ModulosActualesTable extends Component
                     // Buscar si el espacio tiene una planificación activa
                     $planificacionActiva = $planificacionesActivas->where('id_espacio', $espacio->id_espacio)->first();
                     
+                    // Buscar si el espacio tiene una reserva de solicitante
+                    $reservaSolicitante = $reservasSolicitantes->where('id_espacio', $espacio->id_espacio)->first();
+                    
                     $estado = $espacio->estado ?? 'Disponible';
                     $tieneClase = false;
+                    $tieneReservaSolicitante = false;
                     $datosClase = null;
+                    $datosSolicitante = null;
 
                     if ($planificacionActiva) {
                         $tieneClase = true;
-                        // No cambiar el estado, mantener el original de la BD
                         $datosClase = [
                             'codigo_asignatura' => $planificacionActiva->asignatura->codigo_asignatura ?? '-',
                             'nombre_asignatura' => $planificacionActiva->asignatura->nombre_asignatura ?? '-',
@@ -88,58 +99,129 @@ class ModulosActualesTable extends Component
                         ];
                     }
 
+                    if ($reservaSolicitante) {
+                        $tieneReservaSolicitante = true;
+                        $datosSolicitante = [
+                            'nombre' => $reservaSolicitante->solicitante->nombre ?? '-',
+                            'run' => $reservaSolicitante->run_solicitante ?? '-',
+                            'tipo_solicitante' => $reservaSolicitante->solicitante->tipo_solicitante ?? '-',
+                            'hora_inicio' => $reservaSolicitante->hora ?? '-',
+                            'hora_salida' => $reservaSolicitante->hora_salida ?? '-'
+                        ];
+                    }
+
                     $espaciosPiso[] = [
                         'id_espacio' => $espacio->id_espacio,
                         'nombre_espacio' => $espacio->nombre_espacio,
-                        'estado' => $estado, // Mantener el estado original de la BD
+                        'estado' => $estado,
                         'tipo_espacio' => $espacio->tipo_espacio,
                         'puestos_disponibles' => $espacio->puestos_disponibles,
                         'tiene_clase' => $tieneClase,
+                        'tiene_reserva_solicitante' => $tieneReservaSolicitante,
                         'datos_clase' => $datosClase,
+                        'datos_solicitante' => $datosSolicitante,
                         'modulo' => [
-                            'id_modulo' => $this->moduloActual->id_modulo,
-                            'numero_modulo' => explode('.', $this->moduloActual->id_modulo)[1] ?? 'N/A',
-                            'hora_inicio' => substr($this->moduloActual->hora_inicio, 0, 5),
-                            'hora_termino' => substr($this->moduloActual->hora_termino, 0, 5),
-                        ]
+                            'id' => $this->moduloActual->id,
+                            'hora_inicio' => $this->moduloActual->hora_inicio,
+                            'hora_termino' => $this->moduloActual->hora_termino
+                        ],
+                        'piso' => $piso->nombre_piso,
+                        'proxima_clase' => null
                     ];
                 }
                 $this->espacios[$piso->id] = $espaciosPiso;
             }
-
-            // Establecer el primer piso como seleccionado por defecto
-            if ($this->pisos->count() > 0 && $this->selectedPiso === null) {
-                $this->selectedPiso = $this->pisos->first()->id;
-            }
-
-            // Mantener las planificaciones para compatibilidad
-            $this->planificaciones = $planificacionesActivas->map(function ($planificacion) {
-                return [
-                    'id' => $planificacion->id,
-                    'modulo' => [
-                        'id_modulo' => $planificacion->modulo->id_modulo,
-                        'numero_modulo' => explode('.', $planificacion->modulo->id_modulo)[1] ?? 'N/A',
-                        'hora_inicio' => substr($planificacion->modulo->hora_inicio, 0, 5),
-                        'hora_termino' => substr($planificacion->modulo->hora_termino, 0, 5),
-                    ],
-                    'asignatura' => [
-                        'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? '-',
-                        'nombre_asignatura' => $planificacion->asignatura->nombre_asignatura ?? '-',
-                        'seccion' => $planificacion->asignatura->seccion ?? '-',
-                        'profesor' => [
-                            'name' => $planificacion->asignatura->profesor->name ?? '-'
-                        ]
-                    ],
-                    'espacio' => [
-                        'id_espacio' => $planificacion->espacio->id_espacio ?? '-',
-                        'nombre_espacio' => $planificacion->espacio->nombre_espacio ?? '-',
-                        'estado' => $planificacion->espacio->estado ?? 'Disponible'
-                    ]
-                ];
-            });
         } else {
-            $this->planificaciones = [];
+            // Procesar espacios cuando no hay módulo activo
             $this->espacios = [];
+            foreach ($this->pisos as $piso) {
+                $espaciosPiso = [];
+                foreach ($piso->espacios as $espacio) {
+                    $espaciosPiso[] = [
+                        'id_espacio' => $espacio->id_espacio,
+                        'nombre_espacio' => $espacio->nombre_espacio,
+                        'estado' => 'Disponible',
+                        'tipo_espacio' => $espacio->tipo_espacio,
+                        'puestos_disponibles' => $espacio->puestos_disponibles,
+                        'tiene_clase' => false,
+                        'tiene_reserva_solicitante' => false,
+                        'datos_clase' => null,
+                        'datos_solicitante' => null,
+                        'modulo' => null,
+                        'piso' => $piso->nombre_piso,
+                        'proxima_clase' => null
+                    ];
+                }
+                $this->espacios[$piso->id] = $espaciosPiso;
+            }
+        }
+    }
+
+    /**
+     * Obtener todos los espacios procesados para la vista
+     */
+    public function getTodosLosEspacios()
+    {
+        $todosLosEspacios = [];
+        
+        foreach ($this->pisos as $piso) {
+            $espaciosPiso = $this->espacios[$piso->id] ?? [];
+            foreach ($espaciosPiso as $espacio) {
+                $espacio['piso'] = $piso->numero_piso;
+                $todosLosEspacios[] = $espacio;
+            }
+        }
+        
+        return $todosLosEspacios;
+    }
+
+    /**
+     * Determinar el color del estado para un espacio
+     */
+    public function getEstadoColor($estado, $tieneClase, $tieneReservaSolicitante)
+    {
+        if (strtolower($estado) === 'ocupado' || $estado === 'Ocupado') {
+            return 'bg-red-500';
+        } elseif (strtolower($estado) === 'reservado' || $estado === 'Reservado') {
+            return 'bg-yellow-400';
+        } elseif (strtolower($estado) === 'proximo' || $estado === 'Proximo' || strtolower($estado) === 'próximo') {
+            return 'bg-blue-500';
+        } elseif ($tieneClase || $tieneReservaSolicitante) {
+            return 'bg-yellow-400';
+        } else {
+            return 'bg-green-500';
+        }
+    }
+
+    /**
+     * Obtener el primer apellido del profesor
+     */
+    public function getPrimerApellido($nombreCompleto)
+    {
+        $apellidos = explode(',', $nombreCompleto);
+        return trim($apellidos[0] ?? '');
+    }
+
+    /**
+     * Obtener el primer apellido del solicitante
+     */
+    public function getPrimerApellidoSolicitante($nombreCompleto)
+    {
+        $apellidos = explode(',', $nombreCompleto);
+        return trim($apellidos[0] ?? '');
+    }
+
+    /**
+     * Determinar si mostrar información de clase o solicitante
+     */
+    public function getTipoOcupacion($espacio)
+    {
+        if ($espacio['tiene_reserva_solicitante']) {
+            return 'solicitante';
+        } elseif ($espacio['tiene_clase']) {
+            return 'clase';
+        } else {
+            return 'disponible';
         }
     }
 
@@ -150,44 +232,7 @@ class ModulosActualesTable extends Component
 
     public function render()
     {
-        // Verificar si estamos en un espacio entre módulos (break)
-        $esBreak = false;
-        $tiempoRestante = 0;
-        $minutosRestantes = 0;
-        $segundosRestantes = 0;
-        $siguienteModulo = null;
-        
-        if ($this->moduloActual) {
-            $horaActual = Carbon::now();
-            $horaActualStr = $horaActual->format('H:i:s');
-            
-            // Buscar el siguiente módulo para determinar si estamos en un break
-            $siguienteModulo = \App\Models\Modulo::where('dia', $this->moduloActual->dia)
-                ->where('hora_inicio', '>', $horaActualStr)
-                ->orderBy('hora_inicio')
-                ->first();
-            
-            if ($siguienteModulo) {
-                $horaInicioSiguiente = Carbon::createFromFormat('H:i:s', $siguienteModulo->hora_inicio);
-                $tiempoRestante = $horaInicioSiguiente->diffInSeconds($horaActual);
-                
-                // Es break si estamos a menos de 10 minutos del siguiente módulo
-                $esBreak = $tiempoRestante <= 600; // 10 minutos = 600 segundos
-                
-                if ($esBreak) {
-                    $minutosRestantes = floor($tiempoRestante / 60);
-                    $segundosRestantes = $tiempoRestante % 60;
-                }
-            }
-        }
-        
-        return view('livewire.modulos-actuales-table', [
-            'tiempoRestante' => $tiempoRestante,
-            'esBreak' => $esBreak,
-            'siguienteModulo' => $siguienteModulo,
-            'minutosRestantes' => $minutosRestantes,
-            'segundosRestantes' => $segundosRestantes
-        ]);
+        return view('livewire.modulos-actuales-table');
     }
 
     public function getHoraActualProperty()
