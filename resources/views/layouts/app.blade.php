@@ -91,6 +91,40 @@
             });
         }
 
+        // Función para mostrar SweetAlert cuando no hay profesores
+        function mostrarSweetAlertNoProfesores(event) {
+            event.preventDefault();
+            Swal.fire({
+                title: 'No hay profesores disponibles',
+                html: `
+                    <div class="text-center">
+                        <p class="mb-4">No se han cargado datos de profesores en el sistema.</p>
+                        <p class="text-sm text-gray-600">Hay que contactarse con el administrador para cargar los datos de profesores.</p>
+                    </div>
+                `,
+                icon: 'warning',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#3B82F6'
+            });
+        }
+
+        // Función para mostrar SweetAlert cuando no hay espacios
+        function mostrarSweetAlertNoEspacios(event) {
+            event.preventDefault();
+            Swal.fire({
+                title: 'No hay espacios disponibles',
+                html: `
+                    <div class="text-center">
+                        <p class="mb-4">No se han encontrado espacios registrados en el sistema.</p>
+                        <p class="text-sm text-gray-600">Hay que contactarse con el administrador para registrar los espacios.</p>
+                    </div>
+                `,
+                icon: 'warning',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#3B82F6'
+            });
+        }
+
         // Interceptor global para manejar expiración de sesión en peticiones AJAX
         document.addEventListener('DOMContentLoaded', function () {
             // Guardar la URL actual en localStorage para recuperarla después del login

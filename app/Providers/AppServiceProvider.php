@@ -41,7 +41,15 @@ class AppServiceProvider extends ServiceProvider
                 $view->with('primerMapa', null);
             }
             
+            // Verificar si hay profesores
+            $tieneProfesores = \App\Models\Profesor::count() > 0;
+            
+            // Verificar si hay espacios
+            $tieneEspacios = \App\Models\Espacio::count() > 0;
+            
             $view->with('sede', $sede);
+            $view->with('tieneProfesores', $tieneProfesores);
+            $view->with('tieneEspacios', $tieneEspacios);
         });
     }
 }

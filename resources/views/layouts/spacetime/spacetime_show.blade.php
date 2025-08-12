@@ -251,7 +251,12 @@
             const semestreFiltro = document.getElementById('semestre')?.value;
 
             if (!semestreFiltro) {
-                alert('Por favor, selecciona el semestre para cargar los horarios.');
+                Swal.fire({
+                    title: 'No hay datos de horarios en los espacios',
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#3B82F6'
+                });
                 return;
             }
 
@@ -284,7 +289,18 @@
                 })
                 .catch(error => {
                     console.error('Error al cargar horarios:', error);
-                    alert('Error al cargar los horarios. Por favor, inténtalo de nuevo.');
+                    Swal.fire({
+                        title: 'Error al cargar horarios',
+                        html: `
+                            <div class="text-center">
+                                <p class="mb-4">Error al cargar los horarios. Por favor, inténtalo de nuevo.</p>
+                                <p class="text-sm text-gray-600">Si el problema persiste, contacta al administrador del sistema.</p>
+                            </div>
+                        `,
+                        icon: 'error',
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#EF4444'
+                    });
                 })
                 .finally(() => {
                     // Ocultar indicador de carga
@@ -471,7 +487,18 @@
 
         function exportarHorarioPDF() {
             if (!espacioActualId) {
-                alert('Error: No se ha seleccionado ningún espacio');
+                Swal.fire({
+                    title: 'No se ha seleccionado ningún espacio',
+                    html: `
+                        <div class="text-center">
+                            <p class="mb-4">Error: No se ha seleccionado ningún espacio</p>
+                            <p class="text-sm text-gray-600">Por favor, selecciona un espacio para exportar su horario en PDF.</p>
+                        </div>
+                    `,
+                    icon: 'warning',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#3B82F6'
+                });
                 return;
             }
 
@@ -537,7 +564,18 @@
                 })
                 .catch(error => {
                     console.error('Error:', error);
-                    alert('Error al generar el PDF: ' + error.message);
+                    Swal.fire({
+                        title: 'Error al generar PDF',
+                        html: `
+                            <div class="text-center">
+                                <p class="mb-4">Error al generar el PDF: ${error.message}</p>
+                                <p class="text-sm text-gray-600">Por favor, inténtalo de nuevo o contacta al administrador si el problema persiste.</p>
+                            </div>
+                        `,
+                        icon: 'error',
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#EF4444'
+                    });
                 })
                 .finally(() => {
                     exportBtn.innerHTML = originalText;
