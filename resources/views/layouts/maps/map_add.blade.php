@@ -493,7 +493,7 @@
                 document.getElementById('archivo').files = dataTransfer.files;
 
                 // Log para depuración
-                console.log('Nombre del mapa a enviar:', nombreMapaForm.value);
+                // Nombre del mapa a enviar
 
                 // Enviar formulario
                 elements.saveMapForm.submit();

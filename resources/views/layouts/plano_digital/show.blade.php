@@ -1314,10 +1314,10 @@
                         console.error('Error al registrar asistencia:', resultado?.mensaje || 'Error desconocido');
                     }
                 } else {
-                    console.log('⚠️ Profesor SIN clases - mostrando modal de módulos');
-                    console.log('Valor exacto de tieneClases:', tieneClases);
-                    console.log('Comparación tieneClases === true:', tieneClases === true);
-                    console.log('Comparación tieneClases == true:', tieneClases == true);
+                                // Profesor SIN clases - mostrando modal de módulos
+            // Valor exacto de tieneClases
+            // Comparación tieneClases === true
+            // Comparación tieneClases == true
                     // CASO 2: Profesor SIN clases - solicita con módulos (máx 2)
                     await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado, 2); // Máximo 2 módulos
                     return; // No continuar, esperar selección de módulos
@@ -1582,13 +1582,13 @@
         }
 
         async function mostrarModalEspacio(indicator) {
-            console.log('Mostrando modal para espacio:', indicator);
+            // Mostrando modal para espacio
             
             // Mostrar el modal inmediatamente
             const modal = document.getElementById('modal-espacio-info');
             if (modal) {
                 modal.classList.remove('hidden');
-                console.log('Modal de espacio mostrado inmediatamente');
+                // Modal de espacio mostrado inmediatamente
             } else {
                 console.error('No se encontró el modal de espacio');
                 return;
@@ -1631,7 +1631,7 @@
 
             try {
                 const data = await Promise.race([dataPromise, timeoutPromise]);
-                console.log('Información detallada del espacio:', data);
+                // Información detallada del espacio
 
                 if (data.success) {
                     // Renderizar información optimizada
@@ -1672,7 +1672,7 @@
         // Función para configurar estado
         function configurarEstado(elements, indicator) {
             const estadoReal = indicator.estado;
-            console.log('Estado real del espacio:', estadoReal);
+            // Estado real del espacio
             
             const estadoConfig = {
                 'disponible': { texto: 'Disponible', pill: 'border-green-500 bg-green-50 text-green-700', icon: 'bg-green-500' },
@@ -1737,13 +1737,13 @@
             
             // Cache válido por 30 segundos para espacios normales
             if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 30000) {
-                console.log('Usando cache para espacio:', espacioId);
+                // Usando cache para espacio
                 return JSON.parse(cached);
             }
             
             // Cache específico para solicitantes (válido por 5 minutos)
             if (solicitanteCached && solicitanteCacheTime && (Date.now() - parseInt(solicitanteCacheTime)) < 300000) {
-                console.log('Usando cache específico para solicitante en espacio:', espacioId);
+                // Usando cache específico para solicitante en espacio
                 return JSON.parse(solicitanteCached);
             }
 
@@ -1762,7 +1762,7 @@
                 // Cache específico para solicitantes (5 minutos)
                 sessionStorage.setItem(solicitanteCacheKey, JSON.stringify(data));
                 sessionStorage.setItem(`${solicitanteCacheKey}_time`, Date.now().toString());
-                console.log('Cache de solicitante guardado para espacio:', espacioId);
+                // Cache de solicitante guardado para espacio
             } else {
                 // Cache normal para otros tipos (30 segundos)
                 sessionStorage.setItem(cacheKey, JSON.stringify(data));
@@ -2293,7 +2293,7 @@
                     runSolicitantePendiente = null;
                     
                     // Mostrar mensaje de éxito
-                    console.log('¡Registro exitoso! Solicitante registrado correctamente. Ahora escanee el QR del espacio.');
+                    // Registro exitoso! Solicitante registrado correctamente
                     
                 } else {
                     console.error('Error al registrar solicitante:', resultado?.mensaje || 'Error desconocido');
@@ -2370,7 +2370,7 @@
                 });
                 const diaActual = obtenerDiaActual();
 
-                console.log('Enviando parámetros al servidor:', {
+                // Enviando parámetros al servidor
                     horaActual,
                     diaActual,
                     idEspacio
@@ -2383,7 +2383,7 @@
                 if (response.ok) {
                     const data = await response.json();
                     
-                    console.log('Respuesta completa del servidor:', data);
+                    // Respuesta completa del servidor
 
                     if (data.success) {
                         // Guardar información adicional para mostrar en el modal
@@ -2396,13 +2396,13 @@
                             detalles: data.detalles
                         };
                         
-                        console.log('Información guardada en window.modulosInfo:', window.modulosInfo);
+                        // Información guardada en window.modulosInfo
                         
                         return data.max_modulos || 1;
                     } else {
                         // Mostrar información detallada del error
                         if (data.detalles && data.detalles.razon === 'fuera_horario') {
-                            console.log('Horario no disponible:', data.detalles.descripcion);
+                            // Horario no disponible
                         }
                         return 1;
                     }
@@ -2417,10 +2417,10 @@
         }
 
         async function mostrarModalSeleccionarModulos(idEspacio, run, maxModulos = 2) {
-            console.log('Iniciando mostrarModalSeleccionarModulos:', { idEspacio, run, maxModulos });
+            // Iniciando mostrarModalSeleccionarModulos
             
             const modulosDisponibles = await calcularModulosDisponibles(idEspacio);
-            console.log('Módulos disponibles calculados:', modulosDisponibles);
+            // Módulos disponibles calculados
             
             // Limitar a máximo 2 módulos según la lógica del negocio
             maxModulosDisponibles = Math.min(modulosDisponibles, maxModulos);
@@ -2442,19 +2442,19 @@
             runParaReserva = run;
             
             // Mostrar información detallada si está disponible
-            console.log('Verificando window.modulosInfo:', window.modulosInfo);
+            // Verificando window.modulosInfo
             if (window.modulosInfo) {
-                console.log('Llamando a mostrarInformacionModulos con:', window.modulosInfo);
+                // Llamando a mostrarInformacionModulos
                 mostrarInformacionModulos(window.modulosInfo);
             } else {
-                console.log('No hay información de módulos disponible');
+                // No hay información de módulos disponible
             }
             
             // Mostrar el modal directamente
             const modal = document.getElementById('modal-seleccionar-modulos');
             if (modal) {
                 modal.classList.remove('hidden');
-                console.log('Modal mostrado correctamente');
+                // Modal mostrado correctamente
                 // Enfocar el input
                 setTimeout(() => {
                     if (inputModulos) {
@@ -2471,7 +2471,7 @@
             if (!infoContainer) return;
             
             // Debug: mostrar información recibida
-            console.log('Información de módulos recibida:', info);
+            // Información de módulos recibida
             
             let html = '<div class="p-4 bg-white rounded-lg shadow-sm border-l-4 border-green-500">';
             html += '<h3 class="text-lg font-semibold text-gray-800 mb-3">Información de Disponibilidad</h3>';

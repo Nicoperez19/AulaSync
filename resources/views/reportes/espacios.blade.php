@@ -388,8 +388,8 @@
 
         // Inicializar cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', function () {
-            console.log('Inicializando reportes de espacios...');
-            console.log('Datos disponibles:', datosGrafico);
+                    // Inicializando reportes de espacios
+        // Datos disponibles
             
             inicializarGraficos();
             inicializarFiltrosDinamicos();
@@ -397,7 +397,7 @@
             // Asegurar que se muestren todos los datos inicialmente
             setTimeout(() => {
                 actualizarDatosFiltrados();
-                console.log('Reportes de espacios inicializados correctamente');
+                // Reportes de espacios inicializados correctamente
             }, 100);
         });
 
@@ -419,7 +419,7 @@
             );
             const data = datosGrafico.resumen.map(espacio => espacio.promedio || 0);
 
-            console.log('Creando gráfico de utilización con:', { labels, data });
+            // Creando gráfico de utilización
 
             chartUtilizacion = new Chart(ctx, {
                 type: 'bar',
@@ -550,7 +550,7 @@
         }
 
         function limpiarFiltros() {
-            console.log('Limpiando filtros...');
+            // Limpiando filtros
             
             document.getElementById('filtro-busqueda').value = '';
             document.getElementById('filtro-tipo-espacio').value = '';
@@ -568,7 +568,7 @@
                 fechaFin: document.getElementById('filtro-fecha-fin').value
             };
 
-            console.log('Filtros limpiados:', filtros);
+            // Filtros limpiados
             
             // Restaurar gráfico de utilización con todos los datos
             actualizarGraficoUtilizacion(datosGrafico.resumen);
@@ -578,11 +578,11 @@
         }
 
         function actualizarDatosFiltrados() {
-            console.log('Actualizando datos filtrados con filtros:', filtros);
+            // Actualizando datos filtrados con filtros
             
             // Verificar que los datos estén disponibles
             if (!datosGrafico || !datosGrafico.resumen) {
-                console.log('Datos del gráfico no disponibles');
+                // Datos del gráfico no disponibles
                 return;
             }
             
@@ -607,9 +607,9 @@
                 return cumpleBusqueda && cumpleTipo && cumplePiso && cumpleEstado;
             });
 
-            console.log('Datos filtrados:', resumenFiltrado);
-            console.log('Total de espacios originales:', datosGrafico.resumen.length);
-            console.log('Total de espacios filtrados:', resumenFiltrado.length);
+                    // Datos filtrados
+        // Total de espacios originales
+        // Total de espacios filtrados
 
             // Actualizar tabla de resumen
             const tbody = document.getElementById('tabla-resumen')?.querySelector('tbody');
@@ -656,16 +656,16 @@
         }
 
         function actualizarGraficoUtilizacion(resumenFiltrado) {
-            console.log('Llamando a actualizarGraficoUtilizacion con:', resumenFiltrado);
+            // Llamando a actualizarGraficoUtilizacion
             
             const ctx = document.getElementById('chartUtilizacion');
             if (!ctx) {
-                console.log('No se encontró el elemento chartUtilizacion');
+                // No se encontró el elemento chartUtilizacion
                 return;
             }
 
             if (chartUtilizacion) {
-                console.log('Destruyendo gráfico anterior');
+                // Destruyendo gráfico anterior
                 chartUtilizacion.destroy();
             }
 
@@ -675,9 +675,9 @@
             );
             const data = resumenFiltrado.map(espacio => espacio.promedio || 0);
 
-            console.log('Actualizando gráfico de utilización con datos filtrados:', { labels, data });
-            console.log('Labels:', labels);
-            console.log('Data:', data);
+                    // Actualizando gráfico de utilización con datos filtrados
+        // Labels
+        // Data
 
             chartUtilizacion = new Chart(ctx, {
                 type: 'bar',
