@@ -91,7 +91,7 @@
 
                         <!-- Información del usuario (oculta inicialmente) -->
                         <div id="info-usuario" class="hidden px-4 py-3 space-y-2 text-sm bg-white rounded-lg shadow-md">
-                            <h3 class="mb-2 text-xs font-semibold tracking-wide uppercase text-gray-800">Información de
+                            <h3 class="mb-2 text-xs font-semibold tracking-wide text-gray-800 uppercase">Información de
                             usuario</h3>
 
                             <div class="flex items-center gap-2">
@@ -116,8 +116,10 @@
                         </div>
 
                         <input type="text" id="qr-input"
-                            class="absolute w-full px-1 py-1 text-transparent bg-transparent border-0 focus:outline-none focus:border-0 focus:ring-0 opacity-0"
+                            class="absolute w-full px-1 py-1 text-transparent bg-transparent border-0 opacity-0 focus:outline-none focus:border-0 focus:ring-0"
                             autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" autofocus>
+
+
 
                     </div>
                 </div>
@@ -154,6 +156,18 @@
                             </div>
                         </div>
                     </div>
+                </div>
+                
+                <!-- Enlace Volver -->
+                <div class="w-full mt-4">
+                    <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}" 
+                       class="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors duration-200 shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+                            <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
+                            <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
+                        </svg>
+                        Volver
+                    </a>
                 </div>
             </div>
         </aside>
@@ -210,7 +224,7 @@
 
     <!-- Modal para mostrar información del espacio -->
     <div id="modal-espacio-info" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
-        <div class="flex flex-col w-full max-h-screen mx-2 overflow-hidden bg-white rounded-lg shadow-lg max-w-4xl md:mx-8">
+        <div class="flex flex-col w-full max-w-4xl max-h-screen mx-2 overflow-hidden bg-white rounded-lg shadow-lg md:mx-8">
             <!-- Encabezado con diseño tipo banner -->
             <div class="relative flex flex-col gap-6 p-8 bg-gradient-to-r bg-light-cloud-blue md:flex-row md:items-center md:justify-between">
                 <!-- Círculos decorativos -->
@@ -232,17 +246,17 @@
                 </div>
                 
                 <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
-                    <button onclick="cerrarModalEspacio()" class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors">&times;</button>
+                    <button onclick="cerrarModalEspacio()" class="ml-2 text-3xl font-bold text-white transition-colors hover:text-gray-200">&times;</button>
                 </div>
             </div>
             
             <!-- Contenido del modal -->
             <div class="p-6 bg-gray-50 overflow-y-auto max-h-[70vh] flex-1">
                 <!-- Estado del espacio -->
-                <div class="mb-6 p-6 bg-white rounded-xl shadow-sm border-l-4 border-blue-500">
+                <div class="p-6 mb-6 bg-white border-l-4 border-blue-500 shadow-sm rounded-xl">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-xl font-semibold text-gray-800">
-                            <i class="fas fa-info-circle mr-2 text-blue-500"></i>
+                            <i class="mr-2 text-blue-500 fas fa-info-circle"></i>
                             Estado Actual
                         </h3>
                         <span id="estadoPill" class="inline-flex items-center px-4 py-2 text-sm font-bold border rounded-full">
@@ -256,9 +270,9 @@
                 </div>
                 
                 <!-- Información del ocupante actual -->
-                <div id="ocupanteContainer" class="mb-6 p-6 bg-white rounded-xl shadow-sm border-l-4 border-green-500" style="display: none;">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
-                        <i class="fas fa-user mr-2 text-green-500"></i>
+                <div id="ocupanteContainer" class="p-6 mb-6 bg-white border-l-4 border-green-500 shadow-sm rounded-xl" style="display: none;">
+                    <h3 class="mb-4 text-xl font-semibold text-gray-800">
+                        <i class="mr-2 text-green-500 fas fa-user"></i>
                         Ocupante Actual
                     </h3>
                     <div id="ocupanteInfo" class="space-y-3">
@@ -267,9 +281,9 @@
                 </div>
                 
                 <!-- Información de la clase actual -->
-                <div id="claseActualContainer" class="mb-6 p-6 bg-white rounded-xl shadow-sm border-l-4 border-orange-500" style="display: none;">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
-                        <i class="fas fa-chalkboard-teacher mr-2 text-orange-500"></i>
+                <div id="claseActualContainer" class="p-6 mb-6 bg-white border-l-4 border-orange-500 shadow-sm rounded-xl" style="display: none;">
+                    <h3 class="mb-4 text-xl font-semibold text-gray-800">
+                        <i class="mr-2 text-orange-500 fas fa-chalkboard-teacher"></i>
                         Clase Actual
                     </h3>
                     <div id="claseActualInfo" class="space-y-3">
@@ -278,9 +292,9 @@
                 </div>
                 
                 <!-- Próxima clase programada -->
-                <div id="proximaClaseContainer" class="mb-6 p-6 bg-white rounded-xl shadow-sm border-l-4 border-purple-500" style="display: none;">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
-                        <i class="fas fa-clock mr-2 text-purple-500"></i>
+                <div id="proximaClaseContainer" class="p-6 mb-6 bg-white border-l-4 border-purple-500 shadow-sm rounded-xl" style="display: none;">
+                    <h3 class="mb-4 text-xl font-semibold text-gray-800">
+                        <i class="mr-2 text-purple-500 fas fa-clock"></i>
                         Próxima Clase
                     </h3>
                     <div id="proximaClaseInfo" class="space-y-3">
@@ -449,7 +463,7 @@
 
     <!-- Modal para seleccionar cantidad de módulos -->
     <div id="modal-seleccionar-modulos" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
-        <div class="flex flex-col w-full max-h-screen mx-2 overflow-hidden bg-white rounded-lg shadow-lg max-w-2xl md:mx-8">
+        <div class="flex flex-col w-full max-w-2xl max-h-screen mx-2 overflow-hidden bg-white rounded-lg shadow-lg md:mx-8">
             <!-- Encabezado azul con diseño tipo banner -->
             <div class="relative flex flex-col gap-6 p-8 bg-light-cloud-blue md:flex-row md:items-center md:justify-between">
                 <!-- Círculos decorativos -->
@@ -478,13 +492,13 @@
             <!-- Contenido del modal -->
             <div class="p-6 bg-gray-50 overflow-y-auto max-h-[70vh] flex-1">
               <!-- Selección de módulos -->
-                <div class="mb-6 p-4 bg-white rounded-lg shadow-sm">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">Configuración de Reserva</h3>
-                    <div class="text-center mb-4">
-                        <p class="text-base text-gray-700 mb-4">¿Por cuántos módulos desea reservar?</p>
+                <div class="p-4 mb-6 bg-white rounded-lg shadow-sm">
+                    <h3 class="mb-4 text-lg font-semibold text-gray-800">Configuración de Reserva</h3>
+                    <div class="mb-4 text-center">
+                        <p class="mb-4 text-base text-gray-700">¿Por cuántos módulos desea reservar?</p>
                         <div class="flex items-center justify-center gap-4">
                             <input type="number" id="input-cantidad-modulos" min="1" max="1" value="1"
-                                class="w-24 px-4 py-3 text-xl text-center border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-semibold">
+                                class="w-24 px-4 py-3 text-xl font-semibold text-center border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                             <span class="text-sm text-gray-600">
                                 de <span id="max-modulos-disponibles" class="font-semibold text-blue-600">1</span> disponibles
                             </span>
@@ -498,7 +512,7 @@
                 <!-- Botones de acción -->
                 <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
                     <button onclick="cerrarModalModulos()"
-                        class="px-6 py-2 text-sm font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition">
+                        class="px-6 py-2 text-sm font-semibold text-gray-700 transition bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500">
                             Cancelar
                         </button>
                     <x-button id="btn-confirmar-modulos" variant='add'>
@@ -806,13 +820,116 @@
             }
         }
 
+        function resetearFlujoPorError(mensajeError) {
+            // Solo limpiar el estado de lectura, NO cerrar modales ni resetear toda la interfaz
+            limpiarEstadoLectura(mensajeError);
+        }
+
+        function limpiarEstadoSilencioso() {
+            // Limpiar buffer y input sin mostrar mensajes
+            bufferQR = '';
+            lastBufferLength = 0;
+            if (processingTimeout) {
+                clearTimeout(processingTimeout);
+                processingTimeout = null;
+            }
+            if (errorTimeout) {
+                clearTimeout(errorTimeout);
+                errorTimeout = null;
+            }
+            const inputEscanner = document.getElementById('qr-input');
+            if (inputEscanner) {
+                inputEscanner.value = '';
+            }
+            
+            // OCULTAR el bloque de información del usuario silenciosamente
+            const infoUsuario = getInfoUsuario();
+            if (infoUsuario) {
+                infoUsuario.classList.add('hidden');
+            }
+            
+            // Limpiar los datos mostrados
+            const runEscaneado = document.getElementById('run-escaneado');
+            const nombreUsuario = document.getElementById('nombre-usuario');
+            if (runEscaneado) runEscaneado.textContent = '--';
+            if (nombreUsuario) nombreUsuario.textContent = '--';
+        }
+
+        function limpiarEstadoLectura(mensajeError = null) {
+            // Solo limpiar el estado de lectura del QR, NO toda la interfaz
+            
+            // Limpiar buffer y timeouts
+            bufferQR = '';
+            lastBufferLength = 0;
+            if (processingTimeout) {
+                clearTimeout(processingTimeout);
+                processingTimeout = null;
+            }
+            if (errorTimeout) {
+                clearTimeout(errorTimeout);
+                errorTimeout = null;
+            }
+            
+            // Limpiar input
+            const inputEscanner = document.getElementById('qr-input');
+            if (inputEscanner) {
+                inputEscanner.value = '';
+                inputEscanner.focus(); // Mantener foco en el input
+            }
+            
+            // OCULTAR el bloque de información del usuario cuando hay error
+            const infoUsuario = getInfoUsuario();
+            if (infoUsuario) {
+                infoUsuario.classList.add('hidden');
+            }
+            
+            // Limpiar los datos mostrados en el bloque de información
+            const runEscaneado = document.getElementById('run-escaneado');
+            const nombreUsuario = document.getElementById('nombre-usuario');
+            if (runEscaneado) runEscaneado.textContent = '--';
+            if (nombreUsuario) nombreUsuario.textContent = '--';
+            
+            // Mostrar mensaje de error temporal si se proporciona
+            if (mensajeError) {
+                const qrStatus = getQrStatus();
+                if (qrStatus) {
+                    qrStatus.classList.remove('parpadeo');
+                    qrStatus.innerHTML = `Error: ${mensajeError}`;
+                    qrStatus.style.color = '#FFFFFF';
+                    
+                    // Restaurar estado normal después de 1.5 segundos
+                    setTimeout(() => {
+                        qrStatus.classList.add('parpadeo');
+                        qrStatus.innerHTML = 'Esperando... Escanea el código QR';
+                        qrStatus.style.color = '';
+                    }, 1500);
+                }
+            } else {
+                // Si no hay mensaje de error, solo restaurar el estado normal
+                const qrStatus = getQrStatus();
+                if (qrStatus) {
+                    qrStatus.classList.add('parpadeo');
+                    qrStatus.innerHTML = 'Esperando... Escanea el código QR';
+                }
+            }
+            
+            // Resetear orden de escaneo
+            ordenEscaneo = 'usuario';
+        }
+
+
+
         async function verificarUsuario(run) {
             try {
                 const response = await fetch(`/api/verificar-usuario/${run}`);
+                if (!response.ok) {
+                    console.error('Error en respuesta del servidor:', response.status);
+                    return null;
+                }
                 const result = await response.json();
                 return result;
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error al verificar usuario:', error);
                 return null;
             }
         }
@@ -822,10 +939,14 @@
         async function verificarEspacio(idEspacio) {
             try {
                 const response = await fetch(`/api/verificar-espacio/${idEspacio}`);
+                if (!response.ok) {
+                    console.error('Error en respuesta del servidor:', response.status);
+                    return null;
+                }
                 const result = await response.json();
                 return result;
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error al verificar espacio:', error);
                 return null;
             }
         }
@@ -970,6 +1091,7 @@
 
         let lastBufferLength = 0;
         let processingTimeout = null;
+        let errorTimeout = null;
         
         async function handleScan(event) {
             // Solo procesar cuando se presiona Enter
@@ -991,8 +1113,25 @@
                         processingTimeout = setTimeout(async () => {
                             await procesarQRCompleto();
                         }, 500);
+                        
+                        // Timeout de seguridad para detectar lecturas erróneas (60 segundos)
+                        if (errorTimeout) {
+                            clearTimeout(errorTimeout);
+                        }
+                        errorTimeout = setTimeout(() => {
+                            if (bufferQR && bufferQR.trim() !== '' && bufferQR.length > 10) {
+                                console.log('Timeout de seguridad: Lectura errónea detectada');
+                                limpiarEstadoLectura('Timeout de lectura - QR inválido');
+                            }
+                        }, 60000);
                     }
                 }
+                return;
+            }
+
+            // Validar que hay contenido en el buffer antes de procesar
+            if (!bufferQR || bufferQR.trim() === '') {
+                console.log('Buffer vacío al presionar Enter - ignorando');
                 return;
             }
 
@@ -1000,12 +1139,29 @@
         }
         
         async function procesarQRCompleto() {
+            // Validar que el buffer no esté vacío
+            if (!bufferQR || bufferQR.trim() === '') {
+                console.log('Buffer QR vacío - ignorando procesamiento');
+                return;
+            }
+
+            // Validar que el buffer tenga un tamaño mínimo razonable
+            if (bufferQR.length < 5) {
+                console.log('Buffer QR muy corto - ignorando procesamiento');
+                limpiarEstadoLectura(); // Solo limpiar lectura, no toda la interfaz
+                return;
+            }
+
+            console.log('Procesando QR completo. Buffer:', bufferQR, 'Orden:', ordenEscaneo);
+
             // Validar orden de escaneo
             if (ordenEscaneo === 'usuario') {
                 // PASO 1: Escanear usuario (obligatorio primero)
+                console.log('Procesando usuario...');
                 await procesarUsuario();
             } else if (ordenEscaneo === 'espacio') {
                 // PASO 2: Escanear espacio (solo después del usuario)
+                console.log('Procesando espacio...');
                 const resultado = await procesarEspacio();
                 
                 // Si la devolución fue exitosa, no continuar con más procesamiento
@@ -1015,41 +1171,64 @@
             } else {
                 // Error: orden incorrecto
                 console.error('Error: Debe escanear primero el QR del usuario');
+                limpiarEstadoLectura('Orden de escaneo incorrecto');
             }
 
-            // Limpiar buffer y input
-            bufferQR = '';
-            lastBufferLength = 0;
+            // NO limpiar el buffer aquí - dejarlo para que las funciones individuales lo manejen
+            // Solo limpiar timeouts
             if (processingTimeout) {
                 clearTimeout(processingTimeout);
                 processingTimeout = null;
             }
-            const inputEscanner = document.getElementById('qr-input');
-            if (inputEscanner) {
-                inputEscanner.value = '';
+            if (errorTimeout) {
+                clearTimeout(errorTimeout);
+                errorTimeout = null;
             }
         }
 
         async function procesarUsuario() {
             // Extraer RUN del QR (buscar "RUN" seguido de números)
             const runMatch = bufferQR.match(/RUN[^0-9]*(\d+)/);
+            let run = null;
+            
             if (!runMatch) {
-                return;
+                // Intentar otros formatos de RUN
+                const runMatchAlt = bufferQR.match(/(\d{7,8})/);
+                if (!runMatchAlt) {
+                    // Solo mostrar error si el buffer tiene contenido significativo y no es ruido
+                    if (bufferQR.length > 8) {
+                        console.log('Lectura errónea: No se pudo extraer RUN del QR');
+                        limpiarEstadoLectura('QR de usuario inválido');
+                    } else {
+                        // Error silencioso para buffers cortos
+                        limpiarEstadoSilencioso();
+                    }
+                    return;
+                }
+                run = runMatchAlt[1];
+            } else {
+                run = runMatch[1];
             }
 
-            const run = runMatch[1];
+            console.log('RUN extraído:', run);
 
             // Verificar usuario en la base de datos
             const usuarioInfo = await verificarUsuario(run);
             
             if (!usuarioInfo) {
+                // Error al verificar usuario - resetear flujo
+                console.log('Error al verificar usuario');
+                limpiarEstadoLectura('Usuario no encontrado en el sistema');
                 return;
             }
 
             if (usuarioInfo.verificado) {
+                console.log('Usuario verificado:', usuarioInfo.tipo_usuario);
+                
                 if (usuarioInfo.tipo_usuario === 'profesor') {
                     // Es profesor - verificar si tiene clases programadas
                     const tieneClases = await verificarClasesProfesor(run);
+                    console.log('Profesor tiene clases:', tieneClases);
                     
                     if (tieneClases === true) {
                         // Profesor CON clases - solo registra solicitud
@@ -1058,6 +1237,7 @@
                         mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
                         usuarioEscaneado = run;
                         ordenEscaneo = 'espacio';
+                        console.log('Estado actualizado: usuario escaneado, esperando espacio');
                         // No necesita devolución para volver a solicitar
                     } else {
                         // Profesor SIN clases - solicita con módulos
@@ -1066,6 +1246,7 @@
                         mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
                         usuarioEscaneado = run;
                         ordenEscaneo = 'espacio';
+                        console.log('Estado actualizado: usuario escaneado, esperando espacio');
                         // Necesitará especificar módulos (máx 2)
                     }
                 } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
@@ -1075,12 +1256,24 @@
                     mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
                     usuarioEscaneado = run;
                     ordenEscaneo = 'espacio';
+                    console.log('Estado actualizado: solicitante escaneado, esperando espacio');
                     // Necesitará especificar módulos (máx 2)
                 } else {
                     // Otro tipo de usuario - mostrar error
+                    console.log('Tipo de usuario no manejado:', usuarioInfo.tipo_usuario);
                 }
+                
+                // Limpiar buffer después de procesar usuario exitosamente
+                bufferQR = '';
+                lastBufferLength = 0;
+                const inputEscanner = document.getElementById('qr-input');
+                if (inputEscanner) {
+                    inputEscanner.value = '';
+                }
+                
             } else {
                 // Usuario no encontrado - mostrar modal de registro de solicitante
+                console.log('Usuario no encontrado, abriendo modal de registro');
                 runSolicitantePendiente = run;
                 document.getElementById('run-solicitante-no-registrado').textContent = run;
                 
@@ -1102,27 +1295,96 @@
                         detail: 'registro-solicitante'
                     }));
                 }, 300);
+                
+                // Limpiar buffer después de abrir modal
+                bufferQR = '';
+                lastBufferLength = 0;
+                const inputEscanner = document.getElementById('qr-input');
+                if (inputEscanner) {
+                    inputEscanner.value = '';
+                }
             }
         }
 
         async function procesarEspacio() {
-            // Extraer código de espacio (buscar "TH" seguido de letras/números)
-            const espacioMatch = bufferQR.match(/(TH[^A-Z0-9]*[A-Z0-9]+)/);
-            if (!espacioMatch) {
-                return;
+            console.log('Procesando espacio con buffer:', bufferQR);
+            
+            // Extraer código de espacio - múltiples formatos posibles
+            let espacio = null;
+            
+            // Patrón 1: TH seguido de cualquier cosa (formato estándar)
+            const espacioMatch = bufferQR.match(/(TH[^A-Z0-9]*[A-Z0-9]+)/i);
+            if (espacioMatch) {
+                espacio = espacioMatch[1];
+            } else {
+                // Patrón 2: 2-3 letras + números (formato compacto)
+                const espacioMatchAlt = bufferQR.match(/([A-Z]{2,3}[0-9]+)/i);
+                if (espacioMatchAlt) {
+                    espacio = espacioMatchAlt[1];
+                } else {
+                    // Patrón 3: Letras + caracteres especiales + letras/números
+                    const espacioMatchSpecial = bufferQR.match(/([A-Z]+['\-]?[A-Z0-9]+)/i);
+                    if (espacioMatchSpecial) {
+                        espacio = espacioMatchSpecial[1];
+                    } else {
+                        // Patrón 4: Formato simple letras + números
+                        const espacioMatchSimple = bufferQR.match(/([A-Z]+[0-9]+)/i);
+                        if (espacioMatchSimple) {
+                            espacio = espacioMatchSimple[1];
+                        } else {
+                            // Solo mostrar error si el buffer tiene contenido significativo
+                            if (bufferQR.length > 8) {
+                                console.log('Lectura errónea: No se pudo extraer código de espacio del QR');
+                                limpiarEstadoLectura('QR de espacio inválido');
+                            } else {
+                                // Error silencioso para buffers cortos
+                                limpiarEstadoSilencioso();
+                            }
+                            return;
+                        }
+                    }
+                }
             }
 
-            const espacio = espacioMatch[1].replace(/[^A-Z0-9]/g, '-');
+            console.log('Espacio extraído:', espacio);
+            
+            // Normalizar el formato del espacio para que coincida con la BD (TH-C1)
+            if (espacio) {
+                // Convertir a mayúsculas y reemplazar apóstrofe por guión
+                espacio = espacio.toUpperCase().replace(/'/g, '-');
+                console.log('Espacio normalizado:', espacio);
+            }
 
             // Verificar estado del espacio y reservas del usuario
-            const resultadoVerificacion = await verificarEstadoEspacioYReserva(usuarioEscaneado, espacio);
+            console.log('Verificando estado del espacio:', espacio, 'para usuario:', usuarioEscaneado);
+            
+            // Agregar timeout para evitar que se cuelgue
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout en verificación de espacio')), 10000)
+            );
+            
+            const resultadoVerificacion = await Promise.race([
+                verificarEstadoEspacioYReserva(usuarioEscaneado, espacio),
+                timeoutPromise
+            ]).catch(error => {
+                console.error('Error en verificación de espacio:', error);
+                return {
+                    tipo: 'error',
+                    mensaje: 'Timeout al verificar el estado del espacio'
+                };
+            });
+            
+            console.log('Resultado de verificación:', resultadoVerificacion);
             
             if (resultadoVerificacion.tipo === 'error') {
-                ordenEscaneo = 'usuario';
+                // Error al verificar estado - resetear flujo
+                console.log('Error al verificar estado del espacio');
+                limpiarEstadoLectura('Error al verificar el estado del espacio');
                 return;
             }
 
             if (resultadoVerificacion.tipo === 'devolucion') {
+                console.log('Procesando devolución...');
                 // Evitar procesamiento múltiple
                 if (procesandoDevolucion) {
                     return 'devolucion_en_proceso';
@@ -1161,10 +1423,10 @@
                         // Mostrar mensaje de éxito
                         document.getElementById('qr-status').innerHTML = 'Devolución exitosa';
                     
-                    // Limpiar completamente la interfaz después de un delay
-                    setTimeout(() => {
-                        limpiarEstadoCompleto();
-                    }, 2000);
+                                            // Limpiar solo el estado de lectura después de un delay
+                        setTimeout(() => {
+                            limpiarEstadoLectura();
+                        }, 2000);
                     
                     // IMPORTANTE: Detener completamente el procesamiento aquí
                     procesandoDevolucion = false;
@@ -1182,6 +1444,7 @@
             }
 
             if (resultadoVerificacion.tipo === 'reserva_existente') {
+                console.log('Procesando reserva existente...');
                 
                 // Mostrar Sweet Alert de reserva existente
                 Swal.fire({
@@ -1197,7 +1460,7 @@
                 
                 // Limpiar estado después del Sweet Alert
                 setTimeout(() => {
-                    limpiarEstadoCompleto();
+                    limpiarEstadoLectura();
                 }, 2500);
                 
                 ordenEscaneo = 'usuario';
@@ -1205,6 +1468,7 @@
             }
 
             if (resultadoVerificacion.tipo === 'espacio_ocupado') {
+                console.log('Procesando espacio ocupado...');
                 // Verificar si el ocupante es el mismo usuario que acaba de escanear
                 if (resultadoVerificacion.ocupante && resultadoVerificacion.ocupante.run === usuarioEscaneado) {
                     // Es el mismo usuario, no mostrar mensaje de ocupado
@@ -1219,7 +1483,7 @@
                     mensajeDetallado = `
                         <div class="text-left">
                             <p class="mb-2"><strong>${resultadoVerificacion.mensaje}</strong></p>
-                            <div class="bg-gray-100 p-3 rounded-lg">
+                            <div class="p-3 bg-gray-100 rounded-lg">
                                 <p><strong>${tipoUsuario}:</strong> ${ocupante.nombre}</p>
                                 <p><strong>RUN:</strong> ${ocupante.run}</p>
                                 <p><strong>Hora de inicio:</strong> ${ocupante.hora_inicio}</p>
@@ -1233,7 +1497,7 @@
                 
                 // Limpiar estado después de mostrar el mensaje
                 setTimeout(() => {
-                    limpiarEstadoCompleto();
+                    limpiarEstadoLectura();
                 }, 1000);
                 
                 ordenEscaneo = 'usuario';
@@ -1241,6 +1505,7 @@
             }
 
             // Si llegamos aquí, el espacio está disponible para crear una nueva reserva
+            console.log('Espacio disponible, verificando usuario para determinar flujo...');
             // Verificar el tipo de usuario para determinar el flujo
             const usuarioInfo = await verificarUsuario(usuarioEscaneado);
             
@@ -1285,30 +1550,25 @@
                         document.getElementById('qr-status').innerHTML = 'Asistencia registrada';
                         document.getElementById('qr-status').classList.remove('parpadeo');
                         
-                        // Limpiar completamente la interfaz después de un delay
+                        // Limpiar solo el estado de lectura después de un delay
                         setTimeout(() => {
-                            // Limpiar todo excepto usuarioEscaneado
-                            ordenEscaneo = 'usuario';
+                            // Mantener usuarioEscaneado para continuar el flujo
+                            ordenEscaneo = 'espacio'; // Ya escaneó usuario, ahora espera espacio
                             espacioParaReserva = null;
                             runParaReserva = null;
                             
-                            // Limpiar buffers
-                                bufferQR = '';
+                            // Limpiar solo buffers de lectura
+                            bufferQR = '';
                             
-                            // Resetear interfaz visual
-                            limpiarEstadoCompleto();
+                            // Resetear solo interfaz de lectura
+                            limpiarEstadoLectura();
                             
-                            // Restaurar parpadeo del estado QR
+                            // Mantener información del usuario visible
                             const qrStatus = document.getElementById('qr-status');
                             if (qrStatus) {
-                                qrStatus.classList.add('parpadeo');
-                                qrStatus.innerHTML = 'Esperando... Escanea el código QR';
+                                qrStatus.classList.remove('parpadeo');
+                                qrStatus.innerHTML = 'Usuario verificado. Escanee el espacio.';
                             }
-                            
-                            // Limpiar usuarioEscaneado después de 5 segundos
-                            setTimeout(() => {
-                                usuarioEscaneado = null;
-                            }, 5000);
                         }, 2000);
                     } else {
                         console.error('Error al registrar asistencia:', resultado?.mensaje || 'Error desconocido');
@@ -1331,9 +1591,17 @@
                     return;
                 }
 
+            // Limpiar buffer después de procesar espacio exitosamente
+            bufferQR = '';
+            lastBufferLength = 0;
+            const inputEscanner = document.getElementById('qr-input');
+            if (inputEscanner) {
+                inputEscanner.value = '';
+            }
+            
             // Resetear para siguiente usuario
             setTimeout(() => {
-                limpiarEstadoCompleto();
+                limpiarEstadoLectura();
             }, 3000);
             
             return 'procesamiento_completado';
@@ -1716,7 +1984,7 @@
                 if (elements.ocupanteInfo) {
                     elements.ocupanteInfo.innerHTML = `
                         <div class="flex items-center justify-center py-4">
-                            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                            <div class="w-6 h-6 border-b-2 border-blue-500 rounded-full animate-spin"></div>
                             <span class="ml-2 text-sm text-gray-600">Cargando...</span>
                         </div>
                     `;
@@ -1777,7 +2045,7 @@
             if (elements.ocupanteInfo) {
                 elements.ocupanteInfo.innerHTML = `
                     <div class="flex items-center justify-center py-4">
-                        <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i>
+                        <i class="mr-2 text-red-500 fas fa-exclamation-triangle"></i>
                         <span class="text-sm text-red-600">${mensaje}</span>
                     </div>
                 `;
@@ -1802,16 +2070,16 @@
         function renderizarInformacionProfesor(elements, data) {
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
                 elements.ocupanteInfo.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="flex items-center">
-                            <i class="fas fa-user-tie mr-3 text-blue-500"></i>
+                            <i class="mr-3 text-blue-500 fas fa-user-tie"></i>
                             <div>
                                 <div class="font-medium text-gray-800">${data.nombre || 'No especificado'}</div>
                                 <div class="text-sm text-gray-600">Profesor</div>
                             </div>
                         </div>
                         <div class="flex items-center">
-                            <i class="fas fa-book mr-3 text-green-500"></i>
+                            <i class="mr-3 text-green-500 fas fa-book"></i>
                             <div>
                                 <div class="font-medium text-gray-800">${data.asignatura || 'No especificada'}</div>
                                 <div class="text-sm text-gray-600">Asignatura</div>
@@ -1819,7 +2087,7 @@
                         </div>
                         ${data.hora_inicio ? `
                         <div class="flex items-center">
-                            <i class="fas fa-clock mr-3 text-orange-500"></i>
+                            <i class="mr-3 text-orange-500 fas fa-clock"></i>
                             <div>
                                 <div class="font-medium text-gray-800">${data.hora_inicio}</div>
                                 <div class="text-sm text-gray-600">Hora inicio</div>
@@ -1828,7 +2096,7 @@
                         ` : ''}
                         ${data.hora_salida ? `
                         <div class="flex items-center">
-                            <i class="fas fa-clock mr-3 text-red-500"></i>
+                            <i class="mr-3 text-red-500 fas fa-clock"></i>
                             <div>
                                 <div class="font-medium text-gray-800">${data.hora_salida}</div>
                                 <div class="text-sm text-gray-600">Hora salida</div>
@@ -1843,16 +2111,16 @@
             if (elements.claseActualContainer && elements.claseActualInfo) {
                 elements.claseActualContainer.style.display = 'block';
                 elements.claseActualInfo.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="flex items-center">
-                            <i class="fas fa-chalkboard mr-3 text-blue-500"></i>
+                            <i class="mr-3 text-blue-500 fas fa-chalkboard"></i>
                             <div>
                                 <div class="font-medium text-gray-800">${data.asignatura || 'No especificada'}</div>
                                 <div class="text-sm text-gray-600">Asignatura actual</div>
                             </div>
                         </div>
                         <div class="flex items-center">
-                            <i class="fas fa-user-tie mr-3 text-green-500"></i>
+                            <i class="mr-3 text-green-500 fas fa-user-tie"></i>
                             <div>
                                 <div class="font-medium text-gray-800">${data.nombre || 'No especificado'}</div>
                                 <div class="text-sm text-gray-600">Profesor a cargo</div>
@@ -1866,16 +2134,16 @@
             if (data.proxima_clase && elements.proximaClaseContainer && elements.proximaClaseInfo) {
                 elements.proximaClaseContainer.style.display = 'block';
                 elements.proximaClaseInfo.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="flex items-center">
-                            <i class="fas fa-calendar mr-3 text-purple-500"></i>
+                            <i class="mr-3 text-purple-500 fas fa-calendar"></i>
                             <div>
                                 <div class="font-medium text-gray-800">${data.proxima_clase.asignatura || 'No especificada'}</div>
                                 <div class="text-sm text-gray-600">Próxima asignatura</div>
                             </div>
                         </div>
                         <div class="flex items-center">
-                            <i class="fas fa-user-tie mr-3 text-purple-500"></i>
+                            <i class="mr-3 text-purple-500 fas fa-user-tie"></i>
                             <div>
                                 <div class="font-medium text-gray-800">${data.proxima_clase.profesor || 'No especificado'}</div>
                                 <div class="text-sm text-gray-600">Próximo profesor</div>
@@ -1891,37 +2159,37 @@
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
                 // Crear HTML optimizado usando template literal
                 const html = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="flex items-center">
-                            <i class="fas fa-user mr-3 text-green-500"></i>
+                            <i class="mr-3 text-green-500 fas fa-user"></i>
                             <div>
                                 <div class="font-medium text-gray-800">Solicitante</div>
                                 <div class="text-sm text-gray-600">${data.nombre || 'No especificado'}</div>
                             </div>
                         </div>
                         <div class="flex items-center">
-                            <i class="fas fa-id-card mr-3 text-blue-500"></i>
+                            <i class="mr-3 text-blue-500 fas fa-id-card"></i>
                             <div>
                                 <div class="font-medium text-gray-800">RUN</div>
                                 <div class="text-sm text-gray-600">${data.run_solicitante || 'No especificado'}</div>
                             </div>
                         </div>
                         <div class="flex items-center">
-                            <i class="fas fa-envelope mr-3 text-orange-500"></i>
+                            <i class="mr-3 text-orange-500 fas fa-envelope"></i>
                             <div>
                                 <div class="font-medium text-gray-800">Correo</div>
                                 <div class="text-sm text-gray-600">${data.correo || 'No especificado'}</div>
                             </div>
                         </div>
                         <div class="flex items-center">
-                            <i class="fas fa-phone mr-3 text-red-500"></i>
+                            <i class="mr-3 text-red-500 fas fa-phone"></i>
                             <div>
                                 <div class="font-medium text-gray-800">Teléfono</div>
                                 <div class="text-sm text-gray-600">${data.telefono || 'No especificado'}</div>
                             </div>
                         </div>
                         <div class="flex items-center">
-                            <i class="fas fa-tag mr-3 text-purple-500"></i>
+                            <i class="mr-3 text-purple-500 fas fa-tag"></i>
                             <div>
                                 <div class="font-medium text-gray-800">Tipo solicitante</div>
                                 <div class="text-sm text-gray-600">${data.tipo_solicitante || 'No especificado'}</div>
@@ -1938,7 +2206,7 @@
                         ` : ''}
                         ${data.fecha_registro ? `
                         <div class="flex items-center">
-                            <i class="fas fa-calendar mr-3 text-indigo-500"></i>
+                            <i class="mr-3 text-indigo-500 fas fa-calendar"></i>
                             <div>
                                 <div class="font-medium text-gray-800">Fecha registro</div>
                                 <div class="text-sm text-gray-600">${new Date(data.fecha_registro).toLocaleDateString('es-CL')}</div>
@@ -1968,16 +2236,16 @@
         function renderizarInformacionOcupadoSinInfo(elements, data) {
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
                 elements.ocupanteInfo.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="flex items-center">
-                            <i class="fas fa-user mr-3 text-gray-500"></i>
+                            <i class="mr-3 text-gray-500 fas fa-user"></i>
                             <div>
                                 <div class="font-medium text-gray-800">${data.nombre || 'No especificado'}</div>
                                 <div class="text-sm text-gray-600">Ocupante</div>
                             </div>
                         </div>
                         <div class="flex items-center">
-                            <i class="fas fa-info-circle mr-3 text-gray-500"></i>
+                            <i class="mr-3 text-gray-500 fas fa-info-circle"></i>
                             <div>
                                 <div class="font-medium text-gray-800">${data.tipo_reserva || 'Ocupado'}</div>
                                 <div class="text-sm text-gray-600">Tipo</div>
@@ -1985,7 +2253,7 @@
                         </div>
                         ${data.hora_inicio ? `
                         <div class="flex items-center">
-                            <i class="fas fa-clock mr-3 text-gray-500"></i>
+                            <i class="mr-3 text-gray-500 fas fa-clock"></i>
                             <div>
                                 <div class="font-medium text-gray-800">${data.hora_inicio}</div>
                                 <div class="text-sm text-gray-600">Hora inicio</div>
@@ -1994,7 +2262,7 @@
                         ` : ''}
                         ${data.hora_salida ? `
                         <div class="flex items-center">
-                            <i class="fas fa-clock mr-3 text-gray-500"></i>
+                            <i class="mr-3 text-gray-500 fas fa-clock"></i>
                             <div>
                                 <div class="font-medium text-gray-800">${data.hora_salida}</div>
                                 <div class="text-sm text-gray-600">Hora salida</div>
@@ -2003,7 +2271,7 @@
                         ` : ''}
                         ${data.detalles ? `
                         <div class="flex items-center">
-                            <i class="fas fa-info mr-3 text-gray-500"></i>
+                            <i class="mr-3 text-gray-500 fas fa-info"></i>
                             <div>
                                 <div class="font-medium text-gray-800">${data.detalles}</div>
                                 <div class="text-sm text-gray-600">Detalles</div>
@@ -2031,16 +2299,16 @@
             if (data.proxima_clase && elements.proximaClaseContainer && elements.proximaClaseInfo) {
                 elements.proximaClaseContainer.style.display = 'block';
                 elements.proximaClaseInfo.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="flex items-center">
-                            <i class="fas fa-calendar mr-3 text-purple-500"></i>
+                            <i class="mr-3 text-purple-500 fas fa-calendar"></i>
                             <div>
                                 <div class="font-medium text-gray-800">${data.proxima_clase.asignatura || 'No especificada'}</div>
                                 <div class="text-sm text-gray-600">Próxima asignatura</div>
                             </div>
                         </div>
                         <div class="flex items-center">
-                            <i class="fas fa-user-tie mr-3 text-purple-500"></i>
+                            <i class="mr-3 text-purple-500 fas fa-user-tie"></i>
                             <div>
                                 <div class="font-medium text-gray-800">${data.proxima_clase.profesor || 'No especificado'}</div>
                                 <div class="text-sm text-gray-600">Próximo profesor</div>
@@ -2132,9 +2400,15 @@
                     inputEscanner.focus();
                 });
                 inputEscanner.focus();
-                document.getElementById('qr-status').innerHTML = 'Esperando';
+                document.getElementById('qr-status').innerHTML = 'Esperando... Escanea el código QR';
                 // Asegurar que la interfaz esté en estado inicial
                 limpiarEstadoCompleto();
+                
+                console.log('Sistema QR inicializado. Estado inicial:', {
+                    ordenEscaneo,
+                    usuarioEscaneado,
+                    bufferQR
+                });
             }
             // Inicializar elementos del canvas
             initElements();
@@ -2473,16 +2747,16 @@
             // Debug: mostrar información recibida
             console.log('Información de módulos recibida:', info);
             
-            let html = '<div class="p-4 bg-white rounded-lg shadow-sm border-l-4 border-green-500">';
-            html += '<h3 class="text-lg font-semibold text-gray-800 mb-3">Información de Disponibilidad</h3>';
+            let html = '<div class="p-4 bg-white border-l-4 border-green-500 rounded-lg shadow-sm">';
+            html += '<h3 class="mb-3 text-lg font-semibold text-gray-800">Información de Disponibilidad</h3>';
             
             // Información básica con validación
             const moduloActual = info.modulo_actual !== null && info.modulo_actual !== undefined ? info.modulo_actual : 'No disponible';
             const maxModulos = info.max_modulos || 0;
             
-            html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">';
-            html += `<div class="text-sm"><p class="font-medium text-gray-600">Módulo actual:</p><p class="text-gray-800 font-semibold">${moduloActual}</p></div>`;
-            html += `<div class="text-sm"><p class="font-medium text-gray-600">Módulos disponibles:</p><p class="text-gray-800 font-semibold">${maxModulos}</p></div>`;
+            html += '<div class="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">';
+            html += `<div class="text-sm"><p class="font-medium text-gray-600">Módulo actual:</p><p class="font-semibold text-gray-800">${moduloActual}</p></div>`;
+            html += `<div class="text-sm"><p class="font-medium text-gray-600">Módulos disponibles:</p><p class="font-semibold text-gray-800">${maxModulos}</p></div>`;
             html += '</div>';
             
          
@@ -2490,11 +2764,11 @@
             
             // Clases próximas con información básica
             if (info.clases_proximas && info.clases_proximas.length > 0) {
-                html += '<div class="mb-4 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">';
-                html += '<h4 class="text-sm font-semibold text-blue-800 mb-3">Clases próximas:</h4>';
+                html += '<div class="p-4 mb-4 border-l-4 border-blue-400 rounded-lg bg-blue-50">';
+                html += '<h4 class="mb-3 text-sm font-semibold text-blue-800">Clases próximas:</h4>';
                 info.clases_proximas.forEach((clase, index) => {
-                    html += `<div class="mb-3 p-3 bg-white rounded border">`;
-                    html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-3">';
+                    html += `<div class="p-3 mb-3 bg-white border rounded">`;
+                    html += '<div class="grid grid-cols-1 gap-3 md:grid-cols-2">';
                     html += `<div class="text-sm"><p class="font-medium text-blue-700">Asignatura:</p><p class="text-blue-800">${clase.asignatura || 'No especificada'}</p></div>`;
                     html += `<div class="text-sm"><p class="font-medium text-blue-700">Profesor:</p><p class="text-blue-800">${clase.profesor || 'No especificado'}</p></div>`;
                     html += '</div>';
