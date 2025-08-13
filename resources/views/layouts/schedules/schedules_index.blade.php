@@ -290,8 +290,6 @@
                     return response.json();
                 })
                 .then(data => {
-                    // Debug logging para el modal
-                    console.log('Datos recibidos en modal:', {
                         horario: data.horario,
                         asignaturas: data.asignaturas,
                         periodo: data.periodo,

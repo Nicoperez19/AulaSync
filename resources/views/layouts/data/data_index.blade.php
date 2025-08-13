@@ -441,7 +441,7 @@
 
         // Inicialización cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', function () {
-            console.log('Página de carga de datos inicializada');
+            // Página de carga de datos inicializada
 
             // Event listeners para los selectores
             const semestreSelector = document.getElementById('semestre_selector');
@@ -465,8 +465,8 @@
         // Función para abrir el modal y cargar los datos
         function abrirModalDetalleCarga(data) {
             const modal = document.getElementById('modal-detalle-carga');
-            console.log('Modal encontrado:', modal);
-            console.log('Datos a mostrar:', data);
+                            // Modal encontrado
+                // Datos a mostrar
 
             if (modal) {
 
@@ -503,7 +503,7 @@
         }
 
         function verDetalleCarga(id) {
-            console.log('Iniciando verDetalleCarga con ID:', id);
+            // Iniciando verDetalleCarga con ID
             fetch('/data/detalle/' + id)
                 .then(res => {
                     if (!res.ok) {
@@ -512,7 +512,7 @@
                     return res.json();
                 })
                 .then(data => {
-                    console.log('Datos recibidos:', data);
+                    // Datos recibidos
                     abrirModalDetalleCarga(data);
                 })
                 .catch(error => {

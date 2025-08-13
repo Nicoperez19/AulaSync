@@ -145,7 +145,7 @@
             document.addEventListener('change', function(e) {
                 if (e.target.name === 'id_espacio') {
                     // Opcional: puedes agregar lógica adicional aquí si es necesario
-                    console.log('Espacio seleccionado:', e.target.value);
+                    // Espacio seleccionado
                 }
             });
         });

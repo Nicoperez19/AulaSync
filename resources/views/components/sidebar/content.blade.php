@@ -23,8 +23,9 @@
     <!-- Horarios Espacios - Solo Administrador y Supervisor -->
     @can('horarios por espacios')
         <x-sidebar.link title="Horarios por Espacios"
-            href="{{ $sede ? route('espacios.show', $sede->id_sede) : (auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard')) }}"
-            :isActive="request()->routeIs('espacios.show')">
+            href="{{ $tieneEspacios ? ($sede ? route('espacios.show', $sede->id_sede) : (auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard'))) : '#' }}"
+            :isActive="request()->routeIs('espacios.show')"
+            onclick="{{ !$tieneEspacios ? 'mostrarSweetAlertNoEspacios(event)' : '' }}">
             <x-slot name="icon">
                 <x-icons.clock class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
             </x-slot>
@@ -33,8 +34,10 @@
 
     <!-- Horarios Profesores - Solo Administrador y Supervisor -->
     @can('horarios profesores')
-        <x-sidebar.link title="Horarios Profesores" href="{{ route('horarios.index') }}"
-            :isActive="request()->routeIs('horarios.index')">
+        <x-sidebar.link title="Horarios Profesores" 
+            href="{{ $tieneProfesores ? route('horarios.index') : '#' }}"
+            :isActive="request()->routeIs('horarios.index')"
+            onclick="{{ !$tieneProfesores ? 'mostrarSweetAlertNoProfesores(event)' : '' }}">
             <x-slot name="icon">
                 <x-icons.dashboard class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
             </x-slot>

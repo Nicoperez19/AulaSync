@@ -295,7 +295,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // Debug: Verificar que los datos están llegando
-        console.log('Datos del gráfico de utilización:', {
+        // Datos del gráfico de utilización
             labels: @json($labels_grafico),
             data: @json($data_grafico),
             resumen: @json($resumen)
@@ -308,16 +308,16 @@
         
         // Si no hay datos, usar datos de prueba
         if (!labelsUtil || labelsUtil.length === 0) {
-            console.log('No hay datos reales, usando datos de prueba');
+            // No hay datos reales, usando datos de prueba
             labelsUtil = ['Sala de Clases', 'Laboratorio', 'Auditorio', 'Oficina', 'Sala de Reuniones'];
             dataUtil = [75, 60, 85, 45, 30];
         }
         
         // Verificar que el canvas existe
         const canvasUtilizacion = document.getElementById('chartUtilizacion');
-        console.log('Canvas de utilización:', canvasUtilizacion);
-        console.log('Labels:', labelsUtil);
-        console.log('Data:', dataUtil);
+        // Canvas de utilización
+        // Labels
+        // Data
         
         if (canvasUtilizacion && labelsUtil && dataUtil) {
             new Chart(canvasUtilizacion.getContext('2d'), {
@@ -434,7 +434,7 @@
                     }
                 }
             });
-            console.log('Gráfico de utilización creado exitosamente');
+            // Gráfico de utilización creado exitosamente
         } else {
             console.error('Error: No se pudo crear el gráfico de utilización', {
                 canvas: canvasUtilizacion,
@@ -510,7 +510,7 @@
                     }
                 }
             });
-            console.log('Gráfico de reservas creado exitosamente');
+            // Gráfico de reservas creado exitosamente
         } else {
             console.error('Error: No se pudo crear el gráfico de reservas', {
                 canvas: canvasReservas,

@@ -171,7 +171,7 @@
     }
 
     function confirmDelete(formId) {
-        console.log('Función confirmDelete llamada para formulario:', formId);
+        // Función confirmDelete llamada para formulario
 
         Swal.fire({
             title: '¿Estás seguro?',
@@ -184,12 +184,12 @@
             cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
-                console.log('Usuario confirmó eliminación');
+                // Usuario confirmó eliminación
                 const form = document.getElementById(formId);
-                console.log('Formulario encontrado:', form);
+                // Formulario encontrado
 
                 if (form) {
-                    console.log('Enviando formulario...');
+                    // Enviando formulario
                     form.submit();
                 } else {
                     console.error('No se encontró el formulario con ID:', formId);

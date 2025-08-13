@@ -300,7 +300,7 @@
             oscillator.start(audioContext.currentTime);
             oscillator.stop(audioContext.currentTime + 0.2);
         } catch (error) {
-            console.log('No se pudo reproducir sonido de notificación');
+            // Error al reproducir sonido de notificación
         }
     }
 
@@ -309,7 +309,7 @@
         if (Notification.permission === 'default') {
             Notification.requestPermission().then(permission => {
                 if (permission === 'granted') {
-                    console.log('Permisos de notificación concedidos');
+                    // Permisos de notificación concedidos
                 }
             });
         }
