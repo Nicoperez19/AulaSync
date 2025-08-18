@@ -577,7 +577,7 @@
                         });
                     })
                     .catch(error => {
-                        console.error('Error al cargar los pisos:', error);
+                        // Error al cargar los pisos
                     });
             }
         });

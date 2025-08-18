@@ -387,7 +387,7 @@
                                     }
                                 })
                                 .catch(error => {
-                                    console.error('Error al consultar el progreso:', error);
+                                    // Error al consultar el progreso
                                     clearInterval(progressInterval);
                                     if (!alertShown) {
                                         alertShown = true; // Marcar como mostrado
@@ -497,9 +497,9 @@
 
                 // Mostrar el modal
                 modal.classList.remove('hidden');
-            } else {
-                console.error('Modal no encontrado');
-            }
+                    } else {
+            // Modal no encontrado
+        }
         }
 
         function verDetalleCarga(id) {
@@ -516,7 +516,7 @@
                     abrirModalDetalleCarga(data);
                 })
                 .catch(error => {
-                    console.error('Error:', error);
+                    // Error
                     Swal.fire({
                         title: 'Error',
                         text: 'No se pudo cargar los detalles del archivo',

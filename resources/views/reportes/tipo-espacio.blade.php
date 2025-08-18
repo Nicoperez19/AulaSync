@@ -436,7 +436,7 @@
             });
             // Gráfico de utilización creado exitosamente
         } else {
-            console.error('Error: No se pudo crear el gráfico de utilización', {
+            // Error: No se pudo crear el gráfico de utilización
                 canvas: canvasUtilizacion,
                 labels: labelsUtil,
                 data: dataUtil
@@ -512,7 +512,7 @@
             });
             // Gráfico de reservas creado exitosamente
         } else {
-            console.error('Error: No se pudo crear el gráfico de reservas', {
+            // Error: No se pudo crear el gráfico de reservas
                 canvas: canvasReservas,
                 resumenData: resumenData
             });
@@ -598,7 +598,7 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error al cargar histórico:', error);
+                    // Error al cargar histórico
                     document.getElementById('spinner-historico').classList.add('hidden');
                     document.getElementById('tbody-historico').innerHTML = '<tr><td colspan="8" class="px-4 py-2 text-center text-red-500">Error al cargar datos: ' + error.message + '</td></tr>';
                 });

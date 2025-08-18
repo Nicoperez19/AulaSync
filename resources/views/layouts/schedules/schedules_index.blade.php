@@ -229,12 +229,12 @@
                             });
                         });
                     } else {
-                        console.error('No se encontró el elemento profesores-lista en la respuesta');
+                        // No se encontró el elemento profesores-lista en la respuesta
                         document.getElementById('profesores-lista').innerHTML = '<div class="py-8 text-center text-red-500">Error al cargar los datos</div>';
                     }
                 })
                 .catch(error => {
-                    console.error('Error en la búsqueda:', error);
+                    // Error en la búsqueda
                     document.getElementById('profesores-lista').innerHTML = '<div class="py-8 text-center text-red-500">Error al cargar los datos: ' + error.message + '</div>';
                 })
                 .finally(() => {
@@ -371,7 +371,7 @@
                     });
                 })
                 .catch(error => {
-                    console.error('Error:', error);
+                    // Error
                     document.getElementById('modalNombreProfesor').textContent = 'Error';
                     document.getElementById('modalCorreoProfesor').textContent = '';
                     const horarioBody = document.getElementById('horarioBody');
@@ -451,12 +451,12 @@
                         profesoresLista.innerHTML = newList.innerHTML;
                         activarClickCard();
                     } else {
-                        console.error('No se encontró el elemento profesores-lista en la respuesta');
+                        // No se encontró el elemento profesores-lista en la respuesta
                         profesoresLista.innerHTML = '<div class="py-8 text-center text-red-500">Error al cargar los datos</div>';
                     }
                 })
                 .catch(error => {
-                    console.error('Error al aplicar filtros:', error);
+                    // Error al aplicar filtros
                     profesoresLista.innerHTML = '<div class="py-8 text-center text-red-500">Error al cargar los datos: ' + error.message + '</div>';
                 })
                 .finally(() => ocultarSpinner());

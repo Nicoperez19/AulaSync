@@ -923,13 +923,13 @@
             try {
                 const response = await fetch(`/api/verificar-usuario/${run}`);
                 if (!response.ok) {
-                    console.error('Error en respuesta del servidor:', response.status);
+                    // Error en respuesta del servidor
                     return null;
                 }
                 const result = await response.json();
                 return result;
             } catch (error) {
-                console.error('Error al verificar usuario:', error);
+                // Error al verificar usuario
                 return null;
             }
         }
@@ -940,13 +940,13 @@
             try {
                 const response = await fetch(`/api/verificar-espacio/${idEspacio}`);
                 if (!response.ok) {
-                    console.error('Error en respuesta del servidor:', response.status);
+                    // Error en respuesta del servidor
                     return null;
                 }
                 const result = await response.json();
                 return result;
             } catch (error) {
-                console.error('Error al verificar espacio:', error);
+                // Error al verificar espacio
                 return null;
             }
         }
@@ -981,7 +981,7 @@
                 });
                 return await response.json();
             } catch (error) {
-                console.error('Error:', error);
+                // Error
                 return null;
             }
         }
@@ -1001,7 +1001,7 @@
                 });
                 return await response.json();
             } catch (error) {
-                console.error('Error al registrar asistencia:', error);
+                // Error al registrar asistencia
                 return null;
             }
         }
@@ -1020,7 +1020,7 @@
                 });
                 return await response.json();
             } catch (error) {
-                console.error('Error:', error);
+                // Error
                 return null;
             }
         }
@@ -1041,7 +1041,7 @@
                 });
                 return await response.json();
             } catch (error) {
-                console.error('Error:', error);
+                // Error
                 return null;
             }
         }
@@ -1061,7 +1061,7 @@
                 });
                 return await response.json();
             } catch (error) {
-                console.error('Error:', error);
+                // Error
                 return null;
             }
         }
@@ -1120,7 +1120,7 @@
                         }
                         errorTimeout = setTimeout(() => {
                             if (bufferQR && bufferQR.trim() !== '' && bufferQR.length > 10) {
-                                console.log('Timeout de seguridad: Lectura errónea detectada');
+                                // Timeout de seguridad: Lectura errónea detectada
                                 limpiarEstadoLectura('Timeout de lectura - QR inválido');
                             }
                         }, 60000);
@@ -1131,7 +1131,7 @@
 
             // Validar que hay contenido en el buffer antes de procesar
             if (!bufferQR || bufferQR.trim() === '') {
-                console.log('Buffer vacío al presionar Enter - ignorando');
+                // Buffer vacío al presionar Enter - ignorando
                 return;
             }
 
@@ -1141,27 +1141,27 @@
         async function procesarQRCompleto() {
             // Validar que el buffer no esté vacío
             if (!bufferQR || bufferQR.trim() === '') {
-                console.log('Buffer QR vacío - ignorando procesamiento');
+                // Buffer QR vacío - ignorando procesamiento
                 return;
             }
 
             // Validar que el buffer tenga un tamaño mínimo razonable
             if (bufferQR.length < 5) {
-                console.log('Buffer QR muy corto - ignorando procesamiento');
+                // Buffer QR muy corto - ignorando procesamiento
                 limpiarEstadoLectura(); // Solo limpiar lectura, no toda la interfaz
                 return;
             }
 
-            console.log('Procesando QR completo. Buffer:', bufferQR, 'Orden:', ordenEscaneo);
+            // Procesando QR completo
 
             // Validar orden de escaneo
             if (ordenEscaneo === 'usuario') {
                 // PASO 1: Escanear usuario (obligatorio primero)
-                console.log('Procesando usuario...');
+                // Procesando usuario...
                 await procesarUsuario();
             } else if (ordenEscaneo === 'espacio') {
                 // PASO 2: Escanear espacio (solo después del usuario)
-                console.log('Procesando espacio...');
+                // Procesando espacio...
                 const resultado = await procesarEspacio();
                 
                 // Si la devolución fue exitosa, no continuar con más procesamiento
@@ -1170,7 +1170,7 @@
                 }
             } else {
                 // Error: orden incorrecto
-                console.error('Error: Debe escanear primero el QR del usuario');
+                // Error: Debe escanear primero el QR del usuario
                 limpiarEstadoLectura('Orden de escaneo incorrecto');
             }
 
@@ -1197,7 +1197,7 @@
                 if (!runMatchAlt) {
                     // Solo mostrar error si el buffer tiene contenido significativo y no es ruido
                     if (bufferQR.length > 8) {
-                        console.log('Lectura errónea: No se pudo extraer RUN del QR');
+                        // Lectura errónea: No se pudo extraer RUN del QR
                         limpiarEstadoLectura('QR de usuario inválido');
                     } else {
                         // Error silencioso para buffers cortos
@@ -1210,25 +1210,25 @@
                 run = runMatch[1];
             }
 
-            console.log('RUN extraído:', run);
+            // RUN extraído
 
             // Verificar usuario en la base de datos
             const usuarioInfo = await verificarUsuario(run);
             
             if (!usuarioInfo) {
                 // Error al verificar usuario - resetear flujo
-                console.log('Error al verificar usuario');
+                // Error al verificar usuario
                 limpiarEstadoLectura('Usuario no encontrado en el sistema');
                 return;
             }
 
             if (usuarioInfo.verificado) {
-                console.log('Usuario verificado:', usuarioInfo.tipo_usuario);
+                // Usuario verificado
                 
                 if (usuarioInfo.tipo_usuario === 'profesor') {
                     // Es profesor - verificar si tiene clases programadas
                     const tieneClases = await verificarClasesProfesor(run);
-                    console.log('Profesor tiene clases:', tieneClases);
+                    // Profesor tiene clases
                     
                     if (tieneClases === true) {
                         // Profesor CON clases - solo registra solicitud
@@ -1237,7 +1237,7 @@
                         mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
                         usuarioEscaneado = run;
                         ordenEscaneo = 'espacio';
-                        console.log('Estado actualizado: usuario escaneado, esperando espacio');
+                        // Estado actualizado: usuario escaneado, esperando espacio
                         // No necesita devolución para volver a solicitar
                     } else {
                         // Profesor SIN clases - solicita con módulos
@@ -1246,7 +1246,7 @@
                         mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
                         usuarioEscaneado = run;
                         ordenEscaneo = 'espacio';
-                        console.log('Estado actualizado: usuario escaneado, esperando espacio');
+                        // Estado actualizado: usuario escaneado, esperando espacio
                         // Necesitará especificar módulos (máx 2)
                     }
                 } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
@@ -1256,11 +1256,11 @@
                     mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
                     usuarioEscaneado = run;
                     ordenEscaneo = 'espacio';
-                    console.log('Estado actualizado: solicitante escaneado, esperando espacio');
+                    // Estado actualizado: solicitante escaneado, esperando espacio
                     // Necesitará especificar módulos (máx 2)
                 } else {
                     // Otro tipo de usuario - mostrar error
-                    console.log('Tipo de usuario no manejado:', usuarioInfo.tipo_usuario);
+                    // Tipo de usuario no manejado
                 }
                 
                 // Limpiar buffer después de procesar usuario exitosamente
@@ -1273,7 +1273,7 @@
                 
             } else {
                 // Usuario no encontrado - mostrar modal de registro de solicitante
-                console.log('Usuario no encontrado, abriendo modal de registro');
+                // Usuario no encontrado, abriendo modal de registro
                 runSolicitantePendiente = run;
                 document.getElementById('run-solicitante-no-registrado').textContent = run;
                 
@@ -1307,7 +1307,7 @@
         }
 
         async function procesarEspacio() {
-            console.log('Procesando espacio con buffer:', bufferQR);
+            // Procesando espacio con buffer
             
             // Extraer código de espacio - múltiples formatos posibles
             let espacio = null;
@@ -1334,7 +1334,7 @@
                         } else {
                             // Solo mostrar error si el buffer tiene contenido significativo
                             if (bufferQR.length > 8) {
-                                console.log('Lectura errónea: No se pudo extraer código de espacio del QR');
+                                // Lectura errónea: No se pudo extraer código de espacio del QR
                                 limpiarEstadoLectura('QR de espacio inválido');
                             } else {
                                 // Error silencioso para buffers cortos
@@ -1346,17 +1346,16 @@
                 }
             }
 
-            console.log('Espacio extraído:', espacio);
+            // Espacio extraído
             
             // Normalizar el formato del espacio para que coincida con la BD (TH-C1)
             if (espacio) {
                 // Convertir a mayúsculas y reemplazar apóstrofe por guión
                 espacio = espacio.toUpperCase().replace(/'/g, '-');
-                console.log('Espacio normalizado:', espacio);
+                // Espacio normalizado
             }
 
             // Verificar estado del espacio y reservas del usuario
-            console.log('Verificando estado del espacio:', espacio, 'para usuario:', usuarioEscaneado);
             
             // Agregar timeout para evitar que se cuelgue
             const timeoutPromise = new Promise((_, reject) => 
@@ -1367,24 +1366,24 @@
                 verificarEstadoEspacioYReserva(usuarioEscaneado, espacio),
                 timeoutPromise
             ]).catch(error => {
-                console.error('Error en verificación de espacio:', error);
+                // Error en verificación de espacio
                 return {
                     tipo: 'error',
                     mensaje: 'Timeout al verificar el estado del espacio'
                 };
             });
             
-            console.log('Resultado de verificación:', resultadoVerificacion);
+            // Resultado de verificación
             
             if (resultadoVerificacion.tipo === 'error') {
                 // Error al verificar estado - resetear flujo
-                console.log('Error al verificar estado del espacio');
+                // Error al verificar estado del espacio
                 limpiarEstadoLectura('Error al verificar el estado del espacio');
                 return;
             }
 
             if (resultadoVerificacion.tipo === 'devolucion') {
-                console.log('Procesando devolución...');
+                // Procesando devolución...
                 // Evitar procesamiento múltiple
                 if (procesandoDevolucion) {
                     return 'devolucion_en_proceso';
@@ -1434,7 +1433,7 @@
                 } else {
                     // Mostrar error específico de devolución
                     const mensajeError = devolucion?.mensaje || 'Error al devolver las llaves';
-                    console.error('Error en devolución:', mensajeError);
+                    // Error en devolución
                     
                     // Resetear el estado para permitir nuevo escaneo
                     procesandoDevolucion = false;
@@ -1444,7 +1443,7 @@
             }
 
             if (resultadoVerificacion.tipo === 'reserva_existente') {
-                console.log('Procesando reserva existente...');
+                // Procesando reserva existente...
                 
                 // Mostrar Sweet Alert de reserva existente
                 Swal.fire({
@@ -1468,7 +1467,7 @@
             }
 
             if (resultadoVerificacion.tipo === 'espacio_ocupado') {
-                console.log('Procesando espacio ocupado...');
+                // Procesando espacio ocupado...
                 // Verificar si el ocupante es el mismo usuario que acaba de escanear
                 if (resultadoVerificacion.ocupante && resultadoVerificacion.ocupante.run === usuarioEscaneado) {
                     // Es el mismo usuario, no mostrar mensaje de ocupado
@@ -1505,7 +1504,7 @@
             }
 
             // Si llegamos aquí, el espacio está disponible para crear una nueva reserva
-            console.log('Espacio disponible, verificando usuario para determinar flujo...');
+            // Espacio disponible, verificando usuario para determinar flujo...
             // Verificar el tipo de usuario para determinar el flujo
             const usuarioInfo = await verificarUsuario(usuarioEscaneado);
             
@@ -1571,7 +1570,7 @@
                             }
                         }, 2000);
                     } else {
-                        console.error('Error al registrar asistencia:', resultado?.mensaje || 'Error desconocido');
+                        // Error al registrar asistencia
                     }
                 } else {
                                 // Profesor SIN clases - mostrando modal de módulos
@@ -1858,7 +1857,7 @@
                 modal.classList.remove('hidden');
                 // Modal de espacio mostrado inmediatamente
             } else {
-                console.error('No se encontró el modal de espacio');
+                // No se encontró el modal de espacio
                 return;
             }
             
@@ -1908,7 +1907,7 @@
                     mostrarErrorCarga(elements, 'No se pudo cargar la información');
                 }
             } catch (error) {
-                console.error('Error al cargar información:', error);
+                // Error al cargar información
                 mostrarErrorCarga(elements, 'Error de conexión');
             }
         }
@@ -2404,11 +2403,7 @@
                 // Asegurar que la interfaz esté en estado inicial
                 limpiarEstadoCompleto();
                 
-                console.log('Sistema QR inicializado. Estado inicial:', {
-                    ordenEscaneo,
-                    usuarioEscaneado,
-                    bufferQR
-                });
+                // Sistema QR inicializado
             }
             // Inicializar elementos del canvas
             initElements();
@@ -2570,11 +2565,11 @@
                     // Registro exitoso! Solicitante registrado correctamente
                     
                 } else {
-                    console.error('Error al registrar solicitante:', resultado?.mensaje || 'Error desconocido');
+                    // Error al registrar solicitante
                 }
             } catch (error) {
-                console.error('Error:', error);
-                console.error('Error al procesar el registro');
+                // Error
+                // Error al procesar el registro
             }
         }
 
@@ -2645,11 +2640,6 @@
                 const diaActual = obtenerDiaActual();
 
                 // Enviando parámetros al servidor
-                    horaActual,
-                    diaActual,
-                    idEspacio
-                });
-
                 const response = await fetch(
                     `/api/espacio/${idEspacio}/modulos-disponibles?hora_actual=${horaActual}&dia_actual=${diaActual}`
                 );
@@ -2681,11 +2671,11 @@
                         return 1;
                     }
                 } else {
-                    console.error('Error en la respuesta del servidor:', response.status, response.statusText);
+                    // Error en la respuesta del servidor
                     return 1;
                 }
             } catch (error) {
-                console.error('Error al calcular módulos disponibles:', error);
+                // Error al calcular módulos disponibles
                 return 1;
             }
         }
@@ -2736,7 +2726,7 @@
                     }
                 }, 100);
             } else {
-                console.error('No se encontró el modal');
+                // No se encontró el modal
             }
         }
         
@@ -2848,7 +2838,7 @@
                     });
                 }
 
-                console.error('Error al crear reserva:', mensajeError);
+                // Error al crear reserva
                 
                 // Cerrar modal en caso de error
                 cerrarModalModulos();
