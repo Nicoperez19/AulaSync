@@ -944,6 +944,7 @@ class PlanoDigitalController extends Controller
         $reserva->id_espacio = $espacio->id_espacio;
         $reserva->fecha_reserva = $fechaActual;
         $reserva->hora = $horaActual;
+    $reserva->run_profesor = null; // explícito: reserva creada por solicitante
         $reserva->estado = 'activa';
         $reserva->save();
 
