@@ -157,7 +157,7 @@
                             <div>
                                 <x-form.label for="fecha_nacimiento" :value="__('Fecha de Nacimiento')" />
                                 <x-form.input id="fecha_nacimiento" name="fecha_nacimiento" type="date" class="w-full"
-                                    :value="old('fecha_nacimiento', $user->fecha_nacimiento)" />
+                                    :value="old('fecha_nacimiento', $user->fecha_nacimiento ? \Carbon\Carbon::parse($user->fecha_nacimiento)->format('Y-m-d') : '')" />
                                 <x-form.error :messages="$errors->get('fecha_nacimiento')" />
                             </div>
 

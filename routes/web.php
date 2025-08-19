@@ -44,6 +44,8 @@ Route::get('/', function () {
 // Dashboard - Solo Administrador y Supervisor
 Route::middleware(['auth', 'permission:dashboard'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/widget-data', [DashboardController::class, 'getWidgetData'])->name('dashboard.widget-data');
+    Route::get('/dashboard/horarios-semana', [DashboardController::class, 'horariosSemana'])->name('dashboard.horarios-semana');
 });
 
 Route::middleware(['auth', 'role:Administrador'])->group(function () {
