@@ -702,7 +702,10 @@
             }
         };
 
-        let bufferQR = '';
+    // Debug flag: set to false to disable all QR debug logs quickly
+    const QR_DEBUG = true; // <- toggle here to disable logs
+
+    let bufferQR = '';
         let ordenEscaneo = 'usuario';
         let usuarioEscaneado = null;
         let espacioEscaneado = null;
@@ -1093,12 +1096,14 @@
         let processingTimeout = null;
         let errorTimeout = null;
         
-        async function handleScan(event) {
+    async function handleScan(event) {
+        if (QR_DEBUG) console.log('[QR DEBUG] handleScan key=', event.key, 'bufferBefore=', bufferQR);
             // Solo procesar cuando se presiona Enter
             if (event.key !== 'Enter') {
                 // Acumular caracteres en el buffer
                 if (event.key.length === 1) {
                     bufferQR += event.key;
+            if (QR_DEBUG) console.log('[QR DEBUG] buffer appended ->', bufferQR);
                     
                     // Detectar cuando el escaneo se completó (buffer dejó de crecer)
                     if (bufferQR.length > lastBufferLength) {
@@ -1111,6 +1116,7 @@
                         
                         // Procesar automáticamente después de 500ms sin nuevos caracteres
                         processingTimeout = setTimeout(async () => {
+                            if (QR_DEBUG) console.log('[QR DEBUG] processingTimeout fired, calling procesarQRCompleto, buffer=', bufferQR);
                             await procesarQRCompleto();
                         }, 500);
                         
@@ -1135,6 +1141,7 @@
                 return;
             }
 
+            if (QR_DEBUG) console.log('[QR DEBUG] Enter pressed, calling procesarQRCompleto, buffer=', bufferQR);
             await procesarQRCompleto();
         }
         
@@ -1154,6 +1161,7 @@
 
             // Procesando QR completo
 
+            if (QR_DEBUG) console.log('[QR DEBUG] procesarQRCompleto ordenEscaneo=', ordenEscaneo, 'buffer=', bufferQR);
             // Validar orden de escaneo
             if (ordenEscaneo === 'usuario') {
                 // PASO 1: Escanear usuario (obligatorio primero)
@@ -1188,6 +1196,7 @@
 
         async function procesarUsuario() {
             // Extraer RUN del QR (buscar "RUN" seguido de números)
+            if (QR_DEBUG) console.log('[QR DEBUG] procesarUsuario buffer=', bufferQR);
             const runMatch = bufferQR.match(/RUN[^0-9]*(\d+)/);
             let run = null;
             
@@ -1210,10 +1219,14 @@
                 run = runMatch[1];
             }
 
+            if (QR_DEBUG) console.log('[QR DEBUG] procesarUsuario extracted run=', run);
+
             // RUN extraído
 
             // Verificar usuario en la base de datos
+            if (QR_DEBUG) console.log('[QR DEBUG] calling verificarUsuario for run=', run);
             const usuarioInfo = await verificarUsuario(run);
+            if (QR_DEBUG) console.log('[QR DEBUG] verificarUsuario result=', usuarioInfo);
             
             if (!usuarioInfo) {
                 // Error al verificar usuario - resetear flujo
@@ -1311,6 +1324,7 @@
             
             // Extraer código de espacio - múltiples formatos posibles
             let espacio = null;
+            if (QR_DEBUG) console.log('[QR DEBUG] procesarEspacio buffer=', bufferQR);
             
             // Patrón 1: TH seguido de cualquier cosa (formato estándar)
             const espacioMatch = bufferQR.match(/(TH[^A-Z0-9]*[A-Z0-9]+)/i);
@@ -1347,6 +1361,7 @@
             }
 
             // Espacio extraído
+            if (QR_DEBUG) console.log('[QR DEBUG] procesarEspacio extracted espacio=', espacio);
             
             // Normalizar el formato del espacio para que coincida con la BD (TH-C1)
             if (espacio) {
@@ -1362,6 +1377,7 @@
                 setTimeout(() => reject(new Error('Timeout en verificación de espacio')), 10000)
             );
             
+            if (QR_DEBUG) console.log('[QR DEBUG] calling verificarEstadoEspacioYReserva user=', usuarioEscaneado, 'espacio=', espacio);
             const resultadoVerificacion = await Promise.race([
                 verificarEstadoEspacioYReserva(usuarioEscaneado, espacio),
                 timeoutPromise
@@ -1372,6 +1388,7 @@
                     mensaje: 'Timeout al verificar el estado del espacio'
                 };
             });
+            if (QR_DEBUG) console.log('[QR DEBUG] verificarEstadoEspacioYReserva result=', resultadoVerificacion);
             
             // Resultado de verificación
             
