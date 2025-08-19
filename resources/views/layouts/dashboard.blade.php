@@ -550,8 +550,7 @@
             if (errores.length === 1) {
                 mostrarNotificacion(errores[0], 'error', 4000);
             } else {
-                mostrarNotificacion(`${errores.length} errores en la actualización. Revisa la consola para más detalles.`, 'error', 5000);
-                console.error('Errores detallados:', errores);
+                mostrarNotificacion(`${errores.length} errores en la actualización.`, 'error', 5000);
             }
         } else {
     
@@ -663,7 +662,6 @@
         
             })
             .catch(error => {
-                console.error('Error al actualizar horarios:', error);
                 contenedor.innerHTML = '<div class="p-4 text-center text-red-500">Error al cargar los horarios</div>';
             });
     }
@@ -778,7 +776,6 @@
                 return data;
             })
             .catch(error => {
-                console.error('Error en auto-refresh:', error);
                 mostrarNotificacion('Error al actualizar el dashboard: ' + error.message, 'error');
             });
     }
@@ -989,7 +986,6 @@
                         document.getElementById('tabla-no-utilizadas-dia').innerHTML = html;
                     })
                     .catch(error => {
-                        console.error('Error al cargar tabla de no utilizadas:', error);
                         mostrarNotificacion('Error al cargar los datos de la tabla', 'error');
                     });
             });

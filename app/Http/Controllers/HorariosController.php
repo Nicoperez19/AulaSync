@@ -9,6 +9,7 @@ use App\Models\Sede;
 use App\Models\Asignatura;
 use App\Models\Modulo;
 use App\Models\Espacio;
+use App\Models\Piso;
 use App\Helpers\SemesterHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -436,7 +437,7 @@ class HorariosController extends Controller
         ]);
 
         // Obtener todos los pisos con sus espacios, ordenados por número de piso
-        $pisos = \App\Models\Piso::with([
+        $pisos = Piso::with([
             'espacios' => function ($q) {
                 $q->orderBy('nombre_espacio');
             }

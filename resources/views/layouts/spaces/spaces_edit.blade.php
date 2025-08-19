@@ -224,7 +224,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error cargando sedes:', error);
                     sedeSelect.innerHTML = "<option value=''>Error cargando sedes</option>";
                     sedeSelect.disabled = true;
                 });
@@ -267,7 +266,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error cargando facultades:', error);
                     facultadSelect.innerHTML = "<option value=''>Error cargando facultades</option>";
                     facultadSelect.disabled = true;
                 });
@@ -307,7 +305,6 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error cargando pisos:', error);
                     pisoSelect.innerHTML = "<option value=''>Error cargando pisos</option>";
                     pisoSelect.disabled = true;
                 });

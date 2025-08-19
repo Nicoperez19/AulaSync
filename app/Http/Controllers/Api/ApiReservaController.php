@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\Reserva;
 use App\Models\Espacio;
 use App\Models\User;
+use App\Models\Modulo;
+use App\Models\Solicitante;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -239,13 +241,13 @@ class ApiReservaController extends Controller
             $horaActual = now()->format('H:i:s');
 
             $idsModulos = $request->modulos;
-            $modulos = \App\Models\Modulo::whereIn('id_modulo', $idsModulos)->orderBy('hora_inicio')->get();
+            $modulos = Modulo::whereIn('id_modulo', $idsModulos)->orderBy('hora_inicio')->get();
 
             $horaInicio = $modulos->first()->hora_inicio;
             $horaTermino = $modulos->last()->hora_termino;
 
             // Verificar si ya existe una reserva para alguno de esos módulos
-            $existeReserva = \App\Models\Reserva::where('id_espacio', $request->espacio_id)
+            $existeReserva = Reserva::where('id_espacio', $request->espacio_id)
                 ->where('fecha_reserva', $fechaReserva)
                 ->where(function ($query) use ($horaInicio, $horaTermino) {
                     $query->whereBetween('hora', [$horaInicio, $horaTermino]);
@@ -260,7 +262,7 @@ class ApiReservaController extends Controller
             }
 
             // Crear la reserva
-            $lastReserva = \App\Models\Reserva::orderBy('id_reserva', 'desc')->first();
+            $lastReserva = Reserva::orderBy('id_reserva', 'desc')->first();
             if ($lastReserva) {
                 $lastIdNumber = intval(substr($lastReserva->id_reserva, 1));
                 $newIdNumber = str_pad($lastIdNumber + 1, 3, '0', STR_PAD_LEFT);
@@ -269,7 +271,7 @@ class ApiReservaController extends Controller
             }
             $newId = 'R' . $newIdNumber;
 
-            $reserva = \App\Models\Reserva::create([
+            $reserva = Reserva::create([
                 'id_reserva' => $newId,
                 'hora' => $horaInicio,
                 'fecha_reserva' => $fechaReserva,
@@ -364,7 +366,7 @@ class ApiReservaController extends Controller
                 $usuario = User::where('run', $reservaActiva->run_profesor)->first();
                 $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
             } elseif ($reservaActiva->run_solicitante) {
-                $solicitante = \App\Models\Solicitante::where('run_solicitante', $reservaActiva->run_solicitante)->first();
+                $solicitante = Solicitante::where('run_solicitante', $reservaActiva->run_solicitante)->first();
                 $nombreUsuario = $solicitante ? $solicitante->nombre : 'Solicitante no encontrado';
             }
 
@@ -402,7 +404,7 @@ class ApiReservaController extends Controller
     {
         try {
             // Primero verificamos el estado del espacio
-            $espacio = \App\Models\Espacio::where('id_espacio', $id)->first();
+            $espacio = Espacio::where('id_espacio', $id)->first();
             
             if (!$espacio) {
                 return response()->json([
@@ -414,7 +416,7 @@ class ApiReservaController extends Controller
             // Si el espacio está ocupado pero no hay reserva activa
             if ($espacio->estado === 'Ocupado') {
                 // Buscar la última reserva activa para este espacio
-                $ultimaReserva = \App\Models\Reserva::where('id_espacio', $id)
+                $ultimaReserva = Reserva::where('id_espacio', $id)
                     ->where('estado', 'activa')
                     ->orderBy('created_at', 'desc')
                     ->first();
@@ -429,7 +431,7 @@ class ApiReservaController extends Controller
                         $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
                         $emailUsuario = $usuario ? $usuario->email : 'Sin información';
                     } elseif ($ultimaReserva->run_solicitante) {
-                        $solicitante = \App\Models\Solicitante::where('run_solicitante', $ultimaReserva->run_solicitante)->first();
+                        $solicitante = Solicitante::where('run_solicitante', $ultimaReserva->run_solicitante)->first();
                         $nombreUsuario = $solicitante ? $solicitante->nombre : 'Solicitante no encontrado';
                         $emailUsuario = $solicitante ? $solicitante->correo : 'Sin información';
                     }
@@ -467,7 +469,7 @@ class ApiReservaController extends Controller
             }
 
             // Si no está ocupado, buscamos reservas activas
-            $reserva = \App\Models\Reserva::where('id_espacio', $id)
+            $reserva = Reserva::where('id_espacio', $id)
                 ->where('fecha_reserva', \Carbon\Carbon::today())
                 ->where('hora', '<=', \Carbon\Carbon::now()->format('H:i:s'))
                 ->where('hora_salida', '>=', \Carbon\Carbon::now()->format('H:i:s'))
@@ -490,7 +492,7 @@ class ApiReservaController extends Controller
                 $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
                 $emailUsuario = $usuario ? $usuario->email : 'Sin información';
             } elseif ($reserva->run_solicitante) {
-                $solicitante = \App\Models\Solicitante::where('run_solicitante', $reserva->run_solicitante)->first();
+                $solicitante = Solicitante::where('run_solicitante', $reserva->run_solicitante)->first();
                 $nombreUsuario = $solicitante ? $solicitante->nombre : 'Solicitante no encontrado';
                 $emailUsuario = $solicitante ? $solicitante->correo : 'Sin información';
             }

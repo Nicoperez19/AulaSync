@@ -5,6 +5,9 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
+use App\Models\Sede;
+use App\Models\Profesor;
+use App\Models\Espacio;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,7 +28,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Registrar el ViewComposer para el sidebar
         View::composer('components.sidebar.content', function ($view) {
-            $sede = \App\Models\Sede::where('nombre_sede', 'like', '%Talcahuano%')
+            $sede = Sede::where('nombre_sede', 'like', '%Talcahuano%')
                 ->with(['facultades.pisos.mapas'])
                 ->first();
             
@@ -42,10 +45,10 @@ class AppServiceProvider extends ServiceProvider
             }
             
             // Verificar si hay profesores
-            $tieneProfesores = \App\Models\Profesor::count() > 0;
+            $tieneProfesores = Profesor::count() > 0;
             
             // Verificar si hay espacios
-            $tieneEspacios = \App\Models\Espacio::count() > 0;
+            $tieneEspacios = Espacio::count() > 0;
             
             $view->with('sede', $sede);
             $view->with('tieneProfesores', $tieneProfesores);

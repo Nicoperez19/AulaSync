@@ -8,6 +8,7 @@ use App\Models\Piso;
 use App\Models\Universidad;
 use App\Models\Modulo;
 use App\Models\Planificacion_Asignatura;
+use App\Models\Solicitante;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Services\QRService;
@@ -285,7 +286,7 @@ class EspacioController extends Controller
         
         // Obtener reservas activas para este espacio en este día
         $fechaActual = now()->toDateString();
-        $reservasActivas = \App\Models\Reserva::where('id_espacio', $espacioId)
+        $reservasActivas = Reserva::where('id_espacio', $espacioId)
             ->where('fecha_reserva', $fechaActual)
             ->where('estado', 'activa')
             ->get();
@@ -933,7 +934,7 @@ class EspacioController extends Controller
         $runSolicitante = $reserva->run_solicitante;
         
         // Usar el método optimizado del modelo Solicitante
-        $solicitante = \App\Models\Solicitante::buscarActivoPorRun($runSolicitante);
+        $solicitante = Solicitante::buscarActivoPorRun($runSolicitante);
         
         if (!$solicitante) {
             return [

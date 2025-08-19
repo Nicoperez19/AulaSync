@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Solicitante;
 use App\Models\Reserva;
 use App\Models\Espacio;
+use App\Models\Planificacion_Asignatura;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -208,13 +209,13 @@ class SolicitanteController extends Controller
             }
 
             // Verificar módulos consecutivos disponibles (incluyendo reservas activas)
-            $planificaciones = \App\Models\Planificacion_Asignatura::where('id_espacio', $request->id_espacio)
+            $planificaciones = Planificacion_Asignatura::where('id_espacio', $request->id_espacio)
                 ->where('id_modulo', 'like', $codigoDia . '.%')
                 ->pluck('id_modulo')
                 ->toArray();
 
             // Obtener reservas activas para este espacio en este día
-            $reservasActivas = \App\Models\Reserva::where('id_espacio', $request->id_espacio)
+            $reservasActivas = Reserva::where('id_espacio', $request->id_espacio)
                 ->where('fecha_reserva', $fechaActual)
                 ->where('estado', 'activa')
                 ->get();
@@ -517,7 +518,7 @@ class SolicitanteController extends Controller
      */
     private function obtenerInfoProximaClase($moduloCodigo, $espacioId)
     {
-        $planificacion = \App\Models\Planificacion_Asignatura::with(['asignatura', 'modulo', 'profesor'])
+        $planificacion = Planificacion_Asignatura::with(['asignatura', 'modulo', 'profesor'])
             ->where('id_espacio', $espacioId)
             ->where('id_modulo', $moduloCodigo)
             ->first();

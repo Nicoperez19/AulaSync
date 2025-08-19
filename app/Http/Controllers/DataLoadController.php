@@ -8,6 +8,7 @@ use App\Models\Asignatura;
 use App\Models\Carrera;
 use App\Models\Horario;
 use App\Models\Planificacion_Asignatura;
+use App\Models\Espacio;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -286,7 +287,7 @@ class DataLoadController extends Controller
                                     $grupo = $matches[3];
                                     $espacio = preg_replace('/^[a-z]{2}:\s*/i', '', $matches[4]);
                                     
-                                    $espacioExiste = \App\Models\Espacio::where('id_espacio', $espacio)->exists();
+                                    $espacioExiste = Espacio::where('id_espacio', $espacio)->exists();
                                     
                                     if (!$espacioExiste) {
                                         continue; // Saltar esta planificación si el espacio no existe

@@ -288,7 +288,6 @@
                     mostrarMensajeExito(`Horarios cargados para ${semestreFiltro}er Semestre ${anioFiltro}`);
                 })
                 .catch(error => {
-                    console.error('Error al cargar horarios:', error);
                     Swal.fire({
                         title: 'Error al cargar horarios',
                         html: `
@@ -563,7 +562,6 @@
                     document.body.removeChild(a);
                 })
                 .catch(error => {
-                    console.error('Error:', error);
                     Swal.fire({
                         title: 'Error al generar PDF',
                         html: `

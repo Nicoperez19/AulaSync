@@ -2,24 +2,24 @@
 
 namespace App\Services;
 
-use App\Models\Space;
+use App\Models\Espacio;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
 use Illuminate\Support\Facades\Storage;
 
 class QRService
 {
-    public function generateSpaceQR(Space $space, int $size = 300): string
+    public function generateSpaceQR(Espacio $espacio, int $size = 300): string
     {
         // Generamos una URL única para el espacio
-        $url = route('spaces.show', ['space' => $space->id]);
+        $url = route('spaces.show', ['space' => $espacio->id_espacio]);
         
         $qrCode = new QrCode($url);
         $writer = new PngWriter();
         $result = $writer->write($qrCode);
 
         // Guardamos el código QR en el almacenamiento
-        $path = 'qrcodes/qr_' . $space->id . '.png';
+        $path = 'qrcodes/qr_' . $espacio->id_espacio . '.png';
         Storage::put('public/' . $path, $result->getString());
 
         return $path;

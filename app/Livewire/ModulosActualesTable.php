@@ -6,6 +6,8 @@ use Livewire\Component;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Espacio;
 use App\Models\Piso;
+use App\Models\Modulo;
+use App\Models\Reserva;
 use App\Helpers\SemesterHelper;
 use Carbon\Carbon;
 
@@ -37,7 +39,7 @@ class ModulosActualesTable extends Component
         $hoy = Carbon::now()->locale('es')->isoFormat('dddd');
         
         // Obtener el módulo actual
-        $this->moduloActual = \App\Models\Modulo::where('dia', $hoy)
+        $this->moduloActual = Modulo::where('dia', $hoy)
             ->where('hora_inicio', '<=', $this->horaActual)
             ->where('hora_termino', '>', $this->horaActual)
             ->first();
@@ -64,7 +66,7 @@ class ModulosActualesTable extends Component
             ->get();
 
             // Obtener reservas activas de solicitantes para el día actual
-            $reservasSolicitantes = \App\Models\Reserva::with(['solicitante'])
+            $reservasSolicitantes = Reserva::with(['solicitante'])
                 ->where('fecha_reserva', Carbon::now()->toDateString())
                 ->where('estado', 'activa')
                 ->whereNotNull('run_solicitante')

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Facultad;
 use App\Models\Universidad;
+use App\Models\Sede;
+use App\Models\Campus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -12,8 +14,8 @@ class FacultadController extends Controller
     public function index()
     {
         $universidades = Universidad::all();
-        $sedes = \App\Models\Sede::all();
-        $campuses = \App\Models\Campus::all();
+        $sedes = Sede::all();
+        $campuses = Campus::all();
         return view('layouts.faculty.facultad_index', compact('universidades', 'sedes', 'campuses'));
     }
 
@@ -48,8 +50,8 @@ class FacultadController extends Controller
     {
         $facultad = Facultad::findOrFail($id);
         $universidades = Universidad::all();
-        $sedes = \App\Models\Sede::all();
-        $campuses = \App\Models\Campus::all();
+        $sedes = Sede::all();
+        $campuses = Campus::all();
         return view('layouts.faculty.facultad_edit', compact('facultad', 'universidades', 'sedes', 'campuses'));
     }
 

@@ -9,6 +9,9 @@ use App\Models\Modulo;
 use App\Models\Reserva;
 use App\Models\Sede;
 use App\Models\Piso;
+use App\Models\Espacio;
+use App\Models\Profesor;
+use App\Models\Solicitante;
 use App\Helpers\SemesterHelper;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -358,10 +361,10 @@ class PlanoDigitalController extends Controller
         $periodo = SemesterHelper::getCurrentPeriod();
 
         // Obtener todos los espacios
-        $espacios = \App\Models\Espacio::all();
+        $espacios = Espacio::all();
         
         // Obtener todas las planificaciones activas para el período actual
-        $planificacionesActivas = \App\Models\Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.profesor'])
+        $planificacionesActivas = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.profesor'])
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
             })
@@ -371,7 +374,7 @@ class PlanoDigitalController extends Controller
             ->get();
         
         // Obtener reservas activas para hoy
-        $reservasActivas = \App\Models\Reserva::where('fecha_reserva', $horaActual->toDateString())
+        $reservasActivas = Reserva::where('fecha_reserva', $horaActual->toDateString())
             ->where('estado', 'activa')
             ->get();
 
@@ -464,7 +467,7 @@ class PlanoDigitalController extends Controller
             $runUsuario = $request->input('run_usuario');
 
             // Buscar el espacio
-            $espacio = \App\Models\Espacio::where('id_espacio', $idEspacio)->first();
+            $espacio = Espacio::where('id_espacio', $idEspacio)->first();
             
             if (!$espacio) {
                 return response()->json([
@@ -474,7 +477,7 @@ class PlanoDigitalController extends Controller
             }
 
             // Verificar si el usuario tiene una reserva activa en este espacio
-            $reservaActiva = \App\Models\Reserva::where(function($query) use ($runUsuario) {
+            $reservaActiva = Reserva::where(function($query) use ($runUsuario) {
                     $query->where('run_profesor', $runUsuario)
                           ->orWhere('run_solicitante', $runUsuario);
                 })
@@ -557,7 +560,7 @@ class PlanoDigitalController extends Controller
             $idEspacio = $request->input('id_espacio');
 
             // Verificar que el espacio existe
-            $espacio = \App\Models\Espacio::where('id_espacio', $idEspacio)->first();
+            $espacio = Espacio::where('id_espacio', $idEspacio)->first();
             if (!$espacio) {
                 return response()->json([
                     'tipo' => 'error',
@@ -566,7 +569,7 @@ class PlanoDigitalController extends Controller
             }
 
             // Verificar si el usuario tiene una reserva activa en otro espacio (prioridad alta)
-            $reservaExistente = \App\Models\Reserva::where(function($query) use ($runUsuario) {
+            $reservaExistente = Reserva::where(function($query) use ($runUsuario) {
                     $query->where('run_profesor', $runUsuario)
                           ->orWhere('run_solicitante', $runUsuario);
                 })
@@ -585,7 +588,7 @@ class PlanoDigitalController extends Controller
             }
 
             // Verificar si el usuario tiene una reserva activa en este espacio
-            $reservaActiva = \App\Models\Reserva::where(function($query) use ($runUsuario) {
+            $reservaActiva = Reserva::where(function($query) use ($runUsuario) {
                     $query->where('run_profesor', $runUsuario)
                           ->orWhere('run_solicitante', $runUsuario);
                 })
@@ -630,7 +633,7 @@ class PlanoDigitalController extends Controller
                 if ($reservaOcupante) {
                     if ($reservaOcupante->run_profesor) {
                         // Es un profesor
-                        $profesor = \App\Models\Profesor::where('run_profesor', $reservaOcupante->run_profesor)->first();
+                        $profesor = Profesor::where('run_profesor', $reservaOcupante->run_profesor)->first();
                         if ($profesor) {
                             $mensaje = "El espacio está ocupado por el profesor {$profesor->name}";
                             $informacionOcupante = [
@@ -681,7 +684,7 @@ class PlanoDigitalController extends Controller
     {
         try {
             // CASO 1: Verificar si es profesor registrado
-            $profesor = \App\Models\Profesor::select('run_profesor', 'name', 'email', 'celular', 'tipo_profesor')
+            $profesor = Profesor::select('run_profesor', 'name', 'email', 'celular', 'tipo_profesor')
                 ->where('run_profesor', $run)
                 ->first();
 
@@ -701,7 +704,7 @@ class PlanoDigitalController extends Controller
             }
 
             // CASO 2: Verificar si es solicitante registrado
-            $solicitante = \App\Models\Solicitante::where('run_solicitante', $run)
+            $solicitante = Solicitante::where('run_solicitante', $run)
                 ->where('activo', true)
                 ->first();
 
@@ -743,7 +746,7 @@ class PlanoDigitalController extends Controller
     public function verificarEspacio($idEspacio)
     {
         try {
-            $espacio = \App\Models\Espacio::with(['piso.facultad.sede'])
+            $espacio = Espacio::with(['piso.facultad.sede'])
                 ->where('id_espacio', $idEspacio)
                 ->first();
 
@@ -799,7 +802,7 @@ class PlanoDigitalController extends Controller
             $tipoUsuario = $request->input('tipo_usuario');
 
             // Verificar que el espacio existe
-            $espacio = \App\Models\Espacio::where('id_espacio', $idEspacio)->first();
+            $espacio = Espacio::where('id_espacio', $idEspacio)->first();
             if (!$espacio) {
                 return response()->json([
                     'success' => false,
@@ -855,7 +858,7 @@ class PlanoDigitalController extends Controller
         $runUsuario = $request->input('run_usuario');
 
         // Verificar si el profesor existe
-        $profesor = \App\Models\Profesor::where('run_profesor', $runUsuario)->first();
+        $profesor = Profesor::where('run_profesor', $runUsuario)->first();
         if (!$profesor) {
             return response()->json([
                 'success' => false,
@@ -864,7 +867,7 @@ class PlanoDigitalController extends Controller
         }
 
         // Verificar si ya tiene una reserva activa
-        $reservaExistente = \App\Models\Reserva::where('run_profesor', $runUsuario)
+        $reservaExistente = Reserva::where('run_profesor', $runUsuario)
             ->where('estado', 'activa')
             ->whereNull('hora_salida')
             ->first();
@@ -877,8 +880,8 @@ class PlanoDigitalController extends Controller
         }
 
         // Crear la reserva
-        $reserva = new \App\Models\Reserva();
-        $reserva->id_reserva = 'R' . str_pad(\App\Models\Reserva::count() + 1, 3, '0', STR_PAD_LEFT);
+        $reserva = new Reserva();
+        $reserva->id_reserva = 'R' . str_pad(Reserva::count() + 1, 3, '0', STR_PAD_LEFT);
         $reserva->run_profesor = $runUsuario;
         $reserva->id_espacio = $espacio->id_espacio;
         $reserva->fecha_reserva = $fechaActual;
@@ -910,7 +913,7 @@ class PlanoDigitalController extends Controller
         $runUsuario = $request->input('run_usuario');
 
         // Verificar si el solicitante existe
-        $solicitante = \App\Models\Solicitante::where('run_solicitante', $runUsuario)
+        $solicitante = Solicitante::where('run_solicitante', $runUsuario)
             ->where('activo', true)
             ->first();
 
@@ -922,7 +925,7 @@ class PlanoDigitalController extends Controller
         }
 
         // Verificar si ya tiene una reserva activa
-        $reservaExistente = \App\Models\Reserva::where('run_solicitante', $runUsuario)
+        $reservaExistente = Reserva::where('run_solicitante', $runUsuario)
             ->where('estado', 'activa')
             ->whereNull('hora_salida')
             ->first();
@@ -935,8 +938,8 @@ class PlanoDigitalController extends Controller
         }
 
         // Crear la reserva
-        $reserva = new \App\Models\Reserva();
-        $reserva->id_reserva = 'R' . str_pad(\App\Models\Reserva::count() + 1, 3, '0', STR_PAD_LEFT);
+        $reserva = new Reserva();
+        $reserva->id_reserva = 'R' . str_pad(Reserva::count() + 1, 3, '0', STR_PAD_LEFT);
         $reserva->run_solicitante = $runUsuario;
         $reserva->id_espacio = $espacio->id_espacio;
         $reserva->fecha_reserva = $fechaActual;
@@ -987,7 +990,7 @@ class PlanoDigitalController extends Controller
             $periodo = \App\Helpers\SemesterHelper::getCurrentPeriod();
 
             // Buscar planificaciones del profesor para el día actual
-            $planificaciones = \App\Models\Planificacion_Asignatura::with(['asignatura', 'modulo', 'espacio'])
+            $planificaciones = Planificacion_Asignatura::with(['asignatura', 'modulo', 'espacio'])
                 ->whereHas('asignatura', function($query) use ($run) {
                     $query->where('run_profesor', $run);
                 })
