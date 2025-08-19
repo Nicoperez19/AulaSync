@@ -291,15 +291,40 @@
         </div>
     </div>
 
-    <!-- Chart.js scripts con datos reales -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Debug: Verificar que los datos están llegando
-        // Datos del gráfico de utilización
-            labels: @json($labels_grafico),
-            data: @json($data_grafico),
-            resumen: @json($resumen)
-        });
+         <!-- Chart.js scripts con datos reales -->
+     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+     <script>
+         // Filtrar mensajes de error de extensiones de Chrome
+         const originalConsoleError = console.error;
+         console.error = function(...args) {
+             const message = args.join(' ');
+             // Filtrar errores de extensiones de Chrome
+             if (message.includes('chrome-extension://') || 
+                 message.includes('net::ERR_FILE_NOT_FOUND') ||
+                 message.includes('Content script received message')) {
+                 return; // No mostrar estos errores
+             }
+             originalConsoleError.apply(console, args);
+         };
+         
+         // Filtrar mensajes de log de extensiones
+         const originalConsoleLog = console.log;
+         console.log = function(...args) {
+             const message = args.join(' ');
+             // Filtrar mensajes de extensiones de Chrome
+             if (message.includes('Content script received message') ||
+                 message.includes('chrome-extension://')) {
+                 return; // No mostrar estos mensajes
+             }
+             originalConsoleLog.apply(console, args);
+         };
+                 // Debug: Verificar que los datos están llegando
+         // Datos del gráfico de utilización
+         // console.log('Datos del gráfico:', {
+         //     labels: @json($labels_grafico),
+         //     data: @json($data_grafico),
+         //     resumen: @json($resumen)
+         // });
         
         // Gráfico de barras para Utilización por Tipo de Espacio
         let labelsUtil = @json($labels_grafico);
@@ -437,6 +462,7 @@
             // Gráfico de utilización creado exitosamente
         } else {
             // Error: No se pudo crear el gráfico de utilización
+            console.log('Error al crear gráfico de utilización:', {
                 canvas: canvasUtilizacion,
                 labels: labelsUtil,
                 data: dataUtil
@@ -513,6 +539,7 @@
             // Gráfico de reservas creado exitosamente
         } else {
             // Error: No se pudo crear el gráfico de reservas
+            console.log('Error al crear gráfico de reservas:', {
                 canvas: canvasReservas,
                 resumenData: resumenData
             });

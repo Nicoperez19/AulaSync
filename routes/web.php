@@ -54,6 +54,11 @@ Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::put('user/user_update/{run}', [UserController::class, 'update'])->name('users.update');
 });
 
+// Horarios profesores - Solo Administrador y Supervisor
+Route::middleware(['auth', 'permission:horarios profesores'])->group(function () {
+    Route::get('/horarios/horarios_index', [HorariosController::class, 'index'])->name('horarios.index');
+});
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/horarios/{run}', [HorariosController::class, 'getHorarioProfesor'])->name('horarios.get');
     Route::get('/modulos-actuales', [\App\Http\Controllers\TableController::class, 'index'])->name('modulos.actuales');
@@ -67,11 +72,6 @@ Route::middleware(['auth', 'permission:horarios por espacios'])->group(function 
     Route::get('/espacios', action: [HorariosController::class, 'showEspacios'])->name('espacios.show');
     Route::get('/espacios/{idEspacio}/export-pdf', [HorariosController::class, 'exportHorarioEspacioPDF'])->name('espacios.export-pdf');
     Route::get('/horarios-por-periodo', [HorariosController::class, 'getHorariosPorPeriodo'])->name('horarios.por-periodo');
-});
-
-// Horarios profesores - Solo Administrador y Supervisor
-Route::middleware(['auth', 'permission:horarios profesores'])->group(function () {
-    Route::get('/horarios/horarios_index', [HorariosController::class, 'index'])->name('horarios.index');
 });
 
 Route::group(['middleware' => ['permission:mantenedor de roles']], function () {

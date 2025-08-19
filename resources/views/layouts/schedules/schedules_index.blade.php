@@ -290,6 +290,7 @@
                     return response.json();
                 })
                 .then(data => {
+                    console.log('Datos recibidos:', {
                         horario: data.horario,
                         asignaturas: data.asignaturas,
                         periodo: data.periodo,
@@ -496,8 +497,20 @@
 
         // Aplicar filtros automáticamente cuando cambie el selector de semestre
         const semestreFiltro = document.getElementById('semestre-filtro');
-
-        semestreFiltro.addEventListener('change', aplicarFiltros);
+        
+        // Bandera para evitar que se ejecute automáticamente al cargar la página
+        let isInitialLoad = true;
+        
+        semestreFiltro.addEventListener('change', function() {
+            if (!isInitialLoad) {
+                aplicarFiltros();
+            }
+        });
+        
+        // Marcar que ya no es la carga inicial después de un breve delay
+        setTimeout(() => {
+            isInitialLoad = false;
+        }, 100);
 
         // Permitir que al hacer clic en la tarjeta completa se active el modal
         function activarClickCard() {
