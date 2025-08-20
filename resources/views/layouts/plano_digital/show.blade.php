@@ -810,7 +810,7 @@
             const qrStatus = getQrStatus();
             if (qrStatus) {
                 qrStatus.classList.add('parpadeo');
-                qrStatus.innerHTML = 'Esperando... Escanea el código QR';
+                qrStatus.innerHTML = 'Esperando... Escanea el código QR de la cedula de identidad';
             }
             
             // Limpiar cualquier input de QR que pueda tener datos
@@ -900,7 +900,7 @@
                     // Restaurar estado normal después de 1.5 segundos
                     setTimeout(() => {
                         qrStatus.classList.add('parpadeo');
-                        qrStatus.innerHTML = 'Esperando... Escanea el código QR';
+                        qrStatus.innerHTML = 'Esperando... Escanea el código QR de la cedula de identidad';
                         qrStatus.style.color = '';
                     }, 1500);
                 }
@@ -909,7 +909,7 @@
                 const qrStatus = getQrStatus();
                 if (qrStatus) {
                     qrStatus.classList.add('parpadeo');
-                    qrStatus.innerHTML = 'Esperando... Escanea el código QR';
+                    qrStatus.innerHTML = 'Esperando... Escanea el código QR de la cedula de identidad';
                 }
             }
             
@@ -1162,7 +1162,9 @@
             } else if (ordenEscaneo === 'espacio') {
                 // PASO 2: Escanear espacio (solo después del usuario)
                 // Procesando espacio...
+                 qrStatus.innerHTML = 'Esperando... Escanea el código QR de la llave de acceso';
                 const resultado = await procesarEspacio();
+
                 
                 // Si la devolución fue exitosa, no continuar con más procesamiento
                 if (resultado === 'devolucion_exitosa') {
