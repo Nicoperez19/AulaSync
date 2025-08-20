@@ -16,7 +16,7 @@ return new class extends Migration
             $table->time('hora');
             $table->date('fecha_reserva');
             $table->string('id_espacio');
-            $table->unsignedBigInteger('run_profesor'); 
+            $table->unsignedBigInteger('run_profesor')->nullable();
             $table->string('run_solicitante')->nullable();
             $table->enum('tipo_reserva', ['clase', 'espontanea', 'directa'])->default('clase');
             $table->enum('estado', ['activa', 'finalizada'])->default('activa');
