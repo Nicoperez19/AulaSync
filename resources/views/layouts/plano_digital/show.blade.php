@@ -161,7 +161,8 @@
                 <!-- Enlace Volver -->
                 <div class="w-full mt-4">
                     <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}" 
-                       class="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors duration-200 shadow-md">
+                       class="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors duration-200 shadow-md"
+                       onclick="qrInputManager.setActiveInput('main')">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
                             <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
                             <path d="m12 5.432 8.159 8.159c.03.03.06.058.091.086v6.198c0 1.035-.84 1.875-1.875 1.875H15a.75.75 0 0 1-.75-.75v-4.5a.75.75 0 0 0-.75-.75h-3a.75.75 0 0 0-.75.75V21a.75.75 0 0 1-.75.75H5.625a1.875 1.875 0 0 1-1.875-1.875v-6.198a2.29 2.29 0 0 0 .091-.086L12 5.432Z" />
@@ -246,7 +247,10 @@
                 </div>
                 
                 <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
-                    <button onclick="cerrarModalEspacio()" class="ml-2 text-3xl font-bold text-white transition-colors hover:text-gray-200">&times;</button>
+                    <button onclick="cerrarModalEspacio(); qrInputManager.setActiveInput('main')" 
+                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
+                        title="Cerrar modal (Esc)"
+                        aria-label="Cerrar modal">&times;</button>
                 </div>
             </div>
             
@@ -390,11 +394,17 @@
     </x-modal>
 
     <!-- Modal para registro de usuario no registrado -->
-    <x-modal name="registro-usuario" :show="false" focusable>
+    <x-modal name="registro-usuario" :show="false" focusable @close-modal.window="handleClose($event, 'registro-usuario')">
         @slot('title')
-            <h2 class="text-lg font-medium text-white dark:text-gray-100">
-                Registro de Usuario
-            </h2>
+            <div class="flex items-center justify-between">
+                <h2 class="text-lg font-medium text-white dark:text-gray-100">
+                    Registro de Usuario
+                </h2>
+                <button wire:click="cerrarModal" 
+                    class="ml-2 text-2xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
+                    title="Cerrar modal (Esc)"
+                    aria-label="Cerrar modal">&times;</button>
+            </div>
         @endslot
         <div class="p-6">
             <div class="space-y-4">
@@ -447,12 +457,8 @@
                     </div>
 
                     <div class="flex pt-4 space-x-3">
-                        <button type="button" onclick="cancelarRegistroSolicitante()"
-                            class="flex-1 px-4 py-2 text-gray-700 bg-gray-200 border border-gray-300 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">
-                            Cancelar
-                        </button>
                         <button type="submit"
-                            class="flex-1 px-4 py-2 text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            class="w-full px-4 py-2 text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                             Registrar y Continuar
                         </button>
                     </div>
@@ -485,7 +491,10 @@
                 </div>
                 
                 <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
-                    <button onclick="cerrarModalModulos()" class="ml-2 text-3xl font-bold text-white hover:text-gray-200">&times;</button>
+                    <button onclick="cerrarModalModulos()" 
+                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
+                        title="Cerrar modal (Esc)"
+                        aria-label="Cerrar modal">&times;</button>
                 </div>
             </div>
             
@@ -511,10 +520,6 @@
                 
                 <!-- Botones de acción -->
                 <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                    <button onclick="cerrarModalModulos()"
-                        class="px-6 py-2 text-sm font-semibold text-gray-700 transition bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500">
-                            Cancelar
-                        </button>
                     <x-button id="btn-confirmar-modulos" variant='add'>
                         Confirmar Reserva
                     </x-button>
@@ -524,11 +529,39 @@
     </div>
 
     <!-- Modal para registro de solicitante -->
-    <x-modal name="registro-solicitante" :show="false" focusable>
+    <x-modal name="registro-solicitante" :show="false" @close-modal.window="handleClose($event, 'registro-solicitante')">
         @slot('title')
-            <h2 class="text-lg font-medium text-white dark:text-gray-100">
-                Registro de Solicitante
-            </h2>
+            <div id="modalHeader"
+                class="relative flex flex-col gap-6 p-8 bg-red-700 md:flex-row md:items-center md:justify-between">
+                <!-- Círculos decorativos -->
+                <span
+                    class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                <span
+                    class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+
+                <div class="flex items-center flex-1 min-w-0 gap-5">
+                    <div class="flex flex-col items-center justify-center flex-shrink-0">
+                        <div class="p-4 mb-2 bg-white rounded-full bg-opacity-20">
+                            <i class="text-3xl text-white fa-solid fa-user-plus"></i>
+                        </div>
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                        <h1 class="text-3xl font-bold text-white truncate">Registro de Solicitante</h1>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-lg truncate text-white/80">Usuario No Registrado</span>
+                            <span class="text-lg text-white/80">•</span>
+                            <span class="text-lg font-semibold text-white/80">2025</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
+                    <button onclick="cerrarModalRegistroSolicitante(); qrInputManager.setActiveInput('main')"
+                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
+                        title="Cerrar modal (Esc)"
+                        aria-label="Cerrar modal">&times;</button>
+                </div>
+            </div>
         @endslot
         <div class="p-6">
             <div class="space-y-4">
@@ -546,7 +579,8 @@
                         <label for="nombre-solicitante" class="block text-sm font-medium text-gray-700">Nombre Completo
                             *</label>
                         <input type="text" id="nombre-solicitante" name="nombre" required autocomplete="name"
-                            class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                            autofocus>
                     </div>
 
                     <div>
@@ -579,12 +613,8 @@
 
 
                     <div class="flex pt-4 space-x-3">
-                        <button type="button" onclick="cancelarRegistroSolicitante()"
-                            class="flex-1 px-4 py-2 text-gray-700 bg-gray-200 border border-gray-300 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500">
-                            Cancelar
-                        </button>
                         <button type="submit"
-                            class="flex-1 px-4 py-2 text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            class="w-full px-4 py-2 text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                             Registrar y Continuar
                         </button>
                     </div>
@@ -594,6 +624,32 @@
     </x-modal>
 
     <script>
+        // Escuchar cuando se abra el modal de registro para establecer el foco correcto
+        document.addEventListener('open-modal', (event) => {
+            if (event.detail === 'registro-solicitante') {
+                // Esperar a que el modal esté completamente visible
+                setTimeout(() => {
+                    const nombreInput = document.getElementById('nombre-solicitante');
+                    if (nombreInput) {
+                        nombreInput.focus();
+                    }
+                }, 150);
+            }
+        });
+        // Función para manejar el cierre de modales
+        function handleClose(event, modalName) {
+            if (event.detail === modalName) {
+                // Cerrar el modal específico
+                const modal = document.querySelector(`[x-data*="modalComponent"][x-data*="${modalName}"]`);
+                if (modal) {
+                    const modalInstance = Alpine.$data(modal);
+                    if (modalInstance && typeof modalInstance.show !== 'undefined') {
+                        modalInstance.show = false;
+                    }
+                }
+            }
+        }
+
         @php
             $mapaIdValue = $mapa->id_mapa ?? 1;
         @endphp
@@ -702,8 +758,147 @@
             }
         };
 
-    // Debug flag: set to false to disable all QR debug logs quickly
-    const QR_DEBUG = false; // <- toggle here to disable logs
+        // SISTEMA GLOBAL DE MANEJO DE AUTOFOCUS PARA TODOS LOS INPUTS QR
+        class QRInputManager {
+            constructor() {
+                this.qrInputs = {
+                    main: document.getElementById('qr-input'),
+                    devolucion: document.getElementById('qr-input-devolucion'),
+                    solicitud: document.getElementById('qr-input-solicitud')
+                };
+                this.activeInput = null;
+                this.modalStates = new Map();
+                this.init();
+            }
+            
+            init() {
+                // Configurar estado inicial
+                this.setActiveInput('main');
+                this.setupEventListeners();
+            }
+            
+            setActiveInput(inputType) {
+                // Desactivar todos los inputs primero
+                Object.values(this.qrInputs).forEach(input => {
+                    if (input) {
+                        input.blur();
+                        input.removeAttribute('autofocus');
+                    }
+                });
+                
+                // Activar el input especificado
+                const targetInput = this.qrInputs[inputType];
+                if (targetInput) {
+                    this.activeInput = inputType;
+                    targetInput.setAttribute('autofocus', '');
+                    setTimeout(() => {
+                        targetInput.focus();
+                    }, 100);
+                }
+            }
+            
+            desactivarTodosLosInputs() {
+                Object.values(this.qrInputs).forEach(input => {
+                    if (input) {
+                        input.blur();
+                        input.removeAttribute('autofocus');
+                    }
+                });
+                this.activeInput = null;
+            }
+            
+            restaurarInputActivo() {
+                if (this.activeInput && this.qrInputs[this.activeInput]) {
+                    const input = this.qrInputs[this.activeInput];
+                    input.setAttribute('autofocus', '');
+                    setTimeout(() => {
+                        input.focus();
+                    }, 100);
+                }
+            }
+            
+            setupEventListeners() {
+                // Event listeners para modales Bootstrap
+                document.addEventListener('show.bs.modal', (event) => {
+                    this.desactivarTodosLosInputs();
+                });
+                
+                document.addEventListener('hide.bs.modal', (event) => {
+                    this.restaurarInputActivo();
+                });
+                
+                // Event listeners para modales personalizados (Livewire)
+                document.addEventListener('show-modal', (event) => {
+                    this.desactivarTodosLosInputs();
+                    
+                    // Cambiar el input activo según el tipo de modal
+                    if (event.detail === 'devolver-llaves') {
+                        this.setActiveInput('devolucion');
+                    } else if (event.detail === 'solicitar-llaves') {
+                        this.setActiveInput('solicitud');
+                    }
+                });
+                
+                document.addEventListener('close-modal', (event) => {
+                    this.restaurarInputActivo();
+                });
+                
+                // Event listeners para Sweet Alerts
+                document.addEventListener('swal:open', (event) => {
+                    this.desactivarTodosLosInputs();
+                });
+                
+                document.addEventListener('swal:close', (event) => {
+                    this.restaurarInputActivo();
+                });
+                
+                // Interceptar SweetAlert2 si está disponible
+                if (typeof Swal !== 'undefined') {
+                    const originalFire = Swal.fire;
+                    Swal.fire = (...args) => {
+                        this.desactivarTodosLosInputs();
+                        const result = originalFire.apply(this, args);
+                        
+                        if (result && typeof result.then === 'function') {
+                            result.then(() => {
+                                this.restaurarInputActivo();
+                            }).catch(() => {
+                                this.restaurarInputActivo();
+                            });
+                        }
+                        
+                        return result;
+                    };
+                }
+                
+                // Event listeners para modales personalizados específicos
+                document.addEventListener('click', (event) => {
+                    // Detectar clics en botones de cerrar modal
+                    if (event.target.matches('[onclick*="cerrarModal"]') || 
+                        event.target.matches('[onclick*="cerrarModalRegistro"]') ||
+                        event.target.matches('[onclick*="cerrarModalModulos"]')) {
+                        setTimeout(() => {
+                            this.restaurarInputActivo();
+                        }, 200);
+                    }
+                    
+                    // Detectar clics en diferentes áreas para cambiar el input activo
+                    if (event.target.closest('#modal-devolver-llaves')) {
+                        this.setActiveInput('devolucion');
+                    } else if (event.target.closest('#modal-solicitar-llaves')) {
+                        this.setActiveInput('solicitud');
+                    } else if (event.target.closest('aside')) {
+                        this.setActiveInput('main');
+                    }
+                });
+            }
+        }
+        
+        // Inicializar el gestor de inputs QR
+        const qrInputManager = new QRInputManager();
+
+            // Debug flag: set to false to disable all QR debug logs quickly
+        const QR_DEBUG = false;
 
     let bufferQR = '';
         let ordenEscaneo = 'usuario';
@@ -821,11 +1016,25 @@
             if (qrInput) {
                 qrInput.value = '';
             }
+            
+            // Restaurar el input QR activo después de limpiar el estado
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.restaurarInputActivo();
+                }
+            }, 100);
         }
 
         function resetearFlujoPorError(mensajeError) {
             // Solo limpiar el estado de lectura, NO cerrar modales ni resetear toda la interfaz
             limpiarEstadoLectura(mensajeError);
+            
+            // Restaurar el input QR activo después de resetear el flujo
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.restaurarInputActivo();
+                }
+            }, 100);
         }
 
         function limpiarEstadoSilencioso() {
@@ -856,6 +1065,13 @@
             const nombreUsuario = document.getElementById('nombre-usuario');
             if (runEscaneado) runEscaneado.textContent = '--';
             if (nombreUsuario) nombreUsuario.textContent = '--';
+            
+            // Restaurar el input QR activo después de limpiar el estado silenciosamente
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.restaurarInputActivo();
+                }
+            }, 100);
         }
 
         function limpiarEstadoLectura(mensajeError = null) {
@@ -877,7 +1093,6 @@
             const inputEscanner = document.getElementById('qr-input');
             if (inputEscanner) {
                 inputEscanner.value = '';
-                inputEscanner.focus(); // Mantener foco en el input
             }
             
             // OCULTAR el bloque de información del usuario cuando hay error
@@ -918,6 +1133,13 @@
             
             // Resetear orden de escaneo
             ordenEscaneo = 'usuario';
+            
+            // Restaurar el input QR activo después de limpiar el estado de lectura
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.restaurarInputActivo();
+                }
+            }, 100);
         }
 
 
@@ -1012,6 +1234,7 @@
 
 
         async function registrarSolicitante(datosSolicitante) {
+            console.log('Enviando datos al servidor:', datosSolicitante);
             try {
                 const response = await fetch('/api/registrar-solicitante', {
                     method: 'POST',
@@ -1021,15 +1244,82 @@
                     },
                     body: JSON.stringify(datosSolicitante)
                 });
+
+                if (!response.ok) {
+                    // Si la respuesta no es exitosa, intentar obtener el error del servidor
+                    const errorData = await response.json().catch(() => ({}));
+                    return {
+                        success: false,
+                        mensaje: errorData.mensaje || `Error del servidor: ${response.status} ${response.statusText}`
+                    };
+                }
+
                 return await response.json();
             } catch (error) {
-                // Error
-                return null;
+                console.error('Error en registrarSolicitante:', error);
+                return {
+                    success: false,
+                    mensaje: 'Error de conexión con el servidor'
+                };
+            }
+        }
+
+        async function registrarUsuario(datosUsuario) {
+            try {
+                console.log('Enviando datos de usuario al servidor:', datosUsuario);
+                const response = await fetch('/api/registrar-usuario', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify(datosUsuario)
+                });
+
+                if (!response.ok) {
+                    // Si la respuesta no es exitosa, intentar obtener el error del servidor
+                    const errorData = await response.json().catch(() => ({}));
+                    return {
+                        success: false,
+                        mensaje: errorData.mensaje || `Error del servidor: ${response.status} ${response.statusText}`
+                    };
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('Error en registrarUsuario:', error);
+                return {
+                    success: false,
+                    mensaje: 'Error de conexión con el servidor'
+                };
             }
         }
 
         async function crearReservaSolicitante(runSolicitante, idEspacio) {
             try {
+                // Validar horario académico antes de enviar la solicitud
+                const ahora = new Date();
+                const horaActual = ahora.toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                
+                // Verificar si estamos dentro del horario académico (08:10 - 23:00)
+                const hora = parseInt(horaActual.split(':')[0]);
+                const minutos = parseInt(horaActual.split(':')[1]);
+                const horaEnMinutos = hora * 60 + minutos;
+                
+                const inicioAcademico = 8 * 60 + 10; // 08:10
+                const finAcademico = 23 * 60; // 23:00
+                
+                if (horaEnMinutos < inicioAcademico || horaEnMinutos >= finAcademico) {
+                    return {
+                        success: false,
+                        mensaje: 'No se pueden crear reservas fuera del horario académico (08:10 - 23:00).'
+                    };
+                }
+                
                 const response = await fetch('/api/crear-reserva-solicitante', {
                     method: 'POST',
                     headers: {
@@ -1042,10 +1332,22 @@
                         modulos: 1 // Por defecto 1 módulo para solicitantes
                     })
                 });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    return {
+                        success: false,
+                        mensaje: errorData.mensaje || `Error del servidor: ${response.status} ${response.statusText}`
+                    };
+                }
+                
                 return await response.json();
             } catch (error) {
-                // Error
-                return null;
+                console.error('Error en crearReservaSolicitante:', error);
+                return {
+                    success: false,
+                    mensaje: 'Error de conexión con el servidor'
+                };
             }
         }
 
@@ -1098,12 +1400,11 @@
         
     async function handleScan(event) {
         if (QR_DEBUG) console.log('[QR DEBUG] handleScan key=', event.key, 'bufferBefore=', bufferQR);
-            // Solo procesar cuando se presiona Enter
-            if (event.key !== 'Enter') {
-                // Acumular caracteres en el buffer
-                if (event.key.length === 1) {
-                    bufferQR += event.key;
-            if (QR_DEBUG) console.log('[QR DEBUG] buffer appended ->', bufferQR);
+                    // Solo procesar cuando se presiona Enter
+        if (event.key !== 'Enter') {
+            // Acumular caracteres en el buffer
+            if (event.key.length === 1) {
+                bufferQR += event.key;
                     
                     // Detectar cuando el escaneo se completó (buffer dejó de crecer)
                     if (bufferQR.length > lastBufferLength) {
@@ -1116,7 +1417,6 @@
                         
                         // Procesar automáticamente después de 500ms sin nuevos caracteres
                         processingTimeout = setTimeout(async () => {
-                            if (QR_DEBUG) console.log('[QR DEBUG] processingTimeout fired, calling procesarQRCompleto, buffer=', bufferQR);
                             await procesarQRCompleto();
                         }, 500);
                         
@@ -1126,23 +1426,28 @@
                         }
                         errorTimeout = setTimeout(() => {
                             if (bufferQR && bufferQR.trim() !== '' && bufferQR.length > 10) {
-                                // Timeout de seguridad: Lectura errónea detectada
-                                limpiarEstadoLectura('Timeout de lectura - QR inválido');
+                                                        // Timeout de seguridad: Lectura errónea detectada
+                        limpiarEstadoLectura('Timeout de lectura - QR inválido');
+                        // Restaurar autofocus del qr-input después de timeout de lectura
+                        setTimeout(() => {
+                            if (qrInputManager) {
+                                qrInputManager.setActiveInput('main');
                             }
-                        }, 60000);
+                        }, 100);
+                    }
+                }, 60000);
                     }
                 }
                 return;
             }
 
-            // Validar que hay contenido en el buffer antes de procesar
-            if (!bufferQR || bufferQR.trim() === '') {
-                // Buffer vacío al presionar Enter - ignorando
-                return;
-            }
+                    // Validar que hay contenido en el buffer antes de procesar
+        if (!bufferQR || bufferQR.trim() === '') {
+            // Buffer vacío al presionar Enter - ignorando
+            return;
+        }
 
-            if (QR_DEBUG) console.log('[QR DEBUG] Enter pressed, calling procesarQRCompleto, buffer=', bufferQR);
-            await procesarQRCompleto();
+        await procesarQRCompleto();
         }
         
         async function procesarQRCompleto() {
@@ -1159,28 +1464,24 @@
                 return;
             }
 
-            // Procesando QR completo
+                    // Procesando QR completo
 
-            if (QR_DEBUG) console.log('[QR DEBUG] procesarQRCompleto ordenEscaneo=', ordenEscaneo, 'buffer=', bufferQR);
-            // Validar orden de escaneo
-            if (ordenEscaneo === 'usuario') {
-                // PASO 1: Escanear usuario (obligatorio primero)
-                // Procesando usuario...
-                await procesarUsuario();
-            } else if (ordenEscaneo === 'espacio') {
-                // PASO 2: Escanear espacio (solo después del usuario)
-                // Procesando espacio...
-                const resultado = await procesarEspacio();
-                
-                // Si la devolución fue exitosa, no continuar con más procesamiento
-                if (resultado === 'devolucion_exitosa') {
-                    return;
-                }
-            } else {
-                // Error: orden incorrecto
-                // Error: Debe escanear primero el QR del usuario
-                limpiarEstadoLectura('Orden de escaneo incorrecto');
+        // Validar orden de escaneo
+        if (ordenEscaneo === 'usuario') {
+            // PASO 1: Escanear usuario (obligatorio primero)
+            await procesarUsuario();
+        } else if (ordenEscaneo === 'espacio') {
+            // PASO 2: Escanear espacio (solo después del usuario)
+            const resultado = await procesarEspacio();
+            
+            // Si la devolución fue exitosa, no continuar con más procesamiento
+            if (resultado === 'devolucion_exitosa') {
+                return;
             }
+        } else {
+            // Error: orden incorrecto
+            limpiarEstadoLectura('Orden de escaneo incorrecto');
+        }
 
             // NO limpiar el buffer aquí - dejarlo para que las funciones individuales lo manejen
             // Solo limpiar timeouts
@@ -1192,88 +1493,90 @@
                 clearTimeout(errorTimeout);
                 errorTimeout = null;
             }
+            
+            // Restaurar el input QR activo después de procesar
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.restaurarInputActivo();
+                }
+            }, 100);
         }
 
         async function procesarUsuario() {
-            // Extraer RUN del QR (buscar "RUN" seguido de números)
-            if (QR_DEBUG) console.log('[QR DEBUG] procesarUsuario buffer=', bufferQR);
-            const runMatch = bufferQR.match(/RUN[^0-9]*(\d+)/);
-            let run = null;
-            
-            if (!runMatch) {
-                // Intentar otros formatos de RUN
-                const runMatchAlt = bufferQR.match(/(\d{7,8})/);
-                if (!runMatchAlt) {
-                    // Solo mostrar error si el buffer tiene contenido significativo y no es ruido
-                    if (bufferQR.length > 8) {
-                        // Lectura errónea: No se pudo extraer RUN del QR
-                        limpiarEstadoLectura('QR de usuario inválido');
-                    } else {
-                        // Error silencioso para buffers cortos
-                        limpiarEstadoSilencioso();
-                    }
-                    return;
+                    // Extraer RUN del QR (buscar "RUN" seguido de números)
+        const runMatch = bufferQR.match(/RUN[^0-9]*(\d+)/);
+        let run = null;
+        
+        if (!runMatch) {
+            // Intentar otros formatos de RUN
+            const runMatchAlt = bufferQR.match(/(\d{7,8})/);
+            if (!runMatchAlt) {
+                // Solo mostrar error si el buffer tiene contenido significativo y no es ruido
+                if (bufferQR.length > 8) {
+                    // Lectura errónea: No se pudo extraer RUN del QR
+                    limpiarEstadoLectura('QR de usuario inválido');
+                    // Restaurar autofocus del qr-input después de error de QR inválido
+                    setTimeout(() => {
+                        if (qrInputManager) {
+                            qrInputManager.setActiveInput('main');
+                        }
+                    }, 100);
+                } else {
+                    // Error silencioso para buffers cortos
+                    limpiarEstadoSilencioso();
                 }
-                run = runMatchAlt[1];
-            } else {
-                run = runMatch[1];
-            }
-
-            if (QR_DEBUG) console.log('[QR DEBUG] procesarUsuario extracted run=', run);
-
-            // RUN extraído
-
-            // Verificar usuario en la base de datos
-            if (QR_DEBUG) console.log('[QR DEBUG] calling verificarUsuario for run=', run);
-            const usuarioInfo = await verificarUsuario(run);
-            if (QR_DEBUG) console.log('[QR DEBUG] verificarUsuario result=', usuarioInfo);
-            
-            if (!usuarioInfo) {
-                // Error al verificar usuario - resetear flujo
-                // Error al verificar usuario
-                limpiarEstadoLectura('Usuario no encontrado en el sistema');
                 return;
             }
+            run = runMatchAlt[1];
+        } else {
+            run = runMatch[1];
+        }
+
+        // RUN extraído
+
+                    // Verificar usuario en la base de datos
+        const usuarioInfo = await verificarUsuario(run);
+        
+        if (!usuarioInfo) {
+            // Error al verificar usuario - resetear flujo
+            limpiarEstadoLectura('Usuario no encontrado en el sistema');
+            // Restaurar autofocus del qr-input después de error de usuario no encontrado
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }, 100);
+            return;
+        }
 
             if (usuarioInfo.verificado) {
                 // Usuario verificado
                 
                 if (usuarioInfo.tipo_usuario === 'profesor') {
-                    // Es profesor - verificar si tiene clases programadas
-                    const tieneClases = await verificarClasesProfesor(run);
-                    // Profesor tiene clases
-                    
-                    if (tieneClases === true) {
-                        // Profesor CON clases - solo registra solicitud
-                        document.getElementById('qr-status').innerHTML = 'Profesor con clases verificado. Escanee el espacio para registrar asistencia.';
-                        // Mostrar información del usuario
-                        mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
-                        usuarioEscaneado = run;
-                        ordenEscaneo = 'espacio';
-                        // Estado actualizado: usuario escaneado, esperando espacio
-                        // No necesita devolución para volver a solicitar
-                    } else {
-                        // Profesor SIN clases - solicita con módulos
-                        document.getElementById('qr-status').innerHTML = 'Profesor sin clases. Escanee el espacio para solicitar.';
-                        // Mostrar información del usuario
-                        mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
-                        usuarioEscaneado = run;
-                        ordenEscaneo = 'espacio';
-                        // Estado actualizado: usuario escaneado, esperando espacio
-                        // Necesitará especificar módulos (máx 2)
-                    }
+                            // Es profesor - verificar si tiene clases programadas
+        const tieneClases = await verificarClasesProfesor(run);
+        
+        if (tieneClases === true) {
+            // Profesor CON clases - solo registra solicitud
+            document.getElementById('qr-status').innerHTML = 'Profesor con clases verificado. Escanee el espacio para registrar asistencia.';
+            mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
+            usuarioEscaneado = run;
+            ordenEscaneo = 'espacio';
+        } else {
+            // Profesor SIN clases - solicita con módulos
+            document.getElementById('qr-status').innerHTML = 'Profesor sin clases. Escanee el espacio para solicitar.';
+            mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
+            usuarioEscaneado = run;
+            ordenEscaneo = 'espacio';
+        }
                 } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
-                    // Es solicitante registrado - solicita con módulos
-                    document.getElementById('qr-status').innerHTML = 'Solicitante verificado. Escanee el espacio para solicitar.';
-                    // Mostrar información del usuario
-                    mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
-                    usuarioEscaneado = run;
-                    ordenEscaneo = 'espacio';
-                    // Estado actualizado: solicitante escaneado, esperando espacio
-                    // Necesitará especificar módulos (máx 2)
+                            // Es solicitante registrado - solicita con módulos
+        document.getElementById('qr-status').innerHTML = 'Solicitante verificado. Escanee el espacio para solicitar.';
+        mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
+        usuarioEscaneado = run;
+        ordenEscaneo = 'espacio';
                 } else {
-                    // Otro tipo de usuario - mostrar error
-                    // Tipo de usuario no manejado
+                            // Otro tipo de usuario - mostrar error
                 }
                 
                 // Limpiar buffer después de procesar usuario exitosamente
@@ -1284,184 +1587,195 @@
                     inputEscanner.value = '';
                 }
                 
-            } else {
-                // Usuario no encontrado - mostrar modal de registro de solicitante
-                // Usuario no encontrado, abriendo modal de registro
-                runSolicitantePendiente = run;
-                document.getElementById('run-solicitante-no-registrado').textContent = run;
-                
-                // Cerrar modal actual si está abierto
-                window.dispatchEvent(new CustomEvent('close-modal', {
-                    detail: 'data-space'
-                }));
-                
-                // Abrir modal de registro de solicitante
+                // Restaurar autofocus del qr-input después de procesar usuario exitosamente
                 setTimeout(() => {
-                    // Desactivar autofocus del qr-input para permitir escribir cómodamente
-                    const qrInput = document.getElementById('qr-input');
-                    if (qrInput) {
-                        qrInput.blur(); // Quitar el foco del qr-input
-                        qrInput.removeAttribute('autofocus'); // Remover autofocus
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
                     }
-                    
-                    window.dispatchEvent(new CustomEvent('open-modal', {
-                        detail: 'registro-solicitante'
-                    }));
-                }, 300);
+                }, 100);
                 
-                // Limpiar buffer después de abrir modal
-                bufferQR = '';
-                lastBufferLength = 0;
-                const inputEscanner = document.getElementById('qr-input');
-                if (inputEscanner) {
-                    inputEscanner.value = '';
+            } else {
+                        // Usuario no encontrado - mostrar modal de registro de solicitante
+        runSolicitantePendiente = run;
+        document.getElementById('run-solicitante-no-registrado').textContent = run;
+        
+        // Cerrar modal actual si está abierto
+        window.dispatchEvent(new CustomEvent('close-modal', {
+            detail: 'data-space'
+        }));
+        
+        // Abrir modal de registro de solicitante
+        setTimeout(() => {
+            // Desactivar todos los inputs QR para permitir escribir cómodamente
+            qrInputManager.desactivarTodosLosInputs();
+            
+            window.dispatchEvent(new CustomEvent('open-modal', {
+                detail: 'registro-solicitante'
+            }));
+            
+            // Restaurar autofocus del qr-input después de abrir modal de registro
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
                 }
+            }, 300);
+        }, 300);
+        
+        // Limpiar buffer después de abrir modal
+        bufferQR = '';
+        lastBufferLength = 0;
+        const inputEscanner = document.getElementById('qr-input');
+        if (inputEscanner) {
+            inputEscanner.value = '';
+        }
             }
         }
 
         async function procesarEspacio() {
-            // Procesando espacio con buffer
-            
-            // Extraer código de espacio - múltiples formatos posibles
-            let espacio = null;
-            if (QR_DEBUG) console.log('[QR DEBUG] procesarEspacio buffer=', bufferQR);
-            
-            // Patrón 1: TH seguido de cualquier cosa (formato estándar)
-            const espacioMatch = bufferQR.match(/(TH[^A-Z0-9]*[A-Z0-9]+)/i);
-            if (espacioMatch) {
-                espacio = espacioMatch[1];
+                    // Extraer código de espacio - múltiples formatos posibles
+        let espacio = null;
+        
+        // Patrón 1: TH seguido de cualquier cosa (formato estándar)
+        const espacioMatch = bufferQR.match(/(TH[^A-Z0-9]*[A-Z0-9]+)/i);
+        if (espacioMatch) {
+            espacio = espacioMatch[1];
+        } else {
+            // Patrón 2: 2-3 letras + números (formato compacto)
+            const espacioMatchAlt = bufferQR.match(/([A-Z]{2,3}[0-9]+)/i);
+            if (espacioMatchAlt) {
+                espacio = espacioMatchAlt[1];
             } else {
-                // Patrón 2: 2-3 letras + números (formato compacto)
-                const espacioMatchAlt = bufferQR.match(/([A-Z]{2,3}[0-9]+)/i);
-                if (espacioMatchAlt) {
-                    espacio = espacioMatchAlt[1];
+                // Patrón 3: Letras + caracteres especiales + letras/números
+                const espacioMatchSpecial = bufferQR.match(/([A-Z]+['\-]?[A-Z0-9]+)/i);
+                if (espacioMatchSpecial) {
+                    espacio = espacioMatchSpecial[1];
                 } else {
-                    // Patrón 3: Letras + caracteres especiales + letras/números
-                    const espacioMatchSpecial = bufferQR.match(/([A-Z]+['\-]?[A-Z0-9]+)/i);
-                    if (espacioMatchSpecial) {
-                        espacio = espacioMatchSpecial[1];
+                    // Patrón 4: Formato simple letras + números
+                    const espacioMatchSimple = bufferQR.match(/([A-Z]+[0-9]+)/i);
+                    if (espacioMatchSimple) {
+                        espacio = espacioMatchSimple[1];
                     } else {
-                        // Patrón 4: Formato simple letras + números
-                        const espacioMatchSimple = bufferQR.match(/([A-Z]+[0-9]+)/i);
-                        if (espacioMatchSimple) {
-                            espacio = espacioMatchSimple[1];
+                        // Solo mostrar error si el buffer tiene contenido significativo
+                        if (bufferQR.length > 8) {
+                            limpiarEstadoLectura('QR de espacio inválido');
                         } else {
-                            // Solo mostrar error si el buffer tiene contenido significativo
-                            if (bufferQR.length > 8) {
-                                // Lectura errónea: No se pudo extraer código de espacio del QR
-                                limpiarEstadoLectura('QR de espacio inválido');
-                            } else {
-                                // Error silencioso para buffers cortos
-                                limpiarEstadoSilencioso();
-                            }
-                            return;
+                            limpiarEstadoSilencioso();
                         }
+                        return;
                     }
                 }
             }
+        }
 
-            // Espacio extraído
-            if (QR_DEBUG) console.log('[QR DEBUG] procesarEspacio extracted espacio=', espacio);
-            
-            // Normalizar el formato del espacio para que coincida con la BD (TH-C1)
-            if (espacio) {
-                // Convertir a mayúsculas y reemplazar apóstrofe por guión
-                espacio = espacio.toUpperCase().replace(/'/g, '-');
-                // Espacio normalizado
-                if (QR_DEBUG) console.log('[QR DEBUG] procesarEspacio normalized espacio=', espacio);
-            }
+        // Normalizar el formato del espacio para que coincida con la BD (TH-C1)
+        if (espacio) {
+            espacio = espacio.toUpperCase().replace(/'/g, '-');
+        }
 
-            // Verificar estado del espacio y reservas del usuario
+                    // Verificar estado del espacio y reservas del usuario
+        
+        // Agregar timeout para evitar que se cuelgue
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout en verificación de espacio')), 10000)
+        );
+        
+        const resultadoVerificacion = await Promise.race([
+            verificarEstadoEspacioYReserva(usuarioEscaneado, espacio),
+            timeoutPromise
+        ]).catch(error => {
+            // Error en verificación de espacio
+            // Restaurar autofocus del qr-input después de timeout en verificación
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }, 100);
+            return {
+                tipo: 'error',
+                mensaje: 'Timeout al verificar el estado del espacio'
+            };
+        });
             
-            // Agregar timeout para evitar que se cuelgue
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout en verificación de espacio')), 10000)
-            );
-            
-            if (QR_DEBUG) console.log('[QR DEBUG] calling verificarEstadoEspacioYReserva user=', usuarioEscaneado, 'espacio=', espacio);
-            const resultadoVerificacion = await Promise.race([
-                verificarEstadoEspacioYReserva(usuarioEscaneado, espacio),
-                timeoutPromise
-            ]).catch(error => {
-                // Error en verificación de espacio
-                return {
-                    tipo: 'error',
-                    mensaje: 'Timeout al verificar el estado del espacio'
-                };
-            });
-            if (QR_DEBUG) console.log('[QR DEBUG] verificarEstadoEspacioYReserva result=', resultadoVerificacion);
-            
-            // Resultado de verificación
-            
-            if (resultadoVerificacion.tipo === 'error') {
-                // Error al verificar estado - resetear flujo
-                // Error al verificar estado del espacio
-                limpiarEstadoLectura('Error al verificar el estado del espacio');
-                return;
-            }
+                    if (resultadoVerificacion.tipo === 'error') {
+            // Error al verificar estado - resetear flujo
+            // Error al verificar estado del espacio
+            limpiarEstadoLectura('Error al verificar el estado del espacio');
+            // Restaurar autofocus del qr-input después de error en verificación de espacio
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }, 100);
+            return;
+        }
 
             if (resultadoVerificacion.tipo === 'devolucion') {
-                // Procesando devolución...
-                // Evitar procesamiento múltiple
-                if (procesandoDevolucion) {
-                    return 'devolucion_en_proceso';
-                }
-                
-                procesandoDevolucion = true;
-                
-                // El usuario tiene una reserva activa en este espacio - procesar devolución automáticamente
-                
-                // Mostrar mensaje de devolución en proceso
-                document.getElementById('qr-status').innerHTML = 'Procesando devolución...';
-                
-        if (QR_DEBUG) console.log('[QR DEBUG] calling devolverEspacio user=', usuarioEscaneado, 'espacio=', espacio);
+                        // Procesando devolución...
+        // Evitar procesamiento múltiple
+        if (procesandoDevolucion) {
+            return 'devolucion_en_proceso';
+        }
+        
+        procesandoDevolucion = true;
+        
+        // El usuario tiene una reserva activa en este espacio - procesar devolución automáticamente
+        
+        // Mostrar mensaje de devolución en proceso
+        document.getElementById('qr-status').innerHTML = 'Procesando devolución...';
+        
         const devolucion = await devolverEspacio(usuarioEscaneado, espacio);
-        if (QR_DEBUG) console.log('[QR DEBUG] devolverEspacio result=', devolucion);
                 
-                                    if (devolucion && devolucion.success) {
-            if (QR_DEBUG) console.log('[QR DEBUG] processing successful devolucion, updating indicators for espacio=', espacio);
+        if (devolucion && devolucion.success) {
             // Actualizar indicador en el mapa
-                        const block = state.indicators.find(b => b.id === espacio);
-            if (QR_DEBUG) console.log('[QR DEBUG] found block before update=', block);
-                        if (block) {
-                            block.estado = '#00FF00'; // Verde = Disponible
-                            state.originalCoordinates = state.indicators.map(i => ({ ...i }));
-                            drawIndicators();
-                        }
-                        
-                        // Mostrar Sweet Alert de éxito para devolución
-                        Swal.fire({
-                            title: '¡Devolución Exitosa!',
-                            text: 'Las llaves han sido devueltas correctamente.',
-                            icon: 'success',
-                            confirmButtonText: 'Aceptar',
-                            confirmButtonColor: '#059669',
-                            timer: 1500,
-                            timerProgressBar: true,
-                            showConfirmButton: false
-                        });
-                        
-                        // Mostrar mensaje de éxito
-                        document.getElementById('qr-status').innerHTML = 'Devolución exitosa';
-                    
-                                            // Limpiar solo el estado de lectura después de un delay
-                        setTimeout(() => {
-                            limpiarEstadoLectura();
-                        }, 2000);
-                    
-                    // IMPORTANTE: Detener completamente el procesamiento aquí
-                    procesandoDevolucion = false;
-                    return 'devolucion_exitosa';
-                } else {
-                    // Mostrar error específico de devolución
-                    const mensajeError = devolucion?.mensaje || 'Error al devolver las llaves';
-                    // Error en devolución
-                    
-                    // Resetear el estado para permitir nuevo escaneo
-                    procesandoDevolucion = false;
-                    ordenEscaneo = 'usuario';
-                    return;
+            const block = state.indicators.find(b => b.id === espacio);
+            if (block) {
+                block.estado = '#00FF00'; // Verde = Disponible
+                state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                drawIndicators();
+            }
+            
+            // Mostrar Sweet Alert de éxito para devolución
+            Swal.fire({
+                title: '¡Devolución Exitosa!',
+                text: 'Las llaves han sido devueltas correctamente.',
+                icon: 'success',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#059669',
+                timer: 1500,
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+            
+            // Mostrar mensaje de éxito
+            document.getElementById('qr-status').innerHTML = 'Devolución exitosa';
+            
+            // Limpiar solo el estado de lectura después de un delay
+            setTimeout(() => {
+                limpiarEstadoLectura();
+                // Restaurar autofocus del qr-input después de devolución exitosa
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
                 }
+            }, 2000);
+            
+            // IMPORTANTE: Detener completamente el procesamiento aquí
+            procesandoDevolucion = false;
+            return 'devolucion_exitosa';
+        } else {
+            // Mostrar error específico de devolución
+            const mensajeError = devolucion?.mensaje || 'Error al devolver las llaves';
+            
+            // Resetear el estado para permitir nuevo escaneo
+            procesandoDevolucion = false;
+            ordenEscaneo = 'usuario';
+            // Restaurar autofocus del qr-input después de error en devolución
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }, 100);
+            return;
+        }
             }
 
             if (resultadoVerificacion.tipo === 'reserva_existente') {
@@ -1482,6 +1796,10 @@
                 // Limpiar estado después del Sweet Alert
                 setTimeout(() => {
                     limpiarEstadoLectura();
+                    // Restaurar autofocus del qr-input después de mostrar reserva existente
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
                 }, 2500);
                 
                 ordenEscaneo = 'usuario';
@@ -1519,120 +1837,138 @@
                 // Limpiar estado después de mostrar el mensaje
                 setTimeout(() => {
                     limpiarEstadoLectura();
+                    // Restaurar autofocus del qr-input después de mostrar espacio ocupado
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
                 }, 1000);
                 
                 ordenEscaneo = 'usuario';
                 return;
             }
 
-            // Si llegamos aquí, el espacio está disponible para crear una nueva reserva
-            // Espacio disponible, verificando usuario para determinar flujo...
-            // Verificar el tipo de usuario para determinar el flujo
-            if (QR_DEBUG) console.log('[QR DEBUG] calling verificarUsuario (from procesarEspacio) for run=', usuarioEscaneado);
-            const usuarioInfo = await verificarUsuario(usuarioEscaneado);
-            if (QR_DEBUG) console.log('[QR DEBUG] verificarUsuario (from procesarEspacio) result=', usuarioInfo);
-            
-            if (!usuarioInfo || !usuarioInfo.verificado) {
-                ordenEscaneo = 'usuario';
-                return;
-            }
+                    // Si llegamos aquí, el espacio está disponible para crear una nueva reserva
+        // Verificar el tipo de usuario para determinar el flujo
+        const usuarioInfo = await verificarUsuario(usuarioEscaneado);
+        
+        if (!usuarioInfo || !usuarioInfo.verificado) {
+            ordenEscaneo = 'usuario';
+            // Restaurar autofocus del qr-input después de error en verificación de usuario
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }, 100);
+            return;
+        }
 
-            // Determinar el flujo según el tipo de usuario
-            if (usuarioInfo.tipo_usuario === 'profesor') {
-                // Verificar si tiene clases programadas
-                const tieneClases = await verificarClasesProfesor(usuarioEscaneado);
-                if (QR_DEBUG) console.log('[QR DEBUG] verificarClasesProfesor result=', tieneClases);
-                
-                if (tieneClases === true) {
-                    // CASO 1: Profesor CON clases - registrar asistencia usando endpoint específico
-                    if (QR_DEBUG) console.log('[QR DEBUG] calling registrarAsistenciaProfesor user=', usuarioEscaneado, 'espacio=', espacio);
-                    const resultado = await registrarAsistenciaProfesor(usuarioEscaneado, espacio);
-                    if (QR_DEBUG) console.log('[QR DEBUG] registrarAsistenciaProfesor result=', resultado);
-                    if (resultado && resultado.success) {
-                        // Mostrar mensaje de proceso
-                        document.getElementById('qr-status').innerHTML = 'Registrando asistencia...';
+        // Determinar el flujo según el tipo de usuario
+        if (usuarioInfo.tipo_usuario === 'profesor') {
+            // Verificar si tiene clases programadas
+            const tieneClases = await verificarClasesProfesor(usuarioEscaneado);
+            
+            if (tieneClases === true) {
+                // CASO 1: Profesor CON clases - registrar asistencia usando endpoint específico
+                const resultado = await registrarAsistenciaProfesor(usuarioEscaneado, espacio);
+                if (resultado && resultado.success) {
+                    // Mostrar mensaje de proceso
+                    document.getElementById('qr-status').innerHTML = 'Registrando asistencia...';
+                    
+                    // Actualizar indicador en el mapa
+                    const block = state.indicators.find(b => b.id === espacio);
+                    if (block) {
+                        block.estado = '#FF0000'; // Rojo = Ocupado
+                        state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                        drawIndicators();
+                    }
+                    
+                    // Mostrar Sweet Alert de éxito para asistencia registrada
+                    Swal.fire({
+                        title: '¡Asistencia Registrada!',
+                        text: 'El profesor ha registrado su asistencia correctamente.',
+                        icon: 'success',
+                        confirmButtonText: 'Aceptar',
+                        confirmButtonColor: '#059669',
+                        timer: 1500,
+                        timerProgressBar: true,
+                        showConfirmButton: false
+                    });
+                    
+                    // Mostrar mensaje de asistencia registrada
+                    document.getElementById('qr-status').innerHTML = 'Asistencia registrada';
+                    document.getElementById('qr-status').classList.remove('parpadeo');
+                    
+                    // Limpiar solo el estado de lectura después de un delay
+                    setTimeout(() => {
+                        // Mantener usuarioEscaneado para continuar el flujo
+                        ordenEscaneo = 'espacio'; // Ya escaneó usuario, ahora espera espacio
+                        espacioParaReserva = null;
+                        runParaReserva = null;
                         
-                        // Actualizar indicador en el mapa
-                        const block = state.indicators.find(b => b.id === espacio);
-                        if (block) {
-                            block.estado = '#FF0000'; // Rojo = Ocupado
-                            state.originalCoordinates = state.indicators.map(i => ({ ...i }));
-                            drawIndicators();
+                        // Limpiar solo buffers de lectura
+                        bufferQR = '';
+                        
+                        // Resetear solo interfaz de lectura
+                        limpiarEstadoLectura();
+                        
+                        // Mantener información del usuario visible
+                        const qrStatus = document.getElementById('qr-status');
+                        if (qrStatus) {
+                            qrStatus.classList.remove('parpadeo');
+                            qrStatus.innerHTML = 'Usuario verificado. Escanee el espacio.';
                         }
                         
-                        // Mostrar Sweet Alert de éxito para asistencia registrada
-                        Swal.fire({
-                            title: '¡Asistencia Registrada!',
-                            text: 'El profesor ha registrado su asistencia correctamente.',
-                            icon: 'success',
-                            confirmButtonText: 'Aceptar',
-                            confirmButtonColor: '#059669',
-                            timer: 1500,
-                            timerProgressBar: true,
-                            showConfirmButton: false
-                        });
-                        
-                        // Mostrar mensaje de asistencia registrada
-                        document.getElementById('qr-status').innerHTML = 'Asistencia registrada';
-                        document.getElementById('qr-status').classList.remove('parpadeo');
-                        
-                        // Limpiar solo el estado de lectura después de un delay
-                        setTimeout(() => {
-                            // Mantener usuarioEscaneado para continuar el flujo
-                            ordenEscaneo = 'espacio'; // Ya escaneó usuario, ahora espera espacio
-                            espacioParaReserva = null;
-                            runParaReserva = null;
-                            
-                            // Limpiar solo buffers de lectura
-                            bufferQR = '';
-                            
-                            // Resetear solo interfaz de lectura
-                            limpiarEstadoLectura();
-                            
-                            // Mantener información del usuario visible
-                            const qrStatus = document.getElementById('qr-status');
-                            if (qrStatus) {
-                                qrStatus.classList.remove('parpadeo');
-                                qrStatus.innerHTML = 'Usuario verificado. Escanee el espacio.';
-                            }
-                        }, 2000);
-                    } else {
-                        // Error al registrar asistencia
-                    }
+                        // Restaurar autofocus del qr-input después de registrar asistencia
+                        if (qrInputManager) {
+                            qrInputManager.setActiveInput('main');
+                        }
+                    }, 2000);
                 } else {
-                                // Profesor SIN clases - mostrando modal de módulos
-            // Valor exacto de tieneClases
-            // Comparación tieneClases === true
-            // Comparación tieneClases == true
-                    // CASO 2: Profesor SIN clases - solicita con módulos (máx 2)
-                    if (QR_DEBUG) console.log('[QR DEBUG] mostrarModalSeleccionarModulos called with espacio=', espacio, 'usuario=', usuarioEscaneado, 'maxMods=2');
-                    await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado, 2); // Máximo 2 módulos
-                    return; // No continuar, esperar selección de módulos
+                    // Error en registro de asistencia - restaurar autofocus
+                    setTimeout(() => {
+                        if (qrInputManager) {
+                            qrInputManager.setActiveInput('main');
+                        }
+                    }, 100);
                 }
-            } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
-                // CASO 3: Solicitante registrado - solicita con módulos (máx 2)
-                if (QR_DEBUG) console.log('[QR DEBUG] mostrarModalSeleccionarModulos called (solicitante) espacio=', espacio, 'usuario=', usuarioEscaneado, 'maxMods=2');
+            } else {
+                // CASO 2: Profesor SIN clases - solicita con módulos (máx 2)
                 await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado, 2); // Máximo 2 módulos
                 return; // No continuar, esperar selección de módulos
-                            } else {
-                    ordenEscaneo = 'usuario';
-                    return;
-                }
-
-            // Limpiar buffer después de procesar espacio exitosamente
-            bufferQR = '';
-            lastBufferLength = 0;
-            const inputEscanner = document.getElementById('qr-input');
-            if (inputEscanner) {
-                inputEscanner.value = '';
             }
-            if (QR_DEBUG) console.log('[QR DEBUG] procesarEspacio completed for espacio=', espacio);
-            // Resetear para siguiente usuario
+        } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
+            // CASO 3: Solicitante registrado - solicita con módulos (máx 2)
+            await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado, 2); // Máximo 2 módulos
+            return; // No continuar, esperar selección de módulos
+        } else {
+            ordenEscaneo = 'usuario';
+            // Restaurar autofocus del qr-input después de error en tipo de usuario
             setTimeout(() => {
-                limpiarEstadoLectura();
-            }, 3000);
-            
-            return 'procesamiento_completado';
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }, 100);
+            return;
+        }
+
+        // Limpiar buffer después de procesar espacio exitosamente
+        bufferQR = '';
+        lastBufferLength = 0;
+        const inputEscanner = document.getElementById('qr-input');
+        if (inputEscanner) {
+            inputEscanner.value = '';
+        }
+        
+        // Resetear para siguiente usuario
+        setTimeout(() => {
+            limpiarEstadoLectura();
+            // Restaurar autofocus del qr-input después de procesar espacio exitosamente
+            if (qrInputManager) {
+                qrInputManager.setActiveInput('main');
+            }
+        }, 3000);
+        
+        return 'procesamiento_completado';
         }
 
         function initElements() {
@@ -1880,15 +2216,17 @@
         async function mostrarModalEspacio(indicator) {
             // Mostrando modal para espacio
             
-            // Mostrar el modal inmediatamente
-            const modal = document.getElementById('modal-espacio-info');
-            if (modal) {
-                modal.classList.remove('hidden');
-                // Modal de espacio mostrado inmediatamente
-            } else {
-                // No se encontró el modal de espacio
-                return;
-            }
+                    // Mostrar el modal inmediatamente
+        const modal = document.getElementById('modal-espacio-info');
+        if (modal) {
+            modal.classList.remove('hidden');
+            // Desactivar todos los inputs QR cuando se abre el modal
+            qrInputManager.desactivarTodosLosInputs();
+            // Modal de espacio mostrado inmediatamente
+        } else {
+            // No se encontró el modal de espacio
+            return;
+        }
             
             // Obtener elementos del modal una sola vez
             const elements = {
@@ -1916,29 +2254,28 @@
             // Configurar estado inmediatamente
             configurarEstado(elements, indicator);
             
-            // Mostrar loading optimizado
-            mostrarLoadingOptimizado(elements);
+                    // Mostrar loading optimizado
+        mostrarLoadingOptimizado(elements);
 
-            // Cargar información detallada en paralelo con timeout
-            const dataPromise = cargarInformacionDetallada(indicator.id);
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout')), 5000)
-            );
+        // Cargar información detallada en paralelo con timeout
+        const dataPromise = cargarInformacionDetallada(indicator.id);
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout')), 5000)
+        );
 
-            try {
-                const data = await Promise.race([dataPromise, timeoutPromise]);
-                // Información detallada del espacio
+        try {
+            const data = await Promise.race([dataPromise, timeoutPromise]);
 
-                if (data.success) {
-                    // Renderizar información optimizada
-                    renderizarInformacionOcupante(elements, data);
-                } else {
-                    mostrarErrorCarga(elements, 'No se pudo cargar la información');
-                }
-            } catch (error) {
-                // Error al cargar información
-                mostrarErrorCarga(elements, 'Error de conexión');
+            if (data.success) {
+                // Renderizar información optimizada
+                renderizarInformacionOcupante(elements, data);
+            } else {
+                mostrarErrorCarga(elements, 'No se pudo cargar la información');
             }
+        } catch (error) {
+            // Error al cargar información
+            mostrarErrorCarga(elements, 'Error de conexión');
+        }
         }
 
         // Función para configurar información básica
@@ -2022,26 +2359,24 @@
 
         // Función para cargar información detallada con cache optimizado para solicitantes
         async function cargarInformacionDetallada(espacioId) {
-            // Cache específico para espacios con solicitantes
-            const cacheKey = `espacio_${espacioId}`;
-            const solicitanteCacheKey = `solicitante_espacio_${espacioId}`;
-            
-            const cached = sessionStorage.getItem(cacheKey);
-            const cacheTime = sessionStorage.getItem(`${cacheKey}_time`);
-            const solicitanteCached = sessionStorage.getItem(solicitanteCacheKey);
-            const solicitanteCacheTime = sessionStorage.getItem(`${solicitanteCacheKey}_time`);
-            
-            // Cache válido por 30 segundos para espacios normales
-            if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 30000) {
-                // Usando cache para espacio
-                return JSON.parse(cached);
-            }
-            
-            // Cache específico para solicitantes (válido por 5 minutos)
-            if (solicitanteCached && solicitanteCacheTime && (Date.now() - parseInt(solicitanteCacheTime)) < 300000) {
-                // Usando cache específico para solicitante en espacio
-                return JSON.parse(solicitanteCached);
-            }
+                    // Cache específico para espacios con solicitantes
+        const cacheKey = `espacio_${espacioId}`;
+        const solicitanteCacheKey = `solicitante_espacio_${espacioId}`;
+        
+        const cached = sessionStorage.getItem(cacheKey);
+        const cacheTime = sessionStorage.getItem(`${cacheKey}_time`);
+        const solicitanteCached = sessionStorage.getItem(solicitanteCacheKey);
+        const solicitanteCacheTime = sessionStorage.getItem(`${solicitanteCacheKey}_time`);
+        
+        // Cache válido por 30 segundos para espacios normales
+        if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 30000) {
+            return JSON.parse(cached);
+        }
+        
+        // Cache específico para solicitantes (válido por 5 minutos)
+        if (solicitanteCached && solicitanteCacheTime && (Date.now() - parseInt(solicitanteCacheTime)) < 300000) {
+            return JSON.parse(solicitanteCached);
+        }
 
             const response = await fetch(`/api/espacio/${espacioId}/informacion-detallada`, {
                 method: 'GET',
@@ -2053,17 +2388,16 @@
 
             const data = await response.json();
             
-            // Guardar en cache según el tipo de ocupación
-            if (data.success && data.tipo_ocupacion === 'solicitante') {
-                // Cache específico para solicitantes (5 minutos)
-                sessionStorage.setItem(solicitanteCacheKey, JSON.stringify(data));
-                sessionStorage.setItem(`${solicitanteCacheKey}_time`, Date.now().toString());
-                // Cache de solicitante guardado para espacio
-            } else {
-                // Cache normal para otros tipos (30 segundos)
-                sessionStorage.setItem(cacheKey, JSON.stringify(data));
-                sessionStorage.setItem(`${cacheKey}_time`, Date.now().toString());
-            }
+                    // Guardar en cache según el tipo de ocupación
+        if (data.success && data.tipo_ocupacion === 'solicitante') {
+            // Cache específico para solicitantes (5 minutos)
+            sessionStorage.setItem(solicitanteCacheKey, JSON.stringify(data));
+            sessionStorage.setItem(`${solicitanteCacheKey}_time`, Date.now().toString());
+        } else {
+            // Cache normal para otros tipos (30 segundos)
+            sessionStorage.setItem(cacheKey, JSON.stringify(data));
+            sessionStorage.setItem(`${cacheKey}_time`, Date.now().toString());
+        }
             
             return data;
         }
@@ -2352,6 +2686,10 @@
             if (modal) {
                 modal.classList.add('hidden');
             }
+            // Restaurar el input QR activo usando el gestor
+            setTimeout(() => {
+                qrInputManager.restaurarInputActivo();
+            }, 200);
         }
 
         function cerrarModalesDespuesDeSwal(modales = []) {
@@ -2365,6 +2703,11 @@
                         .classList.add('hidden'));
                 }, 200);
             });
+            
+            // Restaurar el input QR activo después de cerrar todos los modales
+            setTimeout(() => {
+                qrInputManager.restaurarInputActivo();
+            }, 300);
         }
 
         async function actualizarColoresEspacios() {
@@ -2424,8 +2767,15 @@
             const inputEscanner = document.getElementById('qr-input');
             if (inputEscanner) {
                 inputEscanner.addEventListener('keydown', handleScan);
-                document.addEventListener('click', function () {
-                    inputEscanner.focus();
+                document.addEventListener('click', function (event) {
+                    // Solo enfocar si no se está haciendo clic en un modal o formulario
+                    if (!event.target.closest('.modal') && 
+                        !event.target.closest('form') && 
+                        !event.target.closest('input') && 
+                        !event.target.closest('select') && 
+                        !event.target.closest('button')) {
+                        qrInputManager.setActiveInput('main');
+                    }
                 });
                 inputEscanner.focus();
                 document.getElementById('qr-status').innerHTML = 'Esperando... Escanea el código QR';
@@ -2470,61 +2820,62 @@
             if (formRegistroSolicitante) {
                 formRegistroSolicitante.addEventListener('submit', procesarRegistroSolicitante);
             }
-            // Configurar event listener para el modal de registro de solicitante
-            document.addEventListener('show.bs.modal', function (event) {
-                const modal = event.target;
-                if (modal.getAttribute('data-modal') === 'registro-solicitante') {
-                    // Desactivar autofocus del qr-input cuando se abre el modal
-                    const qrInput = document.getElementById('qr-input');
-                    if (qrInput) {
-                        qrInput.blur();
-                        qrInput.removeAttribute('autofocus');
-                    }
-                }
-            });
             
-            // Configurar event listener para cuando se cierre el modal de registro de solicitante
-            document.addEventListener('hide.bs.modal', function (event) {
-                const modal = event.target;
-                if (modal.getAttribute('data-modal') === 'registro-solicitante') {
-                    // Restaurar autofocus del qr-input cuando se cierre el modal
-                    const qrInput = document.getElementById('qr-input');
-                    if (qrInput) {
-                        qrInput.setAttribute('autofocus', '');
-                        setTimeout(() => {
-                            qrInput.focus();
-                        }, 100);
-                    }
-                }
-            });
+            // Configurar el formulario de registro de usuario
+            const formRegistroUsuario = document.getElementById('form-registro-usuario');
+            if (formRegistroUsuario) {
+                formRegistroUsuario.addEventListener('submit', procesarRegistroUsuario);
+            }
+            
+            // Configurar botón de solicitar llaves para cambiar al input correspondiente
+            const btnSolicitar = document.querySelector('[onclick*="solicitarLlaves"]');
+            if (btnSolicitar) {
+                btnSolicitar.addEventListener('click', function() {
+                    qrInputManager.setActiveInput('solicitud');
+                });
+            }
+            
+
             // Configurar event listeners para los campos del formulario de registro de solicitante
             const camposSolicitante = [
                 'nombre-solicitante',
                 'email-solicitante', 
-                'telefono-solicitante',
-                'tipo-solicitante'
+                'telefono-solicitante'
             ];
             
             camposSolicitante.forEach(campoId => {
                 const campo = document.getElementById(campoId);
                 if (campo) {
-                    // Cuando se haga clic en un campo, asegurar que el qr-input no robe el foco
+                    // Cuando se haga clic en un campo, desactivar todos los inputs QR
                     campo.addEventListener('click', function() {
-                        const qrInput = document.getElementById('qr-input');
-                        if (qrInput) {
-                            qrInput.blur();
-                        }
+                        qrInputManager.desactivarTodosLosInputs();
                     });
                     
-                    // Cuando se haga foco en un campo, desactivar el autofocus del qr-input
+                    // Cuando se haga foco en un campo, desactivar todos los inputs QR
                     campo.addEventListener('focus', function() {
-                        const qrInput = document.getElementById('qr-input');
-                        if (qrInput) {
-                            qrInput.removeAttribute('autofocus');
-                        }
+                        qrInputManager.desactivarTodosLosInputs();
                     });
                 }
             });
+
+            // Configurar event listener específico para el select de tipo solicitante
+            const selectTipoSolicitante = document.getElementById('tipo-solicitante');
+            if (selectTipoSolicitante) {
+                // Desactivar todos los inputs QR cuando se abra el select
+                selectTipoSolicitante.addEventListener('mousedown', function() {
+                    qrInputManager.desactivarTodosLosInputs();
+                });
+                
+                // Prevenir que el select se cierre inmediatamente
+                selectTipoSolicitante.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                });
+                
+                // Asegurar que el select mantenga el foco
+                selectTipoSolicitante.addEventListener('focus', function() {
+                    qrInputManager.desactivarTodosLosInputs();
+                });
+            }
             // Configurar botón devolver
             const btnDevolver = document.getElementById('btnDevolver');
             const areaQR = document.getElementById('area-qr-devolucion');
@@ -2534,9 +2885,8 @@
                 btnDevolver.addEventListener('click', function () {
                     areaQR.classList.remove('hidden');
                     lineaDiv.classList.remove('hidden');
-                    setTimeout(() => {
-                        inputQR.focus();
-                    }, 200);
+                    // Cambiar al input de devolución
+                    qrInputManager.setActiveInput('devolucion');
                 });
             }
             window.actualizarColoresEspacios = actualizarColoresEspacios;
@@ -2552,6 +2902,8 @@
         async function procesarRegistroSolicitante(event) {
             event.preventDefault();
             
+            console.log('Procesando registro de solicitante...');
+            
             const formData = new FormData(event.target);
             const datosSolicitante = {
                 run_solicitante: runSolicitantePendiente,
@@ -2560,24 +2912,49 @@
                 telefono: formData.get('telefono'),
                 tipo_solicitante: formData.get('tipo_solicitante')
             };
+            
+            console.log('Datos del solicitante:', datosSolicitante);
+
+            // Validación básica
+            if (!datosSolicitante.nombre || !datosSolicitante.correo || !datosSolicitante.telefono || !datosSolicitante.tipo_solicitante) {
+                Swal.fire({
+                    title: 'Error de Validación',
+                    text: 'Por favor, complete todos los campos requeridos.',
+                    icon: 'error',
+                    confirmButtonText: 'Entendido'
+                });
+                return;
+            }
 
             try {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Registrando Solicitante',
+                    text: 'Por favor, espere...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
                 const resultado = await registrarSolicitante(datosSolicitante);
                 
                 if (resultado && resultado.success) {
-                    // Cerrar modal de registro inmediatamente
-                    window.dispatchEvent(new CustomEvent('close-modal', {
-                        detail: 'registro-solicitante'
-                    }));
+                    // Cerrar modal de registro
+                    cerrarModalRegistroSolicitante();
                     
-                    // Restaurar autofocus del qr-input para continuar con el escaneo
-                    const qrInput = document.getElementById('qr-input');
-                    if (qrInput) {
-                        qrInput.setAttribute('autofocus', ''); // Restaurar autofocus
-                        setTimeout(() => {
-                            qrInput.focus(); // Volver a dar foco al qr-input
-                        }, 100);
-                    }
+                    // Mostrar SweetAlert de éxito
+                    Swal.fire({
+                        title: '¡Solicitante Registrado!',
+                        text: `${datosSolicitante.nombre} ha sido registrado exitosamente. Ahora puede escanear el QR del espacio deseado.`,
+                        icon: 'success',
+                        confirmButtonText: 'Continuar',
+                        timer: 3000,
+                        timerProgressBar: true
+                    }).then(() => {
+                        // Restaurar el input QR activo
+                        qrInputManager.setActiveInput('main');
+                    });
                     
                     // Actualizar información en la interfaz
                     document.getElementById('qr-status').innerHTML = 'Solicitante registrado. Escanee el QR del espacio.';
@@ -2590,15 +2967,115 @@
                     // Limpiar variables
                     runSolicitantePendiente = null;
                     
-                    // Mostrar mensaje de éxito
-                    // Registro exitoso! Solicitante registrado correctamente
-                    
                 } else {
                     // Error al registrar solicitante
+                    const mensajeError = resultado?.mensaje || 'No se pudo registrar el solicitante. Intente nuevamente.';
+                    Swal.fire({
+                        title: 'Error al Registrar',
+                        text: mensajeError,
+                        icon: 'error',
+                        confirmButtonText: 'Intentar Nuevamente'
+                    });
                 }
             } catch (error) {
-                // Error
                 // Error al procesar el registro
+                console.error('Error al procesar registro:', error);
+                Swal.fire({
+                    title: 'Error de Conexión',
+                    text: 'Ocurrió un error al comunicarse con el servidor. Verifique su conexión e intente nuevamente.',
+                    icon: 'error',
+                    confirmButtonText: 'Reintentar'
+                });
+            }
+        }
+
+        async function procesarRegistroUsuario(event) {
+            event.preventDefault();
+            
+            console.log('Procesando registro de usuario...');
+            
+            const formData = new FormData(event.target);
+            const datosUsuario = {
+                run_usuario: runNoRegistrado,
+                nombre: formData.get('nombre'),
+                correo: formData.get('email'),
+                telefono: formData.get('telefono'),
+                modulos_utilizacion: formData.get('modulos_utilizacion')
+            };
+            
+            console.log('Datos del usuario:', datosUsuario);
+
+            // Validación básica
+            if (!datosUsuario.nombre || !datosUsuario.correo || !datosUsuario.telefono || !datosUsuario.modulos_utilizacion) {
+                Swal.fire({
+                    title: 'Error de Validación',
+                    text: 'Por favor, complete todos los campos requeridos.',
+                    icon: 'error',
+                    confirmButtonText: 'Entendido'
+                });
+                return;
+            }
+
+            try {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Registrando Usuario',
+                    text: 'Por favor, espere...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const resultado = await registrarUsuario(datosUsuario);
+                
+                if (resultado && resultado.success) {
+                    // Cerrar modal de registro
+                    cerrarModalRegistroUsuario();
+                    
+                    // Mostrar SweetAlert de éxito
+                    Swal.fire({
+                        title: '¡Usuario Registrado!',
+                        text: `${datosUsuario.nombre} ha sido registrado exitosamente. Ahora puede escanear el QR del espacio deseado.`,
+                        icon: 'success',
+                        confirmButtonText: 'Continuar',
+                        timer: 3000,
+                        timerProgressBar: true
+                    }).then(() => {
+                        // Restaurar el input QR activo
+                        qrInputManager.setActiveInput('main');
+                    });
+                    
+                    // Actualizar información en la interfaz
+                    document.getElementById('qr-status').innerHTML = 'Usuario registrado. Escanee el QR del espacio.';
+                    mostrarInfo('usuario', datosUsuario.nombre, runNoRegistrado);
+                    
+                    // Continuar con el flujo - solo necesita escanear espacio
+                    usuarioEscaneado = runNoRegistrado;
+                    ordenEscaneo = 'espacio'; // Ya no necesita escanear usuario
+                    
+                    // Limpiar variables
+                    runNoRegistrado = null;
+                    
+                } else {
+                    // Error al registrar usuario
+                    const mensajeError = resultado?.mensaje || 'No se pudo registrar el usuario. Intente nuevamente.';
+                    Swal.fire({
+                        title: 'Error al Registrar',
+                        text: mensajeError,
+                        icon: 'error',
+                        confirmButtonText: 'Intentar Nuevamente'
+                    });
+                }
+            } catch (error) {
+                // Error al procesar el registro
+                console.error('Error al procesar registro de usuario:', error);
+                Swal.fire({
+                    title: 'Error de Conexión',
+                    text: 'Ocurrió un error al comunicarse con el servidor. Verifique su conexión e intente nuevamente.',
+                    icon: 'error',
+                    confirmButtonText: 'Reintentar'
+                });
             }
         }
 
@@ -2608,17 +3085,69 @@
                 detail: 'registro-solicitante'
             }));
             
-            // Restaurar autofocus del qr-input
-            const qrInput = document.getElementById('qr-input');
-            if (qrInput) {
-                qrInput.setAttribute('autofocus', ''); // Restaurar autofocus
-                setTimeout(() => {
-                    qrInput.focus(); // Volver a dar foco al qr-input
-                }, 100);
-            }
+            // Restaurar el input QR activo usando el gestor
+            setTimeout(() => {
+                qrInputManager.restaurarInputActivo();
+            }, 200);
             
             // Limpiar variables
             runSolicitantePendiente = null;
+            
+            // Resetear estado
+            document.getElementById('qr-status').innerHTML = 'Esperando';
+            limpiarEstadoCompleto();
+        }
+
+        function cerrarModalRegistroSolicitante() {
+            // Cerrar modal de registro usando Alpine.js
+            const modal = document.querySelector('[x-data*="modalComponent"]');
+            if (modal) {
+                const modalInstance = Alpine.$data(modal);
+                if (modalInstance && typeof modalInstance.show !== 'undefined') {
+                    modalInstance.show = false;
+                }
+            }
+            
+            // Método alternativo: disparar evento de cierre
+            window.dispatchEvent(new CustomEvent('close-modal', {
+                detail: 'registro-solicitante'
+            }));
+            
+            // Restaurar el input QR activo usando el gestor
+            setTimeout(() => {
+                qrInputManager.restaurarInputActivo();
+            }, 200);
+            
+            // Limpiar variables
+            runSolicitantePendiente = null;
+            
+            // Resetear estado
+            document.getElementById('qr-status').innerHTML = 'Esperando';
+            limpiarEstadoCompleto();
+        }
+
+        function cerrarModalRegistroUsuario() {
+            // Cerrar modal de registro de usuario usando Alpine.js
+            const modal = document.querySelector('[x-data*="modalComponent"]');
+            if (modal) {
+                const modalInstance = Alpine.$data(modal);
+                if (modalInstance && typeof modalInstance.show !== 'undefined') {
+                    modalInstance.show = false;
+                }
+            }
+            
+            // Método alternativo: disparar evento de cierre
+            window.dispatchEvent(new CustomEvent('close-modal', {
+                detail: 'registro-usuario'
+            }));
+            
+            // Restaurar el input QR activo usando el gestor
+            setTimeout(() => {
+                qrInputManager.restaurarInputActivo();
+            }, 200);
+            
+            // Limpiar variables
+            runNoRegistrado = null;
             
             // Resetear estado
             document.getElementById('qr-status').innerHTML = 'Esperando';
@@ -2649,6 +3178,11 @@
                 modalAlt.classList.add('hidden');
             }
             
+            // Restaurar el input QR activo usando el gestor
+            setTimeout(() => {
+                qrInputManager.restaurarInputActivo();
+            }, 200);
+            
             // Limpiar variables
             espacioParaReserva = null;
             runParaReserva = null;
@@ -2676,29 +3210,25 @@
                 if (response.ok) {
                     const data = await response.json();
                     
-                    // Respuesta completa del servidor
-
-                    if (data.success) {
-                        // Guardar información adicional para mostrar en el modal
-                        window.modulosInfo = {
-                            max_modulos: data.max_modulos || 1,
-                            modulo_actual: data.modulo_actual,
-                            modulos_disponibles: data.modulos_disponibles || [],
-                            proxima_clase: data.proxima_clase,
-                            clases_proximas: data.clases_proximas || [],
-                            detalles: data.detalles
-                        };
-                        
-                        // Información guardada en window.modulosInfo
-                        
-                        return data.max_modulos || 1;
-                    } else {
-                        // Mostrar información detallada del error
-                        if (data.detalles && data.detalles.razon === 'fuera_horario') {
-                            // Horario no disponible
-                        }
-                        return 1;
-                    }
+                            if (data.success) {
+            // Guardar información adicional para mostrar en el modal
+            window.modulosInfo = {
+                max_modulos: data.max_modulos || 1,
+                modulo_actual: data.modulo_actual,
+                modulos_disponibles: data.modulos_disponibles || [],
+                proxima_clase: data.proxima_clase,
+                clases_proximas: data.clases_proximas || [],
+                detalles: data.detalles
+            };
+            
+            return data.max_modulos || 1;
+        } else {
+            // Mostrar información detallada del error
+            if (data.detalles && data.detalles.razon === 'fuera_horario') {
+                // Horario no disponible
+            }
+            return 1;
+        }
                 } else {
                     // Error en la respuesta del servidor
                     return 1;
@@ -2710,61 +3240,52 @@
         }
 
         async function mostrarModalSeleccionarModulos(idEspacio, run, maxModulos = 2) {
-            // Iniciando mostrarModalSeleccionarModulos
-            
-            const modulosDisponibles = await calcularModulosDisponibles(idEspacio);
-            // Módulos disponibles calculados
-            
-            // Limitar a máximo 2 módulos según la lógica del negocio
-            maxModulosDisponibles = Math.min(modulosDisponibles, maxModulos);
-            
-            // Actualizar elementos del modal si existen
-            const maxModulosElement = document.getElementById('max-modulos-disponibles');
-            const inputModulos = document.getElementById('input-cantidad-modulos');
-            
-            if (maxModulosElement) {
-                maxModulosElement.textContent = maxModulosDisponibles;
-            }
-            
-            if (inputModulos) {
+                    const modulosDisponibles = await calcularModulosDisponibles(idEspacio);
+        
+        // Limitar a máximo 2 módulos según la lógica del negocio
+        maxModulosDisponibles = Math.min(modulosDisponibles, maxModulos);
+        
+        // Actualizar elementos del modal si existen
+        const maxModulosElement = document.getElementById('max-modulos-disponibles');
+        const inputModulos = document.getElementById('input-cantidad-modulos');
+        
+        if (maxModulosElement) {
+            maxModulosElement.textContent = maxModulosDisponibles;
+        }
+        
+        if (inputModulos) {
             inputModulos.max = maxModulosDisponibles;
             inputModulos.value = 1;
-            }
+        }
+        
+        espacioParaReserva = idEspacio;
+        runParaReserva = run;
             
-            espacioParaReserva = idEspacio;
-            runParaReserva = run;
-            
-            // Mostrar información detallada si está disponible
-            // Verificando window.modulosInfo
-            if (window.modulosInfo) {
-                // Llamando a mostrarInformacionModulos
-                mostrarInformacionModulos(window.modulosInfo);
-            } else {
-                // No hay información de módulos disponible
-            }
-            
-            // Mostrar el modal directamente
-            const modal = document.getElementById('modal-seleccionar-modulos');
-            if (modal) {
-                modal.classList.remove('hidden');
-                // Modal mostrado correctamente
-                // Enfocar el input
-                setTimeout(() => {
-                    if (inputModulos) {
+                    // Mostrar información detallada si está disponible
+        if (window.modulosInfo) {
+            mostrarInformacionModulos(window.modulosInfo);
+        }
+        
+        // Mostrar el modal directamente
+        const modal = document.getElementById('modal-seleccionar-modulos');
+        if (modal) {
+            modal.classList.remove('hidden');
+            // Desactivar todos los inputs QR cuando se abre el modal
+            qrInputManager.desactivarTodosLosInputs();
+            // Enfocar el input
+            setTimeout(() => {
+                if (inputModulos) {
                     inputModulos.focus();
-                    }
-                }, 100);
-            } else {
-                // No se encontró el modal
-            }
+                }
+            }, 100);
+        }
         }
         
         function mostrarInformacionModulos(info) {
             const infoContainer = document.getElementById('info-modulos-disponibles');
             if (!infoContainer) return;
             
-            // Debug: mostrar información recibida
-            // Información de módulos recibida
+                    // Información de módulos recibida
             
             let html = '<div class="p-4 bg-white border-l-4 border-green-500 rounded-lg shadow-sm">';
             html += '<h3 class="mb-3 text-lg font-semibold text-gray-800">Información de Disponibilidad</h3>';
@@ -2778,10 +3299,8 @@
             html += `<div class="text-sm"><p class="font-medium text-gray-600">Módulos disponibles:</p><p class="font-semibold text-gray-800">${maxModulos}</p></div>`;
             html += '</div>';
             
-         
-        
-            
-            // Clases próximas con información básica
+                 
+        // Clases próximas con información básica
             if (info.clases_proximas && info.clases_proximas.length > 0) {
                 html += '<div class="p-4 mb-4 border-l-4 border-blue-400 rounded-lg bg-blue-50">';
                 html += '<h4 class="mb-3 text-sm font-semibold text-blue-800">Clases próximas:</h4>';
@@ -2795,9 +3314,8 @@
                 });
                 html += '</div>';
             }
-            
-            
-            html += '</div>';
+                    
+        html += '</div>';
             infoContainer.innerHTML = html;
         }
 
@@ -2812,66 +3330,73 @@
                 return;
             }
 
-            // Mostrar mensaje de proceso
-            document.getElementById('qr-status').innerHTML = 'Creando reserva...';
+                    // Mostrar mensaje de proceso
+        document.getElementById('qr-status').innerHTML = 'Creando reserva...';
 
-            const response = await fetch('/api/crear-reserva', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({
-                    run_usuario: runParaReserva,
-                    id_espacio: espacioParaReserva,
-                    tipo_usuario: 'solicitante'
-                })
+        const response = await fetch('/api/crear-reserva', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                run_usuario: runParaReserva,
+                id_espacio: espacioParaReserva,
+                tipo_usuario: 'solicitante'
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            // Cerrar el modal inmediatamente
+            cerrarModalModulos();
+
+            // Mostrar Sweet Alert de éxito para reserva creada
+            Swal.fire({
+                title: '¡Reserva Creada!',
+                text: 'La reserva ha sido creada exitosamente.',
+                icon: 'success',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#059669',
+                timer: 1500,
+                timerProgressBar: true,
+                showConfirmButton: false
             });
 
-            const data = await response.json();
+            document.getElementById('qr-status').innerHTML = 'Reserva creada';
+            document.getElementById('qr-status').classList.remove('parpadeo');
 
-                                if (data.success) {
-                                    // Cerrar el modal inmediatamente
-                        cerrarModalModulos();
-
-                        // Mostrar Sweet Alert de éxito para reserva creada
-                        Swal.fire({
-                            title: '¡Reserva Creada!',
-                            text: 'La reserva ha sido creada exitosamente.',
-                            icon: 'success',
-                            confirmButtonText: 'Aceptar',
-                            confirmButtonColor: '#059669',
-                            timer: 1500,
-                            timerProgressBar: true,
-                            showConfirmButton: false
-                        });
-
-
-
-                        document.getElementById('qr-status').innerHTML = 'Reserva creada';
-                        document.getElementById('qr-status').classList.remove('parpadeo');
-
-                        // Limpiar estado después del Sweet Alert
-                        setTimeout(() => {
-                            limpiarEstadoCompleto();
-                        }, 2000);
-                } else {
-                let mensajeError = data.mensaje || 'No se pudo reservar';
-
-                if (data.errors) {
-                    mensajeError = 'Errores de validación:\n';
-                    Object.keys(data.errors).forEach(field => {
-                        data.errors[field].forEach(error => {
-                            mensajeError += `• ${field}: ${error}\n`;
-                        });
-                    });
+            // Limpiar estado después del Sweet Alert
+            setTimeout(() => {
+                limpiarEstadoCompleto();
+                // Restaurar autofocus del qr-input después de crear reserva
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
                 }
+            }, 2000);
+        } else {
+            let mensajeError = data.mensaje || 'No se pudo reservar';
 
-                // Error al crear reserva
-                
-                // Cerrar modal en caso de error
-                cerrarModalModulos();
+            if (data.errors) {
+                mensajeError = 'Errores de validación:\n';
+                Object.keys(data.errors).forEach(field => {
+                    data.errors[field].forEach(error => {
+                        mensajeError += `• ${field}: ${error}\n`;
+                    });
+                });
             }
+
+            // Cerrar modal en caso de error
+            cerrarModalModulos();
+            
+            // Restaurar autofocus del qr-input después de error en reserva
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }, 300);
+        }
         });
     }
 });
@@ -2944,9 +3469,37 @@
                 if (moduloHorarioElement) moduloHorarioElement.textContent = '-';
             }
 
-            // Actualizar colores de los indicadores desde el servidor
-            await actualizarColoresEspacios();
+                    // Actualizar colores de los indicadores desde el servidor
+        await actualizarColoresEspacios();
+    }
+
+    // Agregar funcionalidad para cerrar modales con la tecla Escape
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            // Cerrar modal de espacio si está abierto
+            const modalEspacio = document.getElementById('modal-espacio-info');
+            if (modalEspacio && !modalEspacio.classList.contains('hidden')) {
+                cerrarModalEspacio();
+            }
+            
+            // Cerrar modal de módulos si está abierto
+            const modalModulos = document.getElementById('modal-seleccionar-modulos');
+            if (modalModulos && !modalModulos.classList.contains('hidden')) {
+                cerrarModalModulos();
+            }
+            
+            // Cerrar modales de Livewire si están abiertos
+            const modalesLivewire = document.querySelectorAll('[data-modal]');
+            modalesLivewire.forEach(modal => {
+                if (!modal.classList.contains('hidden')) {
+                    // Disparar evento para cerrar modal de Livewire
+                    window.dispatchEvent(new CustomEvent('close-modal', {
+                        detail: modal.getAttribute('data-modal')
+                    }));
+                }
+            });
         }
+    });
 
 
 

@@ -60,7 +60,9 @@
                             Exportar PDF
                         </button>
                         <button wire:click="cerrarModal"
-                            class="ml-2 text-2xl font-bold text-white hover:text-gray-200">&times;</button>
+                            class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
+                            title="Cerrar modal (Esc)"
+                            aria-label="Cerrar modal">&times;</button>
                     </div>
                 </div>
 
@@ -112,6 +114,13 @@
             Livewire.on('modalClosed', () => {
                 // El modal se cerró, limpiar cualquier estado adicional si es necesario
                 console.log('Modal cerrado');
+            });
+            
+            // Agregar funcionalidad adicional para cerrar el modal con la tecla Escape
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && @json($mostrarModal)) {
+                    @this.cerrarModal();
+                }
             });
         });
     </script>
