@@ -642,14 +642,65 @@ class HorariosController extends Controller
                 ->toArray();
 
             $fecha_generacion = Carbon::now()->format('d/m/Y H:i:s');
+            // Fecha simple para mostrar en el encabezado del PDF
+            $fecha = Carbon::now()->format('d/m/Y');
+
+            // Preparar variables para la vista PDF (asegurar que existan)
+            $moduloInicio = 1;
+            $moduloFin = max(1, count($modulosUnicos));
+            $modulosDia = $moduloFin - $moduloInicio + 1;
+
+            // Calcular ocupación real por módulo:
+            // - Determinamos los días únicos presentes en las planificaciones (si no hay, asumimos 5 días)
+            $uniqueDays = $planificaciones->pluck('modulo.dia')->filter()->unique()->values()->toArray();
+            $denomDays = count($uniqueDays) > 0 ? count($uniqueDays) : 5; // fallback a 5 días
+
+            // Construir la fila de datos con porcentajes reales por módulo
+            $datos = [];
+            $row = [
+                // Mostrar el código del espacio (id_espacio) en lugar del nombre
+                'espacio' => $espacio->id_espacio ?? '',
+                'tipo' => $espacio->tipo_espacio ?? '',
+                'piso' => $espacio->piso->numero_piso ?? '',
+                'facultad' => $espacio->piso->facultad->nombre_facultad ?? ''
+            ];
+
+            // Para cada módulo único contamos cuántas planificaciones coinciden en esa franja horaria
+            foreach ($modulosUnicos as $index => $mod) {
+                $i = $index + 1; // índice humano 1..N para las columnas
+                $countAtTime = $planificaciones->filter(function ($p) use ($mod) {
+                    return isset($p->modulo->hora_inicio)
+                        && $p->modulo->hora_inicio == $mod['hora_inicio']
+                        && $p->modulo->hora_termino == $mod['hora_termino'];
+                })->count();
+
+                // Porcentaje relativo al número de días (ej: si en esa franja hay clases en 2 de 5 días => 40%)
+                $ocup = $denomDays > 0 ? (int) round(($countAtTime / $denomDays) * 100) : 0;
+                $row['modulo_' . $i] = $ocup . '%';
+            }
+
+            $datos[] = $row;
 
             // Generar el PDF
             $pdf = Pdf::loadView('reportes.pdf.horarios-espacio', compact(
                 'espacio',
                 'horarios',
                 'modulosUnicos',
-                'fecha_generacion'
+                'fecha_generacion',
+                'fecha',
+                'moduloInicio',
+                'moduloFin',
+                'modulosDia',
+                'datos'
             ));
+
+            // Usar orientación horizontal para que quepan más columnas en la página
+            try {
+                $pdf->setPaper('a4', 'landscape');
+            } catch (\Throwable $e) {
+                // Algunos drivers/no configuraciones podrían no soportar setPaper; ignorar si falla
+                Log::warning('No se pudo forzar orientación landscape en dompdf: ' . $e->getMessage());
+            }
 
             // Formato del nombre: espacio_horario_2025_1.pdf
             $filename = $idEspacio . '_horario_' . str_replace('-', '_', $periodo) . '.pdf';

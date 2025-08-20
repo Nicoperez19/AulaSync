@@ -5,186 +5,259 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Análisis de Horarios por Espacio</title>
     <style>
+        /* Reset básico y tipografía */
         body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             font-size: 12px;
-            line-height: 1.4;
             color: #333;
             margin: 0;
-            padding: 20px;
+            padding: 6mm;
+            -webkit-font-smoothing: antialiased;
         }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 20px;
-        }
-        
-        .header h1 {
-            margin: 0;
-            color: #2c3e50;
-            font-size: 24px;
-        }
-        
-        .header p {
-            margin: 5px 0;
-            color: #7f8c8d;
-        }
-        
-        .info-filtros {
-            background-color: #f3f4f6;
-            padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 5px;
-        }
-        
-        .info-filtros strong {
-            color: #495057;
-        }
-        
-        table {
+
+        .container {
             width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            font-size: 10px;
+            margin: 0;
+            padding: 0;
         }
-        
-        th {
-            background-color: #34495e;
-            color: white;
-            padding: 8px;
-            text-align: left;
-            font-weight: bold;
+
+        /* Cabecera limpia con logo y título */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
         }
-        
-        td {
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand img { height: 64px; }
+
+        .title {
+            flex: 1;
+        }
+
+        .title h1 { margin: 0; font-size: 20px; color: #0f172a; }
+        .title p { margin: 4px 0 0 0; color: #6b7280; font-size: 12px; }
+
+        .meta {
+            text-align: right;
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        /* Tarjeta de filtros */
+        .filters-card {
+            background: #f8fafc;
+            border: 1px solid #e6eef6;
             padding: 6px 8px;
-            border-bottom: 1px solid #ddd;
+            border-radius: 6px;
+            margin-top: 6px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
         }
-        
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
+
+        .filters-card .left { color: #334155; font-size: 13px; }
+        .filters-card .right { color: #475569; font-size: 13px; }
+
+        /* Tabla moderna */
+    .table-wrap { width: 100%; overflow-x: auto; }
+        table {
+            min-width: 100%;
+            border-collapse: separate; border-spacing: 0;
+            margin-top: 4px;
+            font-size: 9px; /* más compacto para caber más columnas */
+            table-layout: fixed;
+            page-break-inside: auto;
         }
-        
-        .footer {
-            margin-top: 30px;
+
+        tr { page-break-inside: avoid; page-break-after: auto; }
+
+        thead th {
+            background-color: #d3081d; /* nuevo color de header */
+            color: #fff;
+            padding: 6px 6px;
+            text-align: left;
+            font-weight: 700; /* más gordita */
+            vertical-align: middle;
+            font-size: 13px; /* más grande */
+            white-space: nowrap;
+        }
+
+        /* Encabezado adicional que abarca todas las columnas de módulos */
+        thead .modules-header {
+            background-color: #d3081d;
+            color: #fff;
             text-align: center;
-            font-size: 10px;
-            color: #7f8c8d;
-            border-top: 1px solid #ddd;
-            padding-top: 10px;
+            font-size: 14px;
+            padding: 8px 6px;
+            font-weight: 700;
         }
-        
-        .page-break {
-            page-break-before: always;
+
+        /* Números de módulos centrados */
+        thead .module-number { text-align: center; }
+        /* Celdas de módulo centradas */
+        td.module-cell { text-align: center; }
+
+        /* Texto vertical para las celdas de datos en las primeras columnas: usar writing-mode preferente y fallback */
+        .vertical {
+            display: inline-block;
+            writing-mode: vertical-rl; /* preferible para PDF */
+            -ms-writing-mode: tb-rl;
+            text-orientation: mixed;
+            /* fallback: rotar si writing-mode no funciona */
+            transform: rotate(-90deg);
+            transform-origin: center;
+            /* permitir wrapping pero preferir romper por espacios (no dentro de palabras) */
+            white-space: normal;
+            word-break: normal;
+            overflow-wrap: break-word;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-weight: 700;
+            font-size: 9px; /* más compacto */
+            max-width: 120px; /* ampliar para textos largos */
+            max-height: 160px;
+            padding: 2px 4px;
+            line-height: 1;
         }
-        
-        .ocupacion-alta {
-            background-color: #e74c3c;
-            color: white;
+
+        /* Aplicar sólo a las celdas (td) que deben estar verticales */
+        td.vertical-cell {
+            width: 60px; /* aumentar ancho para que el texto rotado no se corte */
+            padding: 2px 4px;
+            vertical-align: middle;
+            text-align: center;
+            height: 140px; /* aumentar altura para permitir más líneas */
+            overflow: hidden;
+        }
+
+        tbody td {
+            padding: 4px 4px;
+            border-bottom: 1px solid #eef2f6;
+            vertical-align: middle;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        tbody tr:nth-child(even) td { background: #fbfdff; }
+
+        /* Badges para porcentajes */
+        .badge {
+            display: inline-block;
             padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 8px;
-            font-weight: bold;
+            border-radius: 6px;
+            color: #fff;
+            font-weight: 600;
+            font-size: 9px;
+            min-width: 28px;
+            text-align: center;
         }
-        
-        .ocupacion-media {
-            background-color: #f39c12;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 8px;
-            font-weight: bold;
+        .badge.zer { background: #16a34a; } /* 0% */
+        .badge.low { background: #f59e0b; } /* 1-40 */
+        .badge.mid { background: #d97706; } /* 41-80 */
+        .badge.high { background: #dc2626; } /* 81-100 */
+
+        /* Footer */
+        .footer {
+            margin-top: 22px;
+            text-align: center;
+            font-size: 11px;
+            color: #6b7280;
+            border-top: 1px solid #e6eef6;
+            padding-top: 12px;
         }
-        
-        .ocupacion-baja {
-            background-color: #27ae60;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 8px;
-            font-weight: bold;
-        }
-        
-        .ocupacion-0 {
-            background-color: #27ae60;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 8px;
-            font-weight: bold;
-        }
-        
-        .ocupacion-1-40 {
-            background-color: #f39c12;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 8px;
-            font-weight: bold;
-        }
-        
-        .ocupacion-41-80 {
-            background-color: #e67e22;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 8px;
-            font-weight: bold;
-        }
-        
-        .ocupacion-81-100 {
-            background-color: #e74c3c;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 8px;
-            font-weight: bold;
-        }
+
+        .legend { display:flex; justify-content:center; gap:12px; margin: 14px 0; }
+        .legend span { display:inline-block; padding:6px 10px; border-radius:6px; color:#fff; font-weight:700; font-size:11px }
+        .legend .l0 { background:#16a34a }
+        .legend .l1 { background:#f59e0b }
+        .legend .l2 { background:#d97706 }
+        .legend .l3 { background:#dc2626 }
+
+    /* Ajustes de impresión (dompdf compatible) */
+    @page { margin: 0mm }
     </style>
 </head>
 <body>
-    <div class="header">
-        <img src="{{ public_path('images/logo_instituto_tecnologico-01.png') }}" alt="Logo Instituto Tecnológico" style="height: 60px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
-        <h1>Análisis de Horarios por Espacio</h1>
-        <p>Sistema AulaSync - Instituto Tecnológico</p>
-        <p>Fecha: {{ $fecha }}</p>
-        <p>Generado el: {{ $fecha_generacion }}</p>
-    </div>
+    <div class="container">
+        <div class="header">
+            <div class="brand">
+                @php $logoPath = public_path('images/logo_instituto_tecnologico-01.png'); @endphp
+                @if(file_exists($logoPath))
+                    <img src="{{ $logoPath }}" alt="Logo Instituto Tecnológico">
+                @else
+                    <div style="width:64px;height:64px;border-radius:6px;background:#0b5e6f;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">UCS</div>
+                @endif
+                <div class="title">
+                    <h1>Análisis de Horarios por Espacio</h1>
+                    <p>Sistema AulaSync - Instituto Tecnológico</p>
+                </div>
+            </div>
+            <div class="meta">
+                <div>Fecha: {{ $fecha }}</div>
+                <div>Generado: {{ $fecha_generacion }}</div>
+            </div>
+        </div>
 
-    <div class="info-filtros">
-        <strong>Rango de Módulos:</strong> {{ $moduloInicio }} - {{ $moduloFin }}<br>
-        <strong>Total de Módulos:</strong> {{ $modulosDia }}
-    </div>
+        <div class="filters-card">
+            <div class="left">
+                <strong>Rango de Módulos:</strong> {{ $moduloInicio }} - {{ $moduloFin }}
+            </div>
+            <div class="right">
+                <strong>Total de Módulos:</strong> {{ $modulosDia }}
+            </div>
+        </div>
 
-    <table>
+        <div class="table-wrap">
+            <table>
         <thead>
+            <!-- Fila superior: título que abarca todas las columnas de módulos -->
             <tr>
-                <th>Espacio</th>
-                <th>Tipo</th>
-                <th>Piso</th>
-                <th>Facultad</th>
+                <th rowspan="2"><div>Espacio</div></th>
+                <th rowspan="2"><div>Tipo</div></th>
+                <th rowspan="2"><div>Piso</div></th>
+                <th rowspan="2"><div>Facultad</div></th>
+                <th class="modules-header" colspan="{{ $moduloFin - $moduloInicio + 1 }}">Módulo</th>
+            </tr>
+            <!-- Segunda fila: números de módulos -->
+            <tr>
                 @for ($i = $moduloInicio; $i <= $moduloFin; $i++)
-                    <th>Módulo {{ $i }}</th>
+                    <th class="module-number">{{ $i }}</th>
                 @endfor
             </tr>
         </thead>
         <tbody>
             @forelse($datos as $fila)
                 <tr>
-                    <td>{{ $fila['espacio'] }}</td>
-                    <td>{{ $fila['tipo'] }}</td>
-                    <td>{{ $fila['piso'] }}</td>
-                    <td>{{ $fila['facultad'] }}</td>
+                    <td class="vertical-cell"><div class="vertical">{{ $fila['espacio'] }}</div></td>
+                        <td class="vertical-cell"><div class="vertical">{{ $fila['tipo'] }}</div></td>
+                        <td class="vertical-cell"><div class="vertical">{{ $fila['piso'] }}</div></td>
+                        <td class="vertical-cell"><div class="vertical">{{ $fila['facultad'] }}</div></td>
                     @for ($i = $moduloInicio; $i <= $moduloFin; $i++)
                         @php
                             $ocupacion = isset($fila['modulo_' . $i]) ? (int)str_replace('%', '', $fila['modulo_' . $i]) : 0;
-                            $clase = $ocupacion == 0 ? 'ocupacion-0' : 
-                                   ($ocupacion <= 40 ? 'ocupacion-1-40' : 
-                                   ($ocupacion <= 80 ? 'ocupacion-41-80' : 'ocupacion-81-100'));
+                            if ($ocupacion == 0) {
+                                $badgeClass = 'badge zer';
+                            } elseif ($ocupacion <= 40) {
+                                $badgeClass = 'badge low';
+                            } elseif ($ocupacion <= 80) {
+                                $badgeClass = 'badge mid';
+                            } else {
+                                $badgeClass = 'badge high';
+                            }
                         @endphp
-                        <td class="{{ $clase }}">{{ $ocupacion }}%</td>
+                        <td class="module-cell"><span class="{{ $badgeClass }}">{{ $ocupacion }}%</span></td>
                     @endfor
                 </tr>
             @empty
@@ -195,18 +268,20 @@
                 </tr>
             @endforelse
         </tbody>
-    </table>
+            </table>
+        </div>
 
-    <div class="footer">
-        <p><strong>Leyenda de Colores:</strong></p>
-        <p>
-            <span style="background-color: #27ae60; color: white; padding: 2px 6px; margin-right: 10px;">0%</span>
-            <span style="background-color: #f39c12; color: white; padding: 2px 6px; margin-right: 10px;">1-40%</span>
-            <span style="background-color: #e67e22; color: white; padding: 2px 6px; margin-right: 10px;">41-80%</span>
-            <span style="background-color: #e74c3c; color: white; padding: 2px 6px;">81-100%</span>
-        </p>
-        <p>Este reporte fue generado automáticamente por el Sistema AulaSync</p>
-        <p>Página 1 de 1</p>
+        <div class="footer">
+            <div><strong>Leyenda de Colores:</strong></div>
+            <div class="legend" aria-hidden="true">
+                <span class="l0">0%</span>
+                <span class="l1">1-40%</span>
+                <span class="l2">41-80%</span>
+                <span class="l3">81-100%</span>
+            </div>
+            <div>Este reporte fue generado automáticamente por el Sistema AulaSync</div>
+            <div>Página 1 de 1</div>
+        </div>
     </div>
 </body>
-</html> 
+</html>
