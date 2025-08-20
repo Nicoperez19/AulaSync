@@ -29,13 +29,26 @@ class MapasTable extends Component
 
     public function verMapa($id)
     {
-        $this->mapaSeleccionado = Mapa::with(['bloques.espacio', 'piso'])->findOrFail($id);
-        $this->mostrarModal = true;
+        try {
+            $this->mapaSeleccionado = Mapa::with(['piso.facultad'])->findOrFail($id);
+            $this->mostrarModal = true;
+        } catch (\Exception $e) {
+            // En caso de error, mostrar un mensaje o manejar la excepción
+            $this->mapaSeleccionado = null;
+            $this->mostrarModal = false;
+        }
     }
 
     public function cerrarModal()
     {
         $this->mostrarModal = false;
         $this->mapaSeleccionado = null;
+        $this->dispatch('modalClosed');
+    }
+
+    public function limpiarEstado()
+    {
+        $this->mapaSeleccionado = null;
+        $this->mostrarModal = false;
     }
 }

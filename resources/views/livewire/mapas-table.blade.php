@@ -24,110 +24,95 @@
         </table>
     </div>
 
-    <!-- Modal simplificado para mostrar solo el mapa -->
+    <!-- Modal con diseño de horario -->
     @if ($mostrarModal && $mapaSeleccionado)
-        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[9999]"
+        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[9999] flex items-center justify-center p-8"
             wire:click="cerrarModal">
-            <div class="relative top-0 w-full h-full p-5 mx-auto bg-white border shadow-lg" wire:click.stop>
-                <!-- Botón de pantalla completa -->
-                <button id="fullscreenBtn"
-                    class="absolute z-20 p-2 transition-colors duration-200 bg-gray-100 rounded-lg top-4 right-4 hover:bg-gray-200 group"
-                    onclick="toggleFullscreen()" title="Pantalla completa">
-                    <i class="text-gray-600 fa-solid fa-expand group-hover:text-gray-800"></i>
-                </button>
+            <div
+                class="flex flex-col w-full max-h-[90vh] mx-2 overflow-hidden bg-white rounded-lg shadow-lg max-w-6xl md:mx-8">
 
-                <div class="flex items-center justify-between mb-4">
-                    <div>
-                        <h3 class="text-lg font-medium text-gray-900">{{ $mapaSeleccionado->nombre_mapa }}</h3>
-                        <div class="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                            <div class="flex items-center gap-1">
-                                <i class="fa-solid fa-clock"></i>
-                                <span id="currentTime">{{ now()->format('H:i:s') }}</span>
+                <div id="modalHeader"
+                    class="relative flex flex-col gap-4 p-6 bg-red-700 md:flex-row md:items-center md:justify-between">
+                    <span
+                        class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                    <span
+                        class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+
+                    <div class="flex items-center flex-1 min-w-0 gap-4">
+                        <div class="flex flex-col items-center justify-center flex-shrink-0">
+                            <div class="p-3 mb-1 bg-white rounded-full bg-opacity-20">
+                                <i class="text-2xl text-white fa-solid fa-calendar-days"></i>
                             </div>
-                            @if(isset($moduloActual))
-                                <div class="flex items-center gap-1">
-                                    <i class="fa-solid fa-book"></i>
-                                    <span>Módulo: {{ $moduloActual }}</span>
-                                </div>
-                            @endif
+                        </div>
+                        <div class="flex flex-col min-w-0">
+                            <h1 class="text-2xl font-bold text-white truncate">{{ $mapaSeleccionado->nombre_mapa }}</h1>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="text-base truncate text-white/80">Visualización del Mapa</span>
+                                <span class="text-base text-white/80">•</span>
+                                <span class="text-base font-semibold text-white/80">{{ now()->format('Y') }}</span>
+                            </div>
                         </div>
                     </div>
-                    <button wire:click="cerrarModal" class="text-gray-400 hover:text-gray-500">
-                        <span class="sr-only">Cerrar</span>
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
+
+                    <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
+                        <button
+                            class="border border-white text-white px-3 py-1 rounded-lg font-semibold hover:bg-white hover:text-red-700 transition text-sm">
+                            Exportar PDF
+                        </button>
+                        <button wire:click="cerrarModal"
+                            class="ml-2 text-2xl font-bold text-white hover:text-gray-200">&times;</button>
+                    </div>
                 </div>
 
-                <div class="flex justify-center h-full">
-                    <img src="{{ asset('storage/' . $mapaSeleccionado->ruta_mapa) }}" alt="Mapa Original"
-                        class="object-contain max-w-full max-h-full border rounded-lg shadow-md">
+                <!-- Contenido del modal -->
+                <div class="flex-1 p-4 bg-white overflow-y-auto">
+                    <div class="flex justify-center mb-4">
+                        <img src="{{ asset('storage/' . $mapaSeleccionado->ruta_mapa) }}"
+                            alt="Mapa {{ $mapaSeleccionado->nombre_mapa }}"
+                            class="h-auto max-w-full border rounded-lg shadow-md">
+                    </div>
+
+                    <!-- Información del mapa -->
+                    <div class="p-3 rounded-lg bg-gray-50">
+                        <h4 class="mb-2 text-base font-semibold text-gray-800">Información del Mapa</h4>
+                        <div class="grid grid-cols-1 gap-2 text-sm md:grid-cols-2">
+                            <div>
+                                <span class="font-medium text-gray-600">Nombre:</span>
+                                <span class="ml-2 text-gray-800">{{ $mapaSeleccionado->nombre_mapa ?? 'N/A' }}</span>
+                            </div>
+                            @if($mapaSeleccionado->piso)
+                                <div>
+                                    <span class="font-medium text-gray-600">Piso:</span>
+                                    <span
+                                        class="ml-2 text-gray-800">{{ $mapaSeleccionado->piso->numero_piso ?? 'N/A' }}</span>
+                                </div>
+                            @endif
+                            @if($mapaSeleccionado->piso && $mapaSeleccionado->piso->facultad)
+                                <div>
+                                    <span class="font-medium text-gray-600">Facultad:</span>
+                                    <span
+                                        class="ml-2 text-gray-800">{{ $mapaSeleccionado->piso->facultad->nombre_facultad ?? 'N/A' }}</span>
+                                </div>
+                            @endif
+                            <div>
+                                <span class="font-medium text-gray-600">Fecha de creación:</span>
+                                <span
+                                    class="ml-2 text-gray-800">{{ $mapaSeleccionado->created_at ? $mapaSeleccionado->created_at->format('d/m/Y H:i') : 'N/A' }}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     @endif
 
     <script>
-        // Función para alternar pantalla completa
-        function toggleFullscreen() {
-            const modal = document.querySelector('.fixed.inset-0');
-            const btn = document.getElementById('fullscreenBtn');
-            const icon = btn.querySelector('i');
-
-            if (!document.fullscreenElement) {
-                // Entrar en pantalla completa
-                if (modal.requestFullscreen) {
-                    modal.requestFullscreen();
-                } else if (modal.webkitRequestFullscreen) {
-                    modal.webkitRequestFullscreen();
-                } else if (modal.msRequestFullscreen) {
-                    modal.msRequestFullscreen();
-                }
-                icon.className = 'fa-solid fa-compress text-gray-600 group-hover:text-gray-800';
-                btn.title = 'Salir de pantalla completa';
-            } else {
-                // Salir de pantalla completa
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.webkitExitFullscreen) {
-                    document.webkitExitFullscreen();
-                } else if (document.msExitFullscreen) {
-                    document.msExitFullscreen();
-                }
-                icon.className = 'fa-solid fa-expand text-gray-600 group-hover:text-gray-800';
-                btn.title = 'Pantalla completa';
-            }
-        }
-
-        // Escuchar cambios en el estado de pantalla completa
-        document.addEventListener('fullscreenchange', function () {
-            const btn = document.getElementById('fullscreenBtn');
-            if (btn) {
-                const icon = btn.querySelector('i');
-                if (!document.fullscreenElement) {
-                    icon.className = 'fa-solid fa-expand text-gray-600 group-hover:text-gray-800';
-                    btn.title = 'Pantalla completa';
-                }
-            }
+        // Escuchar eventos de Livewire
+        document.addEventListener('livewire:init', () => {
+            Livewire.on('modalClosed', () => {
+                // El modal se cerró, limpiar cualquier estado adicional si es necesario
+                console.log('Modal cerrado');
+            });
         });
-
-        // Actualizar la hora cada segundo
-        function updateTime() {
-            const timeElement = document.getElementById('currentTime');
-            if (timeElement) {
-                const now = new Date();
-                const timeString = now.toLocaleTimeString('es-ES', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                });
-                timeElement.textContent = timeString;
-            }
-        }
-
-        // Actualizar la hora cada segundo cuando el modal esté abierto
-        setInterval(updateTime, 1000);
     </script>
 </div>
