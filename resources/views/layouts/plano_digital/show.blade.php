@@ -2759,7 +2759,47 @@
                     actualizarModuloYColores();
                 });
             }
+                // Iniciar polling para sincronizar estados entre máquinas
+                startEstadoPolling();
         });
+
+            // Polling que consulta el endpoint de estados cada 5s si la pestaña está visible
+            let estadoPollingInterval = null;
+            function startEstadoPolling(intervalMs = 5000) {
+                if (estadoPollingInterval) return;
+                estadoPollingInterval = setInterval(async () => {
+                    // No consultar si la pestaña está en background
+                    if (document.hidden) return;
+
+                    // Evitar consultar si hubo cambios locales recientes
+                    const tiempoTranscurrido = Date.now() - (state.ultimoCambioLocal || 0);
+                    if (tiempoTranscurrido < 5000) return;
+
+                    try {
+                        const res = await fetch('/api/espacios/estados');
+                        if (!res.ok) return;
+                        const json = await res.json();
+                        if (!json.success) return;
+
+                        // Actualizar state.indicators según respuesta
+                        const nuevos = json.espacios || [];
+                        let cambios = false;
+                        nuevos.forEach(item => {
+                            const indicador = state.indicators.find(i => i.id === item.id_espacio);
+                            if (indicador && indicador.estado !== item.estado) {
+                                indicador.estado = item.estado;
+                                cambios = true;
+                            }
+                        });
+
+                        if (cambios) {
+                            drawIndicators();
+                        }
+                    } catch (err) {
+                        // Silenciar errores de red
+                    }
+                }, intervalMs);
+            }
 
         document.addEventListener("DOMContentLoaded", function () {
             
@@ -3498,6 +3538,25 @@
                     }));
                 }
             });
+        }
+    });
+
+    // Escuchar cambios en localStorage para sincronizar mapa entre pestañas (p.ej. eliminación de reservas)
+    window.addEventListener('storage', function (event) {
+        if (!event.key) return;
+        if (event.key === 'reserva_eliminada') {
+            try {
+                const payload = JSON.parse(event.newValue);
+                const espacioKey = `espacio_${payload.id_espacio}`;
+                sessionStorage.removeItem(espacioKey);
+                sessionStorage.removeItem(`${espacioKey}_time`);
+
+                if (typeof actualizarModuloYColores === 'function') {
+                    actualizarModuloYColores();
+                }
+            } catch (err) {
+                console.error('Error procesando evento storage reserva_eliminada', err);
+            }
         }
     });
 

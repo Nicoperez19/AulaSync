@@ -45,10 +45,10 @@
                                 class="px-4 py-2 text-white bg-blue-500 rounded dark:bg-blue-700">
                                 Editar
                             </x-button>
-                            <form method="POST" action="{{ route('reservas.delete', $reserva->id_reserva) }}">
+                            <form method="POST" action="{{ route('reservas.delete', $reserva->id_reserva) }}" class="reserva-delete-form">
                                 @csrf
                                 @method('DELETE')
-                                <x-button variant="danger" class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700">
+                                <x-button variant="danger" class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700 btn-delete-reserva" data-espacio="{{ $reserva->id_espacio }}">
                                     Eliminar
                                 </x-button>
                             </form>
@@ -59,3 +59,23 @@
         </tbody>
     </table>
 </div>
+
+<script>
+    // Interceptar clicks en botones de eliminar reservas para notificar otras pestañas
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.btn-delete-reserva').forEach(btn => {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const espacioId = this.getAttribute('data-espacio');
+                const form = this.closest('form');
+                if (!form) return;
+
+                // Guardar en localStorage para notificar otras pestañas
+                localStorage.setItem('reserva_eliminada', JSON.stringify({ id_espacio: espacioId, ts: Date.now() }));
+
+                // Enviar el formulario para eliminar en esta pestaña
+                form.submit();
+            });
+        });
+    });
+</script>
