@@ -71,7 +71,7 @@
 
                 <!-- Botón de Submit -->
                 <div class="flex justify-end pt-4">
-                    <x-button type="submit" class="gap-2">
+                    <x-button id="btn-submit-reserva" type="submit" class="gap-2">
                         <x-heroicon-o-user-add class="w-6 h-6" aria-hidden="true" />
                         {{ __('Agregar Reserva') }}
                     </x-button>
@@ -79,6 +79,23 @@
             </div>
         </form>
     </x-modal>
+
+    <script>
+        // Notificar otras pestañas cuando se crea una nueva reserva desde este modal
+        document.addEventListener('DOMContentLoaded', function () {
+            const btn = document.getElementById('btn-submit-reserva');
+            if (!btn) return;
+            const form = btn.closest('form');
+            if (!form) return;
+
+            form.addEventListener('submit', function () {
+                // Intentar obtener id_espacio del formulario
+                const espacioInput = form.querySelector('[name="id_espacio"]');
+                const idEspacio = espacioInput ? espacioInput.value : null;
+                localStorage.setItem('reserva_creada', JSON.stringify({ id_espacio: idEspacio, ts: Date.now() }));
+            });
+        });
+    </script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
