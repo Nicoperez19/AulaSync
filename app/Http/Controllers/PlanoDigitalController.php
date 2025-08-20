@@ -551,6 +551,8 @@ class PlanoDigitalController extends Controller
     public function verificarEstadoEspacioYReserva(Request $request)
     {
         try {
+            // Registro de diagnóstico: confirmar que la función fue invocada y mostrar payload (temporal)
+            \Log::info('verificarEstadoEspacioYReserva called', ['payload' => $request->all()]);
             $request->validate([
                 'run' => 'required|string',
                 'id_espacio' => 'required|string'

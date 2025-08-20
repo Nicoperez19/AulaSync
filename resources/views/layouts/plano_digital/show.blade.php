@@ -273,9 +273,9 @@
                     </div>
                 </div>
                 
-                <!-- Información del ocupante actual -->
+                <!-- Información del ocupante actual / último ocupante -->
                 <div id="ocupanteContainer" class="p-6 mb-6 bg-white border-l-4 border-green-500 shadow-sm rounded-xl" style="display: none;">
-                    <h3 class="mb-4 text-xl font-semibold text-gray-800">
+                    <h3 id="ocupanteTitulo" class="mb-4 text-xl font-semibold text-gray-800">
                         <i class="mr-2 text-green-500 fas fa-user"></i>
                         Ocupante Actual
                     </h3>
@@ -2430,6 +2430,10 @@
 
         // Función para renderizar información de profesor
         function renderizarInformacionProfesor(elements, data) {
+            const tituloEl = document.getElementById('ocupanteTitulo');
+            // Ajustar título según existencia de próxima clase
+            if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
+
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
                 elements.ocupanteInfo.innerHTML = `
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -2518,6 +2522,10 @@
 
         // Función para renderizar información de solicitante optimizada
         function renderizarInformacionSolicitante(elements, data) {
+            const tituloEl = document.getElementById('ocupanteTitulo');
+            // Ajustar título si no hay próxima clase
+            if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
+
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
                 // Crear HTML optimizado usando template literal
                 const html = `
@@ -2596,6 +2604,10 @@
 
         // Función para renderizar información ocupado sin info
         function renderizarInformacionOcupadoSinInfo(elements, data) {
+            const tituloEl = document.getElementById('ocupanteTitulo');
+            // Ajustar título según si hay próxima clase
+            if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
+
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
                 elements.ocupanteInfo.innerHTML = `
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -2652,9 +2664,61 @@
 
         // Función para renderizar información libre
         function renderizarInformacionLibre(elements, data) {
-            // Ocultar sección de ocupante
-            if (elements.ocupanteContainer) {
-                elements.ocupanteContainer.style.display = 'none';
+            // Si no hay próxima clase, mostrar Último Ocupante si existe información histórica
+            const tituloEl = document.getElementById('ocupanteTitulo');
+            if (!data.proxima_clase) {
+                if (tituloEl) tituloEl.textContent = 'Último Ocupante';
+                // Mostrar contenedor si hay datos del último ocupante
+                if (elements.ocupanteContainer && (data.nombre || data.detalles || data.hora_inicio || data.hora_salida || data.run_solicitante)) {
+                    elements.ocupanteContainer.style.display = 'block';
+                    // Reutilizar la plantilla de "ocupado sin info" para mostrar detalles mínimos
+                    elements.ocupanteInfo.innerHTML = `
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div class="flex items-center">
+                                <i class="mr-3 text-gray-500 fas fa-user"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.nombre || 'Último ocupante'}</div>
+                                    <div class="text-sm text-gray-600">Último registro</div>
+                                </div>
+                            </div>
+                            ${data.run_solicitante ? `
+                            <div class="flex items-center">
+                                <i class="mr-3 text-blue-500 fas fa-id-card"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.run_solicitante}</div>
+                                    <div class="text-sm text-gray-600">RUN</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                            ${data.hora_inicio ? `
+                            <div class="flex items-center">
+                                <i class="mr-3 text-gray-500 fas fa-clock"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.hora_inicio}</div>
+                                    <div class="text-sm text-gray-600">Hora inicio</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                            ${data.hora_salida ? `
+                            <div class="flex items-center">
+                                <i class="mr-3 text-gray-500 fas fa-clock"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.hora_salida}</div>
+                                    <div class="text-sm text-gray-600">Hora salida</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                } else {
+                    // No hay datos históricos; ocultar contenedor
+                    if (elements.ocupanteContainer) elements.ocupanteContainer.style.display = 'none';
+                    if (tituloEl) tituloEl.textContent = 'Ocupante Actual';
+                }
+            } else {
+                // Hay próxima clase, restaurar título y ocultar contenedor de último ocupante
+                if (tituloEl) tituloEl.textContent = 'Ocupante Actual';
+                if (elements.ocupanteContainer) elements.ocupanteContainer.style.display = 'none';
             }
 
             // Mostrar próxima clase si existe
