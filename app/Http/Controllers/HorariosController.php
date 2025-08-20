@@ -650,36 +650,69 @@ class HorariosController extends Controller
             $moduloFin = max(1, count($modulosUnicos));
             $modulosDia = $moduloFin - $moduloInicio + 1;
 
-            // Calcular ocupación real por módulo:
-            // - Determinamos los días únicos presentes en las planificaciones (si no hay, asumimos 5 días)
-            $uniqueDays = $planificaciones->pluck('modulo.dia')->filter()->unique()->values()->toArray();
-            $denomDays = count($uniqueDays) > 0 ? count($uniqueDays) : 5; // fallback a 5 días
-
-            // Construir la fila de datos con porcentajes reales por módulo
+            // Preparar datos para la tabla de horarios (igual que en el modal)
             $datos = [];
-            $row = [
-                // Mostrar el código del espacio (id_espacio) en lugar del nombre
-                'espacio' => $espacio->id_espacio ?? '',
-                'tipo' => $espacio->tipo_espacio ?? '',
-                'piso' => $espacio->piso->numero_piso ?? '',
-                'facultad' => $espacio->piso->facultad->nombre_facultad ?? ''
-            ];
-
-            // Para cada módulo único contamos cuántas planificaciones coinciden en esa franja horaria
-            foreach ($modulosUnicos as $index => $mod) {
-                $i = $index + 1; // índice humano 1..N para las columnas
-                $countAtTime = $planificaciones->filter(function ($p) use ($mod) {
-                    return isset($p->modulo->hora_inicio)
-                        && $p->modulo->hora_inicio == $mod['hora_inicio']
-                        && $p->modulo->hora_termino == $mod['hora_termino'];
-                })->count();
-
-                // Porcentaje relativo al número de días (ej: si en esa franja hay clases en 2 de 5 días => 40%)
-                $ocup = $denomDays > 0 ? (int) round(($countAtTime / $denomDays) * 100) : 0;
-                $row['modulo_' . $i] = $ocup . '%';
+            $diasSemana = ['LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+            
+            // Obtener módulos únicos ordenados (igual que en el modal)
+            $modulosUnicos = $planificaciones->pluck('modulo.id_modulo')
+                ->map(function($idModulo) {
+                    return explode('.', $idModulo)[1] ?? '';
+                })
+                ->unique()
+                ->sort(function($a, $b) {
+                    return intval($a) - intval($b);
+                })
+                ->values();
+            
+            // Crear una tabla con módulos en filas y días en columnas
+            foreach ($modulosUnicos as $modulo) {
+                // Encontrar información del módulo
+                $moduloInfo = $planificaciones->first(function($plan) use ($modulo) {
+                    return explode('.', $plan->modulo->id_modulo)[1] == $modulo;
+                });
+                
+                if (!$moduloInfo) continue;
+                
+                $horaInicio = substr($moduloInfo->modulo->hora_inicio, 0, 5);
+                $horaTermino = substr($moduloInfo->modulo->hora_termino, 0, 5);
+                $hora = $horaInicio . ' a ' . $horaTermino;
+                
+                $row = [
+                    'hora' => $hora,
+                    'modulo' => $modulo
+                ];
+                
+                // Para cada día de la semana
+                foreach ($diasSemana as $dia) {
+                    // Filtrar planificaciones por día y módulo (igual que en el modal)
+                    $planificacionesDia = $planificaciones->filter(function ($plan) use ($dia, $modulo) {
+                        $planDia = explode('.', $plan->modulo->id_modulo)[0] ?? '';
+                        $planModulo = explode('.', $plan->modulo->id_modulo)[1] ?? '';
+                        return $planDia === $dia && $planModulo === $modulo;
+                    });
+                    
+                    if ($planificacionesDia->count() > 0) {
+                        // Mostrar información de las asignaturas (igual que en el modal)
+                        $infoAsignaturas = $planificacionesDia->map(function ($plan) {
+                            $asignatura = $plan->asignatura->nombre_asignatura ?? '';
+                            $espacio = $plan->espacio->id_espacio ?? '';
+                            $codigo = $plan->asignatura->codigo_asignatura ?? '';
+                            return [
+                                'asignatura' => $asignatura,
+                                'espacio' => $espacio,
+                                'codigo' => $codigo
+                            ];
+                        })->toArray();
+                        
+                        $row[$dia] = $infoAsignaturas;
+                    } else {
+                        $row[$dia] = null; // Libre
+                    }
+                }
+                
+                $datos[] = $row;
             }
-
-            $datos[] = $row;
 
             // Generar el PDF
             $pdf = Pdf::loadView('reportes.pdf.horarios-espacio', compact(
