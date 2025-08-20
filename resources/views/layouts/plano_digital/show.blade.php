@@ -82,7 +82,7 @@
                             </div>
                             <div>
                                 <span id="qr-status" class="block text-sm font-semibold parpadeo">Esperando</span>
-                                <span class="text-xs text-white/80 parpadeo">Escanea el código QR</span>
+                                <span class="text-xs text-white">Escanea el código QR</span>
                             </div>
                         </div>
 
@@ -968,13 +968,16 @@
                 }
 
                 // Actualizar datos del usuario
-                document.getElementById('run-escaneado').textContent = run;
-                document.getElementById('nombre-usuario').textContent = nombre;
+                const runEscaneado = document.getElementById('run-escaneado');
+                const nombreUsuario = document.getElementById('nombre-usuario');
+                if (runEscaneado) runEscaneado.textContent = run;
+                if (nombreUsuario) nombreUsuario.textContent = nombre;
 
-                // Quitar parpadeo del estado QR cuando se procesa usuario
+                // Quitar parpadeo del estado QR cuando se procesa usuario y mostrar mensaje
                 const qrStatus = getQrStatus();
                 if (qrStatus) {
                     qrStatus.classList.remove('parpadeo');
+                    qrStatus.innerHTML = 'Usuario escaneado. Ahora escanee el QR del espacio.';
                 }
             }
         }
@@ -1464,9 +1467,14 @@
                 return;
             }
 
+<<<<<<< HEAD
                     // Procesando QR completo
 
 <<<<<<< HEAD
+=======
+            // Procesando QR completo
+            if (QR_DEBUG) console.log('[QR DEBUG] procesarQRCompleto ordenEscaneo=', ordenEscaneo, 'buffer=', bufferQR);
+>>>>>>> main
             // Validar orden de escaneo
             if (ordenEscaneo === 'usuario') {
                 // PASO 1: Escanear usuario (obligatorio primero)
@@ -1474,11 +1482,22 @@
                 await procesarUsuario();
             } else if (ordenEscaneo === 'espacio') {
                 // PASO 2: Escanear espacio (solo después del usuario)
+<<<<<<< HEAD
                 // Procesando espacio...
                  qrStatus.innerHTML = 'Esperando... Escanea el código QR de la llave de acceso';
                 const resultado = await procesarEspacio();
 
                 
+=======
+                // Validar si el QR parece de espacio antes de usuario
+                // Si el usuarioEscaneado no está definido, significa que no se ha escaneado usuario
+                if (!usuarioEscaneado) {
+                    limpiarEstadoLectura('Orden de escaneo incorrecto: primero debe escanear el QR del usuario');
+                    return;
+                }
+                const resultado = await procesarEspacio();
+
+>>>>>>> main
                 // Si la devolución fue exitosa, no continuar con más procesamiento
                 if (resultado === 'devolucion_exitosa') {
                     return;
@@ -1486,6 +1505,7 @@
             } else {
                 // Error: orden incorrecto
                 // Error: Debe escanear primero el QR del usuario
+<<<<<<< HEAD
                 limpiarEstadoLectura('Orden de escaneo incorrecto');
 =======
         // Validar orden de escaneo
@@ -1500,6 +1520,10 @@
             if (resultado === 'devolucion_exitosa') {
                 return;
 >>>>>>> origin/Nperez
+=======
+                limpiarEstadoLectura('Orden de escaneo incorrecto: primero debe escanear el QR del usuario');
+            }
+>>>>>>> main
             }
         } else {
             // Error: orden incorrecto
