@@ -821,6 +821,21 @@ class PlanoDigitalController extends Controller
             $horaActual = now()->format('H:i:s');
             $fechaActual = now()->format('Y-m-d');
             $ahora = now();
+            
+            // Validar horario académico
+            $hora = (int)now()->format('H');
+            $minutos = (int)now()->format('i');
+            $horaEnMinutos = $hora * 60 + $minutos;
+            
+            $inicioAcademico = 8 * 60 + 10; // 08:10
+            $finAcademico = 23 * 60; // 23:00
+            
+            if ($horaEnMinutos < $inicioAcademico || $horaEnMinutos >= $finAcademico) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No se pueden crear reservas fuera del horario académico (08:10 - 23:00).'
+                ], 400);
+            }
 
             // Crear reserva según el tipo de usuario
             if ($tipoUsuario === 'profesor') {
