@@ -898,7 +898,7 @@ class PlanoDigitalController extends Controller
 
         // Crear la reserva
         $reserva = new Reserva();
-        $reserva->id_reserva = 'R' . str_pad(Reserva::count() + 1, 3, '0', STR_PAD_LEFT);
+        $reserva->id_reserva = Reserva::generarIdUnico();
         $reserva->run_profesor = $runUsuario;
         $reserva->id_espacio = $espacio->id_espacio;
         $reserva->fecha_reserva = $fechaActual;
@@ -956,7 +956,7 @@ class PlanoDigitalController extends Controller
 
         // Crear la reserva
         $reserva = new Reserva();
-        $reserva->id_reserva = 'R' . str_pad(Reserva::count() + 1, 3, '0', STR_PAD_LEFT);
+        $reserva->id_reserva = Reserva::generarIdUnico();
         $reserva->run_solicitante = $runUsuario;
         $reserva->id_espacio = $espacio->id_espacio;
         $reserva->fecha_reserva = $fechaActual;

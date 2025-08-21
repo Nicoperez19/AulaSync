@@ -114,16 +114,9 @@ class ApiReservaController extends Controller
 
             DB::beginTransaction();
             try {
-                // Generar ID de reserva
-                $lastReserva = Reserva::orderBy('id_reserva', 'desc')->first();
-                $newIdNumber = $lastReserva ? 
-                    str_pad(intval(substr($lastReserva->id_reserva, 1)) + 1, 3, '0', STR_PAD_LEFT) : 
-                    '001';
-                $newId = 'R' . $newIdNumber;
-
                 // Crear la reserva
                 $reserva = new Reserva();
-                $reserva->id_reserva = $newId;
+                $reserva->id_reserva = Reserva::generarIdUnico();
                 $reserva->run_profesor = $request->run;
                 $reserva->id_espacio = $request->espacio_id;
                 $reserva->fecha_reserva = $horaActual->format('Y-m-d');
@@ -262,18 +255,8 @@ class ApiReservaController extends Controller
                 ], 400);
             }
 
-            // Crear la reserva
-            $lastReserva = Reserva::orderBy('id_reserva', 'desc')->first();
-            if ($lastReserva) {
-                $lastIdNumber = intval(substr($lastReserva->id_reserva, 1));
-                $newIdNumber = str_pad($lastIdNumber + 1, 3, '0', STR_PAD_LEFT);
-            } else {
-                $newIdNumber = '001';
-            }
-            $newId = 'R' . $newIdNumber;
-
             $reserva = Reserva::create([
-                'id_reserva' => $newId,
+                'id_reserva' => Reserva::generarIdUnico(),
                 'hora' => $horaInicio,
                 'fecha_reserva' => $fechaReserva,
                 'id_espacio' => $request->espacio_id,

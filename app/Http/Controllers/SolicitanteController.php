@@ -333,16 +333,9 @@ class SolicitanteController extends Controller
                 ], 400);
             }
 
-            // Generar ID de reserva
-            $lastReserva = Reserva::select('id_reserva')->orderByDesc('id_reserva')->first();
-            $newIdNumber = $lastReserva ? 
-                str_pad(intval(substr($lastReserva->id_reserva, 1)) + 1, 3, '0', STR_PAD_LEFT) : 
-                '001';
-            $newId = 'R' . $newIdNumber;
-
             // Crear la reserva
             $reserva = new Reserva();
-            $reserva->id_reserva = $newId;
+            $reserva->id_reserva = Reserva::generarIdUnico();
             $reserva->hora = $horaInicio;
             $reserva->fecha_reserva = $fechaActual;
             $reserva->id_espacio = $request->id_espacio;

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Profesor;
+use Illuminate\Support\Str;
 
 class Reserva extends Model
 {
@@ -28,6 +29,24 @@ class Reserva extends Model
         'created_at',
         'updated_at'
     ];
+
+    /**
+     * Generar un ID único para la reserva
+     * Formato: R + timestamp + contador (ej: R202508211455301)
+     */
+    public static function generarIdUnico()
+    {
+        do {
+            $timestamp = now()->format('YmdHis'); // YYYYMMDDHHMMSS
+            $contador = rand(1, 999); // Número aleatorio de 1-999
+            $idReserva = 'R' . $timestamp . str_pad($contador, 3, '0', STR_PAD_LEFT);
+            
+            // Verificar que el ID no exista
+            $existe = self::where('id_reserva', $idReserva)->exists();
+        } while ($existe);
+        
+        return $idReserva;
+    }
 
     public function espacio()
     {

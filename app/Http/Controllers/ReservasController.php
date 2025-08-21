@@ -42,19 +42,8 @@ class ReservasController extends Controller
             'id' => 'required|exists:users,id',
         ]);
 
-        $lastReserva = Reserva::orderBy('id_reserva', 'desc')->first();
-
-        if ($lastReserva) {
-            $lastIdNumber = intval(substr($lastReserva->id_reserva, 1));
-            $newIdNumber = str_pad($lastIdNumber + 1, 3, '0', STR_PAD_LEFT);
-        } else {
-            $newIdNumber = '001';
-        }
-
-        $newId = 'R' . $newIdNumber;
-
         $reserva = Reserva::create([
-            'id_reserva' => $newId,
+            'id_reserva' => Reserva::generarIdUnico(),
             'hora' => $request->hora,
             'fecha_reserva' => $request->fecha_reserva,
             'id_espacio' => $request->id_espacio,
