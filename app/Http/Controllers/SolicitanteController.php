@@ -204,7 +204,7 @@ class SolicitanteController extends Controller
                 DB::rollBack();
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'No hay módulo actual disponible.'
+                    'mensaje' => 'No hay módulo actual disponible. El horario académico es de 08:10 a 23:00.'
                 ], 400);
             }
 

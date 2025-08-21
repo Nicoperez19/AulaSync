@@ -53,13 +53,24 @@ class ReservasController extends Controller
 
         $newId = 'R' . $newIdNumber;
 
-        Reserva::create([
+        $reserva = Reserva::create([
             'id_reserva' => $newId,
             'hora' => $request->hora,
             'fecha_reserva' => $request->fecha_reserva,
             'id_espacio' => $request->id_espacio,
             'id' => $request->id,
         ]);
+
+        // Marcar el espacio como ocupado para que el plano se actualice
+        try {
+            $espacio = Espacio::where('id_espacio', $request->id_espacio)->first();
+            if ($espacio) {
+                $espacio->estado = 'Ocupado';
+                $espacio->save();
+            }
+        } catch (\Exception $e) {
+            // No bloquear la creación de la reserva si falla el update del espacio
+        }
 
         return redirect()->route('reservas.index')->with('success', 'Reserva creada exitosamente.');
     }
@@ -90,6 +101,15 @@ class ReservasController extends Controller
     public function destroy($id_reserva)
     {
         $reserva = Reserva::findOrFail($id_reserva);
+        // Marcar el espacio relacionado como disponible
+        if ($reserva->id_espacio) {
+            $espacio = Espacio::where('id_espacio', $reserva->id_espacio)->first();
+            if ($espacio) {
+                $espacio->estado = 'disponible';
+                $espacio->save();
+            }
+        }
+
         $reserva->delete();
 
         return redirect()->route('reservas.index')->with('success', 'Reserva eliminada exitosamente.');

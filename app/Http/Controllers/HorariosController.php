@@ -642,14 +642,98 @@ class HorariosController extends Controller
                 ->toArray();
 
             $fecha_generacion = Carbon::now()->format('d/m/Y H:i:s');
+            // Fecha simple para mostrar en el encabezado del PDF
+            $fecha = Carbon::now()->format('d/m/Y');
+
+            // Preparar variables para la vista PDF (asegurar que existan)
+            $moduloInicio = 1;
+            $moduloFin = max(1, count($modulosUnicos));
+            $modulosDia = $moduloFin - $moduloInicio + 1;
+
+            // Preparar datos para la tabla de horarios (igual que en el modal)
+            $datos = [];
+            $diasSemana = ['LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+            
+            // Obtener módulos únicos ordenados (igual que en el modal)
+            $modulosUnicos = $planificaciones->pluck('modulo.id_modulo')
+                ->map(function($idModulo) {
+                    return explode('.', $idModulo)[1] ?? '';
+                })
+                ->unique()
+                ->sort(function($a, $b) {
+                    return intval($a) - intval($b);
+                })
+                ->values();
+            
+            // Crear una tabla con módulos en filas y días en columnas
+            foreach ($modulosUnicos as $modulo) {
+                // Encontrar información del módulo
+                $moduloInfo = $planificaciones->first(function($plan) use ($modulo) {
+                    return explode('.', $plan->modulo->id_modulo)[1] == $modulo;
+                });
+                
+                if (!$moduloInfo) continue;
+                
+                $horaInicio = substr($moduloInfo->modulo->hora_inicio, 0, 5);
+                $horaTermino = substr($moduloInfo->modulo->hora_termino, 0, 5);
+                $hora = $horaInicio . ' a ' . $horaTermino;
+                
+                $row = [
+                    'hora' => $hora,
+                    'modulo' => $modulo
+                ];
+                
+                // Para cada día de la semana
+                foreach ($diasSemana as $dia) {
+                    // Filtrar planificaciones por día y módulo (igual que en el modal)
+                    $planificacionesDia = $planificaciones->filter(function ($plan) use ($dia, $modulo) {
+                        $planDia = explode('.', $plan->modulo->id_modulo)[0] ?? '';
+                        $planModulo = explode('.', $plan->modulo->id_modulo)[1] ?? '';
+                        return $planDia === $dia && $planModulo === $modulo;
+                    });
+                    
+                    if ($planificacionesDia->count() > 0) {
+                        // Mostrar información de las asignaturas (igual que en el modal)
+                        $infoAsignaturas = $planificacionesDia->map(function ($plan) {
+                            $asignatura = $plan->asignatura->nombre_asignatura ?? '';
+                            $espacio = $plan->espacio->id_espacio ?? '';
+                            $codigo = $plan->asignatura->codigo_asignatura ?? '';
+                            return [
+                                'asignatura' => $asignatura,
+                                'espacio' => $espacio,
+                                'codigo' => $codigo
+                            ];
+                        })->toArray();
+                        
+                        $row[$dia] = $infoAsignaturas;
+                    } else {
+                        $row[$dia] = null; // Libre
+                    }
+                }
+                
+                $datos[] = $row;
+            }
 
             // Generar el PDF
             $pdf = Pdf::loadView('reportes.pdf.horarios-espacio', compact(
                 'espacio',
                 'horarios',
                 'modulosUnicos',
-                'fecha_generacion'
+                'fecha_generacion',
+                'fecha',
+                'moduloInicio',
+                'moduloFin',
+                'modulosDia',
+                'datos'
             ));
+
+            // Usar orientación horizontal para que quepan más columnas en la página
+            try {
+                $pdf->setPaper('a4', 'landscape');
+            } catch (\Throwable $e) {
+                // Algunos drivers/no configuraciones podrían no soportar setPaper; ignorar si falla
+                Log::warning('No se pudo forzar orientación landscape en dompdf: ' . $e->getMessage());
+            }
 
             // Formato del nombre: espacio_horario_2025_1.pdf
             $filename = $idEspacio . '_horario_' . str_replace('-', '_', $periodo) . '.pdf';

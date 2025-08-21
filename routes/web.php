@@ -63,6 +63,7 @@ Route::middleware(['auth', 'permission:horarios profesores'])->group(function ()
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/horarios/{run}', [HorariosController::class, 'getHorarioProfesor'])->name('horarios.get');
+    Route::get('/horarios/{run}/export-pdf', [HorariosController::class, 'exportHorarioProfesorPDF'])->name('horarios.export-pdf');
     Route::get('/modulos-actuales', [\App\Http\Controllers\TableController::class, 'index'])->name('modulos.actuales');
     Route::get('/modulos-actuales/actualizar-datos', [\App\Http\Controllers\TableController::class, 'actualizarDatos'])->name('modulos.actuales.datos');
 });
