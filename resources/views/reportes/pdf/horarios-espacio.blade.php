@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análisis de Horarios por Espacio</title>
+    <title>Horario del Espacio</title>
     <style>
         /* Reset básico y tipografía */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            font-size: 12px;
+            font-size: 11px;
             color: #333;
             margin: 0;
             padding: 6mm;
@@ -52,30 +52,47 @@
             color: #6b7280;
         }
 
-        /* Tarjeta de filtros */
-        .filters-card {
+        /* Información del espacio */
+        .espacio-info {
             background: #f8fafc;
             border: 1px solid #e6eef6;
-            padding: 6px 8px;
+            padding: 12px;
             border-radius: 6px;
-            margin-top: 6px;
-            margin-bottom: 8px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 8px;
+            margin-bottom: 16px;
         }
 
-        .filters-card .left { color: #334155; font-size: 13px; }
-        .filters-card .right { color: #475569; font-size: 13px; }
+        .espacio-info h2 {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+            color: #0f172a;
+        }
+
+        .espacio-details {
+            display: flex;
+            gap: 24px;
+            font-size: 12px;
+        }
+
+        .espacio-details span {
+            color: #475569;
+        }
+
+        .espacio-details strong {
+            color: #334155;
+        }
 
         /* Tabla moderna */
-    .table-wrap { width: 100%; overflow-x: auto; }
+        .table-wrap { 
+            width: 100%; 
+            overflow-x: auto; 
+        }
+        
         table {
             min-width: 100%;
-            border-collapse: separate; border-spacing: 0;
+            border-collapse: separate; 
+            border-spacing: 0;
             margin-top: 4px;
-            font-size: 9px; /* más compacto para caber más columnas */
+            font-size: 9px;
             table-layout: fixed;
             page-break-inside: auto;
         }
@@ -83,90 +100,71 @@
         tr { page-break-inside: avoid; page-break-after: auto; }
 
         thead th {
-            background-color: #d3081d; /* nuevo color de header */
-            color: #fff;
-            padding: 6px 6px;
-            text-align: left;
-            font-weight: 700; /* más gordita */
-            vertical-align: middle;
-            font-size: 13px; /* más grande */
-            white-space: nowrap;
-        }
-
-        /* Encabezado adicional que abarca todas las columnas de módulos */
-        thead .modules-header {
             background-color: #d3081d;
             color: #fff;
-            text-align: center;
-            font-size: 14px;
             padding: 8px 6px;
-            font-weight: 700;
-        }
-
-        /* Números de módulos centrados */
-        thead .module-number { text-align: center; }
-        /* Celdas de módulo centradas */
-        td.module-cell { text-align: center; }
-
-        /* Texto vertical para las celdas de datos en las primeras columnas: usar writing-mode preferente y fallback */
-        .vertical {
-            display: inline-block;
-            writing-mode: vertical-rl; /* preferible para PDF */
-            -ms-writing-mode: tb-rl;
-            text-orientation: mixed;
-            /* fallback: rotar si writing-mode no funciona */
-            transform: rotate(-90deg);
-            transform-origin: center;
-            /* permitir wrapping pero preferir romper por espacios (no dentro de palabras) */
-            white-space: normal;
-            word-break: normal;
-            overflow-wrap: break-word;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            font-weight: 700;
-            font-size: 9px; /* más compacto */
-            max-width: 120px; /* ampliar para textos largos */
-            max-height: 160px;
-            padding: 2px 4px;
-            line-height: 1;
-        }
-
-        /* Aplicar sólo a las celdas (td) que deben estar verticales */
-        td.vertical-cell {
-            width: 60px; /* aumentar ancho para que el texto rotado no se corte */
-            padding: 2px 4px;
-            vertical-align: middle;
             text-align: center;
-            height: 140px; /* aumentar altura para permitir más líneas */
-            overflow: hidden;
+            font-weight: 700;
+            vertical-align: middle;
+            font-size: 11px;
+            white-space: nowrap;
+            border: 1px solid #b91c1c;
         }
 
         tbody td {
-            padding: 4px 4px;
-            border-bottom: 1px solid #eef2f6;
-            vertical-align: middle;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            padding: 6px 4px;
+            border: 1px solid #e5e7eb;
+            vertical-align: top;
+            white-space: normal;
+            word-wrap: break-word;
+            font-size: 8px;
+            line-height: 1.2;
         }
 
-        tbody tr:nth-child(even) td { background: #fbfdff; }
+        tbody tr:nth-child(even) td { 
+            background: #f9fafb; 
+        }
 
-        /* Badges para porcentajes */
-        .badge {
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 6px;
-            color: #fff;
+        /* Estilos para las celdas de horarios */
+        .hora-cell {
+            background-color: #f3f4f6;
             font-weight: 600;
-            font-size: 9px;
-            min-width: 28px;
             text-align: center;
+            color: #374151;
+            width: 80px;
         }
-        .badge.zer { background: #16a34a; } /* 0% */
-        .badge.low { background: #f59e0b; } /* 1-40 */
-        .badge.mid { background: #d97706; } /* 41-80 */
-        .badge.high { background: #dc2626; } /* 81-100 */
+
+        .asignatura-block {
+            background-color: #dbeafe;
+            color: #1e40af;
+            font-weight: 500;
+            padding: 4px 6px;
+            border-radius: 3px;
+            margin-bottom: 2px;
+            display: block;
+            text-align: center;
+            font-size: 7px;
+        }
+
+        .asignatura-nombre {
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 2px;
+        }
+
+        .asignatura-detalle {
+            font-size: 6px;
+            color: #475569;
+        }
+
+        .libre-cell {
+            background-color: #dcfce7;
+            color: #166534;
+            text-align: center;
+            font-weight: 500;
+            font-style: italic;
+            font-size: 8px;
+        }
 
         /* Footer */
         .footer {
@@ -178,15 +176,8 @@
             padding-top: 12px;
         }
 
-        .legend { display:flex; justify-content:center; gap:12px; margin: 14px 0; }
-        .legend span { display:inline-block; padding:6px 10px; border-radius:6px; color:#fff; font-weight:700; font-size:11px }
-        .legend .l0 { background:#16a34a }
-        .legend .l1 { background:#f59e0b }
-        .legend .l2 { background:#d97706 }
-        .legend .l3 { background:#dc2626 }
-
-    /* Ajustes de impresión (dompdf compatible) */
-    @page { margin: 0mm }
+        /* Ajustes de impresión (dompdf compatible) */
+        @page { margin: 0mm }
     </style>
 </head>
 <body>
@@ -200,7 +191,7 @@
                     <div style="width:64px;height:64px;border-radius:6px;background:#0b5e6f;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">UCS</div>
                 @endif
                 <div class="title">
-                    <h1>Análisis de Horarios por Espacio</h1>
+                    <h1>Horario del Espacio</h1>
                     <p>Sistema AulaSync - Instituto Tecnológico</p>
                 </div>
             </div>
@@ -210,75 +201,126 @@
             </div>
         </div>
 
-        <div class="filters-card">
-            <div class="left">
-                <strong>Rango de Módulos:</strong> {{ $moduloInicio }} - {{ $moduloFin }}
-            </div>
-            <div class="right">
-                <strong>Total de Módulos:</strong> {{ $modulosDia }}
+        <div class="espacio-info">
+            <h2>Espacio: {{ $espacio->nombre_espacio ?? 'N/A' }}</h2>
+            <div class="espacio-details">
+                <div><strong>Código:</strong> <span>{{ $espacio->id_espacio ?? 'N/A' }}</span></div>
+                <div><strong>Tipo:</strong> <span>{{ $espacio->tipo_espacio ?? 'N/A' }}</span></div>
+                <div><strong>Piso:</strong> <span>{{ $espacio->piso->numero_piso ?? 'N/A' }}</span></div>
+                <div><strong>Facultad:</strong> <span>{{ $espacio->piso->facultad->nombre_facultad ?? 'N/A' }}</span></div>
             </div>
         </div>
 
         <div class="table-wrap">
             <table>
-        <thead>
-            <!-- Fila superior: título que abarca todas las columnas de módulos -->
-            <tr>
-                <th rowspan="2"><div>Espacio</div></th>
-                <th rowspan="2"><div>Tipo</div></th>
-                <th rowspan="2"><div>Piso</div></th>
-                <th rowspan="2"><div>Facultad</div></th>
-                <th class="modules-header" colspan="{{ $moduloFin - $moduloInicio + 1 }}">Módulo</th>
-            </tr>
-            <!-- Segunda fila: números de módulos -->
-            <tr>
-                @for ($i = $moduloInicio; $i <= $moduloFin; $i++)
-                    <th class="module-number">{{ $i }}</th>
-                @endfor
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($datos as $fila)
-                <tr>
-                    <td class="vertical-cell"><div class="vertical">{{ $fila['espacio'] }}</div></td>
-                        <td class="vertical-cell"><div class="vertical">{{ $fila['tipo'] }}</div></td>
-                        <td class="vertical-cell"><div class="vertical">{{ $fila['piso'] }}</div></td>
-                        <td class="vertical-cell"><div class="vertical">{{ $fila['facultad'] }}</div></td>
-                    @for ($i = $moduloInicio; $i <= $moduloFin; $i++)
-                        @php
-                            $ocupacion = isset($fila['modulo_' . $i]) ? (int)str_replace('%', '', $fila['modulo_' . $i]) : 0;
-                            if ($ocupacion == 0) {
-                                $badgeClass = 'badge zer';
-                            } elseif ($ocupacion <= 40) {
-                                $badgeClass = 'badge low';
-                            } elseif ($ocupacion <= 80) {
-                                $badgeClass = 'badge mid';
-                            } else {
-                                $badgeClass = 'badge high';
-                            }
-                        @endphp
-                        <td class="module-cell"><span class="{{ $badgeClass }}">{{ $ocupacion }}%</span></td>
-                    @endfor
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="{{ 4 + ($moduloFin - $moduloInicio + 1) }}" style="text-align: center; padding: 20px; color: #7f8c8d;">
-                        No se encontraron datos de horarios por espacio
-                    </td>
-                </tr>
-            @endforelse
-        </tbody>
+                <thead>
+                    <tr>
+                        <th>Hora</th>
+                        <th>Lunes</th>
+                        <th>Martes</th>
+                        <th>Miércoles</th>
+                        <th>Jueves</th>
+                        <th>Viernes</th>
+                        <th>Sábado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($datos as $fila)
+                        <tr>
+                            <td class="hora-cell">
+                                <strong>{{ $fila['hora'] }}</strong>
+                            </td>
+                            <td>
+                                @if($fila['LU'] === null)
+                                    <span class="libre-cell">-</span>
+                                @else
+                                    @foreach($fila['LU'] as $asignatura)
+                                        <div class="asignatura-block">
+                                            <div class="asignatura-nombre">{{ $asignatura['asignatura'] }}</div>
+                                            <div class="asignatura-detalle">🏢 {{ $asignatura['espacio'] }}</div>
+                                            <div class="asignatura-detalle"># {{ $asignatura['codigo'] }}</div>
+                                        </div>
+                                    @endforeach
+                                @endif
+                            </td>
+                            <td>
+                                @if($fila['MA'] === null)
+                                    <span class="libre-cell">-</span>
+                                @else
+                                    @foreach($fila['MA'] as $asignatura)
+                                        <div class="asignatura-block">
+                                            <div class="asignatura-nombre">{{ $asignatura['asignatura'] }}</div>
+                                            <div class="asignatura-detalle">🏢 {{ $asignatura['espacio'] }}</div>
+                                            <div class="asignatura-detalle"># {{ $asignatura['codigo'] }}</div>
+                                        </div>
+                                    @endforeach
+                                @endif
+                            </td>
+                            <td>
+                                @if($fila['MI'] === null)
+                                    <span class="libre-cell">-</span>
+                                @else
+                                    @foreach($fila['MI'] as $asignatura)
+                                        <div class="asignatura-block">
+                                            <div class="asignatura-nombre">{{ $asignatura['asignatura'] }}</div>
+                                            <div class="asignatura-detalle">🏢 {{ $asignatura['espacio'] }}</div>
+                                            <div class="asignatura-detalle"># {{ $asignatura['codigo'] }}</div>
+                                        </div>
+                                    @endforeach
+                                @endif
+                            </td>
+                            <td>
+                                @if($fila['JU'] === null)
+                                    <span class="libre-cell">-</span>
+                                @else
+                                    @foreach($fila['JU'] as $asignatura)
+                                        <div class="asignatura-block">
+                                            <div class="asignatura-nombre">{{ $asignatura['asignatura'] }}</div>
+                                            <div class="asignatura-detalle">🏢 {{ $asignatura['espacio'] }}</div>
+                                            <div class="asignatura-detalle"># {{ $asignatura['codigo'] }}</div>
+                                        </div>
+                                    @endforeach
+                                @endif
+                            </td>
+                            <td>
+                                @if($fila['VI'] === null)
+                                    <span class="libre-cell">-</span>
+                                @else
+                                    @foreach($fila['VI'] as $asignatura)
+                                        <div class="asignatura-block">
+                                            <div class="asignatura-nombre">{{ $asignatura['asignatura'] }}</div>
+                                            <div class="asignatura-detalle">🏢 {{ $asignatura['espacio'] }}</div>
+                                            <div class="asignatura-detalle"># {{ $asignatura['codigo'] }}</div>
+                                        </div>
+                                    @endforeach
+                                @endif
+                            </td>
+                            <td>
+                                @if($fila['SA'] === null)
+                                    <span class="libre-cell">-</span>
+                                @else
+                                    @foreach($fila['SA'] as $asignatura)
+                                        <div class="asignatura-block">
+                                            <div class="asignatura-nombre">{{ $asignatura['asignatura'] }}</div>
+                                            <div class="asignatura-detalle">🏢 {{ $asignatura['espacio'] }}</div>
+                                            <div class="asignatura-detalle"># {{ $asignatura['codigo'] }}</div>
+                                        </div>
+                                    @endforeach
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 20px; color: #7f8c8d;">
+                                No se encontraron horarios para este espacio
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
             </table>
         </div>
 
         <div class="footer">
-            <div><strong>Leyenda de Colores:</strong></div>
-            <div class="legend" aria-hidden="true">
-                <span class="l0">0%</span>
-                <span class="l1">1-40%</span>
-                <span class="l2">41-80%</span>
-                <span class="l3">81-100%</span>
-            </div>
             <div>Este reporte fue generado automáticamente por el Sistema AulaSync</div>
             <div>Página 1 de 1</div>
         </div>
