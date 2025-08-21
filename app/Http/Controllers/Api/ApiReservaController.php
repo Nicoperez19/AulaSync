@@ -9,6 +9,7 @@ use App\Models\Espacio;
 use App\Models\User;
 use App\Models\Modulo;
 use App\Models\Solicitante;
+use App\Models\Profesor;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -363,7 +364,7 @@ class ApiReservaController extends Controller
             $nombreUsuario = '';
             
             if ($reservaActiva->run_profesor) {
-                $usuario = User::where('run', $reservaActiva->run_profesor)->first();
+                $usuario = Profesor::where('run_profesor', $reservaActiva->run_profesor)->first();
                 $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
             } elseif ($reservaActiva->run_solicitante) {
                 $solicitante = Solicitante::where('run_solicitante', $reservaActiva->run_solicitante)->first();
@@ -427,7 +428,7 @@ class ApiReservaController extends Controller
                     $emailUsuario = '';
                     
                     if ($ultimaReserva->run_profesor) {
-                        $usuario = User::where('run', $ultimaReserva->run_profesor)->first();
+                        $usuario = Profesor::where('run_profesor', $ultimaReserva->run_profesor)->first();
                         $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
                         $emailUsuario = $usuario ? $usuario->email : 'Sin información';
                     } elseif ($ultimaReserva->run_solicitante) {
@@ -488,7 +489,7 @@ class ApiReservaController extends Controller
             $emailUsuario = '';
             
             if ($reserva->run_profesor) {
-                $usuario = User::where('run', $reserva->run_profesor)->first();
+                $usuario = Profesor::where('run_profesor', $reserva->run_profesor)->first();
                 $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
                 $emailUsuario = $usuario ? $usuario->email : 'Sin información';
             } elseif ($reserva->run_solicitante) {

@@ -880,9 +880,9 @@ class EspacioController extends Controller
     {
         $runProfesor = $reserva->run_profesor;
         
-        // Consulta optimizada para profesor
-        $profesor = User::select('name', 'run')
-            ->where('run', $runProfesor)
+        // Consulta optimizada para profesor desde la tabla profesors
+        $profesor = Profesor::select('name', 'run_profesor')
+            ->where('run_profesor', $runProfesor)
             ->first();
         
         if (!$profesor) {
@@ -905,9 +905,11 @@ class EspacioController extends Controller
         ];
         $codigoDia = $codigosDias[$diaActual] ?? 'LU';
 
-        // Cargar planificaciones del profesor para el día (usando id_modulo) y la relación modulo
-        $planificaciones = Planificacion_Asignatura::with(['asignatura:id,nombre_asignatura', 'modulo'])
-            ->where('run_profesor', $runProfesor)
+        // Cargar planificaciones del profesor para el día (usando la relación con horario)
+        $planificaciones = Planificacion_Asignatura::with(['asignatura:id_asignatura,nombre_asignatura', 'modulo', 'horario'])
+            ->whereHas('horario', function($query) use ($runProfesor) {
+                $query->where('run_profesor', $runProfesor);
+            })
             ->where('id_modulo', 'like', $codigoDia . '.%')
             ->get();
 
@@ -990,7 +992,7 @@ class EspacioController extends Controller
         $codigoDia = $codigosDias[$diaActual] ?? 'LU';
         
         // Cargar planificaciones del espacio para el día (filtrando por id_modulo que comienza con el código de día)
-        $planificaciones = Planificacion_Asignatura::with(['modulo', 'asignatura.profesor'])
+        $planificaciones = Planificacion_Asignatura::with(['modulo', 'asignatura:id_asignatura,nombre_asignatura'])
             ->where('id_espacio', $idEspacio)
             ->where('id_modulo', 'like', $codigoDia . '.%')
             ->get();

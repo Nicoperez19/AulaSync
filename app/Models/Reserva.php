@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Profesor;
 
 class Reserva extends Model
 {
@@ -38,6 +39,7 @@ class Reserva extends Model
         return $this->belongsTo(Profesor::class, 'run_profesor', 'run_profesor');
     }
 
+    // Relación con User (mantenida para compatibilidad, pero se recomienda usar profesor)
     public function user()
     {
         return $this->belongsTo(User::class, 'run_profesor', 'run');
