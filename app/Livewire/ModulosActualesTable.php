@@ -21,6 +21,95 @@ class ModulosActualesTable extends Component
     public $moduloActual;
     public $selectedPiso = null;
 
+    // Horarios de módulos basados en la referencia JavaScript
+    private $horariosModulos = [
+        'lunes' => [
+            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+        ],
+        'martes' => [
+            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+        ],
+        'miercoles' => [
+            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+        ],
+        'jueves' => [
+            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+        ],
+        'viernes' => [
+            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+        ]
+    ];
+
     public function mount()
     {
         $this->actualizarDatos();
@@ -31,18 +120,53 @@ class ModulosActualesTable extends Component
         }
     }
 
+    /**
+     * Obtener el módulo actual basado en la hora y día actual
+     */
+    private function obtenerModuloActual()
+    {
+        $dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        $diaActual = $dias[Carbon::now()->dayOfWeek];
+        $horaActual = Carbon::now()->format('H:i:s');
+
+        // Si es fin de semana, no hay módulos
+        if ($diaActual === 'domingo' || $diaActual === 'sabado') {
+            return null;
+        }
+
+        $horariosDelDia = $this->horariosModulos[$diaActual] ?? null;
+        if (!$horariosDelDia) {
+            return null;
+        }
+
+        // Buscar en qué módulo estamos
+        foreach ($horariosDelDia as $numeroModulo => $modulo) {
+            if ($horaActual >= $modulo['inicio'] && $horaActual < $modulo['fin']) {
+                return [
+                    'numero' => $numeroModulo,
+                    'inicio' => $modulo['inicio'],
+                    'fin' => $modulo['fin']
+                ];
+            }
+        }
+
+        return null;
+    }
+
     public function actualizarDatos()
     {
         $this->horaActual = Carbon::now()->format('H:i:s');
         $this->fechaActual = Carbon::now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY');
         
-        $hoy = Carbon::now()->locale('es')->isoFormat('dddd');
-        
-        // Obtener el módulo actual
-        $this->moduloActual = Modulo::where('dia', $hoy)
-            ->where('hora_inicio', '<=', $this->horaActual)
-            ->where('hora_termino', '>', $this->horaActual)
-            ->first();
+        // Obtener el módulo actual usando la nueva lógica
+        $this->moduloActual = $this->obtenerModuloActual();
+
+        // Debug temporal para verificar el módulo
+        \Log::info('Hora actual: ' . $this->horaActual);
+        \Log::info('Módulo actual encontrado: ' . ($this->moduloActual ? 'Sí' : 'No'));
+        if ($this->moduloActual) {
+            \Log::info('Número del módulo: ' . $this->moduloActual['numero']);
+        }
 
         // Obtener todos los pisos con sus espacios
         $this->pisos = Piso::with(['espacios'])->get();
@@ -53,23 +177,62 @@ class ModulosActualesTable extends Component
             $semestre = SemesterHelper::getCurrentSemester();
             $periodo = SemesterHelper::getCurrentPeriod();
 
-            // Obtener todas las planificaciones del módulo actual
-            $planificacionesActivas = Planificacion_Asignatura::with([
-                'asignatura.profesor',
-                'espacio',
-                'modulo'
-            ])
-            ->where('id_modulo', $this->moduloActual->id_modulo)
-            ->whereHas('horario', function($q) use ($periodo) {
-                $q->where('periodo', $periodo);
-            })
-            ->get();
+            // Buscar el módulo en la base de datos para obtener el ID
+            // El id_modulo tiene formato "JU.1", "LU.10", etc. Necesitamos extraer el número
+            $diaActual = Carbon::now()->locale('es')->isoFormat('dddd');
+            $prefijoDia = '';
+            
+            // Mapear el día a su prefijo
+            switch (strtolower($diaActual)) {
+                case 'lunes':
+                    $prefijoDia = 'LU';
+                    break;
+                case 'martes':
+                    $prefijoDia = 'MA';
+                    break;
+                case 'miercoles':
+                    $prefijoDia = 'MI';
+                    break;
+                case 'jueves':
+                    $prefijoDia = 'JU';
+                    break;
+                case 'viernes':
+                    $prefijoDia = 'VI';
+                    break;
+            }
+            
+            $moduloDB = Modulo::where('id_modulo', $prefijoDia . '.' . $this->moduloActual['numero'])
+                ->where('dia', $diaActual)
+                ->first();
+
+            if ($moduloDB) {
+                // Obtener todas las planificaciones del módulo actual
+                $planificacionesActivas = Planificacion_Asignatura::with([
+                    'asignatura.profesor',
+                    'espacio',
+                    'modulo'
+                ])
+                ->where('id_modulo', $moduloDB->id_modulo)
+                ->whereHas('horario', function($q) use ($periodo) {
+                    $q->where('periodo', $periodo);
+                })
+                ->get();
+            } else {
+                $planificacionesActivas = collect();
+            }
 
             // Obtener reservas activas de solicitantes para el día actual
             $reservasSolicitantes = Reserva::with(['solicitante'])
                 ->where('fecha_reserva', Carbon::now()->toDateString())
                 ->where('estado', 'activa')
                 ->whereNotNull('run_solicitante')
+                ->get();
+
+            // Obtener reservas activas de profesores para el día actual
+            $reservasProfesores = Reserva::with(['profesor'])
+                ->where('fecha_reserva', Carbon::now()->toDateString())
+                ->where('estado', 'activa')
+                ->whereNotNull('run_profesor')
                 ->get();
 
             // Procesar espacios por piso
@@ -83,11 +246,16 @@ class ModulosActualesTable extends Component
                     // Buscar si el espacio tiene una reserva de solicitante
                     $reservaSolicitante = $reservasSolicitantes->where('id_espacio', $espacio->id_espacio)->first();
                     
+                    // Buscar si el espacio tiene una reserva de profesor
+                    $reservaProfesor = $reservasProfesores->where('id_espacio', $espacio->id_espacio)->first();
+                    
                     $estado = $espacio->estado ?? 'Disponible';
                     $tieneClase = false;
                     $tieneReservaSolicitante = false;
+                    $tieneReservaProfesor = false;
                     $datosClase = null;
                     $datosSolicitante = null;
+                    $datosProfesor = null;
 
                     if ($planificacionActiva) {
                         $tieneClase = true;
@@ -112,6 +280,16 @@ class ModulosActualesTable extends Component
                         ];
                     }
 
+                    if ($reservaProfesor) {
+                        $tieneReservaProfesor = true;
+                        $datosProfesor = [
+                            'nombre' => $reservaProfesor->profesor->name ?? '-',
+                            'run' => $reservaProfesor->run_profesor ?? '-',
+                            'hora_inicio' => $reservaProfesor->hora ?? '-',
+                            'hora_salida' => $reservaProfesor->hora_salida ?? '-'
+                        ];
+                    }
+
                     $espaciosPiso[] = [
                         'id_espacio' => $espacio->id_espacio,
                         'nombre_espacio' => $espacio->nombre_espacio,
@@ -120,12 +298,14 @@ class ModulosActualesTable extends Component
                         'puestos_disponibles' => $espacio->puestos_disponibles,
                         'tiene_clase' => $tieneClase,
                         'tiene_reserva_solicitante' => $tieneReservaSolicitante,
+                        'tiene_reserva_profesor' => $tieneReservaProfesor,
                         'datos_clase' => $datosClase,
                         'datos_solicitante' => $datosSolicitante,
+                        'datos_profesor' => $datosProfesor,
                         'modulo' => [
-                            'id' => $this->moduloActual->id,
-                            'hora_inicio' => $this->moduloActual->hora_inicio,
-                            'hora_termino' => $this->moduloActual->hora_termino
+                            'numero' => $this->moduloActual['numero'],
+                            'inicio' => $this->moduloActual['inicio'],
+                            'fin' => $this->moduloActual['fin']
                         ],
                         'piso' => $piso->nombre_piso,
                         'proxima_clase' => null
@@ -180,7 +360,7 @@ class ModulosActualesTable extends Component
     /**
      * Determinar el color del estado para un espacio
      */
-    public function getEstadoColor($estado, $tieneClase, $tieneReservaSolicitante)
+    public function getEstadoColor($estado, $tieneClase, $tieneReservaSolicitante, $tieneReservaProfesor = false)
     {
         if (strtolower($estado) === 'ocupado' || $estado === 'Ocupado') {
             return 'bg-red-500';
@@ -188,11 +368,39 @@ class ModulosActualesTable extends Component
             return 'bg-yellow-400';
         } elseif (strtolower($estado) === 'proximo' || $estado === 'Proximo' || strtolower($estado) === 'próximo') {
             return 'bg-blue-500';
-        } elseif ($tieneClase || $tieneReservaSolicitante) {
+        } elseif ($tieneClase || $tieneReservaSolicitante || $tieneReservaProfesor) {
             return 'bg-yellow-400';
         } else {
             return 'bg-green-500';
         }
+    }
+
+    /**
+     * Obtener solo los apellidos del profesor
+     */
+    public function getApellidosProfesor($nombreCompleto)
+    {
+        if (empty($nombreCompleto)) {
+            return '-';
+        }
+        
+        // Si el nombre tiene formato "APELLIDO, NOMBRE"
+        if (strpos($nombreCompleto, ',') !== false) {
+            $partes = explode(',', $nombreCompleto);
+            $apellidos = trim($partes[0]);
+            
+            // Convertir a minúsculas manteniendo las tildes
+            $apellidos = mb_strtolower($apellidos, 'UTF-8');
+            
+            // Convertir primera letra de cada palabra a mayúscula manteniendo tildes
+            $apellidos = mb_convert_case($apellidos, MB_CASE_TITLE, 'UTF-8');
+            
+            return $apellidos;
+        }
+        
+        // Si es un nombre simple, convertir a minúsculas y luego a título
+        $nombre = mb_strtolower($nombreCompleto, 'UTF-8');
+        return mb_convert_case($nombre, MB_CASE_TITLE, 'UTF-8');
     }
 
     /**
@@ -255,7 +463,7 @@ class ModulosActualesTable extends Component
     public function getModuloActual()
     {
         if ($this->moduloActual) {
-            return $this->moduloActual->numero_modulo ?? 'N/A';
+            return $this->moduloActual['numero'] ?? 'N/A';
         }
         return null;
     }
