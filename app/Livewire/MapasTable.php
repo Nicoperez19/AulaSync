@@ -4,12 +4,16 @@ namespace App\Livewire;
 
 use App\Models\Mapa;
 use Livewire\Component;
+use Illuminate\Support\Facades\Storage;
 
 class MapasTable extends Component
 {
+    protected $listeners = ['cerrarModal'];
     public $mapas;
     public $mapaSeleccionado = null;
     public $mostrarModal = false;
+    public $mapaAEliminar = null;
+    public $mostrarModalEliminar = false;
 
     public function mount()
     {
@@ -25,6 +29,49 @@ class MapasTable extends Component
     {
         Mapa::findOrFail($id)->delete();
         $this->mount(); // refrescar la lista
+    }
+
+    /**
+     * Preparar y mostrar modal de confirmación
+     */
+    public function confirmarEliminarMapa($id)
+    {
+        $this->mapaAEliminar = Mapa::find($id);
+        if ($this->mapaAEliminar) {
+            $this->mostrarModalEliminar = true;
+        } else {
+            $this->dispatch('notify', ['type' => 'error', 'message' => 'Mapa no encontrado']);
+        }
+    }
+
+    /**
+     * Elimina el mapa seleccionado (invocado desde el modal)
+     */
+    public function eliminarMapa()
+    {
+        if (!$this->mapaAEliminar) return;
+
+        try {
+            $ruta = $this->mapaAEliminar->ruta_mapa ?? null;
+            $this->mapaAEliminar->delete();
+
+            if ($ruta) {
+                Storage::disk('public')->delete($ruta);
+            }
+
+            $this->mostrarModalEliminar = false;
+            $this->mapaAEliminar = null;
+            $this->mount();
+            $this->dispatch('notify', ['type' => 'success', 'message' => 'Mapa eliminado correctamente']);
+        } catch (\Exception $e) {
+            $this->dispatch('notify', ['type' => 'error', 'message' => $e->getMessage()]);
+        }
+    }
+
+    public function cerrarEliminarModal()
+    {
+        $this->mostrarModalEliminar = false;
+        $this->mapaAEliminar = null;
     }
 
     public function verMapa($id)
@@ -43,7 +90,7 @@ class MapasTable extends Component
     {
         $this->mostrarModal = false;
         $this->mapaSeleccionado = null;
-        $this->dispatch('modalClosed');
+    $this->dispatch('modalClosed');
     }
 
     public function limpiarEstado()

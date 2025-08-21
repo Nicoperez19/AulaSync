@@ -5,6 +5,7 @@
                 <tr>
                     <th class="px-4 py-2">Nombre Mapa</th>
                     <th class="px-4 py-2">Ver</th>
+                    <th class="px-4 py-2">Eliminar</th>
                 </tr>
             </thead>
             <tbody>
@@ -18,6 +19,12 @@
                                 Ver
                             </x-button>
                         </td>
+                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
+                            <x-button variant="ghost" class="text-red-600" wire:click="confirmarEliminarMapa('{{ $mapa->id_mapa }}')">
+                                Eliminar
+                            </x-button>
+                        </td>
+                        
                     </tr>
                 @endforeach
             </tbody>
@@ -108,6 +115,20 @@
         </div>
     @endif
 
+    <!-- Modal de confirmación para eliminar mapa -->
+    @if($mostrarModalEliminar && $mapaAEliminar)
+        <div class="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-50">
+            <div class="bg-white rounded-lg shadow-lg max-w-lg w-full p-6">
+                <h3 class="text-lg font-semibold mb-4">Confirmar eliminación</h3>
+                <p class="mb-4">¿Estás seguro de que deseas eliminar el mapa "{{ $mapaAEliminar->nombre_mapa }}"? Esta acción no se puede deshacer.</p>
+                <div class="flex justify-end gap-3">
+                    <button wire:click="cerrarEliminarModal" class="px-4 py-2 rounded bg-gray-200">Cancelar</button>
+                    <button wire:click="eliminarMapa" class="px-4 py-2 rounded bg-red-600 text-white">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <script>
         // Escuchar eventos de Livewire
         document.addEventListener('livewire:init', () => {
@@ -117,9 +138,10 @@
             });
             
             // Agregar funcionalidad adicional para cerrar el modal con la tecla Escape
+            const mostrarModal = @json($mostrarModal);
             document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape' && @json($mostrarModal)) {
-                    @this.cerrarModal();
+                if (event.key === 'Escape' && mostrarModal) {
+                    Livewire.emit('cerrarModal');
                 }
             });
         });

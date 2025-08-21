@@ -82,7 +82,7 @@
                             </div>
                             <div>
                                 <span id="qr-status" class="block text-sm font-semibold parpadeo">Esperando</span>
-                                <span class="text-xs text-white">Escanea el código QR</span>
+                                <span class="text-xs text-white/80 parpadeo">Escanea el código QR</span>
                             </div>
                         </div>
 
@@ -968,16 +968,13 @@
                 }
 
                 // Actualizar datos del usuario
-                const runEscaneado = document.getElementById('run-escaneado');
-                const nombreUsuario = document.getElementById('nombre-usuario');
-                if (runEscaneado) runEscaneado.textContent = run;
-                if (nombreUsuario) nombreUsuario.textContent = nombre;
+                document.getElementById('run-escaneado').textContent = run;
+                document.getElementById('nombre-usuario').textContent = nombre;
 
-                // Quitar parpadeo del estado QR cuando se procesa usuario y mostrar mensaje
+                // Quitar parpadeo del estado QR cuando se procesa usuario
                 const qrStatus = getQrStatus();
                 if (qrStatus) {
                     qrStatus.classList.remove('parpadeo');
-                    qrStatus.innerHTML = 'Usuario escaneado. Ahora escanee el QR del espacio.';
                 }
             }
         }
@@ -1011,7 +1008,7 @@
             const qrStatus = getQrStatus();
             if (qrStatus) {
                 qrStatus.classList.add('parpadeo');
-                qrStatus.innerHTML = 'Esperando... Escanea el código QR de la cedula de identidad';
+                qrStatus.innerHTML = 'Esperando... Escanea el código QR';
             }
             
             // Limpiar cualquier input de QR que pueda tener datos
@@ -1121,7 +1118,7 @@
                     // Restaurar estado normal después de 1.5 segundos
                     setTimeout(() => {
                         qrStatus.classList.add('parpadeo');
-                        qrStatus.innerHTML = 'Esperando... Escanea el código QR de la cedula de identidad';
+                        qrStatus.innerHTML = 'Esperando... Escanea el código QR';
                         qrStatus.style.color = '';
                     }, 1500);
                 }
@@ -1130,7 +1127,7 @@
                 const qrStatus = getQrStatus();
                 if (qrStatus) {
                     qrStatus.classList.add('parpadeo');
-                    qrStatus.innerHTML = 'Esperando... Escanea el código QR de la cedula de identidad';
+                    qrStatus.innerHTML = 'Esperando... Escanea el código QR';
                 }
             }
             
@@ -1467,47 +1464,8 @@
                 return;
             }
 
-<<<<<<< HEAD
                     // Procesando QR completo
 
-<<<<<<< HEAD
-=======
-            // Procesando QR completo
-            if (QR_DEBUG) console.log('[QR DEBUG] procesarQRCompleto ordenEscaneo=', ordenEscaneo, 'buffer=', bufferQR);
->>>>>>> main
-            // Validar orden de escaneo
-            if (ordenEscaneo === 'usuario') {
-                // PASO 1: Escanear usuario (obligatorio primero)
-                // Procesando usuario...
-                await procesarUsuario();
-            } else if (ordenEscaneo === 'espacio') {
-                // PASO 2: Escanear espacio (solo después del usuario)
-<<<<<<< HEAD
-                // Procesando espacio...
-                 qrStatus.innerHTML = 'Esperando... Escanea el código QR de la llave de acceso';
-                const resultado = await procesarEspacio();
-
-                
-=======
-                // Validar si el QR parece de espacio antes de usuario
-                // Si el usuarioEscaneado no está definido, significa que no se ha escaneado usuario
-                if (!usuarioEscaneado) {
-                    limpiarEstadoLectura('Orden de escaneo incorrecto: primero debe escanear el QR del usuario');
-                    return;
-                }
-                const resultado = await procesarEspacio();
-
->>>>>>> main
-                // Si la devolución fue exitosa, no continuar con más procesamiento
-                if (resultado === 'devolucion_exitosa') {
-                    return;
-                }
-            } else {
-                // Error: orden incorrecto
-                // Error: Debe escanear primero el QR del usuario
-<<<<<<< HEAD
-                limpiarEstadoLectura('Orden de escaneo incorrecto');
-=======
         // Validar orden de escaneo
         if (ordenEscaneo === 'usuario') {
             // PASO 1: Escanear usuario (obligatorio primero)
@@ -1519,11 +1477,6 @@
             // Si la devolución fue exitosa, no continuar con más procesamiento
             if (resultado === 'devolucion_exitosa') {
                 return;
->>>>>>> origin/Nperez
-=======
-                limpiarEstadoLectura('Orden de escaneo incorrecto: primero debe escanear el QR del usuario');
-            }
->>>>>>> main
             }
         } else {
             // Error: orden incorrecto
@@ -2806,7 +2759,47 @@
                     actualizarModuloYColores();
                 });
             }
+                // Iniciar polling para sincronizar estados entre máquinas
+                startEstadoPolling();
         });
+
+            // Polling que consulta el endpoint de estados cada 5s si la pestaña está visible
+            let estadoPollingInterval = null;
+            function startEstadoPolling(intervalMs = 5000) {
+                if (estadoPollingInterval) return;
+                estadoPollingInterval = setInterval(async () => {
+                    // No consultar si la pestaña está en background
+                    if (document.hidden) return;
+
+                    // Evitar consultar si hubo cambios locales recientes
+                    const tiempoTranscurrido = Date.now() - (state.ultimoCambioLocal || 0);
+                    if (tiempoTranscurrido < 5000) return;
+
+                    try {
+                        const res = await fetch('/api/espacios/estados');
+                        if (!res.ok) return;
+                        const json = await res.json();
+                        if (!json.success) return;
+
+                        // Actualizar state.indicators según respuesta
+                        const nuevos = json.espacios || [];
+                        let cambios = false;
+                        nuevos.forEach(item => {
+                            const indicador = state.indicators.find(i => i.id === item.id_espacio);
+                            if (indicador && indicador.estado !== item.estado) {
+                                indicador.estado = item.estado;
+                                cambios = true;
+                            }
+                        });
+
+                        if (cambios) {
+                            drawIndicators();
+                        }
+                    } catch (err) {
+                        // Silenciar errores de red
+                    }
+                }, intervalMs);
+            }
 
         document.addEventListener("DOMContentLoaded", function () {
             
@@ -3545,6 +3538,25 @@
                     }));
                 }
             });
+        }
+    });
+
+    // Escuchar cambios en localStorage para sincronizar mapa entre pestañas (p.ej. eliminación de reservas)
+    window.addEventListener('storage', function (event) {
+        if (!event.key) return;
+        if (event.key === 'reserva_eliminada') {
+            try {
+                const payload = JSON.parse(event.newValue);
+                const espacioKey = `espacio_${payload.id_espacio}`;
+                sessionStorage.removeItem(espacioKey);
+                sessionStorage.removeItem(`${espacioKey}_time`);
+
+                if (typeof actualizarModuloYColores === 'function') {
+                    actualizarModuloYColores();
+                }
+            } catch (err) {
+                console.error('Error procesando evento storage reserva_eliminada', err);
+            }
         }
     });
 
