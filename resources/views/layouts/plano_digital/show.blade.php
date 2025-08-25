@@ -273,9 +273,9 @@
                     </div>
                 </div>
                 
-                <!-- Información del ocupante actual -->
+                <!-- Información del ocupante actual / último ocupante -->
                 <div id="ocupanteContainer" class="p-6 mb-6 bg-white border-l-4 border-green-500 shadow-sm rounded-xl" style="display: none;">
-                    <h3 class="mb-4 text-xl font-semibold text-gray-800">
+                    <h3 id="ocupanteTitulo" class="mb-4 text-xl font-semibold text-gray-800">
                         <i class="mr-2 text-green-500 fas fa-user"></i>
                         Ocupante Actual
                     </h3>
@@ -393,79 +393,7 @@
         </div>
     </x-modal>
 
-    <!-- Modal para registro de usuario no registrado -->
-    <x-modal name="registro-usuario" :show="false" focusable @close-modal.window="handleClose($event, 'registro-usuario')">
-        @slot('title')
-            <div class="flex items-center justify-between">
-                <h2 class="text-lg font-medium text-white dark:text-gray-100">
-                    Registro de Usuario
-                </h2>
-                <button wire:click="cerrarModal" 
-                    class="ml-2 text-2xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
-                    title="Cerrar modal (Esc)"
-                    aria-label="Cerrar modal">&times;</button>
-            </div>
-        @endslot
-        <div class="p-6">
-            <div class="space-y-4">
-                <div class="text-center">
 
-                    <h3 class="text-lg font-medium text-gray-900">Usuario No Registrado</h3>
-                    <p class="mt-2 text-sm text-gray-600">
-                        El RUN <span id="run-no-registrado" class="font-semibold"></span> no está registrado en el
-                        sistema.
-                        Complete los siguientes datos para continuar con la solicitud.
-                    </p>
-                </div>
-
-                <form id="form-registro-usuario" class="space-y-4">
-                    <div>
-                        <label for="nombre-usuario-input" class="block text-sm font-medium text-right text-gray-700">
-                            Nombre Completo *
-                        </label>
-                        <input type="text" id="nombre-usuario-input" name="nombre" required autocomplete="name"
-                            class="block w-full px-3 py-2 mt-1 text-right border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-
-
-                    <div>
-                        <label for="email-usuario" class="block text-sm font-medium text-gray-700">Correo Electrónico
-                            *</label>
-                        <input type="email" id="email-usuario" name="email" required autocomplete="email"
-                            class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-
-                    <div>
-                        <label for="telefono-usuario" class="block text-sm font-medium text-gray-700">Teléfono
-                            *</label>
-                        <input type="tel" id="telefono-usuario" name="telefono" required autocomplete="tel"
-                            class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-
-                    <div>
-                        <label for="modulos-utilizacion" class="block text-sm font-medium text-gray-700">Módulos de
-                            Utilización *</label>
-                        <select id="modulos-utilizacion" name="modulos_utilizacion" required
-                            class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">Seleccione la cantidad de módulos</option>
-                            <option value="1">1 módulo</option>
-                            <option value="2">2 módulos</option>
-                            <option value="3">3 módulos</option>
-                            <option value="4">4 módulos</option>
-                            <option value="5">5 módulos</option>
-                        </select>
-                    </div>
-
-                    <div class="flex pt-4 space-x-3">
-                        <button type="submit"
-                            class="w-full px-4 py-2 text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                            Registrar y Continuar
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </x-modal>
 
     <!-- Modal para seleccionar cantidad de módulos -->
     <div id="modal-seleccionar-modulos" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
@@ -900,7 +828,7 @@
             // Debug flag: set to false to disable all QR debug logs quickly
         const QR_DEBUG = false;
 
-    let bufferQR = '';
+            let bufferQR = '';
         let ordenEscaneo = 'usuario';
         let usuarioEscaneado = null;
         let espacioEscaneado = null;
@@ -909,6 +837,7 @@
         let maxModulosDisponibles = 1;
         let espacioParaReserva = null;
         let runParaReserva = null;
+        let usuarioInfo = null; // Variable global para almacenar la información del usuario
         const mapaId = @json($mapaIdValue);
 
         const config = {
@@ -986,6 +915,7 @@
             espacioEscaneado = null;
             espacioParaReserva = null;
             runParaReserva = null;
+            usuarioInfo = null; // Limpiar información del usuario
             
             // Limpiar buffers
             bufferQR = '';
@@ -1192,7 +1122,7 @@
 
         async function crearReserva(run, idEspacio, tipoUsuario = 'profesor') {
             try {
-                const response = await fetch('/api/crear-reserva', {
+                const response = await fetch('/api/crear-reserva-profesor', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1234,7 +1164,6 @@
 
 
         async function registrarSolicitante(datosSolicitante) {
-            console.log('Enviando datos al servidor:', datosSolicitante);
             try {
                 const response = await fetch('/api/registrar-solicitante', {
                     method: 'POST',
@@ -1264,36 +1193,7 @@
             }
         }
 
-        async function registrarUsuario(datosUsuario) {
-            try {
-                console.log('Enviando datos de usuario al servidor:', datosUsuario);
-                const response = await fetch('/api/registrar-usuario', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify(datosUsuario)
-                });
 
-                if (!response.ok) {
-                    // Si la respuesta no es exitosa, intentar obtener el error del servidor
-                    const errorData = await response.json().catch(() => ({}));
-                    return {
-                        success: false,
-                        mensaje: errorData.mensaje || `Error del servidor: ${response.status} ${response.statusText}`
-                    };
-                }
-
-                return await response.json();
-            } catch (error) {
-                console.error('Error en registrarUsuario:', error);
-                return {
-                    success: false,
-                    mensaje: 'Error de conexión con el servidor'
-                };
-            }
-        }
 
         async function crearReservaSolicitante(runSolicitante, idEspacio) {
             try {
@@ -1399,7 +1299,6 @@
         let errorTimeout = null;
         
     async function handleScan(event) {
-        if (QR_DEBUG) console.log('[QR DEBUG] handleScan key=', event.key, 'bufferBefore=', bufferQR);
                     // Solo procesar cuando se presiona Enter
         if (event.key !== 'Enter') {
             // Acumular caracteres en el buffer
@@ -1543,9 +1442,9 @@
         // Guardar el usuario escaneado globalmente
         usuarioEscaneado = run;
 
-        // Verificar usuario en la base de datos
+                    // Verificar usuario en la base de datos
         const usuarioInfo = await verificarUsuario(run);
-
+        
         if (!usuarioInfo) {
             // Error al verificar usuario - resetear flujo
             usuarioEscaneado = null;
@@ -1859,7 +1758,7 @@
 
                     // Si llegamos aquí, el espacio está disponible para crear una nueva reserva
         // Verificar el tipo de usuario para determinar el flujo
-        const usuarioInfo = await verificarUsuario(usuarioEscaneado);
+                    usuarioInfo = await verificarUsuario(usuarioEscaneado);
         
         if (!usuarioInfo || !usuarioInfo.verificado) {
             ordenEscaneo = 'usuario';
@@ -2440,6 +2339,10 @@
 
         // Función para renderizar información de profesor
         function renderizarInformacionProfesor(elements, data) {
+            const tituloEl = document.getElementById('ocupanteTitulo');
+            // Ajustar título según existencia de próxima clase
+            if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
+
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
                 elements.ocupanteInfo.innerHTML = `
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -2528,6 +2431,10 @@
 
         // Función para renderizar información de solicitante optimizada
         function renderizarInformacionSolicitante(elements, data) {
+            const tituloEl = document.getElementById('ocupanteTitulo');
+            // Ajustar título si no hay próxima clase
+            if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
+
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
                 // Crear HTML optimizado usando template literal
                 const html = `
@@ -2606,6 +2513,10 @@
 
         // Función para renderizar información ocupado sin info
         function renderizarInformacionOcupadoSinInfo(elements, data) {
+            const tituloEl = document.getElementById('ocupanteTitulo');
+            // Ajustar título según si hay próxima clase
+            if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
+
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
                 elements.ocupanteInfo.innerHTML = `
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -2662,9 +2573,61 @@
 
         // Función para renderizar información libre
         function renderizarInformacionLibre(elements, data) {
-            // Ocultar sección de ocupante
-            if (elements.ocupanteContainer) {
-                elements.ocupanteContainer.style.display = 'none';
+            // Si no hay próxima clase, mostrar Último Ocupante si existe información histórica
+            const tituloEl = document.getElementById('ocupanteTitulo');
+            if (!data.proxima_clase) {
+                if (tituloEl) tituloEl.textContent = 'Último Ocupante';
+                // Mostrar contenedor si hay datos del último ocupante
+                if (elements.ocupanteContainer && (data.nombre || data.detalles || data.hora_inicio || data.hora_salida || data.run_solicitante)) {
+                    elements.ocupanteContainer.style.display = 'block';
+                    // Reutilizar la plantilla de "ocupado sin info" para mostrar detalles mínimos
+                    elements.ocupanteInfo.innerHTML = `
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div class="flex items-center">
+                                <i class="mr-3 text-gray-500 fas fa-user"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.nombre || 'Último ocupante'}</div>
+                                    <div class="text-sm text-gray-600">Último registro</div>
+                                </div>
+                            </div>
+                            ${data.run_solicitante ? `
+                            <div class="flex items-center">
+                                <i class="mr-3 text-blue-500 fas fa-id-card"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.run_solicitante}</div>
+                                    <div class="text-sm text-gray-600">RUN</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                            ${data.hora_inicio ? `
+                            <div class="flex items-center">
+                                <i class="mr-3 text-gray-500 fas fa-clock"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.hora_inicio}</div>
+                                    <div class="text-sm text-gray-600">Hora inicio</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                            ${data.hora_salida ? `
+                            <div class="flex items-center">
+                                <i class="mr-3 text-gray-500 fas fa-clock"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.hora_salida}</div>
+                                    <div class="text-sm text-gray-600">Hora salida</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                } else {
+                    // No hay datos históricos; ocultar contenedor
+                    if (elements.ocupanteContainer) elements.ocupanteContainer.style.display = 'none';
+                    if (tituloEl) tituloEl.textContent = 'Ocupante Actual';
+                }
+            } else {
+                // Hay próxima clase, restaurar título y ocultar contenedor de último ocupante
+                if (tituloEl) tituloEl.textContent = 'Ocupante Actual';
+                if (elements.ocupanteContainer) elements.ocupanteContainer.style.display = 'none';
             }
 
             // Mostrar próxima clase si existe
@@ -2871,11 +2834,7 @@
                 formRegistroSolicitante.addEventListener('submit', procesarRegistroSolicitante);
             }
             
-            // Configurar el formulario de registro de usuario
-            const formRegistroUsuario = document.getElementById('form-registro-usuario');
-            if (formRegistroUsuario) {
-                formRegistroUsuario.addEventListener('submit', procesarRegistroUsuario);
-            }
+
             
             // Configurar botón de solicitar llaves para cambiar al input correspondiente
             const btnSolicitar = document.querySelector('[onclick*="solicitarLlaves"]');
@@ -2952,7 +2911,6 @@
         async function procesarRegistroSolicitante(event) {
             event.preventDefault();
             
-            console.log('Procesando registro de solicitante...');
             
             const formData = new FormData(event.target);
             const datosSolicitante = {
@@ -2963,7 +2921,6 @@
                 tipo_solicitante: formData.get('tipo_solicitante')
             };
             
-            console.log('Datos del solicitante:', datosSolicitante);
 
             // Validación básica
             if (!datosSolicitante.nombre || !datosSolicitante.correo || !datosSolicitante.telefono || !datosSolicitante.tipo_solicitante) {
@@ -2990,9 +2947,6 @@
                 const resultado = await registrarSolicitante(datosSolicitante);
                 
                 if (resultado && resultado.success) {
-                    // Cerrar modal de registro
-                    cerrarModalRegistroSolicitante();
-                    
                     // Mostrar SweetAlert de éxito
                     Swal.fire({
                         title: '¡Solicitante Registrado!',
@@ -3002,6 +2956,9 @@
                         timer: 3000,
                         timerProgressBar: true
                     }).then(() => {
+                        // Cerrar modal de registro después de que termine el SweetAlert
+                        cerrarModalRegistroSolicitante();
+                        
                         // Restaurar el input QR activo
                         qrInputManager.setActiveInput('main');
                     });
@@ -3039,95 +2996,7 @@
             }
         }
 
-        async function procesarRegistroUsuario(event) {
-            event.preventDefault();
-            
-            console.log('Procesando registro de usuario...');
-            
-            const formData = new FormData(event.target);
-            const datosUsuario = {
-                run_usuario: runNoRegistrado,
-                nombre: formData.get('nombre'),
-                correo: formData.get('email'),
-                telefono: formData.get('telefono'),
-                modulos_utilizacion: formData.get('modulos_utilizacion')
-            };
-            
-            console.log('Datos del usuario:', datosUsuario);
 
-            // Validación básica
-            if (!datosUsuario.nombre || !datosUsuario.correo || !datosUsuario.telefono || !datosUsuario.modulos_utilizacion) {
-                Swal.fire({
-                    title: 'Error de Validación',
-                    text: 'Por favor, complete todos los campos requeridos.',
-                    icon: 'error',
-                    confirmButtonText: 'Entendido'
-                });
-                return;
-            }
-
-            try {
-                // Mostrar loading
-                Swal.fire({
-                    title: 'Registrando Usuario',
-                    text: 'Por favor, espere...',
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
-                    }
-                });
-
-                const resultado = await registrarUsuario(datosUsuario);
-                
-                if (resultado && resultado.success) {
-                    // Cerrar modal de registro
-                    cerrarModalRegistroUsuario();
-                    
-                    // Mostrar SweetAlert de éxito
-                    Swal.fire({
-                        title: '¡Usuario Registrado!',
-                        text: `${datosUsuario.nombre} ha sido registrado exitosamente. Ahora puede escanear el QR del espacio deseado.`,
-                        icon: 'success',
-                        confirmButtonText: 'Continuar',
-                        timer: 3000,
-                        timerProgressBar: true
-                    }).then(() => {
-                        // Restaurar el input QR activo
-                        qrInputManager.setActiveInput('main');
-                    });
-                    
-                    // Actualizar información en la interfaz
-                    document.getElementById('qr-status').innerHTML = 'Usuario registrado. Escanee el QR del espacio.';
-                    mostrarInfo('usuario', datosUsuario.nombre, runNoRegistrado);
-                    
-                    // Continuar con el flujo - solo necesita escanear espacio
-                    usuarioEscaneado = runNoRegistrado;
-                    ordenEscaneo = 'espacio'; // Ya no necesita escanear usuario
-                    
-                    // Limpiar variables
-                    runNoRegistrado = null;
-                    
-                } else {
-                    // Error al registrar usuario
-                    const mensajeError = resultado?.mensaje || 'No se pudo registrar el usuario. Intente nuevamente.';
-                    Swal.fire({
-                        title: 'Error al Registrar',
-                        text: mensajeError,
-                        icon: 'error',
-                        confirmButtonText: 'Intentar Nuevamente'
-                    });
-                }
-            } catch (error) {
-                // Error al procesar el registro
-                console.error('Error al procesar registro de usuario:', error);
-                Swal.fire({
-                    title: 'Error de Conexión',
-                    text: 'Ocurrió un error al comunicarse con el servidor. Verifique su conexión e intente nuevamente.',
-                    icon: 'error',
-                    confirmButtonText: 'Reintentar'
-                });
-            }
-        }
 
         function cancelarRegistroSolicitante() {
             // Cerrar modal de registro
@@ -3149,16 +3018,7 @@
         }
 
         function cerrarModalRegistroSolicitante() {
-            // Cerrar modal de registro usando Alpine.js
-            const modal = document.querySelector('[x-data*="modalComponent"]');
-            if (modal) {
-                const modalInstance = Alpine.$data(modal);
-                if (modalInstance && typeof modalInstance.show !== 'undefined') {
-                    modalInstance.show = false;
-                }
-            }
-            
-            // Método alternativo: disparar evento de cierre
+            // Disparar evento de cierre del modal
             window.dispatchEvent(new CustomEvent('close-modal', {
                 detail: 'registro-solicitante'
             }));
@@ -3176,33 +3036,7 @@
             limpiarEstadoCompleto();
         }
 
-        function cerrarModalRegistroUsuario() {
-            // Cerrar modal de registro de usuario usando Alpine.js
-            const modal = document.querySelector('[x-data*="modalComponent"]');
-            if (modal) {
-                const modalInstance = Alpine.$data(modal);
-                if (modalInstance && typeof modalInstance.show !== 'undefined') {
-                    modalInstance.show = false;
-                }
-            }
-            
-            // Método alternativo: disparar evento de cierre
-            window.dispatchEvent(new CustomEvent('close-modal', {
-                detail: 'registro-usuario'
-            }));
-            
-            // Restaurar el input QR activo usando el gestor
-            setTimeout(() => {
-                qrInputManager.restaurarInputActivo();
-            }, 200);
-            
-            // Limpiar variables
-            runNoRegistrado = null;
-            
-            // Resetear estado
-            document.getElementById('qr-status').innerHTML = 'Esperando';
-            limpiarEstadoCompleto();
-        }
+
 
 
 
@@ -3380,23 +3214,55 @@
                 return;
             }
 
-                    // Mostrar mensaje de proceso
-        document.getElementById('qr-status').innerHTML = 'Creando reserva...';
+        
 
-        const response = await fetch('/api/crear-reserva', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-            },
-            body: JSON.stringify({
-                run_usuario: runParaReserva,
-                id_espacio: espacioParaReserva,
-                tipo_usuario: 'solicitante'
-            })
-        });
+            // Determinar el tipo de usuario y la ruta correcta
+            let apiEndpoint = '/api/crear-reserva-solicitante';
+            let tipoUsuario = 'solicitante';
+            
+            // Si tenemos información del usuario escaneado, usar su tipo real
+            if (usuarioEscaneado && typeof usuarioInfo !== 'undefined' && usuarioInfo.tipo_usuario) {
+                if (usuarioInfo.tipo_usuario === 'profesor') {
+                    apiEndpoint = '/api/crear-reserva-profesor';
+                    tipoUsuario = 'profesor';
+                } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
+                    apiEndpoint = '/api/crear-reserva-solicitante';
+                    tipoUsuario = 'solicitante';
+                }
+            }
+
+      
+            // Preparar datos para la petición según el tipo de usuario
+            let requestBody = {};
+            
+            if (tipoUsuario === 'profesor') {
+                requestBody = {
+                    run_profesor: runParaReserva,
+                    id_espacio: espacioParaReserva
+                };
+            } else {
+                requestBody = {
+                    run_solicitante: runParaReserva,
+                    id_espacio: espacioParaReserva,
+                    modulos: cantidad
+                };
+            }
+
+
+            // Mostrar mensaje de proceso
+            document.getElementById('qr-status').innerHTML = 'Creando reserva...';
+
+            const response = await fetch(apiEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify(requestBody)
+            });
 
         const data = await response.json();
+
 
         if (data.success) {
             // Cerrar el modal inmediatamente
@@ -3436,6 +3302,15 @@
                     });
                 });
             }
+
+            // Mostrar SweetAlert de error
+            Swal.fire({
+                title: 'Error al Crear Reserva',
+                text: mensajeError,
+                icon: 'error',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#dc2626'
+            });
 
             // Cerrar modal en caso de error
             cerrarModalModulos();

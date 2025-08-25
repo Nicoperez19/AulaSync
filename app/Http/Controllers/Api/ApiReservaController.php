@@ -9,6 +9,7 @@ use App\Models\Espacio;
 use App\Models\User;
 use App\Models\Modulo;
 use App\Models\Solicitante;
+use App\Models\Profesor;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -113,16 +114,9 @@ class ApiReservaController extends Controller
 
             DB::beginTransaction();
             try {
-                // Generar ID de reserva
-                $lastReserva = Reserva::orderBy('id_reserva', 'desc')->first();
-                $newIdNumber = $lastReserva ? 
-                    str_pad(intval(substr($lastReserva->id_reserva, 1)) + 1, 3, '0', STR_PAD_LEFT) : 
-                    '001';
-                $newId = 'R' . $newIdNumber;
-
                 // Crear la reserva
                 $reserva = new Reserva();
-                $reserva->id_reserva = $newId;
+                $reserva->id_reserva = Reserva::generarIdUnico();
                 $reserva->run_profesor = $request->run;
                 $reserva->id_espacio = $request->espacio_id;
                 $reserva->fecha_reserva = $horaActual->format('Y-m-d');
@@ -261,18 +255,8 @@ class ApiReservaController extends Controller
                 ], 400);
             }
 
-            // Crear la reserva
-            $lastReserva = Reserva::orderBy('id_reserva', 'desc')->first();
-            if ($lastReserva) {
-                $lastIdNumber = intval(substr($lastReserva->id_reserva, 1));
-                $newIdNumber = str_pad($lastIdNumber + 1, 3, '0', STR_PAD_LEFT);
-            } else {
-                $newIdNumber = '001';
-            }
-            $newId = 'R' . $newIdNumber;
-
             $reserva = Reserva::create([
-                'id_reserva' => $newId,
+                'id_reserva' => Reserva::generarIdUnico(),
                 'hora' => $horaInicio,
                 'fecha_reserva' => $fechaReserva,
                 'id_espacio' => $request->espacio_id,
@@ -363,7 +347,7 @@ class ApiReservaController extends Controller
             $nombreUsuario = '';
             
             if ($reservaActiva->run_profesor) {
-                $usuario = User::where('run', $reservaActiva->run_profesor)->first();
+                $usuario = Profesor::where('run_profesor', $reservaActiva->run_profesor)->first();
                 $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
             } elseif ($reservaActiva->run_solicitante) {
                 $solicitante = Solicitante::where('run_solicitante', $reservaActiva->run_solicitante)->first();
@@ -427,7 +411,7 @@ class ApiReservaController extends Controller
                     $emailUsuario = '';
                     
                     if ($ultimaReserva->run_profesor) {
-                        $usuario = User::where('run', $ultimaReserva->run_profesor)->first();
+                        $usuario = Profesor::where('run_profesor', $ultimaReserva->run_profesor)->first();
                         $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
                         $emailUsuario = $usuario ? $usuario->email : 'Sin información';
                     } elseif ($ultimaReserva->run_solicitante) {
@@ -488,7 +472,7 @@ class ApiReservaController extends Controller
             $emailUsuario = '';
             
             if ($reserva->run_profesor) {
-                $usuario = User::where('run', $reserva->run_profesor)->first();
+                $usuario = Profesor::where('run_profesor', $reserva->run_profesor)->first();
                 $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
                 $emailUsuario = $usuario ? $usuario->email : 'Sin información';
             } elseif ($reserva->run_solicitante) {

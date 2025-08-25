@@ -3,210 +3,327 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Análisis de Horarios por Espacio</title>
+    <title>Horario del Espacio</title>
     <style>
+        /* Reset básico y tipografía */
         body {
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.4;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 11px;
             color: #333;
             margin: 0;
-            padding: 20px;
+            padding: 6mm;
+            -webkit-font-smoothing: antialiased;
         }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #333;
-            padding-bottom: 20px;
-        }
-        
-        .header h1 {
+
+        .container {
+            width: 100%;
             margin: 0;
-            color: #2c3e50;
-            font-size: 24px;
+            padding: 0;
         }
-        
-        .header p {
-            margin: 5px 0;
-            color: #7f8c8d;
+
+        /* Cabecera limpia con logo y título */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+            margin-bottom: 18px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
         }
-        
-        .info-filtros {
-            background-color: #f3f4f6;
-            padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 5px;
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
-        
-        .info-filtros strong {
-            color: #495057;
+
+        .brand img { height: 64px; }
+
+        .title {
+            flex: 1;
+        }
+
+        .title h1 { margin: 0; font-size: 20px; color: #0f172a; }
+        .title p { margin: 4px 0 0 0; color: #6b7280; font-size: 12px; }
+
+        .meta {
+            text-align: right;
+            font-size: 11px;
+            color: #6b7280;
+        }
+
+        /* Información del espacio */
+        .espacio-info {
+            background: #f8fafc;
+            border: 1px solid #e6eef6;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+
+        .espacio-info h2 {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+            color: #0f172a;
+        }
+
+        .espacio-details {
+            display: flex;
+            gap: 24px;
+            font-size: 12px;
+        }
+
+        .espacio-details span {
+            color: #475569;
+        }
+
+        .espacio-details strong {
+            color: #334155;
+        }
+
+        /* Tabla moderna */
+        .table-wrap { 
+            width: 100%; 
+            overflow-x: auto; 
         }
         
         table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            font-size: 10px;
+            min-width: 100%;
+            border-collapse: separate; 
+            border-spacing: 0;
+            margin-top: 4px;
+            font-size: 9px;
+            table-layout: fixed;
+            page-break-inside: auto;
         }
-        
-        th {
-            background-color: #34495e;
-            color: white;
-            padding: 8px;
-            text-align: left;
-            font-weight: bold;
-        }
-        
-        td {
-            padding: 6px 8px;
-            border-bottom: 1px solid #ddd;
-        }
-        
-        tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        
-        .footer {
-            margin-top: 30px;
+
+        tr { page-break-inside: avoid; page-break-after: auto; }
+
+        thead th {
+            background-color: #d3081d;
+            color: #fff;
+            padding: 8px 6px;
             text-align: center;
-            font-size: 10px;
-            color: #7f8c8d;
-            border-top: 1px solid #ddd;
-            padding-top: 10px;
+            font-weight: 700;
+            vertical-align: middle;
+            font-size: 11px;
+            white-space: nowrap;
+            border: 1px solid #b91c1c;
         }
-        
-        .page-break {
-            page-break-before: always;
-        }
-        
-        .ocupacion-alta {
-            background-color: #e74c3c;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
+
+        tbody td {
+            padding: 6px 4px;
+            border: 1px solid #e5e7eb;
+            vertical-align: top;
+            white-space: normal;
+            word-wrap: break-word;
             font-size: 8px;
-            font-weight: bold;
+            line-height: 1.2;
         }
-        
-        .ocupacion-media {
-            background-color: #f39c12;
-            color: white;
-            padding: 2px 6px;
+
+        tbody tr:nth-child(even) td { 
+            background: #f9fafb; 
+        }
+
+        /* Estilos para las celdas de horarios */
+        .hora-cell {
+            background-color: #f3f4f6;
+            font-weight: 600;
+            text-align: center;
+            color: #374151;
+            width: 80px;
+        }
+
+        .asignatura-block {
+            background-color: #dbeafe;
+            color: #1e40af;
+            font-weight: 500;
+            padding: 4px 6px;
             border-radius: 3px;
-            font-size: 8px;
-            font-weight: bold;
+            margin-bottom: 2px;
+            display: block;
+            text-align: center;
+            font-size: 7px;
         }
-        
-        .ocupacion-baja {
-            background-color: #27ae60;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 8px;
-            font-weight: bold;
+
+        .asignatura-nombre {
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 2px;
         }
-        
-        .ocupacion-0 {
-            background-color: #27ae60;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 8px;
-            font-weight: bold;
+
+        .asignatura-detalle {
+            font-size: 6px;
+            color: #475569;
         }
-        
-        .ocupacion-1-40 {
-            background-color: #f39c12;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
+
+        .libre-cell {
+            background-color: #dcfce7;
+            color: #166534;
+            text-align: center;
+            font-weight: 500;
+            font-style: italic;
             font-size: 8px;
-            font-weight: bold;
         }
-        
-        .ocupacion-41-80 {
-            background-color: #e67e22;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 8px;
-            font-weight: bold;
+
+        /* Footer */
+        .footer {
+            margin-top: 22px;
+            text-align: center;
+            font-size: 11px;
+            color: #6b7280;
+            border-top: 1px solid #e6eef6;
+            padding-top: 12px;
         }
-        
-        .ocupacion-81-100 {
-            background-color: #e74c3c;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 8px;
-            font-weight: bold;
-        }
+
+        /* Ajustes de impresión (dompdf compatible) */
+        @page { margin: 0mm }
     </style>
 </head>
 <body>
-    <div class="header">
-        <img src="{{ public_path('images/logo_instituto_tecnologico-01.png') }}" alt="Logo Instituto Tecnológico" style="height: 60px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
-        <h1>Análisis de Horarios por Espacio</h1>
-        <p>Sistema AulaSync - Instituto Tecnológico</p>
-        <p>Fecha: {{ $fecha }}</p>
-        <p>Generado el: {{ $fecha_generacion }}</p>
-    </div>
+    <div class="container">
+        <div class="header">
+            <div class="brand">
+                @php $logoPath = public_path('images/logo_instituto_tecnologico-01.png'); @endphp
+                @if(file_exists($logoPath))
+                    <img src="{{ $logoPath }}" alt="Logo Instituto Tecnológico">
+                @else
+                    <div style="width:64px;height:64px;border-radius:6px;background:#0b5e6f;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">UCS</div>
+                @endif
+                <div class="title">
+                    <h1>Horario del Espacio</h1>
+                    <p>Sistema AulaSync - Instituto Tecnológico</p>
+                </div>
+            </div>
+            <div class="meta">
+                <div>Fecha: {{ $fecha }}</div>
+                <div>Generado: {{ $fecha_generacion }}</div>
+            </div>
+        </div>
 
-    <div class="info-filtros">
-        <strong>Rango de Módulos:</strong> {{ $moduloInicio }} - {{ $moduloFin }}<br>
-        <strong>Total de Módulos:</strong> {{ $modulosDia }}
-    </div>
+        <div class="espacio-info">
+            <h2>Espacio: {{ $espacio->nombre_espacio ?? 'N/A' }}</h2>
+            <div class="espacio-details">
+                <div><strong>Código:</strong> <span>{{ $espacio->id_espacio ?? 'N/A' }}</span></div>
+                <div><strong>Tipo:</strong> <span>{{ $espacio->tipo_espacio ?? 'N/A' }}</span></div>
+                <div><strong>Piso:</strong> <span>{{ $espacio->piso->numero_piso ?? 'N/A' }}</span></div>
+                <div><strong>Facultad:</strong> <span>{{ $espacio->piso->facultad->nombre_facultad ?? 'N/A' }}</span></div>
+            </div>
+        </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Espacio</th>
-                <th>Tipo</th>
-                <th>Piso</th>
-                <th>Facultad</th>
-                @for ($i = $moduloInicio; $i <= $moduloFin; $i++)
-                    <th>Módulo {{ $i }}</th>
-                @endfor
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($datos as $fila)
-                <tr>
-                    <td>{{ $fila['espacio'] }}</td>
-                    <td>{{ $fila['tipo'] }}</td>
-                    <td>{{ $fila['piso'] }}</td>
-                    <td>{{ $fila['facultad'] }}</td>
-                    @for ($i = $moduloInicio; $i <= $moduloFin; $i++)
-                        @php
-                            $ocupacion = isset($fila['modulo_' . $i]) ? (int)str_replace('%', '', $fila['modulo_' . $i]) : 0;
-                            $clase = $ocupacion == 0 ? 'ocupacion-0' : 
-                                   ($ocupacion <= 40 ? 'ocupacion-1-40' : 
-                                   ($ocupacion <= 80 ? 'ocupacion-41-80' : 'ocupacion-81-100'));
-                        @endphp
-                        <td class="{{ $clase }}">{{ $ocupacion }}%</td>
-                    @endfor
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="{{ 4 + ($moduloFin - $moduloInicio + 1) }}" style="text-align: center; padding: 20px; color: #7f8c8d;">
-                        No se encontraron datos de horarios por espacio
-                    </td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Hora</th>
+                        <th>Lunes</th>
+                        <th>Martes</th>
+                        <th>Miércoles</th>
+                        <th>Jueves</th>
+                        <th>Viernes</th>
+                        <th>Sábado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($datos as $fila)
+                        <tr>
+                            <td class="hora-cell">
+                                <strong>{{ $fila['hora'] }}</strong>
+                            </td>
+                            <td>
+                                @if($fila['LU'] === null)
+                                    <span class="libre-cell">-</span>
+                                @else
+                                    @foreach($fila['LU'] as $asignatura)
+                                        <div class="asignatura-block">
+                                            <div class="asignatura-nombre">{{ $asignatura['asignatura'] }}</div>
+                                            <div class="asignatura-detalle">🏢 {{ $asignatura['espacio'] }}</div>
+                                            <div class="asignatura-detalle"># {{ $asignatura['codigo'] }}</div>
+                                        </div>
+                                    @endforeach
+                                @endif
+                            </td>
+                            <td>
+                                @if($fila['MA'] === null)
+                                    <span class="libre-cell">-</span>
+                                @else
+                                    @foreach($fila['MA'] as $asignatura)
+                                        <div class="asignatura-block">
+                                            <div class="asignatura-nombre">{{ $asignatura['asignatura'] }}</div>
+                                            <div class="asignatura-detalle">🏢 {{ $asignatura['espacio'] }}</div>
+                                            <div class="asignatura-detalle"># {{ $asignatura['codigo'] }}</div>
+                                        </div>
+                                    @endforeach
+                                @endif
+                            </td>
+                            <td>
+                                @if($fila['MI'] === null)
+                                    <span class="libre-cell">-</span>
+                                @else
+                                    @foreach($fila['MI'] as $asignatura)
+                                        <div class="asignatura-block">
+                                            <div class="asignatura-nombre">{{ $asignatura['asignatura'] }}</div>
+                                            <div class="asignatura-detalle">🏢 {{ $asignatura['espacio'] }}</div>
+                                            <div class="asignatura-detalle"># {{ $asignatura['codigo'] }}</div>
+                                        </div>
+                                    @endforeach
+                                @endif
+                            </td>
+                            <td>
+                                @if($fila['JU'] === null)
+                                    <span class="libre-cell">-</span>
+                                @else
+                                    @foreach($fila['JU'] as $asignatura)
+                                        <div class="asignatura-block">
+                                            <div class="asignatura-nombre">{{ $asignatura['asignatura'] }}</div>
+                                            <div class="asignatura-detalle">🏢 {{ $asignatura['espacio'] }}</div>
+                                            <div class="asignatura-detalle"># {{ $asignatura['codigo'] }}</div>
+                                        </div>
+                                    @endforeach
+                                @endif
+                            </td>
+                            <td>
+                                @if($fila['VI'] === null)
+                                    <span class="libre-cell">-</span>
+                                @else
+                                    @foreach($fila['VI'] as $asignatura)
+                                        <div class="asignatura-block">
+                                            <div class="asignatura-nombre">{{ $asignatura['asignatura'] }}</div>
+                                            <div class="asignatura-detalle">🏢 {{ $asignatura['espacio'] }}</div>
+                                            <div class="asignatura-detalle"># {{ $asignatura['codigo'] }}</div>
+                                        </div>
+                                    @endforeach
+                                @endif
+                            </td>
+                            <td>
+                                @if($fila['SA'] === null)
+                                    <span class="libre-cell">-</span>
+                                @else
+                                    @foreach($fila['SA'] as $asignatura)
+                                        <div class="asignatura-block">
+                                            <div class="asignatura-nombre">{{ $asignatura['asignatura'] }}</div>
+                                            <div class="asignatura-detalle">🏢 {{ $asignatura['espacio'] }}</div>
+                                            <div class="asignatura-detalle"># {{ $asignatura['codigo'] }}</div>
+                                        </div>
+                                    @endforeach
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="7" style="text-align: center; padding: 20px; color: #7f8c8d;">
+                                No se encontraron horarios para este espacio
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
 
-    <div class="footer">
-        <p><strong>Leyenda de Colores:</strong></p>
-        <p>
-            <span style="background-color: #27ae60; color: white; padding: 2px 6px; margin-right: 10px;">0%</span>
-            <span style="background-color: #f39c12; color: white; padding: 2px 6px; margin-right: 10px;">1-40%</span>
-            <span style="background-color: #e67e22; color: white; padding: 2px 6px; margin-right: 10px;">41-80%</span>
-            <span style="background-color: #e74c3c; color: white; padding: 2px 6px;">81-100%</span>
-        </p>
-        <p>Este reporte fue generado automáticamente por el Sistema AulaSync</p>
-        <p>Página 1 de 1</p>
+        <div class="footer">
+            <div>Este reporte fue generado automáticamente por el Sistema AulaSync</div>
+            <div>Página 1 de 1</div>
+        </div>
     </div>
 </body>
-</html> 
+</html>

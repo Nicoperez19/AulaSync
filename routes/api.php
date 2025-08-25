@@ -272,7 +272,7 @@ Route::get('/verificar-usuario/{run}', [PlanoDigitalController::class, 'verifica
 Route::get('/verificar-profesor/{run}', [PlanoDigitalController::class, 'verificarProfesor']);
 
 Route::get('/verificar-espacio/{idEspacio}', [PlanoDigitalController::class, 'verificarEspacio']);
-Route::post('/crear-reserva', [PlanoDigitalController::class, 'crearReserva']);
+Route::post('/crear-reserva-profesor', [App\Http\Controllers\ProfesorController::class, 'crearReservaProfesor']);
 Route::post('/verificar-estado-espacio-reserva', [PlanoDigitalController::class, 'verificarEstadoEspacioYReserva']);
 Route::post('/devolver-llaves', [PlanoDigitalController::class, 'devolverLlaves']);
 Route::post('/verificar-reserva-activa', [PlanoDigitalController::class, 'verificarReservaActiva']);

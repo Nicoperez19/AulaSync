@@ -1,31 +1,34 @@
 <div class="p-6">
     @if (count($pisos) > 0)
-        <div class="relative w-full bg-white rounded-lg shadow-sm border border-gray-200">
+        <div class="relative w-full bg-white rounded-lg shadow-sm border-2 border-black">
             @if (count($this->getTodosLosEspacios()) > 0)
                 <!-- Tabla de dos columnas -->
                 <div class="flex w-full">
                     <!-- Columna 1 - Primera mitad -->
-                    <div class="flex-1 border-r border-gray-200">
+                    <div class="flex-1 border-r-2 border-black">
                         <table class="w-full table-fixed">
                             <thead>
-                                <tr class="bg-light-cloud-blue text-white border-b border-gray-200">
-                                    <th class="w-1/3 px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider">
+                                <tr class="bg-light-cloud-blue text-white border-b-2 border-black">
+                                    <th class="w-1/4 px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r-2 border-black">
                                         Espacio
                                     </th>
-                                    <th class="w-2/5 px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider">
+                                    <th class="w-1/4 px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r-2 border-black">
                                         Estado
                                     </th>
-                                    <th class="w-1/5 px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider">
+                                    <th class="w-1/4 px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r-2 border-black">
                                         Responsable
+                                    </th>
+                                    <th class="w-1/4 px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider">
+                                        Módulo
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100">
+                            <tbody class="divide-y-2 divide-black">
                                 @foreach (array_slice($this->getTodosLosEspacios(), 0, ceil(count($this->getTodosLosEspacios()) / 2)) as $index => $espacio)
-                                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-blue-50 transition-colors duration-200 h-10">
-                                        <td class="px-3 py-1 text-sm align-middle">
+                                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-blue-50 transition-colors duration-200 h-10 border-b-2 border-black">
+                                        <td class="px-3 py-1 text-sm align-middle border-r-2 border-black">
                                             <div class="flex items-center gap-2">
-                                                <span class="w-2 h-2 rounded-full {{ $this->getEstadoColor($espacio['estado'], $espacio['tiene_clase'], $espacio['tiene_reserva_solicitante']) }} flex-shrink-0"></span>
+                                                <span class="w-4 h-4 rounded-full {{ $this->getEstadoColor($espacio['estado'], $espacio['tiene_clase'], $espacio['tiene_reserva_solicitante'], $espacio['tiene_reserva_profesor']) }} flex-shrink-0"></span>
                                                 <div class="min-w-0 flex-1">
                                                     <div class="flex items-center gap-1">
                                                         <span class="font-semibold text-blue-700 text-sm">{{ $espacio['id_espacio'] }}</span>
@@ -35,12 +38,20 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="px-3 py-1 text-sm align-middle">
+                                        <td class="px-3 py-1 text-sm align-middle border-r-2 border-black">
                                             @if ($espacio['tiene_reserva_solicitante'] && $espacio['datos_solicitante'])
                                                 <div class="min-w-0">
                                                     <div class="flex items-center gap-1">
                                                         <span class="text-sm font-medium text-purple-700">
                                                             Espacio Solicitado
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            @elseif ($espacio['tiene_reserva_profesor'] && $espacio['datos_profesor'])
+                                                <div class="min-w-0">
+                                                    <div class="flex items-center gap-1">
+                                                        <span class="text-sm font-medium text-blue-700">
+                                                            Reserva Profesor
                                                         </span>
                                                     </div>
                                                 </div>
@@ -59,11 +70,20 @@
                                                 <span class="text-gray-400 italic text-sm">Sin clases</span>
                                             @endif
                                         </td>
-                                        <td class="px-3 py-1 text-sm align-middle">
+                                        <td class="px-3 py-1 text-sm align-middle border-r-2 border-black">
                                             @if ($espacio['tiene_reserva_solicitante'] && $espacio['datos_solicitante'])
-                                                <span class="font-medium text-purple-700 text-sm">{{ $this->getPrimerApellidoSolicitante($espacio['datos_solicitante']['nombre']) }}</span>
-                                            @elseif ($espacio['tiene_clase'] && $espacio['datos_clase'])
-                                                <span class="font-medium text-gray-900 text-sm">{{ $this->getPrimerApellido($espacio['datos_clase']['profesor']['name']) }}</span>
+                                                <span class="font-medium text-purple-700 text-sm">{{ $espacio['datos_solicitante']['nombre'] }}</span>
+                                            @elseif ($espacio['tiene_reserva_profesor'] && $espacio['datos_profesor'])
+                                                <span class="font-medium text-blue-700 text-sm">{{ $this->getApellidosProfesor($espacio['datos_profesor']['nombre']) }}</span>
+                                            @elseif ($espacio['tiene_clase'] && $espacio['datos_clase'] && isset($espacio['datos_clase']['profesor']) && $espacio['datos_clase']['profesor']['name'])
+                                                <span class="font-medium text-gray-900 text-sm">{{ $this->getApellidosProfesor($espacio['datos_clase']['profesor']['name']) }}</span>
+                                            @else
+                                                <span class="text-gray-400 italic text-sm">-</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-3 py-1 text-sm align-middle">
+                                            @if ($moduloActual && isset($moduloActual['numero']))
+                                                <span class="font-medium text-gray-900 text-sm">{{ $moduloActual['numero'] }}</span>
                                             @else
                                                 <span class="text-gray-400 italic text-sm">-</span>
                                             @endif
@@ -78,24 +98,27 @@
                     <div class="flex-1">
                         <table class="w-full table-fixed">
                             <thead>
-                                <tr class="bg-light-cloud-blue text-white border-b border-gray-200">
-                                    <th class="w-1/3 px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider">
+                                <tr class="bg-light-cloud-blue text-white border-b-2 border-black">
+                                    <th class="w-1/4 px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r-2 border-black">
                                         Espacio
                                     </th>
-                                    <th class="w-2/5 px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider">
+                                    <th class="w-1/4 px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r-2 border-black">
                                         Estado
                                     </th>
-                                    <th class="w-1/5 px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider">
+                                    <th class="w-1/4 px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r-2 border-black">
                                         Responsable
+                                    </th>
+                                    <th class="w-1/4 px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider">
+                                        Módulo
                                     </th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-100">
+                            <tbody class="divide-y-2 divide-black">
                                 @foreach (array_slice($this->getTodosLosEspacios(), ceil(count($this->getTodosLosEspacios()) / 2)) as $index => $espacio)
-                                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-blue-50 transition-colors duration-200 h-10">
-                                        <td class="px-3 py-1 text-sm align-middle">
+                                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-blue-50 transition-colors duration-200 h-10 border-b-2 border-black">
+                                        <td class="px-3 py-1 text-sm align-middle border-r-2 border-black">
                                             <div class="flex items-center gap-2">
-                                                <span class="w-2 h-2 rounded-full {{ $this->getEstadoColor($espacio['estado'], $espacio['tiene_clase'], $espacio['tiene_reserva_solicitante']) }} flex-shrink-0"></span>
+                                                <span class="w-4 h-4 rounded-full {{ $this->getEstadoColor($espacio['estado'], $espacio['tiene_clase'], $espacio['tiene_reserva_solicitante'], $espacio['tiene_reserva_profesor']) }} flex-shrink-0"></span>
                                                 <div class="min-w-0 flex-1">
                                                     <div class="flex items-center gap-1">
                                                         <span class="font-semibold text-blue-700 text-sm">{{ $espacio['id_espacio'] }}</span>
@@ -105,12 +128,20 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="px-3 py-1 text-sm align-middle">
+                                        <td class="px-3 py-1 text-sm align-middle border-r-2 border-black">
                                             @if ($espacio['tiene_reserva_solicitante'] && $espacio['datos_solicitante'])
                                                 <div class="min-w-0">
                                                     <div class="flex items-center gap-1">
                                                         <span class="text-sm font-medium text-purple-700">
                                                             Espacio Solicitado
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            @elseif ($espacio['tiene_reserva_profesor'] && $espacio['datos_profesor'])
+                                                <div class="min-w-0">
+                                                    <div class="flex items-center gap-1">
+                                                        <span class="text-sm font-medium text-blue-700">
+                                                            Reserva Profesor
                                                         </span>
                                                     </div>
                                                 </div>
@@ -129,11 +160,20 @@
                                                 <span class="text-gray-400 italic text-sm">Sin clases</span>
                                             @endif
                                         </td>
-                                        <td class="px-3 py-1 text-sm align-middle">
+                                        <td class="px-3 py-1 text-sm align-middle border-r-2 border-black">
                                             @if ($espacio['tiene_reserva_solicitante'] && $espacio['datos_solicitante'])
-                                                <span class="font-medium text-purple-700 text-sm">{{ $this->getPrimerApellidoSolicitante($espacio['datos_solicitante']['nombre']) }}</span>
-                                            @elseif ($espacio['tiene_clase'] && $espacio['datos_clase'])
-                                                <span class="font-medium text-gray-900 text-sm">{{ $this->getPrimerApellido($espacio['datos_clase']['profesor']['name']) }}</span>
+                                                <span class="font-medium text-purple-700 text-sm">{{ $espacio['datos_solicitante']['nombre'] }}</span>
+                                            @elseif ($espacio['tiene_reserva_profesor'] && $espacio['datos_profesor'])
+                                                <span class="font-medium text-blue-700 text-sm">{{ $this->getApellidosProfesor($espacio['datos_profesor']['nombre']) }}</span>
+                                            @elseif ($espacio['tiene_clase'] && $espacio['datos_clase'] && isset($espacio['datos_clase']['profesor']) && $espacio['datos_clase']['profesor']['name'])
+                                                <span class="font-medium text-gray-900 text-sm">{{ $this->getApellidosProfesor($espacio['datos_clase']['profesor']['name']) }}</span>
+                                            @else
+                                                <span class="text-gray-400 italic text-sm">-</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-3 py-1 text-sm align-middle">
+                                            @if ($moduloActual && isset($moduloActual['numero']))
+                                                <span class="font-medium text-gray-900 text-sm">{{ $moduloActual['numero'] }}</span>
                                             @else
                                                 <span class="text-gray-400 italic text-sm">-</span>
                                             @endif
@@ -149,7 +189,7 @@
     @endif
     
     <!-- Leyenda de colores -->
-    <div class="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
+    <div class="mt-4 p-3 bg-gray-50 rounded-lg border-2 border-black text-center">
         <h4 class="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">Leyenda de Estados</h4>
         <div class="flex flex-wrap gap-4 text-xs justify-center">
             <div class="flex items-center gap-2">
