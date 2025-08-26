@@ -6,6 +6,7 @@ use App\Models\Profesor;
 use App\Models\Universidad;
 use App\Models\Facultad;
 use App\Models\Carrera;
+use App\Models\Reserva;
 use App\Models\AreaAcademica;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -22,21 +23,124 @@ class ProfesorController extends Controller
             $facultades = Facultad::with('sede.universidad')->get();
             $carreras = Carrera::with('areaAcademica.facultad.sede.universidad')->get();
             $areasAcademicas = AreaAcademica::with('facultad.sede.universidad')->get();
-            
+
             return view('layouts.professor.professor_index', compact('universidades', 'facultades', 'carreras', 'areasAcademicas'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar los profesores.'])->withInput();
         }
     }
-
     /**
-     * Show the form for creating a new resource.
+     * Crear reserva para profesor
      */
-    public function create()
+    public function crearReservaProfesor(Request $request)
     {
-        //
-    }
+        try {
+            $request->validate([
+                'run_profesor' => 'required|string',
+                'id_espacio' => 'required|string'
+            ]);
 
+            $runProfesor = $request->input('run_profesor');
+            $idEspacio = $request->input('id_espacio');
+
+            // Verificar que el espacio existe
+            $espacio = Espacio::where('id_espacio', $idEspacio)->first();
+            if (!$espacio) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Espacio no encontrado'
+                ], 404);
+            }
+
+            // Verificar que el espacio esté disponible
+            if ($espacio->estado !== 'Disponible') {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'El espacio no está disponible'
+                ], 400);
+            }
+
+            $horaActual = now()->format('H:i:s');
+            $fechaActual = now()->format('Y-m-d');
+
+            // Validar horario académico
+            $hora = (int)now()->format('H');
+            $minutos = (int)now()->format('i');
+            $horaEnMinutos = $hora * 60 + $minutos;
+
+            $inicioAcademico = 8 * 60 + 10; // 08:10
+            $finAcademico = 23 * 60; // 23:00
+
+            if ($horaEnMinutos < $inicioAcademico || $horaEnMinutos >= $finAcademico) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No se pueden crear reservas fuera del horario académico (08:10 - 23:00).'
+                ], 400);
+            }
+
+            // Verificar si el profesor existe
+            $profesor = Profesor::where('run_profesor', $runProfesor)->first();
+            if (!$profesor) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Profesor no encontrado'
+                ], 404);
+            }
+
+            // Verificar si ya tiene una reserva activa
+            $reservaExistente = Reserva::where('run_profesor', $runProfesor)
+                ->where('estado', 'activa')
+                ->whereNull('hora_salida')
+                ->first();
+
+            if ($reservaExistente) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Ya tienes una reserva activa en otro espacio'
+                ], 400);
+            }
+
+            // Crear la reserva
+            $reserva = new Reserva();
+            $reserva->id_reserva = Reserva::generarIdUnico();
+            $reserva->run_profesor = $runProfesor;
+            $reserva->id_espacio = $espacio->id_espacio;
+            $reserva->fecha_reserva = $fechaActual;
+            $reserva->hora = $horaActual;
+            $reserva->estado = 'activa';
+            $reserva->save();
+
+            // Cambiar estado del espacio
+            $espacio->estado = 'Ocupado';
+            $espacio->save();
+
+            return response()->json([
+                'success' => true,
+                'mensaje' => 'Reserva creada exitosamente para el profesor',
+                'reserva' => [
+                    'id' => $reserva->id_reserva,
+                    'profesor' => $profesor->name,
+                    'run_profesor' => $profesor->run_profesor,
+                    'espacio' => $espacio->nombre_espacio,
+                    'fecha' => $fechaActual,
+                    'hora_inicio' => $horaActual
+                ]
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Error de validación al crear reserva de profesor: ' . json_encode($e->errors()));
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error de validación en los datos enviados',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error al crear reserva de profesor: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error al crear reserva: ' . $e->getMessage()
+            ], 500);
+        }
+    }
     /**
      * Store a newly created resource in storage.
      */
@@ -85,7 +189,7 @@ class ProfesorController extends Controller
             $facultades = Facultad::with('sede.universidad')->get();
             $carreras = Carrera::with('areaAcademica.facultad.sede.universidad')->get();
             $areasAcademicas = AreaAcademica::with('facultad.sede.universidad')->get();
-            
+
             return view('layouts.professor.professor_edit', compact('profesor', 'universidades', 'facultades', 'carreras', 'areasAcademicas'));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('professors.index')->withErrors(['error' => 'Profesor no encontrado.']);
@@ -148,7 +252,6 @@ class ProfesorController extends Controller
             $profesor = Profesor::findOrFail($id);
             $profesor->delete();
             return redirect()->route('professors.index')->with('success', 'Profesor eliminado exitosamente.');
-
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Profesor no encontrado.'], 404);
         } catch (\Exception $e) {
@@ -186,4 +289,4 @@ class ProfesorController extends Controller
             ], 500);
         }
     }
-} 
+}
