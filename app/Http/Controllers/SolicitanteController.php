@@ -641,7 +641,7 @@ class SolicitanteController extends Controller
             return [
                 'modulo' => $moduloCodigo,
                 'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'No especificada',
-                'profesor' => $planificacion->profesor->name ?? 'No especificado',
+                'profesor' => $planificacion->asignatura->profesor->name ?? 'No especificado',
                 'hora_inicio' => $planificacion->modulo->hora_inicio ?? '',
                 'hora_termino' => $planificacion->modulo->hora_termino ?? ''
             ];

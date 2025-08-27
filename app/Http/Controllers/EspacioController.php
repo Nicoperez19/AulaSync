@@ -344,12 +344,24 @@ class EspacioController extends Controller
             }
         }
         
+        // Construir detalle por módulo con horario inicio/fin
+        $modulosDetalle = [];
+        foreach ($modulosDisponibles as $m) {
+            $horario = $this->obtenerHorarioModulo($m, $diaActual);
+            $modulosDetalle[] = [
+                'modulo' => $m,
+                'inicio' => $horario['inicio'] ?? null,
+                'fin' => $horario['fin'] ?? null
+            ];
+        }
+
         return response()->json([
             'success' => true,
             'max_modulos' => $maxModulos,
             'modulo_actual' => $moduloActual,
             'codigo_dia' => $codigoDia,
             'modulos_disponibles' => $modulosDisponibles,
+            'modulos_detalle' => $modulosDetalle,
             'proxima_clase' => $proximaClase,
             'clases_proximas' => $clasesProximas,
             'detalles' => [
@@ -615,7 +627,8 @@ class EspacioController extends Controller
             return [
                 'modulo' => $moduloCodigo,
                 'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'No especificada',
-                'profesor' => $planificacion->profesor->name ?? 'No especificado',
+                // acceder al profesor a través de la asignatura (asignatura->profesor)
+                'profesor' => $planificacion->asignatura->profesor->name ?? 'No especificado',
                 'hora_inicio' => $planificacion->modulo->hora_inicio ?? '',
                 'hora_termino' => $planificacion->modulo->hora_termino ?? ''
             ];
@@ -641,8 +654,13 @@ class EspacioController extends Controller
                 return redirect()->back()->with('error', 'No se pudo generar el código QR.');
             }
             
-            // Descargar el archivo
-            return Storage::disk('public')->download($qrPath, 'QR_' . $espacio->id_espacio . '.png');
+            // Descargar el archivo usando response()->download con la ruta completa
+            // Asumir storage/app/public como disco 'public'
+            $fullPath = storage_path('app/public/' . ltrim($qrPath, '/'));
+            if (file_exists($fullPath)) {
+                return response()->download($fullPath, 'QR_' . $espacio->id_espacio . '.png');
+            }
+            return redirect()->back()->with('error', 'No se pudo encontrar el archivo QR generado.');
             
         } catch (\Exception $e) {
             Log::error('Error al descargar QR individual:', [
@@ -926,6 +944,7 @@ class EspacioController extends Controller
             'success' => true,
             'tipo_ocupacion' => 'profesor',
             'nombre' => $profesor->name,
+            'run_profesor' => $runProfesor,
             'asignatura' => $asignatura,
             'hora_inicio' => $reserva->hora,
             'hora_salida' => $reserva->hora_salida,
@@ -991,8 +1010,9 @@ class EspacioController extends Controller
         ];
         $codigoDia = $codigosDias[$diaActual] ?? 'LU';
         
-        // Cargar planificaciones del espacio para el día (filtrando por id_modulo que comienza con el código de día)
-        $planificaciones = Planificacion_Asignatura::with(['modulo', 'asignatura:id_asignatura,nombre_asignatura'])
+    // Cargar planificaciones del espacio para el día (filtrando por id_modulo que comienza con el código de día)
+    // Incluir relación profesor en la asignatura para poder mostrar nombre y run correctamente
+    $planificaciones = Planificacion_Asignatura::with(['modulo', 'asignatura.profesor'])
             ->where('id_espacio', $idEspacio)
             ->where('id_modulo', 'like', $codigoDia . '.%')
             ->get();
@@ -1018,6 +1038,7 @@ class EspacioController extends Controller
         return [
             'asignatura' => $proxima->asignatura->nombre_asignatura ?? 'No especificada',
             'profesor' => $proxima->asignatura->profesor->name ?? 'No especificado',
+            'profesor_run' => $proxima->asignatura->run_profesor ?? null,
             'hora_inicio' => $proxima->modulo->hora_inicio ?? null,
             'hora_termino' => $proxima->modulo->hora_termino ?? null
         ];

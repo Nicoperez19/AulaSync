@@ -282,6 +282,11 @@
                     <div id="ocupanteInfo" class="space-y-3">
                         <!-- La información se insertará dinámicamente -->
                     </div>
+                    <div class="mt-4 flex justify-end">
+                        <button id="btnDesocupar" class="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded hover:bg-red-700 hidden">
+                            Desocupar
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Información de la clase actual -->
@@ -303,6 +308,11 @@
                     </h3>
                     <div id="proximaClaseInfo" class="space-y-3">
                         <!-- La información se insertará dinámicamente -->
+                    </div>
+                    <div class="mt-4 flex justify-end">
+                        <button id="btnDesocuparReserva" class="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded hover:bg-red-700 hidden">
+                            Desocupar reserva
+                        </button>
                     </div>
                 </div>
             </div>
@@ -600,89 +610,94 @@
         // Definición de horarios de módulos (debe ir antes de las funciones que lo usan)
         const horariosModulos = {
             lunes: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+            0: { inicio: '00:00:00', fin: '08:10:00' },
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
             },
             martes: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+            0: { inicio: '00:00:00', fin: '08:10:00' },
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
             },
             miercoles: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+            0: { inicio: '00:00:00', fin: '08:10:00' },
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
             },
             jueves: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+            0: { inicio: '00:00:00', fin: '08:10:00' },
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
             },
             viernes: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+            0: { inicio: '00:00:00', fin: '08:10:00' },
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
             }
         };
 
@@ -860,7 +875,8 @@
             updateInterval: null,
             hoveredIndicator: null,
             lastLocalChange: null,
-            ultimoCambioLocal: null
+            ultimoCambioLocal: null,
+            currentIndicatorId: null
         };
 
         let elements = {
@@ -2127,6 +2143,9 @@
             return;
         }
 
+                // Guardar indicador actual en estado para usos posteriores
+                state.currentIndicatorId = indicator.id;
+
             // Obtener elementos del modal una sola vez
             const elements = {
                 modalTitulo: document.getElementById('modalTitulo'),
@@ -2327,6 +2346,53 @@
             }
         }
 
+        // Handler para el botón Desocupar
+        document.addEventListener('DOMContentLoaded', function () {
+            const btnDesocupar = document.getElementById('btnDesocupar');
+            if (btnDesocupar) {
+                btnDesocupar.addEventListener('click', async function () {
+                    // Obtener run del ocupante desde la info cargada (intentar data.run_profesor o data.run_solicitante)
+                    const espacioId = state.currentIndicatorId || null;
+                    // Pedir confirmación
+                    if (!confirm('¿Realmente desea desocupar este espacio?')) return;
+
+                    // Intentar leer run desde la cache o hacer una carga rápida
+                    let cached = null;
+                    try {
+                        cached = sessionStorage.getItem(`espacio_${espacioId}`);
+                        cached = cached ? JSON.parse(cached) : null;
+                    } catch (e) { cached = null; }
+                            await actualizarColoresEspacios();
+                    const run = (cached && (cached.run_profesor || cached.run_solicitante)) || prompt('Ingrese RUN del usuario que devuelve el espacio');
+                    if (!run) return alert('Se requiere RUN para desocupar');
+
+                    try {
+                        const res = await fetch('/api/devolver-espacio', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({ run_usuario: run, id_espacio: espacioId })
+                        });
+
+                        const json = await res.json();
+                        if (json.success) {
+                            alert('Espacio desocupado correctamente');
+                            // Cerrar modal y refrescar indicadores
+                            cerrarModalEspacio();
+                            await actualizarColoresEspacios();
+                        } else {
+                            alert(json.mensaje || 'No se pudo desocupar el espacio');
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('Error al desocupar el espacio');
+                    }
+                });
+            }
+        });
+
         // Función para renderizar información de profesor
         function renderizarInformacionProfesor(elements, data) {
             const tituloEl = document.getElementById('ocupanteTitulo');
@@ -2417,6 +2483,16 @@
                     </div>
                 `;
             }
+
+            // Mostrar botón Desocupar si hay run_profesor
+            const btnDesocupar = document.getElementById('btnDesocupar');
+            if (btnDesocupar) {
+                if (data.run_profesor) {
+                    btnDesocupar.classList.remove('hidden');
+                } else {
+                    btnDesocupar.classList.add('hidden');
+                }
+            }
         }
 
         // Función para renderizar información de solicitante optimizada
@@ -2499,6 +2575,15 @@
             if (elements.claseActualContainer) {
                 elements.claseActualContainer.style.display = 'none';
             }
+
+            const btnDesocupar = document.getElementById('btnDesocupar');
+            if (btnDesocupar) {
+                if (data.run_solicitante) {
+                    btnDesocupar.classList.remove('hidden');
+                } else {
+                    btnDesocupar.classList.add('hidden');
+                }
+            }
         }
 
         // Función para renderizar información ocupado sin info
@@ -2558,6 +2643,16 @@
             // Ocultar secciones de planificación
             if (elements.proximaClaseContainer) {
                 elements.proximaClaseContainer.style.display = 'none';
+            }
+
+            const btnDesocupar = document.getElementById('btnDesocupar');
+            if (btnDesocupar) {
+                // Mostrar si hay run en los datos
+                if (data.run_profesor || data.run_solicitante) {
+                    btnDesocupar.classList.remove('hidden');
+                } else {
+                    btnDesocupar.classList.add('hidden');
+                }
             }
         }
 
@@ -2642,6 +2737,9 @@
                     </div>
                 `;
             }
+
+            const btnDesocupar = document.getElementById('btnDesocupar');
+            if (btnDesocupar) btnDesocupar.classList.add('hidden');
         }
 
         function cerrarModalEspacio() {
