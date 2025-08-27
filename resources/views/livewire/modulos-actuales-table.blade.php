@@ -16,15 +16,13 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
-                                @foreach ($this->todosLosEspacios as $espacio)
-                                    @if (strtolower($espacio['estado']) === 'disponible')
-                                        <tr class="bg-white hover:bg-green-50 transition-colors h-10">
-                                            <td class="px-3 py-1 text-sm font-semibold text-blue-700">{{ $espacio['id_espacio'] }}</td>
-                                            <td class="px-3 py-1 text-sm">{{ $espacio['nombre_espacio'] }}</td>
-                                            <td class="px-3 py-1 text-sm text-gray-500">{{ $espacio['piso'] }}</td>
-                                            <td class="px-3 py-1 text-sm text-green-600 font-medium">Disponible</td>
-                                        </tr>
-                                    @endif
+                                @foreach (array_slice(array_filter($this->todosLosEspacios, function($espacio) { return strtolower($espacio['estado']) === 'disponible'; }), 0, 10) as $espacio)
+                                    <tr class="bg-white hover:bg-green-50 transition-colors h-10">
+                                        <td class="px-3 py-1 text-sm font-semibold text-blue-700">{{ $espacio['id_espacio'] }}</td>
+                                        <td class="px-3 py-1 text-sm">{{ $espacio['nombre_espacio'] }}</td>
+                                        <td class="px-3 py-1 text-sm text-gray-500">{{ $espacio['piso'] }}</td>
+                                        <td class="px-3 py-1 text-sm text-green-600 font-medium">Disponible</td>
+                                    </tr>
                                 @endforeach
                             </tbody>
                         </table>
@@ -45,45 +43,51 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-gray-100">
-                                    @foreach ($this->todosLosEspacios as $espacio)
+                                    @php
+                                        $filtrados = array_filter($this->todosLosEspacios, function($espacio) use ($slideCarrusel) {
+                                            $tieneReservaSolicitante = $espacio['tiene_reserva_solicitante'] ?? false;
+                                            $tieneClase = $espacio['tiene_clase'] ?? false;
+                                            $esOcupado = strtolower($espacio['estado']) === 'ocupado';
+                                            $esReservado = strtolower($espacio['estado']) === 'reservado' || $tieneReservaSolicitante || $tieneClase;
+                                            return ($slideCarrusel === 'ocupados' && $esOcupado) || ($slideCarrusel === 'reservados' && $esReservado && !$esOcupado);
+                                        });
+                                    @endphp
+                                    @foreach (array_slice($filtrados, 0, 10) as $espacio)
                                         @php
                                             $tieneReservaSolicitante = $espacio['tiene_reserva_solicitante'] ?? false;
                                             $tieneClase = $espacio['tiene_clase'] ?? false;
                                             $datosSolicitante = $espacio['datos_solicitante'] ?? null;
                                             $datosClase = $espacio['datos_clase'] ?? null;
                                             $esOcupado = strtolower($espacio['estado']) === 'ocupado';
-                                            $esReservado = strtolower($espacio['estado']) === 'reservado' || $tieneReservaSolicitante || $tieneClase;
                                         @endphp
-                                        @if (($slideCarrusel === 'ocupados' && $esOcupado) || ($slideCarrusel === 'reservados' && $esReservado && !$esOcupado))
-                                            <tr class="bg-white hover:bg-blue-50 transition-colors h-10">
-                                                <td class="px-3 py-1 text-sm font-semibold text-blue-700">{{ $espacio['id_espacio'] }}</td>
-                                                <td class="px-3 py-1 text-sm">{{ $espacio['nombre_espacio'] }}</td>
-                                                <td class="px-3 py-1 text-sm text-gray-500">{{ $espacio['piso'] }}</td>
-                                                <td class="px-3 py-1 text-sm font-medium @if($esOcupado) text-red-600 @else text-yellow-600 @endif">
-                                                    @if($esOcupado)
-                                                        Ocupado
-                                                    @elseif($tieneReservaSolicitante && $datosSolicitante)
-                                                        Espacio Solicitado
-                                                    @elseif($tieneClase && $datosClase)
-                                                        {{ $datosClase['nombre_asignatura'] }}
-                                                    @else
-                                                        Reservado
-                                                    @endif
-                                                </td>
-                                                <td class="px-3 py-1 text-sm align-middle">
-                                                    @if($esOcupado)
-                                                        {{-- Aquí podrías mostrar responsable si lo tienes --}}
-                                                        -
-                                                    @elseif($tieneReservaSolicitante && $datosSolicitante)
-                                                        {{ $this->getPrimerApellidoSolicitante($datosSolicitante['nombre']) }}
-                                                    @elseif($tieneClase && $datosClase)
-                                                        {{ $this->getPrimerApellido($datosClase['profesor']['name']) }}
-                                                    @else
-                                                        -
-                                                    @endif
-                                                </td>
-                                            </tr>
-                                        @endif
+                                        <tr class="bg-white hover:bg-blue-50 transition-colors h-10">
+                                            <td class="px-3 py-1 text-sm font-semibold text-blue-700">{{ $espacio['id_espacio'] }}</td>
+                                            <td class="px-3 py-1 text-sm">{{ $espacio['nombre_espacio'] }}</td>
+                                            <td class="px-3 py-1 text-sm text-gray-500">{{ $espacio['piso'] }}</td>
+                                            <td class="px-3 py-1 text-sm font-medium @if($esOcupado) text-red-600 @else text-yellow-600 @endif">
+                                                @if($esOcupado)
+                                                    Ocupado
+                                                @elseif($tieneReservaSolicitante && $datosSolicitante)
+                                                    Espacio Solicitado
+                                                @elseif($tieneClase && $datosClase)
+                                                    {{ $datosClase['nombre_asignatura'] }}
+                                                @else
+                                                    Reservado
+                                                @endif
+                                            </td>
+                                            <td class="px-3 py-1 text-sm align-middle">
+                                                @if($esOcupado)
+                                                    {{-- Aquí podrías mostrar responsable si lo tienes --}}
+                                                    -
+                                                @elseif($tieneReservaSolicitante && $datosSolicitante)
+                                                    {{ $this->getPrimerApellidoSolicitante($datosSolicitante['nombre']) }}
+                                                @elseif($tieneClase && $datosClase)
+                                                    {{ $this->getPrimerApellido($datosClase['profesor']['name']) }}
+                                                @else
+                                                    -
+                                                @endif
+                                            </td>
+                                        </tr>
                                     @endforeach
                                 </tbody>
                             </table>
