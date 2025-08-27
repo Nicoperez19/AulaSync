@@ -176,30 +176,6 @@
         <p>Generado el: {{ $fecha_generacion }}</p>
     </div>
 
-    @if($tipo_espacio)
-        <div class="info-filtros">
-            <strong>Tipo de Espacio:</strong> {{ $tipo_espacio }}
-        </div>
-    @endif
-
-    <div class="stats">
-        <div class="stat-item">
-            <div class="stat-number">{{ $total }}</div>
-            <div class="stat-label">Total Registros</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-number">{{ $completadas }}</div>
-            <div class="stat-label">Completadas</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-number">{{ $canceladas }}</div>
-            <div class="stat-label">Canceladas</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-number">{{ $en_progreso }}</div>
-            <div class="stat-label">En Progreso</div>
-        </div>
-    </div>
 
     <table>
         <thead>

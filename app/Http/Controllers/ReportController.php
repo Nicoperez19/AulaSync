@@ -1865,13 +1865,32 @@ class ReportController extends Controller
     private function exportarHistoricoTipoEspacioPDF($datos, $fechaInicio, $fechaFin, $tipoEspacio)
     {
         try {
+            // Contar registros por estado
+            $completadas = 0;
+            $canceladas = 0;
+            $en_progreso = 0;
+            
+            foreach ($datos as $registro) {
+                $estado = strtolower($registro['estado']);
+                if (str_contains($estado, 'completada') || str_contains($estado, 'finalizada')) {
+                    $completadas++;
+                } elseif (str_contains($estado, 'cancelada')) {
+                    $canceladas++;
+                } elseif (str_contains($estado, 'progreso') || str_contains($estado, 'activa')) {
+                    $en_progreso++;
+                }
+            }
+            
             $data = [
                 'datos' => $datos,
                 'fecha_generacion' => Carbon::now()->format('d/m/Y H:i:s'),
                 'fecha_inicio' => Carbon::parse($fechaInicio)->format('d/m/Y'),
                 'fecha_fin' => Carbon::parse($fechaFin)->format('d/m/Y'),
                 'tipo_espacio' => $tipoEspacio ?: 'Todos',
-                'total_registros' => count($datos)
+                'total' => count($datos),
+                'completadas' => $completadas,
+                'canceladas' => $canceladas,
+                'en_progreso' => $en_progreso
             ];
 
             $filename = 'historico_tipo_espacio_' . date('Y-m-d_H-i-s') . '.pdf';
