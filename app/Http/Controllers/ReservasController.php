@@ -39,16 +39,40 @@ class ReservasController extends Controller
             'hora' => 'required',
             'fecha_reserva' => 'required|date',
             'id_espacio' => 'required|exists:espacios,id_espacio',
-            'id' => 'required|exists:users,id',
+            // ahora esperamos run del usuario en id_usuario
+            'id_usuario' => 'required',
+            'modulos' => 'nullable|integer|min:1|max:10'
         ]);
 
-        $reserva = Reserva::create([
+        // validar que exista el usuario/profesor/solicitante por run
+        $run = $request->input('id_usuario');
+
+        $user = \App\Models\User::where('run', $run)->first();
+        $profesor = class_exists('\App\\Models\\Profesor') ? \App\Models\Profesor::where('run_profesor', $run)->first() : null;
+        $solicitante = class_exists('\App\\Models\\Solicitante') ? \App\Models\Solicitante::where('run_solicitante', $run)->first() : null;
+
+        if (!$user && !$profesor && !$solicitante) {
+            return redirect()->route('reservas.index')->withErrors(['usuario' => 'Usuario no encontrado.']);
+        }
+
+        $reservaData = [
             'id_reserva' => Reserva::generarIdUnico(),
             'hora' => $request->hora,
             'fecha_reserva' => $request->fecha_reserva,
             'id_espacio' => $request->id_espacio,
-            'id' => $request->id,
-        ]);
+            'modulos' => $request->input('modulos', 1),
+            'estado' => 'activa',
+        ];
+
+        // Mapear run a la columna adecuada
+        if ($profesor) {
+            $reservaData['run_profesor'] = $run;
+        } else {
+            // Si es usuario o solicitante, lo registramos como solicitante
+            $reservaData['run_solicitante'] = $run;
+        }
+
+        $reserva = Reserva::create($reservaData);
 
         // Marcar el espacio como ocupado para que el plano se actualice
         try {

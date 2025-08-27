@@ -22,11 +22,11 @@ class PlanoDigitalController extends Controller
     public function index()
     {
         $sedes = Sede::with(['universidad', 'facultades.pisos.mapas'])->get();
-        
+
         // Verificar si hay mapas disponibles
         $mapasDisponibles = Mapa::count();
         $tieneMapas = $mapasDisponibles > 0;
-        
+
         return view('layouts.plano_digital.index', compact('sedes', 'tieneMapas', 'mapasDisponibles'));
     }
 
@@ -36,7 +36,7 @@ class PlanoDigitalController extends Controller
             $mapa = $this->obtenerMapa($id);
             $estadoActual = $this->obtenerEstadoActual(Carbon::now());
             $bloques = $this->prepararBloques($mapa, $estadoActual);
-            
+
             // Obtener todos los pisos de la misma facultad con sus mapas
             $pisos = Piso::with(['mapas'])
                 ->where('id_facultad', $mapa->piso->id_facultad)
@@ -66,7 +66,7 @@ class PlanoDigitalController extends Controller
                     'message' => 'Error al cargar los pisos: ' . $e->getMessage()
                 ], 500);
             }
-            
+
             return redirect()->back()->with('error', 'Error al cargar los pisos: ' . $e->getMessage());
         }
     }
@@ -77,7 +77,7 @@ class PlanoDigitalController extends Controller
             $mapa = $this->obtenerMapa($id);
             $estadoActual = $this->obtenerEstadoActual(Carbon::now());
             $bloques = $this->prepararBloques($mapa, $estadoActual);
-            
+
             return response()->json(['bloques' => $bloques]);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Error al obtener los bloques'], 500);
@@ -226,7 +226,7 @@ class PlanoDigitalController extends Controller
             })
             ->whereHas('modulo', function ($query) use ($horaInicioBusqueda, $horaFinBusqueda, $diaActual, $esRangoEspecial) {
                 $query->where('dia', $diaActual);
-                
+
                 if ($esRangoEspecial) {
                     // Para el rango 05:00-05:10, buscar módulos que empiecen a las 05:10
                     $query->where('hora_inicio', '=', '05:10:00');
@@ -288,7 +288,7 @@ class PlanoDigitalController extends Controller
             ];
             // Incluir el nombre del usuario que ocupa el espacio
             $detalles['usuario_ocupando'] = $reserva->user ? $reserva->user->name : null;
-            
+
             // Incluir información adicional del usuario si está disponible
             if ($reserva->user) {
                 $detalles['usuario_info'] = [
@@ -335,7 +335,7 @@ class PlanoDigitalController extends Controller
         $mapa = Mapa::with(['piso.facultad.sede'])->findOrFail($id);
         $estadoActual = $this->obtenerEstadoActual(Carbon::now());
         $bloques = $this->prepararBloques($mapa, $estadoActual);
-        
+
         return response()->json([
             'mapa' => [
                 'id' => $mapa->id_mapa,
@@ -356,13 +356,13 @@ class PlanoDigitalController extends Controller
         $horaActual = Carbon::now();
         $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
         $horaActualStr = $horaActual->format('H:i:s');
-        
+
         // Determinar el período actual usando el helper
         $periodo = SemesterHelper::getCurrentPeriod();
 
         // Obtener todos los espacios
         $espacios = Espacio::all();
-        
+
         // Obtener todas las planificaciones activas para el período actual
         $planificacionesActivas = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.profesor'])
             ->whereHas('horario', function ($query) use ($periodo) {
@@ -372,7 +372,7 @@ class PlanoDigitalController extends Controller
                 $query->where('dia', $diaActual);
             })
             ->get();
-        
+
         // Obtener reservas activas para hoy
         $reservasActivas = Reserva::where('fecha_reserva', $horaActual->toDateString())
             ->where('estado', 'activa')
@@ -382,37 +382,37 @@ class PlanoDigitalController extends Controller
             'success' => true,
             'espacios' => $espacios->map(function($espacio) use ($horaActual, $horaActualStr, $diaActual, $planificacionesActivas, $reservasActivas) {
                 $estadoTabla = $espacio->estado; // Estado actual en la tabla espacios
-                
+
                 // Verificar si el espacio está ocupado por una reserva activa
                 $tieneReservaActiva = $reservasActivas->where('id_espacio', $espacio->id_espacio)->isNotEmpty();
-                
+
                 // Verificar si el espacio tiene una clase programada que debería estar en curso
                 $claseEnCurso = $planificacionesActivas->where('id_espacio', $espacio->id_espacio)
                     ->filter(function($planificacion) use ($horaActualStr) {
-                        return $planificacion->modulo->hora_inicio <= $horaActualStr && 
+                        return $planificacion->modulo->hora_inicio <= $horaActualStr &&
                                $planificacion->modulo->hora_termino > $horaActualStr;
                     })->first();
-                
+
                 $tieneClaseEnCurso = $claseEnCurso !== null;
-                
+
                 // Verificar si el espacio tiene una clase próxima (entre módulos)
                 $tieneClaseProxima = false;
                 $planificacionesDelEspacio = $planificacionesActivas->where('id_espacio', $espacio->id_espacio);
-                
+
                 foreach ($planificacionesDelEspacio as $planificacion) {
                     $horaInicioModulo = $planificacion->modulo->hora_inicio;
                     $horaActualCarbon = \Carbon\Carbon::createFromFormat('H:i:s', $horaActualStr);
                     $horaInicioCarbon = \Carbon\Carbon::createFromFormat('H:i:s', $horaInicioModulo);
-                    
+
                     // Si la clase comienza dentro de los próximos 10 minutos Y no está actualmente en curso
-                    if ($horaInicioCarbon->gt($horaActualCarbon) && 
+                    if ($horaInicioCarbon->gt($horaActualCarbon) &&
                         $horaInicioCarbon->diffInMinutes($horaActualCarbon) <= 10 &&
                         !$tieneClaseEnCurso) {
                         $tieneClaseProxima = true;
                         break;
                     }
                 }
-                
+
                 // Determinar el estado final según la lógica correcta
                 if ($estadoTabla === 'Ocupado') {
                     // Si el estado en la tabla es "Ocupado", mostrar rojo y mantenerlo hasta devolución
@@ -430,7 +430,7 @@ class PlanoDigitalController extends Controller
                 } else {
                     $estado = $estadoTabla;
                 }
-                
+
                 // Preparar información adicional para el modal
                 $informacionAdicional = null;
                 if ($tieneClaseEnCurso && $claseEnCurso) {
@@ -442,7 +442,7 @@ class PlanoDigitalController extends Controller
                         'hora_termino' => substr($claseEnCurso->modulo->hora_termino, 0, 5)
                     ];
                 }
-                
+
                 return [
                     'id_espacio' => $espacio->id_espacio,
                     'estado' => $estado,
@@ -468,7 +468,7 @@ class PlanoDigitalController extends Controller
 
             // Buscar el espacio
             $espacio = Espacio::where('id_espacio', $idEspacio)->first();
-            
+
             if (!$espacio) {
                 return response()->json([
                     'success' => false,
@@ -487,7 +487,7 @@ class PlanoDigitalController extends Controller
 
             if (!$reservaActiva) {
                 \Log::warning("Intento de devolución sin reserva activa - Usuario: {$runUsuario}, Espacio: {$idEspacio}");
-                
+
                 // Verificar si el espacio ya está disponible (puede que ya se haya devuelto)
                 if ($espacio->estado === 'Disponible') {
                     return response()->json([
@@ -500,14 +500,14 @@ class PlanoDigitalController extends Controller
                         ]
                     ]);
                 }
-                
+
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'No tienes una reserva activa en este espacio'
                 ], 400);
             }
 
-            
+
 
             // Actualizar la reserva activa del usuario: establecer hora_salida y cambiar estado a finalizada
             if ($reservaActiva) {
@@ -535,7 +535,7 @@ class PlanoDigitalController extends Controller
 
         } catch (\Exception $e) {
             \Log::error('Error al devolver espacio: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'mensaje' => 'Error al procesar la devolución: ' . $e->getMessage()
@@ -642,6 +642,8 @@ class PlanoDigitalController extends Controller
                                 'tipo' => 'profesor',
                                 'nombre' => $profesor->name,
                                 'run' => $profesor->run_profesor,
+                                'email' => $profesor->email,
+                                'tipo_profesor' => $profesor->tipo_profesor,
                                 'hora_inicio' => $reservaOcupante->hora,
                                 'fecha' => $reservaOcupante->fecha_reserva
                             ];
@@ -823,15 +825,15 @@ class PlanoDigitalController extends Controller
             $horaActual = now()->format('H:i:s');
             $fechaActual = now()->format('Y-m-d');
             $ahora = now();
-            
+
             // Validar horario académico
             $hora = (int)now()->format('H');
             $minutos = (int)now()->format('i');
             $horaEnMinutos = $hora * 60 + $minutos;
-            
+
             $inicioAcademico = 8 * 60 + 10; // 08:10
             $finAcademico = 23 * 60; // 23:00
-            
+
             if ($horaEnMinutos < $inicioAcademico || $horaEnMinutos >= $finAcademico) {
                 return response()->json([
                     'success' => false,
@@ -1002,9 +1004,9 @@ class PlanoDigitalController extends Controller
                 5 => 'viernes',
                 6 => 'sábado'
             ];
-            
+
             $nombreDia = $diasSemana[$diaActual] ?? 'lunes';
-            
+
             // Obtener período actual
             $periodo = \App\Helpers\SemesterHelper::getCurrentPeriod();
 
@@ -1025,26 +1027,26 @@ class PlanoDigitalController extends Controller
             $horaActualTime = \Carbon\Carbon::createFromFormat('H:i:s', $horaActual);
             $inicioHorario = \Carbon\Carbon::createFromFormat('H:i:s', '20:10:00');
             $finHorario = \Carbon\Carbon::createFromFormat('H:i:s', '22:00:00');
-            
-            $tieneClasesEnHorario = $planificaciones->count() > 0 && 
+
+            $tieneClasesEnHorario = $planificaciones->count() > 0 &&
                                    $horaActualTime->between($inicioHorario, $finHorario);
 
             // Agrupar por asignatura y detectar módulos consecutivos
             $clasesConModulosConsecutivos = [];
             $planificacionesAgrupadas = $planificaciones->groupBy('asignatura.nombre_asignatura');
-            
+
             foreach ($planificacionesAgrupadas as $nombreAsignatura => $planificacionesAsignatura) {
                 $modulosOrdenados = $planificacionesAsignatura->sortBy('modulo.hora_inicio');
                 $secuenciasModulos = [];
                 $secuenciaActual = [];
-                
+
                 foreach ($modulosOrdenados as $planificacion) {
                     if (empty($secuenciaActual)) {
                         $secuenciaActual[] = $planificacion;
                     } else {
                         $ultimoModulo = end($secuenciaActual)->modulo;
                         $moduloActual = $planificacion->modulo;
-                        
+
                         // Verificar si son consecutivos (el siguiente empieza cuando termina el anterior)
                         if ($ultimoModulo->hora_termino === $moduloActual->hora_inicio) {
                             $secuenciaActual[] = $planificacion;
@@ -1057,12 +1059,12 @@ class PlanoDigitalController extends Controller
                         }
                     }
                 }
-                
+
                 // Agregar la última secuencia
                 if (!empty($secuenciaActual)) {
                     $secuenciasModulos[] = $secuenciaActual;
                 }
-                
+
                 $clasesConModulosConsecutivos[$nombreAsignatura] = $secuenciasModulos;
             }
 

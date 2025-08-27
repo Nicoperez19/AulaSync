@@ -23,6 +23,7 @@ class Reserva extends Model
         'id_espacio',
         'run_profesor',
         'run_solicitante',
+    'modulos',
         'tipo_reserva',
         'estado',
         'hora_salida',

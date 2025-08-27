@@ -157,10 +157,10 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Enlace Volver -->
                 <div class="w-full mt-4">
-                    <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}" 
+                    <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}"
                        class="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors duration-200 shadow-md"
                        onclick="qrInputManager.setActiveInput('main')">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
@@ -231,7 +231,7 @@
                 <!-- Círculos decorativos -->
                 <span class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
                 <span class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
-                
+
                 <div class="flex items-center flex-1 min-w-0 gap-5">
                     <div class="flex flex-col items-center justify-center flex-shrink-0">
                         <div class="p-4 mb-2 bg-white rounded-full bg-opacity-20">
@@ -245,15 +245,15 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
-                    <button onclick="cerrarModalEspacio(); qrInputManager.setActiveInput('main')" 
+                    <button onclick="cerrarModalEspacio(); qrInputManager.setActiveInput('main')"
                         class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
                         title="Cerrar modal (Esc)"
                         aria-label="Cerrar modal">&times;</button>
                 </div>
             </div>
-            
+
             <!-- Contenido del modal -->
             <div class="p-6 bg-gray-50 overflow-y-auto max-h-[70vh] flex-1">
                 <!-- Estado del espacio -->
@@ -272,7 +272,7 @@
                         <!-- Información adicional del estado se insertará aquí -->
                     </div>
                 </div>
-                
+
                 <!-- Información del ocupante actual / último ocupante -->
                 <div id="ocupanteContainer" class="p-6 mb-6 bg-white border-l-4 border-green-500 shadow-sm rounded-xl" style="display: none;">
                     <h3 id="ocupanteTitulo" class="mb-4 text-xl font-semibold text-gray-800">
@@ -282,8 +282,13 @@
                     <div id="ocupanteInfo" class="space-y-3">
                         <!-- La información se insertará dinámicamente -->
                     </div>
+                    <div class="mt-4 flex justify-end">
+                        <button id="btnDesocupar" class="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded hover:bg-red-700 hidden">
+                            Desocupar
+                        </button>
+                    </div>
                 </div>
-                
+
                 <!-- Información de la clase actual -->
                 <div id="claseActualContainer" class="p-6 mb-6 bg-white border-l-4 border-orange-500 shadow-sm rounded-xl" style="display: none;">
                     <h3 class="mb-4 text-xl font-semibold text-gray-800">
@@ -294,7 +299,7 @@
                         <!-- La información se insertará dinámicamente -->
                     </div>
                 </div>
-                
+
                 <!-- Próxima clase programada -->
                 <div id="proximaClaseContainer" class="p-6 mb-6 bg-white border-l-4 border-purple-500 shadow-sm rounded-xl" style="display: none;">
                     <h3 class="mb-4 text-xl font-semibold text-gray-800">
@@ -303,6 +308,11 @@
                     </h3>
                     <div id="proximaClaseInfo" class="space-y-3">
                         <!-- La información se insertará dinámicamente -->
+                    </div>
+                    <div class="mt-4 flex justify-end">
+                        <button id="btnDesocuparReserva" class="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded hover:bg-red-700 hidden">
+                            Desocupar reserva
+                        </button>
                     </div>
                 </div>
             </div>
@@ -403,7 +413,7 @@
                 <!-- Círculos decorativos -->
                 <span class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
                 <span class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
-                
+
                 <div class="flex items-center flex-1 min-w-0 gap-5">
                     <div class="flex flex-col items-center justify-center flex-shrink-0">
                         <div class="p-4 mb-2 bg-white rounded-full bg-opacity-20">
@@ -417,15 +427,15 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
-                    <button onclick="cerrarModalModulos()" 
+                    <button onclick="cerrarModalModulos()"
                         class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
                         title="Cerrar modal (Esc)"
                         aria-label="Cerrar modal">&times;</button>
                 </div>
             </div>
-            
+
             <!-- Contenido del modal -->
             <div class="p-6 bg-gray-50 overflow-y-auto max-h-[70vh] flex-1">
               <!-- Selección de módulos -->
@@ -442,10 +452,10 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Información detallada de módulos -->
                 <div id="info-modulos-disponibles" class="mb-6"></div>
-                
+
                 <!-- Botones de acción -->
                 <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
                     <x-button id="btn-confirmar-modulos" variant='add'>
@@ -600,89 +610,94 @@
         // Definición de horarios de módulos (debe ir antes de las funciones que lo usan)
         const horariosModulos = {
             lunes: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+            0: { inicio: '00:00:00', fin: '08:10:00' },
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
             },
             martes: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+            0: { inicio: '00:00:00', fin: '08:10:00' },
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
             },
             miercoles: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+            0: { inicio: '00:00:00', fin: '08:10:00' },
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
             },
             jueves: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+            0: { inicio: '00:00:00', fin: '08:10:00' },
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
             },
             viernes: {
-                1: { inicio: '08:10:00', fin: '09:00:00' },
-                2: { inicio: '09:10:00', fin: '10:00:00' },
-                3: { inicio: '10:10:00', fin: '11:00:00' },
-                4: { inicio: '11:10:00', fin: '12:00:00' },
-                5: { inicio: '12:10:00', fin: '13:00:00' },
-                6: { inicio: '13:10:00', fin: '14:00:00' },
-                7: { inicio: '14:10:00', fin: '15:00:00' },
-                8: { inicio: '15:10:00', fin: '16:00:00' },
-                9: { inicio: '16:10:00', fin: '17:00:00' },
-                10: { inicio: '17:10:00', fin: '18:00:00' },
-                11: { inicio: '18:10:00', fin: '19:00:00' },
-                12: { inicio: '19:10:00', fin: '20:00:00' },
-                13: { inicio: '20:10:00', fin: '21:00:00' },
-                14: { inicio: '21:10:00', fin: '22:00:00' },
-                15: { inicio: '22:10:00', fin: '23:00:00' }
+            0: { inicio: '00:00:00', fin: '08:10:00' },
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
             }
         };
 
@@ -698,13 +713,13 @@
                 this.modalStates = new Map();
                 this.init();
             }
-            
+
             init() {
                 // Configurar estado inicial
                 this.setActiveInput('main');
                 this.setupEventListeners();
             }
-            
+
             setActiveInput(inputType) {
                 // Desactivar todos los inputs primero
                 Object.values(this.qrInputs).forEach(input => {
@@ -713,7 +728,7 @@
                         input.removeAttribute('autofocus');
                     }
                 });
-                
+
                 // Activar el input especificado
                 const targetInput = this.qrInputs[inputType];
                 if (targetInput) {
@@ -724,7 +739,7 @@
                     }, 100);
                 }
             }
-            
+
             desactivarTodosLosInputs() {
                 Object.values(this.qrInputs).forEach(input => {
                     if (input) {
@@ -734,7 +749,7 @@
                 });
                 this.activeInput = null;
             }
-            
+
             restaurarInputActivo() {
                 if (this.activeInput && this.qrInputs[this.activeInput]) {
                     const input = this.qrInputs[this.activeInput];
@@ -744,21 +759,21 @@
                     }, 100);
                 }
             }
-            
+
             setupEventListeners() {
                 // Event listeners para modales Bootstrap
                 document.addEventListener('show.bs.modal', (event) => {
                     this.desactivarTodosLosInputs();
                 });
-                
+
                 document.addEventListener('hide.bs.modal', (event) => {
                     this.restaurarInputActivo();
                 });
-                
+
                 // Event listeners para modales personalizados (Livewire)
                 document.addEventListener('show-modal', (event) => {
                     this.desactivarTodosLosInputs();
-                    
+
                     // Cambiar el input activo según el tipo de modal
                     if (event.detail === 'devolver-llaves') {
                         this.setActiveInput('devolucion');
@@ -766,27 +781,27 @@
                         this.setActiveInput('solicitud');
                     }
                 });
-                
+
                 document.addEventListener('close-modal', (event) => {
                     this.restaurarInputActivo();
                 });
-                
+
                 // Event listeners para Sweet Alerts
                 document.addEventListener('swal:open', (event) => {
                     this.desactivarTodosLosInputs();
                 });
-                
+
                 document.addEventListener('swal:close', (event) => {
                     this.restaurarInputActivo();
                 });
-                
+
                 // Interceptar SweetAlert2 si está disponible
                 if (typeof Swal !== 'undefined') {
                     const originalFire = Swal.fire;
                     Swal.fire = (...args) => {
                         this.desactivarTodosLosInputs();
                         const result = originalFire.apply(this, args);
-                        
+
                         if (result && typeof result.then === 'function') {
                             result.then(() => {
                                 this.restaurarInputActivo();
@@ -794,22 +809,22 @@
                                 this.restaurarInputActivo();
                             });
                         }
-                        
+
                         return result;
                     };
                 }
-                
+
                 // Event listeners para modales personalizados específicos
                 document.addEventListener('click', (event) => {
                     // Detectar clics en botones de cerrar modal
-                    if (event.target.matches('[onclick*="cerrarModal"]') || 
+                    if (event.target.matches('[onclick*="cerrarModal"]') ||
                         event.target.matches('[onclick*="cerrarModalRegistro"]') ||
                         event.target.matches('[onclick*="cerrarModalModulos"]')) {
                         setTimeout(() => {
                             this.restaurarInputActivo();
                         }, 200);
                     }
-                    
+
                     // Detectar clics en diferentes áreas para cambiar el input activo
                     if (event.target.closest('#modal-devolver-llaves')) {
                         this.setActiveInput('devolucion');
@@ -821,7 +836,7 @@
                 });
             }
         }
-        
+
         // Inicializar el gestor de inputs QR
         const qrInputManager = new QRInputManager();
 
@@ -860,7 +875,8 @@
             updateInterval: null,
             hoveredIndicator: null,
             lastLocalChange: null,
-            ultimoCambioLocal: null
+            ultimoCambioLocal: null,
+            currentIndicatorId: null
         };
 
         let elements = {
@@ -916,10 +932,10 @@
             espacioParaReserva = null;
             runParaReserva = null;
             usuarioInfo = null; // Limpiar información del usuario
-            
+
             // Limpiar buffers
             bufferQR = '';
-            
+
             // Ocultar información del usuario
             const infoUsuario = getInfoUsuario();
             if (infoUsuario) infoUsuario.classList.add('hidden');
@@ -940,13 +956,13 @@
                 qrStatus.classList.add('parpadeo');
                 qrStatus.innerHTML = 'Esperando... Escanea el código QR de la cedula de identidad';
             }
-            
+
             // Limpiar cualquier input de QR que pueda tener datos
             const qrInput = document.getElementById('qr-input');
             if (qrInput) {
                 qrInput.value = '';
             }
-            
+
             // Restaurar el input QR activo después de limpiar el estado
             setTimeout(() => {
                 if (qrInputManager) {
@@ -958,7 +974,7 @@
         function resetearFlujoPorError(mensajeError) {
             // Solo limpiar el estado de lectura, NO cerrar modales ni resetear toda la interfaz
             limpiarEstadoLectura(mensajeError);
-            
+
             // Restaurar el input QR activo después de resetear el flujo
             setTimeout(() => {
                 if (qrInputManager) {
@@ -983,19 +999,19 @@
             if (inputEscanner) {
                 inputEscanner.value = '';
             }
-            
+
             // OCULTAR el bloque de información del usuario silenciosamente
             const infoUsuario = getInfoUsuario();
             if (infoUsuario) {
                 infoUsuario.classList.add('hidden');
             }
-            
+
             // Limpiar los datos mostrados
             const runEscaneado = document.getElementById('run-escaneado');
             const nombreUsuario = document.getElementById('nombre-usuario');
             if (runEscaneado) runEscaneado.textContent = '--';
             if (nombreUsuario) nombreUsuario.textContent = '--';
-            
+
             // Restaurar el input QR activo después de limpiar el estado silenciosamente
             setTimeout(() => {
                 if (qrInputManager) {
@@ -1006,7 +1022,7 @@
 
         function limpiarEstadoLectura(mensajeError = null) {
             // Solo limpiar el estado de lectura del QR, NO toda la interfaz
-            
+
             // Limpiar buffer y timeouts
             bufferQR = '';
             lastBufferLength = 0;
@@ -1018,25 +1034,25 @@
                 clearTimeout(errorTimeout);
                 errorTimeout = null;
             }
-            
+
             // Limpiar input
             const inputEscanner = document.getElementById('qr-input');
             if (inputEscanner) {
                 inputEscanner.value = '';
             }
-            
+
             // OCULTAR el bloque de información del usuario cuando hay error
             const infoUsuario = getInfoUsuario();
             if (infoUsuario) {
                 infoUsuario.classList.add('hidden');
             }
-            
+
             // Limpiar los datos mostrados en el bloque de información
             const runEscaneado = document.getElementById('run-escaneado');
             const nombreUsuario = document.getElementById('nombre-usuario');
             if (runEscaneado) runEscaneado.textContent = '--';
             if (nombreUsuario) nombreUsuario.textContent = '--';
-            
+
             // Mostrar mensaje de error temporal si se proporciona
             if (mensajeError) {
                 const qrStatus = getQrStatus();
@@ -1044,7 +1060,7 @@
                     qrStatus.classList.remove('parpadeo');
                     qrStatus.innerHTML = `Error: ${mensajeError}`;
                     qrStatus.style.color = '#FFFFFF';
-                    
+
                     // Restaurar estado normal después de 1.5 segundos
                     setTimeout(() => {
                         qrStatus.classList.add('parpadeo');
@@ -1060,10 +1076,10 @@
                     qrStatus.innerHTML = 'Esperando... Escanea el código QR de la cedula de identidad';
                 }
             }
-            
+
             // Resetear orden de escaneo
             ordenEscaneo = 'usuario';
-            
+
             // Restaurar el input QR activo después de limpiar el estado de lectura
             setTimeout(() => {
                 if (qrInputManager) {
@@ -1110,10 +1126,10 @@
             try {
                 const response = await fetch(`/api/verificar-clases-programadas/${run}`);
                 const result = await response.json();
-                
+
                 const data = result.original || result;
                 const tieneClases = data.success && data.tiene_clases;
-                
+
                 return tieneClases;
             } catch (error) {
                 return false;
@@ -1204,22 +1220,22 @@
                     minute: '2-digit',
                     second: '2-digit'
                 });
-                
+
                 // Verificar si estamos dentro del horario académico (08:10 - 23:00)
                 const hora = parseInt(horaActual.split(':')[0]);
                 const minutos = parseInt(horaActual.split(':')[1]);
                 const horaEnMinutos = hora * 60 + minutos;
-                
+
                 const inicioAcademico = 8 * 60 + 10; // 08:10
                 const finAcademico = 23 * 60; // 23:00
-                
+
                 if (horaEnMinutos < inicioAcademico || horaEnMinutos >= finAcademico) {
                     return {
                         success: false,
                         mensaje: 'No se pueden crear reservas fuera del horario académico (08:10 - 23:00).'
                     };
                 }
-                
+
                 const response = await fetch('/api/crear-reserva-solicitante', {
                     method: 'POST',
                     headers: {
@@ -1232,7 +1248,7 @@
                         modulos: 1 // Por defecto 1 módulo para solicitantes
                     })
                 });
-                
+
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
                     return {
@@ -1240,7 +1256,7 @@
                         mensaje: errorData.mensaje || `Error del servidor: ${response.status} ${response.statusText}`
                     };
                 }
-                
+
                 return await response.json();
             } catch (error) {
                 console.error('Error en crearReservaSolicitante:', error);
@@ -1297,28 +1313,28 @@
         let lastBufferLength = 0;
         let processingTimeout = null;
         let errorTimeout = null;
-        
+
     async function handleScan(event) {
                     // Solo procesar cuando se presiona Enter
         if (event.key !== 'Enter') {
             // Acumular caracteres en el buffer
             if (event.key.length === 1) {
                 bufferQR += event.key;
-                    
+
                     // Detectar cuando el escaneo se completó (buffer dejó de crecer)
                     if (bufferQR.length > lastBufferLength) {
                         lastBufferLength = bufferQR.length;
-                        
+
                         // Limpiar timeout anterior
                         if (processingTimeout) {
                             clearTimeout(processingTimeout);
                         }
-                        
+
                         // Procesar automáticamente después de 500ms sin nuevos caracteres
                         processingTimeout = setTimeout(async () => {
                             await procesarQRCompleto();
                         }, 500);
-                        
+
                         // Timeout de seguridad para detectar lecturas erróneas (60 segundos)
                         if (errorTimeout) {
                             clearTimeout(errorTimeout);
@@ -1348,7 +1364,7 @@
 
         await procesarQRCompleto();
         }
-        
+
         async function procesarQRCompleto() {
             // Validar que el buffer no esté vacío
             if (!bufferQR || bufferQR.trim() === '') {
@@ -1378,7 +1394,7 @@
         } else if (ordenEscaneo === 'espacio') {
             // PASO 2: Escanear espacio (solo después del usuario)
             const resultado = await procesarEspacio();
-            
+
             // Si la devolución fue exitosa, no continuar con más procesamiento
             if (resultado === 'devolucion_exitosa') {
                 return;
@@ -1398,7 +1414,7 @@
                 clearTimeout(errorTimeout);
                 errorTimeout = null;
             }
-            
+
             // Restaurar el input QR activo después de procesar
             setTimeout(() => {
                 if (qrInputManager) {
@@ -1411,7 +1427,7 @@
                     // Extraer RUN del QR (buscar "RUN" seguido de números)
         const runMatch = bufferQR.match(/RUN[^0-9]*(\d+)/);
         let run = null;
-        
+
         if (!runMatch) {
             // Intentar otros formatos de RUN
             const runMatchAlt = bufferQR.match(/(\d{7,8})/);
@@ -1443,8 +1459,8 @@
         usuarioEscaneado = run;
 
                     // Verificar usuario en la base de datos
-        const usuarioInfo = await verificarUsuario(run);
-        
+                    usuarioInfo = await verificarUsuario(run);
+
         if (!usuarioInfo) {
             // Error al verificar usuario - resetear flujo
             usuarioEscaneado = null;
@@ -1460,11 +1476,11 @@
 
             if (usuarioInfo.verificado) {
                 // Usuario verificado
-                
+
                 if (usuarioInfo.tipo_usuario === 'profesor') {
                             // Es profesor - verificar si tiene clases programadas
         const tieneClases = await verificarClasesProfesor(run);
-        
+
         if (tieneClases === true) {
             // Profesor CON clases - solo registra solicitud
             document.getElementById('qr-status').innerHTML = 'Profesor con clases verificado. Escanee el espacio para registrar asistencia.';
@@ -1487,7 +1503,7 @@
                 } else {
                             // Otro tipo de usuario - mostrar error
                 }
-                
+
                 // Limpiar buffer después de procesar usuario exitosamente
                 bufferQR = '';
                 lastBufferLength = 0;
@@ -1495,33 +1511,33 @@
                 if (inputEscanner) {
                     inputEscanner.value = '';
                 }
-                
+
                 // Restaurar autofocus del qr-input después de procesar usuario exitosamente
                 setTimeout(() => {
                     if (qrInputManager) {
                         qrInputManager.setActiveInput('main');
                     }
                 }, 100);
-                
+
             } else {
                         // Usuario no encontrado - mostrar modal de registro de solicitante
         runSolicitantePendiente = run;
         document.getElementById('run-solicitante-no-registrado').textContent = run;
-        
+
         // Cerrar modal actual si está abierto
         window.dispatchEvent(new CustomEvent('close-modal', {
             detail: 'data-space'
         }));
-        
+
         // Abrir modal de registro de solicitante
         setTimeout(() => {
             // Desactivar todos los inputs QR para permitir escribir cómodamente
             qrInputManager.desactivarTodosLosInputs();
-            
+
             window.dispatchEvent(new CustomEvent('open-modal', {
                 detail: 'registro-solicitante'
             }));
-            
+
             // Restaurar autofocus del qr-input después de abrir modal de registro
             setTimeout(() => {
                 if (qrInputManager) {
@@ -1529,7 +1545,7 @@
                 }
             }, 300);
         }, 300);
-        
+
         // Limpiar buffer después de abrir modal
         bufferQR = '';
         lastBufferLength = 0;
@@ -1543,7 +1559,7 @@
         async function procesarEspacio() {
                     // Extraer código de espacio - múltiples formatos posibles
         let espacio = null;
-        
+
         // Patrón 1: TH seguido de cualquier cosa (formato estándar)
         const espacioMatch = bufferQR.match(/(TH[^A-Z0-9]*[A-Z0-9]+)/i);
         if (espacioMatch) {
@@ -1587,12 +1603,12 @@
         }
 
                     // Verificar estado del espacio y reservas del usuario
-        
+
         // Agregar timeout para evitar que se cuelgue
-        const timeoutPromise = new Promise((_, reject) => 
+        const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Timeout en verificación de espacio')), 10000)
         );
-        
+
         const resultadoVerificacion = await Promise.race([
             verificarEstadoEspacioYReserva(usuarioEscaneado, espacio),
             timeoutPromise
@@ -1609,7 +1625,12 @@
                 mensaje: 'Timeout al verificar el estado del espacio'
             };
         });
-            
+
+                    if (resultadoVerificacion.tipo === 'error') {
+            // Error al verificar estado - resetear flujo
+            // Error al verificar estado del espacio
+            limpiarEstadoLectura('Error al verificar el estado del espacio');
+            // Restaurar autofocus del qr-input después de error en verificación de espacio
             setTimeout(() => {
                 if (qrInputManager) {
                     qrInputManager.setActiveInput('main');
@@ -1624,16 +1645,16 @@
         if (procesandoDevolucion) {
             return 'devolucion_en_proceso';
         }
-        
+
         procesandoDevolucion = true;
-        
+
         // El usuario tiene una reserva activa en este espacio - procesar devolución automáticamente
-        
+
         // Mostrar mensaje de devolución en proceso
         document.getElementById('qr-status').innerHTML = 'Procesando devolución...';
-        
+
         const devolucion = await devolverEspacio(usuarioEscaneado, espacio);
-                
+
         if (devolucion && devolucion.success) {
             // Actualizar indicador en el mapa
             const block = state.indicators.find(b => b.id === espacio);
@@ -1642,7 +1663,7 @@
                 state.originalCoordinates = state.indicators.map(i => ({ ...i }));
                 drawIndicators();
             }
-            
+
             // Mostrar Sweet Alert de éxito para devolución
             Swal.fire({
                 title: '¡Devolución Exitosa!',
@@ -1654,10 +1675,10 @@
                 timerProgressBar: true,
                 showConfirmButton: false
             });
-            
+
             // Mostrar mensaje de éxito
             document.getElementById('qr-status').innerHTML = 'Devolución exitosa';
-            
+
             // Limpiar solo el estado de lectura después de un delay
             setTimeout(() => {
                 limpiarEstadoLectura();
@@ -1666,14 +1687,14 @@
                     qrInputManager.setActiveInput('main');
                 }
             }, 2000);
-            
+
             // IMPORTANTE: Detener completamente el procesamiento aquí
             procesandoDevolucion = false;
             return 'devolucion_exitosa';
         } else {
             // Mostrar error específico de devolución
             const mensajeError = devolucion?.mensaje || 'Error al devolver las llaves';
-            
+
             // Resetear el estado para permitir nuevo escaneo
             procesandoDevolucion = false;
             ordenEscaneo = 'usuario';
@@ -1689,7 +1710,7 @@
 
             if (resultadoVerificacion.tipo === 'reserva_existente') {
                 // Procesando reserva existente...
-                
+
                 // Mostrar Sweet Alert de reserva existente
                 Swal.fire({
                     title: 'Reserva Activa',
@@ -1701,7 +1722,7 @@
                     timerProgressBar: true,
                     showConfirmButton: false
                 });
-                
+
                 // Limpiar estado después del Sweet Alert
                 setTimeout(() => {
                     limpiarEstadoLectura();
@@ -1710,7 +1731,7 @@
                         qrInputManager.setActiveInput('main');
                     }
                 }, 2500);
-                
+
                 ordenEscaneo = 'usuario';
                 return;
             }
@@ -1723,7 +1744,7 @@
                     ordenEscaneo = 'usuario';
                     return;
                 }
-                
+
                 let mensajeDetallado = resultadoVerificacion.mensaje;
                 if (resultadoVerificacion.ocupante) {
                     const ocupante = resultadoVerificacion.ocupante;
@@ -1740,9 +1761,9 @@
                         </div>
                     `;
                 }
-                
 
-                
+
+
                 // Limpiar estado después de mostrar el mensaje
                 setTimeout(() => {
                     limpiarEstadoLectura();
@@ -1751,7 +1772,7 @@
                         qrInputManager.setActiveInput('main');
                     }
                 }, 1000);
-                
+
                 ordenEscaneo = 'usuario';
                 return;
             }
@@ -1759,7 +1780,7 @@
                     // Si llegamos aquí, el espacio está disponible para crear una nueva reserva
         // Verificar el tipo de usuario para determinar el flujo
                     usuarioInfo = await verificarUsuario(usuarioEscaneado);
-        
+
         if (!usuarioInfo || !usuarioInfo.verificado) {
             ordenEscaneo = 'usuario';
             // Restaurar autofocus del qr-input después de error en verificación de usuario
@@ -1775,14 +1796,14 @@
         if (usuarioInfo.tipo_usuario === 'profesor') {
             // Verificar si tiene clases programadas
             const tieneClases = await verificarClasesProfesor(usuarioEscaneado);
-            
+
             if (tieneClases === true) {
                 // CASO 1: Profesor CON clases - registrar asistencia usando endpoint específico
                 const resultado = await registrarAsistenciaProfesor(usuarioEscaneado, espacio);
                 if (resultado && resultado.success) {
                     // Mostrar mensaje de proceso
                     document.getElementById('qr-status').innerHTML = 'Registrando asistencia...';
-                    
+
                     // Actualizar indicador en el mapa
                     const block = state.indicators.find(b => b.id === espacio);
                     if (block) {
@@ -1790,7 +1811,7 @@
                         state.originalCoordinates = state.indicators.map(i => ({ ...i }));
                         drawIndicators();
                     }
-                    
+
                     // Mostrar Sweet Alert de éxito para asistencia registrada
                     Swal.fire({
                         title: '¡Asistencia Registrada!',
@@ -1802,31 +1823,31 @@
                         timerProgressBar: true,
                         showConfirmButton: false
                     });
-                    
+
                     // Mostrar mensaje de asistencia registrada
                     document.getElementById('qr-status').innerHTML = 'Asistencia registrada';
                     document.getElementById('qr-status').classList.remove('parpadeo');
-                    
+
                     // Limpiar solo el estado de lectura después de un delay
                     setTimeout(() => {
                         // Mantener usuarioEscaneado para continuar el flujo
                         ordenEscaneo = 'espacio'; // Ya escaneó usuario, ahora espera espacio
                         espacioParaReserva = null;
                         runParaReserva = null;
-                        
+
                         // Limpiar solo buffers de lectura
                         bufferQR = '';
-                        
+
                         // Resetear solo interfaz de lectura
                         limpiarEstadoLectura();
-                        
+
                         // Mantener información del usuario visible
                         const qrStatus = document.getElementById('qr-status');
                         if (qrStatus) {
                             qrStatus.classList.remove('parpadeo');
                             qrStatus.innerHTML = 'Usuario verificado. Escanee el espacio.';
                         }
-                        
+
                         // Restaurar autofocus del qr-input después de registrar asistencia
                         if (qrInputManager) {
                             qrInputManager.setActiveInput('main');
@@ -1867,7 +1888,7 @@
         if (inputEscanner) {
             inputEscanner.value = '';
         }
-        
+
         // Resetear para siguiente usuario
         setTimeout(() => {
             limpiarEstadoLectura();
@@ -1876,7 +1897,7 @@
                 qrInputManager.setActiveInput('main');
             }
         }, 3000);
-        
+
         return 'procesamiento_completado';
         }
 
@@ -2083,7 +2104,7 @@
 
             state.indicators.forEach((indicator, index) => {
                 const position = calculatePosition(indicator);
-                
+
                 const size = config.indicatorSize;
 
                 // Determinar color basado en el estado
@@ -2124,7 +2145,7 @@
 
         async function mostrarModalEspacio(indicator) {
             // Mostrando modal para espacio
-            
+
                     // Mostrar el modal inmediatamente
         const modal = document.getElementById('modal-espacio-info');
         if (modal) {
@@ -2136,7 +2157,10 @@
             // No se encontró el modal de espacio
             return;
         }
-            
+
+                // Guardar indicador actual en estado para usos posteriores
+                state.currentIndicatorId = indicator.id;
+
             // Obtener elementos del modal una sola vez
             const elements = {
                 modalTitulo: document.getElementById('modalTitulo'),
@@ -2159,16 +2183,16 @@
 
             // Configurar información básica del modal inmediatamente (sin esperar)
             configurarInformacionBasica(elements, indicator);
-            
+
             // Configurar estado inmediatamente
             configurarEstado(elements, indicator);
-            
+
                     // Mostrar loading optimizado
         mostrarLoadingOptimizado(elements);
 
         // Cargar información detallada en paralelo con timeout
         const dataPromise = cargarInformacionDetallada(indicator.id);
-        const timeoutPromise = new Promise((_, reject) => 
+        const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Timeout')), 5000)
         );
 
@@ -2192,7 +2216,7 @@
             if (elements.modalTitulo) {
                 elements.modalTitulo.textContent = `${indicator.nombre} (${indicator.id})`;
             }
-            
+
             if (elements.modalSubtitulo) {
                 elements.modalSubtitulo.textContent = `${indicator.tipo || 'Espacio'}`;
             }
@@ -2215,7 +2239,7 @@
         function configurarEstado(elements, indicator) {
             const estadoReal = indicator.estado;
             // Estado real del espacio
-            
+
             const estadoConfig = {
                 'disponible': { texto: 'Disponible', pill: 'border-green-500 bg-green-50 text-green-700', icon: 'bg-green-500' },
                 'Disponible': { texto: 'Disponible', pill: 'border-green-500 bg-green-50 text-green-700', icon: 'bg-green-500' },
@@ -2232,20 +2256,20 @@
                 '#3B82F6': { texto: 'Próximo a ocuparse', pill: 'border-blue-500 bg-blue-50 text-blue-700', icon: 'bg-blue-500' }
             };
 
-            const config = estadoConfig[estadoReal] || { 
-                texto: 'Sin estado', 
-                pill: 'border-gray-400 bg-gray-50 text-gray-700', 
-                icon: 'bg-gray-400' 
+            const config = estadoConfig[estadoReal] || {
+                texto: 'Sin estado',
+                pill: 'border-gray-400 bg-gray-50 text-gray-700',
+                icon: 'bg-gray-400'
             };
 
             if (elements.estadoPill) {
                 elements.estadoPill.className = `inline-flex items-center px-4 py-2 text-sm font-bold border rounded-full ${config.pill}`;
             }
-            
+
             if (elements.estadoIcon) {
                 elements.estadoIcon.className = `w-3 h-3 mr-2 rounded-full ${config.icon}`;
             }
-            
+
             if (elements.modalEstado) {
                 elements.modalEstado.textContent = config.texto;
             }
@@ -2271,17 +2295,17 @@
                     // Cache específico para espacios con solicitantes
         const cacheKey = `espacio_${espacioId}`;
         const solicitanteCacheKey = `solicitante_espacio_${espacioId}`;
-        
+
         const cached = sessionStorage.getItem(cacheKey);
         const cacheTime = sessionStorage.getItem(`${cacheKey}_time`);
         const solicitanteCached = sessionStorage.getItem(solicitanteCacheKey);
         const solicitanteCacheTime = sessionStorage.getItem(`${solicitanteCacheKey}_time`);
-        
+
         // Cache válido por 30 segundos para espacios normales
         if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 30000) {
             return JSON.parse(cached);
         }
-        
+
         // Cache específico para solicitantes (válido por 5 minutos)
         if (solicitanteCached && solicitanteCacheTime && (Date.now() - parseInt(solicitanteCacheTime)) < 300000) {
             return JSON.parse(solicitanteCached);
@@ -2296,7 +2320,7 @@
             });
 
             const data = await response.json();
-            
+
                     // Guardar en cache según el tipo de ocupación
         if (data.success && data.tipo_ocupacion === 'solicitante') {
             // Cache específico para solicitantes (5 minutos)
@@ -2307,7 +2331,7 @@
             sessionStorage.setItem(cacheKey, JSON.stringify(data));
             sessionStorage.setItem(`${cacheKey}_time`, Date.now().toString());
         }
-            
+
             return data;
         }
 
@@ -2336,6 +2360,53 @@
                 renderizarInformacionLibre(elements, data);
             }
         }
+
+        // Handler para el botón Desocupar
+        document.addEventListener('DOMContentLoaded', function () {
+            const btnDesocupar = document.getElementById('btnDesocupar');
+            if (btnDesocupar) {
+                btnDesocupar.addEventListener('click', async function () {
+                    // Obtener run del ocupante desde la info cargada (intentar data.run_profesor o data.run_solicitante)
+                    const espacioId = state.currentIndicatorId || null;
+                    // Pedir confirmación
+                    if (!confirm('¿Realmente desea desocupar este espacio?')) return;
+
+                    // Intentar leer run desde la cache o hacer una carga rápida
+                    let cached = null;
+                    try {
+                        cached = sessionStorage.getItem(`espacio_${espacioId}`);
+                        cached = cached ? JSON.parse(cached) : null;
+                    } catch (e) { cached = null; }
+                            await actualizarColoresEspacios();
+                    const run = (cached && (cached.run_profesor || cached.run_solicitante)) || prompt('Ingrese RUN del usuario que devuelve el espacio');
+                    if (!run) return alert('Se requiere RUN para desocupar');
+
+                    try {
+                        const res = await fetch('/api/devolver-espacio', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                            },
+                            body: JSON.stringify({ run_usuario: run, id_espacio: espacioId })
+                        });
+
+                        const json = await res.json();
+                        if (json.success) {
+                            alert('Espacio desocupado correctamente');
+                            // Cerrar modal y refrescar indicadores
+                            cerrarModalEspacio();
+                            await actualizarColoresEspacios();
+                        } else {
+                            alert(json.mensaje || 'No se pudo desocupar el espacio');
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        alert('Error al desocupar el espacio');
+                    }
+                });
+            }
+        });
 
         // Función para renderizar información de profesor
         function renderizarInformacionProfesor(elements, data) {
@@ -2381,7 +2452,7 @@
                     </div>
                 `;
             }
-            
+
             // Mostrar información de la clase actual
             if (elements.claseActualContainer && elements.claseActualInfo) {
                 elements.claseActualContainer.style.display = 'block';
@@ -2426,6 +2497,16 @@
                         </div>
                     </div>
                 `;
+            }
+
+            // Mostrar botón Desocupar si hay run_profesor
+            const btnDesocupar = document.getElementById('btnDesocupar');
+            if (btnDesocupar) {
+                if (data.run_profesor) {
+                    btnDesocupar.classList.remove('hidden');
+                } else {
+                    btnDesocupar.classList.add('hidden');
+                }
             }
         }
 
@@ -2494,10 +2575,10 @@
                         ` : ''}
                     </div>
                 `;
-                
+
                 // Aplicar HTML de una sola vez
                 elements.ocupanteInfo.innerHTML = html;
-                
+
                 // Mostrar el contenedor
                 elements.ocupanteContainer.style.display = 'block';
             }
@@ -2508,6 +2589,15 @@
             }
             if (elements.claseActualContainer) {
                 elements.claseActualContainer.style.display = 'none';
+            }
+
+            const btnDesocupar = document.getElementById('btnDesocupar');
+            if (btnDesocupar) {
+                if (data.run_solicitante) {
+                    btnDesocupar.classList.remove('hidden');
+                } else {
+                    btnDesocupar.classList.add('hidden');
+                }
             }
         }
 
@@ -2568,6 +2658,16 @@
             // Ocultar secciones de planificación
             if (elements.proximaClaseContainer) {
                 elements.proximaClaseContainer.style.display = 'none';
+            }
+
+            const btnDesocupar = document.getElementById('btnDesocupar');
+            if (btnDesocupar) {
+                // Mostrar si hay run en los datos
+                if (data.run_profesor || data.run_solicitante) {
+                    btnDesocupar.classList.remove('hidden');
+                } else {
+                    btnDesocupar.classList.add('hidden');
+                }
             }
         }
 
@@ -2652,6 +2752,9 @@
                     </div>
                 `;
             }
+
+            const btnDesocupar = document.getElementById('btnDesocupar');
+            if (btnDesocupar) btnDesocupar.classList.add('hidden');
         }
 
         function cerrarModalEspacio() {
@@ -2676,7 +2779,7 @@
                         .classList.add('hidden'));
                 }, 200);
             });
-            
+
             // Restaurar el input QR activo después de cerrar todos los modales
             setTimeout(() => {
                 qrInputManager.restaurarInputActivo();
@@ -2775,17 +2878,17 @@
             }
 
         document.addEventListener("DOMContentLoaded", function () {
-            
+
             // Configurar el input del escáner QR
             const inputEscanner = document.getElementById('qr-input');
             if (inputEscanner) {
                 inputEscanner.addEventListener('keydown', handleScan);
                 document.addEventListener('click', function (event) {
                     // Solo enfocar si no se está haciendo clic en un modal o formulario
-                    if (!event.target.closest('.modal') && 
-                        !event.target.closest('form') && 
-                        !event.target.closest('input') && 
-                        !event.target.closest('select') && 
+                    if (!event.target.closest('.modal') &&
+                        !event.target.closest('form') &&
+                        !event.target.closest('input') &&
+                        !event.target.closest('select') &&
                         !event.target.closest('button')) {
                         qrInputManager.setActiveInput('main');
                     }
@@ -2794,12 +2897,12 @@
                 document.getElementById('qr-status').innerHTML = 'Esperando... Escanea el código QR de la cedula de identidad';
                 // Asegurar que la interfaz esté en estado inicial
                 limpiarEstadoCompleto();
-                
+
                 // Sistema QR inicializado
             }
             // Inicializar elementos del canvas
             initElements();
-            
+
             // Agregar event listeners para los eventos de mouse en el canvas
             if (elements.indicatorsCanvas) {
                 elements.indicatorsCanvas.addEventListener('mousemove', handleMouseMove);
@@ -2833,9 +2936,9 @@
             if (formRegistroSolicitante) {
                 formRegistroSolicitante.addEventListener('submit', procesarRegistroSolicitante);
             }
-            
 
-            
+
+
             // Configurar botón de solicitar llaves para cambiar al input correspondiente
             const btnSolicitar = document.querySelector('[onclick*="solicitarLlaves"]');
             if (btnSolicitar) {
@@ -2843,15 +2946,15 @@
                     qrInputManager.setActiveInput('solicitud');
                 });
             }
-            
+
 
             // Configurar event listeners para los campos del formulario de registro de solicitante
             const camposSolicitante = [
                 'nombre-solicitante',
-                'email-solicitante', 
+                'email-solicitante',
                 'telefono-solicitante'
             ];
-            
+
             camposSolicitante.forEach(campoId => {
                 const campo = document.getElementById(campoId);
                 if (campo) {
@@ -2859,7 +2962,7 @@
                     campo.addEventListener('click', function() {
                         qrInputManager.desactivarTodosLosInputs();
                     });
-                    
+
                     // Cuando se haga foco en un campo, desactivar todos los inputs QR
                     campo.addEventListener('focus', function() {
                         qrInputManager.desactivarTodosLosInputs();
@@ -2874,12 +2977,12 @@
                 selectTipoSolicitante.addEventListener('mousedown', function() {
                     qrInputManager.desactivarTodosLosInputs();
                 });
-                
+
                 // Prevenir que el select se cierre inmediatamente
                 selectTipoSolicitante.addEventListener('click', function(e) {
                     e.stopPropagation();
                 });
-                
+
                 // Asegurar que el select mantenga el foco
                 selectTipoSolicitante.addEventListener('focus', function() {
                     qrInputManager.desactivarTodosLosInputs();
@@ -2899,7 +3002,7 @@
                 });
             }
             window.actualizarColoresEspacios = actualizarColoresEspacios;
-            
+
             // Configurar intervalos para actualizar hora y módulo
             setInterval(actualizarHora, 1000);
             actualizarHora();
@@ -2910,8 +3013,8 @@
 
         async function procesarRegistroSolicitante(event) {
             event.preventDefault();
-            
-            
+
+
             const formData = new FormData(event.target);
             const datosSolicitante = {
                 run_solicitante: runSolicitantePendiente,
@@ -2920,7 +3023,7 @@
                 telefono: formData.get('telefono'),
                 tipo_solicitante: formData.get('tipo_solicitante')
             };
-            
+
 
             // Validación básica
             if (!datosSolicitante.nombre || !datosSolicitante.correo || !datosSolicitante.telefono || !datosSolicitante.tipo_solicitante) {
@@ -2945,7 +3048,7 @@
                 });
 
                 const resultado = await registrarSolicitante(datosSolicitante);
-                
+
                 if (resultado && resultado.success) {
                     // Mostrar SweetAlert de éxito
                     Swal.fire({
@@ -2958,22 +3061,22 @@
                     }).then(() => {
                         // Cerrar modal de registro después de que termine el SweetAlert
                         cerrarModalRegistroSolicitante();
-                        
+
                         // Restaurar el input QR activo
                         qrInputManager.setActiveInput('main');
                     });
-                    
+
                     // Actualizar información en la interfaz
                     document.getElementById('qr-status').innerHTML = 'Solicitante registrado. Escanee el QR del espacio.';
                     mostrarInfo('usuario', datosSolicitante.nombre, runSolicitantePendiente);
-                    
+
                     // Continuar con el flujo - solo necesita escanear espacio
                     usuarioEscaneado = runSolicitantePendiente;
                     ordenEscaneo = 'espacio'; // Ya no necesita escanear usuario
-                    
+
                     // Limpiar variables
                     runSolicitantePendiente = null;
-                    
+
                 } else {
                     // Error al registrar solicitante
                     const mensajeError = resultado?.mensaje || 'No se pudo registrar el solicitante. Intente nuevamente.';
@@ -3003,15 +3106,15 @@
             window.dispatchEvent(new CustomEvent('close-modal', {
                 detail: 'registro-solicitante'
             }));
-            
+
             // Restaurar el input QR activo usando el gestor
             setTimeout(() => {
                 qrInputManager.restaurarInputActivo();
             }, 200);
-            
+
             // Limpiar variables
             runSolicitantePendiente = null;
-            
+
             // Resetear estado
             document.getElementById('qr-status').innerHTML = 'Esperando';
             limpiarEstadoCompleto();
@@ -3022,15 +3125,15 @@
             window.dispatchEvent(new CustomEvent('close-modal', {
                 detail: 'registro-solicitante'
             }));
-            
+
             // Restaurar el input QR activo usando el gestor
             setTimeout(() => {
                 qrInputManager.restaurarInputActivo();
             }, 200);
-            
+
             // Limpiar variables
             runSolicitantePendiente = null;
-            
+
             // Resetear estado
             document.getElementById('qr-status').innerHTML = 'Esperando';
             limpiarEstadoCompleto();
@@ -3040,7 +3143,7 @@
 
 
 
-     
+
         // Asegurar que indicators sea siempre un array
         if (!state.indicators || !Array.isArray(state.indicators)) {
             state.indicators = [];
@@ -3055,22 +3158,22 @@
             if (modal) {
                 modal.classList.add('hidden');
             }
-            
+
             // También intentar con el selector de data-modal
             const modalAlt = document.querySelector('[data-modal="seleccionar-modulos"]');
             if (modalAlt) {
                 modalAlt.classList.add('hidden');
             }
-            
+
             // Restaurar el input QR activo usando el gestor
             setTimeout(() => {
                 qrInputManager.restaurarInputActivo();
             }, 200);
-            
+
             // Limpiar variables
             espacioParaReserva = null;
             runParaReserva = null;
-            
+
             // Resetear interfaz
             limpiarEstadoCompleto();
         }
@@ -3093,7 +3196,7 @@
 
                 if (response.ok) {
                     const data = await response.json();
-                    
+
                             if (data.success) {
             // Guardar información adicional para mostrar en el modal
             window.modulosInfo = {
@@ -3104,7 +3207,7 @@
                 clases_proximas: data.clases_proximas || [],
                 detalles: data.detalles
             };
-            
+
             return data.max_modulos || 1;
         } else {
             // Mostrar información detallada del error
@@ -3125,31 +3228,31 @@
 
         async function mostrarModalSeleccionarModulos(idEspacio, run, maxModulos = 2) {
                     const modulosDisponibles = await calcularModulosDisponibles(idEspacio);
-        
+
         // Limitar a máximo 2 módulos según la lógica del negocio
         maxModulosDisponibles = Math.min(modulosDisponibles, maxModulos);
-        
+
         // Actualizar elementos del modal si existen
         const maxModulosElement = document.getElementById('max-modulos-disponibles');
         const inputModulos = document.getElementById('input-cantidad-modulos');
-        
+
         if (maxModulosElement) {
             maxModulosElement.textContent = maxModulosDisponibles;
         }
-        
+
         if (inputModulos) {
             inputModulos.max = maxModulosDisponibles;
             inputModulos.value = 1;
         }
-        
+
         espacioParaReserva = idEspacio;
         runParaReserva = run;
-            
+
                     // Mostrar información detallada si está disponible
         if (window.modulosInfo) {
             mostrarInformacionModulos(window.modulosInfo);
         }
-        
+
         // Mostrar el modal directamente
         const modal = document.getElementById('modal-seleccionar-modulos');
         if (modal) {
@@ -3164,26 +3267,26 @@
             }, 100);
         }
         }
-        
+
         function mostrarInformacionModulos(info) {
             const infoContainer = document.getElementById('info-modulos-disponibles');
             if (!infoContainer) return;
-            
+
                     // Información de módulos recibida
-            
+
             let html = '<div class="p-4 bg-white border-l-4 border-green-500 rounded-lg shadow-sm">';
             html += '<h3 class="mb-3 text-lg font-semibold text-gray-800">Información de Disponibilidad</h3>';
-            
+
             // Información básica con validación
             const moduloActual = info.modulo_actual !== null && info.modulo_actual !== undefined ? info.modulo_actual : 'No disponible';
             const maxModulos = info.max_modulos || 0;
-            
+
             html += '<div class="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">';
             html += `<div class="text-sm"><p class="font-medium text-gray-600">Módulo actual:</p><p class="font-semibold text-gray-800">${moduloActual}</p></div>`;
             html += `<div class="text-sm"><p class="font-medium text-gray-600">Módulos disponibles:</p><p class="font-semibold text-gray-800">${maxModulos}</p></div>`;
             html += '</div>';
-            
-                 
+
+
         // Clases próximas con información básica
             if (info.clases_proximas && info.clases_proximas.length > 0) {
                 html += '<div class="p-4 mb-4 border-l-4 border-blue-400 rounded-lg bg-blue-50">';
@@ -3198,7 +3301,7 @@
                 });
                 html += '</div>';
             }
-                    
+
         html += '</div>';
             infoContainer.innerHTML = html;
         }
@@ -3214,12 +3317,12 @@
                 return;
             }
 
-        
+
 
             // Determinar el tipo de usuario y la ruta correcta
             let apiEndpoint = '/api/crear-reserva-solicitante';
             let tipoUsuario = 'solicitante';
-            
+
             // Si tenemos información del usuario escaneado, usar su tipo real
             if (usuarioEscaneado && typeof usuarioInfo !== 'undefined' && usuarioInfo.tipo_usuario) {
                 if (usuarioInfo.tipo_usuario === 'profesor') {
@@ -3231,10 +3334,10 @@
                 }
             }
 
-      
+
             // Preparar datos para la petición según el tipo de usuario
             let requestBody = {};
-            
+
             if (tipoUsuario === 'profesor') {
                 requestBody = {
                     run_profesor: runParaReserva,
@@ -3314,7 +3417,7 @@
 
             // Cerrar modal en caso de error
             cerrarModalModulos();
-            
+
             // Restaurar autofocus del qr-input después de error en reserva
             setTimeout(() => {
                 if (qrInputManager) {
@@ -3406,13 +3509,13 @@
             if (modalEspacio && !modalEspacio.classList.contains('hidden')) {
                 cerrarModalEspacio();
             }
-            
+
             // Cerrar modal de módulos si está abierto
             const modalModulos = document.getElementById('modal-seleccionar-modulos');
             if (modalModulos && !modalModulos.classList.contains('hidden')) {
                 cerrarModalModulos();
             }
-            
+
             // Cerrar modales de Livewire si están abiertos
             const modalesLivewire = document.querySelectorAll('[data-modal]');
             modalesLivewire.forEach(modal => {

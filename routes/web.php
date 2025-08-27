@@ -66,6 +66,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/horarios/{run}/export-pdf', [HorariosController::class, 'exportHorarioProfesorPDF'])->name('horarios.export-pdf');
     Route::get('/modulos-actuales', [\App\Http\Controllers\TableController::class, 'index'])->name('modulos.actuales');
     Route::get('/modulos-actuales/actualizar-datos', [\App\Http\Controllers\TableController::class, 'actualizarDatos'])->name('modulos.actuales.datos');
+    // Autocomplete de usuarios (email)
+    Route::get('/api/usuarios/autocomplete', [\App\Http\Controllers\UserController::class, 'autocomplete'])->name('usuarios.autocomplete');
+    // Endpoint para obtener módulos disponibles de un espacio (usado por reservas)
+    Route::get('/api/espacio/{idEspacio}/modulos-disponibles', [\App\Http\Controllers\EspacioController::class, 'modulosDisponibles'])->name('espacio.modulos.disponibles');
 });
 
 // Horarios por espacios - Solo Administrador y Supervisor
@@ -177,6 +181,8 @@ Route::group(['middleware' => ['permission:mantenedor de espacios']], function (
     Route::get('/spaces/download-all-qr', [EspacioController::class, 'downloadAllQR'])->name('spaces.download-all-qr');
     Route::get('/sedes/{universidadId}', [EspacioController::class, 'getSedes']);
     Route::get('/facultades-por-sede/{sedeId}', [EspacioController::class, 'getFacultadesPorSede']);
+    // Endpoint para obtener facultades por universidad (usado por reservas)
+    Route::get('/facultades/{universidadId}', [EspacioController::class, 'getFacultades']);
 });
 
 Route::group(['middleware' => ['permission:mantenedor de reservas']], function () {
