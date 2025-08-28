@@ -2360,7 +2360,7 @@
                 run = runEl.textContent.trim();
                 } else {
                 // Fallback: intenta con el último usuario escaneado
-                run = usuarioEscaneado || 19716146;
+                run = usuarioEscaneado;
                 }
                 if (!run) {
                 Swal.fire({
