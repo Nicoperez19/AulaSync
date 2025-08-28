@@ -1862,7 +1862,7 @@ class ReportController extends Controller
     /**
      * Exportar histórico a PDF
      */
-    private function exportarHistoricoTipoEspacioPDF($datos, $fechaInicio, $fechaFin, $tipoEspacio)
+    private function exportarHistoricoTipoEspacioPDF($datos, $fechaInicio, $fechaFin, $tipoEspacio, $total_reservas, $completadas,$canceladas,$en_progreso)
     {
         try {
             $data = [
@@ -1871,7 +1871,11 @@ class ReportController extends Controller
                 'fecha_inicio' => Carbon::parse($fechaInicio)->format('d/m/Y'),
                 'fecha_fin' => Carbon::parse($fechaFin)->format('d/m/Y'),
                 'tipo_espacio' => $tipoEspacio ?: 'Todos',
-                'total_registros' => count($datos)
+                'total_registros' => $total_reservas,
+                'total_reservas' => $total_reservas,
+                'completadas' => $completadas,
+                'canceladas' => $canceladas,
+                'en_progreso' => $en_progreso
             ];
 
             $filename = 'historico_tipo_espacio_' . date('Y-m-d_H-i-s') . '.pdf';
