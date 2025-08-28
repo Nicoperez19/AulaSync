@@ -1,3 +1,4 @@
+
 <x-show-layout>
     <style>
         @keyframes parpadeo {
@@ -273,13 +274,13 @@
                     </div>
                 </div>
 
-                <!-- Información del ocupante actual / último ocupante -->
-                <div id="ocupanteContainer" class="p-6 mb-6 bg-white border-l-4 border-green-500 shadow-sm rounded-xl" style="display: none;">
-                    <h3 id="ocupanteTitulo" class="mb-4 text-xl font-semibold text-gray-800">
-                        <i class="mr-2 text-green-500 fas fa-user"></i>
-                        Ocupante Actual
+                <!-- Información de la clase actual -->
+                <div id="claseActualContainer" class="p-6 mb-6 bg-white border-l-4 border-orange-500 shadow-sm rounded-xl" style="display: none;">
+                    <h3 class="mb-4 text-xl font-semibold text-gray-800">
+                        <i class="mr-2 text-orange-500 fas fa-chalkboard-teacher"></i>
+                        Clase Actual
                     </h3>
-                    <div id="ocupanteInfo" class="space-y-3">
+                    <div id="claseActualInfo" class="space-y-3">
                         <!-- La información se insertará dinámicamente -->
                     </div>
                     <div class="mt-4 flex justify-end">
@@ -289,13 +290,13 @@
                     </div>
                 </div>
 
-                <!-- Información de la clase actual -->
-                <div id="claseActualContainer" class="p-6 mb-6 bg-white border-l-4 border-orange-500 shadow-sm rounded-xl" style="display: none;">
-                    <h3 class="mb-4 text-xl font-semibold text-gray-800">
-                        <i class="mr-2 text-orange-500 fas fa-chalkboard-teacher"></i>
-                        Clase Actual
+                <!-- Información del ocupante actual / último ocupante (ahora al final) -->
+                <div id="ocupanteContainer" class="p-6 mb-6 bg-white border-l-4 border-green-500 shadow-sm rounded-xl" style="display: none;">
+                    <h3 id="ocupanteTitulo" class="mb-4 text-xl font-semibold text-gray-800">
+                        <i class="mr-2 text-green-500 fas fa-user"></i>
+                        Ocupante Actual
                     </h3>
-                    <div id="claseActualInfo" class="space-y-3">
+                    <div id="ocupanteInfo" class="space-y-3">
                         <!-- La información se insertará dinámicamente -->
                     </div>
                 </div>
@@ -319,7 +320,100 @@
         </div>
     </div>
 
-    <!-- Modal para reconocimiento -->
+    <!-- Modal de confirmación para desocupar -->
+    <div id="modal-confirmar-desocupar" class="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="flex flex-col w-full max-w-md mx-2 overflow-hidden bg-white rounded-lg shadow-lg md:mx-8">
+            <!-- Encabezado con diseño tipo banner -->
+            <div class="relative flex flex-col gap-6 p-6 bg-gradient-to-r bg-red-600 md:flex-row md:items-center md:justify-between">
+                <!-- Círculos decorativos -->
+                <span class="absolute top-0 left-0 w-24 h-24 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                <span class="absolute top-0 right-0 w-24 h-24 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+
+                <div class="flex items-center flex-1 min-w-0 gap-4">
+                    <div class="flex flex-col items-center justify-center flex-shrink-0">
+                        <div class="p-3 bg-white rounded-full bg-opacity-20">
+                            <i class="text-2xl text-white fa-solid fa-exclamation-triangle"></i>
+                        </div>
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                        <h1 class="text-2xl font-bold text-white">Confirmar Acción</h1>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-base truncate text-white/80">Desocupar Espacio</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
+                    <button onclick="cerrarModalConfirmarDesocupar()"
+                        class="text-2xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
+                        title="Cerrar modal"
+                        aria-label="Cerrar modal">&times;</button>
+                </div>
+            </div>
+
+            <!-- Contenido del modal -->
+            <div class="p-6 bg-gray-50">
+                <div class="text-center">
+                    <div class="mb-4">
+                        <i class="text-4xl text-red-500 fas fa-building"></i>
+                    </div>
+                    <h3 class="mb-2 text-lg font-semibold text-gray-800">¿Desocupar Espacio?</h3>
+                    <p class="text-sm text-gray-600 mb-6">
+                        Esta acción liberará el espacio ocupado por <strong id="espacio-desocupar-nombre"></strong> y finalizará la reserva activa.
+                        <br><br>
+                        <span class="text-red-600 font-medium">Esta acción no se puede deshacer.</span>
+                    </p>
+
+                    <!-- Información adicional para administradores -->
+                    <div id="admin-info-desocupar" class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg hidden">
+                        <p class="text-xs text-blue-700">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Como administrador, puedes desocupar cualquier espacio ocupado.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="flex gap-3 justify-center">
+                    <button onclick="cerrarModalConfirmarDesocupar()"
+                        class="px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors duration-200">
+                        Cancelar
+                    </button>
+                    <button id="btnConfirmarDesocupar"
+                        class="px-6 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors duration-200">
+                        <i class="fas fa-check mr-2"></i>
+                        Desocupar Espacio
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para mensajes -->
+    <div id="modal-mensaje" class="fixed inset-0 z-[10001] flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="flex flex-col w-full max-w-sm mx-2 overflow-hidden bg-white rounded-lg shadow-lg md:mx-8">
+            <div class="relative flex flex-col gap-4 p-6 bg-gradient-to-r bg-light-cloud-blue md:flex-row md:items-center md:justify-center">
+                <div class="flex items-center flex-1 min-w-0 gap-3">
+                    <div class="flex flex-col items-center justify-center flex-shrink-0">
+                        <div class="p-2 bg-white rounded-full bg-opacity-20">
+                            <i id="mensaje-icono" class="text-xl text-white fas fa-check-circle"></i>
+                        </div>
+                    </div>
+                    <div class="flex flex-col min-w-0 text-center">
+                        <h1 id="mensaje-titulo" class="text-xl font-bold text-white">Mensaje</h1>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 bg-gray-50 text-center">
+                <p id="mensaje-texto" class="text-sm text-gray-700 mb-4"></p>
+                <button onclick="cerrarModalMensaje()"
+                    class="px-4 py-2 text-sm font-medium text-white bg-light-cloud-blue rounded-lg hover:bg-blue-600 transition-colors duration-200">
+                    Aceptar
+                </button>
+            </div>
+        </div>
+    </div>
     <x-modal name="reconocimiento" :show="false" focusable>
         @slot('title')
             <h2 class="text-lg font-medium text-white dark:text-gray-100">
@@ -562,6 +656,29 @@
     </x-modal>
 
     <script>
+        // Utilidad para decidir si mostrar el bloque 'Último Ocupante'
+        function debeMostrarUltimoOcupante(data) {
+            const normalizar = str => (str || '').toLowerCase().replace(/\s+/g, '');
+            // Si hay próxima clase, nunca mostrar histórico
+            if (data.proxima_clase) {
+                // Si el nombre coincide, tampoco mostrar
+                if (data.nombre && data.proxima_clase.profesor && normalizar(data.nombre) === normalizar(data.proxima_clase.profesor)) {
+                    return false;
+                }
+                // Si hay RUN y coincide, tampoco mostrar
+                if (data.run_profesor && data.proxima_clase.run && data.run_profesor === data.proxima_clase.run) {
+                    return false;
+                }
+                if (data.run_solicitante && data.proxima_clase.run && data.run_solicitante === data.proxima_clase.run) {
+                    return false;
+                }
+                // Si no coincide, pero hay próxima clase, tampoco mostrar
+                return false;
+            }
+            // Si no hay próxima clase, mostrar sólo si hay datos históricos
+            return !!(data.nombre || data.detalles || data.hora_inicio || data.hora_salida || data.run_solicitante);
+        }
+
         // Escuchar cuando se abra el modal de registro para establecer el foco correcto
         document.addEventListener('open-modal', (event) => {
             if (event.detail === 'registro-solicitante') {
@@ -1985,7 +2102,9 @@
 
         function drawCanvas() {
             elements.mapCtx.clearRect(0, 0, elements.mapCanvas.width, elements.mapCanvas.height);
-            if (!state.mapImage) return;
+            if (!state.mapImage) {
+                return;
+            }
 
             // Calcular proporciones para mantener el aspect ratio
             const canvasRatio = elements.mapCanvas.width / elements.mapCanvas.height;
@@ -2150,6 +2269,7 @@
         const modal = document.getElementById('modal-espacio-info');
         if (modal) {
             modal.classList.remove('hidden');
+            modal.classList.add('flex');
             // Desactivar todos los inputs QR cuando se abre el modal
             qrInputManager.desactivarTodosLosInputs();
             // Modal de espacio mostrado inmediatamente
@@ -2365,45 +2485,26 @@
         document.addEventListener('DOMContentLoaded', function () {
             const btnDesocupar = document.getElementById('btnDesocupar');
             if (btnDesocupar) {
-                btnDesocupar.addEventListener('click', async function () {
-                    // Obtener run del ocupante desde la info cargada (intentar data.run_profesor o data.run_solicitante)
+                btnDesocupar.addEventListener('click', function () {
+                    // Obtener información del espacio actual
                     const espacioId = state.currentIndicatorId || null;
-                    // Pedir confirmación
-                    if (!confirm('¿Realmente desea desocupar este espacio?')) return;
+                    let espacioNombre = 'este espacio';
 
-                    // Intentar leer run desde la cache o hacer una carga rápida
-                    let cached = null;
+                    // Intentar obtener el nombre del espacio desde el cache
                     try {
-                        cached = sessionStorage.getItem(`espacio_${espacioId}`);
-                        cached = cached ? JSON.parse(cached) : null;
-                    } catch (e) { cached = null; }
-                            await actualizarColoresEspacios();
-                    const run = (cached && (cached.run_profesor || cached.run_solicitante)) || prompt('Ingrese RUN del usuario que devuelve el espacio');
-                    if (!run) return alert('Se requiere RUN para desocupar');
-
-                    try {
-                        const res = await fetch('/api/devolver-espacio', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: JSON.stringify({ run_usuario: run, id_espacio: espacioId })
-                        });
-
-                        const json = await res.json();
-                        if (json.success) {
-                            alert('Espacio desocupado correctamente');
-                            // Cerrar modal y refrescar indicadores
-                            cerrarModalEspacio();
-                            await actualizarColoresEspacios();
-                        } else {
-                            alert(json.mensaje || 'No se pudo desocupar el espacio');
+                        const cached = sessionStorage.getItem(`espacio_${espacioId}`);
+                        if (cached) {
+                            const data = JSON.parse(cached);
+                            if (data.nombre) {
+                                espacioNombre = data.nombre;
+                            }
                         }
                     } catch (e) {
-                        console.error(e);
-                        alert('Error al desocupar el espacio');
+                        // Ignorar errores de cache
                     }
+
+                    // Mostrar modal de confirmación
+                    mostrarModalConfirmarDesocupar(espacioNombre, espacioId);
                 });
             }
         });
@@ -2413,6 +2514,11 @@
             const tituloEl = document.getElementById('ocupanteTitulo');
             // Ajustar título según existencia de próxima clase
             if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
+
+            // Si hay una próxima clase, ocultar el bloque de 'último ocupante'
+            if (data.proxima_clase && elements.ocupanteContainer) {
+                elements.ocupanteContainer.style.display = 'none';
+            }
 
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
                 elements.ocupanteInfo.innerHTML = `
@@ -2499,13 +2605,36 @@
                 `;
             }
 
-            // Mostrar botón Desocupar si hay run_profesor
+            // Mostrar botón Desocupar si hay run_profesor o si es administrador y el espacio está ocupado
             const btnDesocupar = document.getElementById('btnDesocupar');
             if (btnDesocupar) {
-                if (data.run_profesor) {
+                const isAdmin = window.currentUser && window.currentUser.roles.includes('Administrador');
+                const isOccupied = data.run_profesor || data.run_solicitante || data.tipo_ocupacion === 'ocupado_sin_info';
+                const canVacate = data.run_profesor || (isAdmin && isOccupied);
+
+                if (canVacate) {
                     btnDesocupar.classList.remove('hidden');
+                    // Cambiar texto del botón para administradores
+                    if (isAdmin && !data.run_profesor && !data.run_solicitante) {
+                        btnDesocupar.textContent = 'Desocupar (Admin)';
+                    } else {
+                        btnDesocupar.textContent = 'Desocupar';
+                    }
                 } else {
                     btnDesocupar.classList.add('hidden');
+                }
+            }
+
+            // Asegurar que el bloque "Último Ocupante" no se muestre si hay próxima clase
+            const normalizar = str => (str || '').toLowerCase().replace(/\s+/g, '');
+            const samePersonProfesor = !!(data.run_profesor && data.proxima_clase && (data.proxima_clase.run === data.run_profesor)) ||
+                (!!data.nombre && data.proxima_clase && data.proxima_clase.profesor && normalizar(data.nombre) === normalizar(data.proxima_clase.profesor));
+
+            if (elements.ocupanteContainer) {
+                if (debeMostrarUltimoOcupante(data)) {
+                    elements.ocupanteContainer.style.display = 'block';
+                } else {
+                    elements.ocupanteContainer.style.display = 'none';
                 }
             }
         }
@@ -2515,6 +2644,18 @@
             const tituloEl = document.getElementById('ocupanteTitulo');
             // Ajustar título si no hay próxima clase
             if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
+
+            // Si hay una próxima clase, ocultar el bloque de 'último ocupante'
+            const samePersonSolicitante = !!(data.run_solicitante && data.proxima_clase && (data.proxima_clase.run === data.run_solicitante)) ||
+                (!!data.nombre && data.proxima_clase && data.proxima_clase.profesor && normalizar(data.nombre) === normalizar(data.proxima_clase.profesor));
+
+            if (elements.ocupanteContainer) {
+                if (debeMostrarUltimoOcupante(data)) {
+                    elements.ocupanteContainer.style.display = 'block';
+                } else {
+                    elements.ocupanteContainer.style.display = 'none';
+                }
+            }
 
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
                 // Crear HTML optimizado usando template literal
@@ -2593,13 +2734,24 @@
 
             const btnDesocupar = document.getElementById('btnDesocupar');
             if (btnDesocupar) {
-                if (data.run_solicitante) {
+                const isAdmin = window.currentUser && window.currentUser.roles.includes('Administrador');
+                const isOccupied = data.run_profesor || data.run_solicitante || data.tipo_ocupacion === 'ocupado_sin_info';
+                const canVacate = data.run_solicitante || (isAdmin && isOccupied);
+
+                if (canVacate) {
                     btnDesocupar.classList.remove('hidden');
+                    // Cambiar texto del botón para administradores
+                    if (isAdmin && !data.run_profesor && !data.run_solicitante) {
+                        btnDesocupar.textContent = 'Desocupar (Admin)';
+                    } else {
+                        btnDesocupar.textContent = 'Desocupar';
+                    }
                 } else {
                     btnDesocupar.classList.add('hidden');
                 }
             }
         }
+
 
         // Función para renderizar información ocupado sin info
         function renderizarInformacionOcupadoSinInfo(elements, data) {
@@ -2607,8 +2759,13 @@
             // Ajustar título según si hay próxima clase
             if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
 
-            if (elements.ocupanteContainer && elements.ocupanteInfo) {
-                elements.ocupanteInfo.innerHTML = `
+            // Si hay una próxima clase, ocultar el bloque de 'último ocupante' (no mostrar histórico)
+            if (data.proxima_clase) {
+                if (elements.ocupanteContainer) elements.ocupanteContainer.style.display = 'none';
+            } else {
+                // Solo renderizar el último ocupante cuando NO hay próxima clase
+                if (elements.ocupanteContainer && elements.ocupanteInfo) {
+                    elements.ocupanteInfo.innerHTML = `
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="flex items-center">
                             <i class="mr-3 text-gray-500 fas fa-user"></i>
@@ -2653,6 +2810,9 @@
                         ` : ''}
                     </div>
                 `;
+                    // Asegurar que el contenedor esté visible cuando haya datos
+                    elements.ocupanteContainer.style.display = 'block';
+                }
             }
 
             // Ocultar secciones de planificación
@@ -2660,11 +2820,33 @@
                 elements.proximaClaseContainer.style.display = 'none';
             }
 
+            // Si la persona del último ocupante coincide con la próxima clase, no mostrar histórico
+            const samePersonOcupado = !!( (data.run_profesor || data.run_solicitante) && data.proxima_clase && (
+                (data.proxima_clase.run && (data.proxima_clase.run === data.run_profesor || data.proxima_clase.run === data.run_solicitante))
+            )) || (!!data.nombre && data.proxima_clase && data.proxima_clase.profesor && normalizar(data.nombre) === normalizar(data.proxima_clase.profesor));
+
+            if (elements.ocupanteContainer) {
+                if (debeMostrarUltimoOcupante(data)) {
+                    elements.ocupanteContainer.style.display = 'block';
+                } else {
+                    elements.ocupanteContainer.style.display = 'none';
+                }
+            }
+
             const btnDesocupar = document.getElementById('btnDesocupar');
             if (btnDesocupar) {
-                // Mostrar si hay run en los datos
-                if (data.run_profesor || data.run_solicitante) {
+                const isAdmin = window.currentUser && window.currentUser.roles.includes('Administrador');
+                const isOccupied = data.run_profesor || data.run_solicitante || data.tipo_ocupacion === 'ocupado_sin_info';
+                const canVacate = (data.run_profesor || data.run_solicitante) || (isAdmin && isOccupied);
+
+                if (canVacate) {
                     btnDesocupar.classList.remove('hidden');
+                    // Cambiar texto del botón para administradores
+                    if (isAdmin && !data.run_profesor && !data.run_solicitante) {
+                        btnDesocupar.textContent = 'Desocupar (Admin)';
+                    } else {
+                        btnDesocupar.textContent = 'Desocupar';
+                    }
                 } else {
                     btnDesocupar.classList.add('hidden');
                 }
@@ -2673,61 +2855,61 @@
 
         // Función para renderizar información libre
         function renderizarInformacionLibre(elements, data) {
-            // Si no hay próxima clase, mostrar Último Ocupante si existe información histórica
+            // Si hay una próxima clase, ocultamos siempre el bloque de último ocupante
             const tituloEl = document.getElementById('ocupanteTitulo');
-            if (!data.proxima_clase) {
+            const tieneProximaClase = !!data.proxima_clase;
+
+            // Mostrar último ocupante sólo cuando NO hay clase actual y (el espacio está libre o existe una reserva)
+            const puedeMostrarUltimo = !tieneProximaClase && (data.tipo_ocupacion === 'libre' || !!data.tipo_reserva);
+
+            if (debeMostrarUltimoOcupante(data)) {
                 if (tituloEl) tituloEl.textContent = 'Último Ocupante';
-                // Mostrar contenedor si hay datos del último ocupante
-                if (elements.ocupanteContainer && (data.nombre || data.detalles || data.hora_inicio || data.hora_salida || data.run_solicitante)) {
+                if (elements.ocupanteContainer) {
                     elements.ocupanteContainer.style.display = 'block';
-                    // Reutilizar la plantilla de "ocupado sin info" para mostrar detalles mínimos
-                    elements.ocupanteInfo.innerHTML = `
-                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <div class="flex items-center">
-                                <i class="mr-3 text-gray-500 fas fa-user"></i>
-                                <div>
-                                    <div class="font-medium text-gray-800">${data.nombre || 'Último ocupante'}</div>
-                                    <div class="text-sm text-gray-600">Último registro</div>
-                                </div>
-                            </div>
-                            ${data.run_solicitante ? `
-                            <div class="flex items-center">
-                                <i class="mr-3 text-blue-500 fas fa-id-card"></i>
-                                <div>
-                                    <div class="font-medium text-gray-800">${data.run_solicitante}</div>
-                                    <div class="text-sm text-gray-600">RUN</div>
-                                </div>
-                            </div>
-                            ` : ''}
-                            ${data.hora_inicio ? `
-                            <div class="flex items-center">
-                                <i class="mr-3 text-gray-500 fas fa-clock"></i>
-                                <div>
-                                    <div class="font-medium text-gray-800">${data.hora_inicio}</div>
-                                    <div class="text-sm text-gray-600">Hora inicio</div>
-                                </div>
-                            </div>
-                            ` : ''}
-                            ${data.hora_salida ? `
-                            <div class="flex items-center">
-                                <i class="mr-3 text-gray-500 fas fa-clock"></i>
-                                <div>
-                                    <div class="font-medium text-gray-800">${data.hora_salida}</div>
-                                    <div class="text-sm text-gray-600">Hora salida</div>
-                                </div>
-                            </div>
-                            ` : ''}
-                        </div>
-                    `;
-                } else {
-                    // No hay datos históricos; ocultar contenedor
-                    if (elements.ocupanteContainer) elements.ocupanteContainer.style.display = 'none';
-                    if (tituloEl) tituloEl.textContent = 'Ocupante Actual';
                 }
+                // Reutilizar la plantilla de "ocupado sin info" para mostrar detalles mínimos
+                elements.ocupanteInfo.innerHTML = `
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div class="flex items-center">
+                            <i class="mr-3 text-gray-500 fas fa-user"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.nombre || 'Último ocupante'}</div>
+                                <div class="text-sm text-gray-600">Último registro</div>
+                            </div>
+                        </div>
+                        ${data.run_solicitante ? `
+                        <div class="flex items-center">
+                            <i class="mr-3 text-blue-500 fas fa-id-card"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.run_solicitante}</div>
+                                <div class="text-sm text-gray-600">RUN</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${data.hora_inicio ? `
+                        <div class="flex items-center">
+                            <i class="mr-3 text-gray-500 fas fa-clock"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.hora_inicio}</div>
+                                <div class="text-sm text-gray-600">Hora inicio</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${data.hora_salida ? `
+                        <div class="flex items-center">
+                            <i class="mr-3 text-gray-500 fas fa-clock"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">${data.hora_salida}</div>
+                                <div class="text-sm text-gray-600">Hora salida</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
             } else {
-                // Hay próxima clase, restaurar título y ocultar contenedor de último ocupante
-                if (tituloEl) tituloEl.textContent = 'Ocupante Actual';
+                // No hay datos históricos; ocultar contenedor
                 if (elements.ocupanteContainer) elements.ocupanteContainer.style.display = 'none';
+                if (tituloEl) tituloEl.textContent = 'Ocupante Actual';
             }
 
             // Mostrar próxima clase si existe
@@ -2761,6 +2943,7 @@
             const modal = document.getElementById('modal-espacio-info');
             if (modal) {
                 modal.classList.add('hidden');
+                modal.classList.remove('flex');
             }
             // Restaurar el input QR activo usando el gestor
             setTimeout(() => {
@@ -2882,6 +3065,7 @@
             // Configurar el input del escáner QR
             const inputEscanner = document.getElementById('qr-input');
             if (inputEscanner) {
+            if (inputEscanner) {
                 inputEscanner.addEventListener('keydown', handleScan);
                 document.addEventListener('click', function (event) {
                     // Solo enfocar si no se está haciendo clic en un modal o formulario
@@ -2921,6 +3105,9 @@
                 initCanvases();
                 drawIndicators();
                 state.updateInterval = setInterval(actualizarColoresEspacios, 5000);
+            };
+            img.onerror = function() {
+                console.error('Error al cargar la imagen del mapa:', img.src);
             };
             img.src = "{{ asset('storage/' . $mapa->ruta_mapa) }}";
             window.addEventListener('resize', function () {
@@ -3009,7 +3196,7 @@
 
             setInterval(actualizarModuloYColores, 5000);
             actualizarModuloYColores();
-        });
+        }});
 
         async function procesarRegistroSolicitante(event) {
             event.preventDefault();
@@ -3157,12 +3344,14 @@
             const modal = document.getElementById('modal-seleccionar-modulos');
             if (modal) {
                 modal.classList.add('hidden');
+                modal.classList.remove('flex');
             }
 
             // También intentar con el selector de data-modal
             const modalAlt = document.querySelector('[data-modal="seleccionar-modulos"]');
             if (modalAlt) {
                 modalAlt.classList.add('hidden');
+                modalAlt.classList.remove('flex');
             }
 
             // Restaurar el input QR activo usando el gestor
@@ -3257,6 +3446,7 @@
         const modal = document.getElementById('modal-seleccionar-modulos');
         if (modal) {
             modal.classList.remove('hidden');
+            modal.classList.add('flex');
             // Desactivar todos los inputs QR cuando se abre el modal
             qrInputManager.desactivarTodosLosInputs();
             // Enfocar el input
@@ -3306,229 +3496,6 @@
             infoContainer.innerHTML = html;
         }
 
-       document.addEventListener('DOMContentLoaded', function () {
-    const btnConfirmarModulos = document.getElementById('btn-confirmar-modulos');
-
-    if (btnConfirmarModulos) {
-        btnConfirmarModulos.addEventListener('click', async function () {
-            const cantidad = parseInt(document.getElementById('input-cantidad-modulos').value);
-
-            if (!espacioParaReserva || !runParaReserva) {
-                return;
-            }
-
-
-
-            // Determinar el tipo de usuario y la ruta correcta
-            let apiEndpoint = '/api/crear-reserva-solicitante';
-            let tipoUsuario = 'solicitante';
-
-            // Si tenemos información del usuario escaneado, usar su tipo real
-            if (usuarioEscaneado && typeof usuarioInfo !== 'undefined' && usuarioInfo.tipo_usuario) {
-                if (usuarioInfo.tipo_usuario === 'profesor') {
-                    apiEndpoint = '/api/crear-reserva-profesor';
-                    tipoUsuario = 'profesor';
-                } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
-                    apiEndpoint = '/api/crear-reserva-solicitante';
-                    tipoUsuario = 'solicitante';
-                }
-            }
-
-
-            // Preparar datos para la petición según el tipo de usuario
-            let requestBody = {};
-
-            if (tipoUsuario === 'profesor') {
-                requestBody = {
-                    run_profesor: runParaReserva,
-                    id_espacio: espacioParaReserva
-                };
-            } else {
-                requestBody = {
-                    run_solicitante: runParaReserva,
-                    id_espacio: espacioParaReserva,
-                    modulos: cantidad
-                };
-            }
-
-
-            // Mostrar mensaje de proceso
-            document.getElementById('qr-status').innerHTML = 'Creando reserva...';
-
-            const response = await fetch(apiEndpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify(requestBody)
-            });
-
-        const data = await response.json();
-
-
-        if (data.success) {
-            // Cerrar el modal inmediatamente
-            cerrarModalModulos();
-
-            // Mostrar Sweet Alert de éxito para reserva creada
-            Swal.fire({
-                title: '¡Reserva Creada!',
-                text: 'La reserva ha sido creada exitosamente.',
-                icon: 'success',
-                confirmButtonText: 'Aceptar',
-                confirmButtonColor: '#059669',
-                timer: 1500,
-                timerProgressBar: true,
-                showConfirmButton: false
-            });
-
-            document.getElementById('qr-status').innerHTML = 'Reserva creada';
-            document.getElementById('qr-status').classList.remove('parpadeo');
-
-            // Limpiar estado después del Sweet Alert
-            setTimeout(() => {
-                limpiarEstadoCompleto();
-                // Restaurar autofocus del qr-input después de crear reserva
-                if (qrInputManager) {
-                    qrInputManager.setActiveInput('main');
-                }
-            }, 2000);
-        } else {
-            let mensajeError = data.mensaje || 'No se pudo reservar';
-
-            if (data.errors) {
-                mensajeError = 'Errores de validación:\n';
-                Object.keys(data.errors).forEach(field => {
-                    data.errors[field].forEach(error => {
-                        mensajeError += `• ${field}: ${error}\n`;
-                    });
-                });
-            }
-
-            // Mostrar SweetAlert de error
-            Swal.fire({
-                title: 'Error al Crear Reserva',
-                text: mensajeError,
-                icon: 'error',
-                confirmButtonText: 'Entendido',
-                confirmButtonColor: '#dc2626'
-            });
-
-            // Cerrar modal en caso de error
-            cerrarModalModulos();
-
-            // Restaurar autofocus del qr-input después de error en reserva
-            setTimeout(() => {
-                if (qrInputManager) {
-                    qrInputManager.setActiveInput('main');
-                }
-            }, 300);
-        }
-        });
-    }
-});
-
-
-
-        function obtenerDiaActual() {
-            const dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
-            return dias[new Date().getDay()];
-        }
-
-        function moduloActualNum(hora) {
-            const diaActual = obtenerDiaActual();
-            const horariosDia = horariosModulos[diaActual];
-
-            if (!horariosDia) return null;
-
-            // Buscar en qué módulo estamos según la hora actual
-            for (const [modulo, horario] of Object.entries(horariosDia)) {
-                if (hora >= horario.inicio && hora < horario.fin) {
-                    return parseInt(modulo);
-                }
-            }
-            return null;
-        }
-
-        function actualizarHora() {
-            const ahora = new Date();
-            const horaActual = ahora.toLocaleTimeString('es-ES', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-
-            const horaActualElement = document.getElementById('hora-actual');
-            if (horaActualElement) {
-                horaActualElement.textContent = horaActual;
-            }
-        }
-
-        function formatearHora(horaCompleta) {
-            return horaCompleta.slice(0, 5);
-        }
-
-        async function actualizarModuloYColores() {
-            const ahora = new Date();
-            const horaActual = ahora.toLocaleTimeString('es-ES', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-
-            // Determinar el módulo actual
-            const moduloActual = moduloActualNum(horaActual);
-            const moduloActualElement = document.getElementById('modulo-actual');
-            const moduloHorarioElement = document.getElementById('horario-actual');
-
-            if (moduloActual && moduloActualElement && moduloHorarioElement) {
-                moduloActualElement.textContent = moduloActual;
-
-                // Obtener el horario del módulo actual
-                const diaActual = obtenerDiaActual();
-                const horarioModulo = horariosModulos[diaActual][moduloActual];
-
-                // Mostrar solo horas y minutos
-                const horarioTexto = `${formatearHora(horarioModulo.inicio)} - ${formatearHora(horarioModulo.fin)}`;
-                moduloHorarioElement.textContent = horarioTexto;
-            } else {
-                if (moduloActualElement) moduloActualElement.textContent = 'No hay módulo programado';
-                if (moduloHorarioElement) moduloHorarioElement.textContent = '-';
-            }
-
-                    // Actualizar colores de los indicadores desde el servidor
-        await actualizarColoresEspacios();
-    }
-
-    // Agregar funcionalidad para cerrar modales con la tecla Escape
-    document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') {
-            // Cerrar modal de espacio si está abierto
-            const modalEspacio = document.getElementById('modal-espacio-info');
-            if (modalEspacio && !modalEspacio.classList.contains('hidden')) {
-                cerrarModalEspacio();
-            }
-
-            // Cerrar modal de módulos si está abierto
-            const modalModulos = document.getElementById('modal-seleccionar-modulos');
-            if (modalModulos && !modalModulos.classList.contains('hidden')) {
-                cerrarModalModulos();
-            }
-
-            // Cerrar modales de Livewire si están abiertos
-            const modalesLivewire = document.querySelectorAll('[data-modal]');
-            modalesLivewire.forEach(modal => {
-                if (!modal.classList.contains('hidden')) {
-                    // Disparar evento para cerrar modal de Livewire
-                    window.dispatchEvent(new CustomEvent('close-modal', {
-                        detail: modal.getAttribute('data-modal')
-                    }));
-                }
-            });
-        }
-    });
-
     // Escuchar cambios en localStorage para sincronizar mapa entre pestañas (p.ej. eliminación de reservas)
     window.addEventListener('storage', function (event) {
         if (!event.key) return;
@@ -3548,7 +3515,603 @@
         }
     });
 
+    // Función para probar la conectividad de la API
+    function probarConexionAPI() {
+        console.log('Probando conexión a la API...');
 
+        fetch('/api/espacios/estados', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json'
+            }
+        })
+        .then(response => {
+            console.log('Prueba de API - Status:', response.status);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Prueba de API - Datos:', data);
+        })
+        .catch(error => {
+            console.error('Prueba de API - Error:', error);
+        });
+    }
+
+    // Función de diagnóstico para debugging
+    window.diagnosticarAPI = function() {
+        console.log('=== DIAGNÓSTICO DE API ===');
+        console.log('URL actual:', window.location.href);
+        console.log('Cookies presentes:', document.cookie ? 'Sí' : 'No');
+
+        // Probar ruta simple
+        fetch('/api/espacios/estados', {
+            credentials: 'same-origin'
+        })
+            .then(response => {
+                console.log('Respuesta /api/espacios/estados:', response.status, response.statusText);
+                return response.text();
+            })
+            .then(text => {
+                console.log('Contenido de respuesta:', text);
+            })
+            .catch(error => {
+                console.error('Error en diagnóstico:', error);
+            });
+
+        // Probar ruta de devolver-espacio con datos de prueba
+        fetch('/api/devolver-espacio', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                run_usuario: 'test',
+                id_espacio: 'test'
+            })
+        })
+        .then(response => {
+            console.log('Respuesta /api/devolver-espacio:', response.status, response.statusText);
+            return response.text();
+        })
+        .then(text => {
+            console.log('Contenido de respuesta:', text);
+        })
+        .catch(error => {
+            console.error('Error en diagnóstico de POST:', error);
+        });
+    };
+
+    // Función de prueba simple
+    window.probarAPI = function() {
+        console.log('=== PRUEBA SIMPLE DE API ===');
+
+        fetch('/api/espacios/estados', {
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            console.log('Status:', response.status);
+            console.log('StatusText:', response.statusText);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Datos:', data);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    };
+
+    // Función de prueba específica para devolver-espacio
+    window.probarDevolverEspacio = function() {
+        console.log('=== PRUEBA devolver-espacio ===');
+
+        const datosPrueba = {
+            run_usuario: '20275341',
+            id_espacio: 'TH-40'
+        };
+
+        console.log('Enviando:', datosPrueba);
+
+        // Verificar autenticación primero
+        verificarAutenticacion().then(estaAutenticado => {
+            if (!estaAutenticado) {
+                console.log('❌ Usuario no autenticado');
+                return;
+            }
+
+            console.log('✅ Usuario autenticado, enviando solicitud...');
+
+            fetch('/api/devolver-espacio', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin',
+                body: JSON.stringify(datosPrueba)
+            })
+            .then(response => {
+                console.log('Status:', response.status);
+                console.log('StatusText:', response.statusText);
+                console.log('Headers:', Object.fromEntries(response.headers.entries()));
+                return response.text();
+            })
+            .then(text => {
+                console.log('Respuesta cruda:', text);
+                try {
+                    const data = JSON.parse(text);
+                    console.log('Datos parseados:', data);
+                } catch (e) {
+                    console.log('No es JSON válido');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    };
+
+    // Función para renovar la sesión
+    window.renovarSesion = function() {
+        console.log('=== RENOVANDO SESIÓN ===');
+
+        fetch('/dashboard', {
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            console.log('Respuesta de renovación:', response.status);
+            if (response.status === 200) {
+                console.log('Sesión renovada exitosamente');
+                return true;
+            } else {
+                console.log('No se pudo renovar la sesión');
+                return false;
+            }
+        })
+        .catch(error => {
+            console.error('Error al renovar sesión:', error);
+            return false;
+        });
+    };
+
+    // Función para verificar estado de autenticación correctamente
+    // Usa una ruta web (/auth/check) que depende de la sesión web (guard 'web')
+    window.verificarAutenticacion = function() {
+        console.log('=== VERIFICANDO AUTENTICACIÓN (web) ===');
+
+        // Llamamos a /auth/check, que está protegida por el middleware 'auth' web
+        return fetch('/auth/check', {
+            credentials: 'same-origin',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (response.status === 200) {
+                console.log('✅ Usuario autenticado (web)');
+                return true;
+            } else if (response.status === 403) {
+                // El usuario está autenticado pero no tiene el permiso requerido para esta ruta
+                console.log('⚠️ Usuario autenticado pero sin permiso (403) - consideramos esto como autenticado');
+                return true;
+            } else if (response.status === 401) {
+                console.log('❌ Usuario no autenticado (web)');
+                return false;
+            } else {
+                console.log('⚠️ Error al verificar autenticación (web):', response.status);
+                return false;
+            }
+        })
+        .catch(error => {
+            console.error('Error al verificar autenticación (web):', error);
+            return false;
+        });
+    };
+
+    // Función para inicializar la sesión correctamente
+    window.inicializarSesion = function() {
+        console.log('=== INICIALIZANDO SESIÓN ===');
+
+        // Obtener cookie CSRF primero
+        return fetch('/sanctum/csrf-cookie', {
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            console.log('Cookie CSRF obtenida:', response.status);
+            return new Promise(resolve => setTimeout(resolve, 100)); // Pequeña pausa
+        })
+        .then(() => {
+            // Verificar que ahora tenemos las cookies necesarias
+            console.log('Cookies después de inicialización:', document.cookie);
+
+            if (document.cookie.includes('laravel_session') && document.cookie.includes('XSRF-TOKEN')) {
+                console.log('✅ Sesión inicializada correctamente');
+                return true;
+            } else {
+                console.log('⚠️ Algunas cookies aún faltan');
+                return false;
+            }
+        })
+        .catch(error => {
+            console.error('Error al inicializar sesión:', error);
+            return false;
+        });
+    };
+
+    // Inicializar sesión al cargar la página
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Inicializando sesión...');
+        inicializarSesion().then(success => {
+            if (success) {
+                console.log('Sesión lista para usar');
+            } else {
+                console.log('Problemas con la inicialización de sesión');
+            }
+        });
+    });
+
+    // Función para verificar sesión periódicamente
+    window.verificarSesionPeriodicamente = function() {
+        // Verificar cada 5 minutos
+        setInterval(() => {
+            if (!document.cookie.includes('laravel_session')) {
+                console.log('Sesión expirada detectada - redirigiendo...');
+                mostrarMensaje('Sesión Expirada', 'Tu sesión ha expirado. Serás redirigido al inicio de sesión.', 'error');
+
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 3000);
+            }
+        }, 5 * 60 * 1000); // 5 minutos
+    };
+
+    // Iniciar verificación periódica
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('Iniciando verificación periódica de sesión...');
+        verificarSesionPeriodicamente();
+    });
+
+    console.log('Funciones disponibles:');
+    console.log('- verificarAutenticacion() - Verifica si el usuario está autenticado');
+    console.log('- inicializarSesion() - Inicializa la sesión correctamente');
+    console.log('- verificarSesion() - Verifica estado de la sesión');
+    console.log('- renovarSesion() - Intenta renovar la sesión');
+    console.log('- probarAPI() - Prueba ruta simple');
+    console.log('- probarDevolverEspacio() - Prueba ruta específica');
+
+    // Funciones para modales de desocupar
+    function mostrarModalConfirmarDesocupar(espacioNombre, espacioId) {
+        const modal = document.getElementById('modal-confirmar-desocupar');
+        const nombreElement = document.getElementById('espacio-desocupar-nombre');
+        const adminInfo = document.getElementById('admin-info-desocupar');
+        const btnConfirmar = document.getElementById('btnConfirmarDesocupar');
+
+        if (modal && nombreElement && adminInfo && btnConfirmar) {
+            nombreElement.textContent = espacioNombre || 'este espacio';
+
+            // Mostrar info de admin si es administrador
+            const isAdmin = window.currentUser && window.currentUser.roles.includes('Administrador');
+            if (isAdmin) {
+                adminInfo.classList.remove('hidden');
+            } else {
+                adminInfo.classList.add('hidden');
+            }
+
+            // Configurar el botón de confirmar
+            btnConfirmar.onclick = function() {
+                confirmarDesocupar(espacioId);
+            };
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            qrInputManager.setActiveInput('main');
+        }
+    }
+
+    function cerrarModalConfirmarDesocupar() {
+        const modal = document.getElementById('modal-confirmar-desocupar');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            qrInputManager.setActiveInput('main');
+        }
+    }
+
+    function confirmarDesocupar(espacioId) {
+        cerrarModalConfirmarDesocupar();
+
+        // Obtener run del ocupante desde la info cargada
+        let cached = null;
+        try {
+            cached = sessionStorage.getItem(`espacio_${espacioId}`);
+            cached = cached ? JSON.parse(cached) : null;
+        } catch (e) { cached = null; }
+
+        let run = (cached && (cached.run_profesor || cached.run_solicitante));
+
+        // Si no hay run en cache y el usuario es admin, usar su propio RUN
+        if (!run && window.currentUser && window.currentUser.roles.includes('Administrador')) {
+            run = window.currentUser.run; // Usar RUN del admin
+        }
+
+        // Si aún no hay run, pedirlo
+        if (!run) {
+            mostrarModalSolicitarRun(espacioId);
+            return;
+        }
+
+        // Ejecutar desocupación
+        ejecutarDesocupar(espacioId, run);
+    }
+
+    function mostrarModalSolicitarRun(espacioId) {
+        // Crear modal dinámicamente para solicitar RUN
+        const modalHtml = `
+            <div id="modal-solicitar-run" class="fixed inset-0 z-[10002] flex items-center justify-center bg-black bg-opacity-50">
+                <div class="flex flex-col w-full max-w-sm mx-2 overflow-hidden bg-white rounded-lg shadow-lg md:mx-8">
+                    <div class="relative flex flex-col gap-4 p-6 bg-gradient-to-r bg-light-cloud-blue md:flex-row md:items-center md:justify-center">
+                        <div class="flex items-center flex-1 min-w-0 gap-3">
+                            <div class="flex flex-col items-center justify-center flex-shrink-0">
+                                <div class="p-2 bg-white rounded-full bg-opacity-20">
+                                    <i class="text-xl text-white fas fa-id-card"></i>
+                                </div>
+                            </div>
+                            <div class="flex flex-col min-w-0 text-center">
+                                <h1 class="text-xl font-bold text-white">RUN Requerido</h1>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 bg-gray-50 text-center">
+                        <p class="text-sm text-gray-700 mb-4">Ingrese el RUN del usuario que devuelve el espacio:</p>
+                        <input type="text" id="input-run-desocupar" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4" placeholder="RUN del usuario">
+                        <div class="flex gap-3 justify-center">
+                            <button onclick="cerrarModalSolicitarRun()" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors duration-200">
+                                Cancelar
+                            </button>
+                            <button onclick="confirmarRunDesocupar(${espacioId})" class="px-4 py-2 text-sm font-medium text-white bg-light-cloud-blue rounded-lg hover:bg-blue-600 transition-colors duration-200">
+                                Confirmar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Agregar modal al DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+        // Enfocar el input
+        setTimeout(() => {
+            const input = document.getElementById('input-run-desocupar');
+            if (input) input.focus();
+        }, 100);
+    }
+
+    function cerrarModalSolicitarRun() {
+        const modal = document.getElementById('modal-solicitar-run');
+        if (modal) {
+            modal.remove();
+        }
+    }
+
+    function confirmarRunDesocupar(espacioId) {
+        const input = document.getElementById('input-run-desocupar');
+        const run = input ? input.value.trim() : '';
+
+        if (!run) {
+            mostrarMensaje('Error', 'Debe ingresar un RUN válido', 'error');
+            return;
+        }
+
+        cerrarModalSolicitarRun();
+        ejecutarDesocupar(espacioId, run);
+    }
+
+    function ejecutarDesocupar(espacioId, run) {
+        // Mostrar loading
+        mostrarMensaje('Procesando...', 'Desocupando el espacio...', 'info');
+
+        // Asegurar que los datos sean strings
+        const datosEnvio = {
+            run_usuario: String(run).trim(),
+            id_espacio: String(espacioId).trim()
+        };
+
+        console.log('Enviando datos:', datosEnvio); // Para debugging
+        console.log('URL de destino:', '/api/devolver-espacio');
+        console.log('Cookies disponibles:', document.cookie);
+
+        // Verificar autenticación antes de proceder
+        verificarAutenticacion().then(estaAutenticado => {
+            if (!estaAutenticado) {
+                console.error('Usuario no autenticado');
+                mostrarMensaje('Sesión Expirada', 'Tu sesión ha expirado. Serás redirigido al inicio de sesión.', 'error');
+
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 3000);
+                return;
+            }
+
+            // Si está autenticado, proceder con la solicitud
+            enviarSolicitudDesocupar(datosEnvio);
+        });
+    }
+
+    function enviarSolicitudDesocupar(datosEnvio) {
+        // Construir headers y asegurar que el token CSRF se incluya explícitamente
+        const headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        };
+
+        // Extraer XSRF-TOKEN de las cookies y añadir como cabecera X-XSRF-TOKEN
+        const xsrfMatch = document.cookie.match(/XSRF-TOKEN=([^;]+)/);
+        if (xsrfMatch && xsrfMatch.length > 1) {
+            try {
+                headers['X-XSRF-TOKEN'] = decodeURIComponent(xsrfMatch[1]);
+                console.log('Cabecera X-XSRF-TOKEN añadida');
+            } catch (e) {
+                console.warn('No se pudo decodificar XSRF-TOKEN:', e);
+            }
+        } else {
+            console.warn('No se encontró cookie XSRF-TOKEN al construir la solicitud');
+        }
+
+        console.log('Headers que se enviarán:', headers);
+
+        fetch('/api/devolver-espacio', {
+            method: 'POST',
+            headers: headers,
+            credentials: 'same-origin',
+            body: JSON.stringify(datosEnvio)
+        })
+        .then(response => {
+            console.log('=== RESPUESTA RECIBIDA ===');
+            console.log('Status:', response.status);
+            console.log('StatusText:', response.statusText);
+            console.log('Headers:', Object.fromEntries(response.headers.entries()));
+            console.log('Response type:', response.type);
+            console.log('Response url:', response.url);
+
+            // Verificar si es una respuesta de no autorizado
+            if (response.status === 401) {
+                // Intentar leer el cuerpo para más detalles
+                return response.json().then(data => {
+                    console.log('Error de autenticación:', data);
+                    if (data.message === 'Unauthenticated.') {
+                        mostrarMensaje('Sesión Expirada', 'Tu sesión ha expirado. Serás redirigido al inicio de sesión.', 'error');
+
+                        // Redirigir después de 3 segundos
+                        setTimeout(() => {
+                            window.location.href = '/login';
+                        }, 3000);
+
+                        throw new Error('Sesión expirada - redirigiendo...');
+                    } else {
+                        throw new Error('Usuario no autenticado. Inicia sesión nuevamente.');
+                    }
+                }).catch(() => {
+                    mostrarMensaje('Sesión Expirada', 'Tu sesión ha expirado. Serás redirigido al inicio de sesión.', 'error');
+
+                    // Redirigir después de 3 segundos
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 3000);
+
+                    throw new Error('Usuario no autenticado. Inicia sesión nuevamente.');
+                });
+            }
+
+            if (!response.ok) {
+                // Intentar leer el cuerpo de la respuesta para más detalles
+                return response.text().then(text => {
+                    console.log('Error response body:', text);
+                    throw new Error(`HTTP ${response.status}: ${response.statusText} - ${text}`);
+                });
+            }
+
+            return response.json();
+        })
+        .then(data => {
+            console.log('Datos recibidos:', data); // Para debugging
+            if (data.success) {
+                mostrarMensaje('Éxito', 'Espacio desocupado correctamente', 'success');
+                // Cerrar modal y refrescar indicadores
+                cerrarModalEspacio();
+                actualizarColoresEspacios();
+            } else {
+                mostrarMensaje('Error', data.mensaje || 'No se pudo desocupar el espacio', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('=== ERROR DE CONEXIÓN DETALLADO ===');
+            console.error('Tipo de error:', error.constructor.name);
+            console.error('Mensaje de error:', error.message);
+            console.error('Stack trace:', error.stack);
+
+            // Información adicional de debugging
+            console.log('URL solicitada:', '/api/devolver-espacio');
+            console.log('Método:', 'POST');
+            console.log('Headers enviados:', {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            });
+            console.log('Datos enviados:', datosEnvio);
+
+            // Determinar el tipo de error
+            let mensajeError = 'Error desconocido';
+            if (error.message.includes('fetch')) {
+                mensajeError = 'Error de conexión: No se pudo conectar al servidor';
+            } else if (error.message.includes('HTTP 401')) {
+                mensajeError = 'Usuario no autenticado. Inicia sesión nuevamente.';
+            } else if (error.message.includes('HTTP 500')) {
+                mensajeError = 'Error interno del servidor. Contacta al administrador.';
+            } else if (error.message.includes('HTTP')) {
+                mensajeError = `Error del servidor: ${error.message}`;
+            } else if (error.message.includes('JSON')) {
+                mensajeError = 'Error al procesar la respuesta del servidor';
+            } else if (error.message.includes('autenticado')) {
+                mensajeError = error.message;
+            } else {
+                mensajeError = `Error: ${error.message}`;
+            }
+
+            mostrarMensaje('Error de Conexión', mensajeError, 'error');
+        });
+    }
+
+    // Funciones para modal de mensajes
+    function mostrarMensaje(titulo, texto, tipo = 'info') {
+        const modal = document.getElementById('modal-mensaje');
+        const tituloElement = document.getElementById('mensaje-titulo');
+        const textoElement = document.getElementById('mensaje-texto');
+        const iconoElement = document.getElementById('mensaje-icono');
+
+        if (modal && tituloElement && textoElement && iconoElement) {
+            tituloElement.textContent = titulo;
+            textoElement.textContent = texto;
+
+            // Configurar icono según tipo
+            iconoElement.className = 'text-xl text-white fas';
+            switch (tipo) {
+                case 'success':
+                    iconoElement.classList.add('fa-check-circle');
+                    modal.querySelector('.bg-gradient-to-r').className = 'relative flex flex-col gap-4 p-6 bg-gradient-to-r bg-green-600 md:flex-row md:items-center md:justify-center';
+                    break;
+                case 'error':
+                    iconoElement.classList.add('fa-exclamation-triangle');
+                    modal.querySelector('.bg-gradient-to-r').className = 'relative flex flex-col gap-4 p-6 bg-gradient-to-r bg-red-600 md:flex-row md:items-center md:justify-center';
+                    break;
+                case 'warning':
+                    iconoElement.classList.add('fa-exclamation-circle');
+                    modal.querySelector('.bg-gradient-to-r').className = 'relative flex flex-col gap-4 p-6 bg-gradient-to-r bg-yellow-600 md:flex-row md:items-center md:justify-center';
+                    break;
+                default:
+                    iconoElement.classList.add('fa-info-circle');
+                    modal.querySelector('.bg-gradient-to-r').className = 'relative flex flex-col gap-4 p-6 bg-gradient-to-r bg-light-cloud-blue md:flex-row md:items-center md:justify-center';
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+    }
+
+    function cerrarModalMensaje() {
+        const modal = document.getElementById('modal-mensaje');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    }
 
     </script>
 </x-show-layout>

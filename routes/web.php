@@ -225,6 +225,18 @@ Route::group(['middleware' => ['auth', 'session.timeout', 'permission:monitoreo 
     Route::get('/plano/{id}/modulo-actual', [PlanoDigitalController::class, 'getModuloActual'])->name('plano.modulo-actual');
     Route::get('/plano/{id}/data', [PlanoDigitalController::class, 'getPlanoData'])->name('plano.data');
     Route::get('/api/profesor/{run}', [ProfesorController::class, 'getProfesor'])->name('profesor.get');
+
+    // Simple session-auth check endpoint used by frontend to verify session (returns JSON)
+    Route::get('/auth/check', function () {
+        $user = auth()->user();
+        if ($user) {
+            return response()->json(['authenticated' => true, 'user' => $user]);
+        }
+        return response()->json(['authenticated' => false], 401);
+    })->name('auth.check');
+
+    // Ruta para devolver espacios (usa middleware web/session)
+    Route::post('/api/devolver-espacio', [PlanoDigitalController::class, 'devolverEspacio'])->name('plano.devolver');
 });
 
 // Reportes - Solo Administrador y Supervisor
