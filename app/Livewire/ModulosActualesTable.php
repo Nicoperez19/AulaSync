@@ -161,24 +161,14 @@ class ModulosActualesTable extends Component
         // Obtener el módulo actual usando la nueva lógica
         $this->moduloActual = $this->obtenerModuloActual();
 
-        // Debug temporal para verificar el módulo
-        \Log::info('Hora actual: ' . $this->horaActual);
-        \Log::info('Módulo actual encontrado: ' . ($this->moduloActual ? 'Sí' : 'No'));
-        if ($this->moduloActual) {
-            \Log::info('Número del módulo: ' . $this->moduloActual['numero']);
-        }
-
-        // Obtener todos los pisos con sus espacios
+        // Obtener todos los pisos con sus espacios (optimizado)
         $this->pisos = Piso::with(['espacios'])->get();
 
         if ($this->moduloActual) {
             // Determinar el período actual usando el helper
-            $anioActual = SemesterHelper::getCurrentAcademicYear();
-            $semestre = SemesterHelper::getCurrentSemester();
             $periodo = SemesterHelper::getCurrentPeriod();
 
             // Buscar el módulo en la base de datos para obtener el ID
-            // El id_modulo tiene formato "JU.1", "LU.10", etc. Necesitamos extraer el número
             $diaActual = Carbon::now()->locale('es')->isoFormat('dddd');
             $prefijoDia = '';
             
@@ -206,59 +196,76 @@ class ModulosActualesTable extends Component
                 ->first();
 
             if ($moduloDB) {
-                // Obtener todas las planificaciones del módulo actual
-                $planificacionesActivas = Planificacion_Asignatura::with([
-                    'asignatura.profesor',
-                    'espacio',
-                    'modulo'
+                // Optimizar consulta de planificaciones
+                $planificacionesActivas = Planificacion_Asignatura::select([
+                    'id_planificacion',
+                    'id_espacio',
+                    'id_modulo',
+                    'id_asignatura'
+                ])
+                ->with([
+                    'asignatura:id_asignatura,codigo_asignatura,nombre_asignatura,seccion,id_profesor',
+                    'asignatura.profesor:id,name'
                 ])
                 ->where('id_modulo', $moduloDB->id_modulo)
                 ->whereHas('horario', function($q) use ($periodo) {
                     $q->where('periodo', $periodo);
                 })
-                ->get();
+                ->get()
+                ->keyBy('id_espacio');
             } else {
                 $planificacionesActivas = collect();
             }
 
-            // Obtener reservas activas de solicitantes para el día actual
-            $reservasSolicitantes = Reserva::with(['solicitante'])
-                ->where('fecha_reserva', Carbon::now()->toDateString())
-                ->where('estado', 'activa')
-                ->whereNotNull('run_solicitante')
-                ->get();
+            // Optimizar consultas de reservas
+            $reservasSolicitantes = Reserva::select([
+                'id_reserva',
+                'id_espacio',
+                'run_solicitante',
+                'hora',
+                'hora_salida'
+            ])
+            ->with(['solicitante:id,nombre,tipo_solicitante'])
+            ->where('fecha_reserva', Carbon::now()->toDateString())
+            ->where('estado', 'activa')
+            ->whereNotNull('run_solicitante')
+            ->get()
+            ->keyBy('id_espacio');
 
-            // Obtener reservas activas de profesores para el día actual
-            $reservasProfesores = Reserva::with(['profesor'])
-                ->where('fecha_reserva', Carbon::now()->toDateString())
-                ->where('estado', 'activa')
-                ->whereNotNull('run_profesor')
-                ->get();
+            $reservasProfesores = Reserva::select([
+                'id_reserva',
+                'id_espacio',
+                'run_profesor',
+                'hora',
+                'hora_salida'
+            ])
+            ->with(['profesor:id,name'])
+            ->where('fecha_reserva', Carbon::now()->toDateString())
+            ->where('estado', 'activa')
+            ->whereNotNull('run_profesor')
+            ->get()
+            ->keyBy('id_espacio');
 
-            // Procesar espacios por piso
+            // Procesar espacios por piso de manera más eficiente
             $this->espacios = [];
             foreach ($this->pisos as $piso) {
                 $espaciosPiso = [];
                 foreach ($piso->espacios as $espacio) {
-                    // Buscar si el espacio tiene una planificación activa
-                    $planificacionActiva = $planificacionesActivas->where('id_espacio', $espacio->id_espacio)->first();
-                    
-                    // Buscar si el espacio tiene una reserva de solicitante
-                    $reservaSolicitante = $reservasSolicitantes->where('id_espacio', $espacio->id_espacio)->first();
-                    
-                    // Buscar si el espacio tiene una reserva de profesor
-                    $reservaProfesor = $reservasProfesores->where('id_espacio', $espacio->id_espacio)->first();
+                    // Usar keyBy para acceso más rápido
+                    $planificacionActiva = $planificacionesActivas->get($espacio->id_espacio);
+                    $reservaSolicitante = $reservasSolicitantes->get($espacio->id_espacio);
+                    $reservaProfesor = $reservasProfesores->get($espacio->id_espacio);
                     
                     $estado = $espacio->estado ?? 'Disponible';
-                    $tieneClase = false;
-                    $tieneReservaSolicitante = false;
-                    $tieneReservaProfesor = false;
+                    $tieneClase = !is_null($planificacionActiva);
+                    $tieneReservaSolicitante = !is_null($reservaSolicitante);
+                    $tieneReservaProfesor = !is_null($reservaProfesor);
+                    
                     $datosClase = null;
                     $datosSolicitante = null;
                     $datosProfesor = null;
 
                     if ($planificacionActiva) {
-                        $tieneClase = true;
                         $datosClase = [
                             'codigo_asignatura' => $planificacionActiva->asignatura->codigo_asignatura ?? '-',
                             'nombre_asignatura' => $planificacionActiva->asignatura->nombre_asignatura ?? '-',
@@ -270,7 +277,6 @@ class ModulosActualesTable extends Component
                     }
 
                     if ($reservaSolicitante) {
-                        $tieneReservaSolicitante = true;
                         $datosSolicitante = [
                             'nombre' => $reservaSolicitante->solicitante->nombre ?? '-',
                             'run' => $reservaSolicitante->run_solicitante ?? '-',
@@ -281,7 +287,6 @@ class ModulosActualesTable extends Component
                     }
 
                     if ($reservaProfesor) {
-                        $tieneReservaProfesor = true;
                         $datosProfesor = [
                             'nombre' => $reservaProfesor->profesor->name ?? '-',
                             'run' => $reservaProfesor->run_profesor ?? '-',
@@ -314,7 +319,7 @@ class ModulosActualesTable extends Component
                 $this->espacios[$piso->id] = $espaciosPiso;
             }
         } else {
-            // Procesar espacios cuando no hay módulo activo
+            // Procesar espacios cuando no hay módulo activo (más eficiente)
             $this->espacios = [];
             foreach ($this->pisos as $piso) {
                 $espaciosPiso = [];
