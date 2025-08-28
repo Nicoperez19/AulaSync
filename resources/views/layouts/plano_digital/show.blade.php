@@ -2350,46 +2350,69 @@
         document.addEventListener('DOMContentLoaded', function () {
             const btnDesocupar = document.getElementById('btnDesocupar');
             if (btnDesocupar) {
-                btnDesocupar.addEventListener('click', async function () {
-                    // Obtener run del ocupante desde la info cargada (intentar data.run_profesor o data.run_solicitante)
-                    const espacioId = state.currentIndicatorId || null;
-                    // Pedir confirmación
-                    if (!confirm('¿Realmente desea desocupar este espacio?')) return;
-
-                    // Intentar leer run desde la cache o hacer una carga rápida
-                    let cached = null;
-                    try {
-                        cached = sessionStorage.getItem(`espacio_${espacioId}`);
-                        cached = cached ? JSON.parse(cached) : null;
-                    } catch (e) { cached = null; }
-                            await actualizarColoresEspacios();
-                    const run = (cached && (cached.run_profesor || cached.run_solicitante)) || prompt('Ingrese RUN del usuario que devuelve el espacio');
-                    if (!run) return alert('Se requiere RUN para desocupar');
-
-                    try {
-                        const res = await fetch('/api/devolver-espacio', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                            },
-                            body: JSON.stringify({ run_usuario: run, id_espacio: espacioId })
-                        });
-
-                        const json = await res.json();
-                        if (json.success) {
-                            alert('Espacio desocupado correctamente');
-                            // Cerrar modal y refrescar indicadores
-                            cerrarModalEspacio();
-                            await actualizarColoresEspacios();
-                        } else {
-                            alert(json.mensaje || 'No se pudo desocupar el espacio');
-                        }
-                    } catch (e) {
-                        console.error(e);
-                        alert('Error al desocupar el espacio');
-                    }
+            btnDesocupar.addEventListener('click', async function () {
+                const espacioId = state.currentIndicatorId || null;
+                // Tomar el último RUN mostrado en el modal
+                let run = null;
+                // Busca el RUN en el campo correspondiente del modal
+                const runEl = document.querySelector('#ocupanteInfo [class*="fa-id-card"] ~ div .text-gray-600, #ocupanteInfo [class*="fa-user-tie"] ~ div .text-gray-800');
+                if (runEl && runEl.textContent && runEl.textContent.trim() !== '') {
+                run = runEl.textContent.trim();
+                } else {
+                // Fallback: intenta con el último usuario escaneado
+                run = usuarioEscaneado || null;
+                }
+                if (!run) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'No se encontró RUN para desocupar',
+                    icon: 'error',
+                    confirmButtonText: 'Entendido'
                 });
+                return;
+                }
+
+                try {
+                const res = await fetch('/api/devolver-espacio', {
+                    method: 'POST',
+                    headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ run_usuario: run, id_espacio: espacioId })
+                });
+
+                const json = await res.json();
+                if (json.success) {
+                    Swal.fire({
+                    title: 'Espacio desocupado',
+                    text: 'Espacio desocupado correctamente',
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar',
+                    timer: 1500,
+                    timerProgressBar: true,
+                    showConfirmButton: false
+                    });
+                    cerrarModalEspacio();
+                    await actualizarColoresEspacios();
+                } else {
+                    Swal.fire({
+                    title: 'Error',
+                    text: json.mensaje || 'No se pudo desocupar el espacio',
+                    icon: 'error',
+                    confirmButtonText: 'Entendido'
+                    });
+                }
+                } catch (e) {
+                console.error(e);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Error al desocupar el espacio',
+                    icon: 'error',
+                    confirmButtonText: 'Entendido'
+                });
+                }
+            });
             }
         });
 

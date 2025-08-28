@@ -51,21 +51,24 @@ class ModulosActualesTable extends Component
 
         // Preparar todos los espacios
         $this->todosLosEspacios = [];
-        foreach ($this->pisos as $piso) {
-            foreach ($piso->espacios as $espacio) {
-                $estado = $espacio->estado ?? 'Disponible';
-                $tieneClase = false;
-                $tieneReservaSolicitante = false;
-                $datosClase = null;
-                $datosSolicitante = null;
+        if ($this->moduloActual) {
+            foreach ($this->pisos as $piso) {
+                foreach ($piso->espacios as $espacio) {
+                    $estado = $espacio->estado ?? 'Disponible';
+                    $tieneClase = false;
+                    $tieneReservaSolicitante = false;
+                    $datosClase = null;
+                    $datosSolicitante = null;
+                    $datosProfesor = null;
+                    $tieneReservaProfesor = false;
 
-                if ($this->moduloActual) {
                     $planificacionActiva = Planificacion_Asignatura::with(['asignatura.profesor'])
                         ->where('id_modulo', $this->moduloActual->id_modulo)
                         ->where('id_espacio', $espacio->id_espacio)
                         ->first();
 
                     if ($planificacionActiva) {
+                        $tieneClase = true;
                         $datosClase = [
                             'codigo_asignatura' => $planificacionActiva->asignatura->codigo_asignatura ?? '-',
                             'nombre_asignatura' => $planificacionActiva->asignatura->nombre_asignatura ?? '-',
@@ -82,6 +85,7 @@ class ModulosActualesTable extends Component
                         ->first();
 
                     if ($reservaSolicitante) {
+                        $tieneReservaSolicitante = true;
                         $datosSolicitante = [
                             'nombre' => $reservaSolicitante->solicitante->nombre ?? '-',
                             'run' => $reservaSolicitante->run_solicitante ?? '-',
@@ -90,19 +94,13 @@ class ModulosActualesTable extends Component
                             'hora_salida' => $reservaSolicitante->hora_salida ?? '-'
                         ];
                     }
-<<<<<<< HEAD
-=======
 
-                    if ($reservaProfesor) {
-                        $datosProfesor = [
-                            'nombre' => $reservaProfesor->profesor->name ?? '-',
-                            'run' => $reservaProfesor->run_profesor ?? '-',
-                            'hora_inicio' => $reservaProfesor->hora ?? '-',
-                            'hora_salida' => $reservaProfesor->hora_salida ?? '-'
-                        ];
-                    }
+                    // Si tienes lógica para reservaProfesor, agrégala aquí
+                    // Ejemplo:
+                    // $reservaProfesor = ...;
+                    // if ($reservaProfesor) { ... }
 
-                    $espaciosPiso[] = [
+                    $this->todosLosEspacios[] = [
                         'id_espacio' => $espacio->id_espacio,
                         'nombre_espacio' => $espacio->nombre_espacio,
                         'estado' => $estado,
@@ -110,42 +108,17 @@ class ModulosActualesTable extends Component
                         'puestos_disponibles' => $espacio->puestos_disponibles,
                         'tiene_clase' => $tieneClase,
                         'tiene_reserva_solicitante' => $tieneReservaSolicitante,
-                        'tiene_reserva_profesor' => $tieneReservaProfesor,
                         'datos_clase' => $datosClase,
                         'datos_solicitante' => $datosSolicitante,
-                        'datos_profesor' => $datosProfesor,
-                        'modulo' => [
-                            'numero' => $this->moduloActual['numero'],
-                            'inicio' => $this->moduloActual['inicio'],
-                            'fin' => $this->moduloActual['fin']
-                        ],
-                        'piso' => $piso->nombre_piso,
-                        'proxima_clase' => null
+                        'piso' => $piso->numero_piso,
+                        'modulo' => $this->moduloActual ? [
+                            'id' => $this->moduloActual->id,
+                            'hora_inicio' => $this->moduloActual->hora_inicio,
+                            'hora_termino' => $this->moduloActual->hora_termino
+                        ] : null,
                     ];
->>>>>>> Nperez
                 }
-
-                $this->todosLosEspacios[] = [
-                    'id_espacio' => $espacio->id_espacio,
-                    'nombre_espacio' => $espacio->nombre_espacio,
-                    'estado' => $estado,
-                    'tipo_espacio' => $espacio->tipo_espacio,
-                    'puestos_disponibles' => $espacio->puestos_disponibles,
-                    'tiene_clase' => $tieneClase,
-                    'tiene_reserva_solicitante' => $tieneReservaSolicitante,
-                    'datos_clase' => $datosClase,
-                    'datos_solicitante' => $datosSolicitante,
-                    'piso' => $piso->numero_piso,
-                    'modulo' => $this->moduloActual ? [
-                        'id' => $this->moduloActual->id,
-                        'hora_inicio' => $this->moduloActual->hora_inicio,
-                        'hora_termino' => $this->moduloActual->hora_termino
-                    ] : null,
-                ];
             }
-<<<<<<< HEAD
-    }
-=======
         } else {
             // Procesar espacios cuando no hay módulo activo (más eficiente)
             $this->espacios = [];
@@ -170,7 +143,6 @@ class ModulosActualesTable extends Component
                 $this->espacios[$piso->id] = $espaciosPiso;
             }
         }
->>>>>>> Nperez
     }
 
     public function getEspaciosCarruselProperty()
@@ -205,8 +177,5 @@ class ModulosActualesTable extends Component
     {
         return view('livewire.modulos-actuales-table');
     }
-<<<<<<< HEAD
+
 }
-=======
-}
->>>>>>> Nperez
