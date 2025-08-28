@@ -81,8 +81,8 @@
                                 </svg>
                             </div>
                             <div>
-                                <span id="qr-status" class="block text-sm font-semibold parpadeo">Esperando</span>
-                                <span class="text-xs text-white/80 parpadeo">Escanea el código QR</span>
+                                <span id="qr-status" class="block text-sm font-semibold parpadeo">Esperando escane el QR de la cedula de identidad</span>
+                                <span class="text-xs text-white/80 parpadeo">Esperando</span>
                             </div>
                         </div>
 
@@ -954,7 +954,7 @@
             const qrStatus = getQrStatus();
             if (qrStatus) {
                 qrStatus.classList.add('parpadeo');
-                qrStatus.innerHTML = 'Esperando... Escanea el código QR';
+                qrStatus.innerHTML = 'Esperando... Escanea el código QR de la cedula de identidad';
             }
 
             // Limpiar cualquier input de QR que pueda tener datos
@@ -1064,7 +1064,7 @@
                     // Restaurar estado normal después de 1.5 segundos
                     setTimeout(() => {
                         qrStatus.classList.add('parpadeo');
-                        qrStatus.innerHTML = 'Esperando... Escanea el código QR';
+                        qrStatus.innerHTML = 'Esperando... Escanea el código QR de la cedula de identidad';
                         qrStatus.style.color = '';
                     }, 1500);
                 }
@@ -1073,7 +1073,7 @@
                 const qrStatus = getQrStatus();
                 if (qrStatus) {
                     qrStatus.classList.add('parpadeo');
-                    qrStatus.innerHTML = 'Esperando... Escanea el código QR';
+                    qrStatus.innerHTML = 'Esperando... Escanea el código QR de la cedula de identidad';
                 }
             }
 
@@ -1385,6 +1385,12 @@
         if (ordenEscaneo === 'usuario') {
             // PASO 1: Escanear usuario (obligatorio primero)
             await procesarUsuario();
+            // Al terminar de procesar usuario, mostrar mensaje SOLO en el mensaje inicial superior (si existe)
+            const mensajeInicial = getMensajeInicial();
+            if (mensajeInicial) {
+                mensajeInicial.classList.remove('hidden');
+                mensajeInicial.innerHTML = 'Cédula escaneada. Ahora escanee el QR del espacio.';
+            }
         } else if (ordenEscaneo === 'espacio') {
             // PASO 2: Escanear espacio (solo después del usuario)
             const resultado = await procesarEspacio();
@@ -1449,11 +1455,15 @@
 
         // RUN extraído
 
+        // Guardar el usuario escaneado globalmente
+        usuarioEscaneado = run;
+
                     // Verificar usuario en la base de datos
                     usuarioInfo = await verificarUsuario(run);
 
         if (!usuarioInfo) {
             // Error al verificar usuario - resetear flujo
+            usuarioEscaneado = null;
             limpiarEstadoLectura('Usuario no encontrado en el sistema');
             // Restaurar autofocus del qr-input después de error de usuario no encontrado
             setTimeout(() => {
@@ -1582,6 +1592,11 @@
             }
         }
 
+        // Validar que el usuario haya sido escaneado antes de procesar espacio
+        if (!usuarioEscaneado) {
+            limpiarEstadoLectura('Debe escanear primero la cédula de identidad del usuario');
+            return;
+        }
         // Normalizar el formato del espacio para que coincida con la BD (TH-C1)
         if (espacio) {
             espacio = espacio.toUpperCase().replace(/'/g, '-');
@@ -2879,7 +2894,7 @@
                     }
                 });
                 inputEscanner.focus();
-                document.getElementById('qr-status').innerHTML = 'Esperando... Escanea el código QR';
+                document.getElementById('qr-status').innerHTML = 'Esperando... Escanea el código QR de la cedula de identidad';
                 // Asegurar que la interfaz esté en estado inicial
                 limpiarEstadoCompleto();
 
