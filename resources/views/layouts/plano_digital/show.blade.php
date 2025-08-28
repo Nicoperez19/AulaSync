@@ -2355,13 +2355,18 @@
                 // Tomar el último RUN mostrado en el modal
                 let run = null;
                 // Busca el RUN en el campo correspondiente del modal
-                const runEl = document.querySelector('#ocupanteInfo [class*="fa-id-card"] ~ div .text-gray-600, #ocupanteInfo [class*="fa-user-tie"] ~ div .text-gray-800');
-                if (runEl && runEl.textContent && runEl.textContent.trim() !== '') {
-                run = runEl.textContent.trim();
+                //const runEl = document.querySelector('#ocupanteInfo [class*="fa-id-card"] ~ div .text-gray-600, #ocupanteInfo [class*="fa-user-tie"] ~ div .text-gray-800');
+                const runEl = document.querySelector('#run-ocupante-modal');
+                if (runEl && runEl.value && runEl.value.trim() !== '') {
+                    run = runEl.value.trim();
                 } else {
                 // Fallback: intenta con el último usuario escaneado
-                run = 19716146;
+                    run = 19716146;
                 }
+                console.log('Datos enviados al desocupar:', {
+                    run_usuario: run,
+                    id_espacio: espacioId
+                });
                 if (!run) {
                 Swal.fire({
                     title: 'Error',
@@ -2476,6 +2481,7 @@
                         <div class="flex items-center">
                             <i class="mr-3 text-green-500 fas fa-user-tie"></i>
                             <div>
+                                <input type="hidden" id="run-ocupante-modal" value="${data.run_profesor || data.run_solicitante || ''}">
                                 <div class="font-medium text-gray-800">${data.nombre || 'No especificado'}</div>
                                 <div class="text-sm text-gray-600">Profesor a cargo</div>
                             </div>
