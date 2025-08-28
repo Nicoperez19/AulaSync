@@ -101,44 +101,13 @@ class ReservasController extends Controller
             'hora' => 'required',
             'fecha_reserva' => 'required|date',
             'id_espacio' => 'required|exists:espacios,id_espacio',
-            'nombre_usuario' => 'required',
+            'id' => 'required|exists:users,id',
         ]);
 
         $reserva = Reserva::findOrFail($id_reserva);
+        $reserva->update($request->all());
 
-        // Validar que exista el usuario/profesor/solicitante por el nombre/identificador
-        $nombreUsuario = $request->input('nombre_usuario');
-
-        $user = \App\Models\User::where('name', $nombreUsuario)->orWhere('run', $nombreUsuario)->first();
-        $profesor = class_exists('\App\\Models\\Profesor') ? \App\Models\Profesor::where('name', $nombreUsuario)->orWhere('run_profesor', $nombreUsuario)->first() : null;
-        $solicitante = class_exists('\App\\Models\\Solicitante') ? \App\Models\Solicitante::where('nombre', $nombreUsuario)->orWhere('run_solicitante', $nombreUsuario)->first() : null;
-
-        if (!$user && !$profesor && !$solicitante) {
-            return response()->json(['message' => 'Usuario no encontrado.'], 422);
-        }
-
-        $updateData = [
-            'hora' => $request->hora,
-            'fecha_reserva' => $request->fecha_reserva,
-            'id_espacio' => $request->id_espacio,
-        ];
-
-        // Limpiar campos de usuario anteriores
-        $updateData['run_profesor'] = null;
-        $updateData['run_solicitante'] = null;
-
-        // Mapear el usuario identificado
-        if ($profesor) {
-            $updateData['run_profesor'] = $profesor->run_profesor;
-        } elseif ($solicitante) {
-            $updateData['run_solicitante'] = $solicitante->run_solicitante;
-        } elseif ($user) {
-            $updateData['run_solicitante'] = $user->run;
-        }
-
-        $reserva->update($updateData);
-
-        return response()->json(['message' => 'Reserva actualizada exitosamente.']);
+        return redirect()->route('reservas.index')->with('success', 'Reserva actualizada exitosamente.');
     }
 
     // Eliminar una reserva

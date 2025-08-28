@@ -160,7 +160,7 @@ Route::get('/espacio/{id}', function ($id) {
             ->where('id_espacio', $id)
             ->orWhere('nombre_espacio', $id)
             ->first();
-
+        
         if ($espacio) {
             return response()->json([
                 'success' => true,
@@ -285,7 +285,7 @@ Route::post('/crear-reserva-solicitante', [App\Http\Controllers\SolicitanteContr
 Route::get('/espacios/estados', [PlanoDigitalController::class, 'estadosEspacios']);
 
 // Ruta para devolver espacios
-// (moved to web.php to use session-based web middleware)
+Route::post('/devolver-espacio', [PlanoDigitalController::class, 'devolverEspacio']);
 
 // Ruta para devolver llaves (duplicada - removida)
 // Route::post('/reserva/devolver', [ApiReservaController::class, 'devolverLlaves']);
@@ -328,10 +328,10 @@ Route::get('/verificar-clases-programadas/{run}', function ($run) {
     try {
         $horaActual = now()->format('H:i:s');
         $diaActual = now()->dayOfWeek; // 0 = domingo, 1 = lunes, etc.
-
+        
         $controller = new PlanoDigitalController();
         $resultado = $controller->verificarClasesProgramadas($run, $horaActual, $diaActual);
-
+        
         return response()->json($resultado);
     } catch (\Exception $e) {
         return response()->json([

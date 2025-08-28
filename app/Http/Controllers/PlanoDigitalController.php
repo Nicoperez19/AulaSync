@@ -16,7 +16,6 @@ use App\Helpers\SemesterHelper;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class PlanoDigitalController extends Controller
 {
@@ -458,74 +457,14 @@ class PlanoDigitalController extends Controller
      */
     public function devolverEspacio(Request $request)
     {
-        Log::info('=== INICIO devolverEspacio ===');
-        Log::info('Request method:', ['method' => $request->method()]);
-        Log::info('Request headers:', ['headers' => $request->headers->all()]);
-    // Registrar explícitamente el header X-XSRF-TOKEN si existe
-    $xsrfHeader = $request->header('X-XSRF-TOKEN');
-    Log::info('X-XSRF-TOKEN header:', ['value' => $xsrfHeader]);
-        Log::info('Request data:', ['data' => $request->all()]);
-
         try {
             $request->validate([
-                'id_espacio' => 'required|string|min:1|max:255',
-                'run_usuario' => 'required|string|min:1|max:20'
-            ], [
-                'id_espacio.required' => 'El ID del espacio es obligatorio',
-                'id_espacio.string' => 'El ID del espacio debe ser una cadena de texto',
-                'id_espacio.min' => 'El ID del espacio es demasiado corto',
-                'id_espacio.max' => 'El ID del espacio es demasiado largo',
-                'run_usuario.required' => 'El RUN del usuario es obligatorio',
-                'run_usuario.string' => 'El RUN del usuario debe ser una cadena de texto',
-                'run_usuario.min' => 'El RUN del usuario es demasiado corto',
-                'run_usuario.max' => 'El RUN del usuario es demasiado largo'
+                'id_espacio' => 'required|string',
+                'run_usuario' => 'required|string'
             ]);
 
-            // Limpiar y validar los datos de entrada
-            $idEspacio = trim((string) $request->input('id_espacio'));
-            $runUsuario = trim((string) $request->input('run_usuario'));
-
-            // Remover caracteres de control y espacios extra
-            $idEspacio = preg_replace('/\s+/', ' ', $idEspacio);
-            $runUsuario = preg_replace('/\s+/', ' ', $runUsuario);
-
-            // Validar que no estén vacíos después del procesamiento
-            if (empty($idEspacio)) {
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'El ID del espacio es obligatorio y no puede estar vacío'
-                ], 400);
-            }
-
-            if (empty($runUsuario)) {
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'El RUN del usuario es obligatorio y no puede estar vacío'
-                ], 400);
-            }
-
-            // Validar formato básico
-            if (!preg_match('/^[a-zA-Z0-9\-_\.]+$/', $idEspacio)) {
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'El ID del espacio contiene caracteres inválidos'
-                ], 400);
-            }
-
-            if (!preg_match('/^[a-zA-Z0-9\-_\.]+$/', $runUsuario)) {
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'El RUN del usuario contiene caracteres inválidos'
-                ], 400);
-            }
-
-            // Log de los datos recibidos para debugging
-            Log::info('Datos procesados en devolverEspacio', [
-                'id_espacio' => $idEspacio,
-                'run_usuario' => $runUsuario,
-                'longitud_id' => strlen($idEspacio),
-                'longitud_run' => strlen($runUsuario)
-            ]);
+            $idEspacio = $request->input('id_espacio');
+            $runUsuario = $request->input('run_usuario');
 
             // Buscar el espacio
             $espacio = Espacio::where('id_espacio', $idEspacio)->first();
@@ -537,36 +476,17 @@ class PlanoDigitalController extends Controller
                 ], 404);
             }
 
-            // Verificar permisos del usuario
-            $usuario = auth()->user();
-            if (!$usuario) {
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'Usuario no autenticado'
-                ], 401);
-            }
-
-            $isAdmin = $usuario->hasRole('Administrador');
-
-            // Buscar reserva activa según permisos
-            if ($isAdmin) {
-                // Administradores pueden devolver cualquier reserva activa en el espacio
-                $reservaActiva = Reserva::where('id_espacio', $idEspacio)
-                    ->where('estado', 'activa')
-                    ->first();
-            } else {
-                // Usuarios normales solo pueden devolver sus propias reservas
-                $reservaActiva = Reserva::where(function($query) use ($runUsuario) {
-                        $query->where('run_profesor', $runUsuario)
-                              ->orWhere('run_solicitante', $runUsuario);
-                    })
-                    ->where('id_espacio', $idEspacio)
-                    ->where('estado', 'activa')
-                    ->first();
-            }
+            // Verificar si el usuario tiene una reserva activa en este espacio
+            $reservaActiva = Reserva::where(function($query) use ($runUsuario) {
+                    $query->where('run_profesor', $runUsuario)
+                          ->orWhere('run_solicitante', $runUsuario);
+                })
+                ->where('id_espacio', $idEspacio)
+                ->where('estado', 'activa')
+                ->first();
 
             if (!$reservaActiva) {
-                Log::warning("Intento de devolución sin reserva activa - Usuario: {$runUsuario}, Espacio: {$idEspacio}, EsAdmin: " . ($isAdmin ? 'Sí' : 'No'));
+                \Log::warning("Intento de devolución sin reserva activa - Usuario: {$runUsuario}, Espacio: {$idEspacio}");
 
                 // Verificar si el espacio ya está disponible (puede que ya se haya devuelto)
                 if ($espacio->estado === 'Disponible') {
@@ -581,13 +501,9 @@ class PlanoDigitalController extends Controller
                     ]);
                 }
 
-                $mensaje = $isAdmin
-                    ? 'No hay reserva activa en este espacio'
-                    : 'No tienes una reserva activa en este espacio';
-
                 return response()->json([
                     'success' => false,
-                    'mensaje' => $mensaje
+                    'mensaje' => 'No tienes una reserva activa en este espacio'
                 ], 400);
             }
 
@@ -605,7 +521,7 @@ class PlanoDigitalController extends Controller
             $espacio->save();
 
             // Registrar la devolución en un log o tabla de auditoría si es necesario
-            Log::info("Espacio {$idEspacio} devuelto exitosamente por usuario {$runUsuario} - Reserva ID: {$reservaActiva->id_reserva}");
+            \Log::info("Espacio {$idEspacio} devuelto exitosamente por usuario {$runUsuario} - Reserva ID: {$reservaActiva->id_reserva}");
 
             return response()->json([
                 'success' => true,
@@ -617,21 +533,8 @@ class PlanoDigitalController extends Controller
                 ]
             ]);
 
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            Log::warning('Error de validación en devolverEspacio', [
-                'errors' => $e->errors(),
-                'data' => $request->all()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'mensaje' => 'Datos inválidos: ' . implode(', ', collect($e->errors())->flatten()->toArray())
-            ], 422);
         } catch (\Exception $e) {
-            Log::error('Error al devolver espacio: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString(),
-                'data' => $request->all()
-            ]);
+            \Log::error('Error al devolver espacio: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
@@ -649,7 +552,7 @@ class PlanoDigitalController extends Controller
     {
         try {
             // Registro de diagnóstico: confirmar que la función fue invocada y mostrar payload (temporal)
-            Log::info('verificarEstadoEspacioYReserva called', ['payload' => $request->all()]);
+            \Log::info('verificarEstadoEspacioYReserva called', ['payload' => $request->all()]);
             $request->validate([
                 'run' => 'required|string',
                 'id_espacio' => 'required|string'
@@ -700,7 +603,7 @@ class PlanoDigitalController extends Controller
 
             if ($reservaActiva) {
                 // El usuario tiene una reserva activa en este espacio
-                Log::info("Reserva activa encontrada para devolución - Usuario: {$runUsuario}, Espacio: {$idEspacio}, Reserva ID: {$reservaActiva->id_reserva}");
+                \Log::info("Reserva activa encontrada para devolución - Usuario: {$runUsuario}, Espacio: {$idEspacio}, Reserva ID: {$reservaActiva->id_reserva}");
                 return response()->json([
                     'tipo' => 'devolucion',
                     'mensaje' => 'Tienes una reserva activa en este espacio. ¿Deseas devolver las llaves?',

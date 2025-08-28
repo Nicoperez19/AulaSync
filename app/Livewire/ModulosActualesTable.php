@@ -66,7 +66,6 @@ class ModulosActualesTable extends Component
                         ->first();
 
                     if ($planificacionActiva) {
-                        $tieneClase = true;
                         $datosClase = [
                             'codigo_asignatura' => $planificacionActiva->asignatura->codigo_asignatura ?? '-',
                             'nombre_asignatura' => $planificacionActiva->asignatura->nombre_asignatura ?? '-',
@@ -83,7 +82,6 @@ class ModulosActualesTable extends Component
                         ->first();
 
                     if ($reservaSolicitante) {
-                        $tieneReservaSolicitante = true;
                         $datosSolicitante = [
                             'nombre' => $reservaSolicitante->solicitante->nombre ?? '-',
                             'run' => $reservaSolicitante->run_solicitante ?? '-',
@@ -92,6 +90,39 @@ class ModulosActualesTable extends Component
                             'hora_salida' => $reservaSolicitante->hora_salida ?? '-'
                         ];
                     }
+<<<<<<< HEAD
+=======
+
+                    if ($reservaProfesor) {
+                        $datosProfesor = [
+                            'nombre' => $reservaProfesor->profesor->name ?? '-',
+                            'run' => $reservaProfesor->run_profesor ?? '-',
+                            'hora_inicio' => $reservaProfesor->hora ?? '-',
+                            'hora_salida' => $reservaProfesor->hora_salida ?? '-'
+                        ];
+                    }
+
+                    $espaciosPiso[] = [
+                        'id_espacio' => $espacio->id_espacio,
+                        'nombre_espacio' => $espacio->nombre_espacio,
+                        'estado' => $estado,
+                        'tipo_espacio' => $espacio->tipo_espacio,
+                        'puestos_disponibles' => $espacio->puestos_disponibles,
+                        'tiene_clase' => $tieneClase,
+                        'tiene_reserva_solicitante' => $tieneReservaSolicitante,
+                        'tiene_reserva_profesor' => $tieneReservaProfesor,
+                        'datos_clase' => $datosClase,
+                        'datos_solicitante' => $datosSolicitante,
+                        'datos_profesor' => $datosProfesor,
+                        'modulo' => [
+                            'numero' => $this->moduloActual['numero'],
+                            'inicio' => $this->moduloActual['inicio'],
+                            'fin' => $this->moduloActual['fin']
+                        ],
+                        'piso' => $piso->nombre_piso,
+                        'proxima_clase' => null
+                    ];
+>>>>>>> Nperez
                 }
 
                 $this->todosLosEspacios[] = [
@@ -112,7 +143,34 @@ class ModulosActualesTable extends Component
                     ] : null,
                 ];
             }
+<<<<<<< HEAD
     }
+=======
+        } else {
+            // Procesar espacios cuando no hay módulo activo (más eficiente)
+            $this->espacios = [];
+            foreach ($this->pisos as $piso) {
+                $espaciosPiso = [];
+                foreach ($piso->espacios as $espacio) {
+                    $espaciosPiso[] = [
+                        'id_espacio' => $espacio->id_espacio,
+                        'nombre_espacio' => $espacio->nombre_espacio,
+                        'estado' => 'Disponible',
+                        'tipo_espacio' => $espacio->tipo_espacio,
+                        'puestos_disponibles' => $espacio->puestos_disponibles,
+                        'tiene_clase' => false,
+                        'tiene_reserva_solicitante' => false,
+                        'datos_clase' => null,
+                        'datos_solicitante' => null,
+                        'modulo' => null,
+                        'piso' => $piso->nombre_piso,
+                        'proxima_clase' => null
+                    ];
+                }
+                $this->espacios[$piso->id] = $espaciosPiso;
+            }
+        }
+>>>>>>> Nperez
     }
 
     public function getEspaciosCarruselProperty()
@@ -147,4 +205,8 @@ class ModulosActualesTable extends Component
     {
         return view('livewire.modulos-actuales-table');
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> Nperez
