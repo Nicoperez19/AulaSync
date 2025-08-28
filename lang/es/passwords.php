@@ -13,10 +13,10 @@ return [
     |
     */
 
-    'reset' => '¡Perfecto! Tu contraseña ha sido restablecida exitosamente. 🎉',
-    'sent' => '¡Mensaje enviado! 📧 Hemos enviado el enlace de recuperación a tu correo. ¡Revisa tu bandeja de entrada (y la carpeta de spam, por si acaso)! 🚀',
-    'throttled' => '¡Ups! Espera un momento antes de intentar de nuevo. ⏰',
-    'token' => '¡Oops! Este enlace de recuperación ya no es válido. 😅',
-    'user' => "¡Hmm! No encontramos una cuenta con ese correo electrónico. 🤔",
+    'reset' => '¡Perfecto! Tu contraseña ha sido restablecida exitosamente. ',
+    'sent' => '¡Mensaje enviado!  Hemos enviado el enlace de recuperación a tu correo. ¡Revisa tu bandeja de entrada (y la carpeta de spam, por si acaso)! ',
+    'throttled' => '¡Ups! Espera un momento antes de intentar de nuevo. ',
+    'token' => '¡Oops! Este enlace de recuperación ya no es válido. ',
+    'user' => "¡Hmm! El correo electrónico no está registrado en nuestro sistema.",
 
 ];

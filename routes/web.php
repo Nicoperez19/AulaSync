@@ -243,3 +243,8 @@ Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(fu
 });
 
 require __DIR__ . '/auth.php';
+
+// Ruta para obtener el token CSRF
+Route::get('/csrf-token', function () {
+    return response()->json(['token' => csrf_token()]);
+});
