@@ -2969,6 +2969,64 @@
             }, 300);
         }
 
+        // Función para actualizar la hora actual
+        function actualizarHora() {
+            const ahora = new Date();
+            const hora = ahora.toLocaleTimeString('es-CL', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+
+            // Actualizar el elemento de hora actual
+            const horaActualElement = document.getElementById('hora-actual');
+            if (horaActualElement) {
+                horaActualElement.textContent = hora;
+            }
+        }
+
+        // Función para actualizar el módulo actual y colores
+        function actualizarModuloYColores() {
+            const ahora = new Date();
+            const diaActual = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'][ahora.getDay()];
+            const horaActual = ahora.toTimeString().slice(0, 8);
+            
+            let moduloActual = null;
+            let horarioTexto = '--:-- - --:--';
+
+            // Si no es fin de semana, buscar el módulo actual
+            if (diaActual !== 'domingo' && diaActual !== 'sabado') {
+                const horariosDelDia = horariosModulos[diaActual];
+                if (horariosDelDia) {
+                    for (let numeroModulo in horariosDelDia) {
+                        const modulo = horariosDelDia[numeroModulo];
+                        if (horaActual >= modulo.inicio && horaActual < modulo.fin) {
+                            moduloActual = numeroModulo;
+                            horarioTexto = `${modulo.inicio.slice(0, 5)} - ${modulo.fin.slice(0, 5)}`;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Actualizar el módulo actual
+            const moduloActualElement = document.getElementById('modulo-actual');
+            if (moduloActualElement) {
+                if (moduloActual) {
+                    moduloActualElement.textContent = ` ${moduloActual}`;
+                } else {
+                    moduloActualElement.textContent = 'No hay módulo programado';
+                }
+            }
+
+            // Actualizar el horario actual
+            const horarioActualElement = document.getElementById('horario-actual');
+            if (horarioActualElement) {
+                horarioActualElement.textContent = horarioTexto;
+            }
+        }
+
         async function actualizarColoresEspacios() {
             // Verificar si ha habido cambios locales recientes
             const tiempoTranscurrido = Date.now() - (state.ultimoCambioLocal || 0);
