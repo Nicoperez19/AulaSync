@@ -37,13 +37,17 @@
         }
         .button {
             display: inline-block;
-            background-color: #e74c3c;
-            color: #ffffff;
+            background-color: #e74c3c !important;
+            color: #ffffff !important;
             padding: 15px 30px;
-            text-decoration: none;
+            text-decoration: none !important;
             border-radius: 5px;
             font-weight: bold;
             margin: 20px 0;
+            border: none !important;
+            font-size: 16px;
+            line-height: 1.5;
+            text-align: center;
         }
         .button:hover {
             background-color: #c0392b;
@@ -81,7 +85,7 @@
             <p>Para restablecer tu contraseña, haz clic en el botón de abajo:</p>
             
             <div style="text-align: center;">
-                <a href="{{ $resetUrl }}" class="button">Restablecer Contraseña</a>
+                <a href="{{ $resetUrl }}" class="button" style="display: inline-block; background-color: #e74c3c !important; color: #ffffff !important; padding: 15px 30px; text-decoration: none !important; border-radius: 5px; font-weight: bold; margin: 20px 0; border: none !important; font-size: 16px; line-height: 1.5; text-align: center;">Restablecer Contraseña</a>
             </div>
             
             <p>Si no solicitaste un restablecimiento de contraseña, no es necesario que hagas nada.</p>
