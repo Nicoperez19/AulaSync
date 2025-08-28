@@ -13,6 +13,7 @@ use Carbon\Carbon;
 
 class ModulosActualesTable extends Component
 {
+    public $slideCarrusel = 'ocupados';
     public $planificaciones = [];
     public $espacios = [];
     public $pisos = [];
@@ -21,145 +22,25 @@ class ModulosActualesTable extends Component
     public $moduloActual;
     public $selectedPiso = null;
 
-    // Horarios de módulos basados en la referencia JavaScript
-    private $horariosModulos = [
-        'lunes' => [
-            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-        ],
-        'martes' => [
-            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-        ],
-        'miercoles' => [
-            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-        ],
-        'jueves' => [
-            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-        ],
-        'viernes' => [
-            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-        ]
-    ];
+    public $indiceCarrusel = 0;
+    public $itemsPorPagina = 5;
+
+    public $todosLosEspacios = [];
 
     public function mount()
     {
         $this->actualizarDatos();
         
-        // Establecer el primer piso como seleccionado por defecto
         if ($this->pisos->count() > 0) {
             $this->selectedPiso = $this->pisos->first()->id;
         }
-    }
-
-    /**
-     * Obtener el módulo actual basado en la hora y día actual
-     */
-    private function obtenerModuloActual()
-    {
-        $dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
-        $diaActual = $dias[Carbon::now()->dayOfWeek];
-        $horaActual = Carbon::now()->format('H:i:s');
-
-        // Si es fin de semana, no hay módulos
-        if ($diaActual === 'domingo' || $diaActual === 'sabado') {
-            return null;
-        }
-
-        $horariosDelDia = $this->horariosModulos[$diaActual] ?? null;
-        if (!$horariosDelDia) {
-            return null;
-        }
-
-        // Buscar en qué módulo estamos
-        foreach ($horariosDelDia as $numeroModulo => $modulo) {
-            if ($horaActual >= $modulo['inicio'] && $horaActual < $modulo['fin']) {
-                return [
-                    'numero' => $numeroModulo,
-                    'inicio' => $modulo['inicio'],
-                    'fin' => $modulo['fin']
-                ];
-            }
-        }
-
-        return null;
     }
 
     public function actualizarDatos()
     {
         $this->horaActual = Carbon::now()->format('H:i:s');
         $this->fechaActual = Carbon::now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY');
-        
-        // Obtener el módulo actual usando la nueva lógica
-        $this->moduloActual = $this->obtenerModuloActual();
+        $hoy = Carbon::now()->locale('es')->isoFormat('dddd');
 
         // Obtener todos los pisos con sus espacios (optimizado)
         $this->pisos = Piso::with(['espacios'])->get();
@@ -270,11 +151,16 @@ class ModulosActualesTable extends Component
                             'codigo_asignatura' => $planificacionActiva->asignatura->codigo_asignatura ?? '-',
                             'nombre_asignatura' => $planificacionActiva->asignatura->nombre_asignatura ?? '-',
                             'seccion' => $planificacionActiva->asignatura->seccion ?? '-',
-                            'profesor' => [
-                                'name' => $planificacionActiva->asignatura->profesor->name ?? '-'
-                            ]
+                            'profesor' => ['name' => $planificacionActiva->asignatura->profesor->name ?? '-']
                         ];
                     }
+
+                    $reservaSolicitante = Reserva::with(['solicitante'])
+                        ->where('fecha_reserva', Carbon::now()->toDateString())
+                        ->where('estado', 'activa')
+                        ->where('id_espacio', $espacio->id_espacio)
+                        ->whereNotNull('run_solicitante')
+                        ->first();
 
                     if ($reservaSolicitante) {
                         $datosSolicitante = [
@@ -316,7 +202,24 @@ class ModulosActualesTable extends Component
                         'proxima_clase' => null
                     ];
                 }
-                $this->espacios[$piso->id] = $espaciosPiso;
+
+                $this->todosLosEspacios[] = [
+                    'id_espacio' => $espacio->id_espacio,
+                    'nombre_espacio' => $espacio->nombre_espacio,
+                    'estado' => $estado,
+                    'tipo_espacio' => $espacio->tipo_espacio,
+                    'puestos_disponibles' => $espacio->puestos_disponibles,
+                    'tiene_clase' => $tieneClase,
+                    'tiene_reserva_solicitante' => $tieneReservaSolicitante,
+                    'datos_clase' => $datosClase,
+                    'datos_solicitante' => $datosSolicitante,
+                    'piso' => $piso->numero_piso,
+                    'modulo' => $this->moduloActual ? [
+                        'id' => $this->moduloActual->id,
+                        'hora_inicio' => $this->moduloActual->hora_inicio,
+                        'hora_termino' => $this->moduloActual->hora_termino
+                    ] : null,
+                ];
             }
         } else {
             // Procesar espacios cuando no hay módulo activo (más eficiente)
@@ -344,120 +247,27 @@ class ModulosActualesTable extends Component
         }
     }
 
-    /**
-     * Obtener todos los espacios procesados para la vista
-     */
-    public function getTodosLosEspacios()
+    public function getEspaciosCarruselProperty()
     {
-        $todosLosEspacios = [];
-        
-        foreach ($this->pisos as $piso) {
-            $espaciosPiso = $this->espacios[$piso->id] ?? [];
-            foreach ($espaciosPiso as $espacio) {
-                $espacio['piso'] = $piso->numero_piso;
-                $todosLosEspacios[] = $espacio;
-            }
-        }
-        
-        return $todosLosEspacios;
+        return array_slice($this->todosLosEspacios, $this->indiceCarrusel, $this->itemsPorPagina);
     }
 
-    /**
-     * Determinar el color del estado para un espacio
-     */
-    public function getEstadoColor($estado, $tieneClase, $tieneReservaSolicitante, $tieneReservaProfesor = false)
+    public function avanzarCarrusel()
     {
-        if (strtolower($estado) === 'ocupado' || $estado === 'Ocupado') {
-            return 'bg-red-500';
-        } elseif (strtolower($estado) === 'reservado' || $estado === 'Reservado') {
-            return 'bg-yellow-400';
-        } elseif (strtolower($estado) === 'proximo' || $estado === 'Proximo' || strtolower($estado) === 'próximo') {
-            return 'bg-blue-500';
-        } elseif ($tieneClase || $tieneReservaSolicitante || $tieneReservaProfesor) {
-            return 'bg-yellow-400';
-        } else {
-            return 'bg-green-500';
-        }
+        $total = count($this->todosLosEspacios);
+        $this->indiceCarrusel = ($this->indiceCarrusel + $this->itemsPorPagina) % max($total, 1);
     }
 
-    /**
-     * Obtener solo los apellidos del profesor
-     */
-    public function getApellidosProfesor($nombreCompleto)
-    {
-        if (empty($nombreCompleto)) {
-            return '-';
-        }
-        
-        // Si el nombre tiene formato "APELLIDO, NOMBRE"
-        if (strpos($nombreCompleto, ',') !== false) {
-            $partes = explode(',', $nombreCompleto);
-            $apellidos = trim($partes[0]);
-            
-            // Convertir a minúsculas manteniendo las tildes
-            $apellidos = mb_strtolower($apellidos, 'UTF-8');
-            
-            // Convertir primera letra de cada palabra a mayúscula manteniendo tildes
-            $apellidos = mb_convert_case($apellidos, MB_CASE_TITLE, 'UTF-8');
-            
-            return $apellidos;
-        }
-        
-        // Si es un nombre simple, convertir a minúsculas y luego a título
-        $nombre = mb_strtolower($nombreCompleto, 'UTF-8');
-        return mb_convert_case($nombre, MB_CASE_TITLE, 'UTF-8');
-    }
-
-    /**
-     * Obtener el primer apellido del profesor
-     */
     public function getPrimerApellido($nombreCompleto)
     {
         $apellidos = explode(',', $nombreCompleto);
         return trim($apellidos[0] ?? '');
     }
 
-    /**
-     * Obtener el primer apellido del solicitante
-     */
     public function getPrimerApellidoSolicitante($nombreCompleto)
     {
         $apellidos = explode(',', $nombreCompleto);
         return trim($apellidos[0] ?? '');
-    }
-
-    /**
-     * Determinar si mostrar información de clase o solicitante
-     */
-    public function getTipoOcupacion($espacio)
-    {
-        if ($espacio['tiene_reserva_solicitante']) {
-            return 'solicitante';
-        } elseif ($espacio['tiene_clase']) {
-            return 'clase';
-        } else {
-            return 'disponible';
-        }
-    }
-
-    public function selectPiso($pisoId)
-    {
-        $this->selectedPiso = $pisoId;
-    }
-
-    public function render()
-    {
-        return view('livewire.modulos-actuales-table');
-    }
-
-    public function getHoraActualProperty()
-    {
-        return Carbon::now()->format('H:i:s');
-    }
-
-    public function getFechaActualProperty()
-    {
-        return Carbon::now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY');
     }
 
     public function actualizarAutomaticamente()
@@ -465,11 +275,8 @@ class ModulosActualesTable extends Component
         $this->actualizarDatos();
     }
 
-    public function getModuloActual()
+    public function render()
     {
-        if ($this->moduloActual) {
-            return $this->moduloActual['numero'] ?? 'N/A';
-        }
-        return null;
+        return view('livewire.modulos-actuales-table');
     }
-} 
+}
