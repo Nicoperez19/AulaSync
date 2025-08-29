@@ -16,7 +16,7 @@
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-100">
-                                @foreach (array_slice(array_filter($this->todosLosEspacios, function($espacio) { return strtolower($espacio['estado']) === 'disponible'; }), 0, 10) as $espacio)
+                                @foreach (array_slice(array_filter($this->todosLosEspacios, function($espacio) { return strtolower($espacio['estado']) === 'disponible'; }), 0, 11) as $espacio)
                                     <tr class="bg-white hover:bg-green-50 transition-colors h-10">
                                         <td class="px-3 py-1 text-sm font-semibold text-blue-700">{{ $espacio['id_espacio'] }}</td>
                                         <td class="px-3 py-1 text-sm">{{ $espacio['nombre_espacio'] }}</td>
@@ -52,7 +52,7 @@
                                             return ($slideCarrusel === 'ocupados' && $esOcupado) || ($slideCarrusel === 'reservados' && $esReservado && !$esOcupado);
                                         });
                                     @endphp
-                                    @foreach (array_slice($filtrados, 0, 10) as $espacio)
+                                    @foreach (array_slice($filtrados, 0, 11) as $espacio)
                                         @php
                                             $tieneReservaSolicitante = $espacio['tiene_reserva_solicitante'] ?? false;
                                             $tieneClase = $espacio['tiene_clase'] ?? false;
