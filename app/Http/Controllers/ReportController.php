@@ -1786,10 +1786,15 @@ class ReportController extends Controller
                 ];
             });
 
+            $total_reservas = $reservas->count();
+            $completadas = $reservas->where('estado', 'finalizada')->count();
+            $canceladas = $reservas->where('estado', 'cancelada')->count();
+            $en_progreso = $reservas->where('estado', 'activa')->count();
+
             if ($format === 'excel') {
                 return $this->exportarHistoricoTipoEspacioExcel($datos, $fechaInicio, $fechaFin, $tipoEspacio);
             } elseif ($format === 'pdf') {
-                return $this->exportarHistoricoTipoEspacioPDF($datos, $fechaInicio, $fechaFin, $tipoEspacio);
+                return $this->exportarHistoricoTipoEspacioPDF($datos, $fechaInicio, $fechaFin, $tipoEspacio, $total_reservas, $completadas, $canceladas, $en_progreso);
             }
 
             return redirect()->back()->with('error', 'Formato de exportación no válido');
