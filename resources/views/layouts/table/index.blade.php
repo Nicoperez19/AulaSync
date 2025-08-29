@@ -211,7 +211,7 @@
 
             actualizarModuloActual() {
                 const moduloActual = this.obtenerModuloActual();
-                let textoModulo = 'Sin módulo';
+                let textoModulo = 'En break';
 
                 if (moduloActual) {
                     textoModulo = `Módulo ${moduloActual}`;

@@ -120,27 +120,60 @@ class ModulosActualesTable extends Component
                 }
             }
         } else {
-            // Procesar espacios cuando no hay módulo activo (más eficiente)
-            $this->espacios = [];
+            // Procesar espacios cuando no hay módulo activo (entre módulos)
             foreach ($this->pisos as $piso) {
-                $espaciosPiso = [];
                 foreach ($piso->espacios as $espacio) {
-                    $espaciosPiso[] = [
+                    $estado = $espacio->estado ?? 'Disponible';
+                    $tieneClase = false;
+                    $tieneReservaSolicitante = false;
+                    $datosClase = null;
+                    $datosSolicitante = null;
+                    $proximaClase = null;
+
+                    // Buscar próxima clase (siguiente módulo)
+                    $proximoModulo = Modulo::where('dia', Carbon::now()->locale('es')->isoFormat('dddd'))
+                        ->where('hora_inicio', '>', $this->horaActual)
+                        ->orderBy('hora_inicio', 'asc')
+                        ->first();
+
+                    if ($proximoModulo) {
+                        $planificacionProxima = Planificacion_Asignatura::with(['asignatura.profesor'])
+                            ->where('id_modulo', $proximoModulo->id_modulo)
+                            ->where('id_espacio', $espacio->id_espacio)
+                            ->first();
+
+                        if ($planificacionProxima) {
+                            $tieneClase = true;
+                            $datosClase = [
+                                'codigo_asignatura' => $planificacionProxima->asignatura->codigo_asignatura ?? '-',
+                                'nombre_asignatura' => $planificacionProxima->asignatura->nombre_asignatura ?? '-',
+                                'seccion' => $planificacionProxima->asignatura->seccion ?? '-',
+                                'profesor' => ['name' => $planificacionProxima->asignatura->profesor->name ?? '-'],
+                                'es_proxima' => true,
+                                'hora_inicio' => $proximoModulo->hora_inicio,
+                                'hora_termino' => $proximoModulo->hora_termino
+                            ];
+                        }
+                    }
+
+                    // NO buscar reservas de solicitantes cuando estamos entre módulos
+                    // Solo mantenemos ocupados y próximas clases
+
+                    $this->todosLosEspacios[] = [
                         'id_espacio' => $espacio->id_espacio,
                         'nombre_espacio' => $espacio->nombre_espacio,
-                        'estado' => 'Disponible',
+                        'estado' => $estado,
                         'tipo_espacio' => $espacio->tipo_espacio,
                         'puestos_disponibles' => $espacio->puestos_disponibles,
-                        'tiene_clase' => false,
-                        'tiene_reserva_solicitante' => false,
-                        'datos_clase' => null,
+                        'tiene_clase' => $tieneClase,
+                        'tiene_reserva_solicitante' => false, // No mostrar reservados entre módulos
+                        'datos_clase' => $datosClase,
                         'datos_solicitante' => null,
+                        'piso' => $piso->numero_piso,
                         'modulo' => null,
-                        'piso' => $piso->nombre_piso,
-                        'proxima_clase' => null
+                        'es_entre_modulos' => true
                     ];
                 }
-                $this->espacios[$piso->id] = $espaciosPiso;
             }
         }
     }

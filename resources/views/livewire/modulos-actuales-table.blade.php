@@ -33,8 +33,18 @@
                         <div>
                             <table class="w-full table-fixed">
                                 <thead>
+                                    @php
+                                        $hayEntreModulos = collect($this->todosLosEspacios)->contains('es_entre_modulos', true);
+                                        $mostrandoProximasClases = $slideCarrusel === 'reservados' && $hayEntreModulos;
+                                    @endphp
                                     <tr class="text-white border-b border-gray-200"
-                                        @if($slideCarrusel === 'ocupados') style="background-color: #dc2626;" @elseif($slideCarrusel === 'reservados') style="background-color: #facc15; color: #92400e;" @endif>
+                                        @if($slideCarrusel === 'ocupados') 
+                                            style="background-color: #dc2626;" 
+                                        @elseif($mostrandoProximasClases) 
+                                            style="background-color: #2563eb;" 
+                                        @else 
+                                            style="background-color: #facc15; color: #92400e;" 
+                                        @endif>
                                         <th class="px-3 py-1 text-left text-sm font-semibold uppercase">N° Sala</th>
                                         <th class="px-3 py-1 text-left text-sm font-semibold uppercase">Nombre</th>
                                         <th class="px-3 py-1 text-left text-sm font-semibold uppercase">Piso</th>
@@ -48,6 +58,15 @@
                                             $tieneReservaSolicitante = $espacio['tiene_reserva_solicitante'] ?? false;
                                             $tieneClase = $espacio['tiene_clase'] ?? false;
                                             $esOcupado = strtolower($espacio['estado']) === 'ocupado';
+                                            $esEntreModulos = $espacio['es_entre_modulos'] ?? false;
+                                            
+                                            // Si estamos entre módulos, solo mostrar ocupados y próximas clases
+                                            if ($esEntreModulos) {
+                                                return ($slideCarrusel === 'ocupados' && $esOcupado) || 
+                                                       ($slideCarrusel === 'reservados' && $tieneClase && !$esOcupado);
+                                            }
+                                            
+                                            // Lógica normal cuando hay módulo activo
                                             $esReservado = strtolower($espacio['estado']) === 'reservado' || $tieneReservaSolicitante || $tieneClase;
                                             return ($slideCarrusel === 'ocupados' && $esOcupado) || ($slideCarrusel === 'reservados' && $esReservado && !$esOcupado);
                                         });
@@ -59,14 +78,18 @@
                                             $datosSolicitante = $espacio['datos_solicitante'] ?? null;
                                             $datosClase = $espacio['datos_clase'] ?? null;
                                             $esOcupado = strtolower($espacio['estado']) === 'ocupado';
+                                            $esEntreModulos = $espacio['es_entre_modulos'] ?? false;
+                                            $esProximaClase = isset($datosClase['es_proxima']) && $datosClase['es_proxima'];
                                         @endphp
                                         <tr class="bg-white hover:bg-blue-50 transition-colors h-10">
                                             <td class="px-3 py-1 text-sm font-semibold text-blue-700">{{ $espacio['id_espacio'] }}</td>
                                             <td class="px-3 py-1 text-sm">{{ $espacio['nombre_espacio'] }}</td>
                                             <td class="px-3 py-1 text-sm text-gray-500">{{ $espacio['piso'] }}</td>
-                                            <td class="px-3 py-1 text-sm font-medium @if($esOcupado) text-red-600 @else text-yellow-600 @endif">
+                                            <td class="px-3 py-1 text-sm font-medium @if($esOcupado) text-red-600 @elseif($esProximaClase) text-blue-600 @else text-yellow-600 @endif">
                                                 @if($esOcupado)
                                                     Ocupado
+                                                @elseif($esProximaClase)
+                                                    Próxima Clase
                                                 @elseif($tieneReservaSolicitante && $datosSolicitante)
                                                     Espacio Solicitado
                                                 @elseif($tieneClase && $datosClase)
@@ -79,6 +102,11 @@
                                                 @if($esOcupado)
                                                     {{-- Aquí podrías mostrar responsable si lo tienes --}}
                                                     -
+                                                @elseif($esProximaClase && $datosClase)
+                                                    {{ $this->getPrimerApellido($datosClase['profesor']['name']) }}
+                                                    <div class="text-xs text-gray-500">
+                                                        {{ $datosClase['hora_inicio'] ?? '' }}
+                                                    </div>
                                                 @elseif($tieneReservaSolicitante && $datosSolicitante)
                                                     {{ $this->getPrimerApellidoSolicitante($datosSolicitante['nombre']) }}
                                                 @elseif($tieneClase && $datosClase)
@@ -101,9 +129,27 @@
 
     {{-- Slide label solo sobre la segunda tabla --}}
     <div class="flex justify-end mt-4 mb-1">
+        @php
+            $hayEntreModulos = collect($this->todosLosEspacios)->contains('es_entre_modulos', true);
+            $mostrandoProximasClases = $slideCarrusel === 'reservados' && $hayEntreModulos;
+        @endphp
         <span class="px-3 py-1 rounded-full text-xs font-semibold"
-            :class="@js($slideCarrusel === 'ocupados' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700')">
-            @if($slideCarrusel === 'ocupados') Ocupados @else Reservados @endif
+            @if($slideCarrusel === 'ocupados')
+                class="bg-red-100 text-red-700"
+            @elseif($mostrandoProximasClases)
+                class="bg-blue-100 text-blue-700"
+            @else
+                class="bg-yellow-100 text-yellow-700"
+            @endif>
+            @if($slideCarrusel === 'ocupados') 
+                Ocupados 
+            @else 
+                @if($hayEntreModulos)
+                    Próximas Clases
+                @else
+                    Reservados
+                @endif
+            @endif
         </span>
     </div>
     {{-- Leyenda de colores --}}
