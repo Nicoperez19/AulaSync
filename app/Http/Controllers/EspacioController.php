@@ -344,12 +344,24 @@ class EspacioController extends Controller
             }
         }
         
+        // Construir detalle por módulo con horario inicio/fin
+        $modulosDetalle = [];
+        foreach ($modulosDisponibles as $m) {
+            $horario = $this->obtenerHorarioModulo($m, $diaActual);
+            $modulosDetalle[] = [
+                'modulo' => $m,
+                'inicio' => $horario['inicio'] ?? null,
+                'fin' => $horario['fin'] ?? null
+            ];
+        }
+
         return response()->json([
             'success' => true,
             'max_modulos' => $maxModulos,
             'modulo_actual' => $moduloActual,
             'codigo_dia' => $codigoDia,
             'modulos_disponibles' => $modulosDisponibles,
+            'modulos_detalle' => $modulosDetalle,
             'proxima_clase' => $proximaClase,
             'clases_proximas' => $clasesProximas,
             'detalles' => [
@@ -615,7 +627,8 @@ class EspacioController extends Controller
             return [
                 'modulo' => $moduloCodigo,
                 'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'No especificada',
-                'profesor' => $planificacion->profesor->name ?? 'No especificado',
+                // acceder al profesor a través de la asignatura (asignatura->profesor)
+                'profesor' => $planificacion->asignatura->profesor->name ?? 'No especificado',
                 'hora_inicio' => $planificacion->modulo->hora_inicio ?? '',
                 'hora_termino' => $planificacion->modulo->hora_termino ?? ''
             ];
@@ -641,8 +654,13 @@ class EspacioController extends Controller
                 return redirect()->back()->with('error', 'No se pudo generar el código QR.');
             }
             
-            // Descargar el archivo
-            return Storage::disk('public')->download($qrPath, 'QR_' . $espacio->id_espacio . '.png');
+            // Descargar el archivo usando response()->download con la ruta completa
+            // Asumir storage/app/public como disco 'public'
+            $fullPath = storage_path('app/public/' . ltrim($qrPath, '/'));
+            if (file_exists($fullPath)) {
+                return response()->download($fullPath, 'QR_' . $espacio->id_espacio . '.png');
+            }
+            return redirect()->back()->with('error', 'No se pudo encontrar el archivo QR generado.');
             
         } catch (\Exception $e) {
             Log::error('Error al descargar QR individual:', [
@@ -880,9 +898,9 @@ class EspacioController extends Controller
     {
         $runProfesor = $reserva->run_profesor;
         
-        // Consulta optimizada para profesor
-        $profesor = User::select('name', 'run')
-            ->where('run', $runProfesor)
+        // Consulta optimizada para profesor desde la tabla profesors
+        $profesor = Profesor::select('name', 'run_profesor')
+            ->where('run_profesor', $runProfesor)
             ->first();
         
         if (!$profesor) {
@@ -897,28 +915,36 @@ class EspacioController extends Controller
             ];
         }
         
-        // Buscar planificación actual
+        // Buscar planificación actual utilizando la relación 'modulo'
         $diaActual = strtolower(now()->format('l'));
         $codigosDias = [
-            'monday' => 'LU', 'tuesday' => 'MA', 'wednesday' => 'MI', 
+            'monday' => 'LU', 'tuesday' => 'MA', 'wednesday' => 'MI',
             'thursday' => 'JU', 'friday' => 'VI', 'saturday' => 'SA', 'sunday' => 'DO'
         ];
         $codigoDia = $codigosDias[$diaActual] ?? 'LU';
-        
-        $planificacion = Planificacion_Asignatura::select('asignatura_id', 'hora_inicio', 'hora_termino')
-            ->where('run_profesor', $runProfesor)
-            ->where('codigo_dia', $codigoDia)
-            ->where('hora_inicio', '<=', $horaActual)
-            ->where('hora_termino', '>', $horaActual)
-            ->with('asignatura:id,nombre_asignatura')
-            ->first();
-        
+
+        // Cargar planificaciones del profesor para el día (usando la relación con horario)
+        $planificaciones = Planificacion_Asignatura::with(['asignatura:id_asignatura,nombre_asignatura', 'modulo', 'horario'])
+            ->whereHas('horario', function($query) use ($runProfesor) {
+                $query->where('run_profesor', $runProfesor);
+            })
+            ->where('id_modulo', 'like', $codigoDia . '.%')
+            ->get();
+
+        // Filtrar en memoria por los módulos cuyo horario contiene la hora actual
+        $planificacion = $planificaciones->first(function ($p) use ($horaActual) {
+            return isset($p->modulo->hora_inicio, $p->modulo->hora_termino)
+                && $p->modulo->hora_inicio <= $horaActual
+                && $p->modulo->hora_termino > $horaActual;
+        });
+
         $asignatura = $planificacion ? $planificacion->asignatura->nombre_asignatura : null;
         
         return [
             'success' => true,
             'tipo_ocupacion' => 'profesor',
             'nombre' => $profesor->name,
+            'run_profesor' => $runProfesor,
             'asignatura' => $asignatura,
             'hora_inicio' => $reserva->hora,
             'hora_salida' => $reserva->hora_salida,
@@ -984,23 +1010,37 @@ class EspacioController extends Controller
         ];
         $codigoDia = $codigosDias[$diaActual] ?? 'LU';
         
-        $proximaClase = Planificacion_Asignatura::select('hora_inicio', 'hora_termino')
+    // Cargar planificaciones del espacio para el día (filtrando por id_modulo que comienza con el código de día)
+    // Incluir relación profesor en la asignatura para poder mostrar nombre y run correctamente
+    $planificaciones = Planificacion_Asignatura::with(['modulo', 'asignatura.profesor'])
             ->where('id_espacio', $idEspacio)
-            ->where('codigo_dia', $codigoDia)
-            ->where('hora_inicio', '>', $horaActual)
-            ->orderBy('hora_inicio')
-            ->with(['asignatura.profesor'])
-            ->first();
-        
-        if (!$proximaClase) {
+            ->where('id_modulo', 'like', $codigoDia . '.%')
+            ->get();
+
+        if ($planificaciones->isEmpty()) {
             return null;
         }
-        
+
+        // Filtrar por módulo cuya hora de inicio sea posterior a la hora actual
+        $candidatas = $planificaciones->filter(function ($p) use ($horaActual) {
+            return isset($p->modulo->hora_inicio) && $p->modulo->hora_inicio > $horaActual;
+        });
+
+        if ($candidatas->isEmpty()) {
+            return null;
+        }
+
+        // Ordenar por hora de inicio y tomar la primera
+        $proxima = $candidatas->sortBy(function ($p) {
+            return $p->modulo->hora_inicio ?? '99:99:99';
+        })->first();
+
         return [
-            'asignatura' => $proximaClase->asignatura->nombre_asignatura ?? 'No especificada',
-            'profesor' => $proximaClase->profesor->name ?? 'No especificado',
-            'hora_inicio' => $proximaClase->hora_inicio,
-            'hora_termino' => $proximaClase->hora_termino
+            'asignatura' => $proxima->asignatura->nombre_asignatura ?? 'No especificada',
+            'profesor' => $proxima->asignatura->profesor->name ?? 'No especificado',
+            'profesor_run' => $proxima->asignatura->run_profesor ?? null,
+            'hora_inicio' => $proxima->modulo->hora_inicio ?? null,
+            'hora_termino' => $proxima->modulo->hora_termino ?? null
         ];
     }
 }

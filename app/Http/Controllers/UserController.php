@@ -212,4 +212,80 @@ class UserController extends Controller
             return back()->withErrors(['error' => 'Error al eliminar el usuario.']);
         }
     }
+
+    // Autocomplete de usuarios por email o nombre
+    public function autocomplete(Request $request)
+    {
+        $q = $request->get('q', '');
+        if (!$q) return response()->json([]);
+
+        // Buscar en usuarios (tabla users)
+        $usersQuery = User::where('email', 'like', "%{$q}%")
+            ->orWhere('name', 'like', "%{$q}%")
+            ->limit(10);
+        $users = $usersQuery->get(['run', 'name', 'email'])
+            ->map(function($u) {
+                return ['id' => $u->run, 'nombre' => $u->name, 'email' => $u->email, 'fuente' => 'usuario'];
+            })->toArray();
+        Log::info('Autocomplete users count: ' . count($users));
+        if (count($users) > 0) {
+            Log::info('Autocomplete users sample: ' . json_encode(array_slice($users, 0, 3)));
+        }
+
+        // Buscar en profesores
+        $profesores = [];
+        try {
+            if (class_exists('\App\\Models\\Profesor')) {
+                // El modelo Profesor usa las columnas `name` y `email`
+                $profQuery = \App\Models\Profesor::where('email', 'like', "%{$q}%")
+                    ->orWhere('name', 'like', "%{$q}%")
+                    ->limit(10);
+                $profesores = $profQuery->get(['run_profesor as run', 'name as nombre', 'email'])
+                    ->map(function($p) {
+                        return ['id' => $p->run, 'nombre' => $p->nombre, 'email' => $p->email, 'fuente' => 'profesor'];
+                    })->toArray();
+                Log::info('Autocomplete profesores count: ' . count($profesores));
+                if (count($profesores) > 0) {
+                    Log::info('Autocomplete profesores sample: ' . json_encode(array_slice($profesores, 0, 3)));
+                }
+            }
+        } catch (\Throwable $e) {
+            // No bloquear si modelo no existe o falla la consulta
+            Log::warning('Autocomplete profesores error: ' . $e->getMessage());
+        }
+
+        // Buscar en solicitantes
+        $solicitantes = [];
+        try {
+            if (class_exists('\App\\Models\\Solicitante')) {
+                // El modelo Solicitante usa `nombre` y `correo` (mapeamos correo->email)
+                $solQuery = \App\Models\Solicitante::where('correo', 'like', "%{$q}%")
+                    ->orWhere('nombre', 'like', "%{$q}%")
+                    ->limit(10);
+                $solicitantes = $solQuery->get(['run_solicitante as run', 'nombre', 'correo'])
+                    ->map(function($s) {
+                        return ['id' => $s->run, 'nombre' => $s->nombre, 'email' => $s->correo, 'fuente' => 'solicitante'];
+                    })->toArray();
+                Log::info('Autocomplete solicitantes count: ' . count($solicitantes));
+                if (count($solicitantes) > 0) {
+                    Log::info('Autocomplete solicitantes sample: ' . json_encode(array_slice($solicitantes, 0, 3)));
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Autocomplete solicitantes error: ' . $e->getMessage());
+        }
+
+        // Combinar resultados y evitar duplicados por run (prioridad: usuario, profesor, solicitante)
+        $combined = [];
+        $seen = [];
+        foreach (array_merge($users, $profesores, $solicitantes) as $row) {
+            if (empty($row['id'])) continue;
+            if (in_array($row['id'], $seen)) continue;
+            $seen[] = $row['id'];
+            $combined[] = $row;
+            if (count($combined) >= 10) break;
+        }
+
+        return response()->json($combined);
+    }
 }

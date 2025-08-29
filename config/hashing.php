@@ -9,7 +9,8 @@ return [
     |
     | This option controls the default hash driver that will be used to hash
     | passwords for your application. By default, the bcrypt algorithm is
-    | used; however, you remain free to modify this option if you wish.
+    | used; however, you remain free to modify this option if you are
+    | using a different Hash algorithm.
     |
     | Supported: "bcrypt", "argon", "argon2id"
     |
@@ -29,8 +30,7 @@ return [
     */
 
     'bcrypt' => [
-        'rounds' => env('BCRYPT_ROUNDS', 12),
-        'verify' => true,
+        'rounds' => env('BCRYPT_ROUNDS', 10),
     ],
 
     /*
@@ -48,7 +48,6 @@ return [
         'memory' => 65536,
         'threads' => 1,
         'time' => 4,
-        'verify' => true,
     ],
 
 ];

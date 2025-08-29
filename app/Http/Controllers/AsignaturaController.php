@@ -50,6 +50,7 @@ class AsignaturaController extends Controller
                 'area_conocimiento' => 'nullable|string|max:100',
                 'periodo' => 'nullable|string|max:20',
                 'run_profesor' => 'required|exists:profesors,run_profesor',
+                'run_profesor_reemplazo' => 'nullable|exists:profesors,run_profesor',
                 'id_carrera' => 'required|exists:carreras,id_carrera',
             ]);
 
@@ -63,6 +64,7 @@ class AsignaturaController extends Controller
                 'area_conocimiento' => $request->area_conocimiento,
                 'periodo' => $request->periodo,
                 'run_profesor' => $request->run_profesor,
+                'run_profesor_reemplazo' => $request->run_profesor_reemplazo,
                 'id_carrera' => $request->id_carrera,
             ]);
 
@@ -114,6 +116,7 @@ class AsignaturaController extends Controller
                 'area_conocimiento' => 'nullable|string|max:100',
                 'periodo' => 'nullable|string|max:20',
                 'run_profesor' => 'required|exists:profesors,run_profesor',
+                'run_profesor_reemplazo' => 'nullable|exists:profesors,run_profesor',
                 'id_carrera' => 'required|exists:carreras,id_carrera',
             ]);
 
@@ -128,6 +131,7 @@ class AsignaturaController extends Controller
                 'area_conocimiento' => $request->area_conocimiento,
                 'periodo' => $request->periodo,
                 'run_profesor' => $request->run_profesor,
+                'run_profesor_reemplazo' => $request->run_profesor_reemplazo,
                 'id_carrera' => $request->id_carrera,
             ]);
 

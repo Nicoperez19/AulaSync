@@ -104,7 +104,7 @@
                                 <option value="" disabled selected>{{ __('Seleccionar Comuna') }}</option>
                                 @foreach($comunas as $comuna)
                                     <option value="{{ $comuna->id }}" {{ old('comuna_id') == $comuna->id ? 'selected' : '' }}>
-                                        {{ $comuna->nombre }}
+                                        {{ $comuna->nombre_comuna }}
                                     </option>
                                 @endforeach
                             </select>

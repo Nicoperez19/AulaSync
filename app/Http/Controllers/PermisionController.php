@@ -93,12 +93,27 @@ class PermisionController extends Controller
         try {
             $permission = Permission::findOrFail($id);
             $permission->delete();
+            
+            // Verificar si la petición espera JSON
+            if (request()->expectsJson() || request()->header('Accept') === 'application/json') {
+                return response()->json([
+                    'success' => true, 
+                    'message' => 'Permiso eliminado exitosamente.'
+                ]);
+            }
+            
             return redirect()->route('permissions.index')->with('success', 'Permiso eliminado exitosamente.');
 
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json(['success' => false, 'message' => 'Permiso no encontrado.'], 404);
+            if (request()->expectsJson() || request()->header('Accept') === 'application/json') {
+                return response()->json(['success' => false, 'message' => 'Permiso no encontrado.'], 404);
+            }
+            return redirect()->route('permissions.index')->with('error', 'Permiso no encontrado.');
         } catch (\Exception $e) {
-            return response()->json(['success' => false, 'message' => 'Error al borrar el permiso: ' . $e->getMessage()], 500);
+            if (request()->expectsJson() || request()->header('Accept') === 'application/json') {
+                return response()->json(['success' => false, 'message' => 'Error al borrar el permiso: ' . $e->getMessage()], 500);
+            }
+            return redirect()->route('permissions.index')->with('error', 'Error al borrar el permiso: ' . $e->getMessage());
         }
     }
 }

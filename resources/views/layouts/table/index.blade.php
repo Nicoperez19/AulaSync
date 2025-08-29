@@ -234,11 +234,23 @@
         // Inicializar cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', function() {
             new RelojModulo();
+            
+            // Cargar datos completos de manera diferida para mejorar el rendimiento inicial
+            setTimeout(() => {
+                if (typeof Livewire !== 'undefined') {
+                    Livewire.dispatch('cargar-datos-completos');
+                }
+            }, 1000);
         });
 
         // Inicializar también cuando Livewire se cargue
         document.addEventListener('livewire:load', function() {
             new RelojModulo();
+            
+            // Cargar datos completos después de que Livewire esté listo
+            setTimeout(() => {
+                Livewire.dispatch('cargar-datos-completos');
+            }, 500);
         });
     </script>
 </x-table-layout>

@@ -129,10 +129,6 @@
                                             <div
                                                 class="grid justify-center w-full grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 justify-items-center">
                                                 @foreach ($espacios as $espacio)
-                                                    @php
-                                                        $estado = $espacio->esta_ocupado ? 'Ocupado' : 'Disponible';
-                                                        $puntoEstado = $espacio->esta_ocupado ? 'bg-red-500' : 'bg-green-500';
-                                                    @endphp
                                                     <div class="relative flex flex-col justify-between p-4 border border-gray-200 rounded-xl shadow-sm bg-white transition hover:shadow-lg hover:scale-[1.03] cursor-pointer group items-center text-center mx-auto"
                                                         data-id="{{ $espacio->id_espacio }}"
                                                         data-nombre="{{ $espacio->nombre_espacio }}"
@@ -143,9 +139,7 @@
                                                         </div>
                                                         <span
                                                             class="flex items-center justify-center gap-1 mb-1 text-xs font-semibold">
-                                                            <span
-                                                                class="inline-block w-2 h-2 rounded-full {{ $puntoEstado }}"></span>
-                                                            {{ $estado }}
+                                                            
                                                         </span>
                                                         <div class="mb-1 text-base font-semibold text-gray-900">
                                                             {{ $espacio->nombre_espacio }}

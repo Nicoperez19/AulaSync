@@ -184,7 +184,7 @@
 
     <div class="stats">
         <div class="stat-item">
-            <div class="stat-number">{{ $total }}</div>
+            <div class="stat-number">{{ $total_reservas }}</div>
             <div class="stat-label">Total Registros</div>
         </div>
         <div class="stat-item">

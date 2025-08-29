@@ -72,37 +72,28 @@
     <script>
         function searchTable() {
             var input = document.getElementById("searchInput").value.toLowerCase();
-            var table = document.querySelector("table");
+            var table = document.querySelector("#permissions-table");
+            
+            if (!table) {
+                console.warn('Tabla de permisos no encontrada');
+                return;
+            }
+            
             var rows = table.getElementsByTagName("tr");
 
             for (var i = 1; i < rows.length; i++) {
                 var cells = rows[i].getElementsByTagName("td");
-                var id = cells[0].textContent.toLowerCase();
-                var name = cells[1].textContent.toLowerCase();
+                if (cells.length >= 2) {
+                    var id = cells[0].textContent.toLowerCase();
+                    var name = cells[1].textContent.toLowerCase();
 
-                if (id.includes(input) || name.includes(input)) {
-                    rows[i].style.display = "";
-                } else {
-                    rows[i].style.display = "none";
+                    if (id.includes(input) || name.includes(input)) {
+                        rows[i].style.display = "";
+                    } else {
+                        rows[i].style.display = "none";
+                    }
                 }
             }
-        }
-
-        function confirmDelete(id, name) {
-            Swal.fire({
-                title: '¿Estás seguro?',
-                text: `Esta acción eliminará el permiso "${name}" y no se puede deshacer`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'Sí, eliminar',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('delete-form-' + id).submit();
-                }
-            });
         }
     </script>
 </x-app-layout>

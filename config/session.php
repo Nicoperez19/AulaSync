@@ -6,7 +6,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Default Session Driver
+    | Session Driver
     |--------------------------------------------------------------------------
     |
     | This option controls the default session "driver" that will be used on
@@ -32,6 +32,17 @@ return [
     */
 
     'lifetime' => env('SESSION_LIFETIME', 120),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Session Expire On Close
+    |--------------------------------------------------------------------------
+    |
+    | If this option is set to true, the session will expire immediately
+    | when the browser closes. This option will override the lifetime
+    | option above.
+    |
+    */
 
     'expire_on_close' => false,
 
@@ -175,7 +186,7 @@ return [
     | HTTP Access Only
     |--------------------------------------------------------------------------
     |
-    | Setting this value to true will prevent JavaScript from accessing the
+    | Setting this option to true will prevent JavaScript from accessing the
     | value of the cookie and the cookie will only be accessible through
     | the HTTP protocol. You are free to modify this option if needed.
     |

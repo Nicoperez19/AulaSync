@@ -84,9 +84,9 @@
                         value="{{ old('area_conocimiento', $asignatura->area_conocimiento) }}" />
                 </div>
 
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
                     <div>
-                        <x-form.label for="run_profesor" :value="__('Profesor')" />
+                        <x-form.label for="run_profesor" :value="__('Profesor Titular')" />
                         <select name="run_profesor" id="run_profesor"
                             class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m"
                             required>
@@ -99,7 +99,19 @@
                             @endforeach
                         </select>
                     </div>
-
+                    <div>
+                        <x-form.label for="run_profesor_reemplazo" :value="__('Profesor Reemplazo (opcional)')" />
+                        <select name="run_profesor_reemplazo" id="run_profesor_reemplazo"
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m">
+                            <option value="">Sin reemplazo</option>
+                            @foreach($profesores as $profesor)
+                                <option value="{{ $profesor->run_profesor }}" 
+                                    {{ $asignatura->run_profesor_reemplazo == $profesor->run_profesor ? 'selected' : '' }}>
+                                    {{ $profesor->name }} ({{ $profesor->run_profesor }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
                     <div>
                         <x-form.label for="id_carrera" :value="__('Carrera')" />
                         <select name="id_carrera" id="id_carrera"

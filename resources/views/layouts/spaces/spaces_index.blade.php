@@ -166,7 +166,7 @@
                                     class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
                                     required>
                                     <option value="" disabled selected>{{ __('Seleccionar Tipo de Espacio') }}</option>
-                                    <option value="Aula" {{ old('tipo_espacio') == 'Aula' ? 'selected' : '' }}>
+                                    <option value="Sala de Clases" {{ old('tipo_espacio') == 'Sala de Clases' ? 'selected' : '' }}>
                                         {{ __('Aula') }}
                                     </option>
                                     <option value="Laboratorio" {{ old('tipo_espacio') == 'Laboratorio' ? 'selected' : '' }}>

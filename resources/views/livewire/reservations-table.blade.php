@@ -36,7 +36,7 @@
                         {{ $reserva->id_espacio }}
                     </td>
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap" data-label="Usuario">
-                        {{ optional($reserva->user)->name ?? 'Usuario no asignado' }}
+                        {{ $reserva->nombre_usuario ?? 'Usuario no asignado' }}
                     </td>
 
                     <td class="p-3 border border-black dark:border-white whitespace-nowrap">
