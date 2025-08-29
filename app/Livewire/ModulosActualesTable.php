@@ -95,10 +95,55 @@ class ModulosActualesTable extends Component
                         ];
                     }
 
-                    // Si tienes lógica para reservaProfesor, agrégala aquí
-                    // Ejemplo:
-                    // $reservaProfesor = ...;
-                    // if ($reservaProfesor) { ... }
+                    // Buscar reservas de profesor
+                    $reservaProfesor = Reserva::with(['profesor'])
+                        ->where('fecha_reserva', Carbon::now()->toDateString())
+                        ->where('estado', 'activa')
+                        ->where('id_espacio', $espacio->id_espacio)
+                        ->whereNotNull('run_profesor')
+                        ->first();
+
+                    if ($reservaProfesor) {
+                        $tieneReservaProfesor = true;
+                        $datosProfesor = [
+                            'nombre' => $reservaProfesor->profesor->name ?? '-',
+                            'run' => $reservaProfesor->run_profesor ?? '-',
+                            'hora_inicio' => $reservaProfesor->hora ?? '-',
+                            'hora_salida' => $reservaProfesor->hora_salida ?? '-'
+                        ];
+                    }
+
+                    // Si el espacio está ocupado pero no hay clase ni reserva de profesor,
+                    // buscar la reserva más reciente para determinar quién lo está ocupando
+                    if (strtolower($estado) === 'ocupado' && !$tieneClase && !$tieneReservaProfesor) {
+                        // Buscar cualquier reserva activa (profesor o solicitante)
+                        $reservaActiva = Reserva::with(['profesor', 'solicitante'])
+                            ->where('fecha_reserva', Carbon::now()->toDateString())
+                            ->where('estado', 'activa')
+                            ->where('id_espacio', $espacio->id_espacio)
+                            ->first();
+                        
+                        if ($reservaActiva) {
+                            if ($reservaActiva->run_profesor && $reservaActiva->profesor) {
+                                $tieneReservaProfesor = true;
+                                $datosProfesor = [
+                                    'nombre' => $reservaActiva->profesor->name ?? '-',
+                                    'run' => $reservaActiva->run_profesor ?? '-',
+                                    'hora_inicio' => $reservaActiva->hora ?? '-',
+                                    'hora_salida' => $reservaActiva->hora_salida ?? '-'
+                                ];
+                            } elseif ($reservaActiva->run_solicitante && $reservaActiva->solicitante) {
+                                $tieneReservaSolicitante = true;
+                                $datosSolicitante = [
+                                    'nombre' => $reservaActiva->solicitante->nombre ?? '-',
+                                    'run' => $reservaActiva->run_solicitante ?? '-',
+                                    'tipo_solicitante' => $reservaActiva->solicitante->tipo_solicitante ?? '-',
+                                    'hora_inicio' => $reservaActiva->hora ?? '-',
+                                    'hora_salida' => $reservaActiva->hora_salida ?? '-'
+                                ];
+                            }
+                        }
+                    }
 
                     $this->todosLosEspacios[] = [
                         'id_espacio' => $espacio->id_espacio,
@@ -108,8 +153,10 @@ class ModulosActualesTable extends Component
                         'puestos_disponibles' => $espacio->puestos_disponibles,
                         'tiene_clase' => $tieneClase,
                         'tiene_reserva_solicitante' => $tieneReservaSolicitante,
+                        'tiene_reserva_profesor' => $tieneReservaProfesor,
                         'datos_clase' => $datosClase,
                         'datos_solicitante' => $datosSolicitante,
+                        'datos_profesor' => $datosProfesor,
                         'piso' => $piso->numero_piso,
                         'modulo' => $this->moduloActual ? [
                             'id' => $this->moduloActual->id,
@@ -158,6 +205,47 @@ class ModulosActualesTable extends Component
 
                     // NO buscar reservas de solicitantes cuando estamos entre módulos
                     // Solo mantenemos ocupados y próximas clases
+                    
+                    // Buscar reservas de profesor (estas sí se mantienen entre módulos)
+                    $tieneReservaProfesor = false;
+                    $datosProfesor = null;
+                    
+                    $reservaProfesor = Reserva::with(['profesor'])
+                        ->where('fecha_reserva', Carbon::now()->toDateString())
+                        ->where('estado', 'activa')
+                        ->where('id_espacio', $espacio->id_espacio)
+                        ->whereNotNull('run_profesor')
+                        ->first();
+
+                    if ($reservaProfesor) {
+                        $tieneReservaProfesor = true;
+                        $datosProfesor = [
+                            'nombre' => $reservaProfesor->profesor->name ?? '-',
+                            'run' => $reservaProfesor->run_profesor ?? '-',
+                            'hora_inicio' => $reservaProfesor->hora ?? '-',
+                            'hora_salida' => $reservaProfesor->hora_salida ?? '-'
+                        ];
+                    }
+
+                    // Si el espacio está ocupado pero no hay próxima clase ni reserva de profesor,
+                    // buscar la reserva más reciente para determinar quién lo está ocupando
+                    if (strtolower($estado) === 'ocupado' && !$tieneClase && !$tieneReservaProfesor) {
+                        $reservaActiva = Reserva::with(['profesor', 'solicitante'])
+                            ->where('fecha_reserva', Carbon::now()->toDateString())
+                            ->where('estado', 'activa')
+                            ->where('id_espacio', $espacio->id_espacio)
+                            ->first();
+                        
+                        if ($reservaActiva && $reservaActiva->run_profesor && $reservaActiva->profesor) {
+                            $tieneReservaProfesor = true;
+                            $datosProfesor = [
+                                'nombre' => $reservaActiva->profesor->name ?? '-',
+                                'run' => $reservaActiva->run_profesor ?? '-',
+                                'hora_inicio' => $reservaActiva->hora ?? '-',
+                                'hora_salida' => $reservaActiva->hora_salida ?? '-'
+                            ];
+                        }
+                    }
 
                     $this->todosLosEspacios[] = [
                         'id_espacio' => $espacio->id_espacio,
@@ -167,8 +255,10 @@ class ModulosActualesTable extends Component
                         'puestos_disponibles' => $espacio->puestos_disponibles,
                         'tiene_clase' => $tieneClase,
                         'tiene_reserva_solicitante' => false, // No mostrar reservados entre módulos
+                        'tiene_reserva_profesor' => $tieneReservaProfesor,
                         'datos_clase' => $datosClase,
                         'datos_solicitante' => null,
+                        'datos_profesor' => $datosProfesor,
                         'piso' => $piso->numero_piso,
                         'modulo' => null,
                         'es_entre_modulos' => true
@@ -193,6 +283,29 @@ class ModulosActualesTable extends Component
     {
         $apellidos = explode(',', $nombreCompleto);
         return trim($apellidos[0] ?? '');
+    }
+
+    public function getNombreCompleto($nombreCompleto)
+    {
+        if (empty($nombreCompleto) || $nombreCompleto === '-') {
+            return '-';
+        }
+        
+        // El formato esperado es: "APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2"
+        $partes = explode(',', $nombreCompleto);
+        if (count($partes) >= 2) {
+            $apellidos = trim($partes[0]);
+            $nombres = trim($partes[1]);
+            
+            // Capitalizar nombres y apellidos para mejor legibilidad
+            $apellidosFormateados = ucwords(strtolower($apellidos));
+            $nombresFormateados = ucwords(strtolower($nombres));
+            
+            return $apellidosFormateados . ', ' . $nombresFormateados;
+        }
+        
+        // Si no tiene el formato esperado, devolver tal como está
+        return $nombreCompleto;
     }
 
     public function getPrimerApellidoSolicitante($nombreCompleto)
