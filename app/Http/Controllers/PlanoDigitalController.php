@@ -460,11 +460,23 @@ class PlanoDigitalController extends Controller
         try {
             $request->validate([
                 'id_espacio' => 'required|string',
-                'run_usuario' => 'required|string'
+                'run_usuario' => 'required|string',
+                'tipo_desocupacion' => 'sometimes|string|in:normal,forzosa',
+                'run_administrador' => 'required_if:tipo_desocupacion,forzosa|string'
             ]);
 
             $idEspacio = $request->input('id_espacio');
             $runUsuario = $request->input('run_usuario');
+            $tipoDesocupacion = $request->input('tipo_desocupacion', 'normal');
+            $runAdministrador = $request->input('run_administrador');
+
+            // Log para debugging
+            \Log::info('Devolución de espacio iniciada', [
+                'id_espacio' => $idEspacio,
+                'run_usuario' => $runUsuario,
+                'tipo_desocupacion' => $tipoDesocupacion,
+                'run_administrador' => $runAdministrador
+            ]);
 
             // Buscar el espacio
             $espacio = Espacio::where('id_espacio', $idEspacio)->first();
@@ -513,6 +525,13 @@ class PlanoDigitalController extends Controller
             if ($reservaActiva) {
                 $reservaActiva->hora_salida = now()->format('H:i:s');
                 $reservaActiva->estado = 'finalizada';
+
+                // Si es una desocupación forzosa, agregar información adicional
+                if ($tipoDesocupacion === 'forzosa') {
+                    $reservaActiva->observaciones = ($reservaActiva->observaciones ?? '') .
+                        "; DESOCUPACIÓN FORZOSA por administrador RUN: {$runAdministrador} el " . now()->format('Y-m-d H:i:s');
+                }
+
                 $reservaActiva->save();
             }
 
@@ -520,12 +539,21 @@ class PlanoDigitalController extends Controller
             $espacio->estado = 'Disponible';
             $espacio->save();
 
-            // Registrar la devolución en un log o tabla de auditoría si es necesario
-            \Log::info("Espacio {$idEspacio} devuelto exitosamente por usuario {$runUsuario} - Reserva ID: {$reservaActiva->id_reserva}");
+            // Registrar la devolución en un log
+            $mensajeLog = $tipoDesocupacion === 'forzosa'
+                ? "Espacio {$idEspacio} FORZOSAMENTE devuelto por administrador {$runAdministrador} - Usuario ocupante: {$runUsuario} - Reserva ID: {$reservaActiva->id_reserva}"
+                : "Espacio {$idEspacio} devuelto exitosamente por usuario {$runUsuario} - Reserva ID: {$reservaActiva->id_reserva}";
+
+            \Log::info($mensajeLog);
+
+            $mensajeRespuesta = $tipoDesocupacion === 'forzosa'
+                ? 'Espacio desocupado forzosamente por el administrador'
+                : 'Espacio devuelto exitosamente';
 
             return response()->json([
                 'success' => true,
-                'mensaje' => 'Espacio devuelto exitosamente',
+                'mensaje' => $mensajeRespuesta,
+                'tipo_desocupacion' => $tipoDesocupacion,
                 'espacio' => [
                     'id' => $espacio->id_espacio,
                     'nombre' => $espacio->nombre_espacio,

@@ -14,7 +14,7 @@ use Carbon\Carbon;
 
 /**
  * Controlador para manejar operaciones de solicitantes
- * 
+ *
  * Los solicitantes son usuarios externos que pueden reservar espacios
  * pero no son profesores registrados en el sistema.
  */
@@ -190,17 +190,17 @@ class SolicitanteController extends Controller
             $modulosSolicitados = $request->modulos;
             $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
             $diaActual = $diasSemana[$ahora->dayOfWeek];
-            
+
             $codigosDias = [
                 'lunes' => 'LU', 'martes' => 'MA', 'miercoles' => 'MI',
                 'jueves' => 'JU', 'viernes' => 'VI', 'sabado' => 'SA', 'domingo' => 'DO'
             ];
-            
+
             $codigoDia = $codigosDias[$diaActual] ?? 'LU';
-            
+
             // Determinar módulo actual
             $moduloActual = $this->determinarModuloActual($horaActual, $diaActual);
-            
+
             if (!$moduloActual) {
                 DB::rollBack();
                 return response()->json([
@@ -226,14 +226,14 @@ class SolicitanteController extends Controller
             foreach ($reservasActivas as $reserva) {
                 $horaInicio = $reserva->hora;
                 $horaFin = $reserva->hora_salida;
-                
+
                 // Determinar qué módulos cubre esta reserva
                 for ($i = 1; $i <= 15; $i++) {
                     $moduloCodigo = $codigoDia . '.' . $i;
                     $horarioModulo = $this->obtenerHorarioModulo($i, $diaActual);
-                    
-                    if ($horarioModulo && 
-                        $horaInicio <= $horarioModulo['fin'] && 
+
+                    if ($horarioModulo &&
+                        $horaInicio <= $horarioModulo['fin'] &&
                         $horaFin >= $horarioModulo['inicio']) {
                         $modulosOcupadosPorReservas[] = $moduloCodigo;
                     }
@@ -247,10 +247,10 @@ class SolicitanteController extends Controller
             $modulosDisponibles = 0;
             $modulosDisponiblesList = [];
             $proximaClase = null;
-            
+
             for ($i = $moduloActual; $i <= 15; $i++) {
                 $moduloCodigo = $codigoDia . '.' . $i;
-                
+
                 if (in_array($moduloCodigo, $modulosOcupados)) {
                     // Encontrar información de la próxima clase si es una planificación
                     if (in_array($moduloCodigo, $planificaciones)) {
@@ -258,10 +258,10 @@ class SolicitanteController extends Controller
                     }
                     break;
                 }
-                
+
                 $modulosDisponiblesList[] = $i;
                 $modulosDisponibles++;
-                
+
                 if ($modulosDisponibles >= $modulosSolicitados) {
                     break;
                 }
@@ -270,11 +270,11 @@ class SolicitanteController extends Controller
             if ($modulosDisponibles < $modulosSolicitados) {
                 DB::rollBack();
                 $mensaje = 'No hay suficientes módulos consecutivos disponibles.';
-                
+
                 if ($proximaClase) {
                     $mensaje .= " Próxima clase: {$proximaClase['asignatura']} (Módulo {$proximaClase['modulo']})";
                 }
-                
+
                 return response()->json([
                     'success' => false,
                     'mensaje' => $mensaje,
@@ -522,15 +522,24 @@ class SolicitanteController extends Controller
         $horariosDia = $horariosModulos[$diaActual] ?? null;
         if (!$horariosDia) return null;
 
+        // Primero verificar si estamos en un módulo activo
         foreach ($horariosDia as $modulo => $horario) {
             if ($horaActual >= $horario['inicio'] && $horaActual < $horario['fin']) {
                 return $modulo;
             }
         }
 
+        // Si no estamos en ningún módulo (break), buscar el siguiente módulo disponible
+        // Esto permite hacer reservas durante los breaks
+        foreach ($horariosDia as $modulo => $horario) {
+            if ($horaActual < $horario['inicio']) {
+                return $modulo; // Retornar el siguiente módulo
+            }
+        }
+
         return null;
     }
-    
+
     /**
      * Obtiene el horario de un módulo específico
      */
@@ -623,10 +632,10 @@ class SolicitanteController extends Controller
                 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
             ]
         ];
-        
+
         return $horariosModulos[$diaActual][$modulo] ?? null;
     }
-    
+
     /**
      * Obtiene información de la próxima clase programada
      */
@@ -636,7 +645,7 @@ class SolicitanteController extends Controller
             ->where('id_espacio', $espacioId)
             ->where('id_modulo', $moduloCodigo)
             ->first();
-            
+
         if ($planificacion) {
             return [
                 'modulo' => $moduloCodigo,
@@ -646,7 +655,7 @@ class SolicitanteController extends Controller
                 'hora_termino' => $planificacion->modulo->hora_termino ?? ''
             ];
         }
-        
+
         return null;
     }
-} 
+}

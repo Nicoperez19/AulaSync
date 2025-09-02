@@ -27,6 +27,7 @@ class Reserva extends Model
         'tipo_reserva',
         'estado',
         'hora_salida',
+        'observaciones',
         'created_at',
         'updated_at'
     ];
@@ -41,11 +42,11 @@ class Reserva extends Model
             $timestamp = now()->format('YmdHis'); // YYYYMMDDHHMMSS
             $contador = rand(1, 999); // Número aleatorio de 1-999
             $idReserva = 'R' . $timestamp . str_pad($contador, 3, '0', STR_PAD_LEFT);
-            
+
             // Verificar que el ID no exista
             $existe = self::where('id_reserva', $idReserva)->exists();
         } while ($existe);
-        
+
         return $idReserva;
     }
 
