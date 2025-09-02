@@ -1,34 +1,12 @@
-<style>
-    .sort-icon {
-        display: none;
-        margin-left: 5px;
-        transition: transform 0.2s;
-    }
-
-    .asc .sort-icon,
-    .desc .sort-icon {
-        display: inline-block;
-    }
-
-    .asc .sort-icon {
-        transform: rotate(180deg);
-    }
-
-    .desc .sort-icon {
-        transform: rotate(0deg);
-    }
-
-    th {
-        cursor: pointer;
-        user-select: none;
-    }
-
-    th:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-    }
-</style>
-
 <div>
+    <!-- Barra de búsqueda -->
+    <div class="mb-4">
+        <input type="text"
+            wire:model.live="search"
+            placeholder="Buscar por RUN, Nombre, Email, Tipo o Carrera"
+            class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white">
+    </div>
+
     <div class="mt-4 mb-4">
         {{ $profesores->links('vendor.pagination.tailwind') }}
     </div>
@@ -36,20 +14,55 @@
         <table id="professors-table" class="w-full text-sm text-center border-collapse table-auto min-w-max">
             <thead class="text-white bg-light-cloud-blue dark:bg-black dark:text-white">
                 <tr>
-                    <th class="p-3" onclick="sortTable(0)"> RUN
-                        <span class="sort-icon">▼</span>
+                    <th class="p-3 cursor-pointer hover:bg-black hover:bg-opacity-10" wire:click="sortBy('run_profesor')">
+                        RUN
+                        @if($sortField === 'run_profesor')
+                            @if($sortDirection === 'asc')
+                                <span class="ml-1">↑</span>
+                            @else
+                                <span class="ml-1">↓</span>
+                            @endif
+                        @endif
                     </th>
-                    <th class="p-3" onclick="sortTable(1)"> Nombre
-                        <span class="sort-icon">▼</span>
+                    <th class="p-3 cursor-pointer hover:bg-black hover:bg-opacity-10" wire:click="sortBy('name')">
+                        Nombre
+                        @if($sortField === 'name')
+                            @if($sortDirection === 'asc')
+                                <span class="ml-1">↑</span>
+                            @else
+                                <span class="ml-1">↓</span>
+                            @endif
+                        @endif
                     </th>
-                    <th class="p-3" onclick="sortTable(2)"> Email
-                        <span class="sort-icon">▼</span>
+                    <th class="p-3 cursor-pointer hover:bg-black hover:bg-opacity-10" wire:click="sortBy('email')">
+                        Email
+                        @if($sortField === 'email')
+                            @if($sortDirection === 'asc')
+                                <span class="ml-1">↑</span>
+                            @else
+                                <span class="ml-1">↓</span>
+                            @endif
+                        @endif
                     </th>
-                    <th class="p-3" onclick="sortTable(3)"> Tipo
-                        <span class="sort-icon">▼</span>
+                    <th class="p-3 cursor-pointer hover:bg-black hover:bg-opacity-10" wire:click="sortBy('tipo_profesor')">
+                        Tipo
+                        @if($sortField === 'tipo_profesor')
+                            @if($sortDirection === 'asc')
+                                <span class="ml-1">↑</span>
+                            @else
+                                <span class="ml-1">↓</span>
+                            @endif
+                        @endif
                     </th>
-                    <th class="p-3" onclick="sortTable(4)"> Carrera
-                        <span class="sort-icon">▼</span>
+                    <th class="p-3 cursor-pointer hover:bg-black hover:bg-opacity-10" wire:click="sortBy('carrera')">
+                        Carrera
+                        @if($sortField === 'carrera')
+                            @if($sortDirection === 'asc')
+                                <span class="ml-1">↑</span>
+                            @else
+                                <span class="ml-1">↓</span>
+                            @endif
+                        @endif
                     </th>
                     <th class="p-3">Acciones</th>
                 </tr>
@@ -69,7 +82,7 @@
                                 </td>
                                 <td class="p-3 border border-white dark:border-white whitespace-nowrap">
                                     <span
-                                        class="px-2 py-1 text-xs font-semibold rounded-full 
+                                        class="px-2 py-1 text-xs font-semibold rounded-full
                                             {{ $profesor->tipo_profesor === 'Profesor Responsable' ? 'bg-blue-100 text-blue-800' :
                     ($profesor->tipo_profesor === 'Profesor Colaborador' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800') }}">
                                         {{ $profesor->tipo_profesor }}
@@ -124,42 +137,6 @@
 </div>
 
 <script>
-    function sortTable(columnIndex) {
-        var table = document.getElementById("professors-table");
-        var rows = Array.from(table.rows).slice(1);
-        var isAscending = table.rows[0].cells[columnIndex].classList.contains("asc");
-
-        // Remover clases de ordenamiento de todas las columnas
-        Array.from(table.rows[0].cells).forEach(cell => {
-            cell.classList.remove("asc", "desc");
-        });
-
-        rows.sort((rowA, rowB) => {
-            var cellA = rowA.cells[columnIndex].textContent.trim().toLowerCase();
-            var cellB = rowB.cells[columnIndex].textContent.trim().toLowerCase();
-
-            // Para columnas numéricas (RUN)
-            if (columnIndex === 0) {
-                var numA = parseInt(cellA) || 0;
-                var numB = parseInt(cellB) || 0;
-                return isAscending ? numA - numB : numB - numA;
-            }
-
-            // Para columnas de texto
-            if (cellA < cellB) {
-                return isAscending ? -1 : 1;
-            }
-            if (cellA > cellB) {
-                return isAscending ? 1 : -1;
-            }
-            return 0;
-        });
-
-        rows.forEach(row => table.appendChild(row));
-
-        table.rows[0].cells[columnIndex].classList.add(isAscending ? "desc" : "asc");
-    }
-
     function deleteProfessor(run, name) {
         // Verificar si SweetAlert2 está disponible
         if (typeof Swal === 'undefined') {

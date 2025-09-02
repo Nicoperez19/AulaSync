@@ -38,7 +38,7 @@ class ProfessorsTable extends Component
     public function render()
     {
         $profesores = Profesor::query()
-            ->with('carrera')
+            ->with(['carrera', 'universidad', 'facultad', 'areaAcademica'])
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
                     $q->where('run_profesor', 'like', '%' . $this->search . '%')
@@ -47,6 +47,15 @@ class ProfessorsTable extends Component
                       ->orWhere('tipo_profesor', 'like', '%' . $this->search . '%')
                       ->orWhereHas('carrera', function ($subQuery) {
                           $subQuery->where('nombre', 'like', '%' . $this->search . '%');
+                      })
+                      ->orWhereHas('universidad', function ($subQuery) {
+                          $subQuery->where('nombre_universidad', 'like', '%' . $this->search . '%');
+                      })
+                      ->orWhereHas('facultad', function ($subQuery) {
+                          $subQuery->where('nombre_facultad', 'like', '%' . $this->search . '%');
+                      })
+                      ->orWhereHas('areaAcademica', function ($subQuery) {
+                          $subQuery->where('nombre_area_academica', 'like', '%' . $this->search . '%');
                       });
                 });
             })
@@ -77,4 +86,4 @@ class ProfessorsTable extends Component
 
         return view('livewire.professors-table', compact('profesores'));
     }
-} 
+}

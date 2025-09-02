@@ -6,6 +6,8 @@ use App\Models\Reserva;
 use Illuminate\Http\Request;
 use App\Models\Universidad;
 use App\Models\Espacio;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class ReservasController extends Controller
 {
@@ -152,4 +154,43 @@ class ReservasController extends Controller
 
     return response()->json($espacios);
 }
+
+    /**
+     * Verifica y actualiza los estados de espacios basándose en reservas expiradas
+     * Este método se puede llamar antes de mostrar espacios disponibles
+     */
+    private function verificarEstadosEspacios()
+    {
+        try {
+            $fechaActual = Carbon::now()->format('Y-m-d');
+            
+            // Finalizar reservas del día anterior que aún estén activas
+            $reservasExpiradas = Reserva::where('estado', 'activa')
+                ->where('fecha_reserva', '<', $fechaActual)
+                ->get();
+            
+            foreach ($reservasExpiradas as $reserva) {
+                // Finalizar la reserva
+                $reserva->update(['estado' => 'finalizada']);
+                
+                // Liberar el espacio si no hay otras reservas activas para hoy
+                if ($reserva->id_espacio) {
+                    $reservasActivasHoy = Reserva::where('id_espacio', $reserva->id_espacio)
+                        ->where('estado', 'activa')
+                        ->where('fecha_reserva', $fechaActual)
+                        ->count();
+                    
+                    if ($reservasActivasHoy == 0) {
+                        Espacio::where('id_espacio', $reserva->id_espacio)
+                            ->update(['estado' => 'disponible']);
+                    }
+                }
+            }
+            
+            return true;
+        } catch (\Exception $e) {
+            \Log::error('Error al verificar estados de espacios: ' . $e->getMessage());
+            return false;
+        }
+    }
 }

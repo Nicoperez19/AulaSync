@@ -15,17 +15,13 @@
     </x-slot>
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
-        <div class="flex items-center justify-between mb-6">
-            <div class="w-2/3">
-                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Buscar por RUN, Nombre o Email"
-                    class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white">
-            </div>
+        <div class="flex items-center justify-end mb-6">
             <x-button variant="add" class="max-w-xs gap-2" x-on:click.prevent="$dispatch('open-modal', 'add-professor')">
                 <x-icons.add class="w-6 h-6" aria-hidden="true" />
                 Agregar Profesor
             </x-button>
         </div>
-        <livewire:professors-table />
+        @livewire('professors-table')
   <!-- Modal para agregar profesor -->
   <x-modal name="add-professor" :show="$errors->any()" focusable>
         @slot('title')
@@ -220,34 +216,6 @@
     </div>
 
    <script>
-    function searchTable() {    
-        var input = document.getElementById("searchInput").value.toLowerCase();
-        var table = document.getElementById("professors-table");
-        var rows = table.getElementsByTagName("tr");
-
-        for (var i = 1; i < rows.length; i++) {
-            var cells = rows[i].getElementsByTagName("td");
-            
-            // Verificar que la fila tenga celdas (evitar filas vacías)
-            if (cells.length < 8) continue;
-            
-            var run = cells[0].textContent.toLowerCase();
-            var nombre = cells[1].textContent.toLowerCase();
-            var email = cells[2].textContent.toLowerCase();
-            var tipo = cells[3].textContent.toLowerCase();
-            var universidad = cells[4].textContent.toLowerCase();
-            var facultad = cells[5].textContent.toLowerCase();
-            var carrera = cells[6].textContent.toLowerCase();
-            var areaAcademica = cells[7].textContent.toLowerCase();
-
-            if (run.includes(input) || nombre.includes(input) || email.includes(input) || tipo.includes(input) || universidad.includes(input) || facultad.includes(input) || carrera.includes(input) || areaAcademica.includes(input)) {
-                rows[i].style.display = "";
-            } else {
-                rows[i].style.display = "none";
-            }
-        }
-    }
-
     function deleteProfessor(run, name) {
         Swal.fire({
             title: '¿Estás seguro?',
@@ -260,10 +228,10 @@
             cancelButtonText: 'Cancelar'
         }).then((result) => {
             if (result.isConfirmed) {
-                document.getElementById('delete-form-' + run).submit();        
+                document.getElementById('delete-form-' + run).submit();
             }
         });
     }
    </script>
 
-</x-app-layout> 
+</x-app-layout>
