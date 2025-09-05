@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Livewire;
 
 use Livewire\Component;
@@ -13,7 +12,13 @@ use Carbon\Carbon;
 
 class ModulosActualesTable extends Component
 {
+
     public $slideCarrusel = 'ocupados';
+public $slideCarruselDisponibles = 'disponibles';
+public $indiceCarruselDisponibles = 0;
+public $itemsPorPagina = 13;
+public $debeHacerSlide = false;
+    public $indiceCarrusel = 0;
     public $planificaciones = [];
     public $espacios = [];
     public $pisos = [];
@@ -21,23 +26,29 @@ class ModulosActualesTable extends Component
     public $fechaActual;
     public $moduloActual;
     public $selectedPiso = null;
+ 
 
-    public $indiceCarrusel = 0;
-    public $itemsPorPagina = 5;
-
+   
     public $todosLosEspacios = [];
 
     public function mount()
     {
         $this->actualizarDatos();
+            $this->slideCarruselDisponibles = 'disponibles';
+    $this->indiceCarruselDisponibles = 0;
+    $this->itemsPorPagina = 13; //
         
         if ($this->pisos->count() > 0) {
             $this->selectedPiso = $this->pisos->first()->id;
         }
+      
     }
 
     public function actualizarDatos()
-    {
+    { $this->indiceCarruselDisponibles = 0;
+
+           $this->debeHacerSlide = $this->contarEspaciosDisponibles() > 13;
+        $this->espaciosDisponibles = Espacio::where('estado', 'disponible')->get()->toArray();
         $this->horaActual = Carbon::now()->format('H:i:s');
         $this->fechaActual = Carbon::now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY');
         $hoy = Carbon::now()->locale('es')->isoFormat('dddd');
@@ -95,10 +106,55 @@ class ModulosActualesTable extends Component
                         ];
                     }
 
-                    // Si tienes lógica para reservaProfesor, agrégala aquí
-                    // Ejemplo:
-                    // $reservaProfesor = ...;
-                    // if ($reservaProfesor) { ... }
+                    // Buscar reservas de profesor
+                    $reservaProfesor = Reserva::with(['profesor'])
+                        ->where('fecha_reserva', Carbon::now()->toDateString())
+                        ->where('estado', 'activa')
+                        ->where('id_espacio', $espacio->id_espacio)
+                        ->whereNotNull('run_profesor')
+                        ->first();
+
+                    if ($reservaProfesor) {
+                        $tieneReservaProfesor = true;
+                        $datosProfesor = [
+                            'nombre' => $reservaProfesor->profesor->name ?? '-',
+                            'run' => $reservaProfesor->run_profesor ?? '-',
+                            'hora_inicio' => $reservaProfesor->hora ?? '-',
+                            'hora_salida' => $reservaProfesor->hora_salida ?? '-'
+                        ];
+                    }
+
+                    // Si el espacio está ocupado pero no hay clase ni reserva de profesor,
+                    // buscar la reserva más reciente para determinar quién lo está ocupando
+                    if (strtolower($estado) === 'ocupado' && !$tieneClase && !$tieneReservaProfesor) {
+                        // Buscar cualquier reserva activa (profesor o solicitante)
+                        $reservaActiva = Reserva::with(['profesor', 'solicitante'])
+                            ->where('fecha_reserva', Carbon::now()->toDateString())
+                            ->where('estado', 'activa')
+                            ->where('id_espacio', $espacio->id_espacio)
+                            ->first();
+                        
+                        if ($reservaActiva) {
+                            if ($reservaActiva->run_profesor && $reservaActiva->profesor) {
+                                $tieneReservaProfesor = true;
+                                $datosProfesor = [
+                                    'nombre' => $reservaActiva->profesor->name ?? '-',
+                                    'run' => $reservaActiva->run_profesor ?? '-',
+                                    'hora_inicio' => $reservaActiva->hora ?? '-',
+                                    'hora_salida' => $reservaActiva->hora_salida ?? '-'
+                                ];
+                            } elseif ($reservaActiva->run_solicitante && $reservaActiva->solicitante) {
+                                $tieneReservaSolicitante = true;
+                                $datosSolicitante = [
+                                    'nombre' => $reservaActiva->solicitante->nombre ?? '-',
+                                    'run' => $reservaActiva->run_solicitante ?? '-',
+                                    'tipo_solicitante' => $reservaActiva->solicitante->tipo_solicitante ?? '-',
+                                    'hora_inicio' => $reservaActiva->hora ?? '-',
+                                    'hora_salida' => $reservaActiva->hora_salida ?? '-'
+                                ];
+                            }
+                        }
+                    }
 
                     $this->todosLosEspacios[] = [
                         'id_espacio' => $espacio->id_espacio,
@@ -108,8 +164,10 @@ class ModulosActualesTable extends Component
                         'puestos_disponibles' => $espacio->puestos_disponibles,
                         'tiene_clase' => $tieneClase,
                         'tiene_reserva_solicitante' => $tieneReservaSolicitante,
+                        'tiene_reserva_profesor' => $tieneReservaProfesor,
                         'datos_clase' => $datosClase,
                         'datos_solicitante' => $datosSolicitante,
+                        'datos_profesor' => $datosProfesor,
                         'piso' => $piso->numero_piso,
                         'modulo' => $this->moduloActual ? [
                             'id' => $this->moduloActual->id,
@@ -120,27 +178,103 @@ class ModulosActualesTable extends Component
                 }
             }
         } else {
-            // Procesar espacios cuando no hay módulo activo (más eficiente)
-            $this->espacios = [];
+            // Procesar espacios cuando no hay módulo activo (entre módulos)
             foreach ($this->pisos as $piso) {
-                $espaciosPiso = [];
                 foreach ($piso->espacios as $espacio) {
-                    $espaciosPiso[] = [
+                    $estado = $espacio->estado ?? 'Disponible';
+                    $tieneClase = false;
+                    $tieneReservaSolicitante = false;
+                    $datosClase = null;
+                    $datosSolicitante = null;
+                    $proximaClase = null;
+
+                    // Buscar próxima clase (siguiente módulo)
+                    $proximoModulo = Modulo::where('dia', Carbon::now()->locale('es')->isoFormat('dddd'))
+                        ->where('hora_inicio', '>', $this->horaActual)
+                        ->orderBy('hora_inicio', 'asc')
+                        ->first();
+
+                    if ($proximoModulo) {
+                        $planificacionProxima = Planificacion_Asignatura::with(['asignatura.profesor'])
+                            ->where('id_modulo', $proximoModulo->id_modulo)
+                            ->where('id_espacio', $espacio->id_espacio)
+                            ->first();
+
+                        if ($planificacionProxima) {
+                            $tieneClase = true;
+                            $datosClase = [
+                                'codigo_asignatura' => $planificacionProxima->asignatura->codigo_asignatura ?? '-',
+                                'nombre_asignatura' => $planificacionProxima->asignatura->nombre_asignatura ?? '-',
+                                'seccion' => $planificacionProxima->asignatura->seccion ?? '-',
+                                'profesor' => ['name' => $planificacionProxima->asignatura->profesor->name ?? '-'],
+                                'es_proxima' => true,
+                                'hora_inicio' => $proximoModulo->hora_inicio,
+                                'hora_termino' => $proximoModulo->hora_termino
+                            ];
+                        }
+                    }
+
+                    // NO buscar reservas de solicitantes cuando estamos entre módulos
+                    // Solo mantenemos ocupados y próximas clases
+                    
+                    // Buscar reservas de profesor (estas sí se mantienen entre módulos)
+                    $tieneReservaProfesor = false;
+                    $datosProfesor = null;
+                    
+                    $reservaProfesor = Reserva::with(['profesor'])
+                        ->where('fecha_reserva', Carbon::now()->toDateString())
+                        ->where('estado', 'activa')
+                        ->where('id_espacio', $espacio->id_espacio)
+                        ->whereNotNull('run_profesor')
+                        ->first();
+
+                    if ($reservaProfesor) {
+                        $tieneReservaProfesor = true;
+                        $datosProfesor = [
+                            'nombre' => $reservaProfesor->profesor->name ?? '-',
+                            'run' => $reservaProfesor->run_profesor ?? '-',
+                            'hora_inicio' => $reservaProfesor->hora ?? '-',
+                            'hora_salida' => $reservaProfesor->hora_salida ?? '-'
+                        ];
+                    }
+
+                    // Si el espacio está ocupado pero no hay próxima clase ni reserva de profesor,
+                    // buscar la reserva más reciente para determinar quién lo está ocupando
+                    if (strtolower($estado) === 'ocupado' && !$tieneClase && !$tieneReservaProfesor) {
+                        $reservaActiva = Reserva::with(['profesor', 'solicitante'])
+                            ->where('fecha_reserva', Carbon::now()->toDateString())
+                            ->where('estado', 'activa')
+                            ->where('id_espacio', $espacio->id_espacio)
+                            ->first();
+                        
+                        if ($reservaActiva && $reservaActiva->run_profesor && $reservaActiva->profesor) {
+                            $tieneReservaProfesor = true;
+                            $datosProfesor = [
+                                'nombre' => $reservaActiva->profesor->name ?? '-',
+                                'run' => $reservaActiva->run_profesor ?? '-',
+                                'hora_inicio' => $reservaActiva->hora ?? '-',
+                                'hora_salida' => $reservaActiva->hora_salida ?? '-'
+                            ];
+                        }
+                    }
+
+                    $this->todosLosEspacios[] = [
                         'id_espacio' => $espacio->id_espacio,
                         'nombre_espacio' => $espacio->nombre_espacio,
-                        'estado' => 'Disponible',
+                        'estado' => $estado,
                         'tipo_espacio' => $espacio->tipo_espacio,
                         'puestos_disponibles' => $espacio->puestos_disponibles,
-                        'tiene_clase' => false,
-                        'tiene_reserva_solicitante' => false,
-                        'datos_clase' => null,
+                        'tiene_clase' => $tieneClase,
+                        'tiene_reserva_solicitante' => false, // No mostrar reservados entre módulos
+                        'tiene_reserva_profesor' => $tieneReservaProfesor,
+                        'datos_clase' => $datosClase,
                         'datos_solicitante' => null,
+                        'datos_profesor' => $datosProfesor,
+                        'piso' => $piso->numero_piso,
                         'modulo' => null,
-                        'piso' => $piso->nombre_piso,
-                        'proxima_clase' => null
+                        'es_entre_modulos' => true
                     ];
                 }
-                $this->espacios[$piso->id] = $espaciosPiso;
             }
         }
     }
@@ -162,6 +296,29 @@ class ModulosActualesTable extends Component
         return trim($apellidos[0] ?? '');
     }
 
+    public function getNombreCompleto($nombreCompleto)
+    {
+        if (empty($nombreCompleto) || $nombreCompleto === '-') {
+            return '-';
+        }
+        
+        // El formato esperado es: "APELLIDO1 APELLIDO2, NOMBRE1 NOMBRE2"
+        $partes = explode(',', $nombreCompleto);
+        if (count($partes) >= 2) {
+            $apellidos = trim($partes[0]);
+            $nombres = trim($partes[1]);
+            
+            // Capitalizar nombres y apellidos para mejor legibilidad
+            $apellidosFormateados = ucwords(strtolower($apellidos));
+            $nombresFormateados = ucwords(strtolower($nombres));
+            
+            return $apellidosFormateados . ', ' . $nombresFormateados;
+        }
+        
+        // Si no tiene el formato esperado, devolver tal como está
+        return $nombreCompleto;
+    }
+
     public function getPrimerApellidoSolicitante($nombreCompleto)
     {
         $apellidos = explode(',', $nombreCompleto);
@@ -173,9 +330,95 @@ class ModulosActualesTable extends Component
         $this->actualizarDatos();
     }
 
-    public function render()
-    {
-        return view('livewire.modulos-actuales-table');
+
+
+public function getDebeHacerSlideProperty()
+{
+    return $this->contarEspaciosDisponibles() > 13;
+}
+
+
+
+
+
+
+private function contarEspaciosDisponibles()
+{
+    return count(array_filter($this->todosLosEspacios, function ($espacio) {
+        $tieneReservaSolicitante = $espacio['tiene_reserva_solicitante'] ?? false;
+        $tieneReservaProfesor = $espacio['tiene_reserva_profesor'] ?? false;
+        $tieneClase = $espacio['tiene_clase'] ?? false;
+        $esOcupado = strtolower($espacio['estado']) === 'ocupado';
+        $esEntreModulos = $espacio['es_entre_modulos'] ?? false;
+
+        return !$esOcupado && !$tieneClase && !$tieneReservaSolicitante && !$tieneReservaProfesor && !$esEntreModulos;
+    }));
+}
+public function updatedSlideCarruselDisponibles($value)
+{
+    if ($value === 'disponibles') {
+        $this->indiceCarruselDisponibles = 0;
+    } elseif ($value === 'disponibles_2') {
+        $this->indiceCarruselDisponibles = 1;
+    } else {
+        $this->indiceCarruselDisponibles = 0;
     }
+}
+
+public function getEspaciosFiltradosProperty()
+{
+    $todosDisponibles = array_filter($this->todosLosEspacios, function($espacio) {
+        $esOcupado = strtolower($espacio['estado']) === 'ocupado';
+        $tieneClase = $espacio['tiene_clase'] ?? false;
+        $tieneReservaSolicitante = $espacio['tiene_reserva_solicitante'] ?? false;
+        $tieneReservaProfesor = $espacio['tiene_reserva_profesor'] ?? false;
+
+        return !$esOcupado && !$tieneClase && !$tieneReservaSolicitante && !$tieneReservaProfesor;
+    });
+
+    $start = $this->indiceCarruselDisponibles * $this->itemsPorPagina;
+
+    return array_slice($todosDisponibles, $start, $this->itemsPorPagina);
+}
+
+
+public function avanzarCarruselDisponibles()
+{
+    $todosDisponibles = array_filter($this->todosLosEspacios, function ($espacio) {
+        $esOcupado = strtolower($espacio['estado']) === 'ocupado';
+        $tieneClase = $espacio['tiene_clase'] ?? false;
+        $tieneReservaSolicitante = $espacio['tiene_reserva_solicitante'] ?? false;
+        $tieneReservaProfesor = $espacio['tiene_reserva_profesor'] ?? false;
+
+        return !$esOcupado && !$tieneClase && !$tieneReservaSolicitante && !$tieneReservaProfesor;
+    });
+
+    $total = count($todosDisponibles);
+    $this->indiceCarruselDisponibles = ($this->indiceCarruselDisponibles + 1) % ceil($total / $this->itemsPorPagina);
+}
+
+
+public function retrocederCarruselDisponibles()
+{
+    $total = count(array_filter($this->todosLosEspacios, function($espacio) {
+        $esOcupado = strtolower($espacio['estado']) === 'ocupado';
+        $tieneClase = $espacio['tiene_clase'] ?? false;
+        $tieneReservaSolicitante = $espacio['tiene_reserva_solicitante'] ?? false;
+        $tieneReservaProfesor = $espacio['tiene_reserva_profesor'] ?? false;
+        return !$esOcupado && !$tieneClase && !$tieneReservaSolicitante && !$tieneReservaProfesor;
+    }));
+
+    $maxIndice = intval(floor(($total - 1) / $this->itemsPorPagina));
+
+    $this->indiceCarruselDisponibles = ($this->indiceCarruselDisponibles - 1) < 0 ? $maxIndice : $this->indiceCarruselDisponibles - 1;
+}
 
 }
+
+
+
+
+
+
+
+
