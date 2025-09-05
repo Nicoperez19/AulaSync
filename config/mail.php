@@ -131,4 +131,20 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Email Addresses
+    |--------------------------------------------------------------------------
+    |
+    | Email addresses of administrators who should receive system alerts
+    | and inconsistency notifications.
+    |
+    */
+
+    'admin_emails' => [
+        env('ADMIN_EMAIL_1', 'admin@aulasync.com'),
+        env('ADMIN_EMAIL_2', 'soporte@aulasync.com'),
+        // Agregar más correos según sea necesario
+    ],
+
 ];

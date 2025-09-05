@@ -93,7 +93,9 @@ class Solicitante extends Model
                 'run_solicitante', 
                 'correo', 
                 'telefono', 
-                'tipo_solicitante'
+                'tipo_solicitante',
+                'activo',
+                'fecha_registro'
             )
             ->where('run_solicitante', $runSolicitante)
             ->where('activo', true)

@@ -271,6 +271,12 @@
                     <div id="estadoDetalles" class="text-sm text-gray-600">
                         <!-- Información adicional del estado se insertará aquí -->
                     </div>
+                    
+                    <div class="mt-4 flex justify-end">
+                        <button id="btnDesocupar" class="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded hover:bg-red-700 hidden">
+                            Desocupar
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Información del ocupante actual / último ocupante -->
@@ -281,11 +287,6 @@
                     </h3>
                     <div id="ocupanteInfo" class="space-y-3">
                         <!-- La información se insertará dinámicamente -->
-                    </div>
-                    <div class="mt-4 flex justify-end">
-                        <button id="btnDesocupar" class="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded hover:bg-red-700 hidden">
-                            Desocupar
-                        </button>
                     </div>
                 </div>
 

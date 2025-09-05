@@ -31,6 +31,18 @@ class Kernel extends ConsoleKernel
                 ->dailyAt('00:00')
                 ->withoutOverlapping()
                 ->runInBackground();
+
+        // Verificar inconsistencias del sistema cada 30 minutos
+        $schedule->command('sistema:verificar-estado')
+                ->everyThirtyMinutes()
+                ->withoutOverlapping()
+                ->runInBackground();
+
+        // Opcional: Verificación diaria a las 23:55 (5 minutos antes de liberar)
+        $schedule->command('sistema:verificar-estado')
+                ->dailyAt('23:55')
+                ->withoutOverlapping()
+                ->appendOutputTo(storage_path('logs/verificacion-sistema.log'));
     }
 
     /**

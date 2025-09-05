@@ -828,7 +828,7 @@ class EspacioController extends Controller
             if (in_array($espacio->estado, ['Ocupado', 'ocupado', '#FF0000'])) {
                 Log::info("Espacio ocupado, revisando tabla Reservas");
 
-                // Consulta optimizada para reserva activa
+                // Primero buscar reserva activa dentro del horario
                 $reservaActiva = Reserva::select('id_reserva', 'run_profesor', 'run_solicitante', 'hora', 'hora_salida', 'estado', 'tipo_reserva')
                     ->where('id_espacio', $idEspacio)
                     ->where('fecha_reserva', $fechaActual)
@@ -839,6 +839,22 @@ class EspacioController extends Controller
                     })
                     ->where('estado', 'activa')
                     ->first();
+
+                // Si no hay reserva activa, buscar reservas vencidas que aún están marcadas como activas
+                if (!$reservaActiva) {
+                    $reservaVencida = Reserva::select('id_reserva', 'run_profesor', 'run_solicitante', 'hora', 'hora_salida', 'estado', 'tipo_reserva')
+                        ->where('id_espacio', $idEspacio)
+                        ->where('fecha_reserva', $fechaActual)
+                        ->where('estado', 'activa')
+                        ->whereNotNull('hora_salida')
+                        ->where('hora_salida', '<=', $horaActual)
+                        ->first();
+                    
+                    if ($reservaVencida) {
+                        $reservaActiva = $reservaVencida;
+                        Log::info("Reserva vencida encontrada que necesita finalización", ['reserva_id' => $reservaVencida->id_reserva]);
+                    }
+                }
 
                 if ($reservaActiva) {
                     Log::info("Reserva activa encontrada", ['reserva_id' => $reservaActiva->id_reserva]);

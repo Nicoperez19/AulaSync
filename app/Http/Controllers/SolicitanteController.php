@@ -641,7 +641,7 @@ class SolicitanteController extends Controller
      */
     private function obtenerInfoProximaClase($moduloCodigo, $espacioId)
     {
-        $planificacion = Planificacion_Asignatura::with(['asignatura', 'modulo', 'profesor'])
+        $planificacion = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo'])
             ->where('id_espacio', $espacioId)
             ->where('id_modulo', $moduloCodigo)
             ->first();
