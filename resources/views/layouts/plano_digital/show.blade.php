@@ -531,8 +531,18 @@
                     <div>
                         <label for="telefono-solicitante" class="block text-sm font-medium text-gray-700">Teléfono
                             *</label>
-                        <input type="tel" id="telefono-solicitante" name="telefono" required autocomplete="tel"
-                            class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        <div class="flex mt-1">
+                            <div class="flex items-center px-3 py-2 bg-gray-100 border border-r-0 border-gray-300 rounded-l-md">
+                                <span class="text-sm font-medium text-gray-600">+56</span>
+                            </div>
+                            <input type="tel" id="telefono-solicitante" name="telefono" required autocomplete="tel"
+                                pattern="[0-9]{9}"
+                                title="Ingrese un número de teléfono válido (9 dígitos, sin el +56)"
+                                placeholder="912345678"
+                                maxlength="9"
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-r-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500">Formato: 9 dígitos (ej: 912345678). No incluir +56</p>
                     </div>
 
                     <div>
@@ -1267,18 +1277,26 @@
             }
         }
 
-        async function devolverEspacio(runUsuario, idEspacio) {
+        async function devolverEspacio(runUsuario, idEspacio, tipoDesocupacion = 'normal') {
             try {
+                const requestBody = {
+                    run_usuario: runUsuario,
+                    id_espacio: idEspacio,
+                    tipo_desocupacion: tipoDesocupacion
+                };
+
+                // Si es una desocupación forzosa, agregar el RUN del administrador
+                if (tipoDesocupacion === 'forzosa') {
+                    requestBody.run_administrador = '{{ auth()->user()->run ?? "admin" }}';
+                }
+
                 const response = await fetch('/api/devolver-espacio', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
-                    body: JSON.stringify({
-                        run_usuario: runUsuario,
-                        id_espacio: idEspacio
-                    })
+                    body: JSON.stringify(requestBody)
                 });
                 return await response.json();
             } catch (error) {
@@ -2185,8 +2203,8 @@
             const data = await Promise.race([dataPromise, timeoutPromise]);
 
             if (data.success) {
-                // Renderizar información optimizada
-                renderizarInformacionOcupante(elements, data);
+                // Renderizar información optimizada, pasando también el estado del indicator
+                renderizarInformacionOcupante(elements, data, indicator);
             } else {
                 mostrarErrorCarga(elements, 'No se pudo cargar la información');
             }
@@ -2333,49 +2351,68 @@
         }
 
         // Función para renderizar información del ocupante optimizada
-        function renderizarInformacionOcupante(elements, data) {
+        function renderizarInformacionOcupante(elements, data, indicator) {
+            // Debug: Log de los datos recibidos
+            console.log('Estado del indicator:', indicator?.estado);
+
+            // Verificar si el espacio está disponible PRIMERO, sin importar el tipo_ocupacion
+            const espacioDisponible = indicator && (
+                indicator.estado === 'Disponible' ||
+                indicator.estado === 'disponible' ||
+                indicator.estado === '#059669' ||
+                indicator.estado === '#10b981'
+            );
+
+            // Si el espacio está disponible, forzar renderizado como libre
+            if (espacioDisponible) {
+                console.log('🟢 Espacio disponible - Forzando renderizado libre');
+                renderizarInformacionLibre(elements, data, indicator);
+                return;
+            }
+
+            // Solo si el espacio NO está disponible, mostrar según tipo de ocupación
+            console.log('🔴 Espacio ocupado - Renderizando según tipo');
+
             // Mostrar información según el tipo de ocupación
             if (data.tipo_ocupacion === 'profesor') {
-                renderizarInformacionProfesor(elements, data);
+                console.log('Renderizando como profesor');
+                renderizarInformacionProfesor(elements, data, indicator);
             } else if (data.tipo_ocupacion === 'solicitante') {
-                renderizarInformacionSolicitante(elements, data);
+                console.log('Renderizando como solicitante');
+                renderizarInformacionSolicitante(elements, data, indicator);
             } else if (data.tipo_ocupacion === 'ocupado_sin_info') {
-                renderizarInformacionOcupadoSinInfo(elements, data);
+                console.log('Renderizando como ocupado sin info');
+                renderizarInformacionOcupadoSinInfo(elements, data, indicator);
             } else {
-                renderizarInformacionLibre(elements, data);
+                console.log('Renderizando como libre');
+                renderizarInformacionLibre(elements, data, indicator);
             }
-        }
-
-        // Handler para el botón Desocupar
+        }        // Handler para el botón Desocupar
         document.addEventListener('DOMContentLoaded', function () {
             const btnDesocupar = document.getElementById('btnDesocupar');
             if (btnDesocupar) {
             btnDesocupar.addEventListener('click', async function () {
                 const espacioId = state.currentIndicatorId || null;
-                // Tomar el último RUN mostrado en el modal
-                let run = null;
-                // Busca el RUN en el campo correspondiente del modal
-                //const runEl = document.querySelector('#ocupanteInfo [class*="fa-id-card"] ~ div .text-gray-600, #ocupanteInfo [class*="fa-user-tie"] ~ div .text-gray-800');
+
+                // Obtener información del usuario autenticado (administrador)
+                const administradorRun = '{{ auth()->user()->run ?? "admin" }}';
+
+                // Tomar el último RUN mostrado en el modal (el usuario que ocupa el espacio)
+                let runOcupante = null;
                 const runEl = document.querySelector('#run-ocupante-modal');
                 if (runEl && runEl.value && runEl.value.trim() !== '') {
-                    run = runEl.value.trim();
+                    runOcupante = runEl.value.trim();
                 } else {
-                // Fallback: intenta con el último usuario escaneado
-                    run = 19716146;
+                    // Si no se encuentra el RUN, mostrar error
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'No se encontró información del ocupante del espacio',
+                        icon: 'error',
+                        confirmButtonText: 'Entendido'
+                    });
+                    return;
                 }
-                console.log('Datos enviados al desocupar:', {
-                    run_usuario: run,
-                    id_espacio: espacioId
-                });
-                if (!run) {
-                Swal.fire({
-                    title: 'Error',
-                    text: 'No se encontró RUN para desocupar',
-                    icon: 'error',
-                    confirmButtonText: 'Entendido'
-                });
-                return;
-                }
+
 
                 try {
                 const res = await fetch('/api/devolver-espacio', {
@@ -2384,22 +2421,44 @@
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
-                    body: JSON.stringify({ run_usuario: run, id_espacio: espacioId })
+                    body: JSON.stringify({
+                        run_usuario: runOcupante,
+                        run_administrador: administradorRun,
+                        id_espacio: espacioId,
+                        tipo_desocupacion: 'forzosa'
+                    })
                 });
 
                 const json = await res.json();
                 if (json.success) {
                     Swal.fire({
                     title: 'Espacio desocupado',
-                    text: 'Espacio desocupado correctamente',
+                    text: json.mensaje || 'Espacio desocupado correctamente',
                     icon: 'success',
                     confirmButtonText: 'Aceptar',
                     timer: 1500,
                     timerProgressBar: true,
                     showConfirmButton: false
                     });
+
+                    // Cerrar modal primero
                     cerrarModalEspacio();
-                    await actualizarColoresEspacios();
+
+                    // Forzar actualización inmediata del estado del espacio
+                    const indicatorActual = state.indicators.find(b => b.id === espacioId);
+                    if (indicatorActual) {
+                        indicatorActual.estado = 'libre';
+                        indicatorActual.color = '#10b981'; // Verde para libre
+                    }
+
+                    // Resetear el timestamp para permitir actualización inmediata
+                    state.ultimoCambioLocal = 0;
+
+                    // Actualizar colores del mapa con actualización forzada
+                    await actualizarColoresEspacios(true);
+
+                    // Redibujar los indicadores inmediatamente
+                    drawIndicators();
                 } else {
                     Swal.fire({
                     title: 'Error',
@@ -2422,12 +2481,15 @@
         });
 
         // Función para renderizar información de profesor
-        function renderizarInformacionProfesor(elements, data) {
+        function renderizarInformacionProfesor(elements, data, indicator) {
             const tituloEl = document.getElementById('ocupanteTitulo');
             // Ajustar título según existencia de próxima clase
             if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
 
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
+                // Mostrar el contenedor
+                elements.ocupanteContainer.style.display = 'block';
+
                 elements.ocupanteInfo.innerHTML = `
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="flex items-center">
@@ -2525,7 +2587,7 @@
         }
 
         // Función para renderizar información de solicitante optimizada
-        function renderizarInformacionSolicitante(elements, data) {
+        function renderizarInformacionSolicitante(elements, data, indicator) {
             const tituloEl = document.getElementById('ocupanteTitulo');
             // Ajustar título si no hay próxima clase
             if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
@@ -2533,6 +2595,7 @@
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
                 // Crear HTML optimizado usando template literal
                 const html = `
+                    <input type="hidden" id="run-ocupante-modal" value="${data.run_solicitante || ''}">
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="flex items-center">
                             <i class="mr-3 text-green-500 fas fa-user"></i>
@@ -2616,13 +2679,17 @@
         }
 
         // Función para renderizar información ocupado sin info
-        function renderizarInformacionOcupadoSinInfo(elements, data) {
+        function renderizarInformacionOcupadoSinInfo(elements, data, indicator) {
             const tituloEl = document.getElementById('ocupanteTitulo');
             // Ajustar título según si hay próxima clase
             if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
 
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
+                // Siempre mostrar el contenedor cuando llegamos aquí
+                elements.ocupanteContainer.style.display = 'block';
+
                 elements.ocupanteInfo.innerHTML = `
+                    <input type="hidden" id="run-ocupante-modal" value="${data.run_profesor || data.run_solicitante || ''}">
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="flex items-center">
                             <i class="mr-3 text-gray-500 fas fa-user"></i>
@@ -2686,16 +2753,102 @@
         }
 
         // Función para renderizar información libre
-        function renderizarInformacionLibre(elements, data) {
-            // Si no hay próxima clase, mostrar Último Ocupante si existe información histórica
+        function renderizarInformacionLibre(elements, data, indicator) {
             const tituloEl = document.getElementById('ocupanteTitulo');
+
+            // Determinar si el espacio está realmente disponible según el indicator
+            const espacioDisponible = indicator && (
+                indicator.estado === 'Disponible' ||
+                indicator.estado === 'disponible' ||
+                indicator.estado === '#059669' ||
+                indicator.estado === '#10b981'
+            );
+
+            console.log('Estado del espacio disponible:', espacioDisponible, 'Estado indicator:', indicator?.estado);
+
+            // Si el espacio está disponible, NO mostrar información de ocupante ni botón desocupar
+            if (espacioDisponible) {
+                console.log('🟢 Espacio disponible - Ocultando ocupante, mostrando próxima clase');
+                if (tituloEl) tituloEl.textContent = 'Ocupante Actual';
+
+                // Ocultar completamente el contenedor de ocupante
+                if (elements.ocupanteContainer) {
+                    elements.ocupanteContainer.style.display = 'none';
+                }
+
+                // Ocultar botón desocupar
+                const btnDesocupar = document.getElementById('btnDesocupar');
+                if (btnDesocupar) {
+                    btnDesocupar.classList.add('hidden');
+                }
+
+                // SIEMPRE intentar mostrar próxima clase/reserva si existe
+                if (data.proxima_clase && elements.proximaClaseContainer && elements.proximaClaseInfo) {
+                    console.log('📅 Mostrando próxima clase:', data.proxima_clase);
+                    elements.proximaClaseContainer.style.display = 'block';
+                    elements.proximaClaseInfo.innerHTML = `
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div class="flex items-center">
+                                <i class="mr-3 text-purple-500 fas fa-calendar"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.proxima_clase.asignatura || 'No especificada'}</div>
+                                    <div class="text-sm text-gray-600">Próxima asignatura</div>
+                                </div>
+                            </div>
+                            <div class="flex items-center">
+                                <i class="mr-3 text-purple-500 fas fa-user-tie"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.proxima_clase.profesor || 'No especificado'}</div>
+                                    <div class="text-sm text-gray-600">Próximo profesor</div>
+                                </div>
+                            </div>
+                            ${data.proxima_clase.hora_inicio ? `
+                            <div class="flex items-center">
+                                <i class="mr-3 text-green-500 fas fa-clock"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.proxima_clase.hora_inicio}</div>
+                                    <div class="text-sm text-gray-600">Hora de inicio</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                            ${data.proxima_clase.modulo ? `
+                            <div class="flex items-center">
+                                <i class="mr-3 text-blue-500 fas fa-bookmark"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.proxima_clase.modulo}</div>
+                                    <div class="text-sm text-gray-600">Módulo</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                } else {
+                    // No hay próxima clase - ocultar el contenedor
+                    console.log('❌ No hay próxima clase para mostrar');
+                    if (elements.proximaClaseContainer) {
+                        elements.proximaClaseContainer.style.display = 'none';
+                    }
+                }
+
+                return; // Salir aquí para espacios disponibles
+            }
+
+            // Si llegamos aquí, el espacio NO está disponible, por lo tanto puede mostrar último ocupante
             if (!data.proxima_clase) {
+                // No mostrar información si es solo informativo o no hay datos relevantes
+                const esInformativo = data.tipo_reserva === 'info' ||
+                                    data.estado === 'info' ||
+                                    (!data.run_profesor && !data.run_solicitante && !data.hora_inicio);
+
                 if (tituloEl) tituloEl.textContent = 'Último Ocupante';
-                // Mostrar contenedor si hay datos del último ocupante
-                if (elements.ocupanteContainer && (data.nombre || data.detalles || data.hora_inicio || data.hora_salida || data.run_solicitante)) {
+
+                // Solo mostrar contenedor si hay datos del último ocupante Y no es solo informativo
+                if (elements.ocupanteContainer && !esInformativo &&
+                    (data.nombre || data.detalles || data.hora_inicio || data.hora_salida || data.run_solicitante)) {
                     elements.ocupanteContainer.style.display = 'block';
                     // Reutilizar la plantilla de "ocupado sin info" para mostrar detalles mínimos
                     elements.ocupanteInfo.innerHTML = `
+                        <input type="hidden" id="run-ocupante-modal" value="${data.run_profesor || data.run_solicitante || ''}">
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div class="flex items-center">
                                 <i class="mr-3 text-gray-500 fas fa-user"></i>
@@ -2734,7 +2887,7 @@
                         </div>
                     `;
                 } else {
-                    // No hay datos históricos; ocultar contenedor
+                    // No hay datos históricos válidos; ocultar contenedor
                     if (elements.ocupanteContainer) elements.ocupanteContainer.style.display = 'none';
                     if (tituloEl) tituloEl.textContent = 'Ocupante Actual';
                 }
@@ -2767,11 +2920,10 @@
                 `;
             }
 
+            // Para espacios que no están disponibles, mantener botón oculto por defecto
             const btnDesocupar = document.getElementById('btnDesocupar');
             if (btnDesocupar) btnDesocupar.classList.add('hidden');
-        }
-
-        function cerrarModalEspacio() {
+        }        function cerrarModalEspacio() {
             const modal = document.getElementById('modal-espacio-info');
             if (modal) {
                 modal.classList.add('hidden');
@@ -2800,21 +2952,23 @@
             }, 300);
         }
 
-        async function actualizarColoresEspacios() {
-            // Verificar si ha habido cambios locales recientes
+        async function actualizarColoresEspacios(forzarActualizacion = false) {
+            // Verificar si ha habido cambios locales recientes (salvo si se fuerza)
             const tiempoTranscurrido = Date.now() - (state.ultimoCambioLocal || 0);
-            if (tiempoTranscurrido < 10000) { // 10 segundos
+            if (!forzarActualizacion && tiempoTranscurrido < 10000) { // 10 segundos
                 return;
             }
 
             try {
-                const response = await fetch(`/plano/${mapaId}/bloques`);
+                const response = await fetch(`/plano/${mapaId}/bloques?t=${Date.now()}`); // Cache busting
                 if (!response.ok) {
+                    console.error('Error al obtener bloques actualizados:', response.status);
                     return;
                 }
 
                 const data = await response.json();
                 if (!data.bloques || !Array.isArray(data.bloques)) {
+                    console.error('Respuesta de bloques inválida:', data);
                     return;
                 }
 
@@ -2823,7 +2977,9 @@
                 data.bloques.forEach(nuevoBloque => {
                     const bloqueExistente = state.indicators.find(b => b.id === nuevoBloque.id);
                     if (bloqueExistente && bloqueExistente.estado !== nuevoBloque.estado) {
+                        console.log(`Actualizando espacio ${nuevoBloque.id}: ${bloqueExistente.estado} → ${nuevoBloque.estado}`);
                         bloqueExistente.estado = nuevoBloque.estado;
+                        bloqueExistente.color = nuevoBloque.color || bloqueExistente.color;
                         cambiosDetectados.push({
                             id: nuevoBloque.id,
                             estadoAnterior: bloqueExistente.estado,
@@ -2832,7 +2988,7 @@
                     }
                 });
 
-                if (cambiosDetectados.length > 0) {
+                if (cambiosDetectados.length > 0 || forzarActualizacion) {
                     state.originalCoordinates = state.indicators.map(i => ({ ...i }));
                     drawIndicators();
                 }
@@ -2984,6 +3140,36 @@
                 }
             });
 
+            // Configurar validación en tiempo real para el teléfono
+            const campoTelefono = document.getElementById('telefono-solicitante');
+            if (campoTelefono) {
+                campoTelefono.addEventListener('input', function(e) {
+                    // Permitir solo números
+                    e.target.value = e.target.value.replace(/[^0-9]/g, '');
+
+                    // Validar longitud y mostrar feedback visual
+                    const valor = e.target.value;
+                    const esValido = /^[0-9]{8,9}$/.test(valor);
+
+                    if (valor.length > 0 && !esValido) {
+                        e.target.classList.add('border-red-500');
+                        e.target.classList.remove('border-gray-300');
+                    } else {
+                        e.target.classList.remove('border-red-500');
+                        e.target.classList.add('border-gray-300');
+                    }
+                });
+
+                // Validación al perder el foco
+                campoTelefono.addEventListener('blur', function(e) {
+                    const valor = e.target.value;
+                    if (valor.length > 0 && !/^[0-9]{8,9}$/.test(valor)) {
+                        e.target.classList.add('border-red-500');
+                        // Opcional: mostrar mensaje de error
+                    }
+                });
+            }
+
             // Configurar event listener específico para el select de tipo solicitante
             const selectTipoSolicitante = document.getElementById('tipo-solicitante');
             if (selectTipoSolicitante) {
@@ -3028,7 +3214,6 @@
         async function procesarRegistroSolicitante(event) {
             event.preventDefault();
 
-
             const formData = new FormData(event.target);
             const datosSolicitante = {
                 run_solicitante: runSolicitantePendiente,
@@ -3038,12 +3223,23 @@
                 tipo_solicitante: formData.get('tipo_solicitante')
             };
 
-
             // Validación básica
             if (!datosSolicitante.nombre || !datosSolicitante.correo || !datosSolicitante.telefono || !datosSolicitante.tipo_solicitante) {
                 Swal.fire({
                     title: 'Error de Validación',
                     text: 'Por favor, complete todos los campos requeridos.',
+                    icon: 'error',
+                    confirmButtonText: 'Entendido'
+                });
+                return;
+            }
+
+            // Validación adicional del teléfono
+            const telefonoPattern = /^[0-9]{8,9}$/;
+            if (!telefonoPattern.test(datosSolicitante.telefono)) {
+                Swal.fire({
+                    title: 'Teléfono Inválido',
+                    text: 'Por favor, ingrese un número de teléfono válido (8-9 dígitos, sin el +56).',
                     icon: 'error',
                     confirmButtonText: 'Entendido'
                 });
@@ -3099,6 +3295,9 @@
                         text: mensajeError,
                         icon: 'error',
                         confirmButtonText: 'Intentar Nuevamente'
+                    }).then(() => {
+                        // Cerrar modal también en caso de error
+                        cerrarModalRegistroSolicitante();
                     });
                 }
             } catch (error) {
@@ -3109,6 +3308,9 @@
                     text: 'Ocurrió un error al comunicarse con el servidor. Verifique su conexión e intente nuevamente.',
                     icon: 'error',
                     confirmButtonText: 'Reintentar'
+                }).then(() => {
+                    // Cerrar modal también en caso de error de conexión
+                    cerrarModalRegistroSolicitante();
                 });
             }
         }
@@ -3120,6 +3322,17 @@
             window.dispatchEvent(new CustomEvent('close-modal', {
                 detail: 'registro-solicitante'
             }));
+
+            // Método adicional: Forzar cierre si el evento no funciona
+            setTimeout(() => {
+                const modalElement = document.querySelector('[x-data*="modalComponent"]');
+                if (modalElement && modalElement._x_dataStack) {
+                    const alpineData = modalElement._x_dataStack[0];
+                    if (alpineData && typeof alpineData.show !== 'undefined') {
+                        alpineData.show = false;
+                    }
+                }
+            }, 100);
 
             // Restaurar el input QR activo usando el gestor
             setTimeout(() => {
@@ -3139,6 +3352,17 @@
             window.dispatchEvent(new CustomEvent('close-modal', {
                 detail: 'registro-solicitante'
             }));
+
+            // Método adicional: Forzar cierre si el evento no funciona
+            setTimeout(() => {
+                const modalElement = document.querySelector('[x-data*="modalComponent"]');
+                if (modalElement && modalElement._x_dataStack) {
+                    const alpineData = modalElement._x_dataStack[0];
+                    if (alpineData && typeof alpineData.show !== 'undefined') {
+                        alpineData.show = false;
+                    }
+                }
+            }, 100);
 
             // Restaurar el input QR activo usando el gestor
             setTimeout(() => {
@@ -3203,9 +3427,10 @@
                 });
                 const diaActual = obtenerDiaActual();
 
-                // Enviando parámetros al servidor
+                // Enviando parámetros al servidor, incluyendo información sobre si estamos en break
+                const moduloParaReserva = obtenerModuloParaReserva(horaActual);
                 const response = await fetch(
-                    `/api/espacio/${idEspacio}/modulos-disponibles?hora_actual=${horaActual}&dia_actual=${diaActual}`
+                    `/api/espacio/${idEspacio}/modulos-disponibles?hora_actual=${horaActual}&dia_actual=${diaActual}&modulo_solicitado=${moduloParaReserva}&permitir_breaks=true`
                 );
 
                 if (response.ok) {
@@ -3352,16 +3577,27 @@
             // Preparar datos para la petición según el tipo de usuario
             let requestBody = {};
 
+            // Obtener el módulo para la reserva (incluso durante breaks)
+            const ahora = new Date();
+            const horaActual = ahora.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            const moduloParaReserva = obtenerModuloParaReserva(horaActual);
+
             if (tipoUsuario === 'profesor') {
                 requestBody = {
                     run_profesor: runParaReserva,
-                    id_espacio: espacioParaReserva
+                    id_espacio: espacioParaReserva,
+                    modulo_solicitado: moduloParaReserva
                 };
             } else {
                 requestBody = {
                     run_solicitante: runParaReserva,
                     id_espacio: espacioParaReserva,
-                    modulos: cantidad
+                    modulos: cantidad,
+                    modulo_inicio: moduloParaReserva
                 };
             }
 
@@ -3462,7 +3698,40 @@
                     return parseInt(modulo);
                 }
             }
+
+            // Si no estamos en ningún módulo, buscar el siguiente módulo disponible
+            // Esto permite hacer reservas durante los breaks
+            for (const [modulo, horario] of Object.entries(horariosDia)) {
+                if (hora < horario.inicio) {
+                    return parseInt(modulo); // Retornar el siguiente módulo
+                }
+            }
+
             return null;
+        }
+
+        function obtenerModuloParaReserva(hora) {
+            const diaActual = obtenerDiaActual();
+            const horariosDia = horariosModulos[diaActual];
+
+            if (!horariosDia) return null;
+
+            // Primero verificar si estamos en un módulo activo
+            for (const [modulo, horario] of Object.entries(horariosDia)) {
+                if (hora >= horario.inicio && hora < horario.fin) {
+                    return parseInt(modulo);
+                }
+            }
+
+            // Si estamos en break, buscar el siguiente módulo
+            for (const [modulo, horario] of Object.entries(horariosDia)) {
+                if (hora < horario.inicio) {
+                    return parseInt(modulo);
+                }
+            }
+
+            // Si es después del último módulo del día, permitir reserva para el primer módulo del día siguiente
+            return 1;
         }
 
         function actualizarHora() {
@@ -3493,6 +3762,7 @@
 
             // Determinar el módulo actual
             const moduloActual = moduloActualNum(horaActual);
+            const moduloParaReserva = obtenerModuloParaReserva(horaActual);
             const moduloActualElement = document.getElementById('modulo-actual');
             const moduloHorarioElement = document.getElementById('horario-actual');
 
@@ -3507,8 +3777,17 @@
                 const horarioTexto = `${formatearHora(horarioModulo.inicio)} - ${formatearHora(horarioModulo.fin)}`;
                 moduloHorarioElement.textContent = horarioTexto;
             } else {
-                if (moduloActualElement) moduloActualElement.textContent = 'No hay módulo programado';
-                if (moduloHorarioElement) moduloHorarioElement.textContent = '-';
+                // Estamos en un break entre módulos
+                if (moduloActualElement) {
+                    if (moduloParaReserva) {
+                        moduloActualElement.textContent = `Break (Próximo: ${moduloParaReserva})`;
+                    } else {
+                        moduloActualElement.textContent = 'Break entre módulos';
+                    }
+                }
+                if (moduloHorarioElement) {
+                    moduloHorarioElement.textContent = 'Reservas disponibles';
+                }
             }
 
                     // Actualizar colores de los indicadores desde el servidor
@@ -3522,12 +3801,21 @@
             const modalEspacio = document.getElementById('modal-espacio-info');
             if (modalEspacio && !modalEspacio.classList.contains('hidden')) {
                 cerrarModalEspacio();
+                return;
             }
 
             // Cerrar modal de módulos si está abierto
             const modalModulos = document.getElementById('modal-seleccionar-modulos');
             if (modalModulos && !modalModulos.classList.contains('hidden')) {
                 cerrarModalModulos();
+                return;
+            }
+
+            // Cerrar modal de registro de solicitante si está abierto
+            const modalRegistro = document.querySelector('[data-modal="registro-solicitante"]');
+            if (modalRegistro && !modalRegistro.classList.contains('hidden')) {
+                cerrarModalRegistroSolicitante();
+                return;
             }
 
             // Cerrar modales de Livewire si están abiertos

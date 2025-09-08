@@ -13,16 +13,22 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
-        
+
         // Actualizar estados de espacios cada 5 minutos
         $schedule->command('espacios:actualizar-estado')
                 ->everyFiveMinutes()
                 ->withoutOverlapping()
                 ->runInBackground();
-        
+
         // Limpiar sesiones expiradas cada hora
         $schedule->command('sessions:clean')
                 ->hourly()
+                ->withoutOverlapping()
+                ->runInBackground();
+
+        // Liberar todos los espacios a las 12 de la noche para el día siguiente
+        $schedule->command('espacios:liberar')
+                ->dailyAt('00:00')
                 ->withoutOverlapping()
                 ->runInBackground();
     }

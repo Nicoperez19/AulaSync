@@ -28,7 +28,7 @@ class EspacioController extends Controller
     {
         $espacios = Espacio::with('piso.facultad')->get();
         $universidades = Universidad::all();
-    
+
         return view('layouts.spaces.spaces_index', compact('espacios', 'universidades'));
     }
 
@@ -38,7 +38,7 @@ class EspacioController extends Controller
     public function store(Request $request)
     {
         Log::info('Datos recibidos:', $request->all());
-    
+
         try {
             $validated = $request->validate([
                 'id_espacio' => 'required|string|max:50|unique:espacios,id_espacio',
@@ -50,7 +50,7 @@ class EspacioController extends Controller
                 'estado' => 'required|in:Disponible,Ocupado,Reservado',
                 'puestos_disponibles' => 'nullable|integer|min:1',
             ]);
-    
+
             $espacio = Espacio::create([
                 'id_espacio' => $validated['id_espacio'],
                 'nombre_espacio' => $validated['nombre_espacio'],
@@ -59,17 +59,17 @@ class EspacioController extends Controller
                 'estado' => $validated['estado'],
                 'puestos_disponibles' => $validated['puestos_disponibles'],
             ]);
-    
+
             return redirect()
                 ->route('spaces_index')
                 ->with('success', 'Espacio creado exitosamente.');
-            
+
         } catch (\Exception $e) {
             Log::error('Error al crear espacio:', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return redirect()
                 ->back()
                 ->withInput()
@@ -110,7 +110,7 @@ class EspacioController extends Controller
                 'estado' => 'required|in:Disponible,Ocupado,Reservado',
                 'puestos_disponibles' => 'nullable|integer|min:1',
             ]);
-    
+
             $espacio = Espacio::where('id_espacio', $id_espacio)->firstOrFail();
             $espacio->update([
                 'id_espacio' => $validated['id_espacio'],
@@ -120,17 +120,17 @@ class EspacioController extends Controller
                 'estado' => $validated['estado'],
                 'puestos_disponibles' => $validated['puestos_disponibles'],
             ]);
-    
+
             return redirect()
                 ->route('spaces_index')
                 ->with('success', 'Espacio actualizado correctamente.');
-                
+
         } catch (\Exception $e) {
             Log::error('Error al actualizar espacio:', [
                 'error' => $e->getMessage(),
                 'espacio_id' => $id_espacio
             ]);
-            
+
             return redirect()
                 ->route('spaces_index')
                 ->with('error', 'Error al actualizar el espacio: ' . $e->getMessage());
@@ -149,13 +149,13 @@ class EspacioController extends Controller
             return redirect()
                 ->route('spaces_index')
                 ->with('success', 'Espacio eliminado correctamente.');
-                
+
         } catch (\Exception $e) {
             Log::error('Error al eliminar espacio:', [
                 'error' => $e->getMessage(),
                 'espacio_id' => $id_espacio
             ]);
-            
+
             return redirect()
                 ->route('spaces_index')
                 ->with('error', 'Error al eliminar el espacio: ' . $e->getMessage());
@@ -229,43 +229,43 @@ class EspacioController extends Controller
         // Obtener día y módulo actual
         $horaActual = $request->input('hora_actual', now()->format('H:i:s'));
         $diaActual = $request->input('dia_actual', strtolower(now()->locale('es')->isoFormat('dddd')));
-        
+
         // Log para debugging
         Log::info('modulosDisponibles - Parámetros recibidos:', [
             'espacioId' => $espacioId,
             'horaActual' => $horaActual,
             'diaActual' => $diaActual
         ]);
-        
+
         // Mapeo de días a códigos
         $codigosDias = [
             'lunes' => 'LU',
-            'martes' => 'MA', 
+            'martes' => 'MA',
             'miercoles' => 'MI',
             'jueves' => 'JU',
             'viernes' => 'VI',
             'sabado' => 'SA',
             'domingo' => 'DO'
         ];
-        
+
         $codigoDia = $codigosDias[$diaActual] ?? 'LU';
-        
+
         // Determinar el módulo actual según la hora
         $moduloActual = $this->determinarModuloActual($horaActual, $diaActual);
-        
+
         // Log para debugging del módulo actual
         Log::info('modulosDisponibles - Módulo actual determinado:', [
             'moduloActual' => $moduloActual,
             'horaActual' => $horaActual,
             'diaActual' => $diaActual
         ]);
-        
+
         if (!$moduloActual) {
             Log::warning('modulosDisponibles - No se pudo determinar el módulo actual', [
                 'horaActual' => $horaActual,
                 'diaActual' => $diaActual
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'mensaje' => 'No hay módulo actual disponible.',
@@ -277,51 +277,51 @@ class EspacioController extends Controller
                 ]
             ]);
         }
-        
+
         // Obtener todas las planificaciones para este espacio en este día
         $planificaciones = Planificacion_Asignatura::where('id_espacio', $espacioId)
             ->where('id_modulo', 'like', $codigoDia . '.%')
             ->pluck('id_modulo')
             ->toArray();
-        
+
         // Obtener reservas activas para este espacio en este día
         $fechaActual = now()->toDateString();
         $reservasActivas = Reserva::where('id_espacio', $espacioId)
             ->where('fecha_reserva', $fechaActual)
             ->where('estado', 'activa')
             ->get();
-        
+
         // Crear array de módulos ocupados por reservas
         $modulosOcupadosPorReservas = [];
         foreach ($reservasActivas as $reserva) {
             $horaInicio = $reserva->hora;
             $horaFin = $reserva->hora_salida;
-            
+
             // Determinar qué módulos cubre esta reserva
             for ($i = 1; $i <= 15; $i++) {
                 $moduloCodigo = $codigoDia . '.' . $i;
                 $horarioModulo = $this->obtenerHorarioModulo($i, $diaActual);
-                
-                if ($horarioModulo && 
-                    $horaInicio <= $horarioModulo['fin'] && 
+
+                if ($horarioModulo &&
+                    $horaInicio <= $horarioModulo['fin'] &&
                     $horaFin >= $horarioModulo['inicio']) {
                     $modulosOcupadosPorReservas[] = $moduloCodigo;
                 }
             }
         }
-        
+
         // Combinar planificaciones y reservas activas
         $modulosOcupados = array_merge($planificaciones, $modulosOcupadosPorReservas);
         $modulosOcupados = array_unique($modulosOcupados);
-        
+
         // Contar módulos consecutivos disponibles desde el módulo actual
         $maxModulos = 0;
         $modulosDisponibles = [];
         $proximaClase = null;
-        
+
         for ($i = $moduloActual; $i <= 15; $i++) {
             $moduloCodigo = $codigoDia . '.' . $i;
-            
+
             // Si existe planificación o reserva para este módulo, terminar
             if (in_array($moduloCodigo, $modulosOcupados)) {
                 // Encontrar información de la próxima clase
@@ -330,11 +330,11 @@ class EspacioController extends Controller
                 }
                 break;
             }
-            
+
             $modulosDisponibles[] = $i;
             $maxModulos++;
         }
-        
+
         // Verificar si hay clases próximas (dentro de 2 módulos)
         $clasesProximas = [];
         for ($i = $moduloActual + $maxModulos; $i <= min(15, $moduloActual + $maxModulos + 2); $i++) {
@@ -343,7 +343,7 @@ class EspacioController extends Controller
                 $clasesProximas[] = $this->obtenerInfoProximaClase($moduloCodigo, $espacioId);
             }
         }
-        
+
         // Construir detalle por módulo con horario inicio/fin
         $modulosDetalle = [];
         foreach ($modulosDisponibles as $m) {
@@ -370,7 +370,7 @@ class EspacioController extends Controller
                 'modulos_ocupados' => count($modulosOcupados)
             ]
         ]);
-        
+
         // Log final para debugging
         Log::info('modulosDisponibles - Respuesta enviada:', [
             'success' => true,
@@ -380,7 +380,7 @@ class EspacioController extends Controller
             'modulos_disponibles_count' => count($modulosDisponibles)
         ]);
     }
-    
+
     /**
      * Determina el módulo actual según la hora y día
      */
@@ -391,7 +391,7 @@ class EspacioController extends Controller
             'horaActual' => $horaActual,
             'diaActual' => $diaActual
         ]);
-        
+
         // Definir horarios de módulos (mismo formato que en el frontend)
         $horariosModulos = [
             'lunes' => [
@@ -480,22 +480,22 @@ class EspacioController extends Controller
                 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
             ]
         ];
-        
+
         $horariosDia = $horariosModulos[$diaActual] ?? null;
-        
+
         // Log para debugging de horarios del día
         Log::info('determinarModuloActual - Horarios del día:', [
             'diaActual' => $diaActual,
             'horariosDia' => $horariosDia ? 'encontrado' : 'no encontrado'
         ]);
-        
+
         if (!$horariosDia) {
             Log::warning('determinarModuloActual - No se encontraron horarios para el día:', [
                 'diaActual' => $diaActual
             ]);
             return null;
         }
-        
+
         // Buscar en qué módulo estamos según la hora actual
         foreach ($horariosDia as $modulo => $horario) {
             if ($horaActual >= $horario['inicio'] && $horaActual < $horario['fin']) {
@@ -508,15 +508,28 @@ class EspacioController extends Controller
                 return $modulo;
             }
         }
-        
+
+        // Si no estamos en ningún módulo (break), buscar el siguiente módulo disponible
+        // Esto permite hacer reservas durante los breaks
+        foreach ($horariosDia as $modulo => $horario) {
+            if ($horaActual < $horario['inicio']) {
+                Log::info('determinarModuloActual - Módulo encontrado durante break:', [
+                    'modulo' => $modulo,
+                    'horaActual' => $horaActual,
+                    'proximoHorarioInicio' => $horario['inicio']
+                ]);
+                return $modulo; // Retornar el siguiente módulo
+            }
+        }
+
         Log::warning('determinarModuloActual - No se encontró módulo para la hora:', [
             'horaActual' => $horaActual,
             'diaActual' => $diaActual
         ]);
-        
+
         return null;
     }
-    
+
     /**
      * Obtiene el horario de un módulo específico
      */
@@ -609,10 +622,10 @@ class EspacioController extends Controller
                 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
             ]
         ];
-        
+
         return $horariosModulos[$diaActual][$modulo] ?? null;
     }
-    
+
     /**
      * Obtiene información de la próxima clase programada
      */
@@ -622,7 +635,7 @@ class EspacioController extends Controller
             ->where('id_espacio', $espacioId)
             ->where('id_modulo', $moduloCodigo)
             ->first();
-            
+
         if ($planificacion) {
             return [
                 'modulo' => $moduloCodigo,
@@ -633,7 +646,7 @@ class EspacioController extends Controller
                 'hora_termino' => $planificacion->modulo->hora_termino ?? ''
             ];
         }
-        
+
         return null;
     }
 
@@ -645,15 +658,15 @@ class EspacioController extends Controller
         try {
             $espacio = Espacio::where('id_espacio', $id_espacio)->firstOrFail();
             $qrService = new QRService();
-            
+
             // Generar el código QR
             $qrPath = $qrService->generateQRForEspacio($espacio->id_espacio);
-            
+
             // Verificar si el archivo existe
             if (!Storage::disk('public')->exists($qrPath)) {
                 return redirect()->back()->with('error', 'No se pudo generar el código QR.');
             }
-            
+
             // Descargar el archivo usando response()->download con la ruta completa
             // Asumir storage/app/public como disco 'public'
             $fullPath = storage_path('app/public/' . ltrim($qrPath, '/'));
@@ -661,13 +674,13 @@ class EspacioController extends Controller
                 return response()->download($fullPath, 'QR_' . $espacio->id_espacio . '.png');
             }
             return redirect()->back()->with('error', 'No se pudo encontrar el archivo QR generado.');
-            
+
         } catch (\Exception $e) {
             Log::error('Error al descargar QR individual:', [
                 'error' => $e->getMessage(),
                 'espacio_id' => $id_espacio
             ]);
-            
+
             return redirect()->back()->with('error', 'Error al descargar el código QR: ' . $e->getMessage());
         }
     }
@@ -680,42 +693,42 @@ class EspacioController extends Controller
         try {
             $espacios = Espacio::all();
             $qrService = new QRService();
-            
+
             // Crear archivo ZIP temporal
             $zipName = 'QRs_Espacios_' . date('Y-m-d_H-i-s') . '.zip';
             $zipPath = storage_path('app/temp/' . $zipName);
-            
+
             // Crear directorio temporal si no existe
             if (!file_exists(storage_path('app/temp'))) {
                 mkdir(storage_path('app/temp'), 0755, true);
             }
-            
+
             $zip = new ZipArchive();
             if ($zip->open($zipPath, ZipArchive::CREATE) !== TRUE) {
                 return redirect()->back()->with('error', 'No se pudo crear el archivo ZIP.');
             }
-            
+
             foreach ($espacios as $espacio) {
                 // Generar QR para cada espacio
                 $qrPath = $qrService->generateQRForEspacio($espacio->id_espacio);
-                
+
                 // Verificar si el archivo existe
                 if (Storage::disk('public')->exists($qrPath)) {
                     $qrContent = Storage::disk('public')->get($qrPath);
                     $zip->addFromString('QR_' . $espacio->id_espacio . '.png', $qrContent);
                 }
             }
-            
+
             $zip->close();
-            
+
             // Descargar el archivo ZIP
             return response()->download($zipPath, $zipName)->deleteFileAfterSend();
-            
+
         } catch (\Exception $e) {
             Log::error('Error al descargar QRs en ZIP:', [
                 'error' => $e->getMessage()
             ]);
-            
+
             return redirect()->back()->with('error', 'Error al generar el archivo ZIP: ' . $e->getMessage());
         }
     }
@@ -727,7 +740,7 @@ class EspacioController extends Controller
     {
         try {
             $codigoDia = $request->input('codigo_dia', 'LU');
-            
+
             // Obtener las asignaturas del profesor para el día especificado
             $asignaturas = Planificacion_Asignatura::with(['asignatura', 'modulo'])
                 ->whereHas('asignatura', function($query) use ($runProfesor) {
@@ -744,19 +757,19 @@ class EspacioController extends Controller
                         'hora_termino' => $planificacion->modulo->hora_termino ?? ''
                     ];
                 });
-            
+
             return response()->json([
                 'success' => true,
                 'asignaturas' => $asignaturas,
                 'total' => $asignaturas->count()
             ]);
-            
+
         } catch (\Exception $e) {
             Log::error('Error al obtener asignaturas del profesor:', [
                 'run_profesor' => $runProfesor,
                 'error' => $e->getMessage()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'mensaje' => 'Error al obtener las asignaturas del profesor',
@@ -770,23 +783,23 @@ class EspacioController extends Controller
         try {
             // Cache key para este espacio
             $cacheKey = "espacio_info_{$idEspacio}";
-            
+
             // Verificar cache (válido por 30 segundos)
             if (cache()->has($cacheKey)) {
                 $cachedData = cache()->get($cacheKey);
                 $cacheTime = cache()->get("{$cacheKey}_time", 0);
-                
+
                 if ((time() - $cacheTime) < 30) {
                     Log::info("Retornando información desde cache para espacio: {$idEspacio}");
                     return response()->json($cachedData);
                 }
             }
-            
+
             Log::info("Obteniendo información detallada para espacio: {$idEspacio}");
-            
+
             // Buscar el espacio con eager loading
             $espacio = Espacio::where('id_espacio', $idEspacio)->first();
-            
+
             if (!$espacio) {
                 Log::warning("Espacio no encontrado: {$idEspacio}");
                 return response()->json([
@@ -794,10 +807,10 @@ class EspacioController extends Controller
                     'mensaje' => 'Espacio no encontrado'
                 ], 404);
             }
-            
+
             $horaActual = now()->format('H:i:s');
             $fechaActual = now()->format('Y-m-d');
-            
+
             // Preparar respuesta base
             $response = [
                 'success' => true,
@@ -810,11 +823,11 @@ class EspacioController extends Controller
                 'detalles' => null,
                 'proxima_clase' => null
             ];
-            
+
             // Si el espacio está ocupado, revisar tabla Reservas con consulta optimizada
             if (in_array($espacio->estado, ['Ocupado', 'ocupado', '#FF0000'])) {
                 Log::info("Espacio ocupado, revisando tabla Reservas");
-                
+
                 // Consulta optimizada para reserva activa
                 $reservaActiva = Reserva::select('id_reserva', 'run_profesor', 'run_solicitante', 'hora', 'hora_salida', 'estado', 'tipo_reserva')
                     ->where('id_espacio', $idEspacio)
@@ -826,10 +839,10 @@ class EspacioController extends Controller
                     })
                     ->where('estado', 'activa')
                     ->first();
-                
+
                 if ($reservaActiva) {
                     Log::info("Reserva activa encontrada", ['reserva_id' => $reservaActiva->id_reserva]);
-                    
+
                     // Determinar tipo de usuario y obtener información
                     if ($reservaActiva->run_profesor) {
                         $response = $this->obtenerInformacionProfesor($reservaActiva, $horaActual);
@@ -852,7 +865,7 @@ class EspacioController extends Controller
                         ->where('id_espacio', $idEspacio)
                         ->where('fecha_reserva', $fechaActual)
                         ->first();
-                    
+
                     if ($reservaCualquiera) {
                         $response = [
                             'success' => true,
@@ -871,19 +884,19 @@ class EspacioController extends Controller
                 // Espacio libre, buscar próxima clase
                 $response['proxima_clase'] = $this->obtenerProximaClase($idEspacio, $horaActual);
             }
-            
+
             // Guardar en cache
             cache()->put($cacheKey, $response, 30);
             cache()->put("{$cacheKey}_time", time(), 30);
-            
+
             return response()->json($response);
-            
+
         } catch (\Exception $e) {
             Log::error("Error al obtener información del espacio {$idEspacio}:", [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             return response()->json([
                 'success' => false,
                 'mensaje' => 'Error interno del servidor'
@@ -897,12 +910,12 @@ class EspacioController extends Controller
     private function obtenerInformacionProfesor($reserva, $horaActual)
     {
         $runProfesor = $reserva->run_profesor;
-        
+
         // Consulta optimizada para profesor desde la tabla profesors
         $profesor = Profesor::select('name', 'run_profesor')
             ->where('run_profesor', $runProfesor)
             ->first();
-        
+
         if (!$profesor) {
             return [
                 'success' => true,
@@ -914,7 +927,7 @@ class EspacioController extends Controller
                 'hora_salida' => $reserva->hora_salida
             ];
         }
-        
+
         // Buscar planificación actual utilizando la relación 'modulo'
         $diaActual = strtolower(now()->format('l'));
         $codigosDias = [
@@ -939,7 +952,7 @@ class EspacioController extends Controller
         });
 
         $asignatura = $planificacion ? $planificacion->asignatura->nombre_asignatura : null;
-        
+
         return [
             'success' => true,
             'tipo_ocupacion' => 'profesor',
@@ -958,10 +971,10 @@ class EspacioController extends Controller
     private function obtenerInformacionSolicitante($reserva)
     {
         $runSolicitante = $reserva->run_solicitante;
-        
+
         // Usar el método optimizado del modelo Solicitante
         $solicitante = Solicitante::buscarActivoPorRun($runSolicitante);
-        
+
         if (!$solicitante) {
             return [
                 'success' => true,
@@ -973,7 +986,7 @@ class EspacioController extends Controller
                 'hora_salida' => $reserva->hora_salida
             ];
         }
-        
+
         return $this->construirRespuestaSolicitante($solicitante, $reserva);
     }
 
@@ -1005,11 +1018,11 @@ class EspacioController extends Controller
     {
         $diaActual = strtolower(now()->format('l'));
         $codigosDias = [
-            'monday' => 'LU', 'tuesday' => 'MA', 'wednesday' => 'MI', 
+            'monday' => 'LU', 'tuesday' => 'MA', 'wednesday' => 'MI',
             'thursday' => 'JU', 'friday' => 'VI', 'saturday' => 'SA', 'sunday' => 'DO'
         ];
         $codigoDia = $codigosDias[$diaActual] ?? 'LU';
-        
+
     // Cargar planificaciones del espacio para el día (filtrando por id_modulo que comienza con el código de día)
     // Incluir relación profesor en la asignatura para poder mostrar nombre y run correctamente
     $planificaciones = Planificacion_Asignatura::with(['modulo', 'asignatura.profesor'])
