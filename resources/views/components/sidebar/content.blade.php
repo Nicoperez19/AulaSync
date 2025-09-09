@@ -63,6 +63,16 @@
         </x-sidebar.link>
     @endcan
 
+    <!-- Acciones Rápidas - Solo Administrador y Supervisor -->
+    @can('admin panel')
+        <x-sidebar.link title="Acciones Rápidas" href="{{ route('quick-actions.index') }}"
+            :isActive="request()->routeIs('quick-actions.*')">
+            <x-slot name="icon">
+                <x-icons.config class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
+            </x-slot>
+        </x-sidebar.link>
+    @endcan
+
     <!-- Reportería - Solo Administrador y Supervisor -->
     @can('reportes')
         <x-sidebar.dropdown title="Reportes" :active="Str::startsWith(request()->route()->uri(), 'reportes')">
@@ -107,10 +117,12 @@
                     :isActive="request()->routeIs('careers.index')" />
             @endcan
 
+            {{-- Comentado porque está disponible en Acciones Rápidas
             @can('mantenedor de espacios')
                 <x-sidebar.sublink title="Espacios" href="{{ route('spaces_index') }}"
                     :isActive="request()->routeIs('espacios.index')" />
             @endcan
+            --}}
 
             @can('mantenedor de facultades')
                 <x-sidebar.sublink title="Facultades" href="{{ route('faculties.index') }}"
@@ -137,10 +149,12 @@
                     :isActive="request()->routeIs('professors.index')" />
             @endcan
 
+            {{-- Comentado porque está disponible en Acciones Rápidas
             @can('mantenedor de reservas')
                 <x-sidebar.sublink title="Reservas" href="{{ route('reservas.index') }}"
                     :isActive="request()->routeIs('reservas.index')" />
             @endcan
+            --}}
 
             @can('mantenedor de roles')
                 <x-sidebar.sublink title="Roles" href="{{ route('roles.index') }}"

@@ -99,6 +99,59 @@
         </div>
     </div>
 
+    <!-- Widget de Acciones Rápidas -->
+    @can('admin panel')
+    <div class="px-8 mt-8">
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="text-lg font-bold text-gray-700 flex items-center">
+                    <i class="fas fa-bolt mr-2 text-blue-600"></i>
+                    Acciones Rápidas
+                </h4>
+                <a href="{{ route('quick-actions.index') }}" 
+                   class="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center">
+                    Ver todas
+                    <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <a href="{{ route('quick-actions.crear-reserva') }}" 
+                   class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors border border-green-200">
+                    <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-plus text-white"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900">Crear Reserva</p>
+                        <p class="text-sm text-gray-600">Nueva reserva rápida</p>
+                    </div>
+                </a>
+                
+                <a href="{{ route('quick-actions.gestionar-reservas') }}" 
+                   class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
+                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-calendar-check text-white"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900">Gestionar Reservas</p>
+                        <p class="text-sm text-gray-600">Administrar estados</p>
+                    </div>
+                </a>
+                
+                <a href="{{ route('quick-actions.gestionar-espacios') }}" 
+                   class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors border border-purple-200">
+                    <div class="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-building text-white"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900">Gestionar Espacios</p>
+                        <p class="text-sm text-gray-600">Estados de espacios</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+    @endcan
+
     <div class="flex flex-col w-full gap-8 p-8 md:p-8 md:flex-row">
         <div class="flex flex-col flex-1 gap-6">
             <div class="p-4 bg-white rounded-lg shadow-md md:p-6 dark:bg-gray-800">

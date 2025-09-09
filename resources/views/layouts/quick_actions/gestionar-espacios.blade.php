@@ -9,18 +9,21 @@
         <div class="p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Gestión de Espacios</h1>
+                    <h1 class="text-2xl font-bold text-gray-900 flex items-center">
+                        <i class="fas fa-building mr-3 text-purple-600"></i>
+                        Gestión de Espacios
+                    </h1>
                     <p class="text-gray-600 mt-1">Administrar estados y disponibilidad de espacios</p>
                 </div>
                 <div class="flex gap-3">
                     <a href="{{ route('quick-actions.crear-reserva') }}" 
                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                        <i class="fa-solid fa-plus w-4 h-4 mr-2"></i>
+                        <i class="fas fa-plus mr-2"></i>
                         Nueva Reserva
                     </a>
                     <a href="{{ route('quick-actions.index') }}" 
                        class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
-                        <i class="fa-solid fa-arrow-left w-4 h-4 mr-2"></i>
+                        <i class="fas fa-arrow-left mr-2"></i>
                         Volver
                     </a>
                 </div>
@@ -196,6 +199,7 @@
 </div>
 
 @push('scripts')
+<script src="{{ asset('js/admin-panel.js') }}"></script>
 <script>
 // Variables específicas para gestión de espacios
 let espaciosOriginales = [];
@@ -220,13 +224,13 @@ async function cargarEspacios() {
             </tr>
         `;
 
-        const response = await fetch('/api/admin/espacios');
+        const response = await fetch('{{ route("quick-actions.api.espacios") }}');
         const data = await response.json();
 
-        if (data.success && data.espacios) {
-            espaciosOriginales = data.espacios;
-            mostrarEspaciosEnTabla(data.espacios);
-            actualizarEstadisticasEspacios(data.espacios);
+        if (data.success && data.data) {
+            espaciosOriginales = data.data;
+            mostrarEspaciosEnTabla(data.data);
+            actualizarEstadisticasEspacios(data.data);
         } else {
             tbody.innerHTML = `
                 <tr>
@@ -249,7 +253,7 @@ async function cargarEspacios() {
                     <div class="flex flex-col items-center">
                         <!-- <x-heroicon-o-x-circle class="w-12 h-12 text-red-300 mb-4" /> -->
                         <i class="fa-solid fa-circle-xmark text-6xl text-red-300 mb-4"></i>
-                        <p>Error al cargar espacios</p>
+                        <p>Error al cargar espacios: ${error.message}</p>
                     </div>
                 </td>
             </tr>
@@ -384,7 +388,7 @@ async function cambiarEstadoEspacio(codigoEspacio, nuevoEstado) {
         });
 
         if (result.isConfirmed) {
-            const response = await fetch(`/api/admin/espacio/${codigoEspacio}/estado`, {
+            const response = await fetch(`{{ url('quick-actions/api/espacio') }}/${codigoEspacio}/estado`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -397,7 +401,7 @@ async function cambiarEstadoEspacio(codigoEspacio, nuevoEstado) {
 
             const data = await response.json();
 
-            if (data.exito) {
+            if (data.success) {
                 Swal.fire({
                     title: '¡Éxito!',
                     text: data.mensaje,
