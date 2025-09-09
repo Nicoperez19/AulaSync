@@ -872,7 +872,11 @@ class EspacioController extends Controller
                             'tipo_reserva' => 'Reserva sin usuario',
                             'asignatura' => null,
                             'hora_inicio' => $reservaActiva->hora,
-                            'hora_salida' => $reservaActiva->hora_salida
+                            'hora_salida' => $reservaActiva->hora_salida,
+                            // Agregar identificador para permitir desocupación forzosa
+                            'run_profesor' => null,
+                            'run_solicitante' => null,
+                            'id_reserva' => $reservaActiva->id_reserva
                         ];
                     }
                 } else {
@@ -892,7 +896,11 @@ class EspacioController extends Controller
                             'hora_inicio' => $reservaCualquiera->hora,
                             'hora_salida' => $reservaCualquiera->hora_salida,
                             'detalles' => 'Reserva no activa',
-                            'estado_reserva' => $reservaCualquiera->estado
+                            'estado_reserva' => $reservaCualquiera->estado,
+                            // Incluir RUNs para permitir desocupación aunque estén null
+                            'run_profesor' => $reservaCualquiera->run_profesor,
+                            'run_solicitante' => $reservaCualquiera->run_solicitante,
+                            'id_reserva' => $reservaCualquiera->id_reserva
                         ];
                     }
                 }

@@ -19,6 +19,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\CampusController;
 use App\Http\Controllers\SedeController;
+use App\Http\Controllers\QuickActionsController;
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
@@ -243,6 +244,15 @@ Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(fu
 });
 
 require __DIR__ . '/auth.php';
+
+// Rutas para Acciones Rápidas (Mantenedores)
+Route::middleware(['auth'])->prefix('quick-actions')->name('quick-actions.')->group(function () {
+    Route::get('/', [QuickActionsController::class, 'index'])->name('index');
+    Route::get('/crear-reserva', [QuickActionsController::class, 'crearReserva'])->name('crear-reserva');
+    Route::get('/gestionar-reservas', [QuickActionsController::class, 'gestionarReservas'])->name('gestionar-reservas');
+    Route::get('/gestionar-espacios', [QuickActionsController::class, 'gestionarEspacios'])->name('gestionar-espacios');
+    Route::get('/dashboard-data', [QuickActionsController::class, 'getDashboardData'])->name('dashboard-data');
+});
 
 // Ruta para obtener el token CSRF
 Route::get('/csrf-token', function () {

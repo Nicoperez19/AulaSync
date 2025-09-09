@@ -341,3 +341,25 @@ Route::get('/verificar-clases-programadas/{run}', function ($run) {
     }
 });
 
+// ========================================
+// RUTAS DEL PANEL DE ADMINISTRACIÓN
+// ========================================
+
+use App\Http\Controllers\AdminPanelController;
+
+// Búsqueda de usuarios
+Route::get('/buscar-usuario/{run}', [AdminPanelController::class, 'buscarUsuario']);
+
+// Gestión de espacios
+Route::get('/espacios/disponibles', [AdminPanelController::class, 'getEspaciosDisponibles']);
+Route::get('/admin/espacios', [AdminPanelController::class, 'getEspacios']);
+Route::put('/admin/espacio/{codigo}/estado', [AdminPanelController::class, 'cambiarEstadoEspacio']);
+
+// Gestión de reservas
+Route::post('/admin/crear-reserva', [AdminPanelController::class, 'crearReserva']);
+Route::get('/admin/reservas', [AdminPanelController::class, 'getReservas']);
+Route::put('/admin/reserva/{id}/estado', [AdminPanelController::class, 'cambiarEstadoReserva']);
+
+// Operaciones masivas
+Route::post('/admin/vaciar-reservas', [AdminPanelController::class, 'vaciarReservas']);
+

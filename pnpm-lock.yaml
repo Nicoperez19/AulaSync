@@ -44,7 +44,7 @@ devDependencies:
     specifier: ^8.2.2
     version: 8.2.2
   esbuild:
-    specifier: ^0.25.4
+    specifier: ^0.25.9
     version: 0.25.9
   perfect-scrollbar:
     specifier: ^1.5.6

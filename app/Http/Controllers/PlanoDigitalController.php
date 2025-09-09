@@ -489,13 +489,26 @@ class PlanoDigitalController extends Controller
             }
 
             // Verificar si el usuario tiene una reserva activa en este espacio
-            $reservaActiva = Reserva::where(function($query) use ($runUsuario) {
-                    $query->where('run_profesor', $runUsuario)
-                          ->orWhere('run_solicitante', $runUsuario);
-                })
-                ->where('id_espacio', $idEspacio)
-                ->where('estado', 'activa')
-                ->first();
+            $reservaActiva = null;
+            
+            // Si el run_usuario indica desocupación forzosa por falta de info (empieza con FORCE_)
+            if (strpos($runUsuario, 'FORCE_') === 0) {
+                // Buscar cualquier reserva activa en este espacio
+                $reservaActiva = Reserva::where('id_espacio', $idEspacio)
+                    ->where('estado', 'activa')
+                    ->first();
+                    
+                \Log::info("Desocupación forzosa sin RUN específico para espacio: {$idEspacio}");
+            } else {
+                // Búsqueda normal por RUN de usuario
+                $reservaActiva = Reserva::where(function($query) use ($runUsuario) {
+                        $query->where('run_profesor', $runUsuario)
+                              ->orWhere('run_solicitante', $runUsuario);
+                    })
+                    ->where('id_espacio', $idEspacio)
+                    ->where('estado', 'activa')
+                    ->first();
+            }
 
             if (!$reservaActiva) {
                 \Log::warning("Intento de devolución sin reserva activa - Usuario: {$runUsuario}, Espacio: {$idEspacio}");

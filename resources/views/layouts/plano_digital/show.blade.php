@@ -26,14 +26,15 @@
                 <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}" class="mb-1">
                     <x-application-logo-navbar class="w-10 h-10 md:w-8 md:h-8 sm:w-6 sm:h-6" />
                 </a>
+                
             </div>
 
             <div class="flex flex-col items-center justify-center w-full max-w-md p-1 mx-auto ">
                 <div class="w-full mt-6">
-                    <div class="p-4 text-white bg-red-700 rounded shadow-[0_0_10px_2px_rgba(255,255,255,0.4)]">
+                    <div class="p-4 text-white bg-red-700 rounded ">
                         <div class="flex items-center justify-between pb-4">
                             <div
-                                class="flex items-center gap-1 bg-red-700 rounded shadow-[0_0_1px_1px_rgba(255,255,255,0.1)]">
+                                class="flex items-center gap-1 bg-red-700 rounded">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
                                     stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -128,7 +129,7 @@
             <!-- Leyenda abajo del todo -->
             <div class="flex flex-col items-center justify-center w-full max-w-md p-1 mx-auto">
                 <div class="w-full mt-6">
-                    <div class="p-4 text-white bg-red-700 rounded shadow-[0_0_10px_2px_rgba(255,255,255,0.4)]">
+                    <div class="p-4 text-white bg-red-700 rounded">
                         <h3 class="flex items-center justify-center gap-1 mb-2 text-sm font-semibold text-center text-white md:text-xs">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 md:w-3 md:h-3" viewBox="0 0 24 24"
                                 fill="none" stroke="currentColor" stroke-width="2">
@@ -273,8 +274,16 @@
                     </div>
                     
                     <div class="mt-4 flex justify-end">
-                        <button id="btnDesocupar" class="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded hover:bg-red-700 hidden">
-                            Desocupar
+                        <button class="btn-desocupar group relative px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded hover:bg-red-700 hidden transition-all duration-200" data-tipo="espacio" title="Desocupar sala">
+                            <div class="flex items-center space-x-2">
+                                <x-heroicon-s-logout class="w-4 h-4" />
+                                <span>Desocupar</span>
+                            </div>
+                            <!-- Tooltip -->
+                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+                                Desocupar sala
+                                <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                            </div>
                         </button>
                     </div>
                 </div>
@@ -311,8 +320,16 @@
                         <!-- La información se insertará dinámicamente -->
                     </div>
                     <div class="mt-4 flex justify-end">
-                        <button id="btnDesocuparReserva" class="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded hover:bg-red-700 hidden">
-                            Desocupar reserva
+                        <button class="btn-desocupar group relative px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded hover:bg-red-700 hidden transition-all duration-200" data-tipo="reserva" title="Desocupar reserva">
+                            <div class="flex items-center space-x-2">
+                                <x-heroicon-s-logout class="w-4 h-4" />
+                                <span>Desocupar reserva</span>
+                            </div>
+                            <!-- Tooltip -->
+                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
+                                Desocupar reserva
+                                <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                            </div>
                         </button>
                     </div>
                 </div>
@@ -618,99 +635,23 @@
             };
         }
 
-        // Definición de horarios de módulos (debe ir antes de las funciones que lo usan)
-        const horariosModulos = {
-            lunes: {
-            0: { inicio: '00:00:00', fin: '08:10:00' },
-            1: { inicio: '08:10:00', fin: '09:00:00' },
-            2: { inicio: '09:10:00', fin: '10:00:00' },
-            3: { inicio: '10:10:00', fin: '11:00:00' },
-            4: { inicio: '11:10:00', fin: '12:00:00' },
-            5: { inicio: '12:10:00', fin: '13:00:00' },
-            6: { inicio: '13:10:00', fin: '14:00:00' },
-            7: { inicio: '14:10:00', fin: '15:00:00' },
-            8: { inicio: '15:10:00', fin: '16:00:00' },
-            9: { inicio: '16:10:00', fin: '17:00:00' },
-            10: { inicio: '17:10:00', fin: '18:00:00' },
-            11: { inicio: '18:10:00', fin: '19:00:00' },
-            12: { inicio: '19:10:00', fin: '20:00:00' },
-            13: { inicio: '20:10:00', fin: '21:00:00' },
-            14: { inicio: '21:10:00', fin: '22:00:00' },
-            15: { inicio: '22:10:00', fin: '23:00:00' }
-            },
-            martes: {
-            0: { inicio: '00:00:00', fin: '08:10:00' },
-            1: { inicio: '08:10:00', fin: '09:00:00' },
-            2: { inicio: '09:10:00', fin: '10:00:00' },
-            3: { inicio: '10:10:00', fin: '11:00:00' },
-            4: { inicio: '11:10:00', fin: '12:00:00' },
-            5: { inicio: '12:10:00', fin: '13:00:00' },
-            6: { inicio: '13:10:00', fin: '14:00:00' },
-            7: { inicio: '14:10:00', fin: '15:00:00' },
-            8: { inicio: '15:10:00', fin: '16:00:00' },
-            9: { inicio: '16:10:00', fin: '17:00:00' },
-            10: { inicio: '17:10:00', fin: '18:00:00' },
-            11: { inicio: '18:10:00', fin: '19:00:00' },
-            12: { inicio: '19:10:00', fin: '20:00:00' },
-            13: { inicio: '20:10:00', fin: '21:00:00' },
-            14: { inicio: '21:10:00', fin: '22:00:00' },
-            15: { inicio: '22:10:00', fin: '23:00:00' }
-            },
-            miercoles: {
-            0: { inicio: '00:00:00', fin: '08:10:00' },
-            1: { inicio: '08:10:00', fin: '09:00:00' },
-            2: { inicio: '09:10:00', fin: '10:00:00' },
-            3: { inicio: '10:10:00', fin: '11:00:00' },
-            4: { inicio: '11:10:00', fin: '12:00:00' },
-            5: { inicio: '12:10:00', fin: '13:00:00' },
-            6: { inicio: '13:10:00', fin: '14:00:00' },
-            7: { inicio: '14:10:00', fin: '15:00:00' },
-            8: { inicio: '15:10:00', fin: '16:00:00' },
-            9: { inicio: '16:10:00', fin: '17:00:00' },
-            10: { inicio: '17:10:00', fin: '18:00:00' },
-            11: { inicio: '18:10:00', fin: '19:00:00' },
-            12: { inicio: '19:10:00', fin: '20:00:00' },
-            13: { inicio: '20:10:00', fin: '21:00:00' },
-            14: { inicio: '21:10:00', fin: '22:00:00' },
-            15: { inicio: '22:10:00', fin: '23:00:00' }
-            },
-            jueves: {
-            0: { inicio: '00:00:00', fin: '08:10:00' },
-            1: { inicio: '08:10:00', fin: '09:00:00' },
-            2: { inicio: '09:10:00', fin: '10:00:00' },
-            3: { inicio: '10:10:00', fin: '11:00:00' },
-            4: { inicio: '11:10:00', fin: '12:00:00' },
-            5: { inicio: '12:10:00', fin: '13:00:00' },
-            6: { inicio: '13:10:00', fin: '14:00:00' },
-            7: { inicio: '14:10:00', fin: '15:00:00' },
-            8: { inicio: '15:10:00', fin: '16:00:00' },
-            9: { inicio: '16:10:00', fin: '17:00:00' },
-            10: { inicio: '17:10:00', fin: '18:00:00' },
-            11: { inicio: '18:10:00', fin: '19:00:00' },
-            12: { inicio: '19:10:00', fin: '20:00:00' },
-            13: { inicio: '20:10:00', fin: '21:00:00' },
-            14: { inicio: '21:10:00', fin: '22:00:00' },
-            15: { inicio: '22:10:00', fin: '23:00:00' }
-            },
-            viernes: {
-            0: { inicio: '00:00:00', fin: '08:10:00' },
-            1: { inicio: '08:10:00', fin: '09:00:00' },
-            2: { inicio: '09:10:00', fin: '10:00:00' },
-            3: { inicio: '10:10:00', fin: '11:00:00' },
-            4: { inicio: '11:10:00', fin: '12:00:00' },
-            5: { inicio: '12:10:00', fin: '13:00:00' },
-            6: { inicio: '13:10:00', fin: '14:00:00' },
-            7: { inicio: '14:10:00', fin: '15:00:00' },
-            8: { inicio: '15:10:00', fin: '16:00:00' },
-            9: { inicio: '16:10:00', fin: '17:00:00' },
-            10: { inicio: '17:10:00', fin: '18:00:00' },
-            11: { inicio: '18:10:00', fin: '19:00:00' },
-            12: { inicio: '19:10:00', fin: '20:00:00' },
-            13: { inicio: '20:10:00', fin: '21:00:00' },
-            14: { inicio: '21:10:00', fin: '22:00:00' },
-            15: { inicio: '22:10:00', fin: '23:00:00' }
+        // Variable global para horarios de módulos (se carga desde JSON)
+        let horariosModulos = {};
+
+        // Cargar horarios de módulos desde archivo JSON
+        async function cargarHorariosModulos() {
+            try {
+                const response = await fetch('/js/horarios-modulos.json');
+                if (!response.ok) {
+                    throw new Error('No se pudo cargar el archivo de horarios');
+                }
+                horariosModulos = await response.json();
+                console.log('✅ Horarios de módulos cargados correctamente');
+            } catch (error) {
+                console.error('❌ Error al cargar horarios de módulos:', error);
+                console.log('⚠️ Usando horarios de fallback');
             }
-        };
+        }
 
         // SISTEMA GLOBAL DE MANEJO DE AUTOFOCUS PARA TODOS LOS INPUTS QR
         class QRInputManager {
@@ -2148,7 +2089,9 @@
         }
 
         async function mostrarModalEspacio(indicator) {
-            // Mostrando modal para espacio
+            console.log('🔍 DEBUG - mostrarModalEspacio llamada para:', indicator.id);
+            console.log('🔍 Estado del indicator:', indicator.estado);
+            console.log('🔍 Indicator completo:', indicator);
 
                     // Mostrar el modal inmediatamente
         const modal = document.getElementById('modal-espacio-info');
@@ -2156,9 +2099,9 @@
             modal.classList.remove('hidden');
             // Desactivar todos los inputs QR cuando se abre el modal
             qrInputManager.desactivarTodosLosInputs();
-            // Modal de espacio mostrado inmediatamente
+            console.log('✅ Modal mostrado correctamente');
         } else {
-            // No se encontró el modal de espacio
+            console.error('❌ No se encontró el modal de espacio');
             return;
         }
 
@@ -2202,14 +2145,18 @@
 
         try {
             const data = await Promise.race([dataPromise, timeoutPromise]);
+            console.log('🔍 DEBUG - Datos recibidos de la API:', data);
 
             if (data.success) {
+                console.log('✅ API respondió correctamente, llamando renderizarInformacionOcupante');
                 // Renderizar información optimizada, pasando también el estado del indicator
                 renderizarInformacionOcupante(elements, data, indicator);
             } else {
+                console.error('❌ API respondió con error:', data);
                 mostrarErrorCarga(elements, 'No se pudo cargar la información');
             }
         } catch (error) {
+            console.error('❌ Error al cargar información:', error);
             // Error al cargar información
             mostrarErrorCarga(elements, 'Error de conexión');
         }
@@ -2354,7 +2301,10 @@
         // Función para renderizar información del ocupante optimizada
         function renderizarInformacionOcupante(elements, data, indicator) {
             // Debug: Log de los datos recibidos
-            console.log('Estado del indicator:', indicator?.estado);
+            console.log('🔍 DEBUG - renderizarInformacionOcupante llamada');
+            console.log('🔍 Estado del indicator:', indicator?.estado);
+            console.log('🔍 Datos recibidos:', data);
+            console.log('🔍 Tipo de ocupación:', data.tipo_ocupacion);
 
             // Verificar si el espacio está disponible PRIMERO, sin importar el tipo_ocupacion
             const espacioDisponible = indicator && (
@@ -2363,6 +2313,8 @@
                 indicator.estado === '#059669' ||
                 indicator.estado === '#10b981'
             );
+
+            console.log('🔍 ¿Espacio disponible?:', espacioDisponible);
 
             // Si el espacio está disponible, forzar renderizado como libre
             if (espacioDisponible) {
@@ -2374,26 +2326,66 @@
             // Solo si el espacio NO está disponible, mostrar según tipo de ocupación
             console.log('🔴 Espacio ocupado - Renderizando según tipo');
 
+            // IMPORTANTE: Si el espacio está ocupado, SIEMPRE mostrar el botón desocupar
+            // independientemente del tipo de ocupación o si tenemos datos del ocupante
+            const btnsDesocupar = document.querySelectorAll('.btn-desocupar[data-tipo="espacio"]');
+            console.log('🔍 Botones desocupar encontrados:', btnsDesocupar.length);
+            
+            btnsDesocupar.forEach((btn, index) => {
+                btn.classList.remove('hidden');
+                console.log(`🔧 Botón desocupar ${index + 1} activado - Espacio ocupado`);
+            });
+
+            // Asegurar que tengamos un RUN para el botón desocupar
+            let runParaDesocupar = data.run_profesor || data.run_solicitante;
+            
+            // Si no tenemos RUN específico, usar el ID del espacio para desocupación forzosa
+            if (!runParaDesocupar && indicator?.id) {
+                runParaDesocupar = `FORCE_${indicator.id}`;
+                console.log('⚠️ Usando desocupación forzosa para espacio:', indicator.id);
+            }
+
+            console.log('🔍 RUN para desocupar:', runParaDesocupar);
+
+            // Agregar el input hidden con el RUN (o identificador de forzado)
+            const runInput = document.querySelector('#run-ocupante-modal');
+            if (runInput) {
+                runInput.value = runParaDesocupar || 'unknown';
+                console.log('🔍 Input RUN actualizado:', runInput.value);
+            } else {
+                // Crear el input si no existe
+                const newInput = document.createElement('input');
+                newInput.type = 'hidden';
+                newInput.id = 'run-ocupante-modal';
+                newInput.value = runParaDesocupar || 'unknown';
+                if (elements.ocupanteInfo) {
+                    elements.ocupanteInfo.appendChild(newInput);
+                    console.log('🔍 Input RUN creado:', newInput.value);
+                }
+            }
+
             // Mostrar información según el tipo de ocupación
             if (data.tipo_ocupacion === 'profesor') {
-                console.log('Renderizando como profesor');
+                console.log('📚 Renderizando como profesor');
                 renderizarInformacionProfesor(elements, data, indicator);
             } else if (data.tipo_ocupacion === 'solicitante') {
-                console.log('Renderizando como solicitante');
+                console.log('👤 Renderizando como solicitante');
                 renderizarInformacionSolicitante(elements, data, indicator);
             } else if (data.tipo_ocupacion === 'ocupado_sin_info') {
-                console.log('Renderizando como ocupado sin info');
+                console.log('❓ Renderizando como ocupado sin info');
                 renderizarInformacionOcupadoSinInfo(elements, data, indicator);
             } else {
-                console.log('Renderizando como libre');
+                console.log('🆓 Renderizando como libre');
                 renderizarInformacionLibre(elements, data, indicator);
             }
-        }        // Handler para el botón Desocupar
+        }        // Handler para los botones Desocupar usando delegación de eventos
         document.addEventListener('DOMContentLoaded', function () {
-            const btnDesocupar = document.getElementById('btnDesocupar');
-            if (btnDesocupar) {
-            btnDesocupar.addEventListener('click', async function () {
+            // Usar delegación de eventos para manejar todos los botones .btn-desocupar
+            document.addEventListener('click', async function (event) {
+                if (!event.target.matches('.btn-desocupar')) return;
+                
                 const espacioId = state.currentIndicatorId || null;
+                const tipoDesocupacion = event.target.dataset.tipo || 'espacio';
 
                 // Obtener información del usuario autenticado (administrador)
                 const administradorRun = '{{ auth()->user()->run ?? "admin" }}';
@@ -2413,7 +2405,6 @@
                     });
                     return;
                 }
-
 
                 try {
                 const res = await fetch('/api/devolver-espacio', {
@@ -2478,7 +2469,6 @@
                 });
                 }
             });
-            }
         });
 
         // Función para renderizar información de profesor
@@ -2576,15 +2566,7 @@
                 `;
             }
 
-            // Mostrar botón Desocupar si hay run_profesor
-            const btnDesocupar = document.getElementById('btnDesocupar');
-            if (btnDesocupar) {
-                if (data.run_profesor) {
-                    btnDesocupar.classList.remove('hidden');
-                } else {
-                    btnDesocupar.classList.add('hidden');
-                }
-            }
+            // NOTA: El botón desocupar se maneja centralmente en renderizarInformacionOcupante()
         }
 
         // Función para renderizar información de solicitante optimizada
@@ -2669,14 +2651,7 @@
                 elements.claseActualContainer.style.display = 'none';
             }
 
-            const btnDesocupar = document.getElementById('btnDesocupar');
-            if (btnDesocupar) {
-                if (data.run_solicitante) {
-                    btnDesocupar.classList.remove('hidden');
-                } else {
-                    btnDesocupar.classList.add('hidden');
-                }
-            }
+            // NOTA: El botón desocupar se maneja centralmente en renderizarInformacionOcupante()
         }
 
         // Función para renderizar información ocupado sin info
@@ -2742,15 +2717,7 @@
                 elements.proximaClaseContainer.style.display = 'none';
             }
 
-            const btnDesocupar = document.getElementById('btnDesocupar');
-            if (btnDesocupar) {
-                // Mostrar si hay run en los datos
-                if (data.run_profesor || data.run_solicitante) {
-                    btnDesocupar.classList.remove('hidden');
-                } else {
-                    btnDesocupar.classList.add('hidden');
-                }
-            }
+            // NOTA: El botón desocupar se maneja centralmente en renderizarInformacionOcupante()
         }
 
         // Función para renderizar información libre
@@ -2765,7 +2732,37 @@
                 indicator.estado === '#10b981'
             );
 
-            console.log('Estado del espacio disponible:', espacioDisponible, 'Estado indicator:', indicator?.estado);
+            console.log('🔍 DEBUG renderizarInformacionLibre - Estado del espacio disponible:', espacioDisponible, 'Estado indicator:', indicator?.estado);
+
+            // IMPORTANTE: Si el indicator dice que está ocupado, NO ocultar el botón desocupar
+            // esto sucede cuando la API dice "libre" pero el indicator dice "ocupado" (reservas vencidas)
+            if (!espacioDisponible) {
+                console.log('🔧 CASO ESPECIAL: API dice libre pero indicator dice ocupado - Manteniendo botón desocupar');
+                
+                // Asegurar que el botón desocupar esté visible para espacios "ocupados" según indicator
+                const btnsDesocupar = document.querySelectorAll('.btn-desocupar[data-tipo="espacio"]');
+                btnsDesocupar.forEach(btn => {
+                    btn.classList.remove('hidden');
+                    console.log('🔧 Botón desocupar forzado a visible - Indicator dice ocupado');
+                });
+
+                // Crear o actualizar el input RUN para desocupación forzosa
+                const runInput = document.querySelector('#run-ocupante-modal');
+                const runValue = data.run_profesor || data.run_solicitante || `FORCE_${indicator.id}`;
+                
+                if (runInput) {
+                    runInput.value = runValue;
+                } else {
+                    const newInput = document.createElement('input');
+                    newInput.type = 'hidden';
+                    newInput.id = 'run-ocupante-modal';
+                    newInput.value = runValue;
+                    if (elements.ocupanteInfo) {
+                        elements.ocupanteInfo.appendChild(newInput);
+                    }
+                }
+                console.log('🔍 RUN para desocupación forzosa configurado:', runValue);
+            }
 
             // Si el espacio está disponible, NO mostrar información de ocupante ni botón desocupar
             if (espacioDisponible) {
@@ -2778,10 +2775,8 @@
                 }
 
                 // Ocultar botón desocupar
-                const btnDesocupar = document.getElementById('btnDesocupar');
-                if (btnDesocupar) {
-                    btnDesocupar.classList.add('hidden');
-                }
+                const btnsDesocupar = document.querySelectorAll('.btn-desocupar');
+                btnsDesocupar.forEach(btn => btn.classList.add('hidden'));
 
                 // SIEMPRE intentar mostrar próxima clase/reserva si existe
                 if (data.proxima_clase && elements.proximaClaseContainer && elements.proximaClaseInfo) {
@@ -2921,9 +2916,14 @@
                 `;
             }
 
-            // Para espacios que no están disponibles, mantener botón oculto por defecto
-            const btnDesocupar = document.getElementById('btnDesocupar');
-            if (btnDesocupar) btnDesocupar.classList.add('hidden');
+            // Solo ocultar botón desocupar si el espacio está realmente disponible
+            if (espacioDisponible) {
+                console.log('🔍 Espacio realmente disponible - Ocultando botón desocupar');
+                const btnsDesocupar = document.querySelectorAll('.btn-desocupar');
+                btnsDesocupar.forEach(btn => btn.classList.add('hidden'));
+            } else {
+                console.log('🔍 Espacio ocupado según indicator - Manteniendo botón desocupar visible');
+            }
         }        function cerrarModalEspacio() {
             const modal = document.getElementById('modal-espacio-info');
             if (modal) {
@@ -3547,6 +3547,9 @@
         }
 
        document.addEventListener('DOMContentLoaded', function () {
+    // Cargar horarios de módulos al inicio
+    cargarHorariosModulos();
+    
     const btnConfirmarModulos = document.getElementById('btn-confirmar-modulos');
 
     if (btnConfirmarModulos) {
@@ -3851,7 +3854,15 @@
         }
     });
 
-
-
     </script>
+
+    <!-- Modales del Panel de Administración -->
+    <x-modal-agregar-reserva />
+    <x-modal-editar />
+    <x-modal-editar-reservas />
+    <x-modal-editar-espacios />
+
+    <!-- JavaScript del Panel de Administración -->
+    <script src="{{ asset('js/admin-panel.js') }}"></script>
+
 </x-show-layout>
