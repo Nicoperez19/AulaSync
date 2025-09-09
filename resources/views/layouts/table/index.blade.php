@@ -13,13 +13,30 @@
                 </a>
 
                 <!-- Logo y título -->
-                <div class="p-3 rounded-xl bg-light-cloud-blue shadow-lg">
+                <div class="p-3 text- center rounded-xl bg-light-cloud-blue shadow-lg">
                     <i class="text-2xl text-white fa-solid fa-table"></i>
                 </div>
                 <div>
-                    <h2 class="text-2xl font-bold leading-tight text-gray-900">Estado de Espacios</h2>
-                    <p class="text-sm text-gray-600">Visualiza el estado de todos los espacios en el módulo actual</p>
-                </div>
+</div>
+                    <h2 class="text-1xl font-bold leading-tight text-gray-900">Estado de Espacios</h2>
+                <!-- Leyenda de colores -->
+                <div class="p-3  ml-5 rounded-lg   text-center">
+
+        <div class="flex flex-wrap gap-4 text-xs justify-center">
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-green-500 flex-shrink-0"></span>
+                <span class="text-gray-600">Disponible</span>
+            </div>
+           
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-red-500 flex-shrink-0"></span>
+                <span class="text-gray-600">Ocupado (Interacción Física)</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-yellow-500 flex-shrink-0"></span>
+                <span class="text-gray-600">En Programa</span>
+          </div>  </div>
+        </div>
             </div>
 
             <!-- Información del módulo actual -->

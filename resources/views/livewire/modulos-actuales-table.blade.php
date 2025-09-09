@@ -1,204 +1,118 @@
-<div class="p-6">
+<div class="p-6" x-data="{ pagina: 0, totalPaginas: Math.ceil({{ count($this->getTodosLosEspacios()) }} / 13) }" x-init="setInterval(() => { pagina = (pagina + 1) % totalPaginas }, 5000)">
     @if (count($pisos) > 0)
-    <div class="relative w-full bg-white rounded-lg shadow-sm border border-gray-200">
-        @if (count($this->todosLosEspacios) > 0)
-        <div class="flex w-full">
-
-            {{-- Columna izquierda - DISPONIBLES --}}
-            <div class="flex-1 border-r border-gray-200">
-                <table class="w-full table-fixed">
-                    <thead>
-                        <tr class="bg-green-600 text-white border-b border-gray-200">
-                            <th class="px-3 py-1 text-left text-sm font-semibold uppercase">N° Sala</th>
-                            <th class="px-3 py-1 text-left text-sm font-semibold uppercase">Nombre</th>
-                            <th class="px-3 py-1 text-left text-sm font-semibold uppercase">Piso</th>
-                            <th class="px-3 py-1 text-left text-sm font-semibold uppercase">Estado</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        @foreach (array_slice(array_filter($this->todosLosEspacios, function($espacio) { return strtolower($espacio['estado']) === 'disponible'; }), 0, 10) as $espacio)
-                        <tr class="bg-white hover:bg-green-50 transition-colors h-10">
-                            <td class="px-3 py-1 text-sm font-semibold text-blue-700">{{ $espacio['id_espacio'] }}</td>
-                            <td class="px-3 py-1 text-sm">{{ $espacio['nombre_espacio'] }}</td>
-                            <td class="px-3 py-1 text-sm text-gray-500">{{ $espacio['piso'] }}</td>
-                            <td class="px-3 py-1 text-sm text-green-600 font-medium">Disponible</td>
-                        </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
-
-            {{-- Columna derecha - OCUPADOS / RESERVADOS / CLASES --}}
-            <div class="flex-1">
-                <div>
-                    <table class="w-full table-fixed">
-                        <thead>
-                            @php
-                            $hayEntreModulos = collect($this->todosLosEspacios)->contains('es_entre_modulos', true);
-                            $mostrandoProximasClases = $slideCarrusel === 'reservados' && $hayEntreModulos;
-                            @endphp
-                            <tr class="text-white border-b border-gray-200"
-                                @if($slideCarrusel==='ocupados' )
-                                style="background-color: #dc2626;"
-                                @elseif($mostrandoProximasClases)
-                                style="background-color: #2563eb;"
-                                @else
-                                style="background-color: #facc15; color: #92400e;"
-                                @endif>
-                                <th class="px-3 py-1 text-left text-sm font-semibold uppercase w-20">N° Sala</th>
-                                <th class="px-3 py-1 text-left text-sm font-semibold uppercase w-32">Nombre</th>
-                                <th class="px-3 py-1 text-left text-sm font-semibold uppercase w-16">Piso</th>
-                                <th class="px-3 py-1 text-left text-sm font-semibold uppercase w-28">Estado</th>
-                                <th class="px-3 py-1 text-left text-sm font-semibold uppercase">Responsable</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @php
-                            $filtrados = array_filter($this->todosLosEspacios, function($espacio) use ($slideCarrusel) {
-                            $tieneReservaSolicitante = $espacio['tiene_reserva_solicitante'] ?? false;
-                            $tieneReservaProfesor = $espacio['tiene_reserva_profesor'] ?? false;
-                            $tieneClase = $espacio['tiene_clase'] ?? false;
-                            $esOcupado = strtolower($espacio['estado']) === 'ocupado';
-                            $esEntreModulos = $espacio['es_entre_modulos'] ?? false;
-
-                            // Si estamos entre módulos, solo mostrar ocupados y próximas clases
-                            if ($esEntreModulos) {
-                            return ($slideCarrusel === 'ocupados' && $esOcupado) ||
-                            ($slideCarrusel === 'reservados' && $tieneClase && !$esOcupado);
-                            }
-
-                            // Lógica normal cuando hay módulo activo
-                            $esReservado = strtolower($espacio['estado']) === 'reservado' || $tieneReservaSolicitante || $tieneReservaProfesor || $tieneClase;
-                            return ($slideCarrusel === 'ocupados' && $esOcupado) || ($slideCarrusel === 'reservados' && $esReservado && !$esOcupado);
-                            });
-                            @endphp
-                            @foreach (array_slice($filtrados, 0, 10) as $espacio)
-                            @php
-                            $tieneReservaSolicitante = $espacio['tiene_reserva_solicitante'] ?? false;
-                            $tieneClase = $espacio['tiene_clase'] ?? false;
-                            $tieneReservaProfesor = $espacio['tiene_reserva_profesor'] ?? false;
-                            $datosSolicitante = $espacio['datos_solicitante'] ?? null;
-                            $datosClase = $espacio['datos_clase'] ?? null;
-                            $datosProfesor = $espacio['datos_profesor'] ?? null;
-                            $esOcupado = strtolower($espacio['estado']) === 'ocupado';
-                            $esEntreModulos = $espacio['es_entre_modulos'] ?? false;
-                            $esProximaClase = isset($datosClase['es_proxima']) && $datosClase['es_proxima'];
-                            @endphp
-                            <tr class="bg-white hover:bg-blue-50 transition-colors h-10">
-                                <td class="px-3 py-1 text-sm font-semibold text-blue-700">{{ $espacio['id_espacio'] }}</td>
-                                <td class="px-3 py-1 text-sm">{{ $espacio['nombre_espacio'] }}</td>
-                                <td class="px-3 py-1 text-sm text-gray-500">{{ $espacio['piso'] }}</td>
-                                <td class="px-3 py-1 text-sm font-medium @if($esOcupado) text-red-600 @elseif($esProximaClase) text-blue-600 @else text-yellow-600 @endif">
-                                    @if($esOcupado)
-                                    Ocupado
-                                    @elseif($esProximaClase)
-                                    Próxima Clase
-                                    @elseif($tieneReservaSolicitante && $datosSolicitante)
-                                    Espacio Solicitado
-                                    @elseif($tieneReservaProfesor && $datosProfesor)
-                                    Reservado por Profesor
-                                    @elseif($tieneClase && $datosClase)
-                                    {{ $datosClase['nombre_asignatura'] ?? 'Clase Programada' }}
-                                    @else
-                                    Reservado
-                                    @endif
-                                </td>
-                                <td class="px-3 py-1 text-sm align-middle">
-                                    @if($esOcupado)
-                                        @if($datosClase && isset($datosClase['profesor']['name']))
-                                            {{ $this->getNombreCompleto($datosClase['profesor']['name']) }}
-                                        @elseif($datosProfesor)
-                                            {{ $this->getNombreCompleto($datosProfesor['nombre']) }}
-                                        @else
-                                            -
-                                        @endif
-
-                                    @elseif($esProximaClase && $datosClase && isset($datosClase['profesor']['name']))
-                                        {{ $this->getNombreCompleto($datosClase['profesor']['name']) }}
-                                        <div class="text-xs text-gray-500">
-                                            {{ $datosClase['hora_inicio'] ?? '' }}
-                                        </div>
-                                    @elseif($tieneReservaSolicitante && $datosSolicitante)
-                                        {{ $this->getPrimerApellidoSolicitante($datosSolicitante['nombre']) }}
-                                    @elseif($tieneReservaProfesor && $datosProfesor)
-                                        {{ $this->getNombreCompleto($datosProfesor['nombre']) }}
-                                    @elseif($tieneClase && $datosClase && isset($datosClase['profesor']['name']))
-                                        {{ $this->getNombreCompleto($datosClase['profesor']['name']) }}
-                                    @else
-                                        -
-                                    @endif
-                                </td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
+        <div class="relative w-full bg-white rounded-lg shadow-sm border border-gray-300 overflow-hidden">
+            @if (count($this->getTodosLosEspacios()) > 0)
+                @php $totalPaginas = ceil(count($this->getTodosLosEspacios()) / 13); @endphp
+                @for ($i = 0; $i < $totalPaginas; $i++)
+                    <div x-show="pagina === {{ $i }}" class="transition-all duration-500">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="bg-light-cloud-blue text-white border-b border-gray-300">
+                                    <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-1/4">Modulo</th>
+                                    <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-1/6">Espacio</th>
+                                    <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-5/12">Clase</th>
+                                    <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider w-1/6">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                @foreach (array_slice($this->getTodosLosEspacios(), $i * 13, 13) as $index => $espacio)
+                                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-blue-50 transition-colors duration-200 h-10 border-b border-gray-200">
+                                        <!-- Columna 1: Modulo -->
+                                            <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
+                                                @if(($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']) && !empty($espacio['datos_clase']['modulo_inicio']) && !empty($espacio['datos_clase']['modulo_fin']))
+                                                    <div class="font-medium text-gray-900 text-sm">
+                                                        <div class="flex items-center gap-2 text-base font-semibold">
+                                                                         <i class="fas fa-clock"></i>
+                                                           {{ $espacio['datos_clase']['modulo_inicio'] }} - {{ $espacio['datos_clase']['modulo_fin'] }}
+                                                          
+                                                        </div>
+                                                        <div class="text-gray-600">
+                                                             
+                                                            {{ $espacio['datos_clase']['hora_inicio'] ?? '--:--' }} - {{ $espacio['datos_clase']['hora_fin'] ?? '--:--' }}
+                                                        </div>
+                                                    </div>
+                                                @elseif(!empty($espacio['proxima_clase']))
+                                                     <div class="flex items-center gap-2 text-base font-semibold">
+                                                                         <i class="fas fa-clock"></i>
+                                                           {{ $espacio['proxima_clase']['modulo_inicio'] }} - {{ $espacio['proxima_clase']['modulo_fin'] }}
+                                                        </div>
+                                                        <div class="text-gray-600">
+                                                            {{ $espacio['proxima_clase']['hora_inicio'] }} - {{ $espacio['proxima_clase']['hora_fin'] }}
+                                                        </div>
+                                                    </div>
+                                                @elseif($this->moduloActual && !empty($this->moduloActual['numero']))
+                                                    @if(($this->moduloActual['tipo'] ?? 'modulo') === 'break')
+                                                        <span class="text-base font-semibold text-gray-600">
+                                                          ------
+                                                        </span>
+                                                    @else
+                                                        <span class="flex items-center gap-2 text-base font-semibold">
+                                                            <i class="fas fa-clock"></i>
+                                                            {{ $this->moduloActual['numero'] }}
+                                                        </span>
+                                                    @endif
+                                                @endif
+                                            </td>
+                                        <!-- Columna 2: Espacio -->
+                                        <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
+                                            <span class="font-semibold text-blue-700 text-sm">{{ $espacio['id_espacio'] }}</span>
+                                        </td>
+                                        <!-- Columna 3: Estado -->
+                                         <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
+                                            @if (($espacio['tiene_reserva_solicitante'] ?? false) && !empty($espacio['datos_solicitante']))
+                                                <span class="font-medium text-purple-700 text-sm">Solicitante: {{ $espacio['datos_solicitante']['nombre'] }}</span>
+                                            @elseif (($espacio['tiene_reserva_profesor'] ?? false) && !empty($espacio['datos_profesor']) && !empty($espacio['datos_profesor']['nombre']))
+                                                <span class="font-medium text-blue-700 text-sm">Profesor: {{ $espacio['datos_profesor']['nombre'] }}</span>
+                                            @elseif (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']) && isset($espacio['datos_clase']['profesor']) && !empty($espacio['datos_clase']['profesor']['name']))
+                                                <div class="font-medium text-gray-900 text-sm">
+                                                    <div>{{ $espacio['datos_clase']['nombre_asignatura'] }}</div>
+                                                    <div>Prof: {{ $espacio['datos_clase']['profesor']['name'] }}</div>
+                                                </div>
+                                            @elseif(!empty($espacio['proxima_clase']))
+                                                <div class="font-medium text-gray-700 text-sm">
+                                                    <div>Próxima: {{ $espacio['proxima_clase']['nombre_asignatura'] ?? 'Clase programada' }}</div>
+                                                    <div>Prof: {{ $espacio['proxima_clase']['profesor'] ?? '-' }}</div>
+                                                </div>
+                                            @else
+                                                <span class="text-gray-400 italic text-sm">-</span>
+                                            @endif
+                                        </td>
+                                        
+                                        <!-- Columna 4: Status -->
+                                      <td class="px-3 py-1 text-sm align-middle">
+                                            <span class="w-4 h-4 rounded-full {{ $this->getEstadoColor($espacio['estado'], $espacio['tiene_clase'] ?? false, $espacio['tiene_reserva_solicitante'] ?? false, $espacio['tiene_reserva_profesor'] ?? false) }} flex-shrink-0 inline-block mr-2"></span>
+                                            <span class="font-medium text-gray-900 text-sm">{{ $espacio['estado'] }}</span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endfor
+            @endif
         </div>
-        @endif
-    </div>
     @endif
-
-    {{-- Slide label solo sobre la segunda tabla --}}
-    <div class="flex justify-end mt-4 mb-1">
-        @php
-        $hayEntreModulos = collect($this->todosLosEspacios)->contains('es_entre_modulos', true);
-        $mostrandoProximasClases = $slideCarrusel === 'reservados' && $hayEntreModulos;
-        @endphp
-        <span class="px-3 py-1 rounded-full text-xs font-semibold"
-            @if($slideCarrusel==='ocupados' )
-            class="bg-red-100 text-red-700"
-            @elseif($mostrandoProximasClases)
-            class="bg-blue-100 text-blue-700"
-            @else
-            class="bg-yellow-100 text-yellow-700"
-            @endif>
-            @if($slideCarrusel === 'ocupados')
-            Ocupados
-            @else
-            @if($hayEntreModulos)
-            Próximas Clases
-            @else
-            Reservados
-            @endif
-            @endif
-        </span>
-    </div>
-    {{-- Leyenda de colores --}}
-    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200 text-center">
-        <h4 class="text-sm font-semibold text-gray-700 mb-2 uppercase tracking-wider">Leyenda de Estados</h4>
-        <div class="flex flex-wrap gap-4 text-xs justify-center">
-            <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-green-500 flex-shrink-0"></span>
-                <span class="text-gray-600">Disponible</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-yellow-400 flex-shrink-0"></span>
-                <span class="text-gray-600">Reservado / Clase Programada</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-red-500 flex-shrink-0"></span>
-                <span class="text-gray-600">Ocupado (Interacción Física)</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-blue-500 flex-shrink-0"></span>
-                <span class="text-gray-600">Próxima Clase</span>
+    
+    <!-- Indicador de página -->
+    @if (count($this->getTodosLosEspacios()) > 13)
+        <div class="mt-3 text-center">
+            <div class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg border">
+                <span class="text-sm font-medium text-gray-600">Página</span>
+                <span class="px-2 py-1 bg-blue-600 text-white text-sm font-bold rounded" x-text="pagina + 1"></span>
+                <span class="text-sm text-gray-600">de</span>
+                <span class="px-2 py-1 bg-gray-200 text-gray-700 text-sm font-medium rounded" x-text="totalPaginas"></span>
             </div>
         </div>
+    @endif
+    
+    <!-- Leyenda de colores -->
+    
     </div>
 
-    {{-- Carrusel automático y actualización automática --}}
     <script>
-        window.slideCarrusel = window.slideCarrusel || 'ocupados';
-
-        function alternarCarrusel() {
-            window.slideCarrusel = window.slideCarrusel === 'ocupados' ? 'reservados' : 'ocupados';
-            @this.set('slideCarrusel', window.slideCarrusel);
-        }
+        // Actualizar datos cada 10 segundos
         setInterval(function() {
-            alternarCarrusel();
             @this.actualizarAutomaticamente();
-        }, 5000);
+        }, 10000);
     </script>
 </div>

@@ -43,16 +43,12 @@
                                     <x-icons.edit class="w-5 h-5 mr-1" aria-hidden="true" />
                                 </x-button>
 
-                                <form action="{{ route('permission.delete', $permission->id) }}" method="POST"
-                                    id="delete-form-{{ $permission->id }}" style="display: inline;">
-                                    @csrf
-                                    @method('DELETE')
-                                    <x-button variant="danger" type="button"
-                                        onclick="confirmDelete({{ $permission->id }}, '{{ $permission->name }}')"
-                                        class="px-4 py-2">
-                                        <x-icons.delete class="w-5 h-5" aria-hidden="true" />
-                                    </x-button>
-                                </form>
+                                <x-button variant="danger" 
+                                    class="px-4 py-2 delete-permission-btn" 
+                                    data-permission-id="{{ $permission->id }}"
+                                    data-permission-name="{{ $permission->name }}">
+                                    <x-icons.delete class="w-5 h-5" aria-hidden="true" />
+                                </x-button>
                             </div>
                         </td>
                     </tr>
@@ -157,4 +153,127 @@
 
         table.rows[0].cells[columnIndex].classList.add(isAscending ? "desc" : "asc");
     }
+
+    // Clase para manejar la tabla de permisos
+    class PermissionsTableManager {
+        constructor() {
+            this.init();
+        }
+
+        init() {
+            this.setupEventListeners();
+            this.initializeTable();
+        }
+
+        setupEventListeners() {
+            // Eventos de Livewire
+            document.addEventListener('livewire:load', () => this.initializeTable());
+            document.addEventListener('livewire:update', () => this.initializeTable());
+            document.addEventListener('livewire:navigated', () => this.initializeTable());
+            
+            // Evento cuando se carga el DOM
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => this.initializeTable());
+            } else {
+                this.initializeTable();
+            }
+        }
+
+        initializeTable() {
+            console.log('Inicializando tabla de permisos...');
+            this.setupDeleteButtons();
+            console.log('Tabla de permisos inicializada correctamente');
+        }
+
+        setupDeleteButtons() {
+            const buttons = document.querySelectorAll('.delete-permission-btn');
+            buttons.forEach(btn => {
+                // Remover event listeners anteriores si existen
+                if (btn.deleteHandler) {
+                    btn.removeEventListener('click', btn.deleteHandler);
+                }
+                
+                const permissionId = btn.dataset.permissionId;
+                const permissionName = btn.dataset.permissionName;
+                
+                const deleteHandler = (e) => {
+                    e.preventDefault();
+                    this.handleDelete(permissionId, permissionName);
+                };
+
+                btn.deleteHandler = deleteHandler;
+                btn.addEventListener('click', deleteHandler);
+            });
+
+            console.log(`Botones de eliminación configurados: ${buttons.length}`);
+        }
+
+        async handleDelete(permissionId, permissionName) {
+            console.log(`Intentando eliminar permiso: ${permissionId} - ${permissionName}`);
+            
+            if (typeof Swal !== 'undefined') {
+                const result = await Swal.fire({
+                    title: '¿Estás seguro?',
+                    text: `¿Estás seguro de que quieres eliminar el permiso "${permissionName}"? Esta acción no se puede deshacer.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar',
+                });
+
+                if (result.isConfirmed) {
+                    this.performDelete(permissionId);
+                }
+            } else {
+                // Fallback a confirm nativo si SweetAlert2 no está disponible
+                if (confirm(`¿Estás seguro de que quieres eliminar el permiso "${permissionName}"?`)) {
+                    this.performDelete(permissionId);
+                }
+            }
+        }
+
+        async performDelete(permissionId) {
+            try {
+                // Crear un formulario temporal
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = `/permission/permission_delete/${permissionId}`;
+                form.style.display = 'none';
+
+                // Agregar CSRF token
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                if (csrfToken) {
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = '_token';
+                    csrfInput.value = csrfToken;
+                    form.appendChild(csrfInput);
+                }
+
+                // Agregar método DELETE
+                const methodInput = document.createElement('input');
+                methodInput.type = 'hidden';
+                methodInput.name = '_method';
+                methodInput.value = 'DELETE';
+                form.appendChild(methodInput);
+
+                // Agregar al DOM y enviar
+                document.body.appendChild(form);
+                form.submit();
+                
+            } catch (error) {
+                console.error('Error al eliminar permiso:', error);
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('Error', 'Error al eliminar el permiso. Intenta recargar la página.', 'error');
+                } else {
+                    alert('Error al eliminar el permiso. Intenta recargar la página.');
+                }
+            }
+        }
+    }
+
+    // Inicializar cuando el script se carga
+    const permissionsTable = new PermissionsTableManager();
 </script>
