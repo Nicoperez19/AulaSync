@@ -9,18 +9,21 @@
         <div class="p-6">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900">Gestión de Reservas</h1>
+                    <h1 class="text-2xl font-bold text-gray-900 flex items-center">
+                        <i class="fas fa-calendar-check mr-3 text-blue-600"></i>
+                        Gestión de Reservas
+                    </h1>
                     <p class="text-gray-600 mt-1">Administrar estados de reservas activas y finalizadas</p>
                 </div>
                 <div class="flex gap-3">
                     <a href="{{ route('quick-actions.crear-reserva') }}" 
                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                        <i class="fa-solid fa-plus w-4 h-4 mr-2"></i>
+                        <i class="fas fa-plus mr-2"></i>
                         Nueva Reserva
                     </a>
                     <a href="{{ route('quick-actions.index') }}" 
                        class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
-                        <i class="fa-solid fa-arrow-left w-4 h-4 mr-2"></i>
+                        <i class="fas fa-arrow-left mr-2"></i>
                         Volver
                     </a>
                 </div>
@@ -145,6 +148,7 @@
 </div>
 
 @push('scripts')
+<script src="{{ asset('js/admin-panel.js') }}"></script>
 <script>
 // Variables específicas para gestión de reservas
 let reservasOriginales = [];
@@ -169,13 +173,13 @@ async function cargarReservas() {
             </tr>
         `;
 
-        const response = await fetch('/api/admin/reservas');
+        const response = await fetch('{{ route("quick-actions.api.reservas") }}');
         const data = await response.json();
 
-        if (data.success && data.reservas) {
-            reservasOriginales = data.reservas;
-            mostrarReservasEnTabla(data.reservas);
-            actualizarEstadisticas(data.reservas);
+        if (data.success && data.data) {
+            reservasOriginales = data.data;
+            mostrarReservasEnTabla(data.data);
+            actualizarEstadisticas(data.data);
         } else {
             tbody.innerHTML = `
                 <tr>
@@ -195,6 +199,16 @@ async function cargarReservas() {
         tbody.innerHTML = `
             <tr>
                 <td colspan="7" class="px-6 py-12 text-center text-red-500">
+                    <div class="flex flex-col items-center">
+                        <!-- <x-heroicon-o-x-circle class="w-12 h-12 text-red-300 mb-4" /> -->
+                        <i class="fa-solid fa-circle-xmark text-6xl text-red-300 mb-4"></i>
+                        <p>Error al cargar reservas: ${error.message}</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+}
                     <div class="flex flex-col items-center">
                         <!-- <x-heroicon-o-x-circle class="w-12 h-12 text-red-300 mb-4" /> -->
                         <i class="fa-solid fa-circle-xmark text-6xl text-red-300 mb-4"></i>

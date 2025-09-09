@@ -1,5 +1,11 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" x-data="{
+    isSidebarOpen: window.innerWidth >= 1024 ? localStorage.getItem('sidebar-open') !== 'false' : false,
+    isSidebarHovered: false,
+    isDarkMode: localStorage.getItem('dark') === 'true'
+}" x-init="
+    $watch('isSidebarOpen', (value) => localStorage.setItem('sidebar-open', value))
+">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,96 +22,87 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Perfect Scrollbar -->
+    <script src="https://cdn.jsdelivr.net/npm/perfect-scrollbar@1.5.0/dist/perfect-scrollbar.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/perfect-scrollbar@1.5.0/css/perfect-scrollbar.css">
+    
     <!-- Admin Panel Scripts -->
     <script src="{{ asset('js/admin-panel.js') }}"></script>
     
     <!-- Styles adicionales -->
     @stack('styles')
+    
+    <style>
+        /* Scrollbar personalizado */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+    </style>
 </head>
-<body class="font-sans antialiased bg-gray-100">
-    <div class="min-h-screen">
-        <!-- Navigation -->
-        <nav class="bg-white shadow-sm border-b border-gray-200">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-                    <div class="flex items-center">
-                        <!-- Logo -->
-                        <div class="flex-shrink-0">
-                            <a href="{{ route('dashboard') }}">
-                                <x-application-logo class="block h-10 w-auto" />
-                            </a>
-                        </div>
-                        
-                        <!-- Navigation Links -->
-                        <div class="hidden space-x-8 sm:-my-px sm:ml-10 sm:flex">
-                            <x-nav-link :href="route('dashboard')" :active="false">
-                                {{ __('Dashboard') }}
-                            </x-nav-link>
-                            
-                            <x-nav-link :href="route('plano.index')" :active="false">
-                                {{ __('Plano Digital') }}
-                            </x-nav-link>
-                            
-                            <x-nav-link :href="route('quick-actions.index')" :active="request()->routeIs('quick-actions.*')">
-                                {{ __('Acciones Rápidas') }}
-                            </x-nav-link>
-                        </div>
-                    </div>
+<body class="font-sans antialiased bg-gray-50">
+    <div class="min-h-screen flex">
+        <!-- Sidebar -->
 
-                    <!-- Settings Dropdown -->
-                    <div class="hidden sm:flex sm:items-center sm:ml-6">
-                        <x-dropdown align="right" width="48">
-                            <x-slot name="trigger">
-                                <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                                    <div>{{ Auth::user()->name }}</div>
-                                    <div class="ml-1">
-                                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                        </svg>
-                                    </div>
-                                </button>
-                            </x-slot>
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col transition-all duration-300 ease-in-out" 
+             :class="{ 'lg:ml-64': isSidebarOpen || isSidebarHovered, 'lg:ml-16': !(isSidebarOpen || isSidebarHovered) }">
+            
+            <!-- Navbar -->
+            <x-navbar />
 
-                            <x-slot name="content">
-                                <x-dropdown-link :href="route('profile.edit')">
-                                    {{ __('Profile') }}
-                                </x-dropdown-link>
+            <!-- Page Content -->
+            <main class="flex-1 p-6 mt-4 transition-all duration-300 ease-in-out"
+                  :class="{
+                      'opacity-100': !(isSidebarOpen || isSidebarHovered)
+                  }">
+                <div class="max-w-7xl mx-auto">
+                    <!-- Breadcrumb -->
+                    <nav class="flex mb-6" aria-label="Breadcrumb">
+                        <ol class="inline-flex items-center space-x-1 md:space-x-3">
+                            <li class="inline-flex items-center">
+                                <a href="{{ route('dashboard') }}" 
+                                   class="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600">
+                                    <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
+                                    </svg>
+                                    Dashboard
+                                </a>
+                            </li>
+                            <li>
+                                <div class="flex items-center">
+                                    <svg class="w-6 h-6 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    <span class="ml-1 text-sm font-medium text-gray-500 md:ml-2">Acciones Rápidas</span>
+                                </div>
+                            </li>
+                        </ol>
+                    </nav>
 
-                                <!-- Authentication -->
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <x-dropdown-link :href="route('logout')"
-                                            onclick="event.preventDefault();
-                                                        this.closest('form').submit();">
-                                        {{ __('Log Out') }}
-                                    </x-dropdown-link>
-                                </form>
-                            </x-slot>
-                        </x-dropdown>
-                    </div>
+                    @yield('content')
                 </div>
-            </div>
-        </nav>
+            </main>
 
-        <!-- Page Heading -->
-        @if (isset($header))
-            <header class="bg-white shadow">
-                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                    {{ $header }}
-                </div>
-            </header>
-        @endif
-
-        <!-- Page Content -->
-        <main class="py-6">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                @yield('content')
-            </div>
-        </main>
+            <!-- Footer -->
+            <x-footer />
+        </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="{{ asset('js/admin-panel.js') }}"></script>
+    <!-- Scripts adicionales -->
     @stack('scripts')
 </body>
 </html>

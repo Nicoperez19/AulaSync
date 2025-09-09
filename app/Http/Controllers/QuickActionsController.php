@@ -49,38 +49,157 @@ class QuickActionsController extends Controller
     public function getDashboardData()
     {
         try {
-            $estadisticas = [
-                'reservas_hoy' => Reserva::whereDate('fecha_reserva', today())->count(),
-                'reservas_semana' => Reserva::whereBetween('fecha_reserva', [
-                    now()->startOfWeek(), 
-                    now()->endOfWeek()
-                ])->count(),
-                'espacios_ocupados' => Espacio::where('estado', 'Ocupado')->count(),
-                'espacios_disponibles' => Espacio::where('estado', 'Disponible')->count(),
-            ];
-
-            // Reservas recientes
-            $reservas_recientes = Reserva::with(['espacio', 'profesor', 'solicitante'])
-                ->orderBy('created_at', 'desc')
-                ->limit(5)
-                ->get();
-
-            // Espacios por estado
-            $espacios_por_estado = Espacio::selectRaw('estado, COUNT(*) as cantidad')
-                ->groupBy('estado')
-                ->get();
+            // Estadísticas básicas
+            $reservas_hoy = Reserva::whereDate('fecha_reserva', today())->count();
+            $espacios_libres = Espacio::where('estado', 'Disponible')->count();
+            $espacios_ocupados = Espacio::where('estado', 'Ocupado')->count();
+            $espacios_mantencion = Espacio::where('estado', 'Mantenimiento')->count();
 
             return response()->json([
                 'success' => true,
-                'estadisticas' => $estadisticas,
-                'reservas_recientes' => $reservas_recientes,
-                'espacios_por_estado' => $espacios_por_estado
+                'reservas_hoy' => $reservas_hoy,
+                'espacios_libres' => $espacios_libres,
+                'espacios_ocupados' => $espacios_ocupados,
+                'espacios_mantencion' => $espacios_mantencion,
+                'timestamp' => now()->format('Y-m-d H:i:s')
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al obtener datos del dashboard: ' . $e->getMessage()
+                'message' => 'Error al obtener datos del dashboard: ' . $e->getMessage(),
+                'reservas_hoy' => 0,
+                'espacios_libres' => 0,
+                'espacios_ocupados' => 0,
+                'espacios_mantencion' => 0
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener espacios para gestión
+     */
+    public function getEspacios(Request $request)
+    {
+        try {
+            $query = Espacio::select('codigo', 'nombre', 'tipo', 'piso', 'capacidad', 'estado')
+                ->orderBy('codigo');
+
+            // Aplicar filtros si existen
+            if ($request->has('estado') && $request->estado) {
+                $query->where('estado', $request->estado);
+            }
+
+            if ($request->has('piso') && $request->piso) {
+                $query->where('piso', $request->piso);
+            }
+
+            $espacios = $query->get();
+
+            return response()->json([
+                'success' => true,
+                'data' => $espacios
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cargar espacios: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener reservas para gestión
+     */
+    public function getReservas(Request $request)
+    {
+        try {
+            $query = Reserva::with(['espacio', 'profesor', 'solicitante'])
+                ->orderBy('fecha_reserva', 'desc')
+                ->orderBy('id_modulo');
+
+            // Aplicar filtros si existen
+            if ($request->has('estado') && $request->estado) {
+                $query->where('estado_reserva', $request->estado);
+            }
+
+            if ($request->has('fecha') && $request->fecha) {
+                $query->whereDate('fecha_reserva', $request->fecha);
+            }
+
+            $reservas = $query->get()->map(function ($reserva) {
+                return [
+                    'id' => $reserva->id,
+                    'nombre_responsable' => $reserva->solicitante ? $reserva->solicitante->nombre_completo : 'N/A',
+                    'run_responsable' => $reserva->solicitante ? $reserva->solicitante->run : 'N/A',
+                    'codigo_espacio' => $reserva->espacio ? $reserva->espacio->codigo : 'N/A',
+                    'fecha' => $reserva->fecha_reserva,
+                    'modulo_inicial' => $reserva->id_modulo,
+                    'modulo_final' => $reserva->id_modulo + ($reserva->duracion_modulos ?? 1) - 1,
+                    'estado' => strtolower($reserva->estado_reserva ?? 'activa')
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'data' => $reservas
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cargar reservas: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Cambiar estado de un espacio
+     */
+    public function cambiarEstadoEspacio(Request $request, $codigo)
+    {
+        try {
+            $request->validate([
+                'estado' => 'required|in:Disponible,Ocupado,Mantenimiento'
+            ]);
+
+            $espacio = Espacio::where('codigo', $codigo)->firstOrFail();
+            $espacio->estado = $request->estado;
+            $espacio->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Estado del espacio actualizado correctamente'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cambiar estado del espacio: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Cambiar estado de una reserva
+     */
+    public function cambiarEstadoReserva(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'estado' => 'required|in:activa,finalizada,cancelada'
+            ]);
+
+            $reserva = Reserva::findOrFail($id);
+            $reserva->estado_reserva = ucfirst($request->estado);
+            $reserva->save();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Estado de la reserva actualizado correctamente'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al cambiar estado de la reserva: ' . $e->getMessage()
             ], 500);
         }
     }

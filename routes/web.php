@@ -251,7 +251,13 @@ Route::middleware(['auth'])->prefix('quick-actions')->name('quick-actions.')->gr
     Route::get('/crear-reserva', [QuickActionsController::class, 'crearReserva'])->name('crear-reserva');
     Route::get('/gestionar-reservas', [QuickActionsController::class, 'gestionarReservas'])->name('gestionar-reservas');
     Route::get('/gestionar-espacios', [QuickActionsController::class, 'gestionarEspacios'])->name('gestionar-espacios');
+    
+    // API endpoints para quick actions
     Route::get('/dashboard-data', [QuickActionsController::class, 'getDashboardData'])->name('dashboard-data');
+    Route::get('/api/espacios', [QuickActionsController::class, 'getEspacios'])->name('api.espacios');
+    Route::get('/api/reservas', [QuickActionsController::class, 'getReservas'])->name('api.reservas');
+    Route::put('/api/espacio/{codigo}/estado', [QuickActionsController::class, 'cambiarEstadoEspacio'])->name('api.espacio.estado');
+    Route::put('/api/reserva/{id}/estado', [QuickActionsController::class, 'cambiarEstadoReserva'])->name('api.reserva.estado');
 });
 
 // Ruta para obtener el token CSRF
