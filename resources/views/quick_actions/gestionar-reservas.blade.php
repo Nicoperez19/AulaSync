@@ -173,8 +173,11 @@ async function cargarReservas() {
             </tr>
         `;
 
+        console.log('🔗 URL de reservas:', '{{ route("quick-actions.api.reservas") }}');
         const response = await fetch('{{ route("quick-actions.api.reservas") }}');
+        console.log('📡 Respuesta del servidor:', response.status, response.statusText);
         const data = await response.json();
+        console.log('📋 Datos recibidos:', data);
 
         if (data.success && data.data) {
             reservasOriginales = data.data;

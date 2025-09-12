@@ -311,7 +311,7 @@ function mostrarEspaciosEnTabla(espacios) {
                         onclick="cambiarEstadoEspacio('${espacio.codigo}', 'Mantenimiento')"
                         class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-yellow-700 bg-yellow-100 hover:bg-yellow-200 transition-colors">
                         <i class="fa-solid fa-wrench w-3 h-3 mr-1"></i>
-                        Mantto
+                        Mantenimiento
                     </button>
                 </div>
             </td>
