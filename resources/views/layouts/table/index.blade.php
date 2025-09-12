@@ -13,33 +13,11 @@
                 </a>
 
                 <!-- Logo y título -->
-                <div class="p-3 text- center rounded-xl bg-light-cloud-blue shadow-lg">
-                    <i class="text-2xl text-white fa-solid fa-table"></i>
+                <div class="flex items-center gap-4 justify-center flex-1">
+                   <img src='images/Logo-UCSC-Color-Horizontal.png' alt="Logo" class="h-16 w-auto" >
+                   <div class="text-2xl font-bold leading-tight text-gray-900">Sede Talcahuano</div>
                 </div>
-                <div>
-</div>
-                    <h2 class="text-1xl font-bold leading-tight text-gray-900">Estado de Espacios</h2>
-                <!-- Leyenda de colores -->
-                <div class="p-3  ml-5 rounded-lg   text-center">
-
-        <div class="flex flex-wrap gap-4 text-xs justify-center">
-            <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-green-500 flex-shrink-0"></span>
-                <span class="text-gray-600">Disponible</span>
-            </div>
-           
-            <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-red-500 flex-shrink-0"></span>
-                <span class="text-gray-600">Ocupado (Interacción Física)</span>
-            </div>
-            <div class="flex items-center gap-2">
-                <span class="w-3 h-3 rounded-full bg-yellow-500 flex-shrink-0"></span>
-                <span class="text-gray-600">En Programa</span>
-          </div>  </div>
-        </div>
-            </div>
-
-            <!-- Información del módulo actual -->
+            </div>            <!-- Información del módulo actual -->
             <div class="flex items-center gap-4">
                 <div class="hidden md:flex items-center gap-3 px-4 py-2 bg-white rounded-lg shadow-sm border border-gray-200">
                     <div class="text-center">
@@ -61,7 +39,7 @@
 
     <!-- Reloj flotante para pantallas pequeñas -->
     <div id="reloj-flotante" 
-         class="fixed top-4 right-4 z-50 md:hidden bg-light-cloud-blue shadow-lg rounded-xl border border-gray-200 px-4 py-3 flex flex-col items-center gap-1 min-w-[140px] text-white">
+         class="fixed top-4 right-4 z-50 md:hidden bg-gray-800 shadow-lg rounded-xl border border-gray-200 px-4 py-3 flex flex-col items-center gap-1 min-w-[140px] text-white">
         <span class="px-2 font-mono text-lg font-bold text-white" id="hora-actual-mobile"></span>
         <span class="px-2 font-mono text-sm text-white" id="modulo-actual-mobile"></span>
     </div>

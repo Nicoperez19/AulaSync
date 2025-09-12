@@ -524,6 +524,19 @@ class ModulosActualesTable extends Component
         foreach ($this->pisos as $piso) {
             $espaciosPiso = $this->espacios[$piso->id] ?? [];
             foreach ($espaciosPiso as $espacio) {
+                // Excluir salas de estudio
+                if (isset($espacio['tipo_espacio']) && 
+                    (strtolower($espacio['tipo_espacio']) === 'sala de estudio' || 
+                     strtolower($espacio['tipo_espacio']) === 'sala estudio' ||
+                     strpos(strtolower($espacio['tipo_espacio']), 'estudio') !== false)) {
+                    continue;
+                }
+                
+                // Excluir TH-AUD específicamente
+                if (isset($espacio['id_espacio']) && $espacio['id_espacio'] === 'TH-AUD') {
+                    continue;
+                }
+                
                 $espacio['piso'] = $piso->numero_piso;
                 $todosLosEspacios[] = $espacio;
             }
