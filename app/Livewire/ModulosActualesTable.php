@@ -8,6 +8,7 @@ use App\Models\Espacio;
 use App\Models\Piso;
 use App\Models\Modulo;
 use App\Models\Reserva;
+use App\Models\ClaseNoRealizada;
 use App\Helpers\SemesterHelper;
 use Carbon\Carbon;
 
@@ -214,6 +215,55 @@ class ModulosActualesTable extends Component
         }
         
         return null;
+    }
+
+    /**
+     * Verificar si una clase debe marcarse como no realizada
+     */
+    private function verificarClaseNoRealizada($planificacionActiva, $tieneReservaProfesor, $periodo, $moduloActual)
+    {
+        if (!$planificacionActiva || $tieneReservaProfesor) {
+            return false; // Si no hay clase o el profesor se registró, no es clase no realizada
+        }
+
+        // Obtener todas las planificaciones de esta asignatura para encontrar el primer módulo
+        $todasLasPlanificaciones = Planificacion_Asignatura::with(['modulo'])
+            ->where('id_asignatura', $planificacionActiva->id_asignatura)
+            ->whereHas('horario', function($q) use ($periodo) {
+                $q->where('periodo', $periodo);
+            })
+            ->get()
+            ->sortBy(function($planificacion) {
+                $moduloParts = explode('.', $planificacion->id_modulo);
+                return isset($moduloParts[1]) ? (int)$moduloParts[1] : 0;
+            });
+
+        if ($todasLasPlanificaciones->isEmpty()) {
+            return false;
+        }
+
+        // Obtener el primer módulo de la clase
+        $primeraPlanificacion = $todasLasPlanificaciones->first();
+        $primerModuloParts = explode('.', $primeraPlanificacion->id_modulo);
+        $numeroPrimerModulo = isset($primerModuloParts[1]) ? (int)$primerModuloParts[1] : 0;
+
+        // Si estamos en un módulo posterior al primer módulo y no hay reserva del profesor
+        if ($moduloActual && $moduloActual['numero'] > $numeroPrimerModulo && !$tieneReservaProfesor) {
+            // Registrar la clase no realizada
+            ClaseNoRealizada::registrarClaseNoRealizada([
+                'id_asignatura' => $planificacionActiva->id_asignatura,
+                'id_espacio' => $planificacionActiva->id_espacio,
+                'id_modulo' => $primeraPlanificacion->id_modulo,
+                'run_profesor' => $planificacionActiva->asignatura->run_profesor ?? '',
+                'fecha_clase' => Carbon::now()->toDateString(),
+                'periodo' => $periodo,
+                'motivo' => 'No se registró ingreso en el primer módulo programado',
+            ]);
+            
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -452,10 +502,19 @@ class ModulosActualesTable extends Component
                         $proximaClase = $this->obtenerProximaClase($espacio->id_espacio, $periodo);
                     }
 
+                    // Verificar si la clase debe marcarse como no realizada
+                    $claseNoRealizada = false;
+                    if ($tieneClase && !$tieneReservaProfesor) {
+                        $claseNoRealizada = $this->verificarClaseNoRealizada($planificacionActiva, $tieneReservaProfesor, $periodo, $this->moduloActual);
+                    }
+
                     // Determinar el estado dinámicamente
                     if (($tieneClase && $tieneReservaProfesor) || $tieneReservaSolicitante) {
                         // Si hay clase y el profesor registró su ingreso, O si hay reserva de solicitante
                         $estado = 'Ocupado';
+                    } elseif ($tieneClase && !$tieneReservaProfesor && $claseNoRealizada) {
+                        // Si hay clase programada pero se detectó que no fue realizada
+                        $estado = 'Clase no realizada';
                     } elseif ($tieneClase && !$tieneReservaProfesor) {
                         // Si hay clase programada pero el profesor no ha registrado su ingreso
                         $estado = 'En Programa';
@@ -552,6 +611,8 @@ class ModulosActualesTable extends Component
     {
         if (strtolower($estado) === 'ocupado' || $estado === 'Ocupado') {
             return 'bg-red-500';
+        } elseif (strtolower($estado) === 'clase no realizada' || $estado === 'Clase no realizada') {
+            return 'bg-red-700'; // Color más oscuro para indicar problema
         } elseif (strtolower($estado) === 'reservado' || $estado === 'Reservado') {
             return 'bg-yellow-400';
         } elseif (strtolower($estado) === 'en programa' || $estado === 'En Programa') {

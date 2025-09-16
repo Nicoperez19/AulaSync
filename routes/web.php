@@ -20,6 +20,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\CampusController;
 use App\Http\Controllers\SedeController;
 use App\Http\Controllers\QuickActionsController;
+use App\Http\Controllers\ClasesNoRealizadasController;
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
@@ -55,6 +56,9 @@ Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::delete('/user/user_delete/{run}', [UserController::class, 'destroy'])->name('users.delete');
     Route::get('/user/user_edit/{run}', [UserController::class, 'edit'])->name('users.edit');
     Route::put('user/user_update/{run}', [UserController::class, 'update'])->name('users.update');
+    
+    // Estadísticas de clases no realizadas
+    Route::get('/clases-no-realizadas', [\App\Http\Controllers\ClasesNoRealizadasController::class, 'index'])->name('clases-no-realizadas.index');
 });
 
 // Horarios profesores - Solo Administrador y Supervisor

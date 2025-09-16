@@ -81,9 +81,10 @@
 
                                                 </span>
                                             @elseif (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']) && isset($espacio['datos_clase']['profesor']) && !empty($espacio['datos_clase']['profesor']['name']))
-                                                <div class="font-medium text-gray-900 text-sm">
+                                                <div class="font-medium text-sm {{ $espacio['estado'] === 'Clase no realizada' ? 'text-red-700' : 'text-gray-900' }}">
                                                     <div>{{ $espacio['datos_clase']['nombre_asignatura'] }}</div>
                                                     <div>Prof: {{ $espacio['datos_clase']['profesor']['name'] }}</div>
+                                                    
                                                 </div>
                                             @elseif(!empty($espacio['proxima_clase']))
                                                 <div class="font-medium text-gray-700 text-sm">
