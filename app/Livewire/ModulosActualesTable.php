@@ -265,18 +265,21 @@ class ModulosActualesTable extends Component
 
     public function actualizarDatos()
     {
+        // Aumentar el tiempo límite de ejecución para evitar timeout
+        set_time_limit(60);
+        
         $this->horaActual = Carbon::now()->format('H:i:s');
         $this->fechaActual = Carbon::now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY');
         
         // Obtener el módulo actual usando la nueva lógica
         $this->moduloActual = $this->obtenerModuloActual();
 
-        // Debug temporal para verificar el módulo
-        \Log::info('Hora actual: ' . $this->horaActual);
-        \Log::info('Módulo actual encontrado: ' . ($this->moduloActual ? 'Sí' : 'No'));
-        if ($this->moduloActual) {
-            \Log::info('Número del módulo: ' . $this->moduloActual['numero']);
-        }
+        // Debug temporal para verificar el módulo - COMENTADO para evitar spam en logs
+        // \Log::info('Hora actual: ' . $this->horaActual);
+        // \Log::info('Módulo actual encontrado: ' . ($this->moduloActual ? 'Sí' : 'No'));
+        // if ($this->moduloActual) {
+        //     \Log::info('Número del módulo: ' . $this->moduloActual['numero']);
+        // }
 
         // Obtener todos los pisos con sus espacios
         $this->pisos = Piso::with(['espacios'])->get();
@@ -447,10 +450,11 @@ class ModulosActualesTable extends Component
                     }
 
                     // Buscar la próxima clase para este espacio si no tiene clase actual
+                    // TEMPORALMENTE DESACTIVADO para evitar timeout
                     $proximaClase = null;
-                    if (!$tieneClase) {
-                        $proximaClase = $this->obtenerProximaClase($espacio->id_espacio, $periodo);
-                    }
+                    // if (!$tieneClase) {
+                    //     $proximaClase = $this->obtenerProximaClase($espacio->id_espacio, $periodo);
+                    // }
 
                     // Determinar el estado dinámicamente
                     if (($tieneClase && $tieneReservaProfesor) || $tieneReservaSolicitante) {
