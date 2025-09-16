@@ -3,9 +3,9 @@
  * Manejo de modales y operaciones administrativas
  */
 
-// Variables globales para el panel admin
-let espaciosDisponibles = [];
-let modulosHorarios = {};
+// Variables globales para el panel admin (con verificación para evitar duplicados)
+window.espaciosDisponibles = window.espaciosDisponibles || [];
+window.modulosHorarios = window.modulosHorarios || {};
 
 /**
  * ========================================
