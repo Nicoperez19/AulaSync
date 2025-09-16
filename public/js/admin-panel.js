@@ -3,9 +3,9 @@
  * Manejo de modales y operaciones administrativas
  */
 
-// Variables globales para el panel admin
-let espaciosDisponibles = [];
-let modulosHorarios = {};
+// Variables globales para el panel admin (con verificación para evitar duplicados)
+window.espaciosDisponibles = window.espaciosDisponibles || [];
+window.modulosHorarios = window.modulosHorarios || {};
 
 /**
  * ========================================
@@ -424,11 +424,11 @@ async function cargarReservas() {
         const tbody = document.getElementById('tabla-reservas-body');
         tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">Cargando reservas...</td></tr>';
 
-        const response = await fetch('/api/admin/reservas');
+        const response = await fetch('/quick-actions/api/reservas');
         const data = await response.json();
 
-        if (data.success && data.reservas) {
-            mostrarReservasEnTabla(data.reservas);
+        if (data.success && data.data) {
+            mostrarReservasEnTabla(data.data);
         } else {
             tbody.innerHTML = '<tr><td colspan="7" class="px-6 py-4 text-center text-gray-500">No se encontraron reservas</td></tr>';
         }
@@ -490,7 +490,7 @@ function mostrarReservasEnTabla(reservas) {
 // Cambiar estado de una reserva
 async function cambiarEstadoReserva(reservaId, nuevoEstado) {
     try {
-        const response = await fetch(`/api/admin/reserva/${reservaId}/estado`, {
+        const response = await fetch(`/quick-actions/api/reserva/${reservaId}/estado`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -510,7 +510,7 @@ async function cambiarEstadoReserva(reservaId, nuevoEstado) {
                 actualizarColoresEspacios(true);
             }
         } else {
-            Swal.fire('Error', result.mensaje || 'Error al cambiar estado', 'error');
+            Swal.fire('Error', result.message || 'Error al cambiar estado', 'error');
         }
     } catch (error) {
         console.error('Error al cambiar estado de reserva:', error);

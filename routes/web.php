@@ -251,7 +251,80 @@ Route::middleware(['auth'])->prefix('quick-actions')->name('quick-actions.')->gr
     Route::get('/crear-reserva', [QuickActionsController::class, 'crearReserva'])->name('crear-reserva');
     Route::get('/gestionar-reservas', [QuickActionsController::class, 'gestionarReservas'])->name('gestionar-reservas');
     Route::get('/gestionar-espacios', [QuickActionsController::class, 'gestionarEspacios'])->name('gestionar-espacios');
+    
+    // API endpoints para quick actions
     Route::get('/dashboard-data', [QuickActionsController::class, 'getDashboardData'])->name('dashboard-data');
+    Route::get('/api/espacios', [QuickActionsController::class, 'getEspacios'])->name('api.espacios');
+    Route::get('/api/reservas', [QuickActionsController::class, 'getReservas'])->name('api.reservas');
+    Route::get('/debug/test', function () {
+        return response()->json([
+            'message' => 'Quick Actions API funcionando',
+            'user' => auth()->user()->name ?? 'No autenticado',
+            'timestamp' => now()
+        ]);
+    })->name('debug.test');
+    
+    Route::get('/debug/espacios', function () {
+        try {
+            $count = \App\Models\Espacio::count();
+            $first = \App\Models\Espacio::first();
+            return response()->json([
+                'message' => 'Debug espacios',
+                'count' => $count,
+                'first_espacio' => $first,
+                'columns' => $first ? array_keys($first->toArray()) : []
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
+        }
+    })->name('debug.espacios');
+    
+    // API para buscar personas por RUN (autocompletado)
+    Route::get('/api/buscar-personas', [QuickActionsController::class, 'buscarPersonas'])->name('api.buscar-personas');
+    
+    // API para crear reserva
+    Route::post('/api/crear-reserva', [QuickActionsController::class, 'procesarCrearReserva'])->name('api.crear-reserva');
+    
+    // API para obtener reservas
+    Route::get('/api/reservas', [QuickActionsController::class, 'getReservas'])->name('api.reservas');
+    
+    // API para cambiar estado de espacio
+    Route::put('/api/espacio/{codigo}/estado', [QuickActionsController::class, 'cambiarEstadoEspacio'])->name('quick-actions.api.cambiar-estado-espacio');
+    
+    // API para cambiar estado de reserva
+    Route::put('/api/reserva/{id}/estado', [QuickActionsController::class, 'cambiarEstadoReserva'])->name('quick-actions.api.cambiar-estado-reserva');
+    
+    // Debug para verificar estructura de personas
+    Route::get('/debug/personas', function () {
+        try {
+            $profesorCount = \App\Models\Profesor::count();
+            $solicitanteCount = \App\Models\Solicitante::count();
+            $firstProfesor = \App\Models\Profesor::first();
+            $firstSolicitante = \App\Models\Solicitante::first();
+            
+            return response()->json([
+                'message' => 'Debug personas',
+                'profesores_count' => $profesorCount,
+                'solicitantes_count' => $solicitanteCount,
+                'first_profesor' => $firstProfesor,
+                'first_solicitante' => $firstSolicitante,
+                'profesor_columns' => $firstProfesor ? array_keys($firstProfesor->toArray()) : [],
+                'solicitante_columns' => $firstSolicitante ? array_keys($firstSolicitante->toArray()) : []
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
+        }
+    })->name('debug.personas');
+    Route::put('/api/espacio/{codigo}/estado', [QuickActionsController::class, 'cambiarEstadoEspacio'])->name('api.espacio.estado');
+    Route::put('/api/reserva/{id}/estado', [QuickActionsController::class, 'cambiarEstadoReserva'])->name('api.reserva.estado');
 });
 
 // Ruta para obtener el token CSRF

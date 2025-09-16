@@ -42,18 +42,19 @@ class RoleSeeder extends Seeder
         $permission22 = Permission::firstOrCreate(['name' => 'visor de mapas']);
         $permission23 = Permission::firstOrCreate(['name' => 'visor de usuarios']);
         $permission24 = Permission::firstOrCreate(['name' => 'mantenedor de profesores']);
+        $permission25 = Permission::firstOrCreate(['name' => 'acciones rapidas']);
       
         $roleAdmin->syncPermissions([
             $permission1, $permission2, $permission3, $permission4, $permission5,
             $permission6, $permission7, $permission8, $permission9, $permission10,
             $permission11, $permission12, $permission13, $permission14, $permission15,
             $permission16, $permission17, $permission18, $permission19, $permission20,
-            $permission21, $permission22, $permission23, $permission24
+            $permission21, $permission22, $permission23, $permission24, $permission25
         ]);
 
         $roleSupervisor->syncPermissions([
             $permission1, $permission14, $permission15, $permission16, $permission17,
-            $permission18, $permission22, $permission23
+            $permission18, $permission22, $permission23, $permission25
         ]);
 
         $roleUsuario->syncPermissions([
