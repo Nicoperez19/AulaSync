@@ -295,6 +295,9 @@ Route::middleware(['auth'])->prefix('quick-actions')->name('quick-actions.')->gr
     // API para cambiar estado de espacio
     Route::put('/api/espacio/{codigo}/estado', [QuickActionsController::class, 'cambiarEstadoEspacio'])->name('quick-actions.api.cambiar-estado-espacio');
     
+    // API para cambiar estado de reserva
+    Route::put('/api/reserva/{id}/estado', [QuickActionsController::class, 'cambiarEstadoReserva'])->name('quick-actions.api.cambiar-estado-reserva');
+    
     // Debug para verificar estructura de personas
     Route::get('/debug/personas', function () {
         try {

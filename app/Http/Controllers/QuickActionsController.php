@@ -143,8 +143,10 @@ class QuickActionsController extends Controller
     public function getReservas(Request $request)
     {
         try {
-            $query = Reserva::with(['espacio', 'profesor', 'solicitante'])
-                ->orderBy('fecha_reserva', 'desc')
+            Log::info('📋 Solicitando reservas desde Quick Actions');
+            
+            // Temporalmente sin relaciones para debug
+            $query = Reserva::orderBy('fecha_reserva', 'desc')
                 ->orderBy('hora');
 
             // Aplicar filtros si existen
@@ -157,39 +159,57 @@ class QuickActionsController extends Controller
             }
 
             $reservasRaw = $query->get();
+            Log::info('📊 Total de reservas encontradas: ' . $reservasRaw->count());
             
+            // Mejorado para incluir más información
             $reservas = $reservasRaw->map(function ($reserva) {
-                // Determinar el responsable (profesor o solicitante)
-                $nombreResponsable = 'N/A';
+                // Obtener información del responsable
+                $nombreResponsable = 'Sin asignar';
                 $runResponsable = 'N/A';
-                
-                if ($reserva->profesor) {
-                    $nombreResponsable = $reserva->profesor->name ?? ($reserva->profesor->nombre_completo ?? 'N/A');
-                    $runResponsable = $reserva->profesor->run_profesor ?? 'N/A';
-                } elseif ($reserva->solicitante) {
-                    $nombreResponsable = $reserva->solicitante->nombre ?? ($reserva->solicitante->nombre_completo ?? 'N/A');
-                    $runResponsable = $reserva->solicitante->run_solicitante ?? 'N/A';
+                $tipoResponsable = 'desconocido';
+
+                if ($reserva->run_profesor) {
+                    $profesor = \App\Models\Profesor::where('run_profesor', $reserva->run_profesor)->first();
+                    $nombreResponsable = $profesor ? $profesor->name : $reserva->run_profesor;
+                    $runResponsable = $reserva->run_profesor;
+                    $tipoResponsable = 'profesor';
+                } elseif ($reserva->run_solicitante) {
+                    $solicitante = \App\Models\Solicitante::where('run_solicitante', $reserva->run_solicitante)->first();
+                    $nombreResponsable = $solicitante ? $solicitante->nombre : $reserva->run_solicitante;
+                    $runResponsable = $reserva->run_solicitante;
+                    $tipoResponsable = 'solicitante';
                 }
-                
+
+                // Obtener información del espacio
+                $espacio = \App\Models\Espacio::where('id_espacio', $reserva->id_espacio)->first();
+                $nombreEspacio = $espacio ? $espacio->nombre_espacio : 'Espacio desconocido';
+
+                // Procesar módulos y horarios
+                $modulosInfo = $this->procesarModulosYHorarios($reserva);
+
                 return [
                     'id' => $reserva->id_reserva,
                     'nombre_responsable' => $nombreResponsable,
                     'run_responsable' => $runResponsable,
-                    'codigo_espacio' => $reserva->espacio ? $reserva->espacio->id_espacio : 'N/A',
-                    'nombre_espacio' => $reserva->espacio ? $reserva->espacio->nombre_espacio : 'N/A',
+                    'tipo_responsable' => $tipoResponsable,
+                    'codigo_espacio' => $reserva->id_espacio ?? 'N/A',
+                    'nombre_espacio' => $nombreEspacio,
                     'fecha' => $reserva->fecha_reserva,
                     'hora' => $reserva->hora,
-                    'modulos' => $reserva->modulos,
+                    'modulos_info' => $modulosInfo,
                     'tipo_reserva' => $reserva->tipo_reserva,
                     'estado' => strtolower($reserva->estado ?? 'activa'),
-                    'observaciones' => $reserva->observaciones
+                    'observaciones' => $reserva->observaciones ?? ''
                 ];
             });
 
+            Log::info('✅ Enviando ' . $reservas->count() . ' reservas procesadas al frontend');
+            
             return response()->json([
                 'success' => true,
                 'reservas' => $reservas,  // Añadido para consistencia con JavaScript
-                'data' => $reservas       // Mantenemos 'data' por compatibilidad
+                'data' => $reservas,      // Mantenemos 'data' por compatibilidad
+                'total' => $reservas->count()
             ]);
         } catch (\Exception $e) {
             Log::error('Error al obtener reservas en QuickActions: ' . $e->getMessage());
@@ -381,11 +401,22 @@ class QuickActionsController extends Controller
             // Crear la reserva
             $reserva = Reserva::create($datosReserva);
 
-            Log::info('✅ Reserva creada exitosamente', ['id_reserva' => $idReserva]);
+            // Verificar si la reserva es actual para ocupar el espacio automáticamente
+            $espacioOcupado = $this->ocuparEspacioSiEsReservaActual($reserva);
+
+            Log::info('✅ Reserva creada exitosamente', [
+                'id_reserva' => $idReserva,
+                'espacio_ocupado' => $espacioOcupado
+            ]);
+
+            $mensaje = 'Reserva creada exitosamente';
+            if ($espacioOcupado) {
+                $mensaje .= '. Espacio ' . $request->espacio . ' marcado como ocupado automáticamente';
+            }
 
             return response()->json([
                 'success' => true,
-                'mensaje' => 'Reserva creada exitosamente',
+                'mensaje' => $mensaje,
                 'id_reserva' => $idReserva,
                 'datos' => [
                     'responsable' => $request->nombre,
@@ -394,7 +425,8 @@ class QuickActionsController extends Controller
                     'modulos' => $request->modulo_inicial . ' - ' . $request->modulo_final,
                     'hora' => $horaInicio,
                     'tipo' => $request->tipo === 'profesor' ? 'Académica' : 'Externa',
-                    'creado_por' => $usuario->name ?? 'Administrador'
+                    'creado_por' => $usuario->name ?? 'Administrador',
+                    'espacio_ocupado' => $espacioOcupado
                 ]
             ]);
 
@@ -452,20 +484,34 @@ class QuickActionsController extends Controller
             
             $espacio->save();
 
+            // Si el espacio se libera (pasa a Disponible), verificar reservas activas actuales
+            $reservasFinalizadas = [];
+            if ($request->estado === 'Disponible' && $estadoAnterior === 'Ocupado') {
+                $reservasFinalizadas = $this->finalizarReservasActivasActuales($codigo);
+            }
+
             Log::info('✅ Estado de espacio actualizado', [
                 'codigo' => $codigo,
                 'estado_anterior' => $estadoAnterior,
-                'estado_nuevo' => $request->estado
+                'estado_nuevo' => $request->estado,
+                'reservas_finalizadas' => $reservasFinalizadas
             ]);
+
+            $mensaje = "Estado del espacio {$codigo} cambiado de {$estadoAnterior} a {$request->estado}";
+            if (!empty($reservasFinalizadas)) {
+                $cantidadReservas = count($reservasFinalizadas);
+                $mensaje .= ". Se finalizaron automáticamente {$cantidadReservas} reserva(s) activa(s): " . implode(', ', $reservasFinalizadas);
+            }
 
             return response()->json([
                 'success' => true,
-                'mensaje' => "Estado del espacio {$codigo} cambiado de {$estadoAnterior} a {$request->estado}",
+                'mensaje' => $mensaje,
                 'espacio' => [
                     'codigo' => $espacio->id_espacio,
                     'nombre' => $espacio->nombre_espacio,
                     'estado_anterior' => $estadoAnterior,
-                    'estado_nuevo' => $request->estado
+                    'estado_nuevo' => $request->estado,
+                    'reservas_finalizadas' => $reservasFinalizadas
                 ]
             ]);
 
@@ -489,23 +535,510 @@ class QuickActionsController extends Controller
     public function cambiarEstadoReserva(Request $request, $id)
     {
         try {
+            Log::info('🔄 Cambiando estado de reserva', [
+                'id_reserva' => $id,
+                'nuevo_estado' => $request->estado
+            ]);
+
             $request->validate([
                 'estado' => 'required|in:activa,finalizada,cancelada'
             ]);
 
-            $reserva = Reserva::findOrFail($id);
-            $reserva->estado_reserva = ucfirst($request->estado);
+            // Buscar reserva por id_reserva (que es string, no int)
+            $reserva = Reserva::where('id_reserva', $id)->first();
+            
+            if (!$reserva) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Reserva no encontrada'
+                ], 404);
+            }
+
+            $estadoAnterior = $reserva->estado ?? 'activa';
+            
+            // Actualizar el campo estado
+            $reserva->estado = $request->estado;
+            
+            // Variables para el control del espacio
+            $espacioLiberado = false;
+            $espacioId = $reserva->id_espacio;
+            
+            // Actualizar hora de salida si se finaliza
+            if ($request->estado === 'finalizada') {
+                $reserva->hora_salida = now()->format('H:i:s');
+                
+                // Verificar si es una reserva actual para liberar el espacio
+                $espacioLiberado = $this->liberarEspacioSiEsReservaActual($reserva);
+            }
+            
             $reserva->save();
+
+            Log::info('✅ Estado de reserva actualizado', [
+                'id_reserva' => $id,
+                'estado_anterior' => $estadoAnterior,
+                'estado_nuevo' => $request->estado
+            ]);
+
+            $mensaje = "Reserva {$id} {$request->estado} correctamente";
+            if ($request->estado === 'finalizada') {
+                $mensaje .= " (hora de salida: {$reserva->hora_salida})";
+                if ($espacioLiberado) {
+                    $mensaje .= ". Espacio {$espacioId} liberado automáticamente";
+                }
+            }
 
             return response()->json([
                 'success' => true,
-                'message' => 'Estado de la reserva actualizado correctamente'
+                'mensaje' => $mensaje,
+                'reserva' => [
+                    'id' => $reserva->id_reserva,
+                    'estado_anterior' => $estadoAnterior,
+                    'estado_nuevo' => $request->estado,
+                    'hora_salida' => $reserva->hora_salida,
+                    'espacio' => $reserva->espacio->nombre_espacio ?? 'Sin espacio',
+                    'usuario' => $reserva->nombreUsuario ?? 'Sin usuario',
+                    'espacio_liberado' => $espacioLiberado
+                ]
             ]);
-        } catch (\Exception $e) {
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error al cambiar estado de la reserva: ' . $e->getMessage()
+                'mensaje' => 'Estado inválido: ' . collect($e->errors())->flatten()->implode(', ')
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('❌ Error al cambiar estado de reserva: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error interno del servidor: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Liberar espacio automáticamente al finalizar una reserva
+     * Versión mejorada: libera el espacio si no hay más reservas activas actuales o futuras inmediatas
+     */
+    private function liberarEspacioSiEsReservaActual($reserva)
+    {
+        try {
+            // Obtener fecha y hora actual
+            $fechaActual = now()->format('Y-m-d');
+            $horaActual = now()->format('H:i:s');
+            $horaActualEnMinutos = $this->convertirHoraAMinutos($horaActual);
+
+            // Verificar si hay otras reservas activas en el mismo espacio que deban seguir ocupándolo
+            $otrasReservasActivas = Reserva::where('id_espacio', $reserva->id_espacio)
+                ->where('estado', 'activa')
+                ->where('id_reserva', '!=', $reserva->id_reserva) // Excluir la reserva que se está finalizando
+                ->where('fecha_reserva', $fechaActual)
+                ->get();
+
+            // Verificar si alguna de estas reservas está actualmente en curso
+            $hayReservaEnCurso = false;
+            foreach ($otrasReservasActivas as $otraReserva) {
+                $horaInicioOtra = $this->convertirHoraAMinutos($otraReserva->hora);
+                
+                // Estimar duración basada en módulos o asumir 1 hora
+                $duracionEstimada = 60; // minutos por defecto
+                if ($otraReserva->observaciones && preg_match('/Módulos: (\d+)-(\d+)/', $otraReserva->observaciones, $matches)) {
+                    $modulosCount = (int)$matches[2] - (int)$matches[1] + 1;
+                    $duracionEstimada = $modulosCount * 50; // 50 minutos por módulo
+                } elseif (is_numeric($otraReserva->modulos)) {
+                    $duracionEstimada = (int)$otraReserva->modulos * 50;
+                }
+
+                $horaFinEstimada = $horaInicioOtra + $duracionEstimada;
+
+                // Si la hora actual está dentro del rango de esta reserva
+                if ($horaActualEnMinutos >= $horaInicioOtra && $horaActualEnMinutos <= $horaFinEstimada) {
+                    $hayReservaEnCurso = true;
+                    Log::info('⚠️  Hay otra reserva activa en curso en el mismo espacio', [
+                        'reserva_en_curso' => $otraReserva->id_reserva,
+                        'hora_inicio' => $otraReserva->hora,
+                        'duracion_estimada' => $duracionEstimada . ' minutos'
+                    ]);
+                    break;
+                }
+            }
+
+            // Solo liberar el espacio si:
+            // 1. La reserva finalizada es de hoy, Y
+            // 2. No hay otras reservas activas en curso
+            if ($reserva->fecha_reserva === $fechaActual && !$hayReservaEnCurso) {
+                $espacio = Espacio::where('id_espacio', $reserva->id_espacio)->first();
+                if ($espacio && $espacio->estado === 'Ocupado') {
+                    $espacio->estado = 'Disponible';
+                    $espacio->save();
+
+                    Log::info('🔓 Espacio liberado automáticamente', [
+                        'id_espacio' => $reserva->id_espacio,
+                        'reserva_finalizada' => $reserva->id_reserva,
+                        'fecha_reserva' => $reserva->fecha_reserva,
+                        'hora_finalizacion' => $horaActual,
+                        'otras_reservas_activas' => $otrasReservasActivas->count()
+                    ]);
+
+                    return true;
+                }
+            } else {
+                $motivo = $reserva->fecha_reserva !== $fechaActual ? 'no es del día actual' : 'hay otras reservas activas en curso';
+                Log::info('📋 No se libera el espacio', [
+                    'motivo' => $motivo,
+                    'fecha_reserva' => $reserva->fecha_reserva,
+                    'fecha_actual' => $fechaActual,
+                    'otras_reservas_en_curso' => $hayReservaEnCurso
+                ]);
+            }
+
+            return false;
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error al verificar liberación de espacio: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Ocupar espacio automáticamente si la reserva creada es actual
+     * (misma fecha y el módulo actual coincide con el horario de la reserva)
+     */
+    private function ocuparEspacioSiEsReservaActual($reserva)
+    {
+        try {
+            // Obtener fecha y hora actual
+            $fechaActual = now()->format('Y-m-d');
+            $horaActual = now()->format('H:i:s');
+
+            // Verificar si la reserva es del día actual
+            if ($reserva->fecha_reserva !== $fechaActual) {
+                Log::info('📅 Reserva no es del día actual - no se ocupa el espacio', [
+                    'fecha_reserva' => $reserva->fecha_reserva,
+                    'fecha_actual' => $fechaActual
+                ]);
+                return false;
+            }
+
+            // Mapeo de módulos a horarios (mismo que el método de liberación)
+            $horariosModulos = [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+            ];
+
+            // Determinar módulo actual basado en la hora
+            $moduloActual = null;
+            foreach ($horariosModulos as $modulo => $horario) {
+                if ($horaActual >= $horario['inicio'] && $horaActual <= $horario['fin']) {
+                    $moduloActual = $modulo;
+                    break;
+                }
+            }
+
+            if (!$moduloActual) {
+                Log::info('⏰ No hay módulo activo en este momento - no se ocupa el espacio', [
+                    'hora_actual' => $horaActual
+                ]);
+                return false;
+            }
+
+            // Verificar si la reserva incluye el módulo actual
+            // Para reservas recién creadas, usar la información de módulos
+            $modulosReserva = $reserva->modulos;
+            $moduloInicio = null;
+            $moduloFin = null;
+
+            // Primero intentar extraer de las observaciones que contienen "Módulos: X-Y"
+            if ($reserva->observaciones && preg_match('/Módulos: (\d+)-(\d+)/', $reserva->observaciones, $matches)) {
+                $moduloInicio = (int)$matches[1];
+                $moduloFin = (int)$matches[2];
+            } elseif ($modulosReserva && preg_match('/(\d+)\s*-\s*(\d+)/', $modulosReserva, $matches)) {
+                // Si modulos tiene formato "X - Y"
+                $moduloInicio = (int)$matches[1];
+                $moduloFin = (int)$matches[2];
+            } elseif (is_numeric($modulosReserva)) {
+                // Si modulos es la duración, usar la hora de inicio para determinar módulos
+                $horaReserva = $reserva->hora;
+                foreach ($horariosModulos as $modulo => $horario) {
+                    if ($horaReserva >= $horario['inicio'] && $horaReserva <= $horario['fin']) {
+                        $moduloInicio = $modulo;
+                        $moduloFin = $modulo + (int)$modulosReserva - 1;
+                        break;
+                    }
+                }
+            }
+
+            // Si aún no se determinaron, usar la hora de la reserva
+            if (!$moduloInicio || !$moduloFin) {
+                Log::info('⚠️  Determinando módulos por hora de inicio de la reserva', [
+                    'modulos_reserva' => $modulosReserva,
+                    'hora_reserva' => $reserva->hora,
+                    'observaciones' => $reserva->observaciones
+                ]);
+                
+                $horaReserva = $reserva->hora;
+                foreach ($horariosModulos as $modulo => $horario) {
+                    if ($horaReserva >= $horario['inicio'] && $horaReserva <= $horario['fin']) {
+                        $moduloInicio = $modulo;
+                        // Asumir duración de 1 módulo si no se puede determinar
+                        $moduloFin = is_numeric($modulosReserva) ? $modulo + (int)$modulosReserva - 1 : $modulo;
+                        break;
+                    }
+                }
+            }
+
+            // Verificar si el módulo actual está dentro del rango de la reserva
+            if ($moduloInicio && $moduloFin && $moduloActual >= $moduloInicio && $moduloActual <= $moduloFin) {
+                // Es una reserva actual - ocupar el espacio
+                $espacio = Espacio::where('id_espacio', $reserva->id_espacio)->first();
+                if ($espacio && $espacio->estado === 'Disponible') {
+                    $espacio->estado = 'Ocupado';
+                    $espacio->save();
+
+                    Log::info('🔒 Espacio ocupado automáticamente por reserva actual', [
+                        'id_espacio' => $reserva->id_espacio,
+                        'id_reserva' => $reserva->id_reserva,
+                        'modulo_actual' => $moduloActual,
+                        'modulos_reserva' => "{$moduloInicio}-{$moduloFin}",
+                        'fecha_reserva' => $reserva->fecha_reserva,
+                        'hora_actual' => $horaActual,
+                        'hora_reserva' => $reserva->hora
+                    ]);
+
+                    return true;
+                } elseif ($espacio) {
+                    Log::info('⚠️  Espacio ya está ocupado o en otro estado', [
+                        'id_espacio' => $reserva->id_espacio,
+                        'estado_actual' => $espacio->estado
+                    ]);
+                }
+            } else {
+                Log::info('📋 Reserva no corresponde al módulo actual - no se ocupa el espacio', [
+                    'modulo_actual' => $moduloActual,
+                    'modulos_reserva' => "{$moduloInicio}-{$moduloFin}",
+                    'hora_actual' => $horaActual,
+                    'hora_reserva' => $reserva->hora
+                ]);
+            }
+
+            return false;
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error al verificar ocupación de espacio: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Finalizar reservas activas cuando se libera un espacio manualmente
+     * Finaliza la última reserva activa de hoy y todas las posteriores en cascada
+     */
+    private function finalizarReservasActivasActuales($codigoEspacio)
+    {
+        try {
+            // Obtener fecha y hora actual
+            $fechaActual = now()->format('Y-m-d');
+            $horaActual = now()->format('H:i:s');
+
+            // Buscar TODAS las reservas activas para este espacio desde hoy hacia adelante
+            // Ordenadas por fecha y hora para procesar en orden cronológico
+            $reservasActivas = Reserva::where('id_espacio', $codigoEspacio)
+                ->where('estado', 'activa')
+                ->where('fecha_reserva', '>=', $fechaActual)
+                ->orderBy('fecha_reserva')
+                ->orderBy('hora')
+                ->get();
+
+            if ($reservasActivas->isEmpty()) {
+                Log::info('📋 No hay reservas activas para finalizar en el espacio', [
+                    'espacio' => $codigoEspacio,
+                    'fecha' => $fechaActual
+                ]);
+                return [];
+            }
+
+            // Encontrar la última reserva que ya comenzó (de hoy)
+            $reservasDeHoy = $reservasActivas->where('fecha_reserva', $fechaActual);
+            $ultimaReservaIniciada = null;
+            $horaActualEnMinutos = $this->convertirHoraAMinutos($horaActual);
+
+            foreach ($reservasDeHoy as $reserva) {
+                $horaInicioReserva = $this->convertirHoraAMinutos($reserva->hora);
+                
+                // Si la reserva ya comenzó (hora actual >= hora de inicio)
+                if ($horaActualEnMinutos >= $horaInicioReserva) {
+                    $ultimaReservaIniciada = $reserva;
+                } else {
+                    break; // Las siguientes aún no han comenzado
+                }
+            }
+
+            $reservasFinalizadas = [];
+            $esCascada = false;
+            $motivoFinalizacion = null;
+
+            // Si hay una reserva que ya comenzó hoy, esa es la principal a finalizar
+            if ($ultimaReservaIniciada) {
+                $motivoFinalizacion = "FINALIZADA: El espacio fue liberado manualmente, indicando que la actividad terminó";
+                
+                $ultimaReservaIniciada->estado = 'finalizada';
+                $ultimaReservaIniciada->hora_salida = $horaActual;
+                $ultimaReservaIniciada->observaciones .= " | {$motivoFinalizacion} el " . now()->format('d/m/Y H:i:s');
+                $ultimaReservaIniciada->save();
+
+                $reservasFinalizadas[] = $ultimaReservaIniciada->id_reserva;
+                
+                Log::info('🔚 Reserva principal finalizada por liberación de espacio', [
+                    'id_reserva' => $ultimaReservaIniciada->id_reserva,
+                    'espacio' => $codigoEspacio,
+                    'hora_inicio' => $ultimaReservaIniciada->hora,
+                    'hora_salida' => $horaActual
+                ]);
+
+                $esCascada = true;
+            }
+
+            // Finalizar reservas ANTERIORES de hoy que aún estén activas
+            foreach ($reservasDeHoy as $reserva) {
+                // Saltar la reserva principal que ya procesamos
+                if ($ultimaReservaIniciada && $reserva->id === $ultimaReservaIniciada->id) {
+                    continue;
+                }
+
+                // Solo finalizar reservas que comenzaron ANTES de la hora actual
+                $esAnterior = $this->convertirHoraAMinutos($reserva->hora) < $horaActualEnMinutos;
+
+                if ($esAnterior) {
+                    $motivoAnterior = "FINALIZADA EN CASCADA: Al liberar el espacio manualmente, esta reserva anterior que aún estaba activa fue finalizada automáticamente";
+
+                    $reserva->estado = 'finalizada';
+                    $reserva->hora_salida = $horaActual; // Usar la hora actual como hora de salida
+                    $reserva->observaciones .= " | {$motivoAnterior} el " . now()->format('d/m/Y H:i:s');
+                    $reserva->save();
+
+                    $reservasFinalizadas[] = $reserva->id_reserva;
+                    
+                    Log::info('� Reserva finalizada en cascada', [
+                        'id_reserva' => $reserva->id_reserva,
+                        'fecha_reserva' => $reserva->fecha_reserva,
+                        'hora_reserva' => $reserva->hora,
+                        'motivo' => 'cascada_anterior'
+                    ]);
+                }
+            }
+
+            if (!empty($reservasFinalizadas)) {
+                Log::info('✅ Finalización completa de reservas por liberación de espacio', [
+                    'espacio' => $codigoEspacio,
+                    'total_finalizadas' => count($reservasFinalizadas),
+                    'reservas_finalizadas' => $reservasFinalizadas,
+                    'reserva_principal' => $ultimaReservaIniciada ? $ultimaReservaIniciada->id_reserva : 'ninguna',
+                    'fecha_liberacion' => now()->format('d/m/Y H:i:s')
+                ]);
+            }
+
+            return $reservasFinalizadas;
+
+        } catch (\Exception $e) {
+            Log::error('❌ Error al finalizar reservas activas: ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Procesar información de módulos y horarios para mostrar en frontend
+     */
+    private function procesarModulosYHorarios($reserva)
+    {
+        // Mapeo de módulos a horarios
+        $horariosModulos = [
+            1 => ['inicio' => '08:10', 'fin' => '09:00'],
+            2 => ['inicio' => '09:10', 'fin' => '10:00'],
+            3 => ['inicio' => '10:10', 'fin' => '11:00'],
+            4 => ['inicio' => '11:10', 'fin' => '12:00'],
+            5 => ['inicio' => '12:10', 'fin' => '13:00'],
+            6 => ['inicio' => '13:10', 'fin' => '14:00'],
+            7 => ['inicio' => '14:10', 'fin' => '15:00'],
+            8 => ['inicio' => '15:10', 'fin' => '16:00'],
+            9 => ['inicio' => '16:10', 'fin' => '17:00'],
+            10 => ['inicio' => '17:10', 'fin' => '18:00'],
+            11 => ['inicio' => '18:10', 'fin' => '19:00'],
+            12 => ['inicio' => '19:10', 'fin' => '20:00'],
+        ];
+
+        $moduloInicio = null;
+        $moduloFin = null;
+        $cantidadModulos = 1;
+
+        // Intentar extraer de observaciones primero
+        if ($reserva->observaciones && preg_match('/Módulos: (\d+)-(\d+)/', $reserva->observaciones, $matches)) {
+            $moduloInicio = (int)$matches[1];
+            $moduloFin = (int)$matches[2];
+            $cantidadModulos = $moduloFin - $moduloInicio + 1;
+        } elseif ($reserva->modulos && preg_match('/(\d+)\s*-\s*(\d+)/', $reserva->modulos, $matches)) {
+            // Si modulos tiene formato "X - Y"
+            $moduloInicio = (int)$matches[1];
+            $moduloFin = (int)$matches[2];
+            $cantidadModulos = $moduloFin - $moduloInicio + 1;
+        } else {
+            // Determinar por hora de inicio y duración en módulos
+            $horaReserva = substr($reserva->hora, 0, 5); // HH:MM
+            foreach ($horariosModulos as $modulo => $horario) {
+                if ($horaReserva >= $horario['inicio'] && $horaReserva <= $horario['fin']) {
+                    $moduloInicio = $modulo;
+                    $cantidadModulos = is_numeric($reserva->modulos) ? (int)$reserva->modulos : 1;
+                    $moduloFin = $moduloInicio + $cantidadModulos - 1;
+                    break;
+                }
+            }
+        }
+
+        // Construir información completa
+        if ($moduloInicio && $moduloFin && isset($horariosModulos[$moduloInicio]) && isset($horariosModulos[$moduloFin])) {
+            $horaInicio = $horariosModulos[$moduloInicio]['inicio'];
+            $horaFin = $horariosModulos[$moduloFin]['fin'];
+            
+            return [
+                'modulo_inicial' => $moduloInicio,
+                'modulo_final' => $moduloFin,
+                'cantidad_modulos' => $cantidadModulos,
+                'hora_inicio' => $horaInicio,
+                'hora_fin' => $horaFin,
+                'rango_horario' => "{$horaInicio} - {$horaFin}",
+                'texto_completo' => "Módulos {$moduloInicio}-{$moduloFin} ({$horaInicio} - {$horaFin}) • {$cantidadModulos} módulo" . ($cantidadModulos > 1 ? 's' : '')
+            ];
+        }
+
+        // Fallback si no se puede determinar
+        return [
+            'modulo_inicial' => null,
+            'modulo_final' => null,
+            'cantidad_modulos' => $cantidadModulos,
+            'hora_inicio' => substr($reserva->hora, 0, 5),
+            'hora_fin' => 'Desconocido',
+            'rango_horario' => substr($reserva->hora, 0, 5),
+            'texto_completo' => "Hora: " . substr($reserva->hora, 0, 5) . " • Duración: {$cantidadModulos} módulo" . ($cantidadModulos > 1 ? 's' : '')
+        ];
+    }
+
+    /**
+     * Convertir hora en formato H:i:s a minutos desde medianoche
+     * Para comparaciones más fáciles de horarios
+     */
+    private function convertirHoraAMinutos($hora)
+    {
+        $partes = explode(':', $hora);
+        $horas = (int)$partes[0];
+        $minutos = (int)$partes[1];
+        return ($horas * 60) + $minutos;
     }
 }
