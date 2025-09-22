@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
-<head>
+<head class="h-full bg-gray-100">
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -28,22 +28,23 @@
         [x-cloak] {
             display: none !important;
         }
+        
     </style>
 </head>
 
 <!-- VISTA PARA TABLA DE ESPACIOS -->
 
-<body class="font-sans antialiased">
+<body class="font-sans antialiased bg-gray">
     <div x-data="mainState" x-on:resize.window="handleWindowResize" x-cloak>
-        <div class="min-h-screen text-gray-900 bg-gray-100 dark:bg-dark-eval-0 dark:text-gray-200">
+        <div class="min-h-screen text-gray-900 bg-white">
             <header>
-                <div class="py-2 sm:px-6">
+                <div class="py-2 sm:px-6 bg-gray-200 border-b border-gray-300">
                     {{ $header }}
                 </div>
             </header>
-            <div class="flex flex-col transition-all duration-300 ease-in-out bg-cloud-light dark:bg-dark-eval-2">
+            <div class="flex flex-col transition-all duration-300 ease-in-out bg-white">
                 <!-- Main content -->
-                <main class="flex-1 px-4 overflow-x-auto transition-all duration-300 ease-in-out sm:px-6">
+                <main class="flex-1 px-4 overflow-x-auto transition-all duration-300 ease-in-out sm:px-6 bg-gray">
                     {{ $slot }}
                 </main>
             </div>
