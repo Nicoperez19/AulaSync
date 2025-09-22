@@ -265,9 +265,7 @@ class ModulosActualesTable extends Component
 
     public function actualizarDatos()
     {
-        // Aumentar el tiempo límite de ejecución para evitar timeout
-        set_time_limit(60);
-        
+
         $this->horaActual = Carbon::now()->format('H:i:s');
         $this->fechaActual = Carbon::now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY');
         
