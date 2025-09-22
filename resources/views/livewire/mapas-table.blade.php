@@ -5,6 +5,7 @@
                 <tr>
                     <th class="px-4 py-2">Nombre Mapa</th>
                     <th class="px-4 py-2">Ver</th>
+                    <th class="px-4 py-2">Editar</th>
                     <th class="px-4 py-2">Eliminar</th>
                 </tr>
             </thead>
@@ -15,9 +16,17 @@
                             {{ $mapa->nombre_mapa }}
                         </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
+                            @if($mapa->ruta_mapa)
+                                <img src="{{ asset('storage/' . $mapa->ruta_mapa) }}" alt="Mapa {{ $mapa->nombre_mapa }}" class="h-12 w-auto rounded shadow border inline-block align-middle mr-2">
+                            @endif
                             <x-button variant="ghost" class="text-blue-500" wire:click="verMapa('{{ $mapa->id_mapa }}')">
                                 Ver
                             </x-button>
+                        </td>
+                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
+                            <a href="{{ route('mapas.edit', $mapa->id_mapa) }}" class="inline-flex items-center px-3 py-1 text-xs font-semibold text-white bg-yellow-500 rounded hover:bg-yellow-600">
+                                <i class="fa-solid fa-pen mr-1"></i> Editar
+                            </a>
                         </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
                             <x-button variant="ghost" class="text-red-600" wire:click="confirmarEliminarMapa('{{ $mapa->id_mapa }}')">

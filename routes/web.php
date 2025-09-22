@@ -164,6 +164,8 @@ Route::group(['middleware' => ['auth', 'permission:mantenedor de mapas']], funct
     Route::get('/mapas', [MapasController::class, 'index'])->name('mapas.index');
     Route::get('/mapas/add', [MapasController::class, 'add'])->name('mapas.add');
     Route::post('/mapas/store', [MapasController::class, 'store'])->name('mapas.store');
+    Route::get('/mapas/{id}/edit', [MapasController::class, 'edit'])->name('mapas.edit');
+    Route::put('/mapas/{id}', [MapasController::class, 'update'])->name('mapas.update');
     Route::get('/sedes/{universidadId}', [MapasController::class, 'getSedes']);
     Route::get('/facultades-por-sede/{sedeId}', [MapasController::class, 'getFacultadesPorSede']);
     Route::get('/pisos/{facultadId}', [MapasController::class, 'getPisos']);
