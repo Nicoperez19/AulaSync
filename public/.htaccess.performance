@@ -1,0 +1,43 @@
+# Configuraciones específicas para el módulo de visualización
+<Files "modulos-actuales*">
+    # Aumentar límites de tiempo específicamente para estas rutas
+    php_value max_execution_time 180
+    php_value max_input_time 180
+    php_value memory_limit 512M
+    php_value post_max_size 32M
+    php_value upload_max_filesize 32M
+</Files>
+
+# Configuraciones para Livewire
+<IfModule mod_rewrite.c>
+    # Permitir requests largos de Livewire
+    RewriteRule ^livewire/.*$ - [E=noconntimeout:1]
+</IfModule>
+
+# Headers para mejorar el rendimiento
+<IfModule mod_headers.c>
+    # Cache estático para assets
+    <FilesMatch "\.(css|js|png|jpg|jpeg|gif|ico|svg)$">
+        Header set Cache-Control "public, max-age=31536000"
+    </FilesMatch>
+    
+    # No cache para rutas dinámicas de Livewire
+    <FilesMatch "livewire">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires 0
+    </FilesMatch>
+</IfModule>
+
+# Compresión GZIP
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/xml
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/xml
+    AddOutputFilterByType DEFLATE application/xhtml+xml
+    AddOutputFilterByType DEFLATE application/rss+xml
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/x-javascript
+</IfModule>

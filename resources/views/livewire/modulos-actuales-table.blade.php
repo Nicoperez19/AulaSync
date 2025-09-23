@@ -115,9 +115,9 @@
     </div>
 
     <script>
-        // Actualizar datos cada 30 segundos (reducido para evitar sobrecarga)
+        // Actualizar datos cada 60 segundos para evitar sobrecarga del servidor
         setInterval(function() {
             @this.actualizarAutomaticamente();
-        }, 30000);
+        }, 60000); // Aumentado a 60 segundos
     </script>
 </div>

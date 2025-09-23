@@ -71,5 +71,6 @@ class Kernel extends HttpKernel
         'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
         'session.timeout' => \App\Http\Middleware\SessionTimeout::class,
         'ajax.session.timeout' => \App\Http\Middleware\AjaxSessionTimeout::class,
+        'extend.execution' => \App\Http\Middleware\ExtendExecutionTime::class,
     ];
 }

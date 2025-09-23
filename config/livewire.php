@@ -147,6 +147,24 @@ return [
 
     /*
     |---------------------------------------------------------------------------
+    | Performance Optimizations
+    |---------------------------------------------------------------------------
+    |
+    | Configuraciones específicas para mejorar el rendimiento de componentes
+    | Livewire pesados como el módulo de visualización en tiempo real.
+    |
+    */
+
+    'performance' => [
+        'defer_loading' => true,
+        'optimize_queries' => true,
+        'cache_duration' => 30, // segundos
+        'max_execution_time' => 180, // 3 minutos
+        'memory_limit' => '512M',
+    ],
+
+    /*
+    |---------------------------------------------------------------------------
     | Pagination Theme
     |---------------------------------------------------------------------------
     |
