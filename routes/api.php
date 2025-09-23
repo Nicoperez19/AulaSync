@@ -187,6 +187,14 @@ Route::get('/espacio/{espacio}/modulos-disponibles', [EspacioController::class, 
 Route::get('/profesor/{run}/asignaturas-hoy', [EspacioController::class, 'getAsignaturasProfesorHoy']);
 Route::get('/espacio/{id}/informacion-detallada', [EspacioController::class, 'getInformacionDetalladaEspacio']);
 
+// Rutas para manejo de caché
+Route::prefix('cache')->group(function () {
+    Route::get('/health', [App\Http\Controllers\CacheHealthController::class, 'healthCheck']);
+    Route::post('/clear', [App\Http\Controllers\CacheHealthController::class, 'clearCache']);
+    Route::post('/create-structure', [App\Http\Controllers\CacheHealthController::class, 'createCacheStructure']);
+    Route::get('/stats', [App\Http\Controllers\CacheHealthController::class, 'stats']);
+});
+
 // Ruta para verificar si un espacio está ocupado en un módulo específico
 Route::get('/verificar-planificacion/{id_espacio}/{id_modulo}', function ($id_espacio, $id_modulo) {
     try {
