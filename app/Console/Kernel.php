@@ -38,6 +38,13 @@ class Kernel extends ConsoleKernel
                 ->withoutOverlapping()
                 ->runInBackground();
 
+        // Optimización de base de datos cada 6 horas
+        $schedule->command('app:optimize-db')
+                ->everySixHours()
+                ->withoutOverlapping()
+                ->runInBackground()
+                ->appendOutputTo(storage_path('logs/optimization.log'));
+
         // Opcional: Verificación diaria a las 23:55 (5 minutos antes de liberar)
         $schedule->command('sistema:verificar-estado')
                 ->dailyAt('23:55')

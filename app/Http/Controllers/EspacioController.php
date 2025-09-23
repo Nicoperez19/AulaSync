@@ -18,9 +18,11 @@ use App\Models\Sede;
 use App\Models\User;
 use App\Models\Profesor;
 use App\Models\Reserva;
+use App\Traits\SafeCacheTrait;
 
 class EspacioController extends Controller
 {
+    use SafeCacheTrait;
     /**
      * Muestra el listado de espacios
      */
@@ -784,15 +786,13 @@ class EspacioController extends Controller
             // Cache key para este espacio
             $cacheKey = "espacio_info_{$idEspacio}";
 
-            // Verificar cache (válido por 30 segundos)
-            if (cache()->has($cacheKey)) {
-                $cachedData = cache()->get($cacheKey);
-                $cacheTime = cache()->get("{$cacheKey}_time", 0);
+            // Usar caché seguro
+            $cachedData = $this->safeGet($cacheKey);
+            $cacheTime = $this->safeGet("{$cacheKey}_time", 0);
 
-                if ((time() - $cacheTime) < 30) {
-                    Log::info("Retornando información desde cache para espacio: {$idEspacio}");
-                    return response()->json($cachedData);
-                }
+            if ($cachedData && ((time() - $cacheTime) < 30)) {
+                Log::info("Retornando información desde cache para espacio: {$idEspacio}");
+                return response()->json($cachedData);
             }
 
             Log::info("Obteniendo información detallada para espacio: {$idEspacio}");
@@ -909,9 +909,9 @@ class EspacioController extends Controller
                 $response['proxima_clase'] = $this->obtenerProximaClase($idEspacio, $horaActual);
             }
 
-            // Guardar en cache
-            cache()->put($cacheKey, $response, 30);
-            cache()->put("{$cacheKey}_time", time(), 30);
+            // Guardar en caché de forma segura
+            $this->safeCache($cacheKey, $response, 30);
+            $this->safeCache("{$cacheKey}_time", time(), 30);
 
             return response()->json($response);
 

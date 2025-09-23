@@ -108,6 +108,16 @@ class DashboardController extends Controller
         // Total de reservas hoy
         $totalReservasHoy =Reserva::whereDate('fecha_reserva', today())->count();
 
+        // Salas desocupadas hoy
+        $salasDesocupadas = Espacio::where('estado', 'Disponible')
+            ->whereHas('piso', function($query) use ($facultad, $piso) {
+                $query->where('id_facultad', $facultad);
+                if ($piso) {
+                    $query->where('numero_piso', $piso);
+                }
+            })
+            ->get();
+
         // KPI: Sala más utilizada
         $salaMasUtilizada =Reserva::select('id_espacio', DB::raw('count(*) as total'))
             ->groupBy('id_espacio')
@@ -143,7 +153,8 @@ class DashboardController extends Controller
             'accesosActuales',
             'reservasNoUtilizadas',
             'totalReservasHoy',
-            'salaMasUtilizada'
+            'salaMasUtilizada',
+            'salasDesocupadas'
         ));
     }
 

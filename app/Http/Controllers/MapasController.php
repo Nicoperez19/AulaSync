@@ -15,6 +15,66 @@ use Illuminate\Support\Facades\Log;
 
 class MapasController extends Controller
 {
+
+public function edit($id)
+    {
+        $mapa = Mapa::with('bloques.espacio')->findOrFail($id);
+        $pisos = Piso::all();
+        return view('layouts.maps.map_edit', compact('mapa', 'pisos'));
+    }
+    public function update(Request $request, $id)
+    {
+        try {
+            $mapa = Mapa::findOrFail($id);
+            $request->validate([
+                'nombre_mapa' => 'required|string|max:255',
+                'piso_id' => 'required|exists:pisos,id',
+                'bloques' => 'required|string',
+                'archivo' => 'nullable|file|mimes:jpeg,png,jpg,gif,pdf|max:10240'
+            ]);
+
+            $mapa->nombre_mapa = $request->nombre_mapa;
+            $mapa->piso_id = $request->piso_id;
+
+            // Si se sube una nueva imagen, reemplazar la anterior
+            if ($request->hasFile('archivo')) {
+                $file = $request->file('archivo');
+                $nombreMapaSlug = Str::slug($request->nombre_mapa);
+                $extension = $file->getClientOriginalExtension();
+                $fileName = "{$nombreMapaSlug}.{$extension}";
+                $path = $file->storeAs('mapas_subidos', $fileName, 'public');
+                $mapa->ruta_mapa = $path;
+                $mapa->ruta_canvas = $path;
+            }
+
+            $mapa->save();
+
+            $bloques = json_decode($request->bloques, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \Exception('Error al decodificar los bloques: ' . json_last_error_msg());
+            }
+
+            // Elimina bloques antiguos y crea nuevos
+            $mapa->bloques()->delete();
+            foreach ($bloques as $bloque) {
+                \App\Models\Bloque::create([
+                    'id_bloque' => \Illuminate\Support\Str::uuid(),
+                    'id_mapa' => $mapa->id_mapa,
+                    'id_espacio' => $bloque['id_espacio'],
+                    'posicion_x' => $bloque['posicion_x'],
+                    'posicion_y' => $bloque['posicion_y'],
+                    'estado' => $bloque['estado']
+                ]);
+            }
+
+            return redirect()->route('mapas.index')
+                ->with('success', 'Mapa actualizado exitosamente.');
+        } catch (\Exception $e) {
+            \Log::error('Error al actualizar mapa: ' . $e->getMessage());
+            return back()->withErrors(['error' => 'Error al actualizar el mapa: ' . $e->getMessage()]);
+        }
+    }
+
     public function __construct()
     {
         $this->middleware('auth');
@@ -252,3 +312,4 @@ class MapasController extends Controller
         }
     }
 }
+

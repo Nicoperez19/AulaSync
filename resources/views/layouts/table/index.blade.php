@@ -39,7 +39,7 @@
 
     <!-- Reloj flotante para pantallas pequeñas -->
     <div id="reloj-flotante" 
-         class="fixed top-4 right-4 z-50 md:hidden bg-gray-800 shadow-lg rounded-xl border border-gray-200 px-4 py-3 flex flex-col items-center gap-1 min-w-[140px] text-white">
+         class="fixed top-4 right-4 z-50 md:hidden bg-light-cloud-blue shadow-lg rounded-xl border border-gray-200 px-4 py-3 flex flex-col items-center gap-1 min-w-[140px] text-white">
         <span class="px-2 font-mono text-lg font-bold text-white" id="hora-actual-mobile"></span>
         <span class="px-2 font-mono text-sm text-white" id="modulo-actual-mobile"></span>
     </div>
