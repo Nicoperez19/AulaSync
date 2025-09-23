@@ -191,6 +191,65 @@
         </tbody>
     </table>
 
+        <!-- Reporte de Salas Menos Ocupadas -->
+        <div class="page-break"></div>
+        <div class="header">
+            <h1>Salas Menos Ocupadas</h1>
+            <p>Solo se muestran las salas con menor porcentaje de ocupación</p>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Tipo</th>
+                    <th>Piso</th>
+                    <th>Facultad</th>
+                    <th>Estado</th>
+                    <th>Puestos</th>
+                    <th>Reservas</th>
+                    <th>Horas</th>
+                    <th>Utilización</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @php
+                    // Filtrar las salas menos ocupadas (por ejemplo, las del 25% inferior de ocupación)
+                    $umbral = 0.25; // 25% inferior
+                    $total = count($datos);
+                    $ordenados = collect($datos)->sortBy('promedio_utilizacion')->values();
+                    $cantidad = ceil($total * $umbral);
+                    $menos_ocupadas = $ordenados->take($cantidad);
+                @endphp
+                @forelse($menos_ocupadas as $espacio)
+                    <tr>
+                        <td>{{ $espacio['id_espacio'] }}</td>
+                        <td>{{ $espacio['nombre'] }}</td>
+                        <td>{{ $espacio['tipo_espacio'] }}</td>
+                        <td>{{ $espacio['piso'] }}</td>
+                        <td>{{ $espacio['facultad'] }}</td>
+                        <td>{{ $espacio['estado'] }}</td>
+                        <td>{{ $espacio['puestos_disponibles'] }}</td>
+                        <td>{{ $espacio['total_reservas'] }}</td>
+                        <td>{{ $espacio['horas_utilizadas'] }}h</td>
+                        <td>{{ $espacio['promedio_utilizacion'] }}</td>
+                        <td>
+                            <span class="estado-{{ strtolower(str_replace(' ', '-', $espacio['estado_utilizacion'])) }}">
+                                {{ $espacio['estado_utilizacion'] }}
+                            </span>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="11" style="text-align: center; padding: 20px; color: #7f8c8d;">
+                            No se encontraron salas menos ocupadas
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+
     <div class="footer">
         <p>Este reporte fue generado automáticamente por el Sistema AulaSync</p>
         <p>Página 1 de 1</p>

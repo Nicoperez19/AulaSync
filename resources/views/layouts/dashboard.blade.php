@@ -21,7 +21,7 @@
     </div>
 
     <div class="w-full px-8 pb-6">
-        <div class="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
+    <div class="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-5">
             <!-- Total de reservas hoy -->
             <div
                 class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
@@ -45,6 +45,23 @@
                 </div>
                 <div class="flex items-end gap-2">
                     <span class="text-3xl font-bold text-purple-600">{{ $ocupacionSemanal }}%</span>
+                </div>
+            </div>
+
+            <!-- % Salas Desocupadas -->
+            <div
+                class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="font-semibold text-gray-500">% Salas Desocupadas</span>
+                    <span class="p-2 text-green-500 bg-green-100 rounded-full"><i
+                            class="text-xl fa-solid fa-door-open"></i></span>
+                </div>
+                <div class="flex items-end gap-2">
+                    @php
+                        $totalSalas = ($salasOcupadas['ocupadas'] ?? 0) + ($salasOcupadas['libres'] ?? 0);
+                        $porcentajeDesocupadas = $totalSalas > 0 ? round((($salasOcupadas['libres'] ?? 0) / $totalSalas) * 100, 2) : 0;
+                    @endphp
+                    <span class="text-3xl font-bold text-green-600">{{ $porcentajeDesocupadas }}%</span>
                 </div>
             </div>
             <!-- Promedio Ocupación Mensual -->
@@ -406,6 +423,34 @@
             <div id="tabla-no-utilizadas-dia" class="overflow-x-auto">
                 <!-- Aquí se cargará la tabla por AJAX -->
                 @include('partials.tabla_no_utilizadas_dia', ['noUtilizadasDia' => $noUtilizadasDia ?? []])
+            </div>
+            <!-- Reporte de Salas Desocupadas -->
+            <div class="w-full p-8 mb-8 bg-white shadow-lg rounded-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-bold text-gray-700">Salas Desocupadas (Hoy)</h3>
+                </div>
+                <div id="tabla-salas-desocupadas" class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Sala</th>
+                                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Ubicación</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($salasDesocupadas as $sala)
+                            <tr>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{{ $sala->nombre_espacio }}</td>
+                                <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-500">{{ $sala->ubicacion ?? '-' }}</td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="2" class="px-4 py-2 text-center text-gray-400">No hay salas desocupadas hoy</td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div> --}}
     </div>
