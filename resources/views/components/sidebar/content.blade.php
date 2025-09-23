@@ -89,10 +89,9 @@
 
         </x-sidebar.dropdown>
     @endcan
-
-    <!-- Estadísticas Profesores - Solo Administrador -->
-    @role('Administrador')
-        <x-sidebar.link title="Estadísticas Profesores" href="{{ route('clases-no-realizadas.index') }}"
+    <!-- Estadísticas Profesores - Solo Administrador y Supervisor -->
+    @role('Administrador|Supervisor')
+        <x-sidebar.link title="Clases no realizadas" href="{{ route('clases-no-realizadas.index') }}"
             :isActive="request()->routeIs('clases-no-realizadas.*')">
             <x-slot name="icon">
                 <x-icons.chart-bar class="flex-shrink-0 w-6 h-6" aria-hidden="true" />

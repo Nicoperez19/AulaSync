@@ -7,7 +7,7 @@
                 </div>
 
                 <div>
-                    <h2 class="text-2xl font-bold leading-tight">Estadísticas de Profesores</h2>
+                    <h2 class="text-2xl font-bold leading-tight">Clases no realizadas</h2>
                     <p class="text-sm text-gray-500">Administra los registros de clases no realizadas por los profesores</p>
                 </div>
             </div>

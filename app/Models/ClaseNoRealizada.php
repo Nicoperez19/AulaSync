@@ -70,9 +70,9 @@ class ClaseNoRealizada extends Model
         return $query->whereDate('fecha_clase', $fechaInicio);
     }
 
-    public function scopePendientes($query)
+    public function scopeNoRealizadas($query)
     {
-        return $query->where('estado', 'pendiente');
+        return $query->where('estado', 'no_realizada');
     }
 
     // Métodos estáticos
@@ -88,7 +88,7 @@ class ClaseNoRealizada extends Model
             'periodo' => $datosClase['periodo'],
             'motivo' => $datosClase['motivo'] ?? 'No se registró ingreso en el primer módulo',
             'observaciones' => $datosClase['observaciones'] ?? null,
-            'estado' => 'pendiente',
+            'estado' => 'no_realizada',
             'hora_deteccion' => Carbon::now(),
         ]);
     }
