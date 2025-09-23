@@ -213,35 +213,34 @@ class ModulosActualesTable extends Component
 
     public function actualizarDatos()
     {
-        // Establecer límite de tiempo de ejecución
-        set_time_limit(120);
-        ini_set('max_execution_time', 120);
+        try {
+            // Establecer límite de tiempo de ejecución
+            set_time_limit(120);
+            ini_set('max_execution_time', 120);
 
-        $this->horaActual = Carbon::now()->format('H:i:s');
-        $this->fechaActual = Carbon::now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY');
-        
-        // Obtener el módulo actual usando la nueva lógica
-        $this->moduloActual = $this->obtenerModuloActual();
+            $this->horaActual = Carbon::now()->format('H:i:s');
+            $this->fechaActual = Carbon::now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY');
+            
+            // Obtener el módulo actual usando la nueva lógica
+            $this->moduloActual = $this->obtenerModuloActual();
 
-        // Debug temporal para verificar el módulo - COMENTADO para evitar spam en logs
-        // \Log::info('Hora actual: ' . $this->horaActual);
-        // \Log::info('Módulo actual encontrado: ' . ($this->moduloActual ? 'Sí' : 'No'));
-        // if ($this->moduloActual) {
-        //     \Log::info('Número del módulo: ' . $this->moduloActual['numero']);
-        // }
+            // Obtener todos los pisos con sus espacios
+            $this->pisos = Piso::with(['espacios'])->get();
 
-        // Obtener todos los pisos con sus espacios
-        $this->pisos = Piso::with(['espacios'])->get();
+            if (!$this->pisos) {
+                $this->pisos = collect();
+            }
 
-        if ($this->moduloActual) {
-            // Determinar el período actual usando el helper
-            $anioActual = SemesterHelper::getCurrentAcademicYear();
-            $semestre = SemesterHelper::getCurrentSemester();
-            $periodo = SemesterHelper::getCurrentPeriod();
+            // Resto del procesamiento existente...
+            if ($this->moduloActual) {
+                // Determinar el período actual usando el helper
+                $anioActual = SemesterHelper::getCurrentAcademicYear();
+                $semestre = SemesterHelper::getCurrentSemester();
+                $periodo = SemesterHelper::getCurrentPeriod();
 
-            // Buscar el módulo en la base de datos para obtener el ID
-            // El id_modulo tiene formato "JU.1", "LU.10", etc. Necesitamos extraer el número
-            $diaActual = Carbon::now()->locale('es')->isoFormat('dddd');
+                // Buscar el módulo en la base de datos para obtener el ID
+                // El id_modulo tiene formato "JU.1", "LU.10", etc. Necesitamos extraer el número
+                $diaActual = Carbon::now()->locale('es')->isoFormat('dddd');
             $prefijoDia = '';
             
             // Mapear el día a su prefijo
@@ -425,23 +424,23 @@ class ModulosActualesTable extends Component
                     }
 
                     $espaciosPiso[] = [
-                        'id_espacio' => $espacio->id_espacio,
-                        'nombre_espacio' => $espacio->nombre_espacio,
-                        'estado' => $estado,
-                        'tipo_espacio' => $espacio->tipo_espacio,
-                        'puestos_disponibles' => $espacio->puestos_disponibles,
-                        'tiene_clase' => $tieneClase,
-                        'tiene_reserva_solicitante' => $tieneReservaSolicitante,
-                        'tiene_reserva_profesor' => $tieneReservaProfesor,
+                        'id_espacio' => $espacio->id_espacio ?? 'N/A',
+                        'nombre_espacio' => $espacio->nombre_espacio ?? 'N/A',
+                        'estado' => $estado ?? 'Disponible',
+                        'tipo_espacio' => $espacio->tipo_espacio ?? 'N/A',
+                        'puestos_disponibles' => $espacio->puestos_disponibles ?? 0,
+                        'tiene_clase' => $tieneClase ?? false,
+                        'tiene_reserva_solicitante' => $tieneReservaSolicitante ?? false,
+                        'tiene_reserva_profesor' => $tieneReservaProfesor ?? false,
                         'datos_clase' => $datosClase,
                         'datos_solicitante' => $datosSolicitante,
                         'datos_profesor' => $datosProfesor,
                         'modulo' => [
-                            'numero' => $this->moduloActual['numero'],
-                            'inicio' => $this->moduloActual['inicio'],
-                            'fin' => $this->moduloActual['fin']
+                            'numero' => $this->moduloActual['numero'] ?? '--',
+                            'inicio' => $this->moduloActual['inicio'] ?? '--:--',
+                            'fin' => $this->moduloActual['fin'] ?? '--:--'
                         ],
-                        'piso' => $piso->nombre_piso,
+                        'piso' => $piso->nombre_piso ?? 'N/A',
                         'proxima_clase' => $proximaClase
                     ];
                 }
@@ -454,22 +453,30 @@ class ModulosActualesTable extends Component
                 $espaciosPiso = [];
                 foreach ($piso->espacios as $espacio) {
                     $espaciosPiso[] = [
-                        'id_espacio' => $espacio->id_espacio,
-                        'nombre_espacio' => $espacio->nombre_espacio,
+                        'id_espacio' => $espacio->id_espacio ?? 'N/A',
+                        'nombre_espacio' => $espacio->nombre_espacio ?? 'N/A',
                         'estado' => 'Disponible',
-                        'tipo_espacio' => $espacio->tipo_espacio,
-                        'puestos_disponibles' => $espacio->puestos_disponibles,
+                        'tipo_espacio' => $espacio->tipo_espacio ?? 'N/A',
+                        'puestos_disponibles' => $espacio->puestos_disponibles ?? 0,
                         'tiene_clase' => false,
                         'tiene_reserva_solicitante' => false,
+                        'tiene_reserva_profesor' => false,
                         'datos_clase' => null,
                         'datos_solicitante' => null,
+                        'datos_profesor' => null,
                         'modulo' => null,
-                        'piso' => $piso->nombre_piso,
+                        'piso' => $piso->nombre_piso ?? 'N/A',
                         'proxima_clase' => null
                     ];
                 }
                 $this->espacios[$piso->id] = $espaciosPiso;
             }
+        }
+        } catch (\Exception $e) {
+            Log::error('Error en actualizarDatos: ' . $e->getMessage());
+            
+            // Valores por defecto seguros en caso de error
+            $this->espacios = [];
         }
     }
 
@@ -660,5 +667,16 @@ class ModulosActualesTable extends Component
         }
         
         return null;
+    }
+
+    /**
+     * Método auxiliar para validar arrays de manera segura
+     */
+    public function validarArray($array, $key, $default = null)
+    {
+        if (is_array($array) && array_key_exists($key, $array)) {
+            return $array[$key];
+        }
+        return $default;
     }
 } 
