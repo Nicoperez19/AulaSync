@@ -475,9 +475,9 @@ class ModulosActualesTable extends Component
                         $estado = 'Clase no realizada';
                     } elseif ($tieneClase && !$tieneReservaProfesor) {
                         // Si hay clase programada pero el profesor no ha registrado su ingreso
-                        $estado = 'En Programa';
+                        $estado = 'Clase por iniciar';
                     } elseif ($proximaClase) {
-                        $estado = 'En Programa';
+                        $estado = 'Clase por iniciar';
                     } else {
                         $estado = $espacio->estado ?? 'Disponible';
                     }
@@ -578,7 +578,7 @@ class ModulosActualesTable extends Component
         if (strtolower($estado) === 'ocupado' || $estado === 'Ocupado') {
             return 'bg-red-500';
         } elseif (strtolower($estado) === 'clase no realizada' || $estado === 'Clase no realizada') {
-            return 'bg-red-700'; // Color más oscuro para indicar problema
+            return 'bg-black'; // Color más oscuro para indicar problema
         } elseif (strtolower($estado) === 'reservado' || $estado === 'Reservado') {
             return 'bg-yellow-400';
         } elseif (strtolower($estado) === 'en programa' || $estado === 'En Programa') {
