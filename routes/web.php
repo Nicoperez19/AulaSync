@@ -15,6 +15,7 @@ use App\Http\Controllers\AsignaturaController;
 use App\Http\Controllers\DataLoadController;
 use App\Http\Controllers\PlanoDigitalController;
 use App\Http\Controllers\ProfesorController;
+use App\Http\Controllers\VisitanteController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\CampusController;
@@ -161,6 +162,14 @@ Route::group(['middleware' => ['permission:mantenedor de profesores']], function
     Route::get('/professors/{id}/edit', [ProfesorController::class, 'edit'])->name('professors.edit');
     Route::put('/professors/{id}', [ProfesorController::class, 'update'])->name('professors.update');
     Route::delete('/professors/{id}', [ProfesorController::class, 'destroy'])->name('professors.delete');
+});
+
+Route::group(['middleware' => ['permission:mantenedor de visitantes']], function () {
+    Route::get('/visitantes', [VisitanteController::class, 'index'])->name('visitantes.index');
+    Route::post('/visitantes', [VisitanteController::class, 'store'])->name('visitantes.add');
+    Route::get('/visitantes/{id}/edit', [VisitanteController::class, 'edit'])->name('visitantes.edit');
+    Route::put('/visitantes/{id}', [VisitanteController::class, 'update'])->name('visitantes.update');
+    Route::delete('/visitantes/{id}', [VisitanteController::class, 'destroy'])->name('visitantes.delete');
 });
 
 Route::group(['middleware' => ['permission:mantenedor de pisos']], function () {
