@@ -257,7 +257,10 @@ class DashboardController extends Controller
             })
             ->count();
 
-        return round(($horasOcupadas / $totalHoras) * 100, 2);
+    $porcentaje = round(($horasOcupadas / $totalHoras) * 100, 2);
+    $limitado = min($porcentaje, 100);
+    \Log::info('Ocupación semanal calculada', ['horasOcupadas' => $horasOcupadas, 'totalHoras' => $totalHoras, 'porcentaje' => $porcentaje, 'limitado' => $limitado]);
+    return $limitado;
     }
 
     private function calcularOcupacionDiaria($facultad, $piso)
@@ -312,7 +315,10 @@ class DashboardController extends Controller
             })
             ->count();
 
-        return round(($horasOcupadas / $totalHoras) * 100, 2);
+    $porcentaje = round(($horasOcupadas / $totalHoras) * 100, 2);
+    $limitado = min($porcentaje, 100);
+    \Log::info('Ocupación mensual calculada', ['horasOcupadas' => $horasOcupadas, 'totalHoras' => $totalHoras, 'porcentaje' => $porcentaje, 'limitado' => $limitado]);
+    return $limitado;
     }
 
     private function obtenerUsuariosSinEscaneo($facultad, $piso)
