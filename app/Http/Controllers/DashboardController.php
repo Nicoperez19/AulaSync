@@ -14,230 +14,148 @@ use App\Helpers\SemesterHelper;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Cache;
 use App\Models\Mapa;
 
 class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // Increase time limit for dashboard queries
-        set_time_limit(60);
-        
         // Obtener el piso de la sesión o request
         $piso = $request->session()->get('piso');
         $facultad = 'IT_TH'; // Siempre usar IT_TH como facultad
 
-        try {
-            // Obtener los pisos disponibles para la facultad con consulta optimizada
-            $pisos = $this->obtenerPisosOptimizado();
+        // Obtener los pisos disponibles para la facultad
+        $pisos = Piso::whereHas('facultad', function($query) {
+            $query->where('id_facultad', 'IT_TH')
+                  ->whereHas('sede', function($q) {
+                      $q->where('id_sede', 'TH');
+                  });
+        })
+        ->orderBy('numero_piso')
+        ->get();
 
-            // Obtener datos básicos con consultas optimizadas
-            $datosBasicos = $this->obtenerDatosBasicosOptimizado($facultad, $piso);
-            
-            // Extraer datos básicos
-            extract($datosBasicos);
+        // Obtener datos para los KPIs
+        $ocupacionSemanal = $this->calcularOcupacionSemanal($facultad, $piso);
+        $ocupacionDiaria = $this->calcularOcupacionDiaria($facultad, $piso);
+        $ocupacionMensual = $this->calcularOcupacionMensual($facultad, $piso);
+        $usuariosSinEscaneo = $this->obtenerUsuariosSinEscaneo($facultad, $piso);
+        $horasUtilizadas = $this->calcularHorasUtilizadas($facultad, $piso);
+        $salasOcupadas = $this->obtenerSalasOcupadas($facultad, $piso);
 
-            // Obtener datos más pesados solo si es necesario
-            $datosPesados = $this->obtenerDatosPesadosOptimizado($facultad, $piso);
-            
-            // Extraer datos pesados
-            extract($datosPesados);
+        // Obtener datos para los gráficos
+        $usoPorDia = $this->obtenerUsoPorDia($facultad, $piso);
+        $comparativaTipos = $this->obtenerComparativaTipos($facultad, $piso);
+        $evolucionMensual = $this->obtenerEvolucionMensual($facultad, $piso);
 
-            return view('layouts.dashboard', compact(
-                'ocupacionSemanal',
-                'ocupacionDiaria', 
-                'ocupacionMensual',
-                'usuariosSinEscaneo',
-                'horasUtilizadas',
-                'salasOcupadas',
-                'usoPorDia',
-                'comparativaTipos',
-                'evolucionMensual',
-                'reservasPorTipo',
-                'reservasCanceladas',
-                'horariosAgrupados',
-                'facultad',
-                'piso',
-                'pisos',
-                'reservasSinDevolucion',
-                'promedioDuracion',
-                'porcentajeNoShow',
-                'canceladasPorTipo',
-                'horariosPorTipoDiaModulo',
-                'moduloActual',
-                'accesosRegistrados',
-                'tiposEspacioDisponibles',
-                'modulosDisponibles',
-                'accesosActuales',
-                'reservasNoUtilizadas',
-                'totalReservasHoy',
-                'salaMasUtilizada',
-                'salasDesocupadas'
-            ));
-            
-        } catch (\Exception $e) {
-            // En caso de error, mostrar dashboard con datos mínimos
-            Log::error('Error en dashboard: ' . $e->getMessage());
-            
-            return view('layouts.dashboard', [
-                'ocupacionSemanal' => 0,
-                'ocupacionDiaria' => 0,
-                'ocupacionMensual' => 0,
-                'usuariosSinEscaneo' => 0,
-                'horasUtilizadas' => ['utilizadas' => 0, 'disponibles' => 0],
-                'salasOcupadas' => ['ocupadas' => 0, 'libres' => 0],
-                'usoPorDia' => ['datos' => [], 'rango_fechas' => []],
-                'comparativaTipos' => [],
-                'evolucionMensual' => ['dias' => [], 'ocupacion' => []],
-                'reservasPorTipo' => [],
-                'reservasCanceladas' => [],
-                'horariosAgrupados' => [],
-                'facultad' => $facultad,
-                'piso' => $piso,
-                'pisos' => [],
-                'reservasSinDevolucion' => collect([]),
-                'promedioDuracion' => 0,
-                'porcentajeNoShow' => 0,
-                'canceladasPorTipo' => [],
-                'horariosPorTipoDiaModulo' => [],
-                'moduloActual' => null,
-                'accesosRegistrados' => [],
-                'tiposEspacioDisponibles' => [],
-                'modulosDisponibles' => [],
-                'accesosActuales' => collect([]),
-                'reservasNoUtilizadas' => collect([]),
-                'totalReservasHoy' => 0,
-                'salaMasUtilizada' => null,
-                'salasDesocupadas' => collect([])
-            ]);
-        }
-    }
+        // Obtener datos para reservas por tipo de espacio (gráfico de barras)
+        $reservasPorTipo = $this->obtenerReservasPorTipo($facultad, $piso);
 
-    private function obtenerPisosOptimizado()
-    {
-        return Piso::select('numero_piso')
-            ->whereHas('facultad', function($query) {
-                $query->where('id_facultad', 'IT_TH')
-                      ->whereHas('sede', function($q) {
-                          $q->where('id_sede', 'TH');
-                      });
+        // Obtener datos para las tablas
+        $reservasCanceladas = $this->obtenerReservasCanceladas($facultad, $piso);
+        $horariosAgrupados = $this->obtenerHorariosAgrupados($facultad, $piso);
+        $reservasSinDevolucion = $this->obtenerReservasActivasSinDevolucion($facultad, $piso);
+        $promedioDuracion = $this->obtenerPromedioDuracionReserva($facultad, $piso);
+        $porcentajeNoShow = $this->obtenerPorcentajeNoShow($facultad, $piso);
+        $canceladasPorTipo = $this->obtenerCanceladasPorTipoSala($facultad, $piso);
+
+        $horariosPorTipoDiaModulo = $this->obtenerOcupacionPorTipoDiaModulo($facultad, $piso);
+
+        // Obtener módulo actual
+        $moduloActual = Modulo::where('dia', Carbon::now()->format('l'))
+            ->where('hora_inicio', '<=', Carbon::now()->format('H:i:s'))
+            ->where('hora_termino', '>=', Carbon::now()->format('H:i:s'))
+            ->first();
+
+        // Accesos registrados del día (sin exportar, solo para mostrar)
+        $accesosRegistrados = app('App\\Http\\Controllers\\ReportController')->obtenerAccesosRegistrados(
+            Carbon::now()->toDateString(),
+            Carbon::now()->toDateString()
+        );
+
+        // Filtros para accesos registrados
+        $fechaFiltro = request('filtro_fecha', Carbon::now()->format('Y-m-d'));
+        $diaFiltro = Carbon::parse($fechaFiltro)->format('l');
+
+        // Tipos de espacio disponibles
+        $tiposEspacioDisponibles = Espacio::select('tipo_espacio')->distinct()->pluck('tipo_espacio');
+
+        // Módulos disponibles para el día seleccionado
+        $modulosDisponibles = Modulo::where('dia', $diaFiltro)->orderBy('hora_inicio')->get();
+
+        // Accesos actuales (reservas activas sin hora de salida)
+        $accesosActuales = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
+            ->where('estado', 'activa')
+            ->whereNull('hora_salida')
+            ->whereHas('espacio', function($query) use ($facultad, $piso) {
+                $query->whereHas('piso', function($q) use ($facultad, $piso) {
+                    $q->where('id_facultad', $facultad);
+                    if ($piso) {
+                        $q->where('numero_piso', $piso);
+                    }
+                });
             })
-            ->orderBy('numero_piso')
+            ->orderBy('fecha_reserva', 'desc')
+            ->orderBy('hora', 'desc')
             ->get();
-    }
 
-    private function obtenerDatosBasicosOptimizado($facultad, $piso)
-    {
-        // Usar caché para datos básicos (válido por 2 minutos)
-        $cacheKey = "dashboard_basicos_{$facultad}_{$piso}";
-        
-        return Cache::remember($cacheKey, 120, function() use ($facultad, $piso) {
-            $hoy = Carbon::today();
-            
-            // Consultas básicas optimizadas
-            $totalReservasHoy = Reserva::whereDate('fecha_reserva', $hoy)->count();
-            
-            // Salas ocupadas de forma más eficiente
-            $salasQuery = DB::table('espacios')
-                ->join('pisos', 'espacios.piso_id', '=', 'pisos.numero_piso')
-                ->where('pisos.id_facultad', $facultad);
-                
-            if ($piso) {
-                $salasQuery->where('pisos.numero_piso', $piso);
-            }
-                
-            $totalSalas = $salasQuery->count();
-            $salasOcupadas = $salasQuery->where('espacios.estado', 'Ocupado')->count();
-            $salasLibres = $totalSalas - $salasOcupadas;
+        // Reservas no utilizadas (No Show): reservas finalizadas sin hora de ingreso
+        $reservasNoUtilizadas = Reserva::with(['profesor', 'espacio'])
+            ->where('estado', 'finalizada')
+            ->whereNull('hora') // No escanearon QR, no ingresaron
+            ->orderBy('fecha_reserva', 'desc')
+            ->get();
 
-            return [
-                'totalReservasHoy' => $totalReservasHoy,
-                'salasOcupadas' => ['ocupadas' => $salasOcupadas, 'libres' => $salasLibres],
-                'ocupacionSemanal' => $this->calcularOcupacionSemanalOptimizada($facultad, $piso),
-                'ocupacionMensual' => $this->calcularOcupacionMensualOptimizada($facultad, $piso),
-                'ocupacionDiaria' => 0, // Simplificamos por ahora
-                'usuariosSinEscaneo' => 0, // Simplificamos por ahora
-                'horasUtilizadas' => ['utilizadas' => 0, 'disponibles' => 0], // Simplificamos
-            ];
-        });
-    }
+        // Total de reservas hoy
+        $totalReservasHoy =Reserva::whereDate('fecha_reserva', today())->count();
 
-    private function obtenerDatosPesadosOptimizado($facultad, $piso)
-    {
-        // Usar caché para datos pesados (válido por 5 minutos)
-        $cacheKey = "dashboard_pesados_{$facultad}_{$piso}";
-        
-        return Cache::remember($cacheKey, 300, function() use ($facultad, $piso) {
-            $hoy = Carbon::today();
-            
-            // Obtener datos menos críticos
-            $usoPorDia = $this->obtenerUsoPorDiaOptimizado($facultad, $piso);
-            $evolucionMensual = $this->obtenerEvolucionMensualOptimizada($facultad, $piso);
-            
-            // Reservas sin devolución (limitadas y optimizadas)
-            $reservasSinDevolucion = DB::table('reservas')
-                ->join('profesors', 'reservas.run_profesor', '=', 'profesors.run_profesor')
-                ->join('espacios', 'reservas.id_espacio', '=', 'espacios.id_espacio')
-                ->select(
-                    'reservas.*',
-                    'profesors.name as profesor_name',
-                    'espacios.nombre_espacio'
-                )
-                ->where('reservas.estado', 'activa')
-                ->whereNull('reservas.hora_salida')
-                ->limit(10) // Limitar resultados
-                ->get();
+        // Salas desocupadas hoy
+        $salasDesocupadas = Espacio::where('estado', 'Disponible')
+            ->whereHas('piso', function($query) use ($facultad, $piso) {
+                $query->where('id_facultad', $facultad);
+                if ($piso) {
+                    $query->where('numero_piso', $piso);
+                }
+            })
+            ->get();
 
-            // Accesos actuales (limitados y optimizados)  
-            $accesosActuales = DB::table('reservas')
-                ->leftJoin('profesors', 'reservas.run_profesor', '=', 'profesors.run_profesor')
-                ->leftJoin('solicitantes', 'reservas.run_solicitante', '=', 'solicitantes.run_solicitante')
-                ->join('espacios', 'reservas.id_espacio', '=', 'espacios.id_espacio')
-                ->select(
-                    'reservas.*',
-                    'profesors.name as profesor_name',
-                    'solicitantes.nombre as solicitante_name',
-                    'espacios.nombre_espacio'
-                )
-                ->where('reservas.estado', 'activa')
-                ->whereNull('reservas.hora_salida')
-                ->limit(10) // Limitar resultados
-                ->get();
+        // KPI: Sala más utilizada
+        $salaMasUtilizada =Reserva::select('id_espacio', DB::raw('count(*) as total'))
+            ->groupBy('id_espacio')
+            ->orderByDesc('total')
+            ->with('espacio')
+            ->first();
 
-            // Sala más utilizada (optimizada con SQL directo)
-            $salaMasUtilizada = DB::table('reservas')
-                ->join('espacios', 'reservas.id_espacio', '=', 'espacios.id_espacio')
-                ->select('reservas.id_espacio', 'espacios.nombre_espacio', DB::raw('count(*) as total'))
-                ->groupBy('reservas.id_espacio', 'espacios.nombre_espacio')
-                ->orderByDesc('total')
-                ->first();
-
-            return [
-                'usoPorDia' => $usoPorDia,
-                'evolucionMensual' => $evolucionMensual,
-                'comparativaTipos' => $this->obtenerComparativaTiposOptimizada($facultad, $piso),
-                'reservasPorTipo' => [],
-                'reservasCanceladas' => collect([]),
-                'horariosAgrupados' => $this->obtenerHorariosAgrupadosOptimizado($facultad, $piso),
-                'reservasSinDevolucion' => $reservasSinDevolucion,
-                'promedioDuracion' => 0,
-                'porcentajeNoShow' => 0,
-                'canceladasPorTipo' => [],
-                'horariosPorTipoDiaModulo' => [],
-                'moduloActual' => $this->obtenerModuloActual(),
-                'accesosRegistrados' => [],
-                'tiposEspacioDisponibles' => Cache::remember('tipos_espacio', 3600, function() {
-                    return Espacio::select('tipo_espacio')->distinct()->pluck('tipo_espacio');
-                }),
-                'modulosDisponibles' => [],
-                'accesosActuales' => $accesosActuales,
-                'reservasNoUtilizadas' => collect([]),
-                'salaMasUtilizada' => $salaMasUtilizada,
-                'salasDesocupadas' => collect([])
-            ];
-        });
+        return view('layouts.dashboard', compact(
+            'ocupacionSemanal',
+            'ocupacionDiaria',
+            'ocupacionMensual',
+            'usuariosSinEscaneo',
+            'horasUtilizadas',
+            'salasOcupadas',
+            'usoPorDia',
+            'comparativaTipos',
+            'evolucionMensual',
+            'reservasPorTipo',
+            'reservasCanceladas',
+            'horariosAgrupados',
+            'facultad',
+            'piso',
+            'pisos',
+            'reservasSinDevolucion',
+            'promedioDuracion',
+            'porcentajeNoShow',
+            'canceladasPorTipo',
+            'horariosPorTipoDiaModulo',
+            'moduloActual',
+            'accesosRegistrados',
+            'tiposEspacioDisponibles',
+            'modulosDisponibles',
+            'accesosActuales',
+            'reservasNoUtilizadas',
+            'totalReservasHoy',
+            'salaMasUtilizada',
+            'salasDesocupadas'
+        ));
     }
 
     private function calcularOcupacionSemanal($facultad, $piso)
@@ -1045,208 +963,5 @@ class DashboardController extends Controller
         $horariosAgrupados = $this->obtenerHorariosAgrupados($facultad, $piso);
         
         return view('layouts.partials.horarios-semana', compact('horariosAgrupados'));
-    }
-
-    // ========================================
-    // MÉTODOS OPTIMIZADOS PARA MEJORAR RENDIMIENTO
-    // ========================================
-
-    private function calcularOcupacionSemanalOptimizada($facultad, $piso)
-    {
-        try {
-            $inicioSemana = Carbon::now()->startOfWeek();
-            $finSemana = Carbon::now()->endOfWeek();
-            
-            $query = Reserva::whereBetween('fecha_reserva', [$inicioSemana, $finSemana])
-                ->whereIn('estado', ['activa', 'finalizada']);
-                
-            if ($piso) {
-                $query->whereHas('espacio.piso', function($q) use ($piso) {
-                    $q->where('numero_piso', $piso);
-                });
-            }
-            
-            $horasOcupadas = $query->count();
-            $totalHoras = 40; // 8 horas por día, 5 días
-            
-            return round(($horasOcupadas / max($totalHoras, 1)) * 100, 2);
-        } catch (\Exception $e) {
-            Log::warning('Error calculando ocupación semanal: ' . $e->getMessage());
-            return 0;
-        }
-    }
-
-    private function calcularOcupacionMensualOptimizada($facultad, $piso)
-    {
-        try {
-            $inicioMes = Carbon::now()->startOfMonth();
-            $finMes = Carbon::now()->endOfMonth();
-            
-            $query = Reserva::whereBetween('fecha_reserva', [$inicioMes, $finMes])
-                ->whereIn('estado', ['activa', 'finalizada']);
-                
-            if ($piso) {
-                $query->whereHas('espacio.piso', function($q) use ($piso) {
-                    $q->where('numero_piso', $piso);
-                });
-            }
-            
-            $horasOcupadas = $query->count();
-            $diasMes = $finMes->day;
-            $totalHoras = $diasMes * 8; // 8 horas por día
-            
-            return round(($horasOcupadas / max($totalHoras, 1)) * 100, 2);
-        } catch (\Exception $e) {
-            Log::warning('Error calculando ocupación mensual: ' . $e->getMessage());
-            return 0;
-        }
-    }
-
-    private function obtenerUsoPorDiaOptimizado($facultad, $piso)
-    {
-        try {
-            $inicioSemana = Carbon::now()->startOfWeek();
-            $finSemana = Carbon::now()->endOfWeek();
-            
-            $datos = [];
-            $dias = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-            
-            for ($i = 0; $i < 6; $i++) {
-                $fecha = $inicioSemana->copy()->addDays($i);
-                $count = Reserva::whereDate('fecha_reserva', $fecha)
-                    ->whereIn('estado', ['activa', 'finalizada'])
-                    ->count();
-                $datos[$dias[$i]] = $count;
-            }
-            
-            return [
-                'datos' => $datos,
-                'rango_fechas' => [
-                    'inicio' => $inicioSemana->format('d/m'),
-                    'fin' => $finSemana->format('d/m')
-                ]
-            ];
-        } catch (\Exception $e) {
-            Log::warning('Error obteniendo uso por día: ' . $e->getMessage());
-            return ['datos' => [], 'rango_fechas' => []];
-        }
-    }
-
-    private function obtenerEvolucionMensualOptimizada($facultad, $piso)
-    {
-        try {
-            $inicioMes = Carbon::now()->startOfMonth();
-            $diasMes = Carbon::now()->daysInMonth;
-            
-            $dias = [];
-            $ocupacion = [];
-            
-            for ($i = 1; $i <= min($diasMes, 10); $i++) { // Limitamos a 10 días para mejorar rendimiento
-                $fecha = $inicioMes->copy()->addDays($i - 1);
-                $dias[] = $fecha->format('d/m');
-                
-                $reservas = Reserva::whereDate('fecha_reserva', $fecha)
-                    ->whereIn('estado', ['activa', 'finalizada'])
-                    ->count();
-                    
-                $ocupacion[] = min($reservas * 10, 100); // Aproximación simple
-            }
-            
-            return [
-                'dias' => $dias,
-                'ocupacion' => $ocupacion
-            ];
-        } catch (\Exception $e) {
-            Log::warning('Error obteniendo evolución mensual: ' . $e->getMessage());
-            return ['dias' => [], 'ocupacion' => []];
-        }
-    }
-
-    private function obtenerComparativaTiposOptimizada($facultad, $piso)
-    {
-        try {
-            $tipos = Espacio::select('tipo_espacio')
-                ->distinct()
-                ->pluck('tipo_espacio')
-                ->take(5); // Limitar tipos
-                
-            $resultado = [];
-            foreach ($tipos as $tipo) {
-                $count = Espacio::where('tipo_espacio', $tipo)
-                    ->count();
-                $resultado[] = [
-                    'tipo' => $tipo,
-                    'total' => $count,
-                    'ocupadas' => min($count, rand(0, $count)) // Aproximación por ahora
-                ];
-            }
-            
-            return $resultado;
-        } catch (\Exception $e) {
-            Log::warning('Error obteniendo comparativa tipos: ' . $e->getMessage());
-            return [];
-        }
-    }
-
-    private function obtenerHorariosAgrupadosOptimizado($facultad, $piso)
-    {
-        try {
-            // Simplificar esta consulta que es la más problemática
-            $diaActual = strtolower(Carbon::now()->locale('es')->isoFormat('dddd'));
-            $horaActual = Carbon::now()->format('H:i:s');
-            
-            // Buscar módulo actual de forma más simple
-            $moduloActual = Modulo::where('dia', $diaActual)
-                ->where('hora_inicio', '<=', $horaActual)
-                ->where('hora_termino', '>', $horaActual)
-                ->first();
-            
-            if (!$moduloActual) {
-                return [];
-            }
-            
-            // Obtener planificaciones de forma más eficiente
-            $planificaciones = Planificacion_Asignatura::with([
-                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura',
-                'asignatura.profesor:run_profesor,name',
-                'espacio:id_espacio,nombre_espacio',
-                'modulo:id_modulo,dia,hora_inicio,hora_termino'
-            ])
-            ->whereHas('modulo', function($query) use ($diaActual, $moduloActual) {
-                $query->where('dia', $diaActual)
-                      ->where('id_modulo', $moduloActual->id_modulo);
-            })
-            ->limit(20) // Limitar resultados
-            ->get();
-            
-            $horariosAgrupados = [];
-            foreach ($planificaciones as $planificacion) {
-                $espacioId = $planificacion->espacio->id_espacio ?? 'N/A';
-                $horariosAgrupados[$espacioId] = [
-                    'espacio_nombre' => $planificacion->espacio->nombre_espacio ?? 'N/A',
-                    'profesor' => $planificacion->asignatura->profesor->name ?? 'Sin profesor',
-                    'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'N/A',
-                    'hora' => ($moduloActual->hora_inicio ?? '00:00') . ' - ' . ($moduloActual->hora_termino ?? '00:00')
-                ];
-            }
-            
-            return $horariosAgrupados;
-        } catch (\Exception $e) {
-            Log::warning('Error obteniendo horarios agrupados: ' . $e->getMessage());
-            return [];
-        }
-    }
-
-    private function obtenerModuloActual()
-    {
-        try {
-            return Modulo::where('dia', Carbon::now()->format('l'))
-                ->where('hora_inicio', '<=', Carbon::now()->format('H:i:s'))
-                ->where('hora_termino', '>=', Carbon::now()->format('H:i:s'))
-                ->first();
-        } catch (\Exception $e) {
-            Log::warning('Error obteniendo módulo actual: ' . $e->getMessage());
-            return null;
-        }
     }
 } 
