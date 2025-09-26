@@ -39,8 +39,8 @@ class AjaxSessionTimeout
                 Auth::logout();
                 Session::flush();
                 
-                // Si es una petición AJAX, devolver respuesta JSON
-                if ($request->expectsJson() || $request->ajax()) {
+                // Si es una petición AJAX real (no login), devolver respuesta JSON
+                if (($request->expectsJson() || $request->ajax()) && !$request->routeIs('login')) {
                     return response()->json([
                         'error' => 'session_expired',
                         'message' => 'Tu sesión ha expirado por inactividad.',
@@ -64,8 +64,8 @@ class AjaxSessionTimeout
                 // Guardar la URL actual para redirigir después del login
                 session(['url.intended' => $request->fullUrl()]);
                 
-                // Si es una petición AJAX, devolver respuesta JSON
-                if ($request->expectsJson() || $request->ajax()) {
+                // Si es una petición AJAX real (no login), devolver respuesta JSON
+                if (($request->expectsJson() || $request->ajax()) && !$request->routeIs('login')) {
                     return response()->json([
                         'error' => 'not_authenticated',
                         'message' => 'Debes iniciar sesión para acceder a esta página.',

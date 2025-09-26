@@ -14,6 +14,7 @@ use App\Helpers\SemesterHelper;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use App\Models\Mapa;
 
 class DashboardController extends Controller
@@ -177,7 +178,7 @@ class DashboardController extends Controller
 
     $porcentaje = round(($horasOcupadas / $totalHoras) * 100, 2);
     $limitado = min($porcentaje, 100);
-    \Log::info('Ocupación semanal calculada', ['horasOcupadas' => $horasOcupadas, 'totalHoras' => $totalHoras, 'porcentaje' => $porcentaje, 'limitado' => $limitado]);
+    Log::info('Ocupación semanal calculada', ['horasOcupadas' => $horasOcupadas, 'totalHoras' => $totalHoras, 'porcentaje' => $porcentaje, 'limitado' => $limitado]);
     return $limitado;
     }
 
@@ -235,7 +236,7 @@ class DashboardController extends Controller
 
     $porcentaje = round(($horasOcupadas / $totalHoras) * 100, 2);
     $limitado = min($porcentaje, 100);
-    \Log::info('Ocupación mensual calculada', ['horasOcupadas' => $horasOcupadas, 'totalHoras' => $totalHoras, 'porcentaje' => $porcentaje, 'limitado' => $limitado]);
+    Log::info('Ocupación mensual calculada', ['horasOcupadas' => $horasOcupadas, 'totalHoras' => $totalHoras, 'porcentaje' => $porcentaje, 'limitado' => $limitado]);
     return $limitado;
     }
 
@@ -625,11 +626,11 @@ class DashboardController extends Controller
             $horaTermino = Carbon::parse($plan->modulo->hora_termino)->format('H:i');
             
             // Crear notificación en la base de datos
-            \App\Http\Controllers\NotificationController::createKeyReturnNotification(
-                $profesor,
-                $espacio,
-                $horaTermino
-            );
+            // NotificationController::createKeyReturnNotification(
+            //     $profesor,
+            //     $espacio,
+            //     $horaTermino
+            // );
             
             $notifications[] = [
                 'profesor' => $profesor,
