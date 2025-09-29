@@ -85,9 +85,9 @@
                             class="text-xl fa-solid fa-star"></i></span>
                 </div>
                 <div class="flex flex-col gap-1 mt-2">
-                    @if($salaMasUtilizada && $salaMasUtilizada->espacio)
+                    @if($salaMasUtilizada)
                         <span class="text-xl font-bold text-yellow-600">
-                            {{ $salaMasUtilizada->espacio->nombre_espacio }} ({{ $salaMasUtilizada->id_espacio }})
+                            {{ $salaMasUtilizada->nombre_espacio }} ({{ $salaMasUtilizada->id_espacio }})
                         </span>
                     @else
                         <span class="text-gray-400">Sin datos</span>

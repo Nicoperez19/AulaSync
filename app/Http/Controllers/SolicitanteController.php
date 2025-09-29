@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Solicitante;
+use App\Models\Visitante;
 use App\Models\Reserva;
 use App\Models\Espacio;
 use App\Models\Planificacion_Asignatura;
@@ -85,6 +86,22 @@ class SolicitanteController extends Controller
             $solicitante->activo = true;
             $solicitante->fecha_registro = now();
             $solicitante->save();
+            
+            // Registrar también como visitante para que aparezca en el mantenedor
+            try {
+                \App\Models\Visitante::create([
+                    'run_solicitante' => $request->run_solicitante,
+                    'nombre' => $request->nombre,
+                    'correo' => $request->correo,
+                    'telefono' => $request->telefono,
+                    'tipo_solicitante' => $request->tipo_solicitante,
+                    'activo' => true,
+                    'fecha_registro' => now(),
+                ]);
+            } catch (\Exception $e) {
+                // Si falla al crear el visitante, continuamos igual porque ya tenemos el solicitante
+                Log::warning('No se pudo registrar como visitante: ' . $e->getMessage());
+            }
 
             Log::info('Solicitante registrado exitosamente', [
                 'run_solicitante' => $solicitante->run_solicitante,

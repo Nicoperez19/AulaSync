@@ -11,32 +11,34 @@
                     <div class="mb-4">
                         <h5 class="flex items-center mb-2 font-medium text-md text-black">
                             <i class="mr-2 fas fa-clock" style="color: #8C0303;"></i>
-                            Módulo: {{ $datosModulo['numero_modulo'] }} ({{ $hora }})
+                            Módulo: {{ is_array($datosModulo) && isset($datosModulo['numero_modulo']) ? $datosModulo['numero_modulo'] : '?' }} ({{ $hora }})
                         </h5>
                         
-                        @if(count($datosModulo['espacios']) > 0)
+                        @if(is_array($datosModulo) && isset($datosModulo['espacios']) && count($datosModulo['espacios']) > 0)
                         <div class="grid grid-cols-1 gap-3 text-center md:grid-cols-2 lg:grid-cols-4">
                             @foreach($datosModulo['espacios'] as $espacio)
+                                @if(is_array($espacio))
                                 <div class="p-3 transition-shadow border rounded-lg shadow-sm hover:shadow-md bg-white border-gray-400">
                                     <div class="mb-2 text-lg font-semibold text-black">
                                         <i class="mr-1 fas fa-building" style="color: #8C0303;"></i>
-                                        {{ $espacio['espacio'] }}
+                                        {{ $espacio['espacio'] ?? 'No especificado' }}
                                     </div>
                                     <div class="mb-1 text-sm text-black">
                                         <i class="mr-1 fas fa-book" style="color: #8C0303;"></i>
-                                        <span class="font-medium">{{ $espacio['asignatura'] }}</span>
+                                        <span class="font-medium">{{ $espacio['asignatura'] ?? 'No especificado' }}</span>
                                     </div>
                                     <div class="mb-1 text-sm text-black">
                                         <i class="mr-1 fas fa-user" style="color: #8C0303;"></i>
-                                        <span class="font-medium">{{ $espacio['profesor'] }}</span>
+                                        <span class="font-medium">{{ $espacio['profesor'] ?? 'No especificado' }}</span>
                                     </div>
-                                    @if($espacio['email'] !== 'No disponible')
+                                    @if(isset($espacio['email']) && $espacio['email'] !== 'No disponible')
                                         <div class="text-xs text-gray-700">
                                             <i class="mr-1 fas fa-envelope" style="color: #8C0303;"></i>
                                             {{ $espacio['email'] }}
                                         </div>
                                     @endif
                                 </div>
+                                @endif
                             @endforeach
                         </div>
                         @else
@@ -58,19 +60,25 @@
     </div>
 @endif
 
-@if(isset($horariosPorTipoDiaModulo) && !empty($horariosPorTipoDiaModulo))
+@if(isset($horariosPorTipoDiaModulo) && !empty($horariosPorTipoDiaModulo) && is_array($horariosPorTipoDiaModulo))
     <div class="overflow-x-auto">
         <table class="min-w-full text-center border border-gray-300 rounded-lg">
             <thead>
                 <tr class="bg-gray-200">
                     <th class="px-2 py-1 border">Tipo de Espacio</th>
                     @php
-                        $dias = array_keys(reset($horariosPorTipoDiaModulo));
+                        $firstItem = reset($horariosPorTipoDiaModulo);
+                        $dias = is_array($firstItem) ? array_keys($firstItem) : [];
                         $modulos = [];
-                        foreach ($dias as $dia) {
-                            $modulos = array_unique(array_merge($modulos, array_keys(reset($horariosPorTipoDiaModulo)[$dia])));
+                        
+                        if (!empty($dias) && is_array($firstItem)) {
+                            foreach ($dias as $dia) {
+                                if (isset($firstItem[$dia]) && is_array($firstItem[$dia])) {
+                                    $modulos = array_unique(array_merge($modulos, array_keys($firstItem[$dia])));
+                                }
+                            }
+                            sort($modulos);
                         }
-                        sort($modulos);
                     @endphp
                     @foreach($dias as $dia)
                         @foreach($modulos as $modulo)
@@ -85,8 +93,11 @@
                         <td class="font-bold border bg-gray-50">{{ $tipo }}</td>
                         @foreach($dias as $dia)
                             @foreach($modulos as $modulo)
-                                <td class="border {{ ($diasData[$dia][$modulo] ?? 0) > 70 ? 'bg-green-200' : (($diasData[$dia][$modulo] ?? 0) > 40 ? 'bg-yellow-200' : 'bg-red-100') }}">
-                                    {{ $diasData[$dia][$modulo] ?? 0 }}%
+                                @php
+                                    $valor = isset($diasData[$dia]) && is_array($diasData[$dia]) && isset($diasData[$dia][$modulo]) ? $diasData[$dia][$modulo] : 0;
+                                @endphp
+                                <td class="border {{ $valor > 70 ? 'bg-green-200' : ($valor > 40 ? 'bg-yellow-200' : 'bg-red-100') }}">
+                                    {{ $valor }}%
                                 </td>
                             @endforeach
                         @endforeach

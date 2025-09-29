@@ -72,23 +72,29 @@
                                         </td>
                                         <!-- Columna 3: Estado -->
                                          <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
+                                            @php
+                                                $asignatura = $espacio['datos_clase']['nombre_asignatura'] ?? $espacio['proxima_clase']['nombre_asignatura'] ?? null;
+                                            @endphp
                                             @if (($espacio['tiene_reserva_solicitante'] ?? false) && !empty($espacio['datos_solicitante']))
                                                 <span class="font-medium text--700 text-sm">Solicitante: {{ $espacio['datos_solicitante']['nombre'] ?? 'N/A' }}</span>
                                             @elseif (($espacio['tiene_reserva_profesor'] ?? false) && !empty($espacio['datos_profesor']) && !empty($espacio['datos_profesor']['nombre']))
                                                 <span class="font-medium text-gray-700 text-sm">
-                                                    <div><div>{{ $espacio['datos_clase']['nombre_asignatura'] ?? 'Sin asignatura' }}</div>
+                                                    <div>{{ $asignatura ?? 'Sin asignatura' }}</div>
                                                     <div>Profesor: {{ $espacio['datos_profesor']['nombre'] ?? 'N/A' }}</div>
-
                                                 </span>
                                             @elseif (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']) && isset($espacio['datos_clase']['profesor']) && !empty($espacio['datos_clase']['profesor']['name']))
                                                 <div class="font-medium text-gray-900 text-sm">
-                                                    <div>{{ $espacio['datos_clase']['nombre_asignatura'] ?? 'Sin asignatura' }}</div>
+                                                    <div>{{ $asignatura ?? 'Sin asignatura' }}</div>
                                                     <div>Prof: {{ $espacio['datos_clase']['profesor']['name'] ?? 'N/A' }}</div>
                                                 </div>
                                             @elseif(!empty($espacio['proxima_clase']) && is_array($espacio['proxima_clase']))
                                                 <div class="font-medium text-gray-700 text-sm">
-                                                    <div>Próxima: {{ $espacio['proxima_clase']['nombre_asignatura'] ?? 'Clase programada' }}</div>
+                                                    <div>Próxima: {{ $asignatura ?? 'Clase programada' }}</div>
                                                     <div>Prof: {{ $espacio['proxima_clase']['profesor'] ?? '-' }}</div>
+                                                </div>
+                                            @elseif($asignatura)
+                                                <div class="font-medium text-gray-900 text-sm">
+                                                    <div>{{ $asignatura }}</div>
                                                 </div>
                                             @else
                                                 <span class="text-gray-400 italic text-sm">-</span>
