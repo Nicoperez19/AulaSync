@@ -460,7 +460,7 @@
         <div id="horarios-semana-container" class="p-6 mb-8 bg-white shadow-lg rounded-xl">
             <!-- Horarios de la semana -->
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-bold text-gray-700">Horarios de la semana - Profesores asignados por espacio</h3>
+                <h3 class="text-lg font-bold text-gray-700">Horarios del día actual - Módulos actuales</h3>
                 <x-button class="inline-flex items-center gap-2 px-4 py-2 mt-3 text-sm font-medium hover:bg-red-700"
                     variant="primary" href="{{ route('espacios.show') }}">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
@@ -818,10 +818,11 @@
             })
             .then(html => {
                 contenedor.innerHTML = html;
-        
+                console.log('Horarios de la semana actualizados correctamente');
             })
             .catch(error => {
-                contenedor.innerHTML = '<div class="p-4 text-center text-red-500">Error al cargar los horarios</div>';
+                console.error('Error al actualizar horarios:', error);
+                contenedor.innerHTML = '<div class="p-4 text-center text-red-500">Error al cargar los horarios: ' + error.message + '</div>';
             });
     }
 

@@ -258,9 +258,8 @@ class DashboardController extends Controller
             ->count();
 
     $porcentaje = round(($horasOcupadas / $totalHoras) * 100, 2);
-    $limitado = min($porcentaje, 100);
-    \Log::info('Ocupación semanal calculada', ['horasOcupadas' => $horasOcupadas, 'totalHoras' => $totalHoras, 'porcentaje' => $porcentaje, 'limitado' => $limitado]);
-    return $limitado;
+    \Log::info('Ocupación semanal calculada', ['horasOcupadas' => $horasOcupadas, 'totalHoras' => $totalHoras, 'porcentaje' => $porcentaje]);
+    return $porcentaje;
     }
 
     private function calcularOcupacionDiaria($facultad, $piso)
@@ -316,9 +315,8 @@ class DashboardController extends Controller
             ->count();
 
     $porcentaje = round(($horasOcupadas / $totalHoras) * 100, 2);
-    $limitado = min($porcentaje, 100);
-    \Log::info('Ocupación mensual calculada', ['horasOcupadas' => $horasOcupadas, 'totalHoras' => $totalHoras, 'porcentaje' => $porcentaje, 'limitado' => $limitado]);
-    return $limitado;
+    \Log::info('Ocupación mensual calculada', ['horasOcupadas' => $horasOcupadas, 'totalHoras' => $totalHoras, 'porcentaje' => $porcentaje]);
+    return $porcentaje;
     }
 
     private function obtenerUsuariosSinEscaneo($facultad, $piso)
@@ -1155,7 +1153,7 @@ class DashboardController extends Controller
                     ->whereIn('estado', ['activa', 'finalizada'])
                     ->count();
                     
-                $ocupacion[] = min($reservas * 10, 100); // Aproximación simple
+                $ocupacion[] = $reservas * 10; // Sin limitación artificial
             }
             
             return [
@@ -1222,7 +1220,6 @@ class DashboardController extends Controller
                 $query->where('dia', $diaActual)
                       ->where('id_modulo', $moduloActual->id_modulo);
             })
-            ->limit(20) // Limitar resultados
             ->get();
             
             $horariosAgrupados = [];
