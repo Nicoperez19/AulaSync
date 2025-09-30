@@ -45,7 +45,7 @@ Route::get('/', function () {
 })->middleware('guest');
 
 // Dashboard - Solo Administrador y Supervisor
-Route::middleware(['auth', 'permission:dashboard', 'dashboard.timelimit'])->group(function () {
+Route::middleware(['auth', 'permission:dashboard'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/widget-data', [DashboardController::class, 'getWidgetData'])->name('dashboard.widget-data');
     Route::get('/dashboard/horarios-semana', [DashboardController::class, 'horariosSemana'])->name('dashboard.horarios-semana');
@@ -57,8 +57,10 @@ Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::delete('/user/user_delete/{run}', [UserController::class, 'destroy'])->name('users.delete');
     Route::get('/user/user_edit/{run}', [UserController::class, 'edit'])->name('users.edit');
     Route::put('user/user_update/{run}', [UserController::class, 'update'])->name('users.update');
-    
-    // Estadísticas de clases no realizadas
+});
+
+// Estadísticas de clases no realizadas - Administrador y Supervisor
+Route::middleware(['auth', 'permission:reportes'])->group(function () {
     Route::get('/clases-no-realizadas', [\App\Http\Controllers\ClasesNoRealizadasController::class, 'index'])->name('clases-no-realizadas.index');
 });
 

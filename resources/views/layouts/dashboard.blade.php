@@ -480,75 +480,12 @@
 </x-app-layout>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+@vite(['resources/js/dashboard.js'])
+
 <script>
     // ========================================
-    // CONFIGURACIÓN Y VARIABLES GLOBALES
+    // CONFIGURACIÓN DE HORARIOS DE MÓDULOS
     // ========================================
-    let autoRefreshInterval;
-    let autoRefreshEnabled = true;
-    let moduloActual = null;
-    let moduloCheckInterval;
-
-    // ========================================
-    // FUNCIÓN DE NOTIFICACIONES
-    // ========================================
-    function mostrarNotificacion(mensaje, tipo = 'info', duracion = 3000) {
-        // Crear el elemento de notificación
-        const notificacion = document.createElement('div');
-        notificacion.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
-        
-        // Configurar colores según el tipo
-        let bgColor, textColor, icon;
-        switch (tipo) {
-            case 'success':
-                bgColor = 'bg-green-500';
-                textColor = 'text-white';
-                icon = '✓';
-                break;
-            case 'error':
-                bgColor = 'bg-red-500';
-                textColor = 'text-white';
-                icon = '✗';
-                break;
-            case 'warning':
-                bgColor = 'bg-yellow-500';
-                textColor = 'text-white';
-                icon = '⚠';
-                break;
-            default:
-                bgColor = 'bg-blue-500';
-                textColor = 'text-white';
-                icon = 'ℹ';
-        }
-        
-        notificacion.className += ` ${bgColor} ${textColor}`;
-        notificacion.innerHTML = `
-            <div class="flex items-center gap-3">
-                <span class="text-lg">${icon}</span>
-                <span>${mensaje}</span>
-                <button onclick="this.parentElement.parentElement.remove()" class="ml-2 text-white hover:text-gray-200">×</button>
-            </div>
-        `;
-        
-        // Agregar al DOM
-        document.body.appendChild(notificacion);
-        
-        // Animar entrada
-        setTimeout(() => {
-            notificacion.classList.remove('translate-x-full');
-        }, 100);
-        
-        // Auto-remover después del tiempo especificado
-        setTimeout(() => {
-            notificacion.classList.add('translate-x-full');
-            setTimeout(() => {
-                if (notificacion.parentElement) {
-                    notificacion.remove();
-                }
-            }, 300);
-        }, duracion);
-    }
-
     window.horariosModulos = window.horariosModulos || {
         'lunes': {
             1: { inicio: '08:10:00', fin: '09:00:00' },
@@ -637,29 +574,8 @@
         }
     };
 
-    function obtenerDiaActual() {
-        const dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
-        return dias[new Date().getDay()];
-    }
-
-    function obtenerModuloActual(hora = null) {
-        const diaActual = obtenerDiaActual();
-        const horaAhora = hora || new Date().toTimeString().slice(0, 8);
-
-        if (!window.horariosModulos[diaActual]) {
-            return null;
-        }
-
-        for (const [num, horario] of Object.entries(window.horariosModulos[diaActual])) {
-            if (horaAhora >= horario.inicio && horaAhora < horario.fin) {
-                return parseInt(num);
-            }
-        }
-        return null;
-    }
-
     // ========================================
-    // FUNCIONES DE ACTUALIZACIÓN DE WIDGETS
+    // DATOS PARA LOS GRÁFICOS
     // ========================================
 
     // Función principal de actualización de widgets
@@ -1219,13 +1135,13 @@
 
     @keyframes slideInUp {
         from {
-            transform: translateY(100%);
+            transform: translateY(10px);
             opacity: 0;
         }
 
         to {
             transform: translateY(0);
-            opacity: 0.75;
+            opacity: 1;
         }
     }
 

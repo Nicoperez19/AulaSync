@@ -13,15 +13,23 @@ trait RedirectByRole
     protected function redirectByRole()
     {
         $user = Auth::user();
+        
+        // Verificar si el usuario tiene el permiso dashboard
+        $hasDashboardPermission = false;
+        try {
+            $hasDashboardPermission = $user->hasPermissionTo('dashboard');
+        } catch (\Exception $e) {
+            // Si hay error con permisos, asumir que no tiene acceso
+            $hasDashboardPermission = false;
+        }
 
         if ($user->hasRole('Usuario')) {
             return redirect()->route('espacios.show');
-        } elseif ($user->hasRole('Supervisor')) {
-            return redirect(RouteServiceProvider::HOME);
-        } elseif ($user->hasRole('Administrador')) {
+        } elseif (($user->hasRole('Supervisor') || $user->hasRole('Administrador')) && $hasDashboardPermission) {
             return redirect(RouteServiceProvider::HOME);
         } else {
-            return redirect(RouteServiceProvider::HOME);
+            // Si no tiene permisos para dashboard o es un rol desconocido, enviar a espacios
+            return redirect()->route('espacios.show');
         }
     }
 }

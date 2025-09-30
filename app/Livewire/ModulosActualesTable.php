@@ -195,8 +195,39 @@ class ModulosActualesTable extends Component
         $primerModuloParts = explode('.', $primeraPlanificacion->id_modulo);
         $numeroPrimerModulo = isset($primerModuloParts[1]) ? (int)$primerModuloParts[1] : 0;
 
-        // Si estamos en un módulo posterior al primer módulo y no hay reserva del profesor
-        if ($moduloActual && $moduloActual['numero'] > $numeroPrimerModulo && !$tieneReservaProfesor) {
+        // Obtener la hora de inicio del primer módulo para calcular el tiempo de gracia
+        $diaActual = Carbon::now()->locale('es')->isoFormat('dddd');
+        $diaKey = strtolower($diaActual);
+        
+        // Mapear días en español a las claves en inglés que usa el array
+        $mapaDias = [
+            'lunes' => 'lunes',
+            'martes' => 'martes', 
+            'miércoles' => 'miercoles',
+            'miercoles' => 'miercoles',
+            'jueves' => 'jueves',
+            'viernes' => 'viernes'
+        ];
+        
+        $diaKey = $mapaDias[$diaKey] ?? $diaKey;
+        $horariosDelDia = $this->horariosModulos[$diaKey] ?? null;
+        
+        if (!$horariosDelDia || !isset($horariosDelDia[$numeroPrimerModulo])) {
+            return false;
+        }
+
+        $horaInicioPrimerModulo = $horariosDelDia[$numeroPrimerModulo]['inicio'];
+        $horaActual = Carbon::now()->format('H:i:s');
+        
+        // Calcular el tiempo transcurrido desde el inicio del primer módulo
+        $inicioModulo = Carbon::createFromTimeString($horaInicioPrimerModulo);
+        $ahora = Carbon::createFromTimeString($horaActual);
+        
+        // Solo marcar como no realizada si ha pasado 1 hora desde el inicio del primer módulo
+        // Y si estamos en un módulo posterior y no hay reserva del profesor
+        $hasPasadoUnaHora = $ahora->diffInMinutes($inicioModulo) >= 60;
+        
+        if ($moduloActual && $moduloActual['numero'] > $numeroPrimerModulo && !$tieneReservaProfesor && $hasPasadoUnaHora) {
             // Registrar la clase no realizada
             ClaseNoRealizada::registrarClaseNoRealizada([
                 'id_asignatura' => $planificacionActiva->id_asignatura,
@@ -205,7 +236,7 @@ class ModulosActualesTable extends Component
                 'run_profesor' => $planificacionActiva->asignatura->run_profesor ?? '',
                 'fecha_clase' => Carbon::now()->toDateString(),
                 'periodo' => $periodo,
-                'motivo' => 'No se registró ingreso en el primer módulo programado',
+                'motivo' => 'No se registró ingreso después de 1 hora del primer módulo programado',
             ]);
             
             return true;
