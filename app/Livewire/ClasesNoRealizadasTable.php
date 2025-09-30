@@ -296,6 +296,18 @@ class ClasesNoRealizadasTable extends Component
             $query->whereBetween('fecha_clase', [$this->fecha_inicio, $this->fecha_fin]);
         }
 
+        // Aplicar el mismo filtro corregido para las estadísticas
+        $hoy = Carbon::now()->toDateString();
+        $query->where(function($q) use ($hoy) {
+            // Mostrar TODOS los registros de días anteriores
+            $q->whereDate('fecha_clase', '<', $hoy)
+            // PARA registros de hoy, aplicar filtro especial
+            ->orWhere(function($subQ) use ($hoy) {
+                $subQ->whereDate('fecha_clase', $hoy);
+                $this->filtrarClasesFinalizadasDeHoy($subQ);
+            });
+        });
+
         return [
             'total' => $query->count(),
             'no_realizadas' => $query->clone()->where('estado', 'no_realizada')->count(),
@@ -331,6 +343,19 @@ class ClasesNoRealizadasTable extends Component
             $query->whereBetween('fecha_clase', [$this->fecha_inicio, $this->fecha_fin]);
         }
 
+        // Solo aplicar filtro de clases finalizadas para registros de HOY
+        // Los registros de días anteriores se mantienen para historial
+        $hoy = Carbon::now()->toDateString();
+        $query->where(function($q) use ($hoy) {
+            // Mostrar TODOS los registros de días anteriores
+            $q->whereDate('fecha_clase', '<', $hoy)
+            // PARA registros de hoy, aplicar filtro especial
+            ->orWhere(function($subQ) use ($hoy) {
+                $subQ->whereDate('fecha_clase', $hoy);
+                $this->filtrarClasesFinalizadasDeHoy($subQ);
+            });
+        });
+
         $query->orderBy($this->sortField, $this->sortDirection);
 
         $clasesNoRealizadas = $query->paginate($this->perPage);
@@ -352,5 +377,172 @@ class ClasesNoRealizadasTable extends Component
             'clasesNoRealizadas' => $clasesNoRealizadas,
             'estadisticas' => $estadisticas,
         ]);
+    }
+
+    /**
+     * Filtrar clases que ya terminaron para el día de hoy
+     */
+    private function filtrarClasesFinalizadasDeHoy($query)
+    {
+        // Obtener el módulo actual
+        $moduloActual = $this->obtenerModuloActual();
+        
+        if (!$moduloActual) {
+            return; // Si no hay módulo actual, no filtrar nada
+        }
+
+        // Filtrar clases que:
+        // 1. No han terminado por horario (módulo actual < último módulo de la clase)
+        // 2. Y no han terminado antes (sin reserva finalizada del profesor)
+        $query->where(function($q) use ($moduloActual) {
+            // Incluir clases cuyo último módulo aún no ha pasado
+            $q->whereRaw("CAST(SUBSTRING_INDEX(id_modulo, '.', -1) AS UNSIGNED) >= ?", [$moduloActual['numero']])
+            // Y que no tengan una reserva finalizada del profesor hoy
+            ->whereNotExists(function($subQuery) {
+                $subQuery->select('id_reserva')
+                    ->from('reservas')
+                    ->whereColumn('reservas.id_espacio', 'clases_no_realizadas.id_espacio')
+                    ->where('reservas.fecha_reserva', Carbon::now()->toDateString())
+                    ->whereNotNull('reservas.run_profesor')
+                    ->where('reservas.estado', 'finalizada')
+                    ->whereNotNull('reservas.hora_salida');
+            });
+        });
+    }
+
+    /**
+     * Obtener el módulo actual basado en la hora y día actual
+     */
+    private function obtenerModuloActual()
+    {
+        $dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        $diaActual = $dias[Carbon::now()->dayOfWeek];
+        $horaActual = Carbon::now()->format('H:i:s');
+
+        // Si es fin de semana, no hay módulos
+        if ($diaActual === 'domingo' || $diaActual === 'sabado') {
+            return null;
+        }
+
+        // Horarios de módulos (mismo array que en ModulosActualesTable)
+        $horariosModulos = [
+            'lunes' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ],
+            'martes' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ],
+            'miercoles' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ],
+            'jueves' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ],
+            'viernes' => [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+            ]
+        ];
+
+        $horariosDelDia = $horariosModulos[$diaActual] ?? null;
+        if (!$horariosDelDia) {
+            return null;
+        }
+
+        // Buscar en qué módulo estamos
+        foreach ($horariosDelDia as $numeroModulo => $modulo) {
+            if ($horaActual >= $modulo['inicio'] && $horaActual < $modulo['fin']) {
+                return [
+                    'numero' => $numeroModulo,
+                    'inicio' => $modulo['inicio'],
+                    'fin' => $modulo['fin'],
+                    'tipo' => 'modulo'
+                ];
+            }
+        }
+
+        // Si no estamos en un módulo, buscar el próximo módulo (estamos en break)
+        foreach ($horariosDelDia as $numeroModulo => $modulo) {
+            if ($horaActual < $modulo['inicio']) {
+                return [
+                    'numero' => $numeroModulo,
+                    'inicio' => $modulo['inicio'],
+                    'fin' => $modulo['fin'],
+                    'tipo' => 'break',
+                    'mensaje' => 'Próximo Módulo'
+                ];
+            }
+        }
+
+        return null;
     }
 }

@@ -190,10 +190,25 @@ class ModulosActualesTable extends Component
             return false;
         }
 
-        // Obtener el primer módulo de la clase
+        // Obtener el primer y último módulo de la clase
         $primeraPlanificacion = $todasLasPlanificaciones->first();
+        $ultimaPlanificacion = $todasLasPlanificaciones->last();
+        
         $primerModuloParts = explode('.', $primeraPlanificacion->id_modulo);
+        $ultimoModuloParts = explode('.', $ultimaPlanificacion->id_modulo);
+        
         $numeroPrimerModulo = isset($primerModuloParts[1]) ? (int)$primerModuloParts[1] : 0;
+        $numeroUltimoModulo = isset($ultimoModuloParts[1]) ? (int)$ultimoModuloParts[1] : 0;
+
+        // Verificar si la clase ya terminó
+        if ($this->verificarClaseFinalizada($numeroUltimoModulo, $moduloActual)) {
+            return false; // Si la clase ya terminó, no puede ser "no realizada"
+        }
+
+        // Verificar si la clase terminó antes (profesor se fue antes)
+        if ($this->verificarClaseTerminoAntes($planificacionActiva->id_espacio, $numeroUltimoModulo, $moduloActual)) {
+            return false; // Si el profesor hizo la clase y se fue antes, no es "no realizada"
+        }
 
         // Obtener la hora de inicio del primer módulo para calcular el tiempo de gracia
         $diaActual = Carbon::now()->locale('es')->isoFormat('dddd');
@@ -243,6 +258,65 @@ class ModulosActualesTable extends Component
         }
 
         return false;
+    }
+
+    /**
+     * Verificar si una clase ha finalizado
+     */
+    private function verificarClaseFinalizada($numeroUltimoModulo, $moduloActual)
+    {
+        if (!$moduloActual || !$numeroUltimoModulo) {
+            return false;
+        }
+
+        // Si el módulo actual es mayor al último módulo de la clase, la clase ha terminado
+        return $moduloActual['numero'] > $numeroUltimoModulo;
+    }
+
+    /**
+     * Verificar si una clase terminó antes (profesor registró salida)
+     */
+    private function verificarClaseTerminoAntes($espacio, $numeroUltimoModulo, $moduloActual)
+    {
+        if (!$moduloActual || !$numeroUltimoModulo) {
+            return false;
+        }
+
+        // Si estamos en el rango de módulos de la clase o antes del final
+        if ($moduloActual['numero'] <= $numeroUltimoModulo) {
+            // Verificar si hay una reserva del profesor que ya finalizó (con hora_salida)
+            $reservaFinalizada = \App\Models\Reserva::where('id_espacio', $espacio)
+                ->where('fecha_reserva', \Carbon\Carbon::now()->toDateString())
+                ->whereNotNull('run_profesor')
+                ->where('estado', 'finalizada')
+                ->whereNotNull('hora_salida')
+                ->orderBy('created_at', 'desc')
+                ->first();
+
+            if ($reservaFinalizada) {
+                // Verificar que la reserva terminó hoy
+                $horaActual = \Carbon\Carbon::now()->format('H:i:s');
+                $horaSalida = $reservaFinalizada->hora_salida;
+                
+                // Si ya registró salida, la clase terminó antes
+                return $horaSalida < $horaActual || !empty($horaSalida);
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Verificar si una clase está actualmente en curso
+     */
+    private function verificarClaseEnCurso($numeroModuloInicio, $numeroModuloFin, $moduloActual)
+    {
+        if (!$moduloActual || !$numeroModuloInicio || !$numeroModuloFin) {
+            return false;
+        }
+
+        // La clase está en curso si estamos entre el módulo de inicio y fin (inclusive)
+        return $moduloActual['numero'] >= $numeroModuloInicio && $moduloActual['numero'] <= $numeroModuloFin;
     }
 
     /**
@@ -493,12 +567,42 @@ class ModulosActualesTable extends Component
 
                     // Verificar si la clase debe marcarse como no realizada
                     $claseNoRealizada = false;
-                    if ($tieneClase && !$tieneReservaProfesor) {
-                        $claseNoRealizada = $this->verificarClaseNoRealizada($planificacionActiva, $tieneReservaProfesor, $periodo, $this->moduloActual);
+                    $claseFinalizada = false;
+                    $claseTerminoAntes = false;
+                    
+                    if ($tieneClase) {
+                        // Obtener los números de módulos para verificar estado
+                        $planificacionesAsignatura = $todasLasPlanificaciones->get($planificacionActiva->id_asignatura, collect())
+                            ->sortBy(function($planificacion) {
+                                $moduloParts = explode('.', $planificacion->id_modulo);
+                                return isset($moduloParts[1]) ? (int)$moduloParts[1] : 0;
+                            });
+                        
+                        if ($planificacionesAsignatura->isNotEmpty()) {
+                            $moduloInicio = $planificacionesAsignatura->first();
+                            $moduloFin = $planificacionesAsignatura->last();
+                            
+                            $numeroModuloInicio = $moduloInicio ? explode('.', $moduloInicio->id_modulo)[1] ?? 0 : 0;
+                            $numeroModuloFin = $moduloFin ? explode('.', $moduloFin->id_modulo)[1] ?? 0 : 0;
+                            
+                            // Verificar si la clase terminó antes (profesor registró salida)
+                            $claseTerminoAntes = $this->verificarClaseTerminoAntes($espacio->id_espacio, (int)$numeroModuloFin, $this->moduloActual);
+                            
+                            // Verificar si la clase ha finalizado por horario
+                            $claseFinalizada = $this->verificarClaseFinalizada((int)$numeroModuloFin, $this->moduloActual);
+                            
+                            // Solo verificar clase no realizada si no ha finalizado ni terminó antes
+                            if (!$claseFinalizada && !$claseTerminoAntes && !$tieneReservaProfesor) {
+                                $claseNoRealizada = $this->verificarClaseNoRealizada($planificacionActiva, $tieneReservaProfesor, $periodo, $this->moduloActual);
+                            }
+                        }
                     }
 
                     // Determinar el estado dinámicamente
-                    if (($tieneClase && $tieneReservaProfesor) || $tieneReservaSolicitante) {
+                    if ($tieneClase && ($claseFinalizada || $claseTerminoAntes)) {
+                        // Si la clase ya terminó (por horario o porque el profesor se fue antes)
+                        $estado = 'Clase finalizada';
+                    } elseif (($tieneClase && $tieneReservaProfesor) || $tieneReservaSolicitante) {
                         // Si hay clase y el profesor registró su ingreso, O si hay reserva de solicitante
                         $estado = 'Ocupado';
                     } elseif ($tieneClase && !$tieneReservaProfesor && $claseNoRealizada) {
@@ -608,6 +712,8 @@ class ModulosActualesTable extends Component
     {
         if (strtolower($estado) === 'ocupado' || $estado === 'Ocupado') {
             return 'bg-red-500';
+        } elseif (strtolower($estado) === 'clase finalizada' || $estado === 'Clase finalizada') {
+            return 'bg-blue-500'; // Color azul para clases que terminaron
         } elseif (strtolower($estado) === 'clase no realizada' || $estado === 'Clase no realizada') {
             return 'bg-black'; // Color más oscuro para indicar problema
         } elseif (strtolower($estado) === 'reservado' || $estado === 'Reservado') {

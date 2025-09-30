@@ -147,7 +147,7 @@
                                         {{ $clase->id_espacio }}
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ $clase->id_modulo }}
+                                        {{ preg_replace('/^[A-Z]{2}\./', '', $clase->id_modulo) }}
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap">
                                         <span class="px-2 py-1 text-xs font-semibold rounded-full

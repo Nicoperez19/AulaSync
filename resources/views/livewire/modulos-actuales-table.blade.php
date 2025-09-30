@@ -36,7 +36,7 @@
                                                     <div class="font-medium text-gray-900 text-sm">
                                                         <div class="flex items-center gap-2 text-base font-semibold">
                                                                          <i class="fas fa-clock"></i>
-                                                           {{ $espacio['datos_clase']['modulo_inicio'] }} - {{ $espacio['datos_clase']['modulo_fin'] }}
+                                                           {{ preg_replace('/^[A-Z]{2}\./', '', $espacio['datos_clase']['modulo_inicio']) }} - {{ preg_replace('/^[A-Z]{2}\./', '', $espacio['datos_clase']['modulo_fin']) }}
                                                           
                                                         </div>
                                                         <div class="text-gray-600">
@@ -47,7 +47,7 @@
                                                 @elseif(!empty($espacio['proxima_clase']) && is_array($espacio['proxima_clase']))
                                                      <div class="flex items-center gap-2 text-base font-semibold">
                                                                          <i class="fas fa-clock"></i>
-                                                           {{ $espacio['proxima_clase']['modulo_inicio'] ?? '--' }} - {{ $espacio['proxima_clase']['modulo_fin'] ?? '--' }}
+                                                           {{ preg_replace('/^[A-Z]{2}\./', '', $espacio['proxima_clase']['modulo_inicio'] ?? '--') }} - {{ preg_replace('/^[A-Z]{2}\./', '', $espacio['proxima_clase']['modulo_fin'] ?? '--') }}
                                                         </div>
                                                         <div class="text-gray-600">
                                                             {{ $espacio['proxima_clase']['hora_inicio'] ?? '--:--' }} - {{ $espacio['proxima_clase']['hora_fin'] ?? '--:--' }}
