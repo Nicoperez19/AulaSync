@@ -94,7 +94,7 @@ class ClaseNoRealizada extends Model
         $tuvoEntrada = \App\Models\Reserva::where('id_espacio', $datosClase['id_espacio'])
             ->where('fecha_reserva', $datosClase['fecha_clase'])
             ->whereNotNull('run_profesor')
-            ->whereNotNull('hora_entrada')
+            ->whereNotNull('hora') // hora es la hora de entrada en la tabla reservas
             ->exists();
 
         // Si el profesor SÍ entró, NO registrar como clase no realizada
