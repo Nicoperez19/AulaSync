@@ -204,7 +204,7 @@ class ModulosActualesTable extends Component
         $tuvoEntradaHoy = \App\Models\Reserva::where('id_espacio', $planificacionActiva->id_espacio)
             ->where('fecha_reserva', Carbon::now()->toDateString())
             ->whereNotNull('run_profesor')
-            ->whereNotNull('hora_entrada') // El profesor sí entró
+            ->whereNotNull('hora') // El profesor sí entró (hora es la hora de entrada)
             ->exists();
 
         // Si el profesor SÍ registró entrada, la clase SÍ se realizó (aunque haya terminado antes)
