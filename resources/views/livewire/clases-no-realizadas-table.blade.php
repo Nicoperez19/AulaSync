@@ -2,17 +2,38 @@
 
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-gray-900">Estadísticas de Clases No Realizadas</h1>
+        
+        <!-- Botones de Exportación -->
+        <div class="flex gap-3">
+            <button wire:click="exportarPDFSemanal" 
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
+                <i class="fas fa-file-pdf mr-2"></i>
+                Exportar Semanal
+            </button>
+            <button wire:click="exportarPDFMensual" 
+                    class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
+                <i class="fas fa-file-pdf mr-2"></i>
+                Exportar Mensual
+            </button>
+        </div>
     </div>
 
     <!-- Estadísticas Generales -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div class="stat-card bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div class="text-blue-600 text-sm font-medium">Total</div>
             <div class="text-2xl font-bold text-blue-900">{{ $estadisticas['total'] }}</div>
         </div>
         <div class="stat-card bg-red-50 border border-red-200 rounded-lg p-4">
-            <div class="text-red-600 text-sm font-medium">Clases No Realizadas</div>
+            <div class="text-red-600 text-sm font-medium">No Realizadas</div>
             <div class="text-2xl font-bold text-red-900">{{ $estadisticas['no_realizadas'] }}</div>
+        </div>
+        <div class="stat-card bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div class="text-yellow-600 text-sm font-medium flex items-center gap-1">
+                <i class="fas fa-clock text-xs"></i>
+                Pendientes
+            </div>
+            <div class="text-2xl font-bold text-yellow-900">{{ $estadisticas['pendientes'] ?? 0 }}</div>
         </div>
         <div class="stat-card bg-green-50 border border-green-200 rounded-lg p-4">
             <div class="text-green-600 text-sm font-medium">Justificados</div>
@@ -50,7 +71,8 @@
                             id="estado"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         <option value="">Todos</option>
-                        <option value="no_realizada">Clase no realizada</option>
+                        <option value="no_realizada">No realizada</option>
+                        <option value="pendiente">Pendiente de recuperación</option>
                         <option value="justificado">Justificado</option>
                     </select>
                 </div>
@@ -130,9 +152,15 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($clasesNoRealizadas as $clase)
-                                <tr class="table-row hover:bg-gray-50">
+                                <tr class="table-row hover:bg-gray-50 {{ $clase->estado === 'pendiente' ? 'bg-yellow-50' : '' }}">
                                     <td class="px-3 py-4 text-sm text-gray-900 w-24">
-                                        {{ $clase->fecha_clase->format('d/m/Y') }}
+                                        <div class="flex items-center gap-1">
+                                            {{ $clase->fecha_clase->format('d/m/Y') }}
+                                            @if($clase->estado === 'pendiente')
+                                                <i class="fas fa-clock text-yellow-600 text-xs cursor-help" 
+                                                   title="Clase reagendada - Pendiente de recuperación"></i>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-900 w-32">
                                         <div class="break-words">{{ $clase->profesor->name ?? 'N/A' }}</div>
@@ -150,10 +178,22 @@
                                         {{ preg_replace('/^[A-Z]{2}\./', '', $clase->id_modulo) }}
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap">
-                                        <span class="px-2 py-1 text-xs font-semibold rounded-full
-                                            {{ $clase->estado === 'no_realizada' ? 'estado-no-realizada' : 'estado-justificado' }}">
-                                            {{ $clase->estado === 'no_realizada' ? 'Clase no realizada' : 'Justificado' }}
-                                        </span>
+                                        <div class="flex flex-col gap-1">
+                                            @if($clase->estado === 'no_realizada')
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                                    No Realizada
+                                                </span>
+                                            @elseif($clase->estado === 'pendiente')
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 flex items-center gap-1">
+                                                    <i class="fas fa-clock text-[10px]"></i>
+                                                    Pendiente Recuperación
+                                                </span>
+                                            @elseif($clase->estado === 'justificado')
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                                                    Justificado
+                                                </span>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td class="px-3 py-4 text-sm text-gray-500 w-28">
                                         <div class="break-words">
@@ -171,6 +211,16 @@
                                                         <i class="fas fa-calendar-plus icon-animate text-xs"></i>
                                                     </button>
                                                     <span class="tooltip-text">Reagendar</span>
+                                                </div>
+                                            @endif
+                                            @if($clase->estado === 'pendiente')
+                                                <div class="custom-tooltip">
+                                                    <button wire:click="marcarComoRecuperada({{ $clase->id }})" 
+                                                            class="p-1 bg-green-100 hover:bg-green-200 text-green-700 rounded transition-colors duration-200"
+                                                            title="Marcar como recuperada">
+                                                        <i class="fas fa-check-circle icon-animate text-xs"></i>
+                                                    </button>
+                                                    <span class="tooltip-text">Recuperada</span>
                                                 </div>
                                             @endif
                                             <div class="custom-tooltip">
@@ -238,9 +288,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
                         <select id="swal-estado" class="w-full p-2 border border-gray-300 rounded-md">
-                            <option value="no_realizada" ${clase.estado === 'no_realizada' ? 'selected' : ''}>Clase no realizada</option>
-                            <option value="justificado" ${clase.estado === 'justificado' ? 'selected' : ''}>Justificado</option>
+                            <option value="no_realizada" ${clase.estado === 'no_realizada' ? 'selected' : ''}>No realizada</option>
+                            <option value="pendiente" ${clase.estado === 'pendiente' ? 'selected' : ''}>Pendiente de recuperación</option>
+                            <option value="justificado" ${clase.estado === 'justificado' ? 'selected' : ''}>Justificado (sin recuperación)</option>
                         </select>
+                        <p class="text-xs text-gray-500 mt-1">
+                            <strong>Pendiente:</strong> Clase reagendada esperando recuperación<br>
+                            <strong>Justificado:</strong> Clase justificada sin necesidad de recuperación
+                        </p>
                     </div>
                     
                     <div class="mb-4">
@@ -318,6 +373,21 @@ document.addEventListener('DOMContentLoaded', function() {
             title: '<strong><i class="fas fa-calendar-plus"></i> Reagendar Clase</strong>',
             html: `
                 <div class="text-left space-y-4">
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <i class="fas fa-exclamation-triangle text-yellow-400 text-xl"></i>
+                            </div>
+                            <div class="ml-3">
+                                <p class="text-sm text-yellow-700">
+                                    <strong>Importante:</strong> Al reagendar esta clase, se marcará como <strong>justificada</strong> 
+                                    pero quedará <strong>pendiente de recuperación</strong>. La clase permanecerá en el listado 
+                                    hasta que se confirme su realización.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="bg-blue-50 p-4 rounded-lg mb-4">
                         <h4 class="font-semibold text-blue-900 mb-2">Clase Original</h4>
                         <p><strong>Profesor:</strong> ${clase.profesor}</p>

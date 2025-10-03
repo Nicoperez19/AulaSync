@@ -142,9 +142,21 @@ return [
     */
 
     'admin_emails' => [
-        env('ADMIN_EMAIL_1', 'admin@aulasync.com'),
+        env('ADMIN_EMAIL_1', 'layala@ing.ucsc.cl'),
         env('ADMIN_EMAIL_2', 'soporte@aulasync.com'),
         // Agregar más correos según sea necesario
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Report Recipients
+    |--------------------------------------------------------------------------
+    |
+    | Email addresses that should receive automated reports
+    | (weekly and monthly reports of unrealized classes).
+    |
+    */
+
+    'report_recipients' => env('REPORT_RECIPIENTS', 'lorenzo.paredes@ucsc.cl,layala@ing.ucsc.cl'),
 
 ];

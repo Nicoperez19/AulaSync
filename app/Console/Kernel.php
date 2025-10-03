@@ -50,6 +50,18 @@ class Kernel extends ConsoleKernel
                 ->dailyAt('23:55')
                 ->withoutOverlapping()
                 ->appendOutputTo(storage_path('logs/verificacion-sistema.log'));
+
+        // Enviar reporte semanal de clases no realizadas cada lunes a las 8:00 AM
+        $schedule->command('reportes:clases-no-realizadas-semanal')
+                ->weeklyOn(1, '08:00') // Lunes a las 8:00 AM
+                ->withoutOverlapping()
+                ->appendOutputTo(storage_path('logs/reporte-semanal.log'));
+
+        // Enviar reporte mensual de clases no realizadas el primer día del mes a las 9:00 AM
+        $schedule->command('reportes:clases-no-realizadas-mensual')
+                ->monthlyOn(1, '09:00') // Día 1 de cada mes a las 9:00 AM
+                ->withoutOverlapping()
+                ->appendOutputTo(storage_path('logs/reporte-mensual.log'));
     }
 
     /**

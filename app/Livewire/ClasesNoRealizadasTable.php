@@ -8,6 +8,7 @@ use App\Models\ClaseNoRealizada;
 use App\Helpers\SemesterHelper;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use App\Services\ClasesNoRealizadasReportService;
 
 class ClasesNoRealizadasTable extends Component
 {
@@ -35,8 +36,52 @@ class ClasesNoRealizadasTable extends Component
     protected $listeners = [
         'updateClase',
         'confirmDelete',
-        'reagendarClase'
+        'reagendarClase',
+        'marcarComoRecuperada'
     ];
+
+    public function exportarPDFSemanal()
+    {
+        try {
+            $reportService = new ClasesNoRealizadasReportService();
+            
+            // Usar las fechas del filtro o la semana actual
+            $fechaInicio = $this->fecha_inicio ? Carbon::parse($this->fecha_inicio) : Carbon::now()->startOfWeek();
+            $fechaFin = $this->fecha_fin ? Carbon::parse($this->fecha_fin) : Carbon::now()->endOfWeek();
+            
+            $pdf = $reportService->generarPDFSemanal($fechaInicio, $fechaFin);
+            
+            return response()->streamDownload(function () use ($pdf) {
+                echo $pdf->output();
+            }, 'Reporte_Semanal_Clases_No_Realizadas.pdf');
+            
+        } catch (\Exception $e) {
+            Log::error('Error al generar PDF semanal: ' . $e->getMessage());
+            $this->dispatch('show-error', ['message' => 'Error al generar el PDF: ' . $e->getMessage()]);
+        }
+    }
+
+    public function exportarPDFMensual()
+    {
+        try {
+            $reportService = new ClasesNoRealizadasReportService();
+            
+            // Usar el mes actual o el del filtro
+            $fecha = $this->fecha_inicio ? Carbon::parse($this->fecha_inicio) : Carbon::now();
+            $mes = $fecha->month;
+            $anio = $fecha->year;
+            
+            $pdf = $reportService->generarPDFMensual($mes, $anio);
+            
+            return response()->streamDownload(function () use ($pdf) {
+                echo $pdf->output();
+            }, 'Reporte_Mensual_Clases_No_Realizadas.pdf');
+            
+        } catch (\Exception $e) {
+            Log::error('Error al generar PDF mensual: ' . $e->getMessage());
+            $this->dispatch('show-error', ['message' => 'Error al generar el PDF: ' . $e->getMessage()]);
+        }
+    }
 
     public function mount()
     {
@@ -221,25 +266,76 @@ class ClasesNoRealizadasTable extends Component
                 return;
             }
             
-            // Crear observación de reagendamiento
-            $observacionReagendamiento = "Reagendada desde {$clase->fecha_clase->format('d/m/Y')} en {$clase->id_espacio} módulo {$clase->id_modulo} a {$nuevaFecha} en {$nuevoEspacio} módulo {$nuevoModulo}";
+            // Crear observación completa indicando que debe recuperarse
+            $observacionReagendamiento = "⚠️ CLASE PENDIENTE DE RECUPERACIÓN - ";
+            $observacionReagendamiento .= "Reagendada desde {$clase->fecha_clase->format('d/m/Y')} ({$clase->id_espacio}, módulo {$clase->id_modulo}) ";
+            $observacionReagendamiento .= "a {$nuevaFecha} ({$nuevoEspacio}, módulo {$nuevoModulo}). ";
+            $observacionReagendamiento .= "El profesor debe recuperar esta clase en la nueva fecha programada.";
             
             if ($observaciones) {
-                $observacionReagendamiento .= ". Motivo: {$observaciones}";
+                $observacionReagendamiento .= " Motivo: {$observaciones}";
             }
             
+            // Cambiar estado a PENDIENTE (esperando recuperación)
             $clase->update([
                 'fecha_clase' => $nuevaFecha,
                 'id_espacio' => $nuevoEspacio,
                 'id_modulo' => $nuevoModulo,
-                'estado' => 'justificado',
+                'estado' => 'pendiente', // Estado específico para clases reagendadas
                 'observaciones' => $observacionReagendamiento,
             ]);
             
-            $this->dispatch('show-success', ['message' => 'Clase reagendada exitosamente']);
+            Log::info("Clase reagendada exitosamente", [
+                'clase_id' => $id,
+                'fecha_original' => $clase->fecha_clase->format('Y-m-d'),
+                'fecha_nueva' => $nuevaFecha,
+                'espacio_original' => $clase->id_espacio,
+                'espacio_nuevo' => $nuevoEspacio,
+                'modulo_original' => $clase->id_modulo,
+                'modulo_nuevo' => $nuevoModulo,
+                'estado' => 'pendiente',
+            ]);
+            
+            $this->dispatch('show-success', ['message' => 'Clase reagendada exitosamente. Quedará como PENDIENTE hasta que se confirme su realización.']);
             $this->refresh(); // Refrescar datos después de reagendar
         } catch (\Exception $e) {
+            Log::error("Error al reagendar clase: " . $e->getMessage());
             $this->dispatch('show-error', ['message' => 'Error al reagendar la clase: ' . $e->getMessage()]);
+        }
+    }
+
+    public function marcarComoRecuperada($id)
+    {
+        try {
+            $clase = ClaseNoRealizada::findOrFail($id);
+            
+            // Verificar que esté en estado pendiente
+            if ($clase->estado !== 'pendiente') {
+                $this->dispatch('show-error', ['message' => 'Solo se pueden marcar como recuperadas las clases en estado PENDIENTE']);
+                return;
+            }
+            
+            // Actualizar observaciones agregando confirmación de recuperación
+            $observacionAnterior = $clase->observaciones ?? '';
+            $nuevaObservacion = $observacionAnterior . "\n\n✓ CLASE RECUPERADA - Confirmada el " . Carbon::now()->format('d/m/Y H:i');
+            
+            // Cambiar estado a justificado
+            $clase->update([
+                'estado' => 'justificado',
+                'observaciones' => $nuevaObservacion,
+            ]);
+            
+            Log::info("Clase marcada como recuperada", [
+                'clase_id' => $id,
+                'fecha_clase' => $clase->fecha_clase->format('Y-m-d'),
+                'profesor' => $clase->profesor->name ?? 'N/A',
+            ]);
+            
+            $this->dispatch('show-success', ['message' => 'Clase marcada como recuperada exitosamente']);
+            $this->refresh();
+        } catch (\Exception $e) {
+            Log::error("Error al marcar clase como recuperada: " . $e->getMessage());
+            $this->dispatch('show-error', ['message' => 'Error al procesar: ' . $e->getMessage()]);
         }
     }
 
@@ -297,11 +393,14 @@ class ClasesNoRealizadasTable extends Component
         }
 
         // Aplicar el mismo filtro corregido para las estadísticas
+        // IMPORTANTE: Las clases pendientes se cuentan siempre (incluso futuras)
         $hoy = Carbon::now()->toDateString();
         $query->where(function($q) use ($hoy) {
-            // Mostrar TODOS los registros de días anteriores
-            $q->whereDate('fecha_clase', '<', $hoy)
-            // PARA registros de hoy, aplicar filtro especial
+            // OPCIÓN 1: Clases pendientes (reagendadas) - mostrar SIEMPRE
+            $q->where('estado', 'pendiente')
+            // OPCIÓN 2: Mostrar TODOS los registros de días anteriores
+            ->orWhereDate('fecha_clase', '<', $hoy)
+            // OPCIÓN 3: PARA registros de hoy, aplicar filtro especial
             ->orWhere(function($subQ) use ($hoy) {
                 $subQ->whereDate('fecha_clase', $hoy);
                 $this->filtrarClasesFinalizadasDeHoy($subQ);
@@ -311,6 +410,7 @@ class ClasesNoRealizadasTable extends Component
         return [
             'total' => $query->count(),
             'no_realizadas' => $query->clone()->where('estado', 'no_realizada')->count(),
+            'pendientes' => $query->clone()->where('estado', 'pendiente')->count(),
             'justificados' => $query->clone()->where('estado', 'justificado')->count(),
         ];
     }
@@ -345,11 +445,14 @@ class ClasesNoRealizadasTable extends Component
 
         // Solo aplicar filtro de clases finalizadas para registros de HOY
         // Los registros de días anteriores se mantienen para historial
+        // IMPORTANTE: Las clases con estado "pendiente" se muestran siempre (incluso futuras)
         $hoy = Carbon::now()->toDateString();
         $query->where(function($q) use ($hoy) {
-            // Mostrar TODOS los registros de días anteriores
-            $q->whereDate('fecha_clase', '<', $hoy)
-            // PARA registros de hoy, aplicar filtro especial
+            // OPCIÓN 1: Clases pendientes (reagendadas) - mostrar SIEMPRE
+            $q->where('estado', 'pendiente')
+            // OPCIÓN 2: Mostrar TODOS los registros de días anteriores
+            ->orWhereDate('fecha_clase', '<', $hoy)
+            // OPCIÓN 3: PARA registros de hoy, aplicar filtro especial
             ->orWhere(function($subQ) use ($hoy) {
                 $subQ->whereDate('fecha_clase', $hoy);
                 $this->filtrarClasesFinalizadasDeHoy($subQ);
