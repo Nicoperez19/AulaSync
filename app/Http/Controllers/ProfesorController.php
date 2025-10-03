@@ -115,6 +115,12 @@ class ProfesorController extends Controller
             $espacio->estado = 'Ocupado';
             $espacio->save();
 
+            // Limpiar registros incorrectos de clases no realizadas
+            \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
+                $espacio->id_espacio,
+                $fechaActual
+            );
+
             return response()->json([
                 'success' => true,
                 'mensaje' => 'Reserva creada exitosamente para el profesor',
@@ -318,6 +324,12 @@ class ProfesorController extends Controller
             // Cambiar estado del espacio
             $espacio->estado = 'Ocupado';
             $espacio->save();
+
+            // Limpiar registros incorrectos de clases no realizadas
+            \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
+                $espacio->id_espacio,
+                $fechaActual
+            );
 
             return response()->json([
                 'success' => true,

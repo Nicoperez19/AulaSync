@@ -170,11 +170,11 @@ class ModulosActualesTable extends Component
      */
     private function verificarClaseNoRealizada($planificacionActiva, $tieneReservaProfesor, $periodo, $moduloActual)
     {
-        if (!$planificacionActiva || $tieneReservaProfesor) {
-            return false; // Si no hay clase o el profesor se registró, no es clase no realizada
+        if (!$planificacionActiva) {
+            return false; // Si no hay clase planificada, no hay nada que verificar
         }
 
-        // Obtener todas las planificaciones de esta asignatura para encontrar el primer módulo
+        // Obtener todas las planificaciones de esta asignatura para encontrar el primer y último módulo
         $todasLasPlanificaciones = Planificacion_Asignatura::with(['modulo'])
             ->where('id_asignatura', $planificacionActiva->id_asignatura)
             ->whereHas('horario', function($q) use ($periodo) {
@@ -200,14 +200,31 @@ class ModulosActualesTable extends Component
         $numeroPrimerModulo = isset($primerModuloParts[1]) ? (int)$primerModuloParts[1] : 0;
         $numeroUltimoModulo = isset($ultimoModuloParts[1]) ? (int)$ultimoModuloParts[1] : 0;
 
-        // Verificar si la clase ya terminó
-        if ($this->verificarClaseFinalizada($numeroUltimoModulo, $moduloActual)) {
-            return false; // Si la clase ya terminó, no puede ser "no realizada"
+        // Verificar si el profesor registró entrada HOY en este espacio (independiente del estado)
+        $tuvoEntradaHoy = \App\Models\Reserva::where('id_espacio', $planificacionActiva->id_espacio)
+            ->where('fecha_reserva', Carbon::now()->toDateString())
+            ->whereNotNull('run_profesor')
+            ->whereNotNull('hora_entrada') // El profesor sí entró
+            ->exists();
+
+        // Si el profesor SÍ registró entrada, la clase SÍ se realizó (aunque haya terminado antes)
+        if ($tuvoEntradaHoy) {
+            return false; // La clase SÍ se realizó
         }
 
-        // Verificar si la clase terminó antes (profesor se fue antes)
-        if ($this->verificarClaseTerminoAntes($planificacionActiva->id_espacio, $numeroUltimoModulo, $moduloActual)) {
-            return false; // Si el profesor hizo la clase y se fue antes, no es "no realizada"
+        // Verificar si la clase ya terminó completamente
+        if ($this->verificarClaseFinalizada($numeroUltimoModulo, $moduloActual)) {
+            // Si la clase terminó y NO hubo entrada, es clase no realizada
+            ClaseNoRealizada::registrarClaseNoRealizada([
+                'id_asignatura' => $planificacionActiva->id_asignatura,
+                'id_espacio' => $planificacionActiva->id_espacio,
+                'id_modulo' => $primeraPlanificacion->id_modulo,
+                'run_profesor' => $planificacionActiva->asignatura->run_profesor ?? '',
+                'fecha_clase' => Carbon::now()->toDateString(),
+                'periodo' => $periodo,
+                'motivo' => 'No se registró ingreso del profesor durante toda la clase',
+            ]);
+            return true;
         }
 
         // Obtener la hora de inicio del primer módulo para calcular el tiempo de gracia
@@ -239,10 +256,10 @@ class ModulosActualesTable extends Component
         $ahora = Carbon::createFromTimeString($horaActual);
         
         // Solo marcar como no realizada si ha pasado 1 hora desde el inicio del primer módulo
-        // Y si estamos en un módulo posterior y no hay reserva del profesor
+        // Y si NO hay reserva con entrada del profesor
         $hasPasadoUnaHora = $ahora->diffInMinutes($inicioModulo) >= 60;
         
-        if ($moduloActual && $moduloActual['numero'] > $numeroPrimerModulo && !$tieneReservaProfesor && $hasPasadoUnaHora) {
+        if ($moduloActual && $moduloActual['numero'] > $numeroPrimerModulo && !$tuvoEntradaHoy && $hasPasadoUnaHora) {
             // Registrar la clase no realizada
             ClaseNoRealizada::registrarClaseNoRealizada([
                 'id_asignatura' => $planificacionActiva->id_asignatura,

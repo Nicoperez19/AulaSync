@@ -381,6 +381,7 @@ class ClasesNoRealizadasTable extends Component
 
     /**
      * Filtrar clases que ya terminaron para el día de hoy
+     * Solo ocultar las clases de hoy que aún no han terminado su horario
      */
     private function filtrarClasesFinalizadasDeHoy($query)
     {
@@ -388,24 +389,19 @@ class ClasesNoRealizadasTable extends Component
         $moduloActual = $this->obtenerModuloActual();
         
         if (!$moduloActual) {
-            return; // Si no hay módulo actual, no filtrar nada
+            // Si no estamos en horario de clases (fuera de módulos), mostrar todo
+            return;
         }
 
-        // Filtrar clases que:
-        // 1. No han terminado por horario (módulo actual < último módulo de la clase)
-        // 2. Y no han terminado antes (sin reserva finalizada del profesor)
+        // Para clases de HOY, solo mostrar las que:
+        // 1. Ya pasó su último módulo programado (la clase terminó su horario)
+        // 2. O que pasó más de 1 hora desde el inicio del primer módulo
         $query->where(function($q) use ($moduloActual) {
-            // Incluir clases cuyo último módulo aún no ha pasado
-            $q->whereRaw("CAST(SUBSTRING_INDEX(id_modulo, '.', -1) AS UNSIGNED) >= ?", [$moduloActual['numero']])
-            // Y que no tengan una reserva finalizada del profesor hoy
-            ->whereNotExists(function($subQuery) {
-                $subQuery->select('id_reserva')
-                    ->from('reservas')
-                    ->whereColumn('reservas.id_espacio', 'clases_no_realizadas.id_espacio')
-                    ->where('reservas.fecha_reserva', Carbon::now()->toDateString())
-                    ->whereNotNull('reservas.run_profesor')
-                    ->where('reservas.estado', 'finalizada')
-                    ->whereNotNull('reservas.hora_salida');
+            // Opción 1: La clase ya terminó su horario (módulo actual > último módulo de la clase)
+            $q->whereRaw("CAST(SUBSTRING_INDEX(id_modulo, '.', -1) AS UNSIGNED) < ?", [$moduloActual['numero']])
+            // Opción 2: O ha pasado más de 1 hora desde la detección
+            ->orWhere(function($subQ) {
+                $subQ->where('hora_deteccion', '<=', Carbon::now()->subHour());
             });
         });
     }
