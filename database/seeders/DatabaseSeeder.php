@@ -31,7 +31,10 @@ class DatabaseSeeder extends Seeder
 
         $this->call(class: ModulosSeeder::class);
 
+        // Tipos de correos masivos
+        $this->call(class: TiposCorreosMasivosSeeder::class);
 
-        // $this->call(class: ReservasSeeder::class); 
+
+        // $this->call(class: ReservasSeeder::class);
     }
 }

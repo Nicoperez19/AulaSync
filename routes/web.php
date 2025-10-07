@@ -57,6 +57,9 @@ Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::delete('/user/user_delete/{run}', [UserController::class, 'destroy'])->name('users.delete');
     Route::get('/user/user_edit/{run}', [UserController::class, 'edit'])->name('users.edit');
     Route::put('user/user_update/{run}', [UserController::class, 'update'])->name('users.update');
+
+    // Administración de Correos Masivos
+    Route::get('/correos-masivos', \App\Livewire\CorreosMasivosManager::class)->name('correos-masivos.index');
 });
 
 // Estadísticas de clases no realizadas - Administrador y Supervisor
@@ -72,13 +75,13 @@ Route::middleware(['auth', 'permission:horarios profesores'])->group(function ()
 Route::middleware(['auth'])->group(function () {
     Route::get('/horarios/{run}', [HorariosController::class, 'getHorarioProfesor'])->name('horarios.get');
     Route::get('/horarios/{run}/export-pdf', [HorariosController::class, 'exportHorarioProfesorPDF'])->name('horarios.export-pdf');
-    
+
     // Rutas con tiempo de ejecución extendido para el módulo de visualización
     Route::middleware(['extend.execution:180'])->group(function () {
         Route::get('/modulos-actuales', [\App\Http\Controllers\TableController::class, 'index'])->name('modulos.actuales');
         Route::get('/modulos-actuales/actualizar-datos', [\App\Http\Controllers\TableController::class, 'actualizarDatos'])->name('modulos.actuales.datos');
     });
-    
+
     // Autocomplete de usuarios (email)
     Route::get('/api/usuarios/autocomplete', [\App\Http\Controllers\UserController::class, 'autocomplete'])->name('usuarios.autocomplete');
     // Endpoint para obtener módulos disponibles de un espacio (usado por reservas)
@@ -273,7 +276,7 @@ Route::middleware(['auth'])->prefix('quick-actions')->name('quick-actions.')->gr
     Route::get('/crear-reserva', [QuickActionsController::class, 'crearReserva'])->name('crear-reserva');
     Route::get('/gestionar-reservas', [QuickActionsController::class, 'gestionarReservas'])->name('gestionar-reservas');
     Route::get('/gestionar-espacios', [QuickActionsController::class, 'gestionarEspacios'])->name('gestionar-espacios');
-    
+
     // API endpoints para quick actions
     Route::get('/dashboard-data', [QuickActionsController::class, 'getDashboardData'])->name('dashboard-data');
     Route::get('/api/espacios', [QuickActionsController::class, 'getEspacios'])->name('api.espacios');
@@ -285,7 +288,7 @@ Route::middleware(['auth'])->prefix('quick-actions')->name('quick-actions.')->gr
             'timestamp' => now()
         ]);
     })->name('debug.test');
-    
+
     Route::get('/debug/espacios', function () {
         try {
             $count = \App\Models\Espacio::count();
@@ -304,22 +307,22 @@ Route::middleware(['auth'])->prefix('quick-actions')->name('quick-actions.')->gr
             ]);
         }
     })->name('debug.espacios');
-    
+
     // API para buscar personas por RUN (autocompletado)
     Route::get('/api/buscar-personas', [QuickActionsController::class, 'buscarPersonas'])->name('api.buscar-personas');
-    
+
     // API para crear reserva
     Route::post('/api/crear-reserva', [QuickActionsController::class, 'procesarCrearReserva'])->name('api.crear-reserva');
-    
+
     // API para obtener reservas
     Route::get('/api/reservas', [QuickActionsController::class, 'getReservas'])->name('api.reservas');
-    
+
     // API para cambiar estado de espacio
     Route::put('/api/espacio/{codigo}/estado', [QuickActionsController::class, 'cambiarEstadoEspacio'])->name('quick-actions.api.cambiar-estado-espacio');
-    
+
     // API para cambiar estado de reserva
     Route::put('/api/reserva/{id}/estado', [QuickActionsController::class, 'cambiarEstadoReserva'])->name('quick-actions.api.cambiar-estado-reserva');
-    
+
     // Debug para verificar estructura de personas
     Route::get('/debug/personas', function () {
         try {
@@ -327,7 +330,7 @@ Route::middleware(['auth'])->prefix('quick-actions')->name('quick-actions.')->gr
             $solicitanteCount = \App\Models\Solicitante::count();
             $firstProfesor = \App\Models\Profesor::first();
             $firstSolicitante = \App\Models\Solicitante::first();
-            
+
             return response()->json([
                 'message' => 'Debug personas',
                 'profesores_count' => $profesorCount,
