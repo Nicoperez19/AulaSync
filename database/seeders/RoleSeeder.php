@@ -17,6 +17,7 @@ class RoleSeeder extends Seeder
         $roleAdmin = Role::firstOrCreate(['name' => 'Administrador']);
         $roleSupervisor = Role::firstOrCreate(['name' => 'Supervisor']);
         $roleUsuario = Role::firstOrCreate(['name' => 'Usuario']);
+        $roleProfesor = Role::firstOrCreate(['name' => 'Profesor']);
         
         $permission1 = Permission::firstOrCreate(['name' => 'dashboard']);
         $permission2 = Permission::firstOrCreate(['name' => 'mantenedor de roles']);
@@ -59,6 +60,10 @@ class RoleSeeder extends Seeder
 
         $roleUsuario->syncPermissions([
             $permission15, $permission16, $permission17, $permission18, $permission22, $permission23
+        ]);
+
+        $roleProfesor->syncPermissions([
+            $permission15, $permission16
         ]);
     }
 }
