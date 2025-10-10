@@ -114,6 +114,65 @@
         </div>
     @endif
 
+    <!-- Modal de Vista Previa de Plantilla -->
+    <div id="modalVistaPreviaPlantilla" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden z-[9999] overflow-y-auto" style="backdrop-filter: blur(4px);" onclick="cerrarModalVistaPrevia(event)">
+        <div class="flex min-h-screen items-center justify-center p-4">
+            <div class="relative bg-white rounded-lg shadow-2xl w-full max-w-5xl" style="max-height: 90vh; overflow-y: auto;" onclick="event.stopPropagation()">
+                
+                <!-- Header del Modal -->
+                <div class="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 rounded-t-lg z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="bg-white bg-opacity-20 rounded-lg p-2">
+                            <i class="fas fa-eye text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold" id="modalVistaPreviaTitulo">Vista Previa de Plantilla</h3>
+                            <p class="text-sm opacity-90">Vista previa del correo con datos de ejemplo</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <a id="btnDescargarPdfPlantilla" href="#" target="_blank"
+                           class="inline-flex items-center px-4 py-2 bg-white text-indigo-600 rounded-lg hover:bg-indigo-50 transition-all shadow-md text-sm font-medium">
+                            <i class="fas fa-download mr-2"></i>
+                            Descargar PDF
+                        </a>
+                        <button onclick="cerrarModalVistaPrevia()" 
+                                class="text-white hover:bg-white hover:bg-opacity-20 rounded-lg p-2 transition-all">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contenido del Modal -->
+                <div class="p-6 bg-gray-50">
+                    <div id="contenidoVistaPreviaPlantilla" class="bg-white rounded-lg shadow-inner border border-gray-200 p-4 min-h-[500px]">
+                        <div class="flex items-center justify-center h-full">
+                            <div class="text-center">
+                                <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600 mb-3"></div>
+                                <p class="text-gray-700 font-medium">Cargando vista previa...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer del Modal -->
+                <div class="sticky bottom-0 bg-gradient-to-r from-gray-50 to-gray-100 px-6 py-4 rounded-b-lg border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-3">
+                    <div class="text-sm text-gray-700 flex items-center gap-2">
+                        <div class="bg-indigo-100 text-indigo-600 rounded-full p-1.5">
+                            <i class="fas fa-info-circle text-sm"></i>
+                        </div>
+                        <span>Esta es una vista previa con datos de ejemplo</span>
+                    </div>
+                    <button onclick="cerrarModalVistaPrevia()" 
+                            class="px-6 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md font-medium">
+                        <i class="fas fa-times mr-2"></i>
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -226,3 +285,97 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+
+<script>
+    function abrirVistaPreviaPlantilla(plantillaId, nombrePlantilla) {
+        console.log('Abriendo vista previa de plantilla:', plantillaId, nombrePlantilla);
+        
+        const modal = document.getElementById('modalVistaPreviaPlantilla');
+        const titulo = document.getElementById('modalVistaPreviaTitulo');
+        const contenido = document.getElementById('contenidoVistaPreviaPlantilla');
+        const btnDescargar = document.getElementById('btnDescargarPdfPlantilla');
+        
+        if (!modal) {
+            console.error('Modal no encontrado');
+            return;
+        }
+        
+        // Actualizar título
+        titulo.textContent = nombrePlantilla;
+        
+        // Actualizar enlace de descarga
+        btnDescargar.href = `/test/plantillas-pdf/generar/${plantillaId}`;
+        
+        // Mostrar modal con loading
+        modal.classList.remove('hidden');
+        contenido.innerHTML = `
+            <div class="flex items-center justify-center min-h-[500px]">
+                <div class="text-center">
+                    <div class="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600 mb-3"></div>
+                    <p class="text-gray-700 font-medium text-lg">Cargando vista previa...</p>
+                    <p class="text-gray-500 text-sm mt-2">Por favor espera un momento</p>
+                </div>
+            </div>
+        `;
+        
+        // Bloquear scroll del body
+        document.body.style.overflow = 'hidden';
+        
+        // Cargar contenido via fetch
+        fetch(`/test/plantillas-pdf/preview/${plantillaId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al cargar la vista previa');
+                }
+                return response.text();
+            })
+            .then(html => {
+                contenido.innerHTML = `
+                    <div class="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+                        <iframe srcdoc="${html.replace(/"/g, '&quot;')}" 
+                                class="w-full border-0 rounded" 
+                                style="height: 70vh; min-height: 500px;">
+                        </iframe>
+                    </div>
+                `;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                contenido.innerHTML = `
+                    <div class="flex items-center justify-center min-h-[500px]">
+                        <div class="text-center max-w-md mx-auto">
+                            <div class="bg-red-100 text-red-600 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                                <i class="fas fa-exclamation-circle text-3xl"></i>
+                            </div>
+                            <p class="text-red-600 text-lg font-semibold mb-2">Error al cargar la vista previa</p>
+                            <p class="text-gray-600 text-sm mb-4">${error.message}</p>
+                            <button onclick="cerrarModalVistaPrevia()" 
+                                    class="px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg hover:from-indigo-700 hover:to-purple-700 transition-all">
+                                Cerrar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+    }
+    
+    function cerrarModalVistaPrevia(event) {
+        // Si se hizo click en el backdrop o en el botón cerrar
+        if (!event || event.target.id === 'modalVistaPreviaPlantilla' || event.type === 'click') {
+            const modal = document.getElementById('modalVistaPreviaPlantilla');
+            if (modal) {
+                modal.classList.add('hidden');
+                // Restaurar scroll del body
+                document.body.style.overflow = 'auto';
+            }
+        }
+    }
+    
+    // Cerrar modal con tecla ESC
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            cerrarModalVistaPrevia();
+        }
+    });
+</script>
+
