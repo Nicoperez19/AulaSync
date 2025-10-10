@@ -35,56 +35,56 @@
         </div>
     @endif
 
-    <div class="px-6 min-h-[80vh]">
-        <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
-            <div class="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+    <div class="px-4 min-h-[80vh]">
+        <div class="grid grid-cols-1 gap-3 mb-4 md:grid-cols-4">
+            <div class="p-3 bg-white rounded-lg shadow-md dark:bg-gray-800">
                 <div class="flex items-center">
                     <div class="p-2 bg-blue-100 rounded-lg dark:bg-blue-900">
                         <i class="text-blue-600 fas fa-users dark:text-blue-400"></i>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Total de accesos</p>
-                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ $accesos->count() }}</p>
+                    <div class="ml-3">
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Total de accesos</p>
+                        <p class="text-lg font-semibold text-gray-900 dark:text-white">{{ $accesos->count() }}</p>
                     </div>
                 </div>
             </div>
 
-            <div class="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+            <div class="p-3 bg-white rounded-lg shadow-md dark:bg-gray-800">
                 <div class="flex items-center">
                     <div class="p-2 bg-green-100 rounded-lg dark:bg-green-900">
                         <i class="text-green-600 fas fa-user-check dark:text-green-400"></i>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Usuarios únicos</p>
-                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">
+                    <div class="ml-3">
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Usuarios únicos</p>
+                        <p class="text-lg font-semibold text-gray-900 dark:text-white">
                             {{ $accesos->unique('run')->count() }}
                         </p>
                     </div>
                 </div>
             </div>
 
-            <div class="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+            <div class="p-3 bg-white rounded-lg shadow-md dark:bg-gray-800">
                 <div class="flex items-center">
                     <div class="p-2 bg-yellow-100 rounded-lg dark:bg-yellow-900">
                         <i class="text-yellow-600 fas fa-building dark:text-yellow-400"></i>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Espacios utilizados</p>
-                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">
+                    <div class="ml-3">
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">Espacios utilizados</p>
+                        <p class="text-lg font-semibold text-gray-900 dark:text-white">
                             {{ $accesos->unique('espacio')->count() }}
                         </p>
                     </div>
                 </div>
             </div>
 
-            <div class="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+            <div class="p-3 bg-white rounded-lg shadow-md dark:bg-gray-800">
                 <div class="flex items-center">
                     <div class="p-2 bg-purple-100 rounded-lg dark:bg-purple-900">
                         <i class="text-purple-600 fas fa-clock dark:text-purple-400"></i>
                     </div>
-                    <div class="ml-4">
-                        <p class="text-sm font-medium text-gray-500 dark:text-gray-400">En curso</p>
-                        <p class="text-2xl font-semibold text-gray-900 dark:text-white">
+                    <div class="ml-3">
+                        <p class="text-xs font-medium text-gray-500 dark:text-gray-400">En curso</p>
+                        <p class="text-lg font-semibold text-gray-900 dark:text-white">
                             {{ $accesos->where('hora_salida', 'En curso')->count() }}
                         </p>
                     </div>
@@ -92,8 +92,8 @@
             </div>
         </div>
         <!-- Filtros -->
-        <div class="p-6 mb-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
-            <h3 class="flex items-center gap-2 mb-4 text-lg font-semibold text-gray-700 dark:text-gray-300">
+        <div class="p-4 mb-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+            <h3 class="flex items-center gap-2 mb-3 text-base font-semibold text-gray-700 dark:text-gray-300">
                 <i class="fas fa-filter"></i> Filtros de búsqueda
             </h3>
             <form method="GET" action="{{ route('reportes.accesos') }}"
@@ -185,9 +185,9 @@
         
 
         <!-- Tabla de accesos -->
-        <div class="p-6 bg-white rounded-lg shadow-md dark:bg-gray-800">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300">
+        <div class="p-4 bg-white rounded-lg shadow-md dark:bg-gray-800">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-base font-semibold text-gray-700 dark:text-gray-300">
                     Registro de accesos ({{ $accesos->count() }} registros)
                 </h3>
                 <div class="flex gap-2">
@@ -200,8 +200,8 @@
                         <input type="hidden" name="tipo_usuario" value="{{ $tipoUsuario }}">
                         <input type="hidden" name="espacio" value="{{ $espacio }}">
                         <button type="submit"
-                            class="px-4 py-2 text-white transition-colors bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                            <i class="mr-2 fas fa-file-excel"></i>Exportar Excel
+                            class="px-3 py-1.5 text-xs text-white transition-colors bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                            <i class="mr-1 fas fa-file-excel"></i>Excel
                         </button>
                     </form>
                     <form method="POST" action="{{ route('reportes.accesos.export.filtros', ['format' => 'pdf']) }}"
@@ -213,121 +213,103 @@
                         <input type="hidden" name="tipo_usuario" value="{{ $tipoUsuario }}">
                         <input type="hidden" name="espacio" value="{{ $espacio }}">
                         <button type="submit"
-                            class="px-4 py-2 text-white transition-colors bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
-                            <i class="mr-2 fas fa-file-pdf"></i>Exportar PDF
+                            class="px-3 py-1.5 text-xs text-white transition-colors bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                            <i class="mr-1 fas fa-file-pdf"></i>PDF
                         </button>
                     </form>
                 </div>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="min-w-full bg-white rounded-lg dark:bg-gray-800">
+                <table class="w-full text-xs bg-white rounded-lg dark:bg-gray-800 table-fixed">
                     <thead class="bg-gray-50 dark:bg-gray-700">
                         <tr>
-                            <th
-                                class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
-                                Profesor/Solicitante
+                            <th class="w-1/5 px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                                Usuario
                             </th>
-                            <th
-                                class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="w-1/5 px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
                                 Espacio
                             </th>
-                            <th
-                                class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="w-1/8 px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
                                 Fecha
                             </th>
-                            <th
-                                class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
-                                Hora entrada
+                            <th class="w-1/8 px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                                Entrada
                             </th>
-                            <th
-                                class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
-                                Hora salida
+                            <th class="w-1/8 px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                                Salida
                             </th>
-                            <th
-                                class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="w-1/8 px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
                                 Duración
                             </th>
-                            <th
-                                class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
-                                Tipo usuario
+                            <th class="w-1/8 px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                                Tipo
                             </th>
-                            <th
-                                class="px-4 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
+                            <th class="w-1/8 px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
                                 Estado
                             </th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200 dark:bg-gray-800 dark:divide-gray-700">
                         @forelse($accesos as $acceso)
-                                            <tr class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700">
-                                                <td class="px-4 py-3 whitespace-nowrap">
-                                                    <div>
-                                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                                            {{ $acceso['usuario'] }}
-                                                        </div>
-                                                        <div class="text-sm text-gray-500 dark:text-gray-400">
-                                                            {{ $acceso['run'] }}
-                                                        </div>
-                                                        <div class="text-xs text-gray-400 dark:text-gray-500">
-                                                            {{ $acceso['email'] }}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="px-4 py-3 whitespace-nowrap">
-                                                    <div>
-                                                        <div class="text-sm font-medium text-gray-900 dark:text-white">
-                                                            {{ $acceso['espacio'] }} - {{ $acceso['id_espacio'] }} - Piso
-                                                            {{ $acceso['piso'] }}
-                                                        </div>
-                                                        <div class="text-xs text-gray-400 dark:text-gray-500">
-                                                            {{ $acceso['facultad'] }}
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap dark:text-white">
-                                                    {{ $acceso['fecha'] }}
-                                                </td>
-                                                <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap dark:text-white">
-                                                    {{ $acceso['hora_entrada'] }}
-                                                </td>
-                                                <td class="px-4 py-3 whitespace-nowrap">
-                                                    <span
-                                                        class="text-sm {{ $acceso['hora_salida'] == 'En curso' ? 'text-yellow-600 dark:text-yellow-400 font-medium' : 'text-gray-900 dark:text-white' }}">
-                                                        {{ $acceso['hora_salida'] }}
-                                                    </span>
-                                                </td>
-                                                <td class="px-4 py-3 whitespace-nowrap">
-                                                    <span
-                                                        class="text-sm {{ $acceso['duracion'] == 'En curso' ? 'text-yellow-600 dark:text-yellow-400 font-medium' : 'text-gray-900 dark:text-white' }}">
-                                                        {{ $acceso['duracion'] }}
-                                                    </span>
-                                                </td>
-                                                <td class="px-4 py-3 whitespace-nowrap">
-                                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
-                                                                                                                                                                                                                    {{ $acceso['tipo_usuario'] == 'profesor' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
-                            ($acceso['tipo_usuario'] == 'estudiante' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                                ($acceso['tipo_usuario'] == 'administrativo' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
-                                    'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200')) }}">
-                                                        {{ ucfirst($acceso['tipo_usuario']) }}
-                                                    </span>
-                                                </td>
-                                                <td class="px-4 py-3 whitespace-nowrap">
-                                                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full 
-                                                                                                                                                                                                                    {{ $acceso['estado'] == 'activa' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
-                            ($acceso['estado'] == 'finalizada' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' :
-                                'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200') }}">
-                                                        {{ ucfirst($acceso['estado']) }}
-                                                    </span>
-                                                </td>
-                                            </tr>
+                            <tr class="transition-colors hover:bg-gray-50 dark:hover:bg-gray-700">
+                                <td class="px-2 py-2">
+                                    <div class="text-xs font-medium text-gray-900 dark:text-white truncate">
+                                        {{ $acceso['usuario'] }}
+                                    </div>
+                                    <div class="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                        {{ $acceso['run'] }}
+                                    </div>
+                                </td>
+                                <td class="px-2 py-2">
+                                    <div class="text-xs font-medium text-gray-900 dark:text-white truncate">
+                                        {{ $acceso['espacio'] }}
+                                    </div>
+                                    <div class="text-xs text-gray-400 dark:text-gray-500 truncate">
+                                        Piso {{ $acceso['piso'] }}
+                                    </div>
+                                </td>
+                                <td class="px-2 py-2 text-xs text-gray-900 dark:text-white">
+                                    {{ \Carbon\Carbon::parse($acceso['fecha'])->format('d/m/Y') }}
+                                </td>
+                                <td class="px-2 py-2 text-xs text-gray-900 dark:text-white">
+                                    {{ $acceso['hora_entrada'] }}
+                                </td>
+                                <td class="px-2 py-2">
+                                    <span class="text-xs {{ $acceso['hora_salida'] == 'En curso' ? 'text-yellow-600 dark:text-yellow-400 font-medium' : 'text-gray-900 dark:text-white' }}">
+                                        {{ $acceso['hora_salida'] }}
+                                    </span>
+                                </td>
+                                <td class="px-2 py-2">
+                                    <span class="text-xs {{ $acceso['duracion'] == 'En curso' ? 'text-yellow-600 dark:text-yellow-400 font-medium' : 'text-gray-900 dark:text-white' }}">
+                                        {{ $acceso['duracion'] }}
+                                    </span>
+                                </td>
+                                <td class="px-2 py-2">
+                                    <span class="inline-flex px-1 py-0.5 text-xs font-semibold rounded-full 
+                                        {{ $acceso['tipo_usuario'] == 'profesor' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' :
+                                           ($acceso['tipo_usuario'] == 'estudiante' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                                           ($acceso['tipo_usuario'] == 'administrativo' ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200' :
+                                            'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200')) }}">
+                                        {{ substr(ucfirst($acceso['tipo_usuario']), 0, 4) }}
+                                    </span>
+                                </td>
+                                <td class="px-2 py-2">
+                                    <span class="inline-flex px-1 py-0.5 text-xs font-semibold rounded-full 
+                                        {{ $acceso['estado'] == 'activa' ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' :
+                                           ($acceso['estado'] == 'finalizada' ? 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200' :
+                                            'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200') }}">
+                                        {{ substr(ucfirst($acceso['estado']), 0, 4) }}
+                                    </span>
+                                </td>
+                            </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">
+                                <td colspan="8" class="px-2 py-4 text-center text-gray-500 dark:text-gray-400">
                                     <div class="flex flex-col items-center">
-                                        <i class="mb-2 text-4xl fas fa-search"></i>
-                                        <p class="text-lg font-medium">No se encontraron accesos registrados</p>
-                                        <p class="text-sm">Intenta ajustar los filtros de búsqueda</p>
+                                        <i class="mb-2 text-2xl fas fa-search"></i>
+                                        <p class="text-sm font-medium">No se encontraron accesos registrados</p>
+                                        <p class="text-xs">Intenta ajustar los filtros de búsqueda</p>
                                     </div>
                                 </td>
                             </tr>
@@ -338,8 +320,8 @@
 
             <!-- Paginación -->
             @if($accesos->count() > 0)
-                <div class="flex items-center justify-between mt-4">
-                    <div class="text-sm text-gray-700 dark:text-gray-300">
+                <div class="flex items-center justify-between mt-3">
+                    <div class="text-xs text-gray-700 dark:text-gray-300">
                         Mostrando {{ $accesos->count() }} de {{ $accesos->count() }} registros
                     </div>
                 </div>
