@@ -15,7 +15,8 @@ class CrearUsuariosProfesores extends Command
      *
      * @var string
      */
-    protected $signature = 'crear:usuarios-profesores {--dry-run : No crea usuarios, solo muestra qué pasaría}';
+    protected $signature = 'crear:usuarios-profesores {--
+    dry-run : No crea usuarios, solo muestra qué pasaría}';
 
     /**
      * The console command description.
