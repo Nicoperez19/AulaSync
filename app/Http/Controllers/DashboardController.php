@@ -164,7 +164,14 @@ class DashboardController extends Controller
         $inicioSemana = Carbon::now()->startOfWeek();
         $finSemana = Carbon::now()->endOfWeek();
         
-        $totalHoras = 40; // 8 horas por día, 5 días
+        // Obtener número total de espacios disponibles
+        $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)->count();
+        
+        // Calcular total de horas disponibles: espacios × días × horas por día
+        $diasLaborales = 5; // Lunes a viernes
+        $horasPorDia = 8;
+        $totalHoras = $totalEspacios * $diasLaborales * $horasPorDia;
+        
         $horasOcupadas = Reserva::whereBetween('fecha_reserva', [$inicioSemana, $finSemana])
             ->whereIn('estado', ['activa', 'finalizada']) // Incluir tanto activas como finalizadas
             ->whereHas('espacio', function($query) use ($piso) {
@@ -176,8 +183,13 @@ class DashboardController extends Controller
             })
             ->count();
 
-    $porcentaje = round(($horasOcupadas / $totalHoras) * 100, 2);
-    \Log::info('Ocupación semanal calculada', ['horasOcupadas' => $horasOcupadas, 'totalHoras' => $totalHoras, 'porcentaje' => $porcentaje]);
+    $porcentaje = $totalHoras > 0 ? round(($horasOcupadas / $totalHoras) * 100, 2) : 0;
+    \Log::info('Ocupación semanal calculada', [
+        'horasOcupadas' => $horasOcupadas, 
+        'totalEspacios' => $totalEspacios,
+        'totalHoras' => $totalHoras, 
+        'porcentaje' => $porcentaje
+    ]);
     return $porcentaje;
     }
 
@@ -221,7 +233,21 @@ class DashboardController extends Controller
         $inicioMes = Carbon::now()->startOfMonth();
         $finMes = Carbon::now()->endOfMonth();
         
-        $totalHoras = 160; // 8 horas por día, 20 días hábiles
+        // Obtener número total de espacios disponibles
+        $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)->count();
+        
+        // Calcular días laborales del mes
+        $diasLaborales = 0;
+        for ($dia = $inicioMes->copy(); $dia->lte($finMes); $dia->addDay()) {
+            if ($dia->isWeekday()) {
+                $diasLaborales++;
+            }
+        }
+        
+        // Calcular total de horas disponibles: espacios × días laborales × horas por día
+        $horasPorDia = 8;
+        $totalHoras = $totalEspacios * $diasLaborales * $horasPorDia;
+        
         $horasOcupadas = Reserva::whereBetween('fecha_reserva', [$inicioMes, $finMes])
             ->whereIn('estado', ['activa', 'finalizada']) // Incluir tanto activas como finalizadas
             ->whereHas('espacio', function($query) use ($piso) {
@@ -233,8 +259,14 @@ class DashboardController extends Controller
             })
             ->count();
 
-    $porcentaje = round(($horasOcupadas / $totalHoras) * 100, 2);
-    \Log::info('Ocupación mensual calculada', ['horasOcupadas' => $horasOcupadas, 'totalHoras' => $totalHoras, 'porcentaje' => $porcentaje]);
+    $porcentaje = $totalHoras > 0 ? round(($horasOcupadas / $totalHoras) * 100, 2) : 0;
+    \Log::info('Ocupación mensual calculada', [
+        'horasOcupadas' => $horasOcupadas, 
+        'totalEspacios' => $totalEspacios,
+        'diasLaborales' => $diasLaborales,
+        'totalHoras' => $totalHoras, 
+        'porcentaje' => $porcentaje
+    ]);
     return $porcentaje;
     }
 
@@ -980,6 +1012,14 @@ class DashboardController extends Controller
             $inicioSemana = Carbon::now()->startOfWeek();
             $finSemana = Carbon::now()->endOfWeek();
             
+            // Obtener número total de espacios disponibles
+            $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)->count();
+            
+            // Calcular total de horas disponibles: espacios × días × horas por día
+            $diasLaborales = 5; // Lunes a viernes
+            $horasPorDia = 8;
+            $totalHoras = $totalEspacios * $diasLaborales * $horasPorDia;
+            
             $query = Reserva::whereBetween('fecha_reserva', [$inicioSemana, $finSemana])
                 ->whereIn('estado', ['activa', 'finalizada']);
                 
@@ -990,9 +1030,8 @@ class DashboardController extends Controller
             }
             
             $horasOcupadas = $query->count();
-            $totalHoras = 40; // 8 horas por día, 5 días
             
-            return round(($horasOcupadas / max($totalHoras, 1)) * 100, 2);
+            return $totalHoras > 0 ? round(($horasOcupadas / $totalHoras) * 100, 2) : 0;
         } catch (\Exception $e) {
             Log::warning('Error calculando ocupación semanal: ' . $e->getMessage());
             return 0;
@@ -1005,6 +1044,21 @@ class DashboardController extends Controller
             $inicioMes = Carbon::now()->startOfMonth();
             $finMes = Carbon::now()->endOfMonth();
             
+            // Obtener número total de espacios disponibles
+            $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)->count();
+            
+            // Calcular días laborales del mes
+            $diasLaborales = 0;
+            for ($dia = $inicioMes->copy(); $dia->lte($finMes); $dia->addDay()) {
+                if ($dia->isWeekday()) {
+                    $diasLaborales++;
+                }
+            }
+            
+            // Calcular total de horas disponibles: espacios × días laborales × horas por día
+            $horasPorDia = 8;
+            $totalHoras = $totalEspacios * $diasLaborales * $horasPorDia;
+            
             $query = Reserva::whereBetween('fecha_reserva', [$inicioMes, $finMes])
                 ->whereIn('estado', ['activa', 'finalizada']);
                 
@@ -1015,10 +1069,8 @@ class DashboardController extends Controller
             }
             
             $horasOcupadas = $query->count();
-            $diasMes = $finMes->day;
-            $totalHoras = $diasMes * 8; // 8 horas por día
             
-            return round(($horasOcupadas / max($totalHoras, 1)) * 100, 2);
+            return $totalHoras > 0 ? round(($horasOcupadas / $totalHoras) * 100, 2) : 0;
         } catch (\Exception $e) {
             Log::warning('Error calculando ocupación mensual: ' . $e->getMessage());
             return 0;
