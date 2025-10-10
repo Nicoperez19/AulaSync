@@ -34,7 +34,7 @@
 
     <!-- Horarios Profesores - Solo Administrador y Supervisor -->
     @can('horarios profesores')
-        <x-sidebar.link title="Horarios Profesores" 
+        <x-sidebar.link title="Horarios Profesores"
             href="{{ $tieneProfesores ? route('horarios.index') : '#' }}"
             :isActive="request()->routeIs('horarios.index')"
             onclick="{{ !$tieneProfesores ? 'mostrarSweetAlertNoProfesores(event)' : '' }}">
@@ -125,6 +125,11 @@
                 <x-sidebar.sublink title="Carreras" href="{{ route('careers.index') }}"
                     :isActive="request()->routeIs('careers.index')" />
             @endcan
+
+            @role('Administrador')
+                <x-sidebar.sublink title="Correos Masivos" href="{{ route('correos-masivos.index') }}"
+                    :isActive="request()->routeIs('correos-masivos.*')" />
+            @endrole
 
             {{-- Comentado porque está disponible en Acciones Rápidas
             @can('mantenedor de espacios')
