@@ -6,7 +6,7 @@
             <p class="text-sm text-gray-600 mt-1">Crea y edita plantillas HTML personalizadas para tus correos masivos</p>
         </div>
         <button wire:click="showPlantillaEditorModal" 
-                class="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <i class="fas fa-plus mr-2"></i>
             Nueva Plantilla
         </button>
@@ -85,13 +85,18 @@
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                 <div class="flex justify-end gap-2">
+                                    <button onclick="abrirVistaPreviaPlantilla({{ $plantilla->id }}, '{{ addslashes($plantilla->nombre) }}')"
+                                            class="text-purple-600 hover:text-purple-900 transition-colors"
+                                            title="Vista Previa">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
                                     <button wire:click="editPlantilla({{ $plantilla->id }})"
-                                            class="text-indigo-600 hover:text-indigo-900"
+                                            class="text-indigo-600 hover:text-indigo-900 transition-colors"
                                             title="Editar">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <button wire:click="deletePlantilla({{ $plantilla->id }})"
-                                            class="text-red-600 hover:text-red-900"
+                                            class="text-red-600 hover:text-red-900 transition-colors"
                                             title="Eliminar">
                                         <i class="fas fa-trash"></i>
                                     </button>
@@ -296,21 +301,6 @@
     }
 </style>
 
-                <!-- Contenido Texto Plano (Opcional) -->
-                <div>
-                    <label for="plantilla-texto" class="block text-sm font-medium text-gray-700 mb-2">
-                        Versión en Texto Plano (Opcional)
-                    </label>
-                    <textarea wire:model="plantillaContenidoTexto"
-                              id="plantilla-texto"
-                              rows="5"
-                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                              placeholder="Versión alternativa sin HTML para clientes de correo básicos"></textarea>
-                    @error('plantillaContenidoTexto')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
-                </div>
-
                 <!-- Activo -->
                 <div>
                     <label class="flex items-center">
@@ -451,3 +441,4 @@
 })();
 </script>
 @endscript
+

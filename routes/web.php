@@ -356,3 +356,13 @@ Route::middleware(['auth'])->prefix('quick-actions')->name('quick-actions.')->gr
 Route::get('/csrf-token', function () {
     return response()->json(['token' => csrf_token()]);
 });
+
+// ===================================================
+// RUTAS DE TEST - Plantillas PDF
+// ===================================================
+Route::prefix('test/plantillas-pdf')->name('test.plantillas.pdf.')->group(function () {
+    Route::get('/', [App\Http\Controllers\TestPlantillaPdfController::class, 'index'])->name('index');
+    Route::get('/preview/{id}', [App\Http\Controllers\TestPlantillaPdfController::class, 'vistaPrevia'])->name('preview');
+    Route::get('/generar/{id}', [App\Http\Controllers\TestPlantillaPdfController::class, 'generarPdf'])->name('generar');
+    Route::get('/todos', [App\Http\Controllers\TestPlantillaPdfController::class, 'generarTodos'])->name('todos');
+});
