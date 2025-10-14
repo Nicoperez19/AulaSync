@@ -26,6 +26,11 @@
                 <i class="fas fa-file-alt mr-2"></i>
                 Plantillas
             </button>
+            <button wire:click="$set('tab', 'enviar')"
+                    class="@if($tab === 'enviar') border-indigo-500 text-indigo-600 @else border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 @endif whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+                <i class="fas fa-paper-plane mr-2"></i>
+                Enviar Correos
+            </button>
         </nav>
     </div>
 
@@ -34,8 +39,10 @@
         @include('livewire.partials.tipos-correos-tab')
     @elseif($tab === 'destinatarios')
         @include('livewire.partials.destinatarios-correos-tab')
-    @else
+    @elseif($tab === 'plantillas')
         @include('livewire.partials.plantillas-correos-tab')
+    @else
+        @include('livewire.partials.enviar-correos-tab')
     @endif
 
     <!-- Modal de Asignaciones -->
