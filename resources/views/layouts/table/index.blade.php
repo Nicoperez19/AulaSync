@@ -2,7 +2,8 @@
     <x-slot name="header">
         <div class="flex flex-col gap-4 pr-6 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-4">
-                <!-- Botón Volver -->
+                <!-- Botón Volver (solo visible cuando hay sesión activa) -->
+                @auth
                 <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}" 
                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors duration-200 shadow-md">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
@@ -11,6 +12,7 @@
                     </svg>
                     Volver
                 </a>
+                @endauth
 
                 <!-- Logo y título -->
                 <div class="flex items-center gap-4 justify-center flex-1">
