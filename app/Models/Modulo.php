@@ -21,6 +21,16 @@ class Modulo extends Model
         'hora_termino',
     ];
 
+    protected $appends = ['nombre_modulo'];
+
+    /**
+     * Obtiene una representación legible del módulo
+     */
+    public function getNombreModuloAttribute()
+    {
+        return $this->id_modulo . ' (' . substr($this->hora_inicio, 0, 5) . ' - ' . substr($this->hora_termino, 0, 5) . ')';
+    }
+
     public function planificaciones()
     {
         return $this->hasMany(Planificacion_Asignatura::class, 'id_modulo', 'id_modulo');
