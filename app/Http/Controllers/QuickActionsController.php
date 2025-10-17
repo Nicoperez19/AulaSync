@@ -184,6 +184,15 @@ class QuickActionsController extends Controller
                 $espacio = \App\Models\Espacio::where('id_espacio', $reserva->id_espacio)->first();
                 $nombreEspacio = $espacio ? $espacio->nombre_espacio : 'Espacio desconocido';
 
+                // Obtener información de la asignatura
+                $asignaturaInfo = 'Sin asignatura';
+                if ($reserva->id_asignatura) {
+                    $asignatura = \App\Models\Asignatura::where('id_asignatura', $reserva->id_asignatura)->first();
+                    if ($asignatura) {
+                        $asignaturaInfo = $asignatura->codigo_asignatura . ' - ' . $asignatura->nombre_asignatura;
+                    }
+                }
+
                 // Procesar módulos y horarios
                 $modulosInfo = $this->procesarModulosYHorarios($reserva);
 
@@ -194,6 +203,7 @@ class QuickActionsController extends Controller
                     'tipo_responsable' => $tipoResponsable,
                     'codigo_espacio' => $reserva->id_espacio ?? 'N/A',
                     'nombre_espacio' => $nombreEspacio,
+                    'asignatura' => $asignaturaInfo,
                     'fecha' => $reserva->fecha_reserva,
                     'hora' => $reserva->hora,
                     'modulos_info' => $modulosInfo,
@@ -305,12 +315,21 @@ class QuickActionsController extends Controller
                 'run' => 'required|string|max:20',
                 'correo' => 'required|email|max:255',
                 'tipo' => 'required|in:profesor,solicitante',
+                'id_asignatura' => 'nullable|string|exists:asignaturas,id_asignatura',
                 'espacio' => 'required|string',
                 'fecha' => 'required|date',
                 'modulo_inicial' => 'required|integer|min:1|max:12',
                 'modulo_final' => 'required|integer|min:1|max:12',
                 'observaciones' => 'nullable|string|max:500'
             ]);
+
+            // Validar que si es profesor tenga asignatura
+            if ($request->tipo === 'profesor' && !$request->id_asignatura) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Debe seleccionar una asignatura para las reservas de profesores'
+                ], 400);
+            }
 
             // Verificar que el módulo inicial sea menor o igual al final
             if ($request->modulo_inicial > $request->modulo_final) {
@@ -356,6 +375,7 @@ class QuickActionsController extends Controller
                 'id_reserva' => $idReserva,
                 'fecha_reserva' => $request->fecha,
                 'id_espacio' => $request->espacio,
+                'id_asignatura' => $request->id_asignatura,
                 'modulos' => $duracionModulos,
                 'hora' => $horaInicio,
                 'tipo_reserva' => $request->tipo === 'profesor' ? 'clase' : 'espontanea',

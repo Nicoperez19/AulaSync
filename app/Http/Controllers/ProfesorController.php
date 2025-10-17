@@ -7,6 +7,7 @@ use App\Models\Universidad;
 use App\Models\Facultad;
 use App\Models\Carrera;
 use App\Models\Reserva;
+use App\Models\Asignatura;
 use App\Models\AreaAcademica;
 use Illuminate\Http\Request;
 use App\Models\Espacio;
@@ -101,11 +102,15 @@ class ProfesorController extends Controller
                 ], 400);
             }
 
+            // Obtener la asignatura principal del profesor (primera asignatura activa)
+            $asignatura = $profesor->asignaturas()->first();
+            
             // Crear la reserva
             $reserva = new Reserva();
             $reserva->id_reserva = Reserva::generarIdUnico();
             $reserva->run_profesor = $runProfesor;
             $reserva->id_espacio = $espacio->id_espacio;
+            $reserva->id_asignatura = $asignatura ? $asignatura->id_asignatura : null;
             $reserva->fecha_reserva = $fechaActual;
             $reserva->hora = $horaActual;
             $reserva->estado = 'activa';
@@ -311,11 +316,16 @@ class ProfesorController extends Controller
                 ], 400);
             }
 
+            // Obtener profesor y su asignatura principal
+            $profesor = Profesor::where('run_profesor', $run)->first();
+            $asignatura = $profesor ? $profesor->asignaturas()->first() : null;
+            
             // Crear la reserva
             $reserva = new Reserva();
             $reserva->id_reserva = Reserva::generarIdUnico();
             $reserva->run_profesor = $run;
             $reserva->id_espacio = $espacio->id_espacio;
+            $reserva->id_asignatura = $asignatura ? $asignatura->id_asignatura : null;
             $reserva->fecha_reserva = $fechaActual;
             $reserva->hora = $horaActual;
             $reserva->estado = 'activa';
@@ -356,6 +366,37 @@ class ProfesorController extends Controller
             return response()->json([
                 'success' => false,
                 'mensaje' => 'Error al crear reserva: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtener asignaturas de un profesor
+     */
+    public function getAsignaturasProfesor($run)
+    {
+        try {
+            $profesor = Profesor::where('run_profesor', $run)->first();
+            
+            if (!$profesor) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Profesor no encontrado'
+                ], 404);
+            }
+
+            $asignaturas = $profesor->asignaturas()->select('id_asignatura', 'codigo_asignatura', 'nombre_asignatura')->get();
+
+            return response()->json([
+                'success' => true,
+                'asignaturas' => $asignaturas
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error al obtener asignaturas del profesor: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error al obtener asignaturas: ' . $e->getMessage()
             ], 500);
         }
     }

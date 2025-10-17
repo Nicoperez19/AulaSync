@@ -100,11 +100,23 @@
                                 <select 
                                     id="tipo-responsable"
                                     required
+                                    onchange="toggleAsignaturaField()"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
                                     <option value="">Seleccione tipo</option>
                                     <option value="profesor">Profesor</option>
                                     <option value="solicitante">Solicitante externo</option>
                                 </select>
+                            </div>
+                            
+                            <!-- Campo para seleccionar asignatura (solo visible cuando es profesor) -->
+                            <div id="asignatura-field" class="hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Asignatura *</label>
+                                <select 
+                                    id="id-asignatura"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
+                                    <option value="">Seleccione una asignatura</option>
+                                </select>
+                                <p class="text-xs text-gray-500 mt-1">Seleccione la asignatura para esta reserva</p>
                             </div>
                         </div>
                     </div>
@@ -209,6 +221,7 @@ async function procesarCrearReserva(event) {
         correo: document.getElementById('correo-responsable').value.trim(),
         telefono: document.getElementById('telefono-responsable').value.trim(),
         tipo: document.getElementById('tipo-responsable').value,
+        id_asignatura: document.getElementById('id-asignatura').value,
         espacio: document.getElementById('espacio-reserva').value,
         fecha: document.getElementById('fecha-reserva').value,
         modulo_inicial: parseInt(document.getElementById('modulo-inicial').value),
@@ -219,6 +232,12 @@ async function procesarCrearReserva(event) {
     // Validaciones
     if (!formData.nombre || !formData.run || !formData.correo || !formData.tipo) {
         Swal.fire('Error', 'Complete todos los campos obligatorios del responsable', 'error');
+        return;
+    }
+
+    // Validar asignatura si es profesor
+    if (formData.tipo === 'profesor' && !formData.id_asignatura) {
+        Swal.fire('Error', 'Debe seleccionar una asignatura para la reserva del profesor', 'error');
         return;
     }
 
@@ -430,6 +449,9 @@ function seleccionarPersona(persona) {
     document.getElementById('telefono-responsable').value = persona.telefono || '';
     document.getElementById('tipo-responsable').value = persona.tipo;
     
+    // Activar campo de asignatura si es profesor
+    toggleAsignaturaField();
+    
     // Ocultar resultados
     document.getElementById('autocomplete-results').classList.add('hidden');
     
@@ -563,6 +585,63 @@ function cargarModulosParaSeleccion() {
             cargarModulosParaSeleccion();
         }
     });
+}
+
+// Función para mostrar/ocultar el campo de asignatura
+function toggleAsignaturaField() {
+    const tipoSelect = document.getElementById('tipo-responsable');
+    const asignaturaField = document.getElementById('asignatura-field');
+    const asignaturaSelect = document.getElementById('id-asignatura');
+    
+    if (tipoSelect.value === 'profesor') {
+        asignaturaField.classList.remove('hidden');
+        cargarAsignaturasProfesor();
+    } else {
+        asignaturaField.classList.add('hidden');
+        asignaturaSelect.innerHTML = '<option value="">Seleccione una asignatura</option>';
+    }
+}
+
+// Función para cargar asignaturas del profesor
+async function cargarAsignaturasProfesor() {
+    const runProfesor = document.getElementById('run-responsable').value.trim();
+    const asignaturaSelect = document.getElementById('id-asignatura');
+    
+    if (!runProfesor) {
+        asignaturaSelect.innerHTML = '<option value="">Primero seleccione un profesor</option>';
+        return;
+    }
+    
+    try {
+        asignaturaSelect.innerHTML = '<option value="">Cargando asignaturas...</option>';
+        
+        const response = await fetch(`/api/profesor/${runProfesor}/asignaturas`, {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+        
+        const data = await response.json();
+        
+        asignaturaSelect.innerHTML = '<option value="">Seleccione una asignatura</option>';
+        
+        if (data.success && data.asignaturas.length > 0) {
+            data.asignaturas.forEach(asignatura => {
+                const option = document.createElement('option');
+                option.value = asignatura.id_asignatura;
+                option.textContent = `${asignatura.codigo_asignatura} - ${asignatura.nombre_asignatura}`;
+                asignaturaSelect.appendChild(option);
+            });
+        } else {
+            const option = document.createElement('option');
+            option.value = '';
+            option.textContent = 'No se encontraron asignaturas para este profesor';
+            asignaturaSelect.appendChild(option);
+        }
+    } catch (error) {
+        console.error('Error al cargar asignaturas:', error);
+        asignaturaSelect.innerHTML = '<option value="">Error al cargar asignaturas</option>';
+    }
 }
 
 // Inicializar al cargar la página

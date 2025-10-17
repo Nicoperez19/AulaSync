@@ -273,7 +273,7 @@ class ReportController extends Controller
         $fechaFin = $request->get('fecha_fin', Carbon::now()->endOfMonth()->format('Y-m-d'));
         
         // Obtener reservas del rango de fechas con información completa
-        $reservasQuery = Reserva::with(['espacio.piso.facultad', 'profesor', 'solicitante'])
+        $reservasQuery = Reserva::with(['espacio.piso.facultad', 'profesor', 'solicitante', 'asignatura'])
             ->whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
             ->whereHas('espacio', function($q) use ($espacios) {
                 $q->whereIn('id_espacio', $espacios->pluck('id_espacio'));
@@ -332,6 +332,7 @@ class ReportController extends Controller
                     $reserva->espacio->piso->facultad->nombre_facultad : 'N/A',
                 'usuario' => $this->obtenerNombreUsuario($reserva),
                 'tipo_usuario' => $this->obtenerTipoUsuario($reserva),
+                'asignatura' => $reserva->asignatura ? ($reserva->asignatura->codigo_asignatura . ' - ' . $reserva->asignatura->nombre_asignatura) : 'Sin asignatura',
                 'horas_utilizadas' => round($horasUtilizadas, 1),
                 'duracion' => $duracionFormateada,
                 'estado' => ucfirst($reserva->estado)

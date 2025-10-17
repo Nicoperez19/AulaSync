@@ -79,7 +79,7 @@
                                                 <span class="font-medium text--700 text-sm">Solicitante: {{ $espacio['datos_solicitante']['nombre'] ?? 'N/A' }}</span>
                                             @elseif (($espacio['tiene_reserva_profesor'] ?? false) && !empty($espacio['datos_profesor']) && !empty($espacio['datos_profesor']['nombre']))
                                                 <span class="font-medium text-gray-700 text-sm">
-                                                    <div>{{ $asignatura ?? 'Sin asignatura' }}</div>
+                                                    <div>{{ $espacio['datos_profesor']['nombre_asignatura'] ?? $asignatura ?? 'Sin asignatura' }}</div>
                                                     <div>Profesor: {{ $espacio['datos_profesor']['nombre'] ?? 'N/A' }}</div>
                                                 </span>
                                             @elseif (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']) && isset($espacio['datos_clase']['profesor']) && !empty($espacio['datos_clase']['profesor']['name']))
