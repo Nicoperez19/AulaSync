@@ -9,26 +9,74 @@
             </h3>
 
             <form wire:submit.prevent="saveDestinatario">
-                <!-- Usuario -->
+                <!-- Tipo de Destinatario -->
                 <div class="mb-4">
-                    <label for="destinatario-user" class="block text-sm font-medium text-gray-700 mb-2">
-                        Usuario <span class="text-red-500">*</span>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox"
+                               wire:model.live="destinatarioEsExterno"
+                               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                               {{ $editingDestinatarioId ? 'disabled' : '' }}>
+                        <span class="ml-2 text-sm font-medium text-gray-700">
+                            <i class="fas fa-external-link-alt mr-1"></i>
+                            Destinatario Externo (no registrado)
+                        </span>
                     </label>
-                    <select wire:model="destinatarioUserId"
-                            id="destinatario-user"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                            {{ $editingDestinatarioId ? 'disabled' : '' }}>
-                        <option value="">Seleccionar usuario...</option>
-                        @foreach($usuarios as $usuario)
-                            <option value="{{ $usuario->run }}">
-                                {{ $usuario->name }} - RUN: {{ $usuario->run }} ({{ $usuario->email }})
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('destinatarioUserId')
-                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                    @enderror
+                    <p class="mt-1 text-xs text-gray-500">Marca esta opción para agregar un destinatario que no está en el sistema</p>
                 </div>
+
+                @if($destinatarioEsExterno)
+                    <!-- Email Externo -->
+                    <div class="mb-4">
+                        <label for="destinatario-email-externo" class="block text-sm font-medium text-gray-700 mb-2">
+                            Email <span class="text-red-500">*</span>
+                        </label>
+                        <input type="email"
+                               wire:model="destinatarioEmailExterno"
+                               id="destinatario-email-externo"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                               placeholder="correo@ejemplo.com"
+                               {{ $editingDestinatarioId ? 'disabled' : '' }}>
+                        @error('destinatarioEmailExterno')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <!-- Nombre Externo -->
+                    <div class="mb-4">
+                        <label for="destinatario-nombre-externo" class="block text-sm font-medium text-gray-700 mb-2">
+                            Nombre <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text"
+                               wire:model="destinatarioNombreExterno"
+                               id="destinatario-nombre-externo"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                               placeholder="Nombre completo del destinatario">
+                        @error('destinatarioNombreExterno')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                @else
+                    <!-- Usuario -->
+                    <div class="mb-4">
+                        <label for="destinatario-user" class="block text-sm font-medium text-gray-700 mb-2">
+                            Usuario <span class="text-red-500">*</span>
+                        </label>
+                        <select wire:model="destinatarioUserId"
+                                id="destinatario-user"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                {{ $editingDestinatarioId ? 'disabled' : '' }}>
+                            <option value="">Seleccionar usuario...</option>
+                            @foreach($usuarios as $usuario)
+                                <option value="{{ $usuario->run }}">
+                                    {{ $usuario->name }} - RUN: {{ $usuario->run }} ({{ $usuario->email }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('destinatarioUserId')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                @endif
 
                 <!-- Rol -->
                 <div class="mb-4">
@@ -135,18 +183,33 @@
                                 <td class="px-6 py-4">
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0 h-10 w-10">
-                                            <div class="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                                                <span class="text-indigo-600 font-medium text-sm">
-                                                    {{ strtoupper(substr($destinatario->user->name ?? 'N', 0, 2)) }}
-                                                </span>
+                                            <div class="h-10 w-10 rounded-full {{ $destinatario->es_externo ? 'bg-purple-100' : 'bg-indigo-100' }} flex items-center justify-center">
+                                                @if($destinatario->es_externo)
+                                                    <i class="fas fa-external-link-alt text-purple-600"></i>
+                                                @else
+                                                    <span class="text-indigo-600 font-medium text-sm">
+                                                        {{ strtoupper(substr($destinatario->user->name ?? 'N', 0, 2)) }}
+                                                    </span>
+                                                @endif
                                             </div>
                                         </div>
                                         <div class="ml-4">
-                                            <div class="text-sm font-medium text-gray-900">
-                                                {{ $destinatario->user->name ?? 'N/A' }}
+                                            <div class="text-sm font-medium text-gray-900 flex items-center gap-2">
+                                                @if($destinatario->es_externo)
+                                                    {{ $destinatario->nombre_externo ?? 'N/A' }}
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
+                                                        <i class="fas fa-external-link-alt mr-1"></i>Externo
+                                                    </span>
+                                                @else
+                                                    {{ $destinatario->user->name ?? 'N/A' }}
+                                                @endif
                                             </div>
                                             <div class="text-sm text-gray-500">
-                                                {{ $destinatario->user->email ?? 'N/A' }}
+                                                @if($destinatario->es_externo)
+                                                    {{ $destinatario->email_externo ?? 'N/A' }}
+                                                @else
+                                                    {{ $destinatario->user->email ?? 'N/A' }}
+                                                @endif
                                             </div>
                                         </div>
                                     </div>
