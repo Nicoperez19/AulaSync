@@ -13,7 +13,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // RUNs de usuarios base del sistema que no deben ser modificados
-        $baseUserRuns = ['19716146', '11111111', '99999999', '00000000'];
+        $baseUserRuns = ['19716146', '11111111', '99999999', '00000000', '18687107', '16600867'];
 
         // Crear usuarios base del sistema (siempre se crean/actualizan)
         User::updateOrCreate(
@@ -27,7 +27,8 @@ class UserSeeder extends Seeder
                 'fecha_nacimiento' => '1985-05-20',
             ]
         )->assignRole('Administrador');
-           User::updateOrCreate(
+
+        User::updateOrCreate(
             ['run' => '18687107'],
             [
                 'name' => 'Geraldin',
