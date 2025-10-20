@@ -27,6 +27,29 @@ class UserSeeder extends Seeder
                 'fecha_nacimiento' => '1985-05-20',
             ]
         )->assignRole('Administrador');
+           User::updateOrCreate(
+            ['run' => '18687107'],
+            [
+                'name' => 'Geraldin',
+                'email' => 'gcuevas@ucsc.cl',
+                'password' => bcrypt('password'),
+                'celular' => '987654321',
+                'direccion' => 'Calle Falsa 123',
+                'fecha_nacimiento' => '1985-05-20',
+            ]
+        )->assignRole('Supervisor');
+
+       User::updateOrCreate(
+            ['run' => '16600867'],
+            [
+                'name' => 'Romina',
+                'email' => 'rlizana@ucsc.cl',
+                'password' => bcrypt('password'),
+                'celular' => '987654321',
+                'direccion' => 'Calle Falsa 123',
+                'fecha_nacimiento' => '1985-05-20',
+            ]
+        )->assignRole('Supervisor');
 
         User::updateOrCreate(
             ['run' => '11111111'],
