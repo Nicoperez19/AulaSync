@@ -43,6 +43,7 @@ class ReservasController extends Controller
             'id_espacio' => 'required|exists:espacios,id_espacio',
             // ahora esperamos run del usuario en id_usuario
             'id_usuario' => 'required',
+            'id_asignatura' => 'nullable|string|exists:asignaturas,id_asignatura',
             'modulos' => 'nullable|integer|min:1|max:10'
         ]);
 
@@ -62,6 +63,7 @@ class ReservasController extends Controller
             'hora' => $request->hora,
             'fecha_reserva' => $request->fecha_reserva,
             'id_espacio' => $request->id_espacio,
+            'id_asignatura' => $request->input('id_asignatura'),
             'modulos' => $request->input('modulos', 1),
             'estado' => 'activa',
         ];
