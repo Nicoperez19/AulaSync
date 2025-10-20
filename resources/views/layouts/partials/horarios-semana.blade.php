@@ -25,7 +25,7 @@
                                     </div>
                                     <div class="mb-1 text-sm text-black">
                                         <i class="mr-1 fas fa-book" style="color: #8C0303;"></i>
-                                        <span class="font-medium">{{ $espacio['asignatura'] ?? 'No especificado' }}</span>
+                                        <span class="font-medium">{{ $espacio['asignatura'] ?? 'Sin asignatura' }}</span>
                                     </div>
                                     <div class="mb-1 text-sm text-black">
                                         <i class="mr-1 fas fa-user" style="color: #8C0303;"></i>

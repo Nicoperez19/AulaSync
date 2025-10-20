@@ -473,7 +473,7 @@ class ModulosActualesTable extends Component
                 ->keyBy('id_espacio'); // Indexar por espacio para búsqueda rápida
 
             // Obtener reservas activas de profesores para el día actual
-            $reservasProfesores = Reserva::with(['profesor'])
+            $reservasProfesores = Reserva::with(['profesor', 'asignatura'])
                 ->where('fecha_reserva', Carbon::now()->toDateString())
                 ->where('estado', 'activa')
                 ->whereNotNull('run_profesor')
@@ -571,7 +571,9 @@ class ModulosActualesTable extends Component
                             'nombre' => $reservaProfesor->profesor->name ?? '-',
                             'run' => $reservaProfesor->run_profesor ?? '-',
                             'hora_inicio' => $reservaProfesor->hora ?? '-',
-                            'hora_salida' => $reservaProfesor->hora_salida ?? '-'
+                            'hora_salida' => $reservaProfesor->hora_salida ?? '-',
+                            'nombre_asignatura' => $reservaProfesor->asignatura->nombre_asignatura ?? 'Sin asignatura',
+                            'codigo_asignatura' => $reservaProfesor->asignatura->codigo_asignatura ?? '-'
                         ];
                     }
 

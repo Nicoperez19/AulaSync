@@ -641,7 +641,7 @@ class EspacioController extends Controller
         if ($planificacion) {
             return [
                 'modulo' => $moduloCodigo,
-                'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'No especificada',
+                'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'Sin asignatura',
                 // acceder al profesor a través de la asignatura (asignatura->profesor)
                 'profesor' => $planificacion->asignatura->profesor->name ?? 'No especificado',
                 'hora_inicio' => $planificacion->modulo->hora_inicio ?? '',
@@ -752,7 +752,7 @@ class EspacioController extends Controller
                 ->get()
                 ->map(function($planificacion) {
                     return [
-                        'nombre_asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'No especificada',
+                        'nombre_asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'Sin asignatura',
                         'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? 'No especificado',
                         'modulo' => $planificacion->modulo->id_modulo ?? 'No especificado',
                         'hora_inicio' => $planificacion->modulo->hora_inicio ?? '',
@@ -1073,7 +1073,7 @@ class EspacioController extends Controller
         })->first();
 
         return [
-            'asignatura' => $proxima->asignatura->nombre_asignatura ?? 'No especificada',
+            'asignatura' => $proxima->asignatura->nombre_asignatura ?? 'Sin asignatura',
             'profesor' => $proxima->asignatura->profesor->name ?? 'No especificado',
             'profesor_run' => $proxima->asignatura->run_profesor ?? null,
             'hora_inicio' => $proxima->modulo->hora_inicio ?? null,

@@ -300,6 +300,7 @@
                                 <th class="px-6 py-4 font-semibold">Piso</th>
                                 <th class="px-6 py-4 font-semibold">Facultad</th>
                                 <th class="px-6 py-4 font-semibold">Profesor/Solicitante</th>
+                                <th class="px-6 py-4 font-semibold">Asignatura</th>
                                 <th class="px-6 py-4 font-semibold">Horas</th>
                                 <th class="px-6 py-4 font-semibold">Duración</th>
                                 <th class="px-6 py-4 font-semibold">Estado</th>
@@ -330,6 +331,9 @@
                                             </span>
                                         </div>
                                     </td>
+                                    <td class="px-6 py-4 text-gray-700">
+                                        <div class="font-medium text-indigo-600">{{ $reserva['asignatura'] ?? 'Sin asignatura' }}</div>
+                                    </td>
                                     <td class="px-6 py-4 font-semibold text-orange-600">{{ $reserva['horas_utilizadas'] }}h
                                     </td>
                                     <td class="px-6 py-4 text-gray-700">{{ $reserva['duracion'] }}</td>
@@ -344,7 +348,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="11" class="px-6 py-8 text-center text-gray-500">
+                                    <td colspan="12" class="px-6 py-8 text-center text-gray-500">
                                         <div class="flex flex-col items-center">
                                             <i class="mb-2 text-4xl fas fa-history"></i>
                                             <p class="text-lg font-medium">No se encontraron reservas</p>

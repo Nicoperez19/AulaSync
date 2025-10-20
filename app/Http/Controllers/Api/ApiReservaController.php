@@ -100,12 +100,16 @@ class ApiReservaController extends Controller
                     $query->where('m.hora_inicio', '<=', $horaActualStr)
                           ->where('m.hora_termino', '>=', $horaActualStr);
                 })
-                ->select('a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino')
+                ->select('a.id_asignatura', 'a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino')
                 ->first();
 
-            // Si no tiene clase programada, permitir uso libre
+            // Si no tiene clase programada, obtener la primera asignatura del profesor para uso libre
             if (!$tieneClase) {
+                $profesor = \App\Models\Profesor::where('run_profesor', $request->run)->first();
+                $asignaturaLibre = $profesor ? $profesor->asignaturas()->first() : null;
+                
                 $tieneClase = (object)[
+                    'id_asignatura' => $asignaturaLibre ? $asignaturaLibre->id_asignatura : null,
                     'nombre_asignatura' => 'Uso libre',
                     'hora_inicio' => $horaActualStr,
                     'hora_termino' => Carbon::parse($horaActualStr)->addMinutes(50)->format('H:i:s')
@@ -119,6 +123,7 @@ class ApiReservaController extends Controller
                 $reserva->id_reserva = Reserva::generarIdUnico();
                 $reserva->run_profesor = $request->run;
                 $reserva->id_espacio = $request->espacio_id;
+                $reserva->id_asignatura = $tieneClase->id_asignatura ?? null;
                 $reserva->fecha_reserva = $horaActual->format('Y-m-d');
                 $reserva->hora = $horaActualStr;
                 $reserva->tipo_reserva = $tieneClase->nombre_asignatura === 'Uso libre' ? 'espontanea' : 'clase';

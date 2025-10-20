@@ -21,6 +21,7 @@ class Reserva extends Model
         'hora',
         'fecha_reserva',
         'id_espacio',
+        'id_asignatura',
         'run_profesor',
         'run_solicitante',
     'modulos',

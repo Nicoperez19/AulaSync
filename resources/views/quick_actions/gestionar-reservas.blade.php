@@ -108,6 +108,10 @@
                                 Responsable
                                 <i class="fa-solid fa-sort ml-1 text-xs"></i>
                             </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="ordenarPor('asignatura')">
+                                Asignatura
+                                <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                            </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="ordenarPor('fecha')">
                                 Fecha
                                 <i class="fa-solid fa-sort ml-1 text-xs"></i>
@@ -645,6 +649,7 @@ function mostrarReservasEnTabla(reservas) {
                 <div class="text-sm font-medium text-gray-900">${reserva.nombre_responsable || 'Sin nombre'}</div>
                 <div class="text-sm text-gray-500">${reserva.tipo_responsable || 'N/A'} - RUN: ${reserva.run_responsable}</div>
             </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${reserva.asignatura || 'Sin asignatura'}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatearFecha(reserva.fecha)}</td>
             <td class="px-6 py-4 text-sm text-gray-900">
                 ${formatearModulosInfo(reserva.modulos_info)}

@@ -2493,7 +2493,7 @@
                         <div class="flex items-center">
                             <i class="mr-3 text-green-500 fas fa-book"></i>
                             <div>
-                                <div class="font-medium text-gray-800">${data.asignatura || 'No especificada'}</div>
+                                <div class="font-medium text-gray-800">${data.asignatura || 'Sin asignatura'}</div>
                                 <div class="text-sm text-gray-600">Asignatura</div>
                             </div>
                         </div>
@@ -2527,7 +2527,7 @@
                         <div class="flex items-center">
                             <i class="mr-3 text-blue-500 fas fa-chalkboard"></i>
                             <div>
-                                <div class="font-medium text-gray-800">${data.asignatura || 'No especificada'}</div>
+                                <div class="font-medium text-gray-800">${data.asignatura || 'Sin asignatura'}</div>
                                 <div class="text-sm text-gray-600">Asignatura actual</div>
                             </div>
                         </div>
@@ -2551,7 +2551,7 @@
                         <div class="flex items-center">
                             <i class="mr-3 text-purple-500 fas fa-calendar"></i>
                             <div>
-                                <div class="font-medium text-gray-800">${data.proxima_clase.asignatura || 'No especificada'}</div>
+                                <div class="font-medium text-gray-800">${data.proxima_clase.asignatura || 'Sin asignatura'}</div>
                                 <div class="text-sm text-gray-600">Próxima asignatura</div>
                             </div>
                         </div>
@@ -2787,7 +2787,7 @@
                             <div class="flex items-center">
                                 <i class="mr-3 text-purple-500 fas fa-calendar"></i>
                                 <div>
-                                    <div class="font-medium text-gray-800">${data.proxima_clase.asignatura || 'No especificada'}</div>
+                                    <div class="font-medium text-gray-800">${data.proxima_clase.asignatura || 'Sin asignatura'}</div>
                                     <div class="text-sm text-gray-600">Próxima asignatura</div>
                                 </div>
                             </div>
@@ -2901,7 +2901,7 @@
                         <div class="flex items-center">
                             <i class="mr-3 text-purple-500 fas fa-calendar"></i>
                             <div>
-                                <div class="font-medium text-gray-800">${data.proxima_clase.asignatura || 'No especificada'}</div>
+                                <div class="font-medium text-gray-800">${data.proxima_clase.asignatura || 'Sin asignatura'}</div>
                                 <div class="text-sm text-gray-600">Próxima asignatura</div>
                             </div>
                         </div>
@@ -3534,7 +3534,7 @@
                 info.clases_proximas.forEach((clase, index) => {
                     html += `<div class="p-3 mb-3 bg-white border rounded">`;
                     html += '<div class="grid grid-cols-1 gap-3 md:grid-cols-2">';
-                    html += `<div class="text-sm"><p class="font-medium text-blue-700">Asignatura:</p><p class="text-blue-800">${clase.asignatura || 'No especificada'}</p></div>`;
+                    html += `<div class="text-sm"><p class="font-medium text-blue-700">Asignatura:</p><p class="text-blue-800">${clase.asignatura || 'Sin asignatura'}</p></div>`;
                     html += `<div class="text-sm"><p class="font-medium text-blue-700">Profesor:</p><p class="text-blue-800">${clase.profesor || 'No especificado'}</p></div>`;
                     html += '</div>';
                     html += '</div>';

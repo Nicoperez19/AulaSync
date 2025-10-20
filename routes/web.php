@@ -44,6 +44,12 @@ Route::get('/', function () {
     return view('auth/login');
 })->middleware('guest');
 
+// Rutas públicas de módulos actuales (sin autenticación)
+Route::middleware(['extend.execution:180'])->group(function () {
+    Route::get('/modulos-actuales', [\App\Http\Controllers\TableController::class, 'index'])->name('modulos.actuales');
+    Route::get('/modulos-actuales/actualizar-datos', [\App\Http\Controllers\TableController::class, 'actualizarDatos'])->name('modulos.actuales.datos');
+});
+
 // Dashboard - Solo Administrador y Supervisor
 Route::middleware(['auth', 'permission:dashboard'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -76,10 +82,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/horarios/{run}', [HorariosController::class, 'getHorarioProfesor'])->name('horarios.get');
     Route::get('/horarios/{run}/export-pdf', [HorariosController::class, 'exportHorarioProfesorPDF'])->name('horarios.export-pdf');
 
-    // Rutas con tiempo de ejecución extendido para el módulo de visualización
+    // Rutas con tiempo de ejecución extendido para el módulo de visualización (dentro del auth)
     Route::middleware(['extend.execution:180'])->group(function () {
-        Route::get('/modulos-actuales', [\App\Http\Controllers\TableController::class, 'index'])->name('modulos.actuales');
-        Route::get('/modulos-actuales/actualizar-datos', [\App\Http\Controllers\TableController::class, 'actualizarDatos'])->name('modulos.actuales.datos');
+        // Estas rutas permanecen autenticadas para funcionalidad completa
+        // La ruta pública se define más abajo
     });
 
     // Autocomplete de usuarios (email)
