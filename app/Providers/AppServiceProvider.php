@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\View;
 use App\Models\Sede;
 use App\Models\Profesor;
 use App\Models\Espacio;
+use App\Models\LicenciaProfesor;
+use App\Observers\LicenciaProfesorObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,6 +27,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Blade::component('layouts.show-layout', 'show-layout');
+
+        // Registrar el Observer para LicenciaProfesor
+        LicenciaProfesor::observe(LicenciaProfesorObserver::class);
 
         // Registrar el ViewComposer para el sidebar
         View::composer('components.sidebar.content', function ($view) {

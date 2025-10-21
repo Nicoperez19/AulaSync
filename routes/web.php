@@ -22,6 +22,8 @@ use App\Http\Controllers\CampusController;
 use App\Http\Controllers\SedeController;
 use App\Http\Controllers\QuickActionsController;
 use App\Http\Controllers\ClasesNoRealizadasController;
+use App\Http\Controllers\LicenciaProfesorController;
+use App\Http\Controllers\RecuperacionClaseController;
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
@@ -117,6 +119,16 @@ Route::group(['middleware' => ['permission:mantenedor de permisos']], function (
     Route::get('/permission/permission_edit/{id}', [PermisionController::class, 'edit'])->name('permissions.edit');
     Route::put('/permission/permission_update/{id}', [PermisionController::class, 'update'])->name('permissions.update');
     Route::post('/permission/permission_store', [PermisionController::class, 'store'])->name('permission.add');
+});
+
+// Licencias de Profesores
+Route::group(['middleware' => ['auth', 'permission:gestionar licencias profesores']], function () {
+    Route::get('/licencias-profesores', [LicenciaProfesorController::class, 'index'])->name('licencias.index');
+});
+
+// Recuperación de Clases
+Route::group(['middleware' => ['auth', 'permission:gestionar recuperacion clases']], function () {
+    Route::get('/recuperacion-clases', [RecuperacionClaseController::class, 'index'])->name('recuperacion-clases.index');
 });
 
 Route::group(['middleware' => ['permission:mantenedor de universidades']], function () {

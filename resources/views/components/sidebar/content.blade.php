@@ -99,6 +99,26 @@
         </x-sidebar.link>
     @endrole
 
+    <!-- Gestión de Licencias - Protegido por permiso -->
+    @can('gestionar licencias profesores')
+        <x-sidebar.link title="Licencias Profesores" href="{{ route('licencias.index') }}"
+            :isActive="request()->routeIs('licencias.*')">
+            <x-slot name="icon">
+                <i class="flex-shrink-0 w-6 h-6 fa-solid fa-file-medical" aria-hidden="true"></i>
+            </x-slot>
+        </x-sidebar.link>
+    @endcan
+
+    <!-- Recuperación de Clases - Protegido por permiso -->
+    @can('gestionar recuperacion clases')
+        <x-sidebar.link title="Recuperación de Clases" href="{{ route('recuperacion-clases.index') }}"
+            :isActive="request()->routeIs('recuperacion-clases.*')">
+            <x-slot name="icon">
+                <i class="flex-shrink-0 w-6 h-6 fa-solid fa-calendar-check" aria-hidden="true"></i>
+            </x-slot>
+        </x-sidebar.link>
+    @endcan
+
     <!-- Mantenedores - Solo Administrador -->
     @canany(['mantenedor de roles', 'mantenedor de permisos', 'mantenedor de universidades', 'mantenedor de facultades', 'mantenedor de areas academicas', 'mantenedor de carreras', 'mantenedor de pisos', 'mantenedor de espacios', 'mantenedor de reservas', 'mantenedor de asignaturas', 'mantenedor de mapas', 'mantenedor de campus', 'mantenedor de sedes', 'mantenedor de profesores', 'mantenedor de visitantes'])
         <x-sidebar.dropdown title="Mantenedores" :active="Str::startsWith(request()->route()->uri(), 'users')">

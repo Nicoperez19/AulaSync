@@ -80,6 +80,18 @@ class Profesor extends Model
         return $this->hasMany(DataLoad::class, 'profesor_run', 'run_profesor');
     }
 
+    // Relación con Licencias
+    public function licencias()
+    {
+        return $this->hasMany(LicenciaProfesor::class, 'run_profesor', 'run_profesor');
+    }
+
+    // Relación con Recuperaciones de Clases
+    public function recuperaciones()
+    {
+        return $this->hasMany(RecuperacionClase::class, 'run_profesor', 'run_profesor');
+    }
+
   
     // Método para obtener el nombre completo
     public function getNombreCompleto()
