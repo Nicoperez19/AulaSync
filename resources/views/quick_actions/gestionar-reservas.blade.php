@@ -6,23 +6,23 @@
 <div class="space-y-6">
     <!-- Header -->
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-        <div class="p-6">
-            <div class="flex items-center justify-between">
+        <div class="p-4 sm:p-6">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-900 flex items-center">
-                        <i class="fas fa-calendar-check mr-3 text-blue-600"></i>
+                    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
+                        <i class="fas fa-calendar-check mr-2 sm:mr-3 text-blue-600"></i>
                         Gestión de Reservas
                     </h1>
-                    <p class="text-gray-600 mt-1">Administrar estados de reservas activas y finalizadas</p>
+                    <p class="text-sm sm:text-base text-gray-600 mt-1">Administrar estados de reservas activas y finalizadas</p>
                 </div>
-                <div class="flex gap-3">
+                <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <a href="{{ route('quick-actions.crear-reserva') }}" 
-                       class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                       class="inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white text-sm sm:text-base rounded-lg hover:bg-green-700 transition-colors">
                         <i class="fas fa-plus mr-2"></i>
                         Nueva Reserva
                     </a>
                     <a href="{{ route('quick-actions.index') }}" 
-                       class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                       class="inline-flex items-center justify-center px-4 py-2 bg-gray-600 text-white text-sm sm:text-base rounded-lg hover:bg-gray-700 transition-colors">
                         <i class="fas fa-arrow-left mr-2"></i>
                         Volver
                     </a>
@@ -33,14 +33,14 @@
 
     <!-- Filtros -->
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-        <div class="p-6">
-            <div class="flex flex-wrap gap-4 items-center">
+        <div class="p-4 sm:p-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                     <select 
                         id="filtro-estado-reserva"
                         onchange="filtrarReservas()"
-                        class="px-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
                         <option value="">Todos los estados</option>
                         <option value="activa">Activas</option>
                         <option value="finalizada">Finalizadas</option>
@@ -53,7 +53,7 @@
                         type="date"
                         id="filtro-fecha-reserva"
                         onchange="filtrarReservas()"
-                        class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
                     />
                 </div>
                 
@@ -62,7 +62,7 @@
                     <select 
                         id="ordenar-reservas"
                         onchange="aplicarOrdenamiento()"
-                        class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
                         <option value="fecha-desc">Fecha (más reciente)</option>
                         <option value="fecha-asc">Fecha (más antigua)</option>
                         <option value="responsable-asc">Responsable (A-Z)</option>
@@ -77,7 +77,7 @@
                 <div class="flex items-end">
                     <button 
                         onclick="cargarReservas()"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                        class="w-full px-4 py-2 bg-blue-600 text-white text-sm sm:text-base rounded-md hover:bg-blue-700 transition-colors">
                         <i class="fa-solid fa-rotate-right w-4 h-4 mr-2 inline"></i>
                         Actualizar
                     </button>
@@ -88,48 +88,49 @@
 
     <!-- Tabla de reservas -->
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-        <div class="p-6">
-            <div class="overflow-x-auto">
+        <div class="p-4 sm:p-6">
+            <!-- Versión Desktop -->
+            <div class="hidden lg:block overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 <input type="checkbox" id="select-all-reservas" onchange="toggleSelectAllReservas(this)" class="rounded">
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="ordenarPor('estado')">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="ordenarPor('estado')">
                                 Estado
                                 <i class="fa-solid fa-sort ml-1 text-xs"></i>
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="ordenarPor('espacio')">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="ordenarPor('espacio')">
                                 Espacio
                                 <i class="fa-solid fa-sort ml-1 text-xs"></i>
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="ordenarPor('responsable')">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="ordenarPor('responsable')">
                                 Responsable
                                 <i class="fa-solid fa-sort ml-1 text-xs"></i>
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="ordenarPor('asignatura')">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="ordenarPor('asignatura')">
                                 Asignatura
                                 <i class="fa-solid fa-sort ml-1 text-xs"></i>
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="ordenarPor('fecha')">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="ordenarPor('fecha')">
                                 Fecha
                                 <i class="fa-solid fa-sort ml-1 text-xs"></i>
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Módulos y Horarios
                             </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Observaciones
                             </th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Acciones
                             </th>
                         </tr>
                     </thead>
                     <tbody id="tabla-reservas-body" class="bg-white divide-y divide-gray-200">
                         <tr>
-                            <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                            <td colspan="9" class="px-6 py-12 text-center text-gray-500">
                                 <div class="flex flex-col items-center">
                                     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
                                     <p>Cargando reservas...</p>
@@ -139,26 +140,34 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Versión Mobile/Tablet (Cards) -->
+            <div id="tabla-reservas-cards" class="lg:hidden space-y-4">
+                <div class="flex flex-col items-center justify-center py-12 text-gray-500">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                    <p>Cargando reservas...</p>
+                </div>
+            </div>
             
             <!-- Controles de acciones en lote -->
-            <div id="acciones-lote" class="border-t border-gray-200 bg-gray-50 px-6 py-4" style="display: none;">
-                <div class="flex items-center justify-between">
+            <div id="acciones-lote" class="border-t border-gray-200 bg-gray-50 px-4 py-3 sm:px-6 sm:py-4" style="display: none;">
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div class="text-sm text-gray-700">
                         <span id="contador-seleccionadas">0</span> reserva(s) seleccionada(s)
                     </div>
-                    <div class="flex space-x-3">
+                    <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
                         <button 
                             type="button"
                             id="btn-finalizar-lote"
                             onclick="finalizarReservasEnLote()"
-                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                            class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                             <i class="fa-solid fa-xmark w-4 h-4 mr-2"></i>
                             Finalizar Seleccionadas
                         </button>
                         <button 
                             type="button"
                             onclick="limpiarSeleccion()"
-                            class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+                            class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
                             <i class="fa-solid fa-times w-4 h-4 mr-2"></i>
                             Limpiar Selección
                         </button>
@@ -615,11 +624,13 @@ async function cargarReservas() {
 // Mostrar reservas en la tabla
 function mostrarReservasEnTabla(reservas) {
     const tbody = document.getElementById('tabla-reservas-body');
+    const cardsContainer = document.getElementById('tabla-reservas-cards');
     
     if (reservas.length === 0) {
+        // Vista desktop
         tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                <td colspan="9" class="px-6 py-12 text-center text-gray-500">
                     <div class="flex flex-col items-center">
                         <i class="fa-solid fa-folder-open text-6xl text-gray-300 mb-4"></i>
                         <p>No hay reservas con los filtros aplicados</p>
@@ -627,15 +638,24 @@ function mostrarReservasEnTabla(reservas) {
                 </td>
             </tr>
         `;
+        
+        // Vista mobile
+        cardsContainer.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-12 text-gray-500">
+                <i class="fa-solid fa-folder-open text-6xl text-gray-300 mb-4"></i>
+                <p>No hay reservas con los filtros aplicados</p>
+            </div>
+        `;
         return;
     }
 
+    // Vista Desktop (tabla)
     tbody.innerHTML = reservas.map(reserva => `
         <tr class="hover:bg-gray-50 transition-colors">
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-4 py-3 whitespace-nowrap">
                 <input type="checkbox" class="reserva-checkbox rounded" value="${reserva.id}" onchange="actualizarContadorSeleccionadas()">
             </td>
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-4 py-3 whitespace-nowrap">
                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                     reserva.estado === 'activa' 
                         ? 'bg-green-100 text-green-800' 
@@ -644,22 +664,22 @@ function mostrarReservasEnTabla(reservas) {
                     ${reserva.estado === 'activa' ? 'Activa' : 'Finalizada'}
                 </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">${reserva.codigo_espacio}</td>
-            <td class="px-6 py-4 whitespace-nowrap">
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">${reserva.codigo_espacio}</td>
+            <td class="px-4 py-3 whitespace-nowrap">
                 <div class="text-sm font-medium text-gray-900">${reserva.nombre_responsable || 'Sin nombre'}</div>
                 <div class="text-sm text-gray-500">${reserva.tipo_responsable || 'N/A'} - RUN: ${reserva.run_responsable}</div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${reserva.asignatura || 'Sin asignatura'}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatearFecha(reserva.fecha)}</td>
-            <td class="px-6 py-4 text-sm text-gray-900">
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${reserva.asignatura || 'Sin asignatura'}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${formatearFecha(reserva.fecha)}</td>
+            <td class="px-4 py-3 text-sm text-gray-900">
                 ${formatearModulosInfo(reserva.modulos_info)}
             </td>
-            <td class="px-6 py-4 text-sm text-gray-900 max-w-xs">
+            <td class="px-4 py-3 text-sm text-gray-900 max-w-xs">
                 <div class="truncate" title="${reserva.observaciones || 'Sin observaciones'}">
                     ${reserva.observaciones || 'Sin observaciones'}
                 </div>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                 <div class="flex flex-col space-y-2">
                     ${reserva.estado === 'activa' 
                         ? `<button 
@@ -681,6 +701,81 @@ function mostrarReservasEnTabla(reservas) {
                 </div>
             </td>
         </tr>
+    `).join('');
+    
+    // Vista Mobile/Tablet (cards)
+    cardsContainer.innerHTML = reservas.map(reserva => `
+        <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-start justify-between mb-3">
+                <div class="flex items-center gap-3">
+                    <input type="checkbox" class="reserva-checkbox rounded mt-1" value="${reserva.id}" onchange="actualizarContadorSeleccionadas()">
+                    <div>
+                        <h3 class="font-semibold text-gray-900 text-lg">${reserva.codigo_espacio}</h3>
+                        <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full mt-1 ${
+                            reserva.estado === 'activa' 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-gray-100 text-gray-800'
+                        }">
+                            ${reserva.estado === 'activa' ? 'Activa' : 'Finalizada'}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="space-y-2 text-sm">
+                <div class="flex items-start">
+                    <i class="fa-solid fa-user text-gray-400 w-5 mt-0.5"></i>
+                    <div class="ml-2">
+                        <p class="font-medium text-gray-900">${reserva.nombre_responsable || 'Sin nombre'}</p>
+                        <p class="text-gray-500 text-xs">${reserva.tipo_responsable || 'N/A'} - RUN: ${reserva.run_responsable}</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center">
+                    <i class="fa-solid fa-book text-gray-400 w-5"></i>
+                    <span class="ml-2 text-gray-700">${reserva.asignatura || 'Sin asignatura'}</span>
+                </div>
+                
+                <div class="flex items-center">
+                    <i class="fa-solid fa-calendar text-gray-400 w-5"></i>
+                    <span class="ml-2 text-gray-700">${formatearFecha(reserva.fecha)}</span>
+                </div>
+                
+                <div class="flex items-start">
+                    <i class="fa-solid fa-clock text-gray-400 w-5 mt-0.5"></i>
+                    <div class="ml-2 text-gray-700">
+                        ${formatearModulosInfo(reserva.modulos_info)}
+                    </div>
+                </div>
+                
+                ${reserva.observaciones ? `
+                <div class="flex items-start">
+                    <i class="fa-solid fa-note-sticky text-gray-400 w-5 mt-0.5"></i>
+                    <p class="ml-2 text-gray-600 line-clamp-2">${reserva.observaciones}</p>
+                </div>
+                ` : ''}
+            </div>
+            
+            <div class="mt-4 flex gap-2">
+                ${reserva.estado === 'activa' 
+                    ? `<button 
+                        type="button"
+                        onclick="cambiarEstadoReserva('${reserva.id}', 'finalizada')"
+                        class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors">
+                        <i class="fa-solid fa-xmark w-4 h-4 mr-1"></i>
+                        Finalizar
+                    </button>`
+                    : `<div class="flex-1 text-center text-sm text-gray-500 italic py-2">Finalizada</div>`
+                }
+                <button 
+                    type="button"
+                    onclick="verDetalleReserva('${reserva.id}')"
+                    class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                    <i class="fa-solid fa-eye w-4 h-4 mr-1"></i>
+                    Ver Detalle
+                </button>
+            </div>
+        </div>
     `).join('');
     
     // Actualizar contador después de mostrar la tabla
