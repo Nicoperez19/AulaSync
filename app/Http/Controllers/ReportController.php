@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use App\Models\Espacio;
 use App\Models\Reserva;
 use App\Models\Planificacion_Asignatura;
@@ -891,10 +892,28 @@ class ReportController extends Controller
      */
     public function obtenerAccesosRegistrados($fechaInicio, $fechaFin, $piso = null, $tipoUsuario = null, $espacio = null)
     {
-        $query = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
+        // OPTIMIZACIÓN: Seleccionar solo los campos necesarios y limitar resultados
+        $query = Reserva::select([
+                'id_reserva',
+                'run_profesor',
+                'run_solicitante',
+                'id_espacio',
+                'fecha_reserva',
+                'hora',
+                'hora_salida',
+                'tipo_reserva',
+                'estado'
+            ])
+            ->with([
+                'profesor:run_profesor,name,email',
+                'solicitante:run_solicitante,nombre,correo,tipo_solicitante',
+                'espacio:id_espacio,nombre_espacio,piso_id',
+                'espacio.piso:id,numero_piso,id_facultad',
+                'espacio.piso.facultad:id_facultad,nombre_facultad'
+            ])
             ->whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
-            ->whereIn('estado', ['activa', 'finalizada']) // Mostrar activas y finalizadas
-            ->whereNotNull('hora') // Solo las que tienen hora de entrada (escaneo QR)
+            ->whereIn('estado', ['activa', 'finalizada'])
+            ->whereNotNull('hora')
             ->orderBy('fecha_reserva', 'desc')
             ->orderBy('hora', 'desc');
 
@@ -912,11 +931,11 @@ class ReportController extends Controller
             } elseif ($tipoUsuario === 'solicitante') {
                 $query->whereNotNull('run_solicitante');
             } elseif ($tipoUsuario === 'estudiante') {
-                $query->whereHas('solicitante', function ($q) use ($tipoUsuario) {
+                $query->whereHas('solicitante', function ($q) {
                     $q->where('tipo_solicitante', 'estudiante');
                 });
             } elseif ($tipoUsuario === 'administrativo') {
-                $query->whereHas('solicitante', function ($q) use ($tipoUsuario) {
+                $query->whereHas('solicitante', function ($q) {
                     $q->where('tipo_solicitante', 'personal');
                 });
             }
@@ -929,50 +948,57 @@ class ReportController extends Controller
             });
         }
 
-        return $query->get()->map(function ($reserva) {
-            // Determinar si es profesor o solicitante
-            $esProfesor = !empty($reserva->run_profesor);
-            $esSolicitante = !empty($reserva->run_solicitante);
-            
-            if ($esProfesor) {
-                // Es una reserva de profesor
-                $usuario = $reserva->profesor->name ?? 'Profesor no encontrado';
-                $run = $reserva->profesor->run_profesor ?? 'N/A';
-                $email = $reserva->profesor->email ?? 'N/A';
-                $tipoUsuario = 'profesor';
-            } elseif ($esSolicitante) {
-                // Es una reserva de solicitante
-                $usuario = $reserva->solicitante->nombre ?? 'Solicitante no encontrado';
-                $tipoUsuario = ucfirst($reserva->solicitante->tipo_solicitante ?? 'Solicitante');
-                $run = $reserva->solicitante->run_solicitante ?? 'N/A';
-                $email = $reserva->solicitante->correo ?? 'N/A';
-            } else {
-                // Caso por defecto (no debería ocurrir)
-                $usuario = 'Usuario no identificado';
-                $run = 'N/A';
-                $email = 'N/A';
-                $tipoUsuario = 'desconocido';
-            }
+        // OPTIMIZACIÓN: Limitar a 500 registros máximo para evitar timeout
+        $query->limit(500);
 
-            return [
-                'id' => $reserva->id_reserva,
-                'usuario' => $usuario,
-                'run' => $run,
-                'email' => $email,
-                'tipo_usuario' => $tipoUsuario,
-                'espacio' => $reserva->espacio->nombre_espacio ?? 'Espacio no encontrado',
-                'id_espacio' => $reserva->espacio->id_espacio ?? '',
-                'piso' => $reserva->espacio->piso->numero_piso ?? 'N/A',
-                'facultad' => $reserva->espacio->piso->facultad->nombre_facultad ?? 'N/A',
-                'fecha' => Carbon::parse($reserva->fecha_reserva)->format('d/m/Y'),
-                'hora_entrada' => $reserva->hora,
-                'hora_salida' => $reserva->hora_salida ? Carbon::parse($reserva->hora_salida)->format('H:i:s') : 'En curso',
-                'tipo_reserva' => $reserva->tipo_reserva ?? 'Directa',
-                'estado' => $reserva->estado,
-                'duracion' => $this->calcularDuracion($reserva->hora, $reserva->hora_salida),
-                'incidencias' => $this->obtenerIncidencias($reserva->id_reserva)
-            ];
+        // OPTIMIZACIÓN: Usar chunk para procesar en lotes pequeños
+        $accesos = collect();
+        
+        $query->chunk(100, function ($reservas) use (&$accesos) {
+            foreach ($reservas as $reserva) {
+                // Determinar si es profesor o solicitante
+                $esProfesor = !empty($reserva->run_profesor);
+                $esSolicitante = !empty($reserva->run_solicitante);
+                
+                if ($esProfesor && $reserva->profesor) {
+                    $usuario = $reserva->profesor->name;
+                    $run = $reserva->profesor->run_profesor;
+                    $email = $reserva->profesor->email;
+                    $tipoUsuario = 'profesor';
+                } elseif ($esSolicitante && $reserva->solicitante) {
+                    $usuario = $reserva->solicitante->nombre;
+                    $tipoUsuario = ucfirst($reserva->solicitante->tipo_solicitante ?? 'Solicitante');
+                    $run = $reserva->solicitante->run_solicitante;
+                    $email = $reserva->solicitante->correo;
+                } else {
+                    $usuario = 'Usuario no identificado';
+                    $run = 'N/A';
+                    $email = 'N/A';
+                    $tipoUsuario = 'desconocido';
+                }
+
+                $accesos->push([
+                    'id' => $reserva->id_reserva,
+                    'usuario' => $usuario ?? 'N/A',
+                    'run' => $run ?? 'N/A',
+                    'email' => $email ?? 'N/A',
+                    'tipo_usuario' => $tipoUsuario,
+                    'espacio' => $reserva->espacio->nombre_espacio ?? 'Espacio no encontrado',
+                    'id_espacio' => $reserva->espacio->id_espacio ?? '',
+                    'piso' => $reserva->espacio->piso->numero_piso ?? 'N/A',
+                    'facultad' => $reserva->espacio->piso->facultad->nombre_facultad ?? 'N/A',
+                    'fecha' => $reserva->fecha_reserva,
+                    'hora_entrada' => $reserva->hora,
+                    'hora_salida' => $reserva->hora_salida ? Carbon::parse($reserva->hora_salida)->format('H:i:s') : 'En curso',
+                    'tipo_reserva' => $reserva->tipo_reserva ?? 'Directa',
+                    'estado' => $reserva->estado,
+                    'duracion' => $this->calcularDuracion($reserva->hora, $reserva->hora_salida),
+                    'incidencias' => [] // Optimización: evitar consultas adicionales
+                ]);
+            }
         });
+
+        return $accesos;
     }
 
     /**
@@ -1024,27 +1050,31 @@ class ReportController extends Controller
     }
 
     /**
-     * Obtener pisos disponibles
+     * Obtener pisos disponibles (con caché)
      */
     private function obtenerPisosDisponibles()
     {
-        return Piso::whereHas('facultad', function ($query) {
-            $query->where('id_facultad', 'IT_TH');
-        })
-        ->orderBy('numero_piso')
-        ->pluck('numero_piso', 'numero_piso');
+        return Cache::remember('reportes.pisos_disponibles', 3600, function () {
+            return Piso::whereHas('facultad', function ($query) {
+                $query->where('id_facultad', 'IT_TH');
+            })
+            ->orderBy('numero_piso')
+            ->pluck('numero_piso', 'numero_piso');
+        });
     }
 
     /**
-     * Obtener espacios disponibles
+     * Obtener espacios disponibles (con caché)
      */
     private function obtenerEspaciosDisponibles()
     {
-        return Espacio::whereHas('piso.facultad', function ($query) {
-            $query->where('id_facultad', 'IT_TH');
-        })
-        ->orderBy('nombre_espacio')
-        ->pluck('nombre_espacio', 'nombre_espacio');
+        return Cache::remember('reportes.espacios_disponibles', 3600, function () {
+            return Espacio::whereHas('piso.facultad', function ($query) {
+                $query->where('id_facultad', 'IT_TH');
+            })
+            ->orderBy('nombre_espacio')
+            ->pluck('nombre_espacio', 'nombre_espacio');
+        });
     }
 
     /**
