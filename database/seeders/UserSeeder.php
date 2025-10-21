@@ -13,7 +13,7 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         // RUNs de usuarios base del sistema que no deben ser modificados
-        $baseUserRuns = ['19716146', '11111111', '99999999', '00000000', '18687107', '16600867'];
+        $baseUserRuns = ['19716146', '11111111', '99999999', '00000000', '18687107', '16600867', '10044790'];
 
         // Crear usuarios base del sistema (siempre se crean/actualizan)
         User::updateOrCreate(
@@ -22,6 +22,17 @@ class UserSeeder extends Seeder
                 'name' => 'Administrador',
                 'email' => 'admin@ucsc.cl',
                 'password' => bcrypt('password'),
+                'celular' => '987654321',
+                'direccion' => 'Calle Falsa 123',
+                'fecha_nacimiento' => '1985-05-20',
+            ]
+        )->assignRole('Administrador');
+        User::updateOrCreate(
+            ['run' => '10044790'],
+            [
+                'name' => 'Christian Villagra O.',
+                'email' => 'chvillagra@ucsc.cl',
+                'password' => bcrypt('Logan5'),
                 'celular' => '987654321',
                 'direccion' => 'Calle Falsa 123',
                 'fecha_nacimiento' => '1985-05-20',
