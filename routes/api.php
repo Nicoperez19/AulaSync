@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ApiReservaController;
+use App\Http\Controllers\Api\ProgramacionSemanalController;
 use App\Models\User;
 use App\Http\Controllers\EspacioController;
 use Illuminate\Support\Facades\DB;
@@ -371,4 +372,14 @@ Route::put('/admin/reserva/{id}/estado', [AdminPanelController::class, 'cambiarE
 
 // Operaciones masivas
 Route::post('/admin/vaciar-reservas', [AdminPanelController::class, 'vaciarReservas']);
+
+// ========================================
+// RUTAS DE PROGRAMACIÓN SEMANAL Y ASISTENCIA
+// ========================================
+
+// Consultar programación semanal por sala (GET)
+Route::get('/programacion-semanal/{id_espacio}', [ProgramacionSemanalController::class, 'obtenerProgramacionSemanal']);
+
+// Registrar asistencia (POST)
+Route::post('/asistencia', [ProgramacionSemanalController::class, 'registrarAsistencia']);
 

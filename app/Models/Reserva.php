@@ -120,4 +120,12 @@ class Reserva extends Model
     {
         return $this->belongsTo(Asignatura::class, 'id_asignatura', 'id_asignatura');
     }
+
+    /**
+     * Relación con las asistencias de la reserva
+     */
+    public function asistencias()
+    {
+        return $this->hasMany(Asistencia::class, 'id_reserva', 'id_reserva');
+    }
 }
