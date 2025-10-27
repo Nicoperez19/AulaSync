@@ -383,3 +383,18 @@ Route::get('/programacion-semanal/{id_espacio}', [ProgramacionSemanalController:
 // Registrar asistencia (POST)
 Route::post('/asistencia', [ProgramacionSemanalController::class, 'registrarAsistencia']);
 
+// ========================================
+// RUTAS DE ESPACIOS Y TIPOS DE ESPACIOS
+// ========================================
+
+use App\Http\Controllers\Api\EspacioApiController;
+
+// Listar todos los espacios (con filtros opcionales: tipo_espacio, estado, piso_id)
+Route::get('/espacios', [EspacioApiController::class, 'listarEspacios']);
+
+// Listar todos los tipos de espacios
+Route::get('/tipos-espacios', [EspacioApiController::class, 'listarTiposEspacios']);
+
+// Obtener resumen de espacios agrupados por tipo y estado
+Route::get('/espacios/resumen', [EspacioApiController::class, 'resumenEspacios']);
+
