@@ -172,7 +172,7 @@
                             {{ ucfirst($acceso['tipo_usuario']) }}
                         </span>
                     </td>
-                    <td>{{ $acceso['id_espacio'] }} - Piso {{ $acceso['piso'] }}</td>
+                    <td>{{ $acceso['id_espacio'] }}</td>
                     <td>{{ $acceso['piso'] }}</td>
                     <td>{{ $acceso['fecha'] }}</td>
                     <td>{{ $acceso['hora_entrada'] }}</td>
