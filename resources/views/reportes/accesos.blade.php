@@ -228,7 +228,7 @@
                                 Usuario
                             </th>
                             <th class="w-1/5 px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
-                                Espacio
+                                ID Sala
                             </th>
                             <th class="w-1/8 px-2 py-2 text-xs font-medium tracking-wider text-left text-gray-500 uppercase dark:text-gray-300">
                                 Fecha
@@ -263,7 +263,7 @@
                                 </td>
                                 <td class="px-2 py-2">
                                     <div class="text-xs font-medium text-gray-900 dark:text-white truncate">
-                                        {{ $acceso['espacio'] }}
+                                        {{ $acceso['id_espacio'] }}
                                     </div>
                                     <div class="text-xs text-gray-400 dark:text-gray-500 truncate">
                                         Piso {{ $acceso['piso'] }}

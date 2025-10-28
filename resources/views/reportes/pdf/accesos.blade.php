@@ -152,7 +152,7 @@
                 <th>Usuario</th>
                 <th>RUN</th>
                 <th>Tipo</th>
-                <th>Espacio</th>
+                <th>ID Sala</th>
                 <th>Piso</th>
                 <th>Fecha</th>
                 <th>Hora Entrada</th>
@@ -172,7 +172,7 @@
                             {{ ucfirst($acceso['tipo_usuario']) }}
                         </span>
                     </td>
-                    <td>{{ $acceso['espacio'] }} - ({{ $acceso['id_espacio'] }}) - Piso {{ $acceso['piso'] }}</td>
+                    <td>{{ $acceso['id_espacio'] }} - Piso {{ $acceso['piso'] }}</td>
                     <td>{{ $acceso['piso'] }}</td>
                     <td>{{ $acceso['fecha'] }}</td>
                     <td>{{ $acceso['hora_entrada'] }}</td>
