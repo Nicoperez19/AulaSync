@@ -383,6 +383,9 @@ Route::get('/programacion-semanal/{id_espacio}', [ProgramacionSemanalController:
 // Registrar asistencia (POST)
 Route::post('/asistencia', [ProgramacionSemanalController::class, 'registrarAsistencia']);
 
+// Obtener reserva activa de un espacio (GET)
+Route::get('/reservas/activa/{id_espacio}', [ProgramacionSemanalController::class, 'obtenerReservaActiva']);
+
 // ========================================
 // RUTAS DE ESPACIOS Y TIPOS DE ESPACIOS
 // ========================================

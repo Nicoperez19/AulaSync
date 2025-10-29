@@ -329,4 +329,170 @@ class ProgramacionSemanalController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * GET /api/reservas/activa/{id_espacio}
+     * Obtiene la reserva activa de un espacio específico
+     * 
+     * Este endpoint devuelve la reserva que está actualmente activa para un espacio dado,
+     * junto con toda la información relacionada (profesor, asignatura, espacio, etc.)
+     * 
+     * Ejemplo de uso:
+     * GET /api/reservas/activa/TH-03
+     * 
+     * @param string $id_espacio - ID del espacio (ej: TH-03, TH-LAB1, etc.)
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function obtenerReservaActiva($id_espacio)
+    {
+        try {
+            // Verificar que el espacio existe
+            $espacio = Espacio::find($id_espacio);
+            
+            if (!$espacio) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Espacio no encontrado',
+                    'id_espacio' => $id_espacio
+                ], 404);
+            }
+
+            // Obtener la fecha y hora actuales
+            $fechaActual = now()->format('Y-m-d');
+            $horaActual = now()->format('H:i:s');
+
+            // Buscar la reserva activa para el espacio
+            $reserva = Reserva::with([
+                'espacio',
+                'profesor',
+                'asignatura.profesor',
+                'solicitante',
+                'asistencias'
+            ])
+            ->where('id_espacio', $id_espacio)
+            ->where('estado', 'activa')
+            ->where('fecha_reserva', $fechaActual)
+            ->where('hora', '<=', $horaActual)
+            ->where(function($query) use ($horaActual) {
+                $query->whereNull('hora_salida')
+                      ->orWhere('hora_salida', '>=', $horaActual);
+            })
+            ->orderBy('hora', 'desc')
+            ->first();
+
+            // Si no hay reserva activa
+            if (!$reserva) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No hay reserva activa en este momento para este espacio',
+                    'data' => [
+                        'espacio' => [
+                            'id' => $espacio->id_espacio,
+                            'nombre' => $espacio->nombre_espacio,
+                            'tipo' => $espacio->tipo_espacio,
+                            'estado' => $espacio->estado,
+                            'puestos_disponibles' => $espacio->puestos_disponibles
+                        ],
+                        'reserva_activa' => null,
+                        'fecha_consulta' => $fechaActual,
+                        'hora_consulta' => $horaActual
+                    ]
+                ], 200);
+            }
+
+            // Preparar datos del profesor o solicitante
+            $usuarioReserva = null;
+            if ($reserva->run_profesor && $reserva->profesor) {
+                $usuarioReserva = [
+                    'tipo' => 'profesor',
+                    'run' => $reserva->profesor->run_profesor,
+                    'nombre' => $reserva->profesor->name,
+                    'email' => $reserva->profesor->email ?? null,
+                    'celular' => $reserva->profesor->celular ?? null
+                ];
+            } elseif ($reserva->run_solicitante && $reserva->solicitante) {
+                $usuarioReserva = [
+                    'tipo' => 'solicitante',
+                    'run' => $reserva->solicitante->run_solicitante,
+                    'nombre' => $reserva->solicitante->nombre,
+                    'email' => $reserva->solicitante->correo ?? null,
+                    'telefono' => $reserva->solicitante->telefono ?? null
+                ];
+            }
+
+            // Preparar datos de la asignatura
+            $asignaturaData = null;
+            if ($reserva->asignatura) {
+                $asignaturaData = [
+                    'id' => $reserva->asignatura->id_asignatura,
+                    'codigo' => $reserva->asignatura->codigo_asignatura,
+                    'nombre' => $reserva->asignatura->nombre_asignatura,
+                    'seccion' => $reserva->asignatura->seccion ?? null,
+                    'profesor_titular' => $reserva->asignatura->profesor ? [
+                        'run' => $reserva->asignatura->profesor->run_profesor,
+                        'nombre' => $reserva->asignatura->profesor->name
+                    ] : null
+                ];
+            }
+
+            // Preparar datos de asistencia
+            $asistenciaData = [
+                'total_registrados' => $reserva->asistencias->count(),
+                'estudiantes' => $reserva->asistencias->map(function($asistencia) {
+                    return [
+                        'id' => $asistencia->id,
+                        'rut' => $asistencia->rut_asistente,
+                        'nombre' => $asistencia->nombre_asistente,
+                        'hora_llegada' => $asistencia->hora_llegada,
+                        'observaciones' => $asistencia->observaciones
+                    ];
+                })
+            ];
+
+            // Calcular duración de la reserva
+            $horaInicio = Carbon::parse($reserva->hora);
+            $horaFin = $reserva->hora_salida ? Carbon::parse($reserva->hora_salida) : Carbon::parse($horaActual);
+            $duracion = $horaInicio->diffInMinutes($horaFin);
+
+            // Respuesta exitosa con toda la información
+            return response()->json([
+                'success' => true,
+                'message' => 'Reserva activa encontrada',
+                'data' => [
+                    'reserva' => [
+                        'id' => $reserva->id_reserva,
+                        'tipo' => $reserva->tipo_reserva,
+                        'estado' => $reserva->estado,
+                        'fecha' => $reserva->fecha_reserva,
+                        'hora_inicio' => $reserva->hora,
+                        'hora_salida' => $reserva->hora_salida,
+                        'duracion_minutos' => $duracion,
+                        'modulos' => $reserva->modulos,
+                        'observaciones' => $reserva->observaciones,
+                        'creada_el' => $reserva->created_at->format('Y-m-d H:i:s')
+                    ],
+                    'espacio' => [
+                        'id' => $espacio->id_espacio,
+                        'nombre' => $espacio->nombre_espacio,
+                        'tipo' => $espacio->tipo_espacio,
+                        'estado' => $espacio->estado,
+                        'puestos_disponibles' => $espacio->puestos_disponibles
+                    ],
+                    'usuario_reserva' => $usuarioReserva,
+                    'asignatura' => $asignaturaData,
+                    'asistencia' => $asistenciaData,
+                    'fecha_consulta' => $fechaActual,
+                    'hora_consulta' => $horaActual
+                ]
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al obtener la reserva activa',
+                'error' => $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null
+            ], 500);
+        }
+    }
 }
