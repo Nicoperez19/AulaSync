@@ -1,0 +1,16 @@
+{
+  "id_reserva": "R20251027145530123",
+  "lista_asistencia": [
+    {
+      "rut": "12345678",
+      "nombre": "Juan Pérez García",
+      "hora_llegada": "14:00:00"
+    },
+    {
+      "rut": "87654321",
+      "nombre": "María González López",
+      "hora_llegada": "14:05:00"
+    }
+  ],
+  "finalizar_ahora": false
+}

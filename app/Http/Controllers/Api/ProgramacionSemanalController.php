@@ -149,16 +149,38 @@ class ProgramacionSemanalController extends Controller
 
     /**
      * POST /api/asistencia
-     * Registra la asistencia de una clase
+     * Registra la asistencia de una clase y finaliza la reserva
+     * 
+     * Este endpoint está diseñado para ser consumido por aplicaciones nativas externas.
      * 
      * Recibe:
-     * - id_reserva: ID de la reserva
-     * - hora_termino: Hora de término de la clase
-     * - lista_asistencia: Array con los asistentes
-     *   - rut: RUT sin dígito verificador
-     *   - nombre: Nombre del asistente
-     *   - hora_llegada: Hora de llegada
-     * - contenido_visto: Contenido visto en la clase (opcional)
+     * - id_reserva: ID de la reserva (string, requerido)
+     * - lista_asistencia: Array con los asistentes (array, requerido, mínimo 1)
+     *   - rut: RUT sin dígito verificador (string, requerido)
+     *   - nombre: Nombre completo del asistente (string, requerido)
+     *   - hora_llegada: Hora de llegada en formato HH:MM:SS (string, requerido)
+     *   - observaciones: Observaciones del estudiante (string, opcional)
+     * - finalizar_ahora: Si true, finaliza la reserva inmediatamente. Si false, se finaliza a la hora programada (boolean, opcional, default: true)
+     * 
+     * Ejemplo de request:
+     * {
+     *   "id_reserva": "R20251027145530123",
+     *   "lista_asistencia": [
+     *     {
+     *       "rut": "12345678",
+     *       "nombre": "Juan Pérez",
+     *       "hora_llegada": "14:55:00",
+     *       "observaciones": "Llegó a tiempo"
+     *     },
+     *     {
+     *       "rut": "87654321",
+     *       "nombre": "María González",
+     *       "hora_llegada": "15:00:00",
+     *       "observaciones": ""
+     *     }
+     *   ],
+     *   "finalizar_ahora": true
+     * }
      * 
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
@@ -169,23 +191,21 @@ class ProgramacionSemanalController extends Controller
             // Validar los datos recibidos
             $validator = Validator::make($request->all(), [
                 'id_reserva' => 'required|string|exists:reservas,id_reserva',
-                'hora_termino' => 'required|date_format:H:i:s',
                 'lista_asistencia' => 'required|array|min:1',
                 'lista_asistencia.*.rut' => 'required|string',
                 'lista_asistencia.*.nombre' => 'required|string',
                 'lista_asistencia.*.hora_llegada' => 'required|date_format:H:i:s',
-                'contenido_visto' => 'nullable|string'
+                'lista_asistencia.*.observaciones' => 'nullable|string',
+                'finalizar_ahora' => 'nullable|boolean'
             ], [
                 'id_reserva.required' => 'El ID de reserva es obligatorio',
                 'id_reserva.exists' => 'La reserva no existe',
-                'hora_termino.required' => 'La hora de término es obligatoria',
-                'hora_termino.date_format' => 'La hora de término debe tener el formato HH:MM:SS',
                 'lista_asistencia.required' => 'La lista de asistencia es obligatoria',
                 'lista_asistencia.min' => 'Debe haber al menos un asistente',
                 'lista_asistencia.*.rut.required' => 'El RUT del asistente es obligatorio',
                 'lista_asistencia.*.nombre.required' => 'El nombre del asistente es obligatorio',
                 'lista_asistencia.*.hora_llegada.required' => 'La hora de llegada es obligatoria',
-                'lista_asistencia.*.hora_llegada.date_format' => 'La hora de llegada debe tener el formato HH:MM:SS'
+                'lista_asistencia.*.hora_llegada.date_format' => 'La hora de llegada debe tener el formato HH:MM:SS (ej: 14:30:00)'
             ]);
 
             if ($validator->fails()) {
@@ -196,8 +216,8 @@ class ProgramacionSemanalController extends Controller
                 ], 422);
             }
 
-            // Verificar que la reserva existe y está activa
-            $reserva = Reserva::with(['espacio', 'profesor'])->find($request->id_reserva);
+            // Obtener la reserva con sus relaciones
+            $reserva = Reserva::with(['espacio', 'profesor', 'asignatura'])->find($request->id_reserva);
             
             if (!$reserva) {
                 return response()->json([
@@ -206,26 +226,37 @@ class ProgramacionSemanalController extends Controller
                 ], 404);
             }
 
+            // Verificar que la reserva esté activa
+            if ($reserva->estado === 'finalizada') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La reserva ya ha sido finalizada',
+                    'data' => [
+                        'reserva_id' => $reserva->id_reserva,
+                        'estado' => $reserva->estado,
+                        'hora_salida' => $reserva->hora_salida
+                    ]
+                ], 400);
+            }
+
+            // Determinar si se debe finalizar ahora o no
+            $finalizarAhora = $request->input('finalizar_ahora', true);
+
             // Iniciar transacción
             DB::beginTransaction();
 
-            // Actualizar la reserva con la hora de salida
-            $reserva->hora_salida = $request->hora_termino;
-            $reserva->estado = 'finalizada';
-            $reserva->save();
-
             // Registrar asistencias
             $asistenciasRegistradas = [];
-            $contenidoVisto = $request->contenido_visto ?? 'Sin información adicionada';
+            $idAsignatura = $reserva->id_asignatura;
 
             foreach ($request->lista_asistencia as $asistente) {
                 $asistencia = Asistencia::create([
                     'id_reserva' => $request->id_reserva,
+                    'id_asignatura' => $idAsignatura,
                     'rut_asistente' => $asistente['rut'],
                     'nombre_asistente' => $asistente['nombre'],
                     'hora_llegada' => $asistente['hora_llegada'],
-                    'hora_termino' => $request->hora_termino,
-                    'contenido_visto' => $contenidoVisto
+                    'observaciones' => $asistente['observaciones'] ?? null
                 ]);
 
                 $asistenciasRegistradas[] = [
@@ -233,34 +264,57 @@ class ProgramacionSemanalController extends Controller
                     'rut' => $asistencia->rut_asistente,
                     'nombre' => $asistencia->nombre_asistente,
                     'hora_llegada' => $asistencia->hora_llegada,
-                    'hora_termino' => $asistencia->hora_termino,
-                    'contenido_visto' => $asistencia->contenido_visto
+                    'observaciones' => $asistencia->observaciones
                 ];
             }
 
-            // Cambiar estado del espacio a disponible
-            if ($reserva->espacio) {
-                $reserva->espacio->estado = 'Disponible';
-                $reserva->espacio->save();
+            // Si se debe finalizar ahora, actualizar la reserva y el espacio
+            if ($finalizarAhora) {
+                $horaActual = now()->format('H:i:s');
+                $reserva->hora_salida = $horaActual;
+                $reserva->estado = 'finalizada';
+                $reserva->save();
+
+                // Cambiar estado del espacio a disponible
+                if ($reserva->espacio) {
+                    $reserva->espacio->estado = 'Disponible';
+                    $reserva->espacio->save();
+                }
             }
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Asistencia registrada exitosamente',
+                'message' => $finalizarAhora 
+                    ? 'Asistencia registrada y reserva finalizada exitosamente' 
+                    : 'Asistencia registrada exitosamente. La reserva se finalizará automáticamente',
                 'data' => [
                     'reserva' => [
                         'id' => $reserva->id_reserva,
-                        'espacio' => $reserva->espacio->nombre_espacio ?? 'N/A',
+                        'espacio' => [
+                            'id' => $reserva->espacio->id_espacio ?? null,
+                            'nombre' => $reserva->espacio->nombre_espacio ?? 'N/A',
+                            'estado' => $reserva->espacio->estado ?? 'N/A'
+                        ],
+                        'asignatura' => $reserva->asignatura ? [
+                            'id' => $reserva->asignatura->id_asignatura,
+                            'codigo' => $reserva->asignatura->codigo_asignatura,
+                            'nombre' => $reserva->asignatura->nombre_asignatura,
+                            'seccion' => $reserva->asignatura->seccion
+                        ] : null,
                         'fecha' => $reserva->fecha_reserva,
                         'hora_inicio' => $reserva->hora,
-                        'hora_termino' => $reserva->hora_salida,
-                        'profesor' => $reserva->profesor->name ?? 'N/A'
+                        'hora_salida' => $reserva->hora_salida,
+                        'estado' => $reserva->estado,
+                        'profesor' => [
+                            'run' => $reserva->profesor->run_profesor ?? null,
+                            'nombre' => $reserva->profesor->name ?? 'N/A'
+                        ]
                     ],
                     'asistencias_registradas' => $asistenciasRegistradas,
                     'total_asistentes' => count($asistenciasRegistradas),
-                    'contenido_visto' => $contenidoVisto
+                    'finalizada' => $finalizarAhora
                 ]
             ], 201);
 
@@ -270,7 +324,8 @@ class ProgramacionSemanalController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Error al registrar la asistencia',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'trace' => config('app.debug') ? $e->getTraceAsString() : null
             ], 500);
         }
     }

@@ -13,16 +13,15 @@ class Asistencia extends Model
 
     protected $fillable = [
         'id_reserva',
+        'id_asignatura',
         'rut_asistente',
         'nombre_asistente',
         'hora_llegada',
-        'hora_termino',
-        'contenido_visto',
+        'observaciones',
     ];
 
     protected $casts = [
         'hora_llegada' => 'datetime:H:i:s',
-        'hora_termino' => 'datetime:H:i:s',
     ];
 
     /**
@@ -34,10 +33,10 @@ class Asistencia extends Model
     }
 
     /**
-     * Obtener el contenido visto o mensaje por defecto
+     * Relación con la asignatura
      */
-    public function getContenidoVistoAttribute($value)
+    public function asignatura()
     {
-        return $value ?? 'Sin información adicionada';
+        return $this->belongsTo(Asignatura::class, 'id_asignatura', 'id_asignatura');
     }
 }

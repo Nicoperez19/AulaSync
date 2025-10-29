@@ -1,0 +1,35 @@
+{
+  "id_reserva": "R20251027145530123",
+  "lista_asistencia": [
+    {
+      "rut": "12345678",
+      "nombre": "Juan Pérez García",
+      "hora_llegada": "14:55:00",
+      "observaciones": "Llegó a tiempo y participó activamente"
+    },
+    {
+      "rut": "87654321",
+      "nombre": "María González López",
+      "hora_llegada": "15:00:00",
+      "observaciones": "Llegó 5 minutos tarde"
+    },
+    {
+      "rut": "11223344",
+      "nombre": "Pedro Martínez Silva",
+      "hora_llegada": "14:50:00",
+      "observaciones": "Llegó temprano"
+    },
+    {
+      "rut": "55667788",
+      "nombre": "Ana Rodríguez Pérez",
+      "hora_llegada": "14:58:00"
+    },
+    {
+      "rut": "99887766",
+      "nombre": "Luis Castro Morales",
+      "hora_llegada": "15:10:00",
+      "observaciones": "Llegó 15 minutos tarde - justificado"
+    }
+  ],
+  "finalizar_ahora": true
+}
