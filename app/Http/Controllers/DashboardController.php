@@ -544,12 +544,17 @@ class DashboardController extends Controller
                     'espacios' => []
                 ];
             }
-            $horariosAgrupados[$dia][$hora]['espacios'][] = [
-                'espacio' => 'Sala de clases (' . $planificacion->espacio->id_espacio . '), Piso ' . ($planificacion->espacio->piso->numero_piso ?? 'N/A'),
-                'asignatura' => $planificacion->asignatura->nombre_asignatura,
-                'profesor' => $planificacion->asignatura->profesor->name ?? 'No asignado',
-                'email' => $planificacion->asignatura->profesor->email ?? 'No disponible'
-            ];
+            
+            // Use space ID as key to prevent duplicates
+            $espacioId = $planificacion->espacio->id_espacio;
+            if (!isset($horariosAgrupados[$dia][$hora]['espacios'][$espacioId])) {
+                $horariosAgrupados[$dia][$hora]['espacios'][$espacioId] = [
+                    'espacio' => 'Sala de clases (' . $espacioId . '), Piso ' . ($planificacion->espacio->piso->numero_piso ?? 'N/A'),
+                    'asignatura' => $planificacion->asignatura->nombre_asignatura,
+                    'profesor' => $planificacion->asignatura->profesor->name ?? 'No asignado',
+                    'email' => $planificacion->asignatura->profesor->email ?? 'No disponible'
+                ];
+            }
         }
         return $horariosAgrupados;
     }
