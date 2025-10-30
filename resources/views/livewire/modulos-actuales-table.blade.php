@@ -31,11 +31,12 @@
                         <table class="w-full">
                             <thead>
                                 <tr class="bg-red-600 text-white border-b border-gray-300">
-                                    <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-1/5">Modulo</th>
+                                    <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-1/6">Modulo</th>
                                     <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-1/12">Espacio</th>
-                                    <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-5/12">Clase</th>
+                                    <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-1/3">Clase</th>
+                                    <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-1/6">Carrera</th>
                                     <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-1/12">Capacidad</th>
-                                    <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider w-1/6">Status</th>
+                                    <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider w-1/12">Status</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-gray-200">
@@ -112,7 +113,16 @@
                                             @endif
                                         </td>
                                         
-                                        <!-- Columna 4: Capacidad -->
+                                        <!-- Columna 4: Carrera -->
+                                        <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
+                                            @if (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']['carrera']))
+                                                <span class="font-medium text-gray-700 text-sm">{{ $espacio['datos_clase']['carrera'] }}</span>
+                                            @else
+                                                <span class="text-gray-400 italic text-sm">-</span>
+                                            @endif
+                                        </td>
+                                        
+                                        <!-- Columna 5: Capacidad -->
                                         <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
                                             @php
                                                 $capacidadMax = $espacio['capacidad_maxima'] ?? 0;
@@ -148,7 +158,7 @@
                                             @endif
                                         </td>
                                         
-                                        <!-- Columna 5: Status -->
+                                        <!-- Columna 6: Status -->
                                       <td class="px-3 py-1 text-sm align-middle">
                                             <span class="w-4 h-4 rounded-full {{ $this->getEstadoColor($espacio['estado'], $espacio['tiene_clase'] ?? false, $espacio['tiene_reserva_solicitante'] ?? false, $espacio['tiene_reserva_profesor'] ?? false) }} flex-shrink-0 inline-block mr-2"></span>
                                             <span class="font-medium text-gray-900 text-sm">{{ $espacio['estado'] }}</span>

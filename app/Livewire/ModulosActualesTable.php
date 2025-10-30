@@ -466,6 +466,7 @@ class ModulosActualesTable extends Component
                     // Obtener todas las planificaciones del módulo actual con eager loading optimizado
                     $planificacionesActivas = Planificacion_Asignatura::with([
                         'asignatura.profesor',
+                        'asignatura.carrera',
                         'espacio',
                         'modulo',
                     ])
@@ -572,6 +573,7 @@ class ModulosActualesTable extends Component
                                 'profesor' => [
                                     'name' => $planificacionActiva->asignatura->profesor->name ?? '-',
                                 ],
+                                'carrera' => $planificacionActiva->asignatura->carrera->nombre ?? '-',
                                 'modulo_inicio' => $numeroModuloInicio,
                                 'modulo_fin' => $numeroModuloFin,
                                 'hora_inicio' => $horaInicio,
