@@ -24,6 +24,7 @@ use App\Http\Controllers\QuickActionsController;
 use App\Http\Controllers\ClasesNoRealizadasController;
 use App\Http\Controllers\LicenciaProfesorController;
 use App\Http\Controllers\RecuperacionClaseController;
+use App\Http\Controllers\DiaFeriadoController;
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
@@ -129,6 +130,11 @@ Route::group(['middleware' => ['auth', 'permission:gestionar licencias profesore
 // Recuperación de Clases
 Route::group(['middleware' => ['auth', 'permission:gestionar recuperacion clases']], function () {
     Route::get('/recuperacion-clases', [RecuperacionClaseController::class, 'index'])->name('recuperacion-clases.index');
+});
+
+// Días Feriados
+Route::group(['middleware' => ['auth', 'permission:mantenedor de feriados']], function () {
+    Route::get('/dias-feriados', [DiaFeriadoController::class, 'index'])->name('dias-feriados.index');
 });
 
 Route::group(['middleware' => ['permission:mantenedor de universidades']], function () {

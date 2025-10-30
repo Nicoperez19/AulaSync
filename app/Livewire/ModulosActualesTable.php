@@ -9,6 +9,7 @@ use App\Models\Piso;
 use App\Models\Modulo;
 use App\Models\Reserva;
 use App\Models\ClaseNoRealizada;
+use App\Models\DiaFeriado;
 use App\Helpers\SemesterHelper;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -22,6 +23,8 @@ class ModulosActualesTable extends Component
     public $fechaActual;
     public $moduloActual;
     public $selectedPiso = null;
+    public $esFeriado = false;
+    public $nombreFeriado = '';
 
     // Horarios de módulos basados en la referencia JavaScript
     private $horariosModulos = [
@@ -392,6 +395,51 @@ class ModulosActualesTable extends Component
 
             $this->horaActual = Carbon::now()->format('H:i:s');
             $this->fechaActual = Carbon::now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY');
+            
+            // Verificar si la fecha actual es un día feriado o sin actividades
+            $feriado = DiaFeriado::obtenerFeriadoEnFecha(Carbon::now()->toDateString());
+            if ($feriado) {
+                $this->esFeriado = true;
+                $this->nombreFeriado = $feriado->nombre;
+                
+                // Obtener todos los pisos con sus espacios para mostrar la estructura
+                $this->pisos = Piso::with(['espacios'])->get();
+                if (!$this->pisos) {
+                    $this->pisos = collect();
+                }
+                
+                // Marcar todos los espacios como "Semana de Reajuste Académico"
+                $this->espacios = [];
+                foreach ($this->pisos as $piso) {
+                    $espaciosPiso = [];
+                    foreach ($piso->espacios as $espacio) {
+                        $espaciosPiso[] = [
+                            'id_espacio' => $espacio->id_espacio ?? 'N/A',
+                            'nombre_espacio' => $espacio->nombre_espacio ?? 'N/A',
+                            'estado' => 'Semana de Reajuste Académico',
+                            'tipo_espacio' => $espacio->tipo_espacio ?? 'N/A',
+                            'puestos_disponibles' => $espacio->puestos_disponibles ?? 0,
+                            'tiene_clase' => false,
+                            'tiene_reserva_solicitante' => false,
+                            'tiene_reserva_profesor' => false,
+                            'datos_clase' => null,
+                            'datos_solicitante' => null,
+                            'datos_profesor' => null,
+                            'modulo' => null,
+                            'piso' => $piso->nombre_piso ?? 'N/A',
+                            'proxima_clase' => null
+                        ];
+                    }
+                    $this->espacios[$piso->id] = $espaciosPiso;
+                }
+                
+                // No continuar procesando si es feriado
+                return;
+            }
+            
+            // Si no es feriado, procesar normalmente
+            $this->esFeriado = false;
+            $this->nombreFeriado = '';
             
             // Obtener el módulo actual usando la nueva lógica
             $this->moduloActual = $this->obtenerModuloActual();

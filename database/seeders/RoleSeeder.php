@@ -46,6 +46,7 @@ class RoleSeeder extends Seeder
         $permission25 = Permission::firstOrCreate(['name' => 'acciones rapidas']);
         $permission26 = Permission::firstOrCreate(['name' => 'gestionar licencias profesores']);
         $permission27 = Permission::firstOrCreate(['name' => 'gestionar recuperacion clases']);
+        $permission28 = Permission::firstOrCreate(['name' => 'mantenedor de feriados']);
       
         $roleAdmin->syncPermissions([
             $permission1, $permission2, $permission3, $permission4, $permission5,
@@ -53,7 +54,7 @@ class RoleSeeder extends Seeder
             $permission11, $permission12, $permission13, $permission14, $permission15,
             $permission16, $permission17, $permission18, $permission19, $permission20,
             $permission21, $permission22, $permission23, $permission24, $permission25,
-            $permission26, $permission27
+            $permission26, $permission27, $permission28
         ]);
 
         $roleSupervisor->syncPermissions([

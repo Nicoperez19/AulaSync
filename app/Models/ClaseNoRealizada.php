@@ -78,6 +78,34 @@ class ClaseNoRealizada extends Model
     // Métodos estáticos
     public static function registrarClaseNoRealizada($datosClase)
     {
+        // Verificar si la fecha es un día feriado o sin actividades
+        if (\App\Models\DiaFeriado::esFeriado($datosClase['fecha_clase'])) {
+            // Si es feriado, registrar como justificado automáticamente
+            $registroExistente = static::where('id_asignatura', $datosClase['id_asignatura'])
+                ->where('id_espacio', $datosClase['id_espacio'])
+                ->where('id_modulo', $datosClase['id_modulo'])
+                ->where('fecha_clase', $datosClase['fecha_clase'])
+                ->first();
+
+            if (!$registroExistente) {
+                $feriado = \App\Models\DiaFeriado::obtenerFeriadoEnFecha($datosClase['fecha_clase']);
+                return static::create([
+                    'id_asignatura' => $datosClase['id_asignatura'],
+                    'id_espacio' => $datosClase['id_espacio'],
+                    'id_modulo' => $datosClase['id_modulo'],
+                    'fecha_clase' => $datosClase['fecha_clase'],
+                    'run_profesor' => $datosClase['run_profesor'],
+                    'periodo' => $datosClase['periodo'],
+                    'motivo' => $feriado ? $feriado->nombre : 'Día sin actividades',
+                    'observaciones' => 'Justificado automáticamente - ' . ($feriado ? $feriado->descripcion : 'Periodo sin actividad universitaria'),
+                    'estado' => 'justificado',
+                    'hora_deteccion' => Carbon::now(),
+                ]);
+            }
+            
+            return $registroExistente;
+        }
+        
         // Verificar si ya existe un registro para esta clase HOY
         $registroExistente = static::where('id_asignatura', $datosClase['id_asignatura'])
             ->where('id_espacio', $datosClase['id_espacio'])

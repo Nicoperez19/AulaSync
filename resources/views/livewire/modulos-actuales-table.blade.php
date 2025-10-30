@@ -1,4 +1,22 @@
 <div class="p-6" x-data="{ pagina: 0, totalPaginas: Math.ceil({{ count($this->getTodosLosEspacios()) }} / 13) }" x-init="setInterval(() => { pagina = (pagina + 1) % totalPaginas }, 5000)">
+    
+    @if ($esFeriado)
+        <!-- Mensaje de Feriado o Semana de Reajuste -->
+        <div class="mb-4 p-6 bg-gradient-to-r from-yellow-100 to-yellow-50 border-l-4 border-yellow-500 rounded-lg shadow-md">
+            <div class="flex items-center gap-3">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-calendar-xmark text-3xl text-yellow-600"></i>
+                </div>
+                <div>
+                    <h3 class="text-xl font-bold text-yellow-800">{{ $nombreFeriado }}</h3>
+                    <p class="text-sm text-yellow-700 mt-1">
+                        No hay actividades académicas programadas para el día de hoy. Las clases no realizadas durante este periodo quedan justificadas automáticamente.
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
+    
     @if (count($pisos) > 0)
         
     <!-- Indicador de página -->

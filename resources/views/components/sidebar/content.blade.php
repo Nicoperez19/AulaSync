@@ -120,7 +120,7 @@
     @endcan
 
     <!-- Mantenedores - Solo Administrador -->
-    @canany(['mantenedor de roles', 'mantenedor de permisos', 'mantenedor de universidades', 'mantenedor de facultades', 'mantenedor de areas academicas', 'mantenedor de carreras', 'mantenedor de pisos', 'mantenedor de espacios', 'mantenedor de reservas', 'mantenedor de asignaturas', 'mantenedor de mapas', 'mantenedor de campus', 'mantenedor de sedes', 'mantenedor de profesores', 'mantenedor de visitantes'])
+    @canany(['mantenedor de roles', 'mantenedor de permisos', 'mantenedor de universidades', 'mantenedor de facultades', 'mantenedor de areas academicas', 'mantenedor de carreras', 'mantenedor de pisos', 'mantenedor de espacios', 'mantenedor de reservas', 'mantenedor de asignaturas', 'mantenedor de mapas', 'mantenedor de campus', 'mantenedor de sedes', 'mantenedor de profesores', 'mantenedor de visitantes', 'mantenedor de feriados'])
         <x-sidebar.dropdown title="Mantenedores" :active="Str::startsWith(request()->route()->uri(), 'users')">
             <x-slot name="icon">
                 <x-icons.config class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
@@ -150,6 +150,11 @@
                 <x-sidebar.sublink title="Correos Masivos" href="{{ route('correos-masivos.index') }}"
                     :isActive="request()->routeIs('correos-masivos.*')" />
             @endrole
+
+            @can('mantenedor de feriados')
+                <x-sidebar.sublink title="Días Feriados" href="{{ route('dias-feriados.index') }}"
+                    :isActive="request()->routeIs('dias-feriados.*')" />
+            @endcan
 
             {{-- Comentado porque está disponible en Acciones Rápidas
             @can('mantenedor de espacios')
