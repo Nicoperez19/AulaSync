@@ -157,4 +157,4 @@ Para verificar los cambios:
 ## Autor
 
 Fix implementado por GitHub Copilot
-Fecha: 2025-10-30
+Fecha: Enero 2025
