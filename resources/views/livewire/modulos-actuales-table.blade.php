@@ -35,7 +35,7 @@
                                     <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-1/12">Espacio</th>
                                     <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-1/3">Clase</th>
                                     <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-1/6">Carrera</th>
-                                    <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-1/12">Capacidad</th>
+                                    <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-1/6">Capacidad</th>
                                     <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider w-1/12">Status</th>
                                 </tr>
                             </thead>
