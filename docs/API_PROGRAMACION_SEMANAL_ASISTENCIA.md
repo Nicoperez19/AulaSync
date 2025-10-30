@@ -22,18 +22,18 @@ Esta documentación describe los endpoints para consultar la programación seman
     "espacio": {
       "id": "A101",
       "nombre": "Sala A101",
-      "tipo": "Aula"
+      "tipo": "Aula",
+      "capacidad_maxima": 40
     },
     "periodo": "2024-2",
     "programacion_semanal": {
       "lunes": [
         {
-          "dia_clases": "Lunes",
-          "modulos": {
-            "numero": "LU-1",
-            "hora_inicio": "08:10:00",
-            "hora_termino": "09:00:00"
-          },
+          "modulo": 1,
+          "cantidad_modulos": 2,
+          "modulo_fin": 2,
+          "hora_inicio": "08:10:00",
+          "hora_termino": "09:30:00",
           "profesor_a_cargo": {
             "run": "12345678",
             "nombre": "Juan Pérez García",
@@ -42,18 +42,21 @@ Esta documentación describe los endpoints para consultar la programación seman
           "asignatura": {
             "codigo": "MAT101",
             "nombre": "Matemáticas I",
-            "seccion": "001"
+            "seccion": "001",
+            "carrera": {
+              "id": "ING-INFO",
+              "nombre": "Ingeniería en Informática"
+            }
           }
         }
       ],
       "martes": [
         {
-          "dia_clases": "Martes",
-          "modulos": {
-            "numero": "MA-2",
-            "hora_inicio": "09:10:00",
-            "hora_termino": "10:00:00"
-          },
+          "modulo": 2,
+          "cantidad_modulos": 1,
+          "modulo_fin": 2,
+          "hora_inicio": "09:10:00",
+          "hora_termino": "10:00:00",
           "profesor_a_cargo": {
             "run": "87654321",
             "nombre": "María López Silva",
@@ -62,7 +65,11 @@ Esta documentación describe los endpoints para consultar la programación seman
           "asignatura": {
             "codigo": "FIS201",
             "nombre": "Física II",
-            "seccion": "002"
+            "seccion": "002",
+            "carrera": {
+              "id": "ING-CIVIL",
+              "nombre": "Ingeniería Civil"
+            }
           }
         }
       ]
@@ -294,6 +301,16 @@ El registro de asistencia se realiza dentro de una transacción de base de datos
 - `500 Internal Server Error`: Error interno del servidor
 
 ## Notas Importantes
+
+### Programación Semanal
+
+1. El endpoint retorna la **capacidad_maxima** del espacio para conocer el aforo de la sala
+2. La información de **carrera** está incluida en cada asignatura cuando está disponible
+3. Si una asignatura no tiene carrera asignada, el campo `carrera` será `null`
+4. Los módulos consecutivos de la misma asignatura y profesor se agrupan automáticamente
+5. Se incluyen los campos `modulo` (inicio), `modulo_fin` y `cantidad_modulos` para cada bloque
+
+### Registro de Asistencia
 
 1. El formato de hora debe ser **HH:MM:SS** (24 horas)
 2. El RUT debe enviarse **sin dígito verificador**
