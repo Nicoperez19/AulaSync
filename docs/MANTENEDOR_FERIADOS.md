@@ -113,14 +113,44 @@ Estado: Activo
 - Solo los feriados con estado **Activo** afectan el sistema
 - La verificación de feriados se realiza automáticamente en tiempo real
 
-## Migración
+## Migración y Datos Iniciales
 
 La tabla `dias_feriados` se crea con la migración `2025_10_30_103535_create_dias_feriados_table.php`
 
-Para ejecutar la migración:
+Para ejecutar la migración y cargar los feriados legales de Chile:
 ```bash
 php artisan migrate
+php artisan db:seed --class=DatabaseSeeder
 ```
+
+O para cargar solo los feriados:
+```bash
+php artisan db:seed --class=DiasFeriadosSeeder
+```
+
+### Feriados Precargados
+
+El sistema incluye por defecto los siguientes feriados legales de Chile para 2025:
+- Año Nuevo (1 de enero)
+- Viernes Santo y Sábado Santo (18-19 de abril)
+- Día del Trabajador (1 de mayo)
+- Día de las Glorias Navales (21 de mayo)
+- San Pedro y San Pablo (29 de junio)
+- Día de la Virgen del Carmen (16 de julio)
+- Asunción de la Virgen (15 de agosto)
+- Día de la Independencia Nacional (18 de septiembre)
+- Día de las Glorias del Ejército (19 de septiembre)
+- Encuentro de Dos Mundos (12 de octubre)
+- Día de las Iglesias Evangélicas y Protestantes (31 de octubre)
+- Día de Todos los Santos (1 de noviembre)
+- Inmaculada Concepción (8 de diciembre)
+- Navidad (25 de diciembre)
+
+Además, incluye recesos académicos típicos:
+- Receso de Invierno (14-25 de julio)
+- Receso Fiestas Patrias (15-22 de septiembre)
+
+Estos datos se pueden actualizar anualmente ejecutando el seeder nuevamente.
 
 ## Permisos en Base de Datos
 

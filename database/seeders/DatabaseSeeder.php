@@ -34,6 +34,8 @@ class DatabaseSeeder extends Seeder
         // Tipos de correos masivos
         $this->call(class: TiposCorreosMasivosSeeder::class);
 
+        // Días feriados de Chile
+        $this->call(class: DiasFeriadosSeeder::class);
 
         // $this->call(class: ReservasSeeder::class);
     }
