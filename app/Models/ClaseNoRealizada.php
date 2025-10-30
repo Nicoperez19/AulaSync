@@ -99,7 +99,7 @@ class ClaseNoRealizada extends Model
                     'run_profesor' => $datosClase['run_profesor'],
                     'periodo' => $datosClase['periodo'],
                     'motivo' => $feriado ? $feriado->nombre : 'Día sin actividades',
-                    'observaciones' => 'Justificado automáticamente - '.($feriado ? $feriado->descripcion : 'Periodo sin actividad universitaria'),
+                    'observaciones' => 'Justificado automáticamente - '.($feriado ? ($feriado->descripcion ?? 'Sin descripción') : 'Periodo sin actividad universitaria'),
                     'estado' => 'justificado',
                     'hora_deteccion' => Carbon::now(),
                 ]);

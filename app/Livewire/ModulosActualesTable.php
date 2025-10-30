@@ -492,7 +492,8 @@ class ModulosActualesTable extends Component
                         break;
                 }
 
-                $moduloDB = Modulo::where('id_modulo', $prefijoDia.'.'.$this->moduloActual['numero'])
+                $idModulo = $prefijoDia.'.'.$this->moduloActual['numero'];
+                $moduloDB = Modulo::where('id_modulo', $idModulo)
                     ->where('dia', $diaActual)
                     ->first();
 
