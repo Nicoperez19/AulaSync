@@ -504,9 +504,71 @@ Cuando `espacio.ocupado = true`:
 
 ---
 
+## 🔧 Manejo de Estados Inconsistentes en Plano Digital
+
+### Problema: Botón "Desocupar" No Funciona
+
+**Escenario:**
+- El espacio tiene `estado = "Ocupado"` en la base de datos
+- PERO la API `/api/espacio/{id}/informacion-detallada` responde con `tipo_ocupacion: 'libre'`
+- Esto puede suceder cuando:
+  - Hay una reserva vencida que no fue finalizada correctamente
+  - El campo `estado` no se sincronizó al terminar una reserva
+  - Hubo un error en el proceso de devolución
+
+**Solución Implementada (30-Oct-2025):**
+
+En el archivo `resources/views/layouts/plano_digital/show.blade.php`, función `renderizarInformacionLibre()`:
+
+1. **Detección del estado inconsistente:**
+   ```javascript
+   const espacioDisponible = indicator && (
+       indicator.estado === 'Disponible' ||
+       indicator.estado === 'disponible' ||
+       indicator.estado === '#059669' ||
+       indicator.estado === '#10b981'
+   );
+   
+   if (!espacioDisponible) {
+       // API dice "libre" pero indicator dice "Ocupado"
+       // ¡Estado inconsistente detectado!
+   }
+   ```
+
+2. **Mantener botón desocupar visible:**
+   ```javascript
+   const btnsDesocupar = document.querySelectorAll('.btn-desocupar[data-tipo="espacio"]');
+   btnsDesocupar.forEach(btn => {
+       btn.classList.remove('hidden');
+   });
+   ```
+
+3. **Configurar desocupación forzosa:**
+   ```javascript
+   const runValue = data.run_profesor || data.run_solicitante || `FORCE_${indicator.id}`;
+   ```
+
+4. **Mostrar mensaje claro al usuario:**
+   - "Estado inconsistente"
+   - "El espacio requiere desocupación manual"
+
+5. **Retorno temprano para evitar que el botón se oculte:**
+   ```javascript
+   return; // Salir antes de que el código posterior oculte el botón
+   ```
+
+**Resultado:**
+- ✅ Los administradores siempre pueden desocupar espacios atascados
+- ✅ El sistema muestra feedback claro sobre el problema
+- ✅ La desocupación forzosa funciona con identificador `FORCE_{space_id}`
+- ✅ Compatibilidad con casos normales se mantiene
+
+---
+
 ## 📝 Historial de Cambios
 
 | Fecha | Cambio | Autor |
 |-------|--------|-------|
+| 2025-10-30 | Fix: Botón desocupar siempre visible para estados inconsistentes | GitHub Copilot |
 | 2025-10-29 | Creación del documento y lógica dual de ocupación | Sistema |
 
