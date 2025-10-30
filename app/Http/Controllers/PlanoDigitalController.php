@@ -570,6 +570,29 @@ class PlanoDigitalController extends Controller
                 $reservaActiva->save();
             }
 
+            // Buscar si hay reservas finalizadas automáticamente que el profesor está devolviendo tarde
+            $reservaAutoFinalizada = Reserva::where(function($query) use ($runUsuario) {
+                    $query->where('run_profesor', $runUsuario)
+                          ->orWhere('run_solicitante', $runUsuario);
+                })
+                ->where('id_espacio', $idEspacio)
+                ->where('estado', 'finalizada')
+                ->where('fecha_reserva', now()->toDateString())
+                ->whereNotNull('observaciones')
+                ->where('observaciones', 'LIKE', '%finalizó automáticamente por excederse en el tiempo%')
+                ->orderBy('updated_at', 'desc')
+                ->first();
+
+            if ($reservaAutoFinalizada) {
+                // El profesor está devolviendo la llave después de que la reserva fue auto-finalizada
+                $observacionActual = $reservaAutoFinalizada->observaciones ?? '';
+                $nuevaObservacion = "\nProfesor finalizó la clase más tarde y devolvió llave de acceso a las " . now()->format('H:i:s') . ".";
+                $reservaAutoFinalizada->observaciones = $observacionActual . $nuevaObservacion;
+                $reservaAutoFinalizada->save();
+                
+                \Log::info("Reserva auto-finalizada {$reservaAutoFinalizada->id_reserva} actualizada: profesor devolvió llave tarde");
+            }
+
             // Cambiar el estado del espacio a disponible
             $espacio->estado = 'Disponible';
             $espacio->save();
