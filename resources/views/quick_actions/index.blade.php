@@ -6,13 +6,13 @@
 <div class="space-y-6">
     <!-- Header -->
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-        <div class="p-6 text-gray-900">
-            <div class="flex items-center justify-between">
+        <div class="p-4 sm:p-6 text-gray-900">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Acciones Rápidas</h1>
-                    <p class="text-gray-600 mt-2">Gestión centralizada de reservas y espacios del sistema</p>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Acciones Rápidas</h1>
+                    <p class="text-sm sm:text-base text-gray-600 mt-2">Gestión centralizada de reservas y espacios del sistema</p>
                 </div>
-                <div class="flex items-center space-x-4">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:space-x-4 sm:gap-0">
                     <div class="text-sm text-gray-500">
                         <i class="fas fa-clock mr-1"></i>
                         {{ date('d/m/Y H:i') }}
@@ -27,66 +27,66 @@
     </div>
 
     <!-- Estadísticas Rápidas -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-4">
+            <div class="p-3 sm:p-4">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                            <i class="fas fa-calendar-plus text-blue-600"></i>
+                            <i class="fas fa-calendar-plus text-blue-600 text-sm"></i>
                         </div>
                     </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-gray-900">Reservas Hoy</p>
-                        <p class="text-lg font-semibold text-blue-600" id="reservas-hoy">-</p>
+                    <div class="ml-2 sm:ml-3">
+                        <p class="text-xs sm:text-sm font-medium text-gray-900">Reservas Hoy</p>
+                        <p class="text-base sm:text-lg font-semibold text-blue-600" id="reservas-hoy">-</p>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-4">
+            <div class="p-3 sm:p-4">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                            <i class="fas fa-door-open text-green-600"></i>
+                            <i class="fas fa-door-open text-green-600 text-sm"></i>
                         </div>
                     </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-gray-900">Espacios Libres</p>
-                        <p class="text-lg font-semibold text-green-600" id="espacios-libres">-</p>
+                    <div class="ml-2 sm:ml-3">
+                        <p class="text-xs sm:text-sm font-medium text-gray-900">Espacios Libres</p>
+                        <p class="text-base sm:text-lg font-semibold text-green-600" id="espacios-libres">-</p>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-4">
+            <div class="p-3 sm:p-4">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         <div class="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                            <i class="fas fa-door-closed text-red-600"></i>
+                            <i class="fas fa-door-closed text-red-600 text-sm"></i>
                         </div>
                     </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-gray-900">Espacios Ocupados</p>
-                        <p class="text-lg font-semibold text-red-600" id="espacios-ocupados">-</p>
+                    <div class="ml-2 sm:ml-3">
+                        <p class="text-xs sm:text-sm font-medium text-gray-900">Espacios Ocupados</p>
+                        <p class="text-base sm:text-lg font-semibold text-red-600" id="espacios-ocupados">-</p>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-4">
+            <div class="p-3 sm:p-4">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
                         <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                            <i class="fas fa-tools text-yellow-600"></i>
+                            <i class="fas fa-tools text-yellow-600 text-sm"></i>
                         </div>
                     </div>
-                    <div class="ml-3">
-                        <p class="text-sm font-medium text-gray-900">En Mantención</p>
-                        <p class="text-lg font-semibold text-yellow-600" id="espacios-mantencion">-</p>
+                    <div class="ml-2 sm:ml-3">
+                        <p class="text-xs sm:text-sm font-medium text-gray-900">En Mantención</p>
+                        <p class="text-base sm:text-lg font-semibold text-yellow-600" id="espacios-mantencion">-</p>
                     </div>
                 </div>
             </div>
@@ -160,12 +160,12 @@
 
     <!-- Accesos Rápidos a Otras Secciones -->
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-        <div class="p-6">
-            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+        <div class="p-4 sm:p-6">
+            <h3 class="text-base sm:text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <i class="fas fa-external-link-alt mr-2 text-gray-600"></i>
                 Accesos Rápidos
             </h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 <a href="{{ route('dashboard') }}" 
                    class="flex items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                     <i class="fas fa-tachometer-alt text-gray-600 mr-3"></i>
