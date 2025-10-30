@@ -19,7 +19,37 @@
                    <img src='images/Logo-UCSC-Color-Horizontal.png' alt="Logo" class="h-16 w-auto" >
                    <div class="text-2xl font-bold leading-tight text-gray-900">Sede Talcahuano</div>
                 </div>
-            </div>            <!-- Información del módulo actual -->
+            </div>            
+            
+            <!-- Indicador de feriado y paginación -->
+            <div class="flex items-center justify-center gap-4" 
+                 x-data="{ 
+                     paginaActual: 1, 
+                     totalPaginas: 1,
+                     esFeriado: false,
+                     nombreFeriado: ''
+                 }" 
+                 @actualizar-pagina.window="paginaActual = $event.detail.pagina; totalPaginas = $event.detail.total"
+                 @actualizar-feriado.window="esFeriado = $event.detail.esFeriado; nombreFeriado = $event.detail.nombreFeriado">
+                
+                <!-- Mensaje de Feriado -->
+                <div x-show="esFeriado" 
+                     x-transition
+                     class="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-100 to-yellow-50 border-l-4 border-yellow-500 rounded-lg shadow-md">
+                    <i class="fas fa-calendar-xmark text-xl text-yellow-600"></i>
+                    <span class="text-sm font-bold text-yellow-800" x-text="nombreFeriado"></span>
+                </div>
+                
+                <!-- Indicador de página -->
+                <div x-show="totalPaginas > 1" class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg border shadow-sm">
+                    <span class="text-sm font-medium text-gray-600">Página</span>
+                    <span class="px-2 py-1 bg-blue-600 text-white text-sm font-bold rounded" x-text="paginaActual"></span>
+                    <span class="text-sm text-gray-600">de</span>
+                    <span class="px-2 py-1 bg-gray-200 text-gray-700 text-sm font-medium rounded" x-text="totalPaginas"></span>
+                </div>
+            </div>
+
+            <!-- Información del módulo actual -->
             <div class="flex items-center gap-4">
                 <div class="hidden md:flex items-center gap-3 px-4 py-2 bg-white rounded-lg shadow-sm border border-gray-200">
                     <div class="text-center">

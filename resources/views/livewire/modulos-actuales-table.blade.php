@@ -1,32 +1,27 @@
-<div class="p-6" x-data="{ pagina: 0, totalPaginas: Math.ceil({{ count($this->getTodosLosEspacios()) }} / 13) }" x-init="setInterval(() => { pagina = (pagina + 1) % totalPaginas }, 5000)">
-    
-    @if ($esFeriado)
-        <!-- Mensaje de Feriado o Semana de Reajuste -->
-        <div class="mb-4 p-6 bg-gradient-to-r from-yellow-100 to-yellow-50 border-l-4 border-yellow-500 rounded-lg shadow-md">
-            <div class="flex items-center gap-3">
-                <div class="flex-shrink-0">
-                    <i class="fas fa-calendar-xmark text-3xl text-yellow-600"></i>
-                </div>
-                <div>
-                    <h3 class="text-xl font-bold text-yellow-800">{{ $nombreFeriado }}</h3>
-                </div>
-            </div>
-        </div>
-    @endif
+<div class="p-6" x-data="{ 
+        pagina: 0, 
+        totalPaginas: Math.ceil({{ count($this->getTodosLosEspacios()) }} / 13) 
+    }" 
+    x-init="
+        // Emitir página inicial
+        window.dispatchEvent(new CustomEvent('actualizar-pagina', { detail: { pagina: pagina + 1, total: totalPaginas } }));
+        
+        // Emitir información de feriado
+        window.dispatchEvent(new CustomEvent('actualizar-feriado', { 
+            detail: { 
+                esFeriado: {{ $esFeriado ? 'true' : 'false' }}, 
+                nombreFeriado: '{{ $nombreFeriado }}' 
+            } 
+        }));
+        
+        // Actualizar página cada 5 segundos
+        setInterval(() => { 
+            pagina = (pagina + 1) % totalPaginas;
+            window.dispatchEvent(new CustomEvent('actualizar-pagina', { detail: { pagina: pagina + 1, total: totalPaginas } }));
+        }, 5000)
+    ">
     
     @if (count($pisos) > 0)
-        
-    <!-- Indicador de página -->
-    @if (count($this->getTodosLosEspacios()) > 13)
-        <div class="mt-1 text-center p-2">
-            <div class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg border">
-                <span class="text-sm font-medium text-gray-600">Página</span>
-                <span class="px-2 py-1 bg-blue-600 text-white text-sm font-bold rounded" x-text="pagina + 1"></span>
-                <span class="text-sm text-gray-600">de</span>
-                <span class="px-2 py-1 bg-gray-200 text-gray-700 text-sm font-medium rounded" x-text="totalPaginas"></span>
-            </div>
-        </div>
-    @endif
     
         <div class="relative w-full fixed bg-gray-100 rounded-lg shadow-sm border border-gray-300 overflow-hidden">
             @if (count($this->getTodosLosEspacios()) > 0)
@@ -140,5 +135,17 @@
         setInterval(function() {
             @this.actualizarAutomaticamente();
         }, 60000); // Aumentado a 60 segundos
+        
+        // Escuchar eventos de Livewire para actualizar el feriado cuando se recarguen los datos
+        document.addEventListener('livewire:load', function() {
+            Livewire.on('datosActualizados', function() {
+                window.dispatchEvent(new CustomEvent('actualizar-feriado', { 
+                    detail: { 
+                        esFeriado: {{ $esFeriado ? 'true' : 'false' }}, 
+                        nombreFeriado: '{{ $nombreFeriado }}' 
+                    } 
+                }));
+            });
+        });
     </script>
 </div>
