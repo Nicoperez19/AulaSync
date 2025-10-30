@@ -90,55 +90,59 @@
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
         <div class="p-4 sm:p-6">
             <!-- Versión Desktop -->
-            <div class="hidden lg:block overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                <input type="checkbox" id="select-all-reservas" onchange="toggleSelectAllReservas(this)" class="rounded">
-                            </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="ordenarPor('estado')">
-                                Estado
-                                <i class="fa-solid fa-sort ml-1 text-xs"></i>
-                            </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="ordenarPor('espacio')">
-                                Espacio
-                                <i class="fa-solid fa-sort ml-1 text-xs"></i>
-                            </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="ordenarPor('responsable')">
-                                Responsable
-                                <i class="fa-solid fa-sort ml-1 text-xs"></i>
-                            </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="ordenarPor('asignatura')">
-                                Asignatura
-                                <i class="fa-solid fa-sort ml-1 text-xs"></i>
-                            </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onclick="ordenarPor('fecha')">
-                                Fecha
-                                <i class="fa-solid fa-sort ml-1 text-xs"></i>
-                            </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Módulos y Horarios
-                            </th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Observaciones
-                            </th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Acciones
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-reservas-body" class="bg-white divide-y divide-gray-200">
-                        <tr>
-                            <td colspan="9" class="px-6 py-12 text-center text-gray-500">
-                                <div class="flex flex-col items-center">
-                                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-                                    <p>Cargando reservas...</p>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <div class="hidden lg:block overflow-x-auto -mx-4 sm:mx-0">
+                <div class="inline-block min-w-full align-middle">
+                    <div class="overflow-hidden">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                        <input type="checkbox" id="select-all-reservas" onchange="toggleSelectAllReservas(this)" class="rounded">
+                                    </th>
+                                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 whitespace-nowrap" onclick="ordenarPor('estado')">
+                                        Estado
+                                        <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                                    </th>
+                                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 whitespace-nowrap" onclick="ordenarPor('espacio')">
+                                        Espacio
+                                        <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                                    </th>
+                                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 whitespace-nowrap" onclick="ordenarPor('responsable')">
+                                        Responsable
+                                        <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                                    </th>
+                                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 whitespace-nowrap" onclick="ordenarPor('asignatura')">
+                                        Asignatura
+                                        <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                                    </th>
+                                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 whitespace-nowrap" onclick="ordenarPor('fecha')">
+                                        Fecha
+                                        <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                                    </th>
+                                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                        Módulos y Horarios
+                                    </th>
+                                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                        Observaciones
+                                    </th>
+                                    <th class="px-3 sm:px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                        Acciones
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-reservas-body" class="bg-white divide-y divide-gray-200">
+                                <tr>
+                                    <td colspan="9" class="px-3 sm:px-6 py-12 text-center text-gray-500">
+                                        <div class="flex flex-col items-center">
+                                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                                            <p>Cargando reservas...</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <!-- Versión Mobile/Tablet (Cards) -->
@@ -178,44 +182,44 @@
     </div>
 
     <!-- Estadísticas -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6">
+            <div class="p-4 sm:p-6">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <i class="fa-solid fa-circle-check text-3xl text-green-600"></i>
+                        <i class="fa-solid fa-circle-check text-2xl sm:text-3xl text-green-600"></i>
                     </div>
-                    <div class="ml-4">
-                        <div class="text-sm font-medium text-gray-500">Reservas Activas</div>
-                        <div class="text-2xl font-bold text-gray-900" id="stats-activas">0</div>
+                    <div class="ml-3 sm:ml-4">
+                        <div class="text-xs sm:text-sm font-medium text-gray-500">Reservas Activas</div>
+                        <div class="text-xl sm:text-2xl font-bold text-gray-900" id="stats-activas">0</div>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6">
+            <div class="p-4 sm:p-6">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <i class="fa-solid fa-circle-xmark text-3xl text-gray-600"></i>
+                        <i class="fa-solid fa-circle-xmark text-2xl sm:text-3xl text-gray-600"></i>
                     </div>
-                    <div class="ml-4">
-                        <div class="text-sm font-medium text-gray-500">Reservas Finalizadas</div>
-                        <div class="text-2xl font-bold text-gray-900" id="stats-finalizadas">0</div>
+                    <div class="ml-3 sm:ml-4">
+                        <div class="text-xs sm:text-sm font-medium text-gray-500">Reservas Finalizadas</div>
+                        <div class="text-xl sm:text-2xl font-bold text-gray-900" id="stats-finalizadas">0</div>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-6">
+            <div class="p-4 sm:p-6">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <i class="fa-solid fa-calendar text-3xl text-blue-600"></i>
+                        <i class="fa-solid fa-calendar text-2xl sm:text-3xl text-blue-600"></i>
                     </div>
-                    <div class="ml-4">
-                        <div class="text-sm font-medium text-gray-500">Total Reservas</div>
-                        <div class="text-2xl font-bold text-gray-900" id="stats-total">0</div>
+                    <div class="ml-3 sm:ml-4">
+                        <div class="text-xs sm:text-sm font-medium text-gray-500">Total Reservas</div>
+                        <div class="text-xl sm:text-2xl font-bold text-gray-900" id="stats-total">0</div>
                     </div>
                 </div>
             </div>
@@ -652,10 +656,10 @@ function mostrarReservasEnTabla(reservas) {
     // Vista Desktop (tabla)
     tbody.innerHTML = reservas.map(reserva => `
         <tr class="hover:bg-gray-50 transition-colors">
-            <td class="px-4 py-3 whitespace-nowrap">
+            <td class="px-3 sm:px-4 py-3 whitespace-nowrap">
                 <input type="checkbox" class="reserva-checkbox rounded" value="${reserva.id}" onchange="actualizarContadorSeleccionadas()">
             </td>
-            <td class="px-4 py-3 whitespace-nowrap">
+            <td class="px-3 sm:px-4 py-3 whitespace-nowrap">
                 <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                     reserva.estado === 'activa' 
                         ? 'bg-green-100 text-green-800' 
@@ -664,28 +668,28 @@ function mostrarReservasEnTabla(reservas) {
                     ${reserva.estado === 'activa' ? 'Activa' : 'Finalizada'}
                 </span>
             </td>
-            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">${reserva.codigo_espacio}</td>
-            <td class="px-4 py-3 whitespace-nowrap">
+            <td class="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">${reserva.codigo_espacio}</td>
+            <td class="px-3 sm:px-4 py-3 whitespace-nowrap">
                 <div class="text-sm font-medium text-gray-900">${reserva.nombre_responsable || 'Sin nombre'}</div>
-                <div class="text-sm text-gray-500">${reserva.tipo_responsable || 'N/A'} - RUN: ${reserva.run_responsable}</div>
+                <div class="text-xs sm:text-sm text-gray-500">${reserva.tipo_responsable || 'N/A'} - RUN: ${reserva.run_responsable}</div>
             </td>
-            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${reserva.asignatura || 'Sin asignatura'}</td>
-            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${formatearFecha(reserva.fecha)}</td>
-            <td class="px-4 py-3 text-sm text-gray-900">
+            <td class="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">${reserva.asignatura || 'Sin asignatura'}</td>
+            <td class="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">${formatearFecha(reserva.fecha)}</td>
+            <td class="px-3 sm:px-4 py-3 text-sm text-gray-900">
                 ${formatearModulosInfo(reserva.modulos_info)}
             </td>
-            <td class="px-4 py-3 text-sm text-gray-900 max-w-xs">
+            <td class="px-3 sm:px-4 py-3 text-sm text-gray-900 max-w-xs">
                 <div class="truncate" title="${reserva.observaciones || 'Sin observaciones'}">
                     ${reserva.observaciones || 'Sin observaciones'}
                 </div>
             </td>
-            <td class="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
+            <td class="px-3 sm:px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                 <div class="flex flex-col space-y-2">
                     ${reserva.estado === 'activa' 
                         ? `<button 
                             type="button"
                             onclick="cambiarEstadoReserva('${reserva.id}', 'finalizada')"
-                            class="inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 transition-colors">
+                            class="inline-flex items-center justify-center px-2 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 transition-colors whitespace-nowrap">
                             <i class="fa-solid fa-xmark w-3 h-3 mr-1"></i>
                             Finalizar
                         </button>`
@@ -694,7 +698,7 @@ function mostrarReservasEnTabla(reservas) {
                     <button 
                         type="button"
                         onclick="verDetalleReserva('${reserva.id}')"
-                        class="inline-flex items-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                        class="inline-flex items-center justify-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors whitespace-nowrap">
                         <i class="fa-solid fa-eye w-3 h-3 mr-1"></i>
                         Ver
                     </button>
