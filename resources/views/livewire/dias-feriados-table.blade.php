@@ -3,9 +3,9 @@
     <div class="p-4 bg-gray-50">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div class="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
-                <!-- Búsqueda -->
+                <!-- Búsqueda con debounce -->
                 <div class="relative">
-                    <input type="text" wire:model.live="search" placeholder="Buscar feriado..."
+                    <input type="text" wire:model.live.debounce.500ms="search" placeholder="Buscar feriado..."
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg md:w-64 focus:ring-2 focus:ring-light-cloud-blue focus:border-transparent">
                     <i class="absolute text-gray-400 transform -translate-y-1/2 fa-solid fa-search right-3 top-1/2"></i>
                 </div>

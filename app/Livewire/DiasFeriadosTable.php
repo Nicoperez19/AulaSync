@@ -142,13 +142,20 @@ class DiasFeriadosTable extends Component
 
     public function render()
     {
-        $query = DiaFeriado::query();
+        $query = DiaFeriado::query()->with('creador'); // Agregar eager loading
 
         if ($this->search) {
-            $query->where(function ($q) {
-                $q->where('nombre', 'like', '%'.$this->search.'%')
-                    ->orWhere('descripcion', 'like', '%'.$this->search.'%');
-            });
+            // Optimización: Usar búsqueda más eficiente y evitar operaciones lentas de mbstring
+            $searchTerm = trim($this->search);
+            
+            // Si el término de búsqueda es corto, usar búsqueda simple
+            if (strlen($searchTerm) > 0) {
+                $query->where(function ($q) use ($searchTerm) {
+                    // Usar LOWER() en la base de datos en lugar de mb_stripos en PHP
+                    $q->whereRaw('LOWER(nombre) LIKE ?', ['%' . strtolower($searchTerm) . '%'])
+                      ->orWhereRaw('LOWER(descripcion) LIKE ?', ['%' . strtolower($searchTerm) . '%']);
+                });
+            }
         }
 
         if ($this->tipo) {
