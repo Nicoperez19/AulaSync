@@ -545,7 +545,7 @@ class DashboardController extends Controller
                 ];
             }
             
-            // Create unique key from space, subject, and professor to prevent exact duplicates
+            // Create unique key from space and subject to prevent exact duplicates
             // while still allowing different classes in the same space
             $espacioId = $planificacion->espacio->id_espacio;
             $asignaturaId = $planificacion->asignatura->id_asignatura ?? 'unknown';
