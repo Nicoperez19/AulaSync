@@ -23,15 +23,9 @@
             class="fixed top-0 left-0 z-40 flex flex-col justify-between w-56 h-screen pt-2 text-base border-r border-gray-200 md:w-56 bg-light-cloud-blue dark:border-gray-700 md:text-sm sm:text-xs">
 
             <div class="flex flex-col items-center gap-2 md:gap-1">
-                @if(auth()->user()->run !== '00000000')
-                    <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}" class="mb-1">
-                        <x-application-logo-navbar class="w-10 h-10 md:w-8 md:h-8 sm:w-6 sm:h-6" />
-                    </a>
-                @else
-                    <div class="mb-1">
-                        <x-application-logo-navbar class="w-10 h-10 md:w-8 md:h-8 sm:w-6 sm:h-6" />
-                    </div>
-                @endif
+                <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}" class="mb-1">
+                    <x-application-logo-navbar class="w-10 h-10 md:w-8 md:h-8 sm:w-6 sm:h-6" />
+                </a>
                 
             </div>
 
@@ -165,8 +159,7 @@
                     </div>
                 </div>
 
-                <!-- Enlace Volver (solo visible si el usuario NO es 00000000) -->
-                @if(auth()->user()->run !== '00000000')
+                <!-- Enlace Volver -->
                 <div class="w-full mt-4">
                     <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}"
                        class="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors duration-200 shadow-md"
@@ -178,7 +171,6 @@
                         Volver
                     </a>
                 </div>
-                @endif
             </div>
         </aside>
 

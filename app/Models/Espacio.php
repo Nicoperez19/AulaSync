@@ -20,8 +20,32 @@ class Espacio extends Model
         'tipo_espacio',
         'estado',
         'qr_espacio',
-        'puestos_disponibles'
+        'puestos_disponibles',
+        'capacidad_maxima'
     ];
+
+    /**
+     * Obtener la capacidad utilizada del espacio
+     * Calculada como: capacidad_maxima - puestos_disponibles
+     */
+    public function getCapacidadUtilizadaAttribute()
+    {
+        if (is_null($this->capacidad_maxima) || is_null($this->puestos_disponibles)) {
+            return 0;
+        }
+        return max(0, $this->capacidad_maxima - $this->puestos_disponibles);
+    }
+
+    /**
+     * Obtener el porcentaje de ocupación del espacio
+     */
+    public function getPorcentajeOcupacionAttribute()
+    {
+        if (is_null($this->capacidad_maxima) || $this->capacidad_maxima == 0) {
+            return 0;
+        }
+        return round(($this->capacidad_utilizada / $this->capacidad_maxima) * 100, 1);
+    }
 
     public function reservas()
     {

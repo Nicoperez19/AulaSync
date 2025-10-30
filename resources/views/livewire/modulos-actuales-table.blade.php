@@ -31,9 +31,10 @@
                         <table class="w-full">
                             <thead>
                                 <tr class="bg-red-600 text-white border-b border-gray-300">
-                                    <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-1/4">Modulo</th>
-                                    <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-1/6">Espacio</th>
+                                    <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-1/5">Modulo</th>
+                                    <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-1/12">Espacio</th>
                                     <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-5/12">Clase</th>
+                                    <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300 w-1/12">Capacidad</th>
                                     <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider w-1/6">Status</th>
                                 </tr>
                             </thead>
@@ -111,7 +112,43 @@
                                             @endif
                                         </td>
                                         
-                                        <!-- Columna 4: Status -->
+                                        <!-- Columna 4: Capacidad -->
+                                        <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
+                                            @php
+                                                $capacidadMax = $espacio['capacidad_maxima'] ?? 0;
+                                                $puestosDisponibles = $espacio['puestos_disponibles'] ?? 0;
+                                                $capacidadUtilizada = max(0, $capacidadMax - $puestosDisponibles);
+                                                $porcentaje = $capacidadMax > 0 ? round(($capacidadUtilizada / $capacidadMax) * 100) : 0;
+                                                
+                                                // Determinar color según ocupación
+                                                $colorClase = '';
+                                                if ($porcentaje >= 90) {
+                                                    $colorClase = 'text-red-600 font-bold';
+                                                } elseif ($porcentaje >= 70) {
+                                                    $colorClase = 'text-orange-600 font-semibold';
+                                                } elseif ($porcentaje >= 50) {
+                                                    $colorClase = 'text-yellow-600 font-medium';
+                                                } else {
+                                                    $colorClase = 'text-green-600';
+                                                }
+                                            @endphp
+                                            
+                                            @if($capacidadMax > 0)
+                                                <div class="flex flex-col gap-1">
+                                                    <div class="{{ $colorClase }} text-sm">
+                                                        {{ $capacidadUtilizada }}/{{ $capacidadMax }}
+                                                    </div>
+                                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                                        <div class="h-2 rounded-full {{ $porcentaje >= 90 ? 'bg-red-600' : ($porcentaje >= 70 ? 'bg-orange-500' : ($porcentaje >= 50 ? 'bg-yellow-500' : 'bg-green-500')) }}" 
+                                                             style="width: {{ $porcentaje }}%"></div>
+                                                    </div>
+                                                </div>
+                                            @else
+                                                <span class="text-gray-400 text-sm">N/A</span>
+                                            @endif
+                                        </td>
+                                        
+                                        <!-- Columna 5: Status -->
                                       <td class="px-3 py-1 text-sm align-middle">
                                             <span class="w-4 h-4 rounded-full {{ $this->getEstadoColor($espacio['estado'], $espacio['tiene_clase'] ?? false, $espacio['tiene_reserva_solicitante'] ?? false, $espacio['tiene_reserva_profesor'] ?? false) }} flex-shrink-0 inline-block mr-2"></span>
                                             <span class="font-medium text-gray-900 text-sm">{{ $espacio['estado'] }}</span>
