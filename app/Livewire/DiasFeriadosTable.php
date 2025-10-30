@@ -3,29 +3,39 @@
 namespace App\Livewire;
 
 use App\Models\DiaFeriado;
+use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 use Livewire\WithPagination;
-use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 
 class DiasFeriadosTable extends Component
 {
     use WithPagination;
 
     public $search = '';
+
     public $tipo = '';
+
     public $sortField = 'fecha_inicio';
+
     public $sortDirection = 'desc';
-    
+
     // Propiedades para el modal de crear/editar
     public $showModal = false;
+
     public $editMode = false;
+
     public $feriadoId;
+
     public $fecha_inicio = '';
+
     public $fecha_fin = '';
+
     public $nombre = '';
+
     public $descripcion = '';
+
     public $tipo_feriado = 'feriado';
+
     public $activo = true;
 
     protected $queryString = ['search', 'tipo'];
@@ -126,7 +136,7 @@ class DiasFeriadosTable extends Component
     public function toggleActivo($id)
     {
         $feriado = DiaFeriado::findOrFail($id);
-        $feriado->update(['activo' => !$feriado->activo]);
+        $feriado->update(['activo' => ! $feriado->activo]);
         session()->flash('message', 'Estado actualizado exitosamente.');
     }
 
@@ -136,8 +146,8 @@ class DiasFeriadosTable extends Component
 
         if ($this->search) {
             $query->where(function ($q) {
-                $q->where('nombre', 'like', '%' . $this->search . '%')
-                  ->orWhere('descripcion', 'like', '%' . $this->search . '%');
+                $q->where('nombre', 'like', '%'.$this->search.'%')
+                    ->orWhere('descripcion', 'like', '%'.$this->search.'%');
             });
         }
 

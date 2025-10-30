@@ -2,10 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class RoleSeeder extends Seeder
 {
@@ -18,7 +17,7 @@ class RoleSeeder extends Seeder
         $roleSupervisor = Role::firstOrCreate(['name' => 'Supervisor']);
         $roleUsuario = Role::firstOrCreate(['name' => 'Usuario']);
         $roleProfesor = Role::firstOrCreate(['name' => 'Profesor']);
-        
+
         $permission1 = Permission::firstOrCreate(['name' => 'dashboard']);
         $permission2 = Permission::firstOrCreate(['name' => 'mantenedor de roles']);
         $permission3 = Permission::firstOrCreate(['name' => 'mantenedor de permisos']);
@@ -47,27 +46,27 @@ class RoleSeeder extends Seeder
         $permission26 = Permission::firstOrCreate(['name' => 'gestionar licencias profesores']);
         $permission27 = Permission::firstOrCreate(['name' => 'gestionar recuperacion clases']);
         $permission28 = Permission::firstOrCreate(['name' => 'mantenedor de feriados']);
-      
+
         $roleAdmin->syncPermissions([
             $permission1, $permission2, $permission3, $permission4, $permission5,
             $permission6, $permission7, $permission8, $permission9, $permission10,
             $permission11, $permission12, $permission13, $permission14, $permission15,
             $permission16, $permission17, $permission18, $permission19, $permission20,
             $permission21, $permission22, $permission23, $permission24, $permission25,
-            $permission26, $permission27, $permission28
+            $permission26, $permission27, $permission28,
         ]);
 
         $roleSupervisor->syncPermissions([
             $permission1, $permission14, $permission15, $permission16, $permission17,
-            $permission18, $permission22, $permission23, $permission25
+            $permission18, $permission22, $permission23, $permission25,
         ]);
 
         $roleUsuario->syncPermissions([
-            $permission15, $permission16, $permission17, $permission18, $permission22, $permission23
+            $permission15, $permission16, $permission17, $permission18, $permission22, $permission23,
         ]);
 
         $roleProfesor->syncPermissions([
-            $permission15, $permission16
+            $permission15, $permission16,
         ]);
     }
 }

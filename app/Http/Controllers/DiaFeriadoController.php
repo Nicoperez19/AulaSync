@@ -2,9 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DiaFeriado;
-use Illuminate\Http\Request;
-
 class DiaFeriadoController extends Controller
 {
     /**

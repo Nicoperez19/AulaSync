@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 
 class DiaFeriado extends Model
 {
     use HasFactory;
 
     protected $table = 'dias_feriados';
+
     protected $primaryKey = 'id_feriado';
 
     protected $fillable = [
@@ -43,7 +44,7 @@ class DiaFeriado extends Model
     public static function esFeriado($fecha)
     {
         $fechaCarbon = Carbon::parse($fecha);
-        
+
         return static::where('activo', true)
             ->where('fecha_inicio', '<=', $fechaCarbon)
             ->where('fecha_fin', '>=', $fechaCarbon)
@@ -56,7 +57,7 @@ class DiaFeriado extends Model
     public static function obtenerFeriadoEnFecha($fecha)
     {
         $fechaCarbon = Carbon::parse($fecha);
-        
+
         return static::where('activo', true)
             ->where('fecha_inicio', '<=', $fechaCarbon)
             ->where('fecha_fin', '>=', $fechaCarbon)
@@ -78,11 +79,11 @@ class DiaFeriado extends Model
     {
         return $query->where(function ($q) use ($fechaInicio, $fechaFin) {
             $q->whereBetween('fecha_inicio', [$fechaInicio, $fechaFin])
-              ->orWhereBetween('fecha_fin', [$fechaInicio, $fechaFin])
-              ->orWhere(function ($q2) use ($fechaInicio, $fechaFin) {
-                  $q2->where('fecha_inicio', '<=', $fechaInicio)
-                     ->where('fecha_fin', '>=', $fechaFin);
-              });
+                ->orWhereBetween('fecha_fin', [$fechaInicio, $fechaFin])
+                ->orWhere(function ($q2) use ($fechaInicio, $fechaFin) {
+                    $q2->where('fecha_inicio', '<=', $fechaInicio)
+                        ->where('fecha_fin', '>=', $fechaFin);
+                });
         });
     }
 
@@ -92,8 +93,8 @@ class DiaFeriado extends Model
     public function estaActivoEn($fecha)
     {
         $fechaCarbon = Carbon::parse($fecha);
-        
-        return $this->activo 
+
+        return $this->activo
             && $fechaCarbon->between($this->fecha_inicio, $this->fecha_fin);
     }
 }

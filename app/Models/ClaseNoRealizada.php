@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 
 class ClaseNoRealizada extends Model
 {
@@ -22,7 +22,7 @@ class ClaseNoRealizada extends Model
         'motivo',
         'observaciones',
         'estado',
-        'hora_deteccion'
+        'hora_deteccion',
     ];
 
     protected $casts = [
@@ -67,6 +67,7 @@ class ClaseNoRealizada extends Model
         if ($fechaFin) {
             return $query->whereBetween('fecha_clase', [$fechaInicio, $fechaFin]);
         }
+
         return $query->whereDate('fecha_clase', $fechaInicio);
     }
 
@@ -87,8 +88,9 @@ class ClaseNoRealizada extends Model
                 ->where('fecha_clase', $datosClase['fecha_clase'])
                 ->first();
 
-            if (!$registroExistente) {
+            if (! $registroExistente) {
                 $feriado = \App\Models\DiaFeriado::obtenerFeriadoEnFecha($datosClase['fecha_clase']);
+
                 return static::create([
                     'id_asignatura' => $datosClase['id_asignatura'],
                     'id_espacio' => $datosClase['id_espacio'],
@@ -97,15 +99,15 @@ class ClaseNoRealizada extends Model
                     'run_profesor' => $datosClase['run_profesor'],
                     'periodo' => $datosClase['periodo'],
                     'motivo' => $feriado ? $feriado->nombre : 'Día sin actividades',
-                    'observaciones' => 'Justificado automáticamente - ' . ($feriado ? $feriado->descripcion : 'Periodo sin actividad universitaria'),
+                    'observaciones' => 'Justificado automáticamente - '.($feriado ? $feriado->descripcion : 'Periodo sin actividad universitaria'),
                     'estado' => 'justificado',
                     'hora_deteccion' => Carbon::now(),
                 ]);
             }
-            
+
             return $registroExistente;
         }
-        
+
         // Verificar si ya existe un registro para esta clase HOY
         $registroExistente = static::where('id_asignatura', $datosClase['id_asignatura'])
             ->where('id_espacio', $datosClase['id_espacio'])
@@ -161,7 +163,7 @@ class ClaseNoRealizada extends Model
             // Actualizar el estado a justificado con una observación
             $registro->update([
                 'estado' => 'justificado',
-                'observaciones' => ($registro->observaciones ?? '') . ' [Auto-corregido: El profesor registró entrada tarde]',
+                'observaciones' => ($registro->observaciones ?? '').' [Auto-corregido: El profesor registró entrada tarde]',
             ]);
         }
 
