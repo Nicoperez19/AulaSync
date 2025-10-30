@@ -545,10 +545,14 @@ class DashboardController extends Controller
                 ];
             }
             
-            // Use space ID as key to prevent duplicates
+            // Create unique key from space, subject, and professor to prevent exact duplicates
+            // while still allowing different classes in the same space
             $espacioId = $planificacion->espacio->id_espacio;
-            if (!isset($horariosAgrupados[$dia][$hora]['espacios'][$espacioId])) {
-                $horariosAgrupados[$dia][$hora]['espacios'][$espacioId] = [
+            $asignaturaId = $planificacion->asignatura->id_asignatura ?? 'unknown';
+            $uniqueKey = $espacioId . '_' . $asignaturaId;
+            
+            if (!isset($horariosAgrupados[$dia][$hora]['espacios'][$uniqueKey])) {
+                $horariosAgrupados[$dia][$hora]['espacios'][$uniqueKey] = [
                     'espacio' => 'Sala de clases (' . $espacioId . '), Piso ' . ($planificacion->espacio->piso->numero_piso ?? 'N/A'),
                     'asignatura' => $planificacion->asignatura->nombre_asignatura,
                     'profesor' => $planificacion->asignatura->profesor->name ?? 'No asignado',
