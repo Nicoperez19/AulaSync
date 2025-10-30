@@ -1,0 +1,18 @@
+{
+  "success": true,
+  "message": "El espacio está disponible, no hay reserva activa en este momento",
+  "data": {
+    "espacio": {
+      "id": "TH-03",
+      "nombre": "Sala TH-03",
+      "tipo": "Sala de clases",
+      "estado": "Disponible",
+      "puestos_disponibles": 40,
+      "ocupado": false
+    },
+    "reserva_activa": null,
+    "fecha_consulta": "2025-10-29",
+    "hora_consulta": "16:30:00",
+    "nota": null
+  }
+}

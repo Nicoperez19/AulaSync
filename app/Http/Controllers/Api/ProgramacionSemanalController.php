@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -337,6 +336,10 @@ class ProgramacionSemanalController extends Controller
      * Este endpoint devuelve la reserva que está actualmente activa para un espacio dado,
      * junto con toda la información relacionada (profesor, asignatura, espacio, etc.)
      * 
+     * IMPORTANTE: Un espacio se considera "ocupado" cuando:
+     * 1. Tiene una reserva activa en este momento, O
+     * 2. El estado del espacio está marcado como "Ocupado" (puede ser ocupación sin reserva)
+     * 
      * Ejemplo de uso:
      * GET /api/reservas/activa/TH-03
      * 
@@ -380,22 +383,33 @@ class ProgramacionSemanalController extends Controller
             ->orderBy('hora', 'desc')
             ->first();
 
+            // Determinar si el espacio está ocupado
+            $espacioOcupado = ($reserva !== null) || ($espacio->estado === 'Ocupado');
+
             // Si no hay reserva activa
             if (!$reserva) {
+                $mensaje = $espacio->estado === 'Ocupado' 
+                    ? 'El espacio está ocupado pero no tiene una reserva formal activa' 
+                    : 'El espacio está disponible, no hay reserva activa en este momento';
+
                 return response()->json([
                     'success' => true,
-                    'message' => 'No hay reserva activa en este momento para este espacio',
+                    'message' => $mensaje,
                     'data' => [
                         'espacio' => [
                             'id' => $espacio->id_espacio,
                             'nombre' => $espacio->nombre_espacio,
                             'tipo' => $espacio->tipo_espacio,
                             'estado' => $espacio->estado,
-                            'puestos_disponibles' => $espacio->puestos_disponibles
+                            'puestos_disponibles' => $espacio->puestos_disponibles,
+                            'ocupado' => $espacioOcupado
                         ],
                         'reserva_activa' => null,
                         'fecha_consulta' => $fechaActual,
-                        'hora_consulta' => $horaActual
+                        'hora_consulta' => $horaActual,
+                        'nota' => $espacio->estado === 'Ocupado' 
+                            ? 'El espacio puede estar siendo usado sin una reserva formal' 
+                            : null
                     ]
                 ], 200);
             }
@@ -457,7 +471,7 @@ class ProgramacionSemanalController extends Controller
             // Respuesta exitosa con toda la información
             return response()->json([
                 'success' => true,
-                'message' => 'Reserva activa encontrada',
+                'message' => 'Reserva activa encontrada - El espacio está ocupado',
                 'data' => [
                     'reserva' => [
                         'id' => $reserva->id_reserva,
@@ -476,7 +490,8 @@ class ProgramacionSemanalController extends Controller
                         'nombre' => $espacio->nombre_espacio,
                         'tipo' => $espacio->tipo_espacio,
                         'estado' => $espacio->estado,
-                        'puestos_disponibles' => $espacio->puestos_disponibles
+                        'puestos_disponibles' => $espacio->puestos_disponibles,
+                        'ocupado' => true  // Siempre ocupado si hay reserva activa
                     ],
                     'usuario_reserva' => $usuarioReserva,
                     'asignatura' => $asignaturaData,

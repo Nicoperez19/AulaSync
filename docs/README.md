@@ -38,6 +38,25 @@ Documentado en: **[API_PROGRAMACION_SEMANAL_ASISTENCIA.md](API_PROGRAMACION_SEMA
 
 - GET `/api/programacion-semanal/{id_espacio}` - Consultar programación
 
+#### Reserva Activa por Espacio
+
+Agregado el: **29 de octubre de 2025**
+
+- **[API_RESERVA_ACTIVA_ESPACIO.md](API_RESERVA_ACTIVA_ESPACIO.md)** 🔥 NUEVO
+  - GET `/api/reservas/activa/{id_espacio}` - Obtener reserva activa de un espacio
+  - Consulta en tiempo real
+  - **Diferencia entre ocupación con/sin reserva formal** ⚠️
+  - Información completa (profesor, asignatura, asistencia)
+  - Ideal para pantallas de estado y apps nativas
+  - Lógica dual: Reserva formal O estado manual "Ocupado"
+
+- **[LOGICA_OCUPACION_ESPACIOS.md](LOGICA_OCUPACION_ESPACIOS.md)** 📚 GUÍA CONCEPTUAL
+  - Explicación detallada de cómo funciona la ocupación de espacios
+  - Diferencia entre estado "Ocupado" con y sin reserva
+  - Casos de uso reales con ejemplos
+  - Diagramas de flujo y código de integración
+  - **LECTURA RECOMENDADA** para entender el modelo de negocio
+
 #### Registro de Asistencia (Actualizado)
 
 Actualizado el: **29 de octubre de 2025**
@@ -159,6 +178,7 @@ Actualizado el: **29 de octubre de 2025**
 | Método | Endpoint | Descripción | Documentación |
 |--------|----------|-------------|---------------|
 | GET | `/api/programacion-semanal/{id_espacio}` | Consultar programación | [Ver](API_PROGRAMACION_SEMANAL_ASISTENCIA.md) |
+| GET | `/api/reservas/activa/{id_espacio}` | Obtener reserva activa | [Ver](API_RESERVA_ACTIVA_ESPACIO.md) 🔥 |
 | POST | `/api/asistencia` | Registrar asistencia | [Ver](API_REGISTRO_ASISTENCIA.md) ⭐ |
 
 ---
@@ -168,6 +188,8 @@ Actualizado el: **29 de octubre de 2025**
 ### Octubre 2025
 
 **29 de octubre:**
+- ✅ Nuevo endpoint de reserva activa por espacio
+- 📝 Documentación: API_RESERVA_ACTIVA_ESPACIO.md
 - ✅ Actualización completa API de asistencia
 - ✅ Nuevo sistema de observaciones por estudiante
 - ✅ Finalización flexible de clases
@@ -200,6 +222,9 @@ Actualizado el: **29 de octubre de 2025**
 - [API_PROGRAMACION_SEMANAL_ASISTENCIA.md](API_PROGRAMACION_SEMANAL_ASISTENCIA.md)
 - [EJEMPLOS_API_PROGRAMACION_ASISTENCIA.md](EJEMPLOS_API_PROGRAMACION_ASISTENCIA.md)
 
+### Reservas
+- [API_RESERVA_ACTIVA_ESPACIO.md](API_RESERVA_ACTIVA_ESPACIO.md) 🔥 - Consultar reserva activa
+
 ### Correos
 - [CORREOS_MASIVOS_GUIA.md](CORREOS_MASIVOS_GUIA.md)
 - [PLANTILLAS_CORREOS_GUIA.md](PLANTILLAS_CORREOS_GUIA.md)
@@ -218,9 +243,14 @@ Actualizado el: **29 de octubre de 2025**
 
 Ubicación: `docs/ejemplos/`
 
+**Asistencia:**
 - `asistencia-completa.json` - Registro completo con múltiples estudiantes
 - `asistencia-simple.json` - Registro mínimo (1 estudiante)
 - `asistencia-sin-finalizar.json` - Registro sin finalizar clase
+
+**Reserva Activa:**
+- `reserva-activa-con-reserva.json` - Respuesta con reserva activa
+- `reserva-activa-sin-reserva.json` - Respuesta sin reserva activa
 
 ### Uso
 

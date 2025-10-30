@@ -1,0 +1,71 @@
+{
+  "success": true,
+  "message": "Reserva activa encontrada - El espacio está ocupado",
+  "data": {
+    "reserva": {
+      "id": "R20251029145530123",
+      "tipo": "clase",
+      "estado": "activa",
+      "fecha": "2025-10-29",
+      "hora_inicio": "14:00:00",
+      "hora_salida": null,
+      "duracion_minutos": 45,
+      "modulos": "M1,M2",
+      "observaciones": null,
+      "creada_el": "2025-10-29 13:55:00"
+    },
+    "espacio": {
+      "id": "TH-03",
+      "nombre": "Sala de Clases",
+      "tipo": "Sala de Clases",
+      "estado": "Ocupado",
+      "puestos_disponibles": 35,
+      "ocupado": true
+    },
+    "usuario_reserva": {
+      "tipo": "profesor",
+      "run": "12345678",
+      "nombre": "Dr. Carlos Rodríguez Pérez",
+      "email": "carlos.rodriguez@ucsc.cl",
+      "celular": "+56912345678"
+    },
+    "asignatura": {
+      "id": "INF101",
+      "codigo": "INF101",
+      "nombre": "Programación I",
+      "seccion": "A",
+      "profesor_titular": {
+        "run": "12345678",
+        "nombre": "Dr. Carlos Rodríguez Pérez"
+      }
+    },
+    "asistencia": {
+      "total_registrados": 3,
+      "estudiantes": [
+        {
+          "id": 1,
+          "rut": "19876543",
+          "nombre": "Juan Pérez García",
+          "hora_llegada": "14:00:00",
+          "observaciones": "Llegó a tiempo"
+        },
+        {
+          "id": 2,
+          "rut": "19876544",
+          "nombre": "María González López",
+          "hora_llegada": "14:05:00",
+          "observaciones": "Llegó 5 minutos tarde"
+        },
+        {
+          "id": 3,
+          "rut": "19876545",
+          "nombre": "Pedro Martínez Silva",
+          "hora_llegada": "14:00:00",
+          "observaciones": null
+        }
+      ]
+    },
+    "fecha_consulta": "2025-10-29",
+    "hora_consulta": "14:45:30"
+  }
+}
