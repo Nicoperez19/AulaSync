@@ -2734,8 +2734,9 @@
 
             console.log('🔍 DEBUG renderizarInformacionLibre - Estado del espacio disponible:', espacioDisponible, 'Estado indicator:', indicator?.estado);
 
-            // IMPORTANTE: Si el indicator dice que está ocupado, NO ocultar el botón desocupar
-            // esto sucede cuando la API dice "libre" pero el indicator dice "ocupado" (reservas vencidas)
+            // IMPORTANTE: Si el indicator dice que está ocupado, aunque la API diga "libre",
+            // mantener el botón desocupar visible para permitir desocupación forzosa
+            // Esto sucede cuando hay reservas vencidas o estados inconsistentes
             if (!espacioDisponible) {
                 console.log('🔧 CASO ESPECIAL: API dice libre pero indicator dice ocupado - Manteniendo botón desocupar');
                 
@@ -2762,6 +2763,45 @@
                     }
                 }
                 console.log('🔍 RUN para desocupación forzosa configurado:', runValue);
+                
+                // Mostrar información del último ocupante o información mínima
+                if (tituloEl) tituloEl.textContent = 'Último Ocupante';
+                
+                if (elements.ocupanteContainer) {
+                    elements.ocupanteContainer.style.display = 'block';
+                    if (elements.ocupanteInfo) {
+                        const infoHtml = `
+                            <input type="hidden" id="run-ocupante-modal" value="${runValue}">
+                            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div class="flex items-center">
+                                    <i class="mr-3 text-orange-500 fas fa-exclamation-triangle"></i>
+                                    <div>
+                                        <div class="font-medium text-gray-800">Estado inconsistente</div>
+                                        <div class="text-sm text-gray-600">El espacio requiere desocupación manual</div>
+                                    </div>
+                                </div>
+                                ${data.hora_inicio ? `
+                                <div class="flex items-center">
+                                    <i class="mr-3 text-gray-500 fas fa-clock"></i>
+                                    <div>
+                                        <div class="font-medium text-gray-800">${data.hora_inicio}</div>
+                                        <div class="text-sm text-gray-600">Última hora de inicio</div>
+                                    </div>
+                                </div>
+                                ` : ''}
+                            </div>
+                        `;
+                        elements.ocupanteInfo.innerHTML = infoHtml;
+                    }
+                }
+                
+                // Ocultar próxima clase en este caso especial
+                if (elements.proximaClaseContainer) {
+                    elements.proximaClaseContainer.style.display = 'none';
+                }
+                
+                // IMPORTANTE: Retornar aquí para evitar que el código posterior oculte el botón
+                return;
             }
 
             // Si el espacio está disponible, NO mostrar información de ocupante ni botón desocupar
