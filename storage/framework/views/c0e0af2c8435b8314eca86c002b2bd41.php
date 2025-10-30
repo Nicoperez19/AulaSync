@@ -1,6 +1,6 @@
 <div class="p-6" x-data="{ 
         pagina: 0, 
-        totalPaginas: Math.ceil({{ count($this->getTodosLosEspacios()) }} / 13),
+        totalPaginas: Math.ceil(<?php echo e(count($this->getTodosLosEspacios())); ?> / 13),
         transicionando: false
     }" 
     x-init="
@@ -10,8 +10,8 @@
         // Emitir información de feriado
         window.dispatchEvent(new CustomEvent('actualizar-feriado', { 
             detail: { 
-                esFeriado: {{ $esFeriado ? 'true' : 'false' }}, 
-                nombreFeriado: '{{ $nombreFeriado }}' 
+                esFeriado: <?php echo e($esFeriado ? 'true' : 'false'); ?>, 
+                nombreFeriado: '<?php echo e($nombreFeriado); ?>' 
             } 
         }));
         
@@ -24,11 +24,11 @@
         }, 10000)
     ">
     
-    @if (count($pisos) > 0)
+    <!--[if BLOCK]><![endif]--><?php if(count($pisos) > 0): ?>
     
         <div class="relative w-full bg-gray-100 rounded-lg shadow-sm border border-gray-300 overflow-hidden">
-            @if (count($this->getTodosLosEspacios()) > 0)
-                @php $totalPaginas = ceil(count($this->getTodosLosEspacios()) / 13); @endphp
+            <!--[if BLOCK]><![endif]--><?php if(count($this->getTodosLosEspacios()) > 0): ?>
+                <?php $totalPaginas = ceil(count($this->getTodosLosEspacios()) / 13); ?>
                 <table class="w-full table-fixed">
                     <colgroup>
                         <col style="width: 16.66%">
@@ -62,8 +62,8 @@
                     </thead>
                 </table>
                 <div class="relative">
-                    @for ($i = 0; $i < $totalPaginas; $i++)
-                        <div x-show="pagina === {{ $i }}" 
+                    <!--[if BLOCK]><![endif]--><?php for($i = 0; $i < $totalPaginas; $i++): ?>
+                        <div x-show="pagina === <?php echo e($i); ?>" 
                              x-transition:enter="transition-opacity ease-in-out duration-500"
                              x-transition:enter-start="opacity-0"
                              x-transition:enter-end="opacity-100"
@@ -81,95 +81,100 @@
                                     <col style="width: 10%">
                                 </colgroup>
                                 <tbody class="divide-y divide-gray-200">
-                                @foreach (array_slice($this->getTodosLosEspacios(), $i * 13, 13) as $index => $espacio)
-                                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-gray-100 transition-colors duration-200 h-10 border-b border-gray-200">
+                                <!--[if BLOCK]><![endif]--><?php $__currentLoopData = array_slice($this->getTodosLosEspacios(), $i * 13, 13); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $espacio): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <tr class="<?php echo e($index % 2 === 0 ? 'bg-white' : 'bg-gray-50'); ?> hover:bg-gray-100 transition-colors duration-200 h-10 border-b border-gray-200">
                                         <!-- Columna 1: Modulo -->
                                             <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
-                                                @if(($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']) && !empty($espacio['datos_clase']['modulo_inicio']) && !empty($espacio['datos_clase']['modulo_fin']))
+                                                <!--[if BLOCK]><![endif]--><?php if(($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']) && !empty($espacio['datos_clase']['modulo_inicio']) && !empty($espacio['datos_clase']['modulo_fin'])): ?>
                                                     <div class="font-medium text-gray-900 text-sm">
                                                         <div class="flex items-center gap-2 text-base font-semibold">
                                                                             
-                                                           {{ preg_replace('/^[A-Z]{2}\./', '', $espacio['datos_clase']['modulo_inicio']) }} - {{ preg_replace('/^[A-Z]{2}\./', '', $espacio['datos_clase']['modulo_fin']) }}
+                                                           <?php echo e(preg_replace('/^[A-Z]{2}\./', '', $espacio['datos_clase']['modulo_inicio'])); ?> - <?php echo e(preg_replace('/^[A-Z]{2}\./', '', $espacio['datos_clase']['modulo_fin'])); ?>
+
                                                           
                                                         </div>
                                                         <div class="text-gray-600">
                                                              
-                                                            {{ $espacio['datos_clase']['hora_inicio'] ?? '--:--' }} - {{ $espacio['datos_clase']['hora_fin'] ?? '--:--' }}
+                                                            <?php echo e($espacio['datos_clase']['hora_inicio'] ?? '--:--'); ?> - <?php echo e($espacio['datos_clase']['hora_fin'] ?? '--:--'); ?>
+
                                                         </div>
                                                     </div>
-                                                @elseif(!empty($espacio['proxima_clase']) && is_array($espacio['proxima_clase']))
+                                                <?php elseif(!empty($espacio['proxima_clase']) && is_array($espacio['proxima_clase'])): ?>
                                                      <div class="flex items-center gap-2 text-base font-semibold">
                                                                          
-                                                           {{ preg_replace('/^[A-Z]{2}\./', '', $espacio['proxima_clase']['modulo_inicio'] ?? '--') }} - {{ preg_replace('/^[A-Z]{2}\./', '', $espacio['proxima_clase']['modulo_fin'] ?? '--') }}
+                                                           <?php echo e(preg_replace('/^[A-Z]{2}\./', '', $espacio['proxima_clase']['modulo_inicio'] ?? '--')); ?> - <?php echo e(preg_replace('/^[A-Z]{2}\./', '', $espacio['proxima_clase']['modulo_fin'] ?? '--')); ?>
+
                                                         </div>
                                                         <div class="text-gray-600">
-                                                            {{ $espacio['proxima_clase']['hora_inicio'] ?? '--:--' }} - {{ $espacio['proxima_clase']['hora_fin'] ?? '--:--' }}
+                                                            <?php echo e($espacio['proxima_clase']['hora_inicio'] ?? '--:--'); ?> - <?php echo e($espacio['proxima_clase']['hora_fin'] ?? '--:--'); ?>
+
                                                         </div>
                                                     </div>
-                                                @elseif($this->moduloActual && !empty($this->moduloActual['numero']))
-                                                    @if(($this->moduloActual['tipo'] ?? 'modulo') === 'break')
+                                                <?php elseif($this->moduloActual && !empty($this->moduloActual['numero'])): ?>
+                                                    <!--[if BLOCK]><![endif]--><?php if(($this->moduloActual['tipo'] ?? 'modulo') === 'break'): ?>
                                                         <span class="text-base font-semibold text-gray-600">
                                                           ------
                                                         </span>
-                                                    @else
+                                                    <?php else: ?>
                                                         <span class="flex items-center gap-2 text-base font-semibold">
                                                             
                                                         <!----
                                                             <i class="fas fa-clock"></i>
-                                                            {{ $this->moduloActual['numero'] }}
+                                                            <?php echo e($this->moduloActual['numero']); ?>
+
                                                             Pendiente de aprobacion
                                                             -->
                                                         </span>
-                                                    @endif
-                                                @endif
+                                                    <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
+                                                <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
                                             </td>
                                         <!-- Columna 2: Espacio -->
                                         <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
-                                            <span class="font-semibold text-blue-700 text-sm">{{ $espacio['id_espacio'] }}</span>
+                                            <span class="font-semibold text-blue-700 text-sm"><?php echo e($espacio['id_espacio']); ?></span>
                                         </td>
                                         <!-- Columna 3: Estado -->
                                          <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
-                                            @php
+                                            <?php
                                                 $asignatura = $espacio['datos_clase']['nombre_asignatura'] ?? $espacio['proxima_clase']['nombre_asignatura'] ?? null;
-                                            @endphp
-                                            @if (($espacio['tiene_reserva_solicitante'] ?? false) && !empty($espacio['datos_solicitante']))
-                                                <span class="font-medium text--700 text-sm">Solicitante: {{ $espacio['datos_solicitante']['nombre'] ?? 'N/A' }}</span>
-                                            @elseif (($espacio['tiene_reserva_profesor'] ?? false) && !empty($espacio['datos_profesor']) && !empty($espacio['datos_profesor']['nombre']))
+                                            ?>
+                                            <!--[if BLOCK]><![endif]--><?php if(($espacio['tiene_reserva_solicitante'] ?? false) && !empty($espacio['datos_solicitante'])): ?>
+                                                <span class="font-medium text--700 text-sm">Solicitante: <?php echo e($espacio['datos_solicitante']['nombre'] ?? 'N/A'); ?></span>
+                                            <?php elseif(($espacio['tiene_reserva_profesor'] ?? false) && !empty($espacio['datos_profesor']) && !empty($espacio['datos_profesor']['nombre'])): ?>
                                                 <span class="font-medium text-gray-700 text-sm">
-                                                    <div>{{ $espacio['datos_profesor']['nombre_asignatura'] ?? $asignatura ?? 'Sin asignatura' }}</div>
-                                                    <div>Profesor: {{ $espacio['datos_profesor']['nombre'] ?? 'N/A' }}</div>
+                                                    <div><?php echo e($espacio['datos_profesor']['nombre_asignatura'] ?? $asignatura ?? 'Sin asignatura'); ?></div>
+                                                    <div>Profesor: <?php echo e($espacio['datos_profesor']['nombre'] ?? 'N/A'); ?></div>
                                                 </span>
-                                            @elseif (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']) && isset($espacio['datos_clase']['profesor']) && !empty($espacio['datos_clase']['profesor']['name']))
+                                            <?php elseif(($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']) && isset($espacio['datos_clase']['profesor']) && !empty($espacio['datos_clase']['profesor']['name'])): ?>
                                                 <div class="font-medium text-gray-900 text-sm">
-                                                    <div>{{ $asignatura ?? 'Sin asignatura' }}</div>
-                                                    <div>Prof: {{ $espacio['datos_clase']['profesor']['name'] ?? 'N/A' }}</div>
+                                                    <div><?php echo e($asignatura ?? 'Sin asignatura'); ?></div>
+                                                    <div>Prof: <?php echo e($espacio['datos_clase']['profesor']['name'] ?? 'N/A'); ?></div>
                                                 </div>
-                                            @elseif(!empty($espacio['proxima_clase']) && is_array($espacio['proxima_clase']))
+                                            <?php elseif(!empty($espacio['proxima_clase']) && is_array($espacio['proxima_clase'])): ?>
                                                 <div class="font-medium text-gray-700 text-sm">
-                                                    <div>Próxima: {{ $asignatura ?? 'Clase programada' }}</div>
-                                                    <div>Prof: {{ $espacio['proxima_clase']['profesor'] ?? '-' }}</div>
+                                                    <div>Próxima: <?php echo e($asignatura ?? 'Clase programada'); ?></div>
+                                                    <div>Prof: <?php echo e($espacio['proxima_clase']['profesor'] ?? '-'); ?></div>
                                                 </div>
-                                            @elseif($asignatura)
+                                            <?php elseif($asignatura): ?>
                                                 <div class="font-medium text-gray-900 text-sm">
-                                                    <div>{{ $asignatura }}</div>
+                                                    <div><?php echo e($asignatura); ?></div>
                                                 </div>
-                                            @else
+                                            <?php else: ?>
                                                 <span class="text-gray-400 italic text-sm">-</span>
-                                            @endif
+                                            <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
                                         </td>
                                         
                                         <!-- Columna 4: Carrera -->
                                         <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
-                                            @if (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']['carrera']))
-                                                <span class="font-medium text-gray-700 text-sm">{{ $espacio['datos_clase']['carrera'] }}</span>
-                                            @else
+                                            <!--[if BLOCK]><![endif]--><?php if(($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']['carrera'])): ?>
+                                                <span class="font-medium text-gray-700 text-sm"><?php echo e($espacio['datos_clase']['carrera']); ?></span>
+                                            <?php else: ?>
                                                 <span class="text-gray-400 italic text-sm">-</span>
-                                            @endif
+                                            <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
                                         </td>
                                         
                                         <!-- Columna 5: Capacidad -->
                                         <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
-                                            @php
+                                            <?php
                                                 $capacidadMax = $espacio['capacidad_maxima'] ?? 0;
                                                 $puestosDisponibles = $espacio['puestos_disponibles'] ?? 0;
                                                 $capacidadUtilizada = max(0, $capacidadMax - $puestosDisponibles);
@@ -186,38 +191,39 @@
                                                 } else {
                                                     $colorClase = 'text-green-600';
                                                 }
-                                            @endphp
+                                            ?>
                                             
-                                            @if($capacidadMax > 0)
+                                            <!--[if BLOCK]><![endif]--><?php if($capacidadMax > 0): ?>
                                                 <div class="flex flex-col gap-1">
-                                                    <div class="{{ $colorClase }} text-sm">
-                                                        {{ $capacidadUtilizada }}/{{ $capacidadMax }}
+                                                    <div class="<?php echo e($colorClase); ?> text-sm">
+                                                        <?php echo e($capacidadUtilizada); ?>/<?php echo e($capacidadMax); ?>
+
                                                     </div>
                                                     <div class="w-full bg-gray-200 rounded-full h-2">
-                                                        <div class="h-2 rounded-full {{ $porcentaje >= 90 ? 'bg-red-600' : ($porcentaje >= 70 ? 'bg-orange-500' : ($porcentaje >= 50 ? 'bg-yellow-500' : 'bg-green-500')) }}" 
-                                                             style="width: {{ $porcentaje }}%"></div>
+                                                        <div class="h-2 rounded-full <?php echo e($porcentaje >= 90 ? 'bg-red-600' : ($porcentaje >= 70 ? 'bg-orange-500' : ($porcentaje >= 50 ? 'bg-yellow-500' : 'bg-green-500'))); ?>" 
+                                                             style="width: <?php echo e($porcentaje); ?>%"></div>
                                                     </div>
                                                 </div>
-                                            @else
+                                            <?php else: ?>
                                                 <span class="text-gray-400 text-sm">N/A</span>
-                                            @endif
+                                            <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
                                         </td>
                                         
                                         <!-- Columna 6: Status -->
                                       <td class="px-3 py-1 text-sm align-middle">
-                                            <span class="w-4 h-4 rounded-full {{ $this->getEstadoColor($espacio['estado'], $espacio['tiene_clase'] ?? false, $espacio['tiene_reserva_solicitante'] ?? false, $espacio['tiene_reserva_profesor'] ?? false) }} flex-shrink-0 inline-block mr-2"></span>
-                                            <span class="font-medium text-gray-900 text-sm">{{ $espacio['estado'] }}</span>
+                                            <span class="w-4 h-4 rounded-full <?php echo e($this->getEstadoColor($espacio['estado'], $espacio['tiene_clase'] ?? false, $espacio['tiene_reserva_solicitante'] ?? false, $espacio['tiene_reserva_profesor'] ?? false)); ?> flex-shrink-0 inline-block mr-2"></span>
+                                            <span class="font-medium text-gray-900 text-sm"><?php echo e($espacio['estado']); ?></span>
                                         </td>
                                     </tr>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?><!--[if ENDBLOCK]><![endif]-->
                                 </tbody>
                             </table>
                         </div>
-                    @endfor
+                    <?php endfor; ?><!--[if ENDBLOCK]><![endif]-->
                 </div>
-            @endif
+            <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
         </div>
-    @endif
+    <?php endif; ?><!--[if ENDBLOCK]><![endif]-->
 
     <!-- Leyenda de colores -->
     
@@ -226,7 +232,7 @@
     <script>
         // Actualizar datos cada 60 segundos para evitar sobrecarga del servidor
         setInterval(function() {
-            @this.actualizarAutomaticamente();
+            window.Livewire.find('<?php echo e($_instance->getId()); ?>').actualizarAutomaticamente();
         }, 60000); // Aumentado a 60 segundos
         
         // Escuchar eventos de Livewire para actualizar el feriado cuando se recarguen los datos
@@ -234,11 +240,11 @@
             Livewire.on('datosActualizados', function() {
                 window.dispatchEvent(new CustomEvent('actualizar-feriado', { 
                     detail: { 
-                        esFeriado: {{ $esFeriado ? 'true' : 'false' }}, 
-                        nombreFeriado: '{{ $nombreFeriado }}' 
+                        esFeriado: <?php echo e($esFeriado ? 'true' : 'false'); ?>, 
+                        nombreFeriado: '<?php echo e($nombreFeriado); ?>' 
                     } 
                 }));
             });
         });
     </script>
-</div>
+</div><?php /**PATH D:\Dev\AulaSync\resources\views/livewire/modulos-actuales-table.blade.php ENDPATH**/ ?>

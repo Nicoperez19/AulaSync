@@ -1,10 +1,19 @@
-<x-table-layout>
-    <x-slot name="header">
+<?php if (isset($component)) { $__componentOriginalbc027840d595f87b354b8956ff641427 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalbc027840d595f87b354b8956ff641427 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.table-layout','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('table-layout'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+     <?php $__env->slot('header', null, []); ?> 
         <div class="flex flex-col gap-4 pr-6 md:flex-row md:items-center md:justify-between">
             <div class="flex items-center gap-4">
                 <!-- Botón Volver (solo visible cuando hay sesión activa) -->
-                @auth
-                <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}" 
+                <?php if(auth()->guard()->check()): ?>
+                <a href="<?php echo e(auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard')); ?>" 
                    class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors duration-200 shadow-md">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
                         <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
@@ -12,7 +21,7 @@
                     </svg>
                     Volver
                 </a>
-                @endauth
+                <?php endif; ?>
 
                 <!-- Logo y título -->
                 <div class="flex items-center gap-4 justify-center flex-1">
@@ -64,10 +73,25 @@
                 </div>
             </div>
         </div>
-    </x-slot>
+     <?php $__env->endSlot(); ?>
 
     <!-- Componente Livewire principal -->
-    <livewire:modulos-actuales-table />
+    <?php
+$__split = function ($name, $params = []) {
+    return [$name, $params];
+};
+[$__name, $__params] = $__split('modulos-actuales-table', []);
+
+$__html = app('livewire')->mount($__name, $__params, 'lw-2621667431-0', $__slots ?? [], get_defined_vars());
+
+echo $__html;
+
+unset($__html);
+unset($__name);
+unset($__params);
+unset($__split);
+if (isset($__slots)) unset($__slots);
+?>
 
     <!-- Reloj flotante para pantallas pequeñas -->
     <div id="reloj-flotante" 
@@ -280,4 +304,13 @@
             }, 500);
         });
     </script>
-</x-table-layout>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalbc027840d595f87b354b8956ff641427)): ?>
+<?php $attributes = $__attributesOriginalbc027840d595f87b354b8956ff641427; ?>
+<?php unset($__attributesOriginalbc027840d595f87b354b8956ff641427); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalbc027840d595f87b354b8956ff641427)): ?>
+<?php $component = $__componentOriginalbc027840d595f87b354b8956ff641427; ?>
+<?php unset($__componentOriginalbc027840d595f87b354b8956ff641427); ?>
+<?php endif; ?><?php /**PATH D:\Dev\AulaSync\resources\views/layouts/table/index.blade.php ENDPATH**/ ?>
