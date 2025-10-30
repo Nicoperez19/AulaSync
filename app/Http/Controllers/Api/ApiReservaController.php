@@ -208,6 +208,29 @@ class ApiReservaController extends Controller
                 $espacio->save();
             }
 
+            // Buscar si hay reservas finalizadas automáticamente que el profesor está devolviendo tarde
+            $reservaAutoFinalizada = Reserva::where('id_espacio', $request->espacio_id)
+                ->where('estado', 'finalizada')
+                ->where('fecha_reserva', Carbon::now()->toDateString())
+                ->whereNotNull('observaciones')
+                ->where('observaciones', 'LIKE', '%finalizó automáticamente por excederse en el tiempo%')
+                ->where(function($query) use ($request) {
+                    $query->where('run_profesor', $request->run)
+                          ->orWhere('run_solicitante', $request->run);
+                })
+                ->orderBy('updated_at', 'desc')
+                ->first();
+
+            if ($reservaAutoFinalizada) {
+                // El profesor está devolviendo la llave después de que la reserva fue auto-finalizada
+                $observacionActual = $reservaAutoFinalizada->observaciones ?? '';
+                $nuevaObservacion = "\nProfesor finalizó la clase más tarde y devolvió llave de acceso a las " . Carbon::now()->format('H:i:s') . ".";
+                $reservaAutoFinalizada->observaciones = $observacionActual . $nuevaObservacion;
+                $reservaAutoFinalizada->save();
+                
+                \Log::info("Reserva auto-finalizada {$reservaAutoFinalizada->id_reserva} actualizada: profesor devolvió llave tarde");
+            }
+
             DB::commit();
 
             return response()->json([

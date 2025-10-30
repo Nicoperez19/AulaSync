@@ -20,6 +20,12 @@ class Kernel extends ConsoleKernel
                 ->withoutOverlapping()
                 ->runInBackground();
 
+        // Finalizar reservas expiradas cada 5 minutos
+        $schedule->command('reservas:finalizar-expiradas')
+                ->everyFiveMinutes()
+                ->withoutOverlapping()
+                ->runInBackground();
+
         // Limpiar sesiones expiradas cada hora
         $schedule->command('sessions:clean')
                 ->hourly()
