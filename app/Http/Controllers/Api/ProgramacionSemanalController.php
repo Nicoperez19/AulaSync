@@ -41,6 +41,7 @@ class ProgramacionSemanalController extends Controller
             $programacion = Planificacion_Asignatura::with([
                 'modulo',
                 'asignatura.profesor',
+                'asignatura.carrera',
                 'espacio'
             ])
             ->where('id_espacio', $id_espacio)
@@ -71,6 +72,10 @@ class ProgramacionSemanalController extends Controller
                             'codigo' => $planificacion->asignatura->codigo_asignatura,
                             'nombre' => $planificacion->asignatura->nombre_asignatura,
                             'seccion' => $planificacion->asignatura->seccion,
+                            'carrera' => $planificacion->asignatura->carrera ? [
+                                'id' => $planificacion->asignatura->carrera->id_carrera,
+                                'nombre' => $planificacion->asignatura->carrera->nombre,
+                            ] : null,
                         ],
                         'profesor' => [
                             'run' => $planificacion->asignatura->profesor->run_profesor ?? null,
@@ -131,6 +136,7 @@ class ProgramacionSemanalController extends Controller
                         'id' => $espacio->id_espacio,
                         'nombre' => $espacio->nombre_espacio,
                         'tipo' => $espacio->tipo_espacio,
+                        'capacidad_maxima' => $espacio->capacidad_maxima,
                     ],
                     'periodo' => $periodo,
                     'programacion_semanal' => $programacion
