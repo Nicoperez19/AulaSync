@@ -9,9 +9,6 @@
                 </div>
                 <div>
                     <h3 class="text-xl font-bold text-yellow-800">{{ $nombreFeriado }}</h3>
-                    <p class="text-sm text-yellow-700 mt-1">
-                        No hay actividades académicas programadas para el día de hoy. Las clases no realizadas durante este periodo quedan justificadas automáticamente.
-                    </p>
                 </div>
             </div>
         </div>
