@@ -3409,6 +3409,57 @@
                 }
             }, 2000);
         } else {
+            // Check if the user is banned
+            if (data.tipo === 'baneado' && data.ban) {
+                // Close any open modals
+                cerrarModalModulos();
+                
+                // Show special black background modal for banned users
+                Swal.fire({
+                    title: '<span style="color: #EF4444;">⛔ ACCESO DENEGADO</span>',
+                    html: `
+                        <div style="text-align: left; color: #FFFFFF;">
+                            <div style="background-color: #1F2937; padding: 20px; border-radius: 10px; border: 2px solid #EF4444;">
+                                <h3 style="color: #EF4444; margin-bottom: 15px; text-align: center;">No puedes realizar reservas</h3>
+                                <div style="margin-bottom: 15px;">
+                                    <p style="margin-bottom: 8px;"><strong style="color: #F87171;">Razón:</strong></p>
+                                    <p style="background-color: #374151; padding: 10px; border-radius: 5px; margin: 0;">${data.ban.razon}</p>
+                                </div>
+                                <div>
+                                    <p style="margin-bottom: 8px;"><strong style="color: #F87171;">Duración:</strong></p>
+                                    <p style="background-color: #374151; padding: 10px; border-radius: 5px; margin: 0;">${data.ban.duracion}</p>
+                                </div>
+                                <div style="margin-top: 15px; text-align: center;">
+                                    <p style="color: #9CA3AF; font-size: 14px;">Fin del baneo: ${data.ban.fecha_fin}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `,
+                    icon: 'error',
+                    background: '#000000',
+                    color: '#FFFFFF',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#EF4444',
+                    allowOutsideClick: false,
+                    customClass: {
+                        popup: 'ban-modal-popup',
+                        title: 'ban-modal-title',
+                        htmlContainer: 'ban-modal-content'
+                    }
+                });
+                
+                // Restore autofocus after showing ban message
+                setTimeout(() => {
+                    limpiarEstadoCompleto();
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 500);
+                
+                return;
+            }
+            
+            // Handle other errors
             let mensajeError = data.mensaje || 'No se pudo reservar';
 
             if (data.errors) {
