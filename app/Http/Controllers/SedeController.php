@@ -42,6 +42,7 @@ class SedeController extends Controller
             $validatedData = $request->validate([
                 'id_sede' => 'required|string|max:20|unique:sedes,id_sede',
                 'nombre_sede' => 'required|string|max:100',
+                'prefijo_sala' => 'nullable|string|max:10',
                 'id_universidad' => 'required|exists:universidades,id_universidad',
                 'comuna_id' => 'required|exists:comunas,id',
             ]);
@@ -89,6 +90,7 @@ class SedeController extends Controller
             $request->validate([
                 'id_sede' => 'required|string|max:20|unique:sedes,id_sede,' . $id . ',id_sede',
                 'nombre_sede' => 'required|string|max:100',
+                'prefijo_sala' => 'nullable|string|max:10',
                 'id_universidad' => 'required|exists:universidades,id_universidad',
                 'comuna_id' => 'required|exists:comunas,id',
             ]);
@@ -97,6 +99,7 @@ class SedeController extends Controller
             $sede->update([
                 'id_sede' => $request->id_sede,
                 'nombre_sede' => $request->nombre_sede,
+                'prefijo_sala' => $request->prefijo_sala,
                 'id_universidad' => $request->id_universidad,
                 'comuna_id' => $request->comuna_id,
             ]);

@@ -28,4 +28,9 @@ class AreaAcademica extends Model
     {
         return $this->hasMany(Carrera::class, 'id_area_academica', 'id_area_academica');
     }
+
+    public function asistenteAcademico()
+    {
+        return $this->hasOne(AsistenteAcademico::class, 'id_area_academica', 'id_area_academica');
+    }
 }
