@@ -12,6 +12,7 @@ use App\Models\Piso;
 use App\Models\Espacio;
 use App\Models\Profesor;
 use App\Models\Solicitante;
+use App\Models\StudentBan;
 use App\Helpers\SemesterHelper;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -804,6 +805,21 @@ class PlanoDigitalController extends Controller
             $runUsuario = $request->input('run_usuario');
             $idEspacio = $request->input('id_espacio');
             $tipoUsuario = $request->input('tipo_usuario');
+
+            // Verificar si el usuario está baneado
+            $ban = StudentBan::getActiveBan($runUsuario);
+            if ($ban) {
+                return response()->json([
+                    'success' => false,
+                    'banned' => true,
+                    'mensaje' => 'No puedes realizar reservas',
+                    'ban_info' => [
+                        'reason' => $ban->reason,
+                        'banned_until' => $ban->banned_until->format('d/m/Y H:i'),
+                        'remaining_time' => $ban->remaining_time,
+                    ]
+                ], 403);
+            }
 
             // Verificar que el espacio existe
             $espacio = Espacio::where('id_espacio', $idEspacio)->first();

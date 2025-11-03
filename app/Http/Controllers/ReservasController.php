@@ -6,6 +6,7 @@ use App\Models\Reserva;
 use Illuminate\Http\Request;
 use App\Models\Universidad;
 use App\Models\Espacio;
+use App\Models\StudentBan;
 
 class ReservasController extends Controller
 {
@@ -53,6 +54,14 @@ class ReservasController extends Controller
 
         if (!$user && !$profesor && !$solicitante) {
             return redirect()->route('reservas.index')->withErrors(['usuario' => 'Usuario no encontrado.']);
+        }
+
+        // Verificar si el usuario está baneado
+        $ban = StudentBan::getActiveBan($run);
+        if ($ban) {
+            return redirect()->route('reservas.index')->withErrors([
+                'ban' => "No puedes realizar reservas. Estás baneado hasta el {$ban->banned_until->format('d/m/Y H:i')}. Razón: {$ban->reason}"
+            ]);
         }
 
         $reservaData = [

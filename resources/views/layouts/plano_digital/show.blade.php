@@ -3409,6 +3409,49 @@
                 }
             }, 2000);
         } else {
+            // Check if user is banned
+            if (data.banned && data.ban_info) {
+                // Display ban message with black background as required
+                Swal.fire({
+                    title: '❌ Usuario Baneado',
+                    html: `
+                        <div style="background-color: black; color: white; padding: 20px; border-radius: 8px; margin: 10px 0;">
+                            <p style="font-size: 18px; font-weight: bold; margin-bottom: 15px;">
+                                No puedes realizar reservas
+                            </p>
+                            <p style="font-size: 16px; margin-bottom: 10px;">
+                                <strong>Razón:</strong> ${data.ban_info.reason}
+                            </p>
+                            <p style="font-size: 16px; margin-bottom: 10px;">
+                                <strong>Baneado hasta:</strong> ${data.ban_info.banned_until}
+                            </p>
+                            <p style="font-size: 14px; color: #fbbf24;">
+                                Tiempo restante: ${data.ban_info.remaining_time}
+                            </p>
+                        </div>
+                    `,
+                    icon: 'error',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#dc2626',
+                    background: '#1f2937',
+                    color: '#ffffff',
+                    customClass: {
+                        popup: 'ban-notification-popup'
+                    }
+                });
+
+                // Cerrar modal
+                cerrarModalModulos();
+
+                // Restaurar autofocus
+                setTimeout(() => {
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 300);
+                return;
+            }
+
             let mensajeError = data.mensaje || 'No se pudo reservar';
 
             if (data.errors) {

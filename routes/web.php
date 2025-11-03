@@ -19,6 +19,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\CampusController;
 use App\Http\Controllers\SedeController;
+use App\Http\Controllers\StudentBanController;
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
@@ -193,6 +194,17 @@ Route::group(['middleware' => ['permission:mantenedor de reservas']], function (
     Route::put('/reservas/{id_reserva}', [ReservasController::class, 'update'])->name('reservas.update');
     Route::delete('/reservas/{id_reserva}', [ReservasController::class, 'destroy'])->name('reservas.delete');
     Route::get('/espacios-disponibles', [ReservasController::class, 'getEspaciosDisponibles']);
+});
+
+// Gestión de baneos - Solo Administrador
+Route::group(['middleware' => ['permission:mantenedor de reservas']], function () {
+    Route::get('/bans', [StudentBanController::class, 'index'])->name('bans.index');
+    Route::get('/bans/create', [StudentBanController::class, 'create'])->name('bans.create');
+    Route::post('/bans', [StudentBanController::class, 'store'])->name('bans.store');
+    Route::get('/bans/{id}/edit', [StudentBanController::class, 'edit'])->name('bans.edit');
+    Route::put('/bans/{id}', [StudentBanController::class, 'update'])->name('bans.update');
+    Route::delete('/bans/{id}', [StudentBanController::class, 'destroy'])->name('bans.destroy');
+    Route::get('/api/bans/check/{run}', [StudentBanController::class, 'checkBan'])->name('bans.check');
 });
 
 Route::group(['middleware' => ['permission:mantenedor de asignaturas']], function () {
