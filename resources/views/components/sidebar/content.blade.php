@@ -142,6 +142,11 @@
                     :isActive="request()->routeIs('reservas.index')" />
             @endcan
 
+            @can('mantenedor de reservas')
+                <x-sidebar.sublink title="Baneos" href="{{ route('bans.index') }}"
+                    :isActive="request()->routeIs('bans.*')" />
+            @endcan
+
             @can('mantenedor de roles')
                 <x-sidebar.sublink title="Roles" href="{{ route('roles.index') }}"
                     :isActive="request()->routeIs('roles.index')" />
