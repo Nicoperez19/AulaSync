@@ -78,6 +78,17 @@
                         </div>
                     </div>
 
+                    <div class="space-y-2">
+                        <x-form.label for="prefijo_sala" value="Prefijo Código Sala" />
+                        <x-form.input id="prefijo_sala" name="prefijo_sala" type="text"
+                            class="w-full @error('prefijo_sala') border-red-500 @enderror" maxlength="10"
+                            placeholder="Ej: TH (para Talcahuano), CT (para Cañete)" value="{{ old('prefijo_sala') }}" />
+                        <p class="text-sm text-gray-600">Este prefijo se utilizará para identificar las salas de esta sede</p>
+                        @error('prefijo_sala')
+                            <p class="text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="space-y-2">
                             <x-form.label for="id_universidad" value="Universidad *" />

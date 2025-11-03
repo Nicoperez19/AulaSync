@@ -76,6 +76,13 @@
                     </div>
                 </div>
 
+                <div>
+                    <x-form.label for="prefijo_sala" :value="__('Prefijo Código Sala')" />
+                    <x-form.input id="prefijo_sala" class="block w-full" type="text" name="prefijo_sala"
+                        value="{{ old('prefijo_sala', $sede->prefijo_sala) }}" maxlength="10" />
+                    <p class="mt-1 text-sm text-gray-600">Este prefijo se utilizará para identificar las salas de esta sede (Ej: TH para Talcahuano, CT para Cañete)</p>
+                </div>
+
                 <div class="flex justify-end mt-6">
                     <x-button variant="success">{{ __('Guardar Cambios') }}</x-button>
                 </div>
