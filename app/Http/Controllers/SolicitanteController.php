@@ -153,6 +153,27 @@ class SolicitanteController extends Controller
                 ], 404);
             }
 
+            // Verificar si el solicitante está baneado
+            $ban = \App\Models\Ban::obtenerBanVigente($request->run_solicitante);
+            if ($ban) {
+                DB::rollBack();
+                $diasRestantes = $ban->diasRestantes();
+                $duracion = $diasRestantes > 0 
+                    ? "{$diasRestantes} día(s) restante(s)" 
+                    : "hasta " . $ban->fecha_fin->format('d/m/Y H:i');
+                
+                return response()->json([
+                    'success' => false,
+                    'tipo' => 'baneado',
+                    'mensaje' => 'No puedes realizar reservas',
+                    'ban' => [
+                        'razon' => $ban->razon,
+                        'duracion' => $duracion,
+                        'fecha_fin' => $ban->fecha_fin->format('d/m/Y H:i')
+                    ]
+                ], 403);
+            }
+
             // Verificar que el espacio existe y está disponible
             $espacio = Espacio::find($request->id_espacio);
             if (!$espacio) {

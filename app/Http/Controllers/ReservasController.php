@@ -55,6 +55,22 @@ class ReservasController extends Controller
             return redirect()->route('reservas.index')->withErrors(['usuario' => 'Usuario no encontrado.']);
         }
 
+        // Si es solicitante, verificar si está baneado
+        if ($solicitante && !$profesor) {
+            $ban = \App\Models\Ban::obtenerBanVigente($run);
+            if ($ban) {
+                $diasRestantes = $ban->diasRestantes();
+                $duracion = $diasRestantes > 0 
+                    ? "{$diasRestantes} día(s) restante(s)" 
+                    : "hasta " . $ban->fecha_fin->format('d/m/Y H:i');
+                
+                return redirect()->route('reservas.index')
+                    ->withErrors([
+                        'ban' => "Este solicitante está baneado y no puede realizar reservas. Razón: {$ban->razon}. Duración: {$duracion}"
+                    ]);
+            }
+        }
+
         $reservaData = [
             'id_reserva' => Reserva::generarIdUnico(),
             'hora' => $request->hora,
