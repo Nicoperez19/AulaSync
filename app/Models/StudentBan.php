@@ -62,11 +62,11 @@ class StudentBan extends Model
         $diff = $now->diff($this->banned_until);
 
         if ($diff->days > 0) {
-            return $diff->days . ' día' . ($diff->days > 1 ? 's' : '');
+            return $diff->days . ' día' . ($diff->days !== 1 ? 's' : '');
         } elseif ($diff->h > 0) {
-            return $diff->h . ' hora' . ($diff->h > 1 ? 's' : '');
+            return $diff->h . ' hora' . ($diff->h !== 1 ? 's' : '');
         } else {
-            return $diff->i . ' minuto' . ($diff->i > 1 ? 's' : '');
+            return $diff->i . ' minuto' . ($diff->i !== 1 ? 's' : '');
         }
     }
 

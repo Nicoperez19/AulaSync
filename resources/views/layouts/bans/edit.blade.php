@@ -55,7 +55,6 @@
                        name="banned_until" 
                        id="banned_until" 
                        value="{{ old('banned_until', $ban->banned_until->format('Y-m-d\TH:i')) }}"
-                       min="{{ now()->format('Y-m-d\TH:i') }}"
                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:bg-gray-800 dark:border-gray-600 dark:text-white"
                        required>
                 <p class="mt-1 text-sm text-gray-500">Seleccione la fecha y hora hasta cuando estará baneado el usuario</p>
