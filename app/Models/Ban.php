@@ -91,6 +91,7 @@ class Ban extends Model
             return 0;
         }
         
-        return Carbon::now()->diffInDays($this->fecha_fin, false);
+        $dias = Carbon::now()->diffInDays($this->fecha_fin, false);
+        return max(0, $dias); // Ensure we never return negative values
     }
 }
