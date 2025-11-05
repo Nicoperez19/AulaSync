@@ -169,7 +169,7 @@ class DashboardController extends Controller
         
         // Calcular total de horas disponibles: espacios × días × horas por día
         $diasLaborales = 5; // Lunes a viernes
-        $horasPorDia = 8;
+        $horasPorDia = 15;
         $totalHoras = $totalEspacios * $diasLaborales * $horasPorDia;
         
         $horasOcupadas = Reserva::whereBetween('fecha_reserva', [$inicioSemana, $finSemana])
@@ -245,7 +245,7 @@ class DashboardController extends Controller
         }
         
         // Calcular total de horas disponibles: espacios × días laborales × horas por día
-        $horasPorDia = 8;
+        $horasPorDia = 15;
         $totalHoras = $totalEspacios * $diasLaborales * $horasPorDia;
         
         $horasOcupadas = Reserva::whereBetween('fecha_reserva', [$inicioMes, $finMes])
@@ -300,7 +300,7 @@ class DashboardController extends Controller
 
         return [
             'utilizadas' => $horasUtilizadas,
-            'disponibles' => 40 // 8 horas por día, 5 días
+            'disponibles' => 75 // 15 horas por día, 5 días
         ];
     }
 
@@ -1026,7 +1026,7 @@ class DashboardController extends Controller
             
             // Calcular total de horas disponibles: espacios × días × horas por día
             $diasLaborales = 5; // Lunes a viernes
-            $horasPorDia = 8;
+            $horasPorDia = 15;
             $totalHoras = $totalEspacios * $diasLaborales * $horasPorDia;
             
             $query = Reserva::whereBetween('fecha_reserva', [$inicioSemana, $finSemana])
@@ -1065,7 +1065,7 @@ class DashboardController extends Controller
             }
             
             // Calcular total de horas disponibles: espacios × días laborales × horas por día
-            $horasPorDia = 8;
+            $horasPorDia = 15;
             $totalHoras = $totalEspacios * $diasLaborales * $horasPorDia;
             
             $query = Reserva::whereBetween('fecha_reserva', [$inicioMes, $finMes])
