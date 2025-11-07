@@ -159,6 +159,63 @@ class DashboardController extends Controller
         ));
     }
 
+    /**
+     * Calcula las horas utilizadas desde planificaciones para un rango de fechas
+     * @param Carbon $inicio Fecha inicial
+     * @param Carbon $fin Fecha final
+     * @param string|null $piso Filtro opcional por piso
+     * @param string|null $tipoEspacio Filtro opcional por tipo de espacio
+     * @return float Total de horas utilizadas
+     */
+    private function calcularHorasDesdePlanificaciones($inicio, $fin, $piso = null, $tipoEspacio = null)
+    {
+        $periodo = SemesterHelper::getCurrentPeriod();
+        $horasTotales = 0;
+        
+        // Obtener las planificaciones del período actual
+        $planificaciones = Planificacion_Asignatura::with(['modulo', 'espacio'])
+            ->whereHas('horario', function($q) use ($periodo) {
+                $q->where('periodo', $periodo);
+            })
+            ->whereHas('espacio', function($query) use ($piso, $tipoEspacio) {
+                if ($piso) {
+                    $query->whereHas('piso', function($q) use ($piso) {
+                        $q->where('numero_piso', $piso);
+                    });
+                }
+                if ($tipoEspacio) {
+                    $query->where('tipo_espacio', $tipoEspacio);
+                }
+            })
+            ->get();
+        
+        // Iterar por cada día en el rango
+        for ($fecha = $inicio->copy(); $fecha->lte($fin); $fecha->addDay()) {
+            // Solo contar días laborales (lunes a viernes)
+            if (!$fecha->isWeekday()) {
+                continue;
+            }
+            
+            $diaSemana = strtolower($fecha->locale('es')->isoFormat('dddd'));
+            
+            // Filtrar planificaciones para este día
+            $planificacionesDia = $planificaciones->filter(function($plan) use ($diaSemana) {
+                return $plan->modulo && strtolower($plan->modulo->dia) === $diaSemana;
+            });
+            
+            // Sumar horas de cada planificación
+            foreach ($planificacionesDia as $plan) {
+                if ($plan->modulo && $plan->modulo->hora_inicio && $plan->modulo->hora_termino) {
+                    $inicio_modulo = Carbon::parse($plan->modulo->hora_inicio);
+                    $fin_modulo = Carbon::parse($plan->modulo->hora_termino);
+                    $horasTotales += $inicio_modulo->diffInHours($fin_modulo, true);
+                }
+            }
+        }
+        
+        return $horasTotales;
+    }
+
     private function calcularOcupacionSemanal($facultad, $piso)
     {
         $inicioSemana = Carbon::now()->startOfWeek();
@@ -172,7 +229,10 @@ class DashboardController extends Controller
         $horasPorDia = 15;
         $totalHoras = $totalEspacios * $diasLaborales * $horasPorDia;
         
-        // Calcular horas REALES utilizadas (no solo contar reservas)
+        // 1. Calcular horas desde PLANIFICACIONES (clases programadas)
+        $horasPlanificaciones = $this->calcularHorasDesdePlanificaciones($inicioSemana, $finSemana, $piso);
+        
+        // 2. Calcular horas desde RESERVAS espontáneas (adicionales a planificación)
         $reservas = Reserva::whereBetween('fecha_reserva', [$inicioSemana, $finSemana])
             ->whereIn('estado', ['activa', 'finalizada'])
             ->whereHas('espacio', function($query) use ($piso) {
@@ -184,7 +244,7 @@ class DashboardController extends Controller
             })
             ->get();
 
-        $horasOcupadas = $reservas->sum(function($reserva) {
+        $horasReservas = $reservas->sum(function($reserva) {
             if ($reserva->hora && $reserva->hora_salida) {
                 $inicio = Carbon::parse($reserva->hora);
                 $fin = Carbon::parse($reserva->hora_salida);
@@ -193,15 +253,20 @@ class DashboardController extends Controller
             // Si no hay hora_salida, asumir 1 módulo de 50 minutos
             return 0.83; // 50/60 horas
         });
+        
+        // Total de horas ocupadas = planificaciones + reservas espontáneas
+        $horasOcupadas = $horasPlanificaciones + $horasReservas;
 
-    $porcentaje = $totalHoras > 0 ? round(($horasOcupadas / $totalHoras) * 100, 2) : 0;
-    \Log::info('Ocupación semanal calculada', [
-        'horasOcupadas' => round($horasOcupadas, 2), 
-        'totalEspacios' => $totalEspacios,
-        'totalHoras' => $totalHoras, 
-        'porcentaje' => $porcentaje
-    ]);
-    return $porcentaje;
+        $porcentaje = $totalHoras > 0 ? round(($horasOcupadas / $totalHoras) * 100, 2) : 0;
+        \Log::info('Ocupación semanal calculada', [
+            'horasPlanificaciones' => round($horasPlanificaciones, 2),
+            'horasReservas' => round($horasReservas, 2),
+            'horasOcupadas' => round($horasOcupadas, 2), 
+            'totalEspacios' => $totalEspacios,
+            'totalHoras' => $totalHoras, 
+            'porcentaje' => $porcentaje
+        ]);
+        return $porcentaje;
     }
 
     private function calcularOcupacionDiaria($facultad, $piso)
@@ -259,7 +324,10 @@ class DashboardController extends Controller
         $horasPorDia = 15;
         $totalHoras = $totalEspacios * $diasLaborales * $horasPorDia;
         
-        // Calcular horas REALES utilizadas (no solo contar reservas)
+        // 1. Calcular horas desde PLANIFICACIONES (clases programadas)
+        $horasPlanificaciones = $this->calcularHorasDesdePlanificaciones($inicioMes, $finMes, $piso);
+        
+        // 2. Calcular horas desde RESERVAS espontáneas
         $reservas = Reserva::whereBetween('fecha_reserva', [$inicioMes, $finMes])
             ->whereIn('estado', ['activa', 'finalizada'])
             ->whereHas('espacio', function($query) use ($piso) {
@@ -271,7 +339,7 @@ class DashboardController extends Controller
             })
             ->get();
 
-        $horasOcupadas = $reservas->sum(function($reserva) {
+        $horasReservas = $reservas->sum(function($reserva) {
             if ($reserva->hora && $reserva->hora_salida) {
                 $inicio = Carbon::parse($reserva->hora);
                 $fin = Carbon::parse($reserva->hora_salida);
@@ -280,16 +348,21 @@ class DashboardController extends Controller
             // Si no hay hora_salida, asumir 1 módulo de 50 minutos
             return 0.83; // 50/60 horas
         });
+        
+        // Total de horas ocupadas = planificaciones + reservas espontáneas
+        $horasOcupadas = $horasPlanificaciones + $horasReservas;
 
-    $porcentaje = $totalHoras > 0 ? round(($horasOcupadas / $totalHoras) * 100, 2) : 0;
-    \Log::info('Ocupación mensual calculada', [
-        'horasOcupadas' => round($horasOcupadas, 2), 
-        'totalEspacios' => $totalEspacios,
-        'diasLaborales' => $diasLaborales,
-        'totalHoras' => $totalHoras, 
-        'porcentaje' => $porcentaje
-    ]);
-    return $porcentaje;
+        $porcentaje = $totalHoras > 0 ? round(($horasOcupadas / $totalHoras) * 100, 2) : 0;
+        \Log::info('Ocupación mensual calculada', [
+            'horasPlanificaciones' => round($horasPlanificaciones, 2),
+            'horasReservas' => round($horasReservas, 2),
+            'horasOcupadas' => round($horasOcupadas, 2), 
+            'totalEspacios' => $totalEspacios,
+            'diasLaborales' => $diasLaborales,
+            'totalHoras' => $totalHoras, 
+            'porcentaje' => $porcentaje
+        ]);
+        return $porcentaje;
     }
 
     private function obtenerUsuariosSinEscaneo($facultad, $piso)
@@ -440,7 +513,10 @@ class DashboardController extends Controller
             // Calcular horas totales disponibles para este tipo de espacio en el mes
             $totalHorasDisponibles = $totalEspaciosTipo * $diasLaborales * $horasPorDia;
             
-            // Obtener reservas del mes para este tipo de espacio
+            // 1. Calcular horas desde PLANIFICACIONES para este tipo de espacio
+            $horasPlanificaciones = $this->calcularHorasDesdePlanificaciones($inicioMes, $finMes, $piso, $tipo);
+            
+            // 2. Obtener reservas espontáneas del mes para este tipo de espacio
             $reservas = Reserva::join('espacios', 'reservas.id_espacio', '=', 'espacios.id_espacio')
                 ->join('pisos', 'espacios.piso_id', '=', 'pisos.id')
                 ->whereBetween('reservas.fecha_reserva', [$inicioMes, $finMes])
@@ -454,8 +530,8 @@ class DashboardController extends Controller
             
             $reservasData = $reservas->select('reservas.hora', 'reservas.hora_salida')->get();
             
-            // Calcular horas reales utilizadas
-            $horasUtilizadas = $reservasData->sum(function($reserva) {
+            // Calcular horas reales desde reservas
+            $horasReservas = $reservasData->sum(function($reserva) {
                 if ($reserva->hora && $reserva->hora_salida) {
                     $inicio = Carbon::parse($reserva->hora);
                     $fin = Carbon::parse($reserva->hora_salida);
@@ -463,6 +539,9 @@ class DashboardController extends Controller
                 }
                 return 0.83; // 50 min default
             });
+            
+            // Total horas utilizadas = planificaciones + reservas espontáneas
+            $horasUtilizadas = $horasPlanificaciones + $horasReservas;
             
             // Calcular porcentaje real basado en horas
             $porcentaje = $totalHorasDisponibles > 0 ? 
@@ -535,7 +614,10 @@ class DashboardController extends Controller
             $dia = $inicioSemana->copy()->addDays($i);
             $diasSemana[] = $dia->format('d/m');
             
-            // Calcular horas REALES utilizadas - incluir activas Y finalizadas para historial
+            // 1. Calcular horas desde PLANIFICACIONES para este día
+            $horasPlanificaciones = $this->calcularHorasDesdePlanificaciones($dia, $dia, $piso);
+            
+            // 2. Calcular horas desde RESERVAS espontáneas
             $reservas = Reserva::whereDate('fecha_reserva', $dia)
                 ->whereIn('estado', ['activa', 'finalizada'])
                 ->whereHas('espacio', function($query) use ($piso) {
@@ -547,7 +629,7 @@ class DashboardController extends Controller
                 })
                 ->get();
 
-            $horasUtilizadas = $reservas->sum(function($reserva) {
+            $horasReservas = $reservas->sum(function($reserva) {
                 if ($reserva->hora && $reserva->hora_salida) {
                     $inicio = Carbon::parse($reserva->hora);
                     $fin = Carbon::parse($reserva->hora_salida);
@@ -555,6 +637,9 @@ class DashboardController extends Controller
                 }
                 return 0.83; // 50 min default
             });
+            
+            // Total de horas utilizadas
+            $horasUtilizadas = $horasPlanificaciones + $horasReservas;
             
             // Calcular porcentaje real de ocupación
             $porcentaje = $totalHorasPorDia > 0 ? round(($horasUtilizadas / $totalHorasPorDia) * 100, 2) : 0;
