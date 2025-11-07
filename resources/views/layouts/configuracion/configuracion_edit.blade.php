@@ -26,14 +26,16 @@
 
                 @if($configuracion->clave === 'logo_institucional')
                     <div class="space-y-2">
-                        <x-form.label for="logo" value="Logo Institucional *" />
+                        <x-form.label for="logo" value="Logo Institucional" />
+                        <p class="text-sm text-gray-600 mb-2">Formatos permitidos: JPEG, PNG, JPG, GIF, SVG, WEBP (máx. 2MB)</p>
                         @if($configuracion->valor)
-                            <div class="mb-2">
-                                <img src="{{ asset('storage/images/logo/' . $configuracion->valor) }}" alt="Logo actual" class="h-20">
-                                <p class="text-sm text-gray-600">Logo actual</p>
+                            <div class="p-4 mb-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <p class="text-sm font-semibold text-gray-700 mb-2">Logo actual:</p>
+                                <img src="{{ asset('storage/images/logo/' . $configuracion->valor) }}" alt="Logo actual" class="h-24 border border-gray-300 rounded">
                             </div>
                         @endif
-                        <x-form.input id="logo" name="logo" type="file" class="w-full @error('logo') border-red-500 @enderror" accept="image/*" />
+                        <input id="logo" name="logo" type="file" class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50 focus:outline-none @error('logo') border-red-500 @enderror" accept="image/*" />
+                        <p class="text-xs text-gray-500">Seleccione un archivo solo si desea cambiar el logo actual</p>
                         @error('logo')
                             <p class="text-sm text-red-600">{{ $message }}</p>
                         @enderror

@@ -81,21 +81,29 @@ class ConfiguracionController extends Controller
             $configuracion = Configuracion::findOrFail($id);
 
             // Special handling for logo upload
-            if ($configuracion->clave === 'logo_institucional' && $request->hasFile('logo')) {
-                $request->validate([
-                    'logo' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-                ]);
+            if ($configuracion->clave === 'logo_institucional') {
+                // Only validate if a file is uploaded
+                if ($request->hasFile('logo')) {
+                    $request->validate([
+                        'logo' => 'image|mimes:jpeg,png,jpg,gif,svg,webp|max:2048',
+                    ]);
 
-                // Delete old logo if exists
-                if ($configuracion->valor && Storage::disk('public')->exists('images/logo/' . $configuracion->valor)) {
-                    Storage::disk('public')->delete('images/logo/' . $configuracion->valor);
+                    // Delete old logo if exists
+                    if ($configuracion->valor && Storage::disk('public')->exists('images/logo/' . $configuracion->valor)) {
+                        Storage::disk('public')->delete('images/logo/' . $configuracion->valor);
+                    }
+
+                    // Upload new logo
+                    $logoName = time() . '.' . $request->logo->extension();
+                    $request->logo->storeAs('images/logo', $logoName, 'public');
+                    
+                    $configuracion->update(['valor' => $logoName]);
                 }
-
-                // Upload new logo
-                $logoName = time() . '.' . $request->logo->extension();
-                $request->logo->storeAs('images/logo', $logoName, 'public');
                 
-                $configuracion->update(['valor' => $logoName]);
+                // Update description if provided
+                if ($request->has('descripcion')) {
+                    $configuracion->update(['descripcion' => $request->descripcion]);
+                }
             } else {
                 $request->validate([
                     'valor' => 'required|string',
@@ -112,7 +120,7 @@ class ConfiguracionController extends Controller
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('configuracion.index')->withErrors(['error' => 'Configuración no encontrada.']);
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error al actualizar la configuración: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Error al actualizar la configuración: ' . $e->getMessage()])->withInput();
         }
     }
 
