@@ -1110,7 +1110,16 @@ class DashboardController extends Controller
                 });
             }
             
-            $horasOcupadas = $query->count();
+            // Calcular horas REALES utilizadas
+            $reservas = $query->get();
+            $horasOcupadas = $reservas->sum(function($reserva) {
+                if ($reserva->hora && $reserva->hora_salida) {
+                    $inicio = Carbon::parse($reserva->hora);
+                    $fin = Carbon::parse($reserva->hora_salida);
+                    return $inicio->diffInHours($fin, true);
+                }
+                return 0.83; // 50 min default
+            });
             
             return $totalHoras > 0 ? round(($horasOcupadas / $totalHoras) * 100, 2) : 0;
         } catch (\Exception $e) {
@@ -1149,7 +1158,16 @@ class DashboardController extends Controller
                 });
             }
             
-            $horasOcupadas = $query->count();
+            // Calcular horas REALES utilizadas
+            $reservas = $query->get();
+            $horasOcupadas = $reservas->sum(function($reserva) {
+                if ($reserva->hora && $reserva->hora_salida) {
+                    $inicio = Carbon::parse($reserva->hora);
+                    $fin = Carbon::parse($reserva->hora_salida);
+                    return $inicio->diffInHours($fin, true);
+                }
+                return 0.83; // 50 min default
+            });
             
             return $totalHoras > 0 ? round(($horasOcupadas / $totalHoras) * 100, 2) : 0;
         } catch (\Exception $e) {
@@ -1169,10 +1187,22 @@ class DashboardController extends Controller
             
             for ($i = 0; $i < 6; $i++) {
                 $fecha = $inicioSemana->copy()->addDays($i);
-                $count = Reserva::whereDate('fecha_reserva', $fecha)
+                
+                // Calcular horas REALES utilizadas
+                $reservas = Reserva::whereDate('fecha_reserva', $fecha)
                     ->whereIn('estado', ['activa', 'finalizada'])
-                    ->count();
-                $datos[$dias[$i]] = $count;
+                    ->get();
+                    
+                $horasUtilizadas = $reservas->sum(function($reserva) {
+                    if ($reserva->hora && $reserva->hora_salida) {
+                        $inicio = Carbon::parse($reserva->hora);
+                        $fin = Carbon::parse($reserva->hora_salida);
+                        return $inicio->diffInHours($fin, true);
+                    }
+                    return 0.83;
+                });
+                
+                $datos[$dias[$i]] = round($horasUtilizadas, 2);
             }
             
             return [
@@ -1194,6 +1224,10 @@ class DashboardController extends Controller
             $inicioMes = Carbon::now()->startOfMonth();
             $diasMes = Carbon::now()->daysInMonth;
             
+            $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)->count();
+            $horasPorDia = 15;
+            $totalHorasPorDia = $totalEspacios * $horasPorDia;
+            
             $dias = [];
             $ocupacion = [];
             
@@ -1201,11 +1235,23 @@ class DashboardController extends Controller
                 $fecha = $inicioMes->copy()->addDays($i - 1);
                 $dias[] = $fecha->format('d/m');
                 
+                // Calcular horas REALES utilizadas
                 $reservas = Reserva::whereDate('fecha_reserva', $fecha)
                     ->whereIn('estado', ['activa', 'finalizada'])
-                    ->count();
+                    ->get();
                     
-                $ocupacion[] = $reservas * 10; // Sin limitación artificial
+                $horasUtilizadas = $reservas->sum(function($reserva) {
+                    if ($reserva->hora && $reserva->hora_salida) {
+                        $inicio = Carbon::parse($reserva->hora);
+                        $fin = Carbon::parse($reserva->hora_salida);
+                        return $inicio->diffInHours($fin, true);
+                    }
+                    return 0.83;
+                });
+                
+                // Calcular porcentaje real de ocupación
+                $porcentaje = $totalHorasPorDia > 0 ? round(($horasUtilizadas / $totalHorasPorDia) * 100, 2) : 0;
+                $ocupacion[] = $porcentaje;
             }
             
             return [
