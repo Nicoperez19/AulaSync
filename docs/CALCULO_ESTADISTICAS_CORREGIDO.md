@@ -147,3 +147,56 @@ const DIAS_LABORALES_SEMANA = 5;    // Lunes a Viernes
 - Considerar cache para cálculos pesados
 - Agregar tests unitarios para validar fórmulas
 
+## Mejoras Futuras (Code Review)
+
+### Refactorización de Código (Mantenibilidad)
+
+Se agregó un método auxiliar `calcularHorasReserva($reserva)` en `DashboardController.php` pero aún no se está utilizando. Para mejorar la mantenibilidad del código, se recomienda:
+
+**Método helper creado:**
+```php
+private function calcularHorasReserva($reserva)
+{
+    if ($reserva->hora && $reserva->hora_salida) {
+        $inicio = Carbon::parse($reserva->hora);
+        $fin = Carbon::parse($reserva->hora_salida);
+        return $inicio->diffInHours($fin, true);
+    }
+    return 0.83; // 50 minutos
+}
+```
+
+**Ubicaciones a refactorizar en `DashboardController.php`:**
+- `calcularOcupacionSemanal()` - línea ~187
+- `calcularOcupacionMensual()` - línea ~274  
+- `calcularHorasUtilizadas()` - línea ~330
+- `obtenerUsoPorDia()` - línea ~355
+- `obtenerEvolucionMensual()` - línea ~498
+- Métodos optimizados similares
+
+**Ejemplo de refactorización:**
+```php
+// Antes (código duplicado):
+$horasOcupadas = $reservas->sum(function($reserva) {
+    if ($reserva->hora && $reserva->hora_salida) {
+        $inicio = Carbon::parse($reserva->hora);
+        $fin = Carbon::parse($reserva->hora_salida);
+        return $inicio->diffInHours($fin, true);
+    }
+    return 0.83;
+});
+
+// Después (usando helper):
+$horasOcupadas = $reservas->sum(function($reserva) {
+    return $this->calcularHorasReserva($reserva);
+});
+```
+
+Esta refactorización:
+- ✅ Elimina duplicación de código
+- ✅ Facilita futuras modificaciones
+- ✅ Asegura consistencia en todos los cálculos
+- ✅ Mejora legibilidad
+
+**Nota**: La funcionalidad actual es correcta. Esta refactorización es solo para mejorar mantenibilidad.
+
