@@ -54,9 +54,9 @@ class ReportController extends Controller
             if ($reserva->hora && $reserva->hora_salida) {
                 $inicio = Carbon::parse($reserva->hora);
                 $fin = Carbon::parse($reserva->hora_salida);
-                return $inicio->diffInHours($fin);
+                return $inicio->diffInHours($fin, true); // true para incluir decimales
             }
-            return 1; // Si no hay hora de salida, asumir 1 hora
+            return 0.83; // Si no hay hora de salida, asumir 1 módulo de 50 minutos
         });
         
         // Calcular promedio basado en horas disponibles vs horas utilizadas
@@ -200,9 +200,9 @@ class ReportController extends Controller
             if ($reserva->hora && $reserva->hora_salida) {
                 $inicio = Carbon::parse($reserva->hora);
                 $fin = Carbon::parse($reserva->hora_salida);
-                return $inicio->diffInHours($fin);
+                return $inicio->diffInHours($fin, true); // true para incluir decimales
             }
-            return 1; // Si no hay hora de salida, asumir 1 hora
+            return 0.83; // Si no hay hora de salida, asumir 1 módulo de 50 minutos
         });
         
         // Calcular promedio de utilización basado en horas reales
@@ -221,9 +221,9 @@ class ReportController extends Controller
                 if ($reserva->hora && $reserva->hora_salida) {
                     $inicio = \Carbon\Carbon::parse($reserva->hora);
                     $fin = \Carbon\Carbon::parse($reserva->hora_salida);
-                    return $inicio->diffInHours($fin);
+                    return $inicio->diffInHours($fin, true); // true para incluir decimales
                 }
-                return 1; // Si no hay hora de salida, asumir 1 hora
+                return 0.83; // Si no hay hora de salida, asumir 1 módulo de 50 minutos
             });
             
             // Calcular porcentaje de utilización basado en días con reservas

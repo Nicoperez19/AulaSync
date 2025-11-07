@@ -1350,4 +1350,19 @@ class DashboardController extends Controller
             return null;
         }
     }
+
+    /**
+     * Calcular horas utilizadas de una reserva individual
+     * Método auxiliar para evitar duplicación de código
+     */
+    private function calcularHorasReserva($reserva)
+    {
+        if ($reserva->hora && $reserva->hora_salida) {
+            $inicio = Carbon::parse($reserva->hora);
+            $fin = Carbon::parse($reserva->hora_salida);
+            return $inicio->diffInHours($fin, true); // true para incluir decimales
+        }
+        // Si no hay hora_salida, asumir 1 módulo de 50 minutos
+        return 0.83; // 50/60 horas
+    }
 } 
