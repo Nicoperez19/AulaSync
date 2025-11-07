@@ -40,7 +40,7 @@ class ReportController extends Controller
                 return $date->isWeekday();
             })->count();
 
-        $modulos_posibles = $total_espacios * $dias_laborales * 15;
+        $modulos_posibles = $total_espacios * $dias_laborales * 15; // 15 módulos por día
         $modulos_reservados = Reserva::whereMonth('fecha_reserva', $mes)
             ->whereYear('fecha_reserva', $anio)
             ->count();
@@ -60,7 +60,7 @@ class ReportController extends Controller
         });
         
         // Calcular promedio basado en horas disponibles vs horas utilizadas
-        $horas_totales_disponibles = $total_espacios * $dias_laborales * 8; // 8 horas por día laboral
+        $horas_totales_disponibles = $total_espacios * $dias_laborales * 15; // 15 horas por día laboral
         $promedio_utilizacion = $horas_totales_disponibles > 0 ? 
             round(($horas_utilizadas / $horas_totales_disponibles) * 100) : 0;
 
@@ -189,7 +189,7 @@ class ReportController extends Controller
 
         // Calcular promedio de utilización basado en días laborales del mes
         $dias_laborales = $this->calcularDiasLaborales($anio, $mes);
-        $horas_totales_disponibles = $total_espacios * $dias_laborales * 8; // 8 horas por día laboral
+        $horas_totales_disponibles = $total_espacios * $dias_laborales * 15; // 15 horas por día laboral
         
         // Calcular horas reales utilizadas
         $reservas_mes = Reserva::whereMonth('fecha_reserva', $mes)

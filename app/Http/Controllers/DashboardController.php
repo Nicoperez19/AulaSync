@@ -172,8 +172,9 @@ class DashboardController extends Controller
         $horasPorDia = 15;
         $totalHoras = $totalEspacios * $diasLaborales * $horasPorDia;
         
-        $horasOcupadas = Reserva::whereBetween('fecha_reserva', [$inicioSemana, $finSemana])
-            ->whereIn('estado', ['activa', 'finalizada']) // Incluir tanto activas como finalizadas
+        // Calcular horas REALES utilizadas (no solo contar reservas)
+        $reservas = Reserva::whereBetween('fecha_reserva', [$inicioSemana, $finSemana])
+            ->whereIn('estado', ['activa', 'finalizada'])
             ->whereHas('espacio', function($query) use ($piso) {
                 if ($piso) {
                     $query->whereHas('piso', function($q) use ($piso) {
@@ -181,11 +182,21 @@ class DashboardController extends Controller
                     });
                 }
             })
-            ->count();
+            ->get();
+
+        $horasOcupadas = $reservas->sum(function($reserva) {
+            if ($reserva->hora && $reserva->hora_salida) {
+                $inicio = Carbon::parse($reserva->hora);
+                $fin = Carbon::parse($reserva->hora_salida);
+                return $inicio->diffInHours($fin, true); // true para incluir decimales
+            }
+            // Si no hay hora_salida, asumir 1 módulo de 50 minutos
+            return 0.83; // 50/60 horas
+        });
 
     $porcentaje = $totalHoras > 0 ? round(($horasOcupadas / $totalHoras) * 100, 2) : 0;
     \Log::info('Ocupación semanal calculada', [
-        'horasOcupadas' => $horasOcupadas, 
+        'horasOcupadas' => round($horasOcupadas, 2), 
         'totalEspacios' => $totalEspacios,
         'totalHoras' => $totalHoras, 
         'porcentaje' => $porcentaje
@@ -248,8 +259,9 @@ class DashboardController extends Controller
         $horasPorDia = 15;
         $totalHoras = $totalEspacios * $diasLaborales * $horasPorDia;
         
-        $horasOcupadas = Reserva::whereBetween('fecha_reserva', [$inicioMes, $finMes])
-            ->whereIn('estado', ['activa', 'finalizada']) // Incluir tanto activas como finalizadas
+        // Calcular horas REALES utilizadas (no solo contar reservas)
+        $reservas = Reserva::whereBetween('fecha_reserva', [$inicioMes, $finMes])
+            ->whereIn('estado', ['activa', 'finalizada'])
             ->whereHas('espacio', function($query) use ($piso) {
                 if ($piso) {
                     $query->whereHas('piso', function($q) use ($piso) {
@@ -257,11 +269,21 @@ class DashboardController extends Controller
                     });
                 }
             })
-            ->count();
+            ->get();
+
+        $horasOcupadas = $reservas->sum(function($reserva) {
+            if ($reserva->hora && $reserva->hora_salida) {
+                $inicio = Carbon::parse($reserva->hora);
+                $fin = Carbon::parse($reserva->hora_salida);
+                return $inicio->diffInHours($fin, true); // true para incluir decimales
+            }
+            // Si no hay hora_salida, asumir 1 módulo de 50 minutos
+            return 0.83; // 50/60 horas
+        });
 
     $porcentaje = $totalHoras > 0 ? round(($horasOcupadas / $totalHoras) * 100, 2) : 0;
     \Log::info('Ocupación mensual calculada', [
-        'horasOcupadas' => $horasOcupadas, 
+        'horasOcupadas' => round($horasOcupadas, 2), 
         'totalEspacios' => $totalEspacios,
         'diasLaborales' => $diasLaborales,
         'totalHoras' => $totalHoras, 
@@ -287,8 +309,15 @@ class DashboardController extends Controller
     private function calcularHorasUtilizadas($facultad, $piso)
     {
         $hoy = Carbon::today();
-        $horasUtilizadas = Reserva::whereDate('fecha_reserva', $hoy)
-            ->whereIn('estado', ['activa', 'finalizada']) // Incluir tanto activas como finalizadas
+        
+        // Obtener total de espacios para calcular horas disponibles correctamente
+        $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)->count();
+        $horasPorDia = 15;
+        $totalHorasDisponibles = $totalEspacios * $horasPorDia;
+        
+        // Calcular horas REALES utilizadas (no solo contar reservas)
+        $reservas = Reserva::whereDate('fecha_reserva', $hoy)
+            ->whereIn('estado', ['activa', 'finalizada'])
             ->whereHas('espacio', function($query) use ($piso) {
                 if ($piso) {
                     $query->whereHas('piso', function($q) use ($piso) {
@@ -296,11 +325,21 @@ class DashboardController extends Controller
                     });
                 }
             })
-            ->count();
+            ->get();
+
+        $horasRealmenteUtilizadas = $reservas->sum(function($reserva) {
+            if ($reserva->hora && $reserva->hora_salida) {
+                $inicio = Carbon::parse($reserva->hora);
+                $fin = Carbon::parse($reserva->hora_salida);
+                return $inicio->diffInHours($fin, true); // true para incluir decimales
+            }
+            // Si no hay hora_salida, asumir 1 módulo de 50 minutos
+            return 0.83; // 50/60 horas
+        });
 
         return [
-            'utilizadas' => $horasUtilizadas,
-            'disponibles' => 75 // 15 horas por día, 5 días
+            'utilizadas' => round($horasRealmenteUtilizadas, 2),
+            'disponibles' => $totalHorasDisponibles
         ];
     }
 
@@ -326,8 +365,10 @@ class DashboardController extends Controller
         
         for ($i = 0; $i < 6; $i++) {
             $dia = $inicioSemana->copy()->addDays($i);
-            $usoPorDia[$diasSemana[$i]] = Reserva::whereDate('fecha_reserva', $dia)
-                ->whereIn('estado', ['activa', 'finalizada']) // Incluir tanto activas como finalizadas
+            
+            // Calcular horas REALES utilizadas (no solo contar reservas)
+            $reservas = Reserva::whereDate('fecha_reserva', $dia)
+                ->whereIn('estado', ['activa', 'finalizada'])
                 ->whereHas('espacio', function($query) use ($piso) {
                     if ($piso) {
                         $query->whereHas('piso', function($q) use ($piso) {
@@ -335,7 +376,18 @@ class DashboardController extends Controller
                         });
                     }
                 })
-                ->count();
+                ->get();
+
+            $horasUtilizadas = $reservas->sum(function($reserva) {
+                if ($reserva->hora && $reserva->hora_salida) {
+                    $inicio = Carbon::parse($reserva->hora);
+                    $fin = Carbon::parse($reserva->hora_salida);
+                    return $inicio->diffInHours($fin, true);
+                }
+                return 0.83; // 50 min default
+            });
+            
+            $usoPorDia[$diasSemana[$i]] = round($horasUtilizadas, 2);
         }
         
         return [
@@ -443,10 +495,17 @@ class DashboardController extends Controller
         $diasSemana = [];
         $ocupacion = [];
         
+        // Obtener total de espacios para calcular el porcentaje correctamente
+        $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)->count();
+        $horasPorDia = 15;
+        $totalHorasPorDia = $totalEspacios * $horasPorDia;
+        
         for ($i = 0; $i < 7; $i++) {
             $dia = $inicioSemana->copy()->addDays($i);
             $diasSemana[] = $dia->format('d/m');
-            $ocupacion[] = Reserva::whereDate('fecha_reserva', $dia)
+            
+            // Calcular horas REALES utilizadas
+            $reservas = Reserva::whereDate('fecha_reserva', $dia)
                 ->where('estado', 'activa')
                 ->whereHas('espacio', function($query) use ($piso) {
                     if ($piso) {
@@ -455,7 +514,20 @@ class DashboardController extends Controller
                         });
                     }
                 })
-                ->count() * 12.5; // Convertir a porcentaje
+                ->get();
+
+            $horasUtilizadas = $reservas->sum(function($reserva) {
+                if ($reserva->hora && $reserva->hora_salida) {
+                    $inicio = Carbon::parse($reserva->hora);
+                    $fin = Carbon::parse($reserva->hora_salida);
+                    return $inicio->diffInHours($fin, true);
+                }
+                return 0.83; // 50 min default
+            });
+            
+            // Calcular porcentaje real de ocupación
+            $porcentaje = $totalHorasPorDia > 0 ? round(($horasUtilizadas / $totalHorasPorDia) * 100, 2) : 0;
+            $ocupacion[] = $porcentaje;
         }
         
         return [
