@@ -153,6 +153,38 @@ Route::group(['middleware' => ['permission:mantenedor de sedes']], function () {
     Route::delete('/sedes/{id}', [SedeController::class, 'destroy'])->name('sedes.destroy');
 });
 
+Route::group(['middleware' => ['permission:mantenedor de configuracion']], function () {
+    Route::get('/configuracion', [\App\Http\Controllers\ConfiguracionController::class, 'index'])->name('configuracion.index');
+    Route::post('/configuracion', [\App\Http\Controllers\ConfiguracionController::class, 'store'])->name('configuracion.store');
+    Route::get('/configuracion/{id}/edit', [\App\Http\Controllers\ConfiguracionController::class, 'edit'])->name('configuracion.edit');
+    Route::put('/configuracion/{id}', [\App\Http\Controllers\ConfiguracionController::class, 'update'])->name('configuracion.update');
+    Route::delete('/configuracion/{id}', [\App\Http\Controllers\ConfiguracionController::class, 'destroy'])->name('configuracion.destroy');
+});
+
+Route::group(['middleware' => ['permission:mantenedor de escuelas']], function () {
+    Route::get('/escuelas', [\App\Http\Controllers\EscuelaController::class, 'index'])->name('escuelas.index');
+    Route::post('/escuelas', [\App\Http\Controllers\EscuelaController::class, 'store'])->name('escuelas.store');
+    Route::get('/escuelas/{id}/edit', [\App\Http\Controllers\EscuelaController::class, 'edit'])->name('escuelas.edit');
+    Route::put('/escuelas/{id}', [\App\Http\Controllers\EscuelaController::class, 'update'])->name('escuelas.update');
+    Route::delete('/escuelas/{id}', [\App\Http\Controllers\EscuelaController::class, 'destroy'])->name('escuelas.destroy');
+});
+
+Route::group(['middleware' => ['permission:mantenedor de jefes de carrera']], function () {
+    Route::get('/jefes-carrera', [\App\Http\Controllers\JefeCarreraController::class, 'index'])->name('jefes-carrera.index');
+    Route::post('/jefes-carrera', [\App\Http\Controllers\JefeCarreraController::class, 'store'])->name('jefes-carrera.store');
+    Route::get('/jefes-carrera/{id}/edit', [\App\Http\Controllers\JefeCarreraController::class, 'edit'])->name('jefes-carrera.edit');
+    Route::put('/jefes-carrera/{id}', [\App\Http\Controllers\JefeCarreraController::class, 'update'])->name('jefes-carrera.update');
+    Route::delete('/jefes-carrera/{id}', [\App\Http\Controllers\JefeCarreraController::class, 'destroy'])->name('jefes-carrera.destroy');
+});
+
+Route::group(['middleware' => ['permission:mantenedor de asistentes academicos']], function () {
+    Route::get('/asistentes-academicos', [\App\Http\Controllers\AsistenteAcademicoController::class, 'index'])->name('asistentes-academicos.index');
+    Route::post('/asistentes-academicos', [\App\Http\Controllers\AsistenteAcademicoController::class, 'store'])->name('asistentes-academicos.store');
+    Route::get('/asistentes-academicos/{id}/edit', [\App\Http\Controllers\AsistenteAcademicoController::class, 'edit'])->name('asistentes-academicos.edit');
+    Route::put('/asistentes-academicos/{id}', [\App\Http\Controllers\AsistenteAcademicoController::class, 'update'])->name('asistentes-academicos.update');
+    Route::delete('/asistentes-academicos/{id}', [\App\Http\Controllers\AsistenteAcademicoController::class, 'destroy'])->name('asistentes-academicos.destroy');
+});
+
 Route::group(['middleware' => ['permission:mantenedor de facultades']], function () {
     Route::get('/faculties', [FacultadController::class, 'index'])->name('faculties.index');
     Route::post('/faculties', [FacultadController::class, 'store'])->name('faculties.add');

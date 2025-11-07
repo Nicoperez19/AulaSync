@@ -120,7 +120,7 @@
     @endcan
 
     <!-- Mantenedores - Solo Administrador -->
-    @canany(['mantenedor de roles', 'mantenedor de permisos', 'mantenedor de universidades', 'mantenedor de facultades', 'mantenedor de areas academicas', 'mantenedor de carreras', 'mantenedor de pisos', 'mantenedor de espacios', 'mantenedor de reservas', 'mantenedor de asignaturas', 'mantenedor de mapas', 'mantenedor de campus', 'mantenedor de sedes', 'mantenedor de profesores', 'mantenedor de visitantes', 'mantenedor de feriados'])
+    @canany(['mantenedor de roles', 'mantenedor de permisos', 'mantenedor de universidades', 'mantenedor de facultades', 'mantenedor de areas academicas', 'mantenedor de carreras', 'mantenedor de pisos', 'mantenedor de espacios', 'mantenedor de reservas', 'mantenedor de asignaturas', 'mantenedor de mapas', 'mantenedor de campus', 'mantenedor de sedes', 'mantenedor de profesores', 'mantenedor de visitantes', 'mantenedor de feriados', 'mantenedor de configuracion', 'mantenedor de escuelas', 'mantenedor de jefes de carrera', 'mantenedor de asistentes academicos'])
         <x-sidebar.dropdown title="Mantenedores" :active="Str::startsWith(request()->route()->uri(), 'users')">
             <x-slot name="icon">
                 <x-icons.config class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
@@ -136,6 +136,11 @@
                     :isActive="request()->routeIs('asignaturas.index')" />
             @endcan
 
+            @can('mantenedor de asistentes academicos')
+                <x-sidebar.sublink title="Asistentes Académicos" href="{{ route('asistentes-academicos.index') }}"
+                    :isActive="request()->routeIs('asistentes-academicos.*')" />
+            @endcan
+
             @can('mantenedor de campus')
                 <x-sidebar.sublink title="Campus" href="{{ route('campus.index') }}"
                     :isActive="request()->routeIs('campus.index')" />
@@ -146,14 +151,24 @@
                     :isActive="request()->routeIs('careers.index')" />
             @endcan
 
+            @can('mantenedor de configuracion')
+                <x-sidebar.sublink title="Configuración" href="{{ route('configuracion.index') }}"
+                    :isActive="request()->routeIs('configuracion.*')" />
+            @endcan
+
             @role('Administrador')
                 <x-sidebar.sublink title="Correos Masivos" href="{{ route('correos-masivos.index') }}"
                     :isActive="request()->routeIs('correos-masivos.*')" />
             @endrole
 
-            @can('mantenedor de feriados')
+            @can('mantenedor de dias feriados')
                 <x-sidebar.sublink title="Días Feriados" href="{{ route('dias-feriados.index') }}"
                     :isActive="request()->routeIs('dias-feriados.*')" />
+            @endcan
+
+            @can('mantenedor de escuelas')
+                <x-sidebar.sublink title="Escuelas" href="{{ route('escuelas.index') }}"
+                    :isActive="request()->routeIs('escuelas.*')" />
             @endcan
 
             {{-- Comentado porque está disponible en Acciones Rápidas
@@ -166,6 +181,11 @@
             @can('mantenedor de facultades')
                 <x-sidebar.sublink title="Facultades" href="{{ route('faculties.index') }}"
                     :isActive="request()->routeIs('faculties.index')" />
+            @endcan
+
+            @can('mantenedor de jefes de carrera')
+                <x-sidebar.sublink title="Jefes de Carrera" href="{{ route('jefes-carrera.index') }}"
+                    :isActive="request()->routeIs('jefes-carrera.*')" />
             @endcan
 
             @can('mantenedor de mapas')

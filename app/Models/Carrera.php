@@ -26,4 +26,9 @@ class Carrera extends Model
     {
         return $this->hasMany(Asignatura::class, 'id_carrera', 'id_carrera');
     }
+
+    public function jefeCarrera()
+    {
+        return $this->hasOne(JefeCarrera::class, 'id_carrera', 'id_carrera');
+    }
 }
