@@ -77,17 +77,22 @@ class ReportController extends Controller
                 ->whereYear('fecha_reserva', $anio)
                 ->get();
             $total_reservas_tipo = $reservas_tipo->count();
+            
+            // Calcular horas reales utilizadas para este tipo
             $horas_utilizadas = $reservas_tipo->sum(function($r) {
-                return $r->hora && $r->hora_salida ? Carbon::parse($r->hora)->diffInMinutes(Carbon::parse($r->hora_salida))/60 : 0;
+                if ($r->hora && $r->hora_salida) {
+                    return Carbon::parse($r->hora)->diffInHours(Carbon::parse($r->hora_salida), true);
+                }
+                return 0.83; // 50 min default si no hay hora_salida
             });
             
-            $espacios_con_reservas = Reserva::whereIn('id_espacio', $espacios)
-                ->whereMonth('fecha_reserva', $mes)
-                ->whereYear('fecha_reserva', $anio)
-                ->distinct('id_espacio')
-                ->count('id_espacio');
+            // Calcular horas totales disponibles para este tipo de espacio
+            $horas_disponibles_tipo = $total_espacios_tipo * $dias_laborales * 15; // 15 horas por día
             
-            $promedio = $total_espacios_tipo > 0 ? round(($espacios_con_reservas / $total_espacios_tipo) * 100) : 0;
+            // Calcular porcentaje real basado en horas utilizadas vs disponibles
+            $promedio = $horas_disponibles_tipo > 0 ? 
+                round(($horas_utilizadas / $horas_disponibles_tipo) * 100) : 0;
+                
             $estado = $promedio >= 80 ? 'Óptimo' : ($promedio >= 40 ? 'Medio uso' : 'Bajo uso');
             $resumen[] = [
                 'nombre' => $tipo,
