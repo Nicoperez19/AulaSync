@@ -219,9 +219,24 @@ class ModulosActualesTable extends Component
             ->whereNotNull('hora') // El profesor sí entró (hora es la hora de entrada)
             ->exists();
 
-        // Si el profesor SÍ registró entrada, la clase SÍ se realizó (aunque haya terminado antes)
+        // Si el profesor SÍ registró entrada en este espacio, la clase SÍ se realizó
         if ($tuvoEntradaHoy) {
             return false; // La clase SÍ se realizó
+        }
+
+        // Verificar si el profesor registró entrada HOY en OTRO espacio (cambio de sala)
+        $runProfesor = $planificacionActiva->asignatura->run_profesor ?? null;
+        if ($runProfesor) {
+            $tuvoEntradaEnOtroEspacio = \App\Models\Reserva::where('id_espacio', '!=', $planificacionActiva->id_espacio)
+                ->where('fecha_reserva', Carbon::now()->toDateString())
+                ->where('run_profesor', $runProfesor)
+                ->whereNotNull('hora') // El profesor sí entró
+                ->exists();
+
+            // Si el profesor registró entrada en otro espacio, la clase SÍ se realizó (solo en otro lugar)
+            if ($tuvoEntradaEnOtroEspacio) {
+                return false; // La clase SÍ se realizó, pero en otro espacio
+            }
         }
 
         // Verificar si la clase ya terminó completamente
@@ -269,10 +284,20 @@ class ModulosActualesTable extends Component
         $ahora = Carbon::createFromTimeString($horaActual);
 
         // Solo marcar como no realizada si ha pasado 1 hora desde el inicio del primer módulo
-        // Y si NO hay reserva con entrada del profesor
+        // Y si NO hay reserva con entrada del profesor (ni en este espacio ni en otro)
         $hasPasadoUnaHora = $ahora->diffInMinutes($inicioModulo) >= 60;
 
-        if ($moduloActual && $moduloActual['numero'] > $numeroPrimerModulo && ! $tuvoEntradaHoy && $hasPasadoUnaHora) {
+        // Verificar nuevamente si registró entrada en otro espacio
+        $tuvoEntradaEnOtroEspacio = false;
+        if ($runProfesor) {
+            $tuvoEntradaEnOtroEspacio = \App\Models\Reserva::where('id_espacio', '!=', $planificacionActiva->id_espacio)
+                ->where('fecha_reserva', Carbon::now()->toDateString())
+                ->where('run_profesor', $runProfesor)
+                ->whereNotNull('hora')
+                ->exists();
+        }
+
+        if ($moduloActual && $moduloActual['numero'] > $numeroPrimerModulo && ! $tuvoEntradaHoy && ! $tuvoEntradaEnOtroEspacio && $hasPasadoUnaHora) {
             // Registrar la clase no realizada
             ClaseNoRealizada::registrarClaseNoRealizada([
                 'id_asignatura' => $planificacionActiva->id_asignatura,
