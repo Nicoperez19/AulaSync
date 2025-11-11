@@ -3894,6 +3894,316 @@
         }
     });
 
+    // ==========================================
+    // FUNCIONES PARA SALA DE ESTUDIO
+    // ==========================================
+
+    let salaEstudioState = {
+        espacioId: null,
+        espacioNombre: null,
+        capacidadMaxima: 0,
+        asistentes: [],
+        modalAbierto: false
+    };
+
+    /**
+     * Abre el modal para registrar asistentes de sala de estudio
+     */
+    function abrirModalSalaEstudio(espacio) {
+        console.log('🎯 Abriendo modal sala de estudio para:', espacio);
+        
+        // Resetear estado
+        salaEstudioState = {
+            espacioId: espacio.id,
+            espacioNombre: espacio.nombre || espacio.id,
+            capacidadMaxima: espacio.capacidad || 0,
+            asistentes: [],
+            modalAbierto: true
+        };
+
+        // Actualizar UI del modal
+        document.getElementById('modal-sala-estudio-titulo').textContent = salaEstudioState.espacioNombre;
+        document.getElementById('sala-capacidad-maxima').textContent = salaEstudioState.capacidadMaxima;
+        document.getElementById('sala-asistentes-count').textContent = '0';
+        document.getElementById('sala-progreso-bar').style.width = '0%';
+        
+        // Limpiar lista de asistentes
+        document.getElementById('lista-asistentes-sala').innerHTML = '<p class="text-sm text-gray-500 italic">No hay asistentes registrados aún</p>';
+        
+        // Deshabilitar botón de registro
+        document.getElementById('btn-registrar-asistencia-sala').disabled = true;
+
+        // Mostrar modal
+        const modal = document.getElementById('modal-sala-estudio');
+        if (modal) {
+            modal.classList.remove('hidden');
+            
+            // Enfocar input QR
+            setTimeout(() => {
+                const qrInput = document.getElementById('qr-input-sala-estudio');
+                if (qrInput) {
+                    qrInput.value = '';
+                    qrInput.focus();
+                }
+            }, 150);
+        }
+    }
+
+    /**
+     * Cierra el modal de sala de estudio
+     */
+    function cerrarModalSalaEstudio() {
+        const modal = document.getElementById('modal-sala-estudio');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        
+        salaEstudioState.modalAbierto = false;
+        
+        // Volver a enfocar el input principal
+        setTimeout(() => {
+            const qrInput = document.getElementById('qr-input');
+            if (qrInput) {
+                qrInput.focus();
+            }
+        }, 100);
+    }
+
+    /**
+     * Agrega un asistente a la lista
+     */
+    function agregarAsistenteSalaEstudio(run, nombre) {
+        // Verificar si ya está registrado
+        if (salaEstudioState.asistentes.some(a => a.run === run)) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Asistente ya registrado',
+                text: `${nombre} ya fue registrado en esta sala`,
+                confirmButtonColor: '#ec4899'
+            });
+            return false;
+        }
+
+        // Verificar capacidad
+        if (salaEstudioState.asistentes.length >= salaEstudioState.capacidadMaxima) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Capacidad completa',
+                text: 'La sala ha alcanzado su capacidad máxima',
+                confirmButtonColor: '#ec4899'
+            });
+            return false;
+        }
+
+        // Agregar asistente
+        salaEstudioState.asistentes.push({ run, nombre });
+        
+        // Actualizar UI
+        actualizarListaAsistentes();
+        actualizarProgresoSala();
+        
+        // Mostrar confirmación
+        const qrStatus = document.getElementById('qr-sala-status');
+        if (qrStatus) {
+            qrStatus.textContent = `✓ ${nombre} agregado`;
+            qrStatus.classList.remove('parpadeo');
+            
+            setTimeout(() => {
+                qrStatus.textContent = 'Esperando escaneo';
+                qrStatus.classList.add('parpadeo');
+            }, 2000);
+        }
+
+        return true;
+    }
+
+    /**
+     * Actualiza la lista visual de asistentes
+     */
+    function actualizarListaAsistentes() {
+        const listaContainer = document.getElementById('lista-asistentes-sala');
+        
+        if (salaEstudioState.asistentes.length === 0) {
+            listaContainer.innerHTML = '<p class="text-sm text-gray-500 italic">No hay asistentes registrados aún</p>';
+            return;
+        }
+
+        listaContainer.innerHTML = salaEstudioState.asistentes.map((asistente, index) => `
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center">
+                        <span class="text-pink-600 font-semibold text-sm">${index + 1}</span>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900">${asistente.nombre}</p>
+                        <p class="text-xs text-gray-500">RUN: ${asistente.run}</p>
+                    </div>
+                </div>
+                <button onclick="eliminarAsistenteSalaEstudio('${asistente.run}')" 
+                    class="text-red-500 hover:text-red-700 transition-colors"
+                    title="Eliminar asistente">
+                    <i class="fas fa-times-circle"></i>
+                </button>
+            </div>
+        `).join('');
+
+        // Habilitar botón de registro si hay al menos un asistente
+        document.getElementById('btn-registrar-asistencia-sala').disabled = false;
+    }
+
+    /**
+     * Actualiza el progreso de ocupación de la sala
+     */
+    function actualizarProgresoSala() {
+        const count = salaEstudioState.asistentes.length;
+        const porcentaje = (count / salaEstudioState.capacidadMaxima) * 100;
+        
+        document.getElementById('sala-asistentes-count').textContent = count;
+        document.getElementById('sala-progreso-bar').style.width = `${porcentaje}%`;
+        
+        // Cambiar color de la barra según ocupación
+        const barra = document.getElementById('sala-progreso-bar');
+        if (porcentaje >= 90) {
+            barra.className = 'bg-red-500 h-2.5 rounded-full transition-all duration-300';
+        } else if (porcentaje >= 70) {
+            barra.className = 'bg-yellow-500 h-2.5 rounded-full transition-all duration-300';
+        } else {
+            barra.className = 'bg-pink-500 h-2.5 rounded-full transition-all duration-300';
+        }
+    }
+
+    /**
+     * Elimina un asistente de la lista
+     */
+    function eliminarAsistenteSalaEstudio(run) {
+        salaEstudioState.asistentes = salaEstudioState.asistentes.filter(a => a.run !== run);
+        actualizarListaAsistentes();
+        actualizarProgresoSala();
+    }
+
+    /**
+     * Registra la asistencia de todos los asistentes
+     */
+    async function registrarAsistenciaSalaEstudio() {
+        if (salaEstudioState.asistentes.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Sin asistentes',
+                text: 'Debe registrar al menos un asistente',
+                confirmButtonColor: '#ec4899'
+            });
+            return;
+        }
+
+        try {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Registrando asistencia...',
+                text: 'Por favor espere',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            const response = await fetch('/api/sala-estudio/registrar-asistencia', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                },
+                body: JSON.stringify({
+                    espacio_id: salaEstudioState.espacioId,
+                    asistentes: salaEstudioState.asistentes
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Asistencia registrada!',
+                    text: `Se registró la asistencia de ${salaEstudioState.asistentes.length} asistente(s)`,
+                    confirmButtonColor: '#ec4899'
+                });
+
+                cerrarModalSalaEstudio();
+                
+                // Actualizar colores del mapa
+                if (typeof actualizarColoresEspacios === 'function') {
+                    await actualizarColoresEspacios();
+                }
+            } else {
+                throw new Error(data.message || 'Error al registrar asistencia');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.message || 'No se pudo registrar la asistencia',
+                confirmButtonColor: '#ec4899'
+            });
+        }
+    }
+
+    // Event listener para el input QR de sala de estudio
+    document.addEventListener('DOMContentLoaded', function() {
+        const qrInputSala = document.getElementById('qr-input-sala-estudio');
+        if (qrInputSala) {
+            qrInputSala.addEventListener('keypress', async function(e) {
+                if (e.key === 'Enter') {
+                    const qrCode = this.value.trim();
+                    if (!qrCode) return;
+
+                    this.value = '';
+
+                    try {
+                        // Buscar información del usuario
+                        const response = await fetch(`/api/usuario/buscar/${qrCode}`);
+                        const data = await response.json();
+
+                        if (data.success) {
+                            agregarAsistenteSalaEstudio(qrCode, data.nombre);
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Usuario no encontrado',
+                                text: 'El código QR no corresponde a un usuario válido',
+                                confirmButtonColor: '#ec4899'
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'No se pudo verificar el código QR',
+                            confirmButtonColor: '#ec4899'
+                        });
+                    }
+
+                    this.focus();
+                }
+            });
+        }
+
+        // Event listener para botón de registrar asistencia
+        const btnRegistrar = document.getElementById('btn-registrar-asistencia-sala');
+        if (btnRegistrar) {
+            btnRegistrar.addEventListener('click', registrarAsistenciaSalaEstudio);
+        }
+
+        // Cerrar modal con ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && salaEstudioState.modalAbierto) {
+                cerrarModalSalaEstudio();
+            }
+        });
+    });
+
     </script>
 
     <!-- Modales del Panel de Administración -->
