@@ -1,7 +1,5 @@
 <?php
-
 namespace App\Http\Controllers;
-
 use App\Models\Espacio;
 use App\Models\Reserva;
 use App\Models\User;
@@ -498,6 +496,19 @@ class DashboardController extends Controller
             });
         
         $todosLosTipos = $tiposDeEspacioQuery->select('tipo_espacio')->distinct()->pluck('tipo_espacio');
+        
+        Log::info('obtenerComparativaTipos - Tipos encontrados', [
+            'facultad' => $facultad,
+            'piso' => $piso,
+            'tipos' => $todosLosTipos->toArray(),
+            'cantidad' => $todosLosTipos->count()
+        ]);
+
+        // Si no hay tipos de espacio, retornar colección vacía pero válida
+        if ($todosLosTipos->isEmpty()) {
+            Log::warning('obtenerComparativaTipos - No se encontraron tipos de espacio');
+            return collect([]);
+        }
 
         $result = [];
         foreach ($todosLosTipos as $tipo) {
@@ -554,6 +565,12 @@ class DashboardController extends Controller
                 'total' => $totalEspaciosTipo
             ];
         }
+        
+        Log::info('obtenerComparativaTipos - Resultado final', [
+            'cantidad_tipos' => count($result),
+            'result' => $result
+        ]);
+        
         return collect($result);
     }
 
@@ -683,13 +700,40 @@ class DashboardController extends Controller
         $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
         $horaActual = now()->format('H:i:s');
         
+        Log::info('obtenerHorariosAgrupados - Inicio', [
+            'diaActual' => $diaActual,
+            'horaActual' => $horaActual,
+            'facultad' => $facultad,
+            'piso' => $piso
+        ]);
+        
         // Buscar el módulo actual
         $moduloActual = Modulo::where('dia', $diaActual)
             ->where('hora_inicio', '<=', $horaActual)
             ->where('hora_termino', '>', $horaActual)
             ->first();
         
+        // Si no hay módulo actual, buscar el siguiente módulo del día
         if (!$moduloActual) {
+            $moduloActual = Modulo::where('dia', $diaActual)
+                ->where('hora_inicio', '>', $horaActual)
+                ->orderBy('hora_inicio', 'asc')
+                ->first();
+        }
+        
+        // Si aún no hay módulo, buscar el primer módulo del día
+        if (!$moduloActual) {
+            $moduloActual = Modulo::where('dia', $diaActual)
+                ->orderBy('hora_inicio', 'asc')
+                ->first();
+        }
+        
+        Log::info('obtenerHorariosAgrupados - Módulo encontrado', [
+            'moduloActual' => $moduloActual ? $moduloActual->id_modulo : 'null'
+        ]);
+        
+        if (!$moduloActual) {
+            Log::warning('obtenerHorariosAgrupados - No se encontró ningún módulo para el día actual');
             return [];
         }
         
@@ -697,6 +741,12 @@ class DashboardController extends Controller
         $anioActual = SemesterHelper::getCurrentAcademicYear();
         $semestre = SemesterHelper::getCurrentSemester();
         $periodo = SemesterHelper::getCurrentPeriod();
+        
+        Log::info('obtenerHorariosAgrupados - Período', [
+            'anio' => $anioActual,
+            'semestre' => $semestre,
+            'periodo' => $periodo
+        ]);
         
         $planificaciones = Planificacion_Asignatura::with(['asignatura.profesor', 'espacio', 'modulo'])
             ->whereHas('modulo', function($query) use ($diaActual, $moduloActual) {
@@ -714,6 +764,10 @@ class DashboardController extends Controller
                 }
             })
             ->get();
+        
+        Log::info('obtenerHorariosAgrupados - Planificaciones encontradas', [
+            'cantidad' => $planificaciones->count()
+        ]);
         
         $horariosAgrupados = [];
         $hora = $moduloActual->hora_inicio . ' - ' . $moduloActual->hora_termino;
@@ -748,6 +802,12 @@ class DashboardController extends Controller
                 ];
             }
         }
+        
+        Log::info('obtenerHorariosAgrupados - Resultado final', [
+            'dias' => array_keys($horariosAgrupados),
+            'total_espacios' => collect($horariosAgrupados)->flatten(2)->count()
+        ]);
+        
         return $horariosAgrupados;
     }
 

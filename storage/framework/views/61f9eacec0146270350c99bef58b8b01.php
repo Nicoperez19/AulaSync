@@ -517,6 +517,14 @@
 
 <script>
     // ========================================
+    // VARIABLES GLOBALES
+    // ========================================
+    let autoRefreshInterval = null;
+    let autoRefreshEnabled = true;
+    let moduloActual = null;
+    let moduloCheckInterval = null;
+
+    // ========================================
     // CONFIGURACIÓN DE HORARIOS DE MÓDULOS
     // ========================================
     window.horariosModulos = window.horariosModulos || {
@@ -650,6 +658,15 @@
             errores.push(`Error al actualizar horarios de la semana: ${error.message}`);
         }
 
+        // Actualizar tabla de utilización por tipo de espacio
+        try {
+            if (data.comparativaTipos) {
+                actualizarTablaUtilizacionTipoEspacio(data.comparativaTipos);
+            }
+        } catch (error) {
+            errores.push(`Error al actualizar tabla de utilización por tipo: ${error.message}`);
+        }
+
         // Ocultar indicadores de carga
         ocultarCargando();
 
@@ -685,6 +702,27 @@
     // ========================================
     // FUNCIONES DE DETECCIÓN DE MÓDULO
     // ========================================
+
+    function obtenerDiaActual() {
+        const dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        return dias[new Date().getDay()];
+    }
+
+    function obtenerModuloActual(hora = null) {
+        const diaActual = obtenerDiaActual();
+        const horaAhora = hora || new Date().toTimeString().slice(0, 8);
+
+        if (!window.horariosModulos || !window.horariosModulos[diaActual]) {
+            return null;
+        }
+
+        for (const [num, horario] of Object.entries(window.horariosModulos[diaActual])) {
+            if (horaAhora >= horario.inicio && horaAhora <= horario.fin) {
+                return parseInt(num);
+            }
+        }
+        return null;
+    }
 
     function verificarCambioModulo() {
         const nuevoModulo = obtenerModuloActual();
@@ -767,7 +805,6 @@
             })
             .then(html => {
                 contenedor.innerHTML = html;
-                console.log('Horarios de la semana actualizados correctamente');
             })
             .catch(error => {
                 console.error('Error al actualizar horarios:', error);
@@ -842,6 +879,71 @@
                 elementoSalas.innerHTML = `${ocupadas} <span class="text-gray-400"> de </span> ${total} <span class="text-gray-400"> en total</span>`;
             }
         }
+    }
+
+    function actualizarTablaUtilizacionTipoEspacio(comparativaTipos) {
+        const contenedor = document.getElementById('tabla-utilizacion-tipo-espacio');
+        if (!contenedor || !comparativaTipos) return;
+
+        // Mapeo de iconos por tipo de espacio
+        const iconos = {
+            'Aula': 'fa-graduation-cap',
+            'Laboratorio': 'fa-flask',
+            'Auditorio': 'fa-volume-up',
+            'Sala de Estudio': 'fa-book',
+            'Taller': 'fa-tools',
+            'Sala de Reuniones': 'fa-comments',
+            'Sala de Clases': 'fa-chalkboard-teacher'
+        };
+
+        if (!Array.isArray(comparativaTipos) || comparativaTipos.length === 0) {
+            contenedor.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12 text-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    </svg>
+                    <p class="text-lg font-medium text-gray-500">No hay datos de utilización de espacios</p>
+                    <p class="mt-1 text-sm text-gray-400">Los datos aparecerán aquí cuando haya espacios registrados</p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">';
+        
+        comparativaTipos.forEach(data => {
+            const icono = iconos[data.nombre] || iconos[data.tipo] || 'fa-door-closed';
+            const nombre = data.nombre || data.tipo || 'Tipo no especificado';
+            const porcentaje = data.porcentaje || 0;
+            const ocupados = data.ocupados || 0;
+            const total = data.total || 0;
+
+            html += `
+                <div class="flex flex-col justify-between p-4 bg-white rounded-lg shadow border border-gray-200 min-h-[120px]">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100">
+                                <i class="fas ${icono} text-xl text-gray-400"></i>
+                            </span>
+                            <span class="font-semibold text-gray-900">${nombre}</span>
+                        </div>
+                        <span class="text-xs font-bold text-gray-500">${porcentaje}%</span>
+                    </div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-xs text-gray-500">${ocupados} de ${total} ocupadas</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                            <div class="absolute left-0 top-0 h-2 rounded-full" style="width: ${porcentaje}%; background: #8C0303;"></div>
+                        </div>
+                        <span class="ml-2 text-xs text-gray-600 font-semibold">${ocupados}/${total}</span>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        contenedor.innerHTML = html;
     }
 
     // ========================================
