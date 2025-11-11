@@ -614,6 +614,7 @@ class ModulosActualesTable extends Component
                                 'hora_salida' => $reservaProfesor->hora_salida ?? '-',
                                 'nombre_asignatura' => $reservaProfesor->asignatura->nombre_asignatura ?? 'Sin asignatura',
                                 'codigo_asignatura' => $reservaProfesor->asignatura->codigo_asignatura ?? '-',
+                                'carrera' => $reservaProfesor->asignatura->carrera->nombre ?? '-',
                             ];
                         }
 

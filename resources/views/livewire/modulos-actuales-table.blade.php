@@ -97,6 +97,12 @@
                                                             {{ $espacio['datos_clase']['hora_inicio'] ?? '--:--' }} - {{ $espacio['datos_clase']['hora_fin'] ?? '--:--' }}
                                                         </div>
                                                     </div>
+                                                @elseif(($espacio['tiene_reserva_profesor'] ?? false) && !empty($espacio['datos_profesor']))
+                                                    <div class="font-medium text-gray-900 text-sm">
+                                                        <div class="text-gray-600">
+                                                            Reserva Profesor
+                                                        </div>
+                                                    </div>
                                                 @elseif(!empty($espacio['proxima_clase']) && is_array($espacio['proxima_clase']))
                                                      <div class="flex items-center gap-2 text-base font-semibold">
                                                                          
@@ -162,6 +168,8 @@
                                         <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
                                             @if (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']['carrera']))
                                                 <span class="font-medium text-gray-700 text-sm">{{ $espacio['datos_clase']['carrera'] }}</span>
+                                            @elseif (($espacio['tiene_reserva_profesor'] ?? false) && !empty($espacio['datos_profesor']['carrera']))
+                                                <span class="font-medium text-gray-700 text-sm">{{ $espacio['datos_profesor']['carrera'] }}</span>
                                             @else
                                                 <span class="text-gray-400 italic text-sm">-</span>
                                             @endif
