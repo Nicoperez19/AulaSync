@@ -40,27 +40,60 @@ class ReportController extends Controller
                 return $date->isWeekday();
             })->count();
 
-        $modulos_posibles = $total_espacios * $dias_laborales * 15;
+        $modulos_posibles = $total_espacios * $dias_laborales * 15; // 15 módulos por día
         $modulos_reservados = Reserva::whereMonth('fecha_reserva', $mes)
             ->whereYear('fecha_reserva', $anio)
             ->count();
         
-        // Calcular horas reales utilizadas para el promedio
+        // Calcular horas desde planificaciones
+        $inicioMes = Carbon::create($anio, $mes, 1)->startOfDay();
+        $finMes = Carbon::create($anio, $mes, 1)->endOfMonth()->endOfDay();
+        $periodo = SemesterHelper::getCurrentPeriod();
+        
+        $horas_planificaciones = 0;
+        $planificaciones = Planificacion_Asignatura::with(['modulo'])
+            ->whereHas('horario', function($q) use ($periodo) {
+                $q->where('periodo', $periodo);
+            })
+            ->get();
+        
+        // Calcular horas de planificaciones para el mes
+        for ($fecha = $inicioMes->copy(); $fecha->lte($finMes); $fecha->addDay()) {
+            if (!$fecha->isWeekday()) continue;
+            
+            $diaSemana = strtolower($fecha->locale('es')->isoFormat('dddd'));
+            $planificacionesDia = $planificaciones->filter(function($plan) use ($diaSemana) {
+                return $plan->modulo && strtolower($plan->modulo->dia) === $diaSemana;
+            });
+            
+            foreach ($planificacionesDia as $plan) {
+                if ($plan->modulo && $plan->modulo->hora_inicio && $plan->modulo->hora_termino) {
+                    $inicio = Carbon::parse($plan->modulo->hora_inicio);
+                    $fin = Carbon::parse($plan->modulo->hora_termino);
+                    $horas_planificaciones += $inicio->diffInHours($fin, true);
+                }
+            }
+        }
+        
+        // Calcular horas reales desde reservas espontáneas
         $reservas_mes = Reserva::whereMonth('fecha_reserva', $mes)
             ->whereYear('fecha_reserva', $anio)
             ->get();
         
-        $horas_utilizadas = $reservas_mes->sum(function($reserva) {
+        $horas_reservas = $reservas_mes->sum(function($reserva) {
             if ($reserva->hora && $reserva->hora_salida) {
                 $inicio = Carbon::parse($reserva->hora);
                 $fin = Carbon::parse($reserva->hora_salida);
-                return $inicio->diffInHours($fin);
+                return $inicio->diffInHours($fin, true); // true para incluir decimales
             }
-            return 1; // Si no hay hora de salida, asumir 1 hora
+            return 0.83; // Si no hay hora de salida, asumir 1 módulo de 50 minutos
         });
         
+        // Total de horas utilizadas
+        $horas_utilizadas = $horas_planificaciones + $horas_reservas;
+        
         // Calcular promedio basado en horas disponibles vs horas utilizadas
-        $horas_totales_disponibles = $total_espacios * $dias_laborales * 8; // 8 horas por día laboral
+        $horas_totales_disponibles = $total_espacios * $dias_laborales * 15; // 15 horas por día laboral
         $promedio_utilizacion = $horas_totales_disponibles > 0 ? 
             round(($horas_utilizadas / $horas_totales_disponibles) * 100) : 0;
 
@@ -69,25 +102,58 @@ class ReportController extends Controller
         $labels_grafico = [];
         $data_grafico = [];
         $data_reservas_grafico = [];
+        
         foreach ($tipos as $tipo) {
             $espacios = Espacio::where('tipo_espacio', $tipo)->pluck('id_espacio');
             $total_espacios_tipo = $espacios->count();
+            
+            // 1. Calcular horas desde PLANIFICACIONES para este tipo
+            $horas_plan_tipo = 0;
+            $planificaciones_tipo = $planificaciones->filter(function($plan) use ($tipo) {
+                return $plan->espacio && $plan->espacio->tipo_espacio === $tipo;
+            });
+            
+            for ($fecha = $inicioMes->copy(); $fecha->lte($finMes); $fecha->addDay()) {
+                if (!$fecha->isWeekday()) continue;
+                
+                $diaSemana = strtolower($fecha->locale('es')->isoFormat('dddd'));
+                $planificacionesDia = $planificaciones_tipo->filter(function($plan) use ($diaSemana) {
+                    return $plan->modulo && strtolower($plan->modulo->dia) === $diaSemana;
+                });
+                
+                foreach ($planificacionesDia as $plan) {
+                    if ($plan->modulo && $plan->modulo->hora_inicio && $plan->modulo->hora_termino) {
+                        $inicio = Carbon::parse($plan->modulo->hora_inicio);
+                        $fin = Carbon::parse($plan->modulo->hora_termino);
+                        $horas_plan_tipo += $inicio->diffInHours($fin, true);
+                    }
+                }
+            }
+            
+            // 2. Calcular horas desde RESERVAS espontáneas para este tipo
             $reservas_tipo = Reserva::whereIn('id_espacio', $espacios)
                 ->whereMonth('fecha_reserva', $mes)
                 ->whereYear('fecha_reserva', $anio)
                 ->get();
             $total_reservas_tipo = $reservas_tipo->count();
-            $horas_utilizadas = $reservas_tipo->sum(function($r) {
-                return $r->hora && $r->hora_salida ? Carbon::parse($r->hora)->diffInMinutes(Carbon::parse($r->hora_salida))/60 : 0;
+            
+            $horas_reservas_tipo = $reservas_tipo->sum(function($r) {
+                if ($r->hora && $r->hora_salida) {
+                    return Carbon::parse($r->hora)->diffInHours(Carbon::parse($r->hora_salida), true);
+                }
+                return 0.83; // 50 min default si no hay hora_salida
             });
             
-            $espacios_con_reservas = Reserva::whereIn('id_espacio', $espacios)
-                ->whereMonth('fecha_reserva', $mes)
-                ->whereYear('fecha_reserva', $anio)
-                ->distinct('id_espacio')
-                ->count('id_espacio');
+            // Total de horas utilizadas = planificaciones + reservas
+            $horas_utilizadas = $horas_plan_tipo + $horas_reservas_tipo;
             
-            $promedio = $total_espacios_tipo > 0 ? round(($espacios_con_reservas / $total_espacios_tipo) * 100) : 0;
+            // Calcular horas totales disponibles para este tipo de espacio
+            $horas_disponibles_tipo = $total_espacios_tipo * $dias_laborales * 15; // 15 horas por día
+            
+            // Calcular porcentaje real basado en horas utilizadas vs disponibles
+            $promedio = $horas_disponibles_tipo > 0 ? 
+                round(($horas_utilizadas / $horas_disponibles_tipo) * 100) : 0;
+                
             $estado = $promedio >= 80 ? 'Óptimo' : ($promedio >= 40 ? 'Medio uso' : 'Bajo uso');
             $resumen[] = [
                 'nombre' => $tipo,
@@ -189,7 +255,7 @@ class ReportController extends Controller
 
         // Calcular promedio de utilización basado en días laborales del mes
         $dias_laborales = $this->calcularDiasLaborales($anio, $mes);
-        $horas_totales_disponibles = $total_espacios * $dias_laborales * 8; // 8 horas por día laboral
+        $horas_totales_disponibles = $total_espacios * $dias_laborales * 15; // 15 horas por día laboral
         
         // Calcular horas reales utilizadas
         $reservas_mes = Reserva::whereMonth('fecha_reserva', $mes)
@@ -200,9 +266,9 @@ class ReportController extends Controller
             if ($reserva->hora && $reserva->hora_salida) {
                 $inicio = Carbon::parse($reserva->hora);
                 $fin = Carbon::parse($reserva->hora_salida);
-                return $inicio->diffInHours($fin);
+                return $inicio->diffInHours($fin, true); // true para incluir decimales
             }
-            return 1; // Si no hay hora de salida, asumir 1 hora
+            return 0.83; // Si no hay hora de salida, asumir 1 módulo de 50 minutos
         });
         
         // Calcular promedio de utilización basado en horas reales
@@ -221,9 +287,9 @@ class ReportController extends Controller
                 if ($reserva->hora && $reserva->hora_salida) {
                     $inicio = \Carbon\Carbon::parse($reserva->hora);
                     $fin = \Carbon\Carbon::parse($reserva->hora_salida);
-                    return $inicio->diffInHours($fin);
+                    return $inicio->diffInHours($fin, true); // true para incluir decimales
                 }
-                return 1; // Si no hay hora de salida, asumir 1 hora
+                return 0.83; // Si no hay hora de salida, asumir 1 módulo de 50 minutos
             });
             
             // Calcular porcentaje de utilización basado en días con reservas

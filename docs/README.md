@@ -6,6 +6,17 @@ Este documento sirve como índice central para toda la documentación de la API 
 
 ## 📚 Documentación de APIs
 
+### Cálculos y Estadísticas
+
+Actualizado el: **7 de noviembre de 2025**
+
+- **[CALCULO_ESTADISTICAS_CORREGIDO.md](CALCULO_ESTADISTICAS_CORREGIDO.md)** 🔥 NUEVO
+  - Correcciones en cálculos de estadísticas del dashboard
+  - Fórmulas correctas para ocupación semanal/mensual
+  - Cálculo de horas reales utilizadas vs count() de reservas
+  - Consistencia en uso de 15 horas/día laboral
+  - **LECTURA OBLIGATORIA** para entender las correcciones aplicadas
+
 ### API de Espacios y Tipos de Espacios
 
 Agregada el: **27 de octubre de 2025**
