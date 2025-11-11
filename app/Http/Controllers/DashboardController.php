@@ -437,8 +437,8 @@ class DashboardController extends Controller
         for ($i = 0; $i < 6; $i++) {
             $dia = $inicioSemana->copy()->addDays($i);
             
-            // Calcular horas REALES utilizadas (no solo contar reservas)
-            $reservas = Reserva::whereDate('fecha_reserva', $dia)
+            // Contar CANTIDAD DE RESERVAS (no horas)
+            $cantidadReservas = Reserva::whereDate('fecha_reserva', $dia)
                 ->whereIn('estado', ['activa', 'finalizada'])
                 ->whereHas('espacio', function($query) use ($piso) {
                     if ($piso) {
@@ -447,18 +447,9 @@ class DashboardController extends Controller
                         });
                     }
                 })
-                ->get();
-
-            $horasUtilizadas = $reservas->sum(function($reserva) {
-                if ($reserva->hora && $reserva->hora_salida) {
-                    $inicio = Carbon::parse($reserva->hora);
-                    $fin = Carbon::parse($reserva->hora_salida);
-                    return $inicio->diffInHours($fin, true);
-                }
-                return 0.83; // 50 min default
-            });
+                ->count();
             
-            $usoPorDia[$diasSemana[$i]] = round($horasUtilizadas, 2);
+            $usoPorDia[$diasSemana[$i]] = $cantidadReservas;
         }
         
         return [
@@ -557,11 +548,21 @@ class DashboardController extends Controller
             // Calcular porcentaje real basado en horas
             $porcentaje = $totalHorasDisponibles > 0 ? 
                 round(($horasUtilizadas / $totalHorasDisponibles) * 100) : 0;
+            
+            // Contar espacios ocupados actualmente (no horas)
+            $espaciosOcupados = Espacio::where('tipo_espacio', $tipo)
+                ->where('estado', 'Ocupado')
+                ->whereHas('piso', function($query) use ($facultad, $piso) {
+                    $query->where('id_facultad', $facultad);
+                    if ($piso) {
+                        $query->where('numero_piso', $piso);
+                    }
+                })->count();
                 
             $result[] = [
                 'nombre' => $tipo,
                 'porcentaje' => $porcentaje,
-                'ocupados' => round($horasUtilizadas, 2),
+                'ocupados' => $espaciosOcupados,  // Espacios ocupados, no horas
                 'total' => $totalEspaciosTipo
             ];
         }

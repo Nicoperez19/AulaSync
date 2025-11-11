@@ -1043,7 +1043,7 @@
         data: {
             labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
             datasets: [{
-                label: 'Horas ocupadas',
+                label: 'Cantidad de reservas',
                 data: <?php echo json_encode(array_values($usoPorDia['datos'])); ?>,
                 backgroundColor: 'rgba(59, 130, 246, 0.7)'
             }]
