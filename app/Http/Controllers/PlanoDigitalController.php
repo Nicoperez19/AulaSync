@@ -1773,7 +1773,159 @@ class PlanoDigitalController extends Controller
         }
     }
 
+    /**
+     * Busca un usuario (profesor o estudiante) por su código QR
+     */
+    public function buscarUsuarioPorQR($qr)
+    {
+        try {
+            // Primero buscar en profesores
+            $profesor = Profesor::where('run_profesor', $qr)->first();
+            
+            if ($profesor) {
+                return response()->json([
+                    'success' => true,
+                    'tipo' => 'profesor',
+                    'nombre' => $profesor->nombre_profesor,
+                    'run' => $profesor->run_profesor,
+                    'email' => $profesor->email_profesor ?? null
+                ]);
+            }
 
+            // Si no es profesor, buscar en usuarios (estudiantes, etc.)
+            $usuario = \App\Models\User::where('run', $qr)->first();
+            
+            if ($usuario) {
+                return response()->json([
+                    'success' => true,
+                    'tipo' => 'usuario',
+                    'nombre' => $usuario->name,
+                    'run' => $usuario->run,
+                    'email' => $usuario->email
+                ]);
+            }
 
+            // No encontrado
+            return response()->json([
+                'success' => false,
+                'message' => 'Usuario no encontrado'
+            ], 404);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al buscar usuario por QR: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al buscar usuario'
+            ], 500);
+        }
+    }
+
+    /**
+     * Registra la asistencia de múltiples asistentes en una sala de estudio
+     */
+    public function registrarAsistenciaSalaEstudio(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'espacio_id' => 'required|string|exists:espacios,id_espacio',
+                'asistentes' => 'required|array|min:1',
+                'asistentes.*.run' => 'required|string',
+                'asistentes.*.nombre' => 'required|string'
+            ]);
+
+            $espacioId = $validated['espacio_id'];
+            $asistentes = $validated['asistentes'];
+
+            // Verificar que el espacio sea una sala de estudio
+            $espacio = Espacio::where('id_espacio', $espacioId)->first();
+            
+            if (!$espacio) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Espacio no encontrado'
+                ], 404);
+            }
+
+            if (strtolower($espacio->tipo_espacio) !== 'sala de estudio') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El espacio no es una sala de estudio'
+                ], 400);
+            }
+
+            // Verificar capacidad
+            if (count($asistentes) > $espacio->capacidad_maxima) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'La cantidad de asistentes excede la capacidad máxima de la sala'
+                ], 400);
+            }
+
+            $horaActual = Carbon::now();
+            $fechaActual = $horaActual->format('Y-m-d');
+
+            // Crear una reserva para cada asistente o una única reserva grupal
+            // Opción 1: Reserva grupal (recomendada)
+            $primerasistente = $asistentes[0];
+            
+            // Buscar o crear solicitante para el primer asistente
+            $solicitante = Solicitante::firstOrCreate(
+                ['run_solicitante' => $primerasistente['run']],
+                [
+                    'nombre_solicitante' => $primerasistente['nombre'],
+                    'email_solicitante' => $primerasistente['run'] . '@temp.com',
+                    'telefono_solicitante' => '000000000',
+                    'tipo_solicitante' => 'estudiante'
+                ]
+            );
+
+            // Crear la reserva grupal
+            $reserva = Reserva::create([
+                'id_espacio' => $espacioId,
+                'run_solicitante' => $solicitante->run_solicitante,
+                'fecha_reserva' => $fechaActual,
+                'hora_inicio' => $horaActual->format('H:i:s'),
+                'hora_fin' => $horaActual->copy()->addHours(2)->format('H:i:s'), // 2 horas por defecto
+                'estado_reserva' => 'Ocupado',
+                'motivo' => 'Sala de Estudio - Grupo de ' . count($asistentes) . ' asistentes',
+                'observaciones' => 'Asistentes: ' . implode(', ', array_column($asistentes, 'nombre'))
+            ]);
+
+            // Actualizar estado del espacio
+            $espacio->update([
+                'estado' => 'Ocupado',
+                'puestos_disponibles' => max(0, $espacio->capacidad_maxima - count($asistentes))
+            ]);
+
+            \Log::info('Asistencia registrada en sala de estudio', [
+                'espacio_id' => $espacioId,
+                'cantidad_asistentes' => count($asistentes),
+                'reserva_id' => $reserva->id_reserva
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Asistencia registrada exitosamente',
+                'reserva_id' => $reserva->id_reserva,
+                'cantidad_asistentes' => count($asistentes)
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Datos inválidos',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Error al registrar asistencia en sala de estudio: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al registrar asistencia: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
 }
