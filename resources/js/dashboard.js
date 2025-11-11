@@ -169,7 +169,6 @@ function iniciarAutoRefresh() {
         actualizarDashboard();
     }, 30000);
 
-    console.log('Auto-refresh iniciado');
 }
 
 function detenerAutoRefresh() {
@@ -267,8 +266,6 @@ function actualizarWidgets(data) {
     // Mostrar errores si los hay
     if (errores.length > 0) {
         console.error('Errores durante la actualización:', errores);
-    } else {
-        console.log('Widgets actualizados exitosamente');
     }
 }
 
@@ -368,7 +365,6 @@ function verificarCambioModulo() {
     if (nuevoModulo !== moduloActual) {
         moduloActual = nuevoModulo;
         actualizarIndicadorModuloInfo(nuevoModulo);
-        console.log('Cambio de módulo detectado:', nuevoModulo);
     }
 }
 
@@ -589,7 +585,6 @@ function inicializarGraficos(data) {
 // ========================================
 
 document.addEventListener('DOMContentLoaded', function () {
-    console.log('Dashboard JavaScript iniciado');
     
     // Inicializar gráficos con datos desde el servidor
     if (window.dashboardData) {
