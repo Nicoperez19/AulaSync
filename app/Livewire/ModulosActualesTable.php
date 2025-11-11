@@ -702,12 +702,12 @@ class ModulosActualesTable extends Component
                             'puestos_disponibles' => $espacio->puestos_disponibles ?? 0,
                             'capacidad_maxima' => $espacio->capacidad_maxima ?? 0,
                             // Solo mostrar información de clase si el estado no es simplemente "Disponible"
-                            'tiene_clase' => ($tieneClase && $estado !== 'Disponible') ?? false,
+                            'tiene_clase' => (($tieneClase ?? false) && $estado !== 'Disponible'),
                             'tiene_reserva_solicitante' => $tieneReservaSolicitante ?? false,
-                            'tiene_reserva_profesor' => $tieneReservaProfesor ?? false,
+                            'tiene_reserva_profesor' => (($tieneReservaProfesor ?? false) && $estado !== 'Disponible'),
                             'datos_clase' => ($estado !== 'Disponible') ? $datosClase : null,
                             'datos_solicitante' => $datosSolicitante,
-                            'datos_profesor' => $datosProfesor,
+                            'datos_profesor' => ($estado !== 'Disponible') ? $datosProfesor : null,
                             'modulo' => [
                                 'numero' => $this->moduloActual['numero'] ?? '--',
                                 'inicio' => $this->moduloActual['inicio'] ?? '--:--',
