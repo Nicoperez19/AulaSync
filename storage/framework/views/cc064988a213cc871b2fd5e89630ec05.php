@@ -1,0 +1,650 @@
+<nav aria-label="secondary" x-data="{ open: false }"
+    class="sticky top z-50 flex items-center justify-between px-3 py-2 bg-light-cloud-blue sm:px-6 dark:bg-dark-eval-1 shadow-[0_4px_6px_rgba(255,255,255,0.3)]">
+    <div class="flex items-center gap-3">
+
+        <!-- Botón Toggle -->
+        <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['type' => 'button','iconOnly' => true,'srText' => 'Toggle sidebar','class' => 'bg-cloud-blue-500 dark:bg-dark-eval-1','xOn:click' => 'isSidebarOpen = !isSidebarOpen']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['type' => 'button','icon-only' => true,'sr-text' => 'Toggle sidebar','class' => 'bg-cloud-blue-500 dark:bg-dark-eval-1','x-on:click' => 'isSidebarOpen = !isSidebarOpen']); ?>
+            <?php if (isset($component)) { $__componentOriginal6762f4f3aefcb76ed1c6bf54c111a56e = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal6762f4f3aefcb76ed1c6bf54c111a56e = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.icons.menu-fold-right','data' => ['xShow' => '!isSidebarOpen','ariaHidden' => 'true','class' => 'w-6 h-6 lg:block']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('icons.menu-fold-right'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['x-show' => '!isSidebarOpen','aria-hidden' => 'true','class' => 'w-6 h-6 lg:block']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal6762f4f3aefcb76ed1c6bf54c111a56e)): ?>
+<?php $attributes = $__attributesOriginal6762f4f3aefcb76ed1c6bf54c111a56e; ?>
+<?php unset($__attributesOriginal6762f4f3aefcb76ed1c6bf54c111a56e); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal6762f4f3aefcb76ed1c6bf54c111a56e)): ?>
+<?php $component = $__componentOriginal6762f4f3aefcb76ed1c6bf54c111a56e; ?>
+<?php unset($__componentOriginal6762f4f3aefcb76ed1c6bf54c111a56e); ?>
+<?php endif; ?>
+            <?php if (isset($component)) { $__componentOriginale54f5f864b1b102f78b215380e462c68 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginale54f5f864b1b102f78b215380e462c68 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.icons.menu-fold-left','data' => ['xShow' => 'isSidebarOpen','ariaHidden' => 'true','class' => 'w-6 h-6 lg:block']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('icons.menu-fold-left'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['x-show' => 'isSidebarOpen','aria-hidden' => 'true','class' => 'w-6 h-6 lg:block']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginale54f5f864b1b102f78b215380e462c68)): ?>
+<?php $attributes = $__attributesOriginale54f5f864b1b102f78b215380e462c68; ?>
+<?php unset($__attributesOriginale54f5f864b1b102f78b215380e462c68); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginale54f5f864b1b102f78b215380e462c68)): ?>
+<?php $component = $__componentOriginale54f5f864b1b102f78b215380e462c68; ?>
+<?php unset($__componentOriginale54f5f864b1b102f78b215380e462c68); ?>
+<?php endif; ?>
+         <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $attributes = $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $component = $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+
+        <!-- Logo -->
+        <a href="<?php echo e(auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard')); ?>" class="flex items-center">
+            <?php if (isset($component)) { $__componentOriginal4c8d64797c56e7d3f0cea6d840add172 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal4c8d64797c56e7d3f0cea6d840add172 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.application-logo-navbar','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('application-logo-navbar'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal4c8d64797c56e7d3f0cea6d840add172)): ?>
+<?php $attributes = $__attributesOriginal4c8d64797c56e7d3f0cea6d840add172; ?>
+<?php unset($__attributesOriginal4c8d64797c56e7d3f0cea6d840add172); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal4c8d64797c56e7d3f0cea6d840add172)): ?>
+<?php $component = $__componentOriginal4c8d64797c56e7d3f0cea6d840add172; ?>
+<?php unset($__componentOriginal4c8d64797c56e7d3f0cea6d840add172); ?>
+<?php endif; ?>
+        </a>
+    </div>
+
+    
+
+    <div class="flex items-center gap-3">
+        
+
+        <!-- Botón Acciones Rápidas - Para usuarios con permiso -->
+        <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('acciones rapidas')): ?>
+            <a href="<?php echo e(route('quick-actions.index')); ?>" 
+               class="hidden md:inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-200"
+               title="Acciones Rápidas">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <span class="hidden lg:inline">Acciones Rápidas</span>
+            </a>
+        <?php endif; ?>
+
+   
+
+        <?php if (isset($component)) { $__componentOriginaldf8083d4a852c446488d8d384bbc7cbe = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginaldf8083d4a852c446488d8d384bbc7cbe = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.dropdown','data' => ['align' => 'right','width' => '48']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('dropdown'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['align' => 'right','width' => '48']); ?>
+             <?php $__env->slot('trigger', null, []); ?> 
+                <button
+                    class="flex items-center p-2 text-sm font-medium text-white transition duration-150 ease-in-out rounded-md hover:text-white focus:outline-none focus:ring focus:ring-white focus:ring-offset-1 focus:ring-offset-white dark:focus:ring-offset-dark-eval-1 dark:text-white dark:hover:text-white">
+                    <div><?php echo e(Auth::user()->name); ?></div>
+
+                    <div class="ml-1">
+                        <svg class="w-4 h-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                </button>
+             <?php $__env->endSlot(); ?>
+
+             <?php $__env->slot('content', null, []); ?> 
+                <?php if (isset($component)) { $__componentOriginal68cb1971a2b92c9735f83359058f7108 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal68cb1971a2b92c9735f83359058f7108 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.dropdown-link','data' => ['href' => route('profile.edit')]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('dropdown-link'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('profile.edit'))]); ?>
+                    <?php echo e(__('Perfil')); ?>
+
+                 <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal68cb1971a2b92c9735f83359058f7108)): ?>
+<?php $attributes = $__attributesOriginal68cb1971a2b92c9735f83359058f7108; ?>
+<?php unset($__attributesOriginal68cb1971a2b92c9735f83359058f7108); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal68cb1971a2b92c9735f83359058f7108)): ?>
+<?php $component = $__componentOriginal68cb1971a2b92c9735f83359058f7108; ?>
+<?php unset($__componentOriginal68cb1971a2b92c9735f83359058f7108); ?>
+<?php endif; ?>
+
+                <form method="POST" action="<?php echo e(route('logout')); ?>">
+                    <?php echo csrf_field(); ?>
+
+                    <?php if (isset($component)) { $__componentOriginal68cb1971a2b92c9735f83359058f7108 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal68cb1971a2b92c9735f83359058f7108 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.dropdown-link','data' => ['href' => route('logout'),'onclick' => 'event.preventDefault(); this.closest(\'form\').submit();']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('dropdown-link'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['href' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(route('logout')),'onclick' => 'event.preventDefault(); this.closest(\'form\').submit();']); ?>
+                        <?php echo e(__('Cerrar Sesión')); ?>
+
+                     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal68cb1971a2b92c9735f83359058f7108)): ?>
+<?php $attributes = $__attributesOriginal68cb1971a2b92c9735f83359058f7108; ?>
+<?php unset($__attributesOriginal68cb1971a2b92c9735f83359058f7108); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal68cb1971a2b92c9735f83359058f7108)): ?>
+<?php $component = $__componentOriginal68cb1971a2b92c9735f83359058f7108; ?>
+<?php unset($__componentOriginal68cb1971a2b92c9735f83359058f7108); ?>
+<?php endif; ?>
+                </form>
+             <?php $__env->endSlot(); ?>
+         <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginaldf8083d4a852c446488d8d384bbc7cbe)): ?>
+<?php $attributes = $__attributesOriginaldf8083d4a852c446488d8d384bbc7cbe; ?>
+<?php unset($__attributesOriginaldf8083d4a852c446488d8d384bbc7cbe); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginaldf8083d4a852c446488d8d384bbc7cbe)): ?>
+<?php $component = $__componentOriginaldf8083d4a852c446488d8d384bbc7cbe; ?>
+<?php unset($__componentOriginaldf8083d4a852c446488d8d384bbc7cbe); ?>
+<?php endif; ?>
+    </div>
+</nav>
+
+<div
+    class="fixed inset-x-0 bottom-0 flex items-center justify-between px-4 py-4 bg-light-cloud-blue sm:px-6 md:hidden dark:bg-dark-eval-1">
+    <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['type' => 'button','iconOnly' => true,'variant' => 'secondary','srText' => 'Search']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['type' => 'button','icon-only' => true,'variant' => 'secondary','sr-text' => 'Search']); ?>
+        <?php if (isset($component)) { $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c = $attributes; } ?>
+<?php $component = BladeUI\Icons\Components\Svg::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('heroicon-o-search'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(BladeUI\Icons\Components\Svg::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['aria-hidden' => 'true','class' => 'w-6 h-6']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c)): ?>
+<?php $attributes = $__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c; ?>
+<?php unset($__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal643fe1b47aec0b76658e1a0200b34b2c)): ?>
+<?php $component = $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c; ?>
+<?php unset($__componentOriginal643fe1b47aec0b76658e1a0200b34b2c); ?>
+<?php endif; ?>
+     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $attributes = $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $component = $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+
+    <a href="<?php echo e(auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard')); ?>">
+        <?php if (isset($component)) { $__componentOriginalf6affe35d4d51d6a153fe25378058191 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalf6affe35d4d51d6a153fe25378058191 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.application-logo-navbar-bot','data' => ['ariaHidden' => 'true','class' => 'w-10 h-10']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('application-logo-navbar-bot'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['aria-hidden' => 'true','class' => 'w-10 h-10']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalf6affe35d4d51d6a153fe25378058191)): ?>
+<?php $attributes = $__attributesOriginalf6affe35d4d51d6a153fe25378058191; ?>
+<?php unset($__attributesOriginalf6affe35d4d51d6a153fe25378058191); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalf6affe35d4d51d6a153fe25378058191)): ?>
+<?php $component = $__componentOriginalf6affe35d4d51d6a153fe25378058191; ?>
+<?php unset($__componentOriginalf6affe35d4d51d6a153fe25378058191); ?>
+<?php endif; ?>
+        <span class="sr-only">Dashboard</span>
+    </a>
+
+    <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['type' => 'button','iconOnly' => true,'variant' => 'secondary','srText' => 'Open main menu','xOn:click' => 'isSidebarOpen = !isSidebarOpen']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['type' => 'button','icon-only' => true,'variant' => 'secondary','sr-text' => 'Open main menu','x-on:click' => 'isSidebarOpen = !isSidebarOpen']); ?>
+        <?php if (isset($component)) { $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c = $attributes; } ?>
+<?php $component = BladeUI\Icons\Components\Svg::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('heroicon-o-menu'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(BladeUI\Icons\Components\Svg::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['x-show' => '!isSidebarOpen','aria-hidden' => 'true','class' => 'w-6 h-6']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c)): ?>
+<?php $attributes = $__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c; ?>
+<?php unset($__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal643fe1b47aec0b76658e1a0200b34b2c)): ?>
+<?php $component = $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c; ?>
+<?php unset($__componentOriginal643fe1b47aec0b76658e1a0200b34b2c); ?>
+<?php endif; ?>
+        <?php if (isset($component)) { $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c = $attributes; } ?>
+<?php $component = BladeUI\Icons\Components\Svg::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('heroicon-o-x'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(BladeUI\Icons\Components\Svg::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['x-show' => 'isSidebarOpen','aria-hidden' => 'true','class' => 'w-6 h-6']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c)): ?>
+<?php $attributes = $__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c; ?>
+<?php unset($__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal643fe1b47aec0b76658e1a0200b34b2c)): ?>
+<?php $component = $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c; ?>
+<?php unset($__componentOriginal643fe1b47aec0b76658e1a0200b34b2c); ?>
+<?php endif; ?>
+     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $attributes = $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $component = $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+</div>
+
+<script>
+    // Horarios de módulos copiados de show.blade.php
+    const horariosModulos = {
+        lunes: {
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
+        },
+        martes: {
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
+        },
+        miercoles: {
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
+        },
+        jueves: {
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
+        },
+        viernes: {
+            1: { inicio: '08:10:00', fin: '09:00:00' },
+            2: { inicio: '09:10:00', fin: '10:00:00' },
+            3: { inicio: '10:10:00', fin: '11:00:00' },
+            4: { inicio: '11:10:00', fin: '12:00:00' },
+            5: { inicio: '12:10:00', fin: '13:00:00' },
+            6: { inicio: '13:10:00', fin: '14:00:00' },
+            7: { inicio: '14:10:00', fin: '15:00:00' },
+            8: { inicio: '15:10:00', fin: '16:00:00' },
+            9: { inicio: '16:10:00', fin: '17:00:00' },
+            10: { inicio: '17:10:00', fin: '18:00:00' },
+            11: { inicio: '18:10:00', fin: '19:00:00' },
+            12: { inicio: '19:10:00', fin: '20:00:00' },
+            13: { inicio: '20:10:00', fin: '21:00:00' },
+            14: { inicio: '21:10:00', fin: '22:00:00' },
+            15: { inicio: '22:10:00', fin: '23:00:00' }
+        }
+    };
+
+    // Variables para el sistema de notificaciones
+    let notificationCheckInterval;
+    let lastNotifiedModules = new Set();
+    let notificationCount = 0;
+
+    // Función para obtener el día actual
+    function obtenerDiaActual() {
+        const dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        return dias[new Date().getDay()];
+    }
+
+    // Función para formatear hora
+    function formatearHora(horaCompleta) {
+        return horaCompleta.slice(0, 5);
+    }
+
+    // Función para obtener el módulo actual
+    function determinarModulo(horaActual) {
+        const diaActual = obtenerDiaActual();
+        if (!horariosModulos[diaActual]) return null;
+
+        for (let modulo = 1; modulo <= 15; modulo++) {
+            const horario = horariosModulos[diaActual][modulo];
+            if (horario && horaActual >= horario.inicio && horaActual <= horario.fin) {
+                return modulo;
+            }
+        }
+        return null;
+    }
+
+    // Función para obtener el próximo módulo
+    function obtenerProximoModulo() {
+        const diaActual = obtenerDiaActual();
+        if (!horariosModulos[diaActual]) return null;
+
+        const ahora = new Date();
+        const horaActual = ahora.toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+
+        for (let modulo = 1; modulo <= 15; modulo++) {
+            const horario = horariosModulos[diaActual][modulo];
+            if (horario && horaActual < horario.inicio) {
+                return { modulo, horario };
+            }
+        }
+        return null;
+    }
+
+    // Función para crear una notificación
+    function crearNotificacion(mensaje, tipo = 'info') {
+        const notificationList = document.getElementById('notification-list');
+        const notificationBadge = document.getElementById('notification-badge');
+        
+        if (!notificationList || !notificationBadge) return;
+
+        // Crear elemento de notificación
+        const notification = document.createElement('div');
+        notification.className = `p-3 rounded-lg border-l-4 ${
+            tipo === 'warning' ? 'bg-yellow-50 border-yellow-400 text-yellow-800' :
+            tipo === 'info' ? 'bg-blue-50 border-blue-400 text-blue-800' :
+            'bg-gray-50 border-gray-400 text-gray-800'
+        }`;
+        
+        notification.innerHTML = `
+            <div class="flex items-start">
+                <div class="flex-shrink-0">
+                    <i class="fas ${tipo === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'}"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium">${mensaje}</p>
+                    <p class="text-xs mt-1">${new Date().toLocaleTimeString('es-ES')}</p>
+                </div>
+            </div>
+        `;
+
+        // Agregar al inicio de la lista
+        notificationList.insertBefore(notification, notificationList.firstChild);
+
+        // Actualizar contador
+        notificationCount++;
+        notificationBadge.textContent = notificationCount;
+        notificationBadge.style.display = 'block';
+
+        // Limitar a 10 notificaciones
+        const notifications = notificationList.querySelectorAll('div');
+        if (notifications.length > 10) {
+            notificationList.removeChild(notifications[notifications.length - 1]);
+        }
+
+        // Mostrar notificación del navegador si está permitido
+        if (Notification.permission === 'granted') {
+            new Notification('AulaSync - Notificación', {
+                body: mensaje,
+                icon: '/favicon.ico',
+                tag: 'modulo-notification'
+            });
+        }
+
+        // Reproducir sonido para notificaciones importantes
+        if (tipo === 'warning') {
+            reproducirSonidoNotificacion();
+        }
+    }
+
+    // Función para reproducir sonido de notificación
+    function reproducirSonidoNotificacion() {
+        try {
+            // Crear un audio context para generar un beep simple
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.2);
+        } catch (error) {
+            // Error al reproducir sonido de notificación
+        }
+    }
+
+    // Función para solicitar permisos de notificación
+    function solicitarPermisosNotificacion() {
+        if (Notification.permission === 'default') {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    // Permisos de notificación concedidos
+                }
+            });
+        }
+    }
+
+    // Función para limpiar todas las notificaciones
+    function limpiarNotificaciones() {
+        const notificationList = document.getElementById('notification-list');
+        const notificationBadge = document.getElementById('notification-badge');
+        
+        if (notificationList) {
+            notificationList.innerHTML = '<p class="p-4 text-sm text-center text-gray-500">No hay notificaciones</p>';
+        }
+        
+        if (notificationBadge) {
+            notificationCount = 0;
+            notificationBadge.style.display = 'none';
+        }
+    }
+
+    // Función para marcar notificación como leída
+    function marcarComoLeida(notificationElement) {
+        notificationElement.style.opacity = '0.6';
+        notificationElement.style.backgroundColor = '#f3f4f6';
+    }
+
+    // Función para verificar módulos próximos
+    function verificarModulosProximos() {
+        const proximoModulo = obtenerProximoModulo();
+        if (!proximoModulo) return;
+
+        const { modulo, horario } = proximoModulo;
+        const ahora = new Date();
+        const horaActual = ahora.toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+
+        // Calcular minutos hasta el inicio del módulo
+        const [horaInicioHora, horaInicioMin] = horario.inicio.split(':').map(Number);
+        const [horaActualHora, horaActualMin] = horaActual.split(':').map(Number);
+        
+        const minutosHastaInicio = (horaInicioHora * 60 + horaInicioMin) - (horaActualHora * 60 + horaActualMin);
+
+        // Crear clave única para este módulo
+        const moduloKey = `${obtenerDiaActual()}_${modulo}`;
+
+        // Notificar si faltan 5 minutos y no se ha notificado antes
+        if (minutosHastaInicio <= 5 && minutosHastaInicio > 0 && !lastNotifiedModules.has(moduloKey)) {
+            const mensaje = `Va a comenzar el módulo ${modulo} en ${minutosHastaInicio} minutos (${formatearHora(horario.inicio)} - ${formatearHora(horario.fin)})`;
+            crearNotificacion(mensaje, 'warning');
+            lastNotifiedModules.add(moduloKey);
+        }
+
+        // Notificar si faltan 1 minuto
+        if (minutosHastaInicio <= 1 && minutosHastaInicio > 0 && !lastNotifiedModules.has(`${moduloKey}_1min`)) {
+            const mensaje = `¡El módulo ${modulo} comenzará en 1 minuto!`;
+            crearNotificacion(mensaje, 'warning');
+            lastNotifiedModules.add(`${moduloKey}_1min`);
+        }
+    }
+
+    // Función para limpiar notificaciones antiguas al cambiar de día
+    function limpiarNotificacionesAntiguas() {
+        const hoy = new Date().toDateString();
+        if (window.lastNotificationDate !== hoy) {
+            lastNotifiedModules.clear();
+            window.lastNotificationDate = hoy;
+        }
+    }
+
+    // Inicializar sistema de notificaciones
+    document.addEventListener('DOMContentLoaded', function() {
+        // Solicitar permisos de notificación
+        solicitarPermisosNotificacion();
+        
+        // Verificar cada minuto
+        notificationCheckInterval = setInterval(() => {
+            limpiarNotificacionesAntiguas();
+            verificarModulosProximos();
+        }, 60000); // 60 segundos
+
+        // Verificar inmediatamente al cargar
+        verificarModulosProximos();
+    });
+
+    // Limpiar intervalo cuando se desmonte
+    window.addEventListener('beforeunload', function() {
+        if (notificationCheckInterval) {
+            clearInterval(notificationCheckInterval);
+        }
+    });
+</script>
+<?php /**PATH D:\Dev\AulaSync\resources\views/components/navbar.blade.php ENDPATH**/ ?>

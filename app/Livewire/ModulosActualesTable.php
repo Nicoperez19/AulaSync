@@ -299,6 +299,12 @@ class ModulosActualesTable extends Component
             return false;
         }
 
+        // Solo considerar finalizada si NO estamos en break Y el módulo actual es mayor al último
+        // Si estamos en break, la clase no puede estar finalizada aún
+        if (isset($moduloActual['tipo']) && $moduloActual['tipo'] === 'break') {
+            return false;
+        }
+
         // Si el módulo actual es mayor al último módulo de la clase, la clase ha terminado
         return $moduloActual['numero'] > $numeroUltimoModulo;
     }
@@ -342,6 +348,11 @@ class ModulosActualesTable extends Component
     private function verificarClaseEnCurso($numeroModuloInicio, $numeroModuloFin, $moduloActual)
     {
         if (! $moduloActual || ! $numeroModuloInicio || ! $numeroModuloFin) {
+            return false;
+        }
+
+        // Si estamos en break, la clase NO está en curso
+        if (isset($moduloActual['tipo']) && $moduloActual['tipo'] === 'break') {
             return false;
         }
 
@@ -497,11 +508,13 @@ class ModulosActualesTable extends Component
                     ->get()
                     ->keyBy('id_espacio'); // Indexar por espacio para búsqueda rápida
 
-                // Obtener reservas activas de profesores para el día actual
+                // Obtener reservas de profesores para el día actual
+                // Solo considerar las que tienen entrada registrada (hora) y están activas O finalizadas hoy
                 $reservasProfesores = Reserva::with(['profesor', 'asignatura'])
                     ->where('fecha_reserva', Carbon::now()->toDateString())
-                    ->where('estado', 'activa')
+                    ->whereIn('estado', ['activa', 'finalizada'])
                     ->whereNotNull('run_profesor')
+                    ->whereNotNull('hora') // Solo las que el profesor sí entró
                     ->get()
                     ->keyBy('id_espacio'); // Indexar por espacio para búsqueda rápida
 
@@ -649,15 +662,32 @@ class ModulosActualesTable extends Component
                         if ($tieneClase && ($claseFinalizada || $claseTerminoAntes)) {
                             // Si la clase ya terminó (por horario o porque el profesor se fue antes)
                             $estado = 'Clase finalizada';
-                        } elseif (($tieneClase && $tieneReservaProfesor) || $tieneReservaSolicitante) {
-                            // Si hay clase y el profesor registró su ingreso, O si hay reserva de solicitante
+                        } elseif ($tieneClase && $tieneReservaProfesor && ! $claseFinalizada && ! $claseTerminoAntes) {
+                            // Si hay clase y el profesor registró su ingreso Y la clase NO ha terminado
+                            // Verificar que realmente esté en el rango de módulos de la clase
+                            $claseEnCurso = $this->verificarClaseEnCurso((int) $numeroModuloInicio, (int) $numeroModuloFin, $this->moduloActual);
+                            $estado = $claseEnCurso ? 'Ocupado' : 'Disponible';
+                        } elseif ($tieneReservaSolicitante) {
+                            // Si hay reserva de solicitante
                             $estado = 'Ocupado';
                         } elseif ($tieneClase && ! $tieneReservaProfesor && $claseNoRealizada) {
                             // Si hay clase programada pero se detectó que no fue realizada
                             $estado = 'Clase no realizada';
                         } elseif ($tieneClase && ! $tieneReservaProfesor) {
                             // Si hay clase programada pero el profesor no ha registrado su ingreso
-                            $estado = 'Clase por iniciar';
+                            // Verificar si la clase ya debería haber empezado (no estamos en break antes de la clase)
+                            $claseYaDebioEmpezar = false;
+                            if ($this->moduloActual && isset($this->moduloActual['tipo'])) {
+                                if ($this->moduloActual['tipo'] === 'break') {
+                                    // En break: verificar si el siguiente módulo es mayor al de inicio de la clase
+                                    $claseYaDebioEmpezar = $this->moduloActual['numero'] > $numeroModuloInicio;
+                                } else {
+                                    // En módulo: verificar si estamos en o después del módulo de inicio
+                                    $claseYaDebioEmpezar = $this->moduloActual['numero'] >= $numeroModuloInicio;
+                                }
+                            }
+                            
+                            $estado = $claseYaDebioEmpezar ? 'Clase por iniciar' : 'Disponible';
                         } elseif ($proximaClase) {
                             $estado = 'Clase por iniciar';
                         } else {
@@ -767,10 +797,12 @@ class ModulosActualesTable extends Component
             return 'bg-black'; // Color más oscuro para indicar problema
         } elseif (strtolower($estado) === 'reservado' || $estado === 'Reservado') {
             return 'bg-yellow-400';
+        } elseif (strtolower($estado) === 'clase por iniciar' || $estado === 'Clase por iniciar') {
+            return 'bg-yellow-400';
         } elseif (strtolower($estado) === 'en programa' || $estado === 'En Programa') {
             return 'bg-yellow-500';
-        } elseif ($tieneClase || $tieneReservaSolicitante || $tieneReservaProfesor) {
-            return 'bg-yellow-400';
+        } elseif (strtolower($estado) === 'disponible' || $estado === 'Disponible') {
+            return 'bg-green-500';
         } else {
             return 'bg-green-500';
         }
