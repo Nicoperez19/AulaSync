@@ -29,8 +29,14 @@ class Reserva extends Model
         'estado',
         'hora_salida',
         'observaciones',
+        'hubo_asistentes',
         'created_at',
         'updated_at'
+    ];
+
+    protected $casts = [
+        'hubo_asistentes' => 'boolean',
+        'fecha_reserva' => 'date',
     ];
 
     /**

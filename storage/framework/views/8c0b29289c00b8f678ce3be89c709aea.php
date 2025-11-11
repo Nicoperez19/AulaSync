@@ -1,4 +1,13 @@
-<x-show-layout>
+<?php if (isset($component)) { $__componentOriginal24ff33e87e9f6b0843d59cf5073d2121 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal24ff33e87e9f6b0843d59cf5073d2121 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'layouts.show-layout','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('show-layout'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
     <style>
         @keyframes parpadeo {
             0% {
@@ -23,8 +32,27 @@
             class="fixed top-0 left-0 z-40 flex flex-col justify-between w-56 h-screen pt-2 text-base border-r border-gray-200 md:w-56 bg-light-cloud-blue dark:border-gray-700 md:text-sm sm:text-xs">
 
             <div class="flex flex-col items-center gap-2 md:gap-1">
-                <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}" class="mb-1">
-                    <x-application-logo-navbar class="w-10 h-10 md:w-8 md:h-8 sm:w-6 sm:h-6" />
+                <a href="<?php echo e(auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard')); ?>" class="mb-1">
+                    <?php if (isset($component)) { $__componentOriginal4c8d64797c56e7d3f0cea6d840add172 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal4c8d64797c56e7d3f0cea6d840add172 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.application-logo-navbar','data' => ['class' => 'w-10 h-10 md:w-8 md:h-8 sm:w-6 sm:h-6']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('application-logo-navbar'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['class' => 'w-10 h-10 md:w-8 md:h-8 sm:w-6 sm:h-6']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal4c8d64797c56e7d3f0cea6d840add172)): ?>
+<?php $attributes = $__attributesOriginal4c8d64797c56e7d3f0cea6d840add172; ?>
+<?php unset($__attributesOriginal4c8d64797c56e7d3f0cea6d840add172); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal4c8d64797c56e7d3f0cea6d840add172)): ?>
+<?php $component = $__componentOriginal4c8d64797c56e7d3f0cea6d840add172; ?>
+<?php unset($__componentOriginal4c8d64797c56e7d3f0cea6d840add172); ?>
+<?php endif; ?>
                 </a>
                 
             </div>
@@ -165,7 +193,7 @@
 
                 <!-- Enlace Volver -->
                 <div class="w-full mt-4">
-                    <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}"
+                    <a href="<?php echo e(auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard')); ?>"
                        class="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors duration-200 shadow-md"
                        onclick="qrInputManager.setActiveInput('main')">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
@@ -184,28 +212,30 @@
                 <div class="flex flex-col flex-1 min-h-0">
                     <div class="flex-1 bg-white shadow-md dark:bg-dark-eval-0">
                         <ul class="flex" id="pills-tab" role="tablist">
-                            @foreach ($pisos as $piso)
-                                @if ($piso['id_mapa'])
+                            <?php $__currentLoopData = $pisos; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $piso): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php if($piso['id_mapa']): ?>
                                     <li role="presentation">
-                                        <a href="{{ route('plano.show', $piso['id_mapa']) }}"
+                                        <a href="<?php echo e(route('plano.show', $piso['id_mapa'])); ?>"
                                             class="px-4 py-2 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
-                                            {{ $piso['id_mapa'] === $mapa->id_mapa
+                                            <?php echo e($piso['id_mapa'] === $mapa->id_mapa
                                                 ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
-                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}" role="tab"
-                                            aria-selected="{{ $piso['id_mapa'] === $mapa->id_mapa ? 'true' : 'false' }}">
-                                            Piso {{ $piso['numero'] }}
+                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue'); ?>" role="tab"
+                                            aria-selected="<?php echo e($piso['id_mapa'] === $mapa->id_mapa ? 'true' : 'false'); ?>">
+                                            Piso <?php echo e($piso['numero']); ?>
+
                                         </a>
                                     </li>
-                                @endif
-                            @endforeach
+                                <?php endif; ?>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </ul>
                         <!-- Card para el canvas y controles -->
                         <div class="flex flex-col h-full">
                             <div class="p-4">
                                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                                    Plano del Piso {{ $mapa->piso->numero_piso }},
-                                    {{ $mapa->piso->facultad->nombre_facultad }},
-                                    Sede {{ $mapa->piso->facultad->sede->nombre_sede }}
+                                    Plano del Piso <?php echo e($mapa->piso->numero_piso); ?>,
+                                    <?php echo e($mapa->piso->facultad->nombre_facultad); ?>,
+                                    Sede <?php echo e($mapa->piso->facultad->sede->nombre_sede); ?>
+
                                 </h3>
                             </div>
 
@@ -280,7 +310,26 @@
                     <div class="mt-4 flex justify-end">
                         <button class="btn-desocupar group relative px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded hover:bg-red-700 hidden transition-all duration-200" data-tipo="espacio" title="Desocupar sala">
                             <div class="flex items-center space-x-2">
-                                <x-heroicon-s-logout class="w-4 h-4" />
+                                <?php if (isset($component)) { $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c = $attributes; } ?>
+<?php $component = BladeUI\Icons\Components\Svg::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('heroicon-s-logout'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(BladeUI\Icons\Components\Svg::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['class' => 'w-4 h-4']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c)): ?>
+<?php $attributes = $__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c; ?>
+<?php unset($__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal643fe1b47aec0b76658e1a0200b34b2c)): ?>
+<?php $component = $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c; ?>
+<?php unset($__componentOriginal643fe1b47aec0b76658e1a0200b34b2c); ?>
+<?php endif; ?>
                                 <span>Desocupar</span>
                             </div>
                             <!-- Tooltip -->
@@ -326,7 +375,26 @@
                     <div class="mt-4 flex justify-end">
                         <button class="btn-desocupar group relative px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded hover:bg-red-700 hidden transition-all duration-200" data-tipo="reserva" title="Desocupar reserva">
                             <div class="flex items-center space-x-2">
-                                <x-heroicon-s-logout class="w-4 h-4" />
+                                <?php if (isset($component)) { $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c = $attributes; } ?>
+<?php $component = BladeUI\Icons\Components\Svg::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('heroicon-s-logout'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(BladeUI\Icons\Components\Svg::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['class' => 'w-4 h-4']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c)): ?>
+<?php $attributes = $__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c; ?>
+<?php unset($__attributesOriginal643fe1b47aec0b76658e1a0200b34b2c); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal643fe1b47aec0b76658e1a0200b34b2c)): ?>
+<?php $component = $__componentOriginal643fe1b47aec0b76658e1a0200b34b2c; ?>
+<?php unset($__componentOriginal643fe1b47aec0b76658e1a0200b34b2c); ?>
+<?php endif; ?>
                                 <span>Desocupar reserva</span>
                             </div>
                             <!-- Tooltip -->
@@ -342,12 +410,21 @@
     </div>
 
     <!-- Modal para reconocimiento -->
-    <x-modal name="reconocimiento" :show="false" focusable>
-        @slot('title')
+    <?php if (isset($component)) { $__componentOriginal9f64f32e90b9102968f2bc548315018c = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9f64f32e90b9102968f2bc548315018c = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal','data' => ['name' => 'reconocimiento','show' => false,'focusable' => true]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('modal'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['name' => 'reconocimiento','show' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(false),'focusable' => true]); ?>
+        <?php $__env->slot('title'); ?>
             <h2 class="text-lg font-medium text-white dark:text-gray-100">
                 Reconocimiento
             </h2>
-        @endslot
+        <?php $__env->endSlot(); ?>
         <div class="p-6">
             <div class="flex flex-col items-center justify-center space-y-4">
                 <div id="reconocimiento-icono" class="text-6xl">
@@ -360,16 +437,34 @@
                 </div>
             </div>
         </div>
-    </x-modal>
+     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9f64f32e90b9102968f2bc548315018c)): ?>
+<?php $attributes = $__attributesOriginal9f64f32e90b9102968f2bc548315018c; ?>
+<?php unset($__attributesOriginal9f64f32e90b9102968f2bc548315018c); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9f64f32e90b9102968f2bc548315018c)): ?>
+<?php $component = $__componentOriginal9f64f32e90b9102968f2bc548315018c; ?>
+<?php unset($__componentOriginal9f64f32e90b9102968f2bc548315018c); ?>
+<?php endif; ?>
 
 
     <!-- Modal para devolución de llaves (rediseñado) -->
-    <x-modal name="devolver-llaves" :show="false" focusable>
-        @slot('title')
+    <?php if (isset($component)) { $__componentOriginal9f64f32e90b9102968f2bc548315018c = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9f64f32e90b9102968f2bc548315018c = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal','data' => ['name' => 'devolver-llaves','show' => false,'focusable' => true]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('modal'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['name' => 'devolver-llaves','show' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(false),'focusable' => true]); ?>
+        <?php $__env->slot('title'); ?>
             <div class="px-6 py-3 text-white bg-red-700 rounded-t">
                 <h2 class="text-lg font-semibold text-center">Devolver Llaves</h2>
             </div>
-        @endslot
+        <?php $__env->endSlot(); ?>
         <div class="flex flex-col items-center justify-center p-8 bg-white">
             <div class="flex flex-col items-center mb-6">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-20 h-20 mb-4 text-black" fill="none"
@@ -385,15 +480,33 @@
                 class="absolute w-full px-1 py-1 border rounded opacity-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Escanea un código QR" autocomplete="off" autofocus>
         </div>
-    </x-modal>
+     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9f64f32e90b9102968f2bc548315018c)): ?>
+<?php $attributes = $__attributesOriginal9f64f32e90b9102968f2bc548315018c; ?>
+<?php unset($__attributesOriginal9f64f32e90b9102968f2bc548315018c); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9f64f32e90b9102968f2bc548315018c)): ?>
+<?php $component = $__componentOriginal9f64f32e90b9102968f2bc548315018c; ?>
+<?php unset($__componentOriginal9f64f32e90b9102968f2bc548315018c); ?>
+<?php endif; ?>
 
     <!-- Modal para solicitud de llaves -->
-    <x-modal name="solicitar-llaves" :show="false" focusable>
-        @slot('title')
+    <?php if (isset($component)) { $__componentOriginal9f64f32e90b9102968f2bc548315018c = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9f64f32e90b9102968f2bc548315018c = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal','data' => ['name' => 'solicitar-llaves','show' => false,'focusable' => true]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('modal'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['name' => 'solicitar-llaves','show' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(false),'focusable' => true]); ?>
+        <?php $__env->slot('title'); ?>
             <h2 class="text-lg font-medium text-white dark:text-gray-100">
                 Solicitar Llaves
             </h2>
-        @endslot
+        <?php $__env->endSlot(); ?>
         <div class="p-6">
             <div class="flex flex-col items-center justify-center">
                 <div
@@ -423,7 +536,16 @@
                 </div>
             </div>
         </div>
-    </x-modal>
+     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9f64f32e90b9102968f2bc548315018c)): ?>
+<?php $attributes = $__attributesOriginal9f64f32e90b9102968f2bc548315018c; ?>
+<?php unset($__attributesOriginal9f64f32e90b9102968f2bc548315018c); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9f64f32e90b9102968f2bc548315018c)): ?>
+<?php $component = $__componentOriginal9f64f32e90b9102968f2bc548315018c; ?>
+<?php unset($__componentOriginal9f64f32e90b9102968f2bc548315018c); ?>
+<?php endif; ?>
 
 
 
@@ -540,17 +662,44 @@
 
                 <!-- Botones de acción -->
                 <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                    <x-button id="btn-confirmar-modulos" variant='add'>
+                    <?php if (isset($component)) { $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.button','data' => ['id' => 'btn-confirmar-modulos','variant' => 'add']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('button'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['id' => 'btn-confirmar-modulos','variant' => 'add']); ?>
                         Confirmar Reserva
-                    </x-button>
+                     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $attributes = $__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__attributesOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561)): ?>
+<?php $component = $__componentOriginald0f1fd2689e4bb7060122a5b91fe8561; ?>
+<?php unset($__componentOriginald0f1fd2689e4bb7060122a5b91fe8561); ?>
+<?php endif; ?>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Modal para registro de solicitante -->
-    <x-modal name="registro-solicitante" :show="false" @close-modal.window="handleClose($event, 'registro-solicitante')">
-        @slot('title')
+    <?php if (isset($component)) { $__componentOriginal9f64f32e90b9102968f2bc548315018c = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9f64f32e90b9102968f2bc548315018c = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal','data' => ['name' => 'registro-solicitante','show' => false,'@closeModal.window' => 'handleClose($event, \'registro-solicitante\')']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('modal'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['name' => 'registro-solicitante','show' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(false),'@close-modal.window' => 'handleClose($event, \'registro-solicitante\')']); ?>
+        <?php $__env->slot('title'); ?>
             <div id="modalHeader"
                 class="relative flex flex-col gap-6 p-8 bg-red-700 md:flex-row md:items-center md:justify-between">
                 <!-- Círculos decorativos -->
@@ -582,7 +731,7 @@
                         aria-label="Cerrar modal">&times;</button>
                 </div>
             </div>
-        @endslot
+        <?php $__env->endSlot(); ?>
         <div class="p-6">
             <div class="space-y-4">
                 <div class="text-center">
@@ -651,7 +800,16 @@
                 </form>
             </div>
         </div>
-    </x-modal>
+     <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9f64f32e90b9102968f2bc548315018c)): ?>
+<?php $attributes = $__attributesOriginal9f64f32e90b9102968f2bc548315018c; ?>
+<?php unset($__attributesOriginal9f64f32e90b9102968f2bc548315018c); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9f64f32e90b9102968f2bc548315018c)): ?>
+<?php $component = $__componentOriginal9f64f32e90b9102968f2bc548315018c; ?>
+<?php unset($__componentOriginal9f64f32e90b9102968f2bc548315018c); ?>
+<?php endif; ?>
 
     <script>
         // Escuchar cuando se abra el modal de registro para establecer el foco correcto
@@ -680,9 +838,9 @@
             }
         }
 
-        @php
+        <?php
             $mapaIdValue = $mapa->id_mapa ?? 1;
-        @endphp
+        ?>
 
         if (!CanvasRenderingContext2D.prototype.roundRect) {
             CanvasRenderingContext2D.prototype.roundRect = function (x, y, width, height, radius) {
@@ -869,7 +1027,7 @@
         let espacioParaReserva = null;
         let runParaReserva = null;
         let usuarioInfo = null; // Variable global para almacenar la información del usuario
-        const mapaId = @json($mapaIdValue);
+        const mapaId = <?php echo json_encode($mapaIdValue, 15, 512) ?>;
 
         const config = {
             indicatorSize: 35,
@@ -883,8 +1041,8 @@
         const state = {
             mapImage: null,
             originalImageSize: null,
-            indicators: @json($bloques) || [],
-            originalCoordinates: @json($bloques) || [],
+            indicators: <?php echo json_encode($bloques, 15, 512) ?> || [],
+            originalCoordinates: <?php echo json_encode($bloques, 15, 512) ?> || [],
             isImageLoaded: false,
             mouseX: 0,
             mouseY: 0,
@@ -1293,7 +1451,7 @@
 
                 // Si es una desocupación forzosa, agregar el RUN del administrador
                 if (tipoDesocupacion === 'forzosa') {
-                    requestBody.run_administrador = '{{ auth()->user()->run ?? "admin" }}';
+                    requestBody.run_administrador = '<?php echo e(auth()->user()->run ?? "admin"); ?>';
                 }
 
                 const response = await fetch('/api/devolver-espacio', {
@@ -2468,7 +2626,7 @@
                 const tipoDesocupacion = event.target.dataset.tipo || 'espacio';
 
                 // Obtener información del usuario autenticado (administrador)
-                const administradorRun = '{{ auth()->user()->run ?? "admin" }}';
+                const administradorRun = '<?php echo e(auth()->user()->run ?? "admin"); ?>';
 
                 // Tomar el último RUN mostrado en el modal (el usuario que ocupa el espacio)
                 let runOcupante = null;
@@ -3307,7 +3465,7 @@
                 drawIndicators();
                 state.updateInterval = setInterval(actualizarColoresEspacios, 5000);
             };
-            img.src = "{{ asset('storage/' . $mapa->ruta_mapa) }}";
+            img.src = "<?php echo e(asset('storage/' . $mapa->ruta_mapa)); ?>";
             window.addEventListener('resize', function () {
                 initCanvases();
             });
@@ -4071,12 +4229,98 @@
     </script>
 
     <!-- Modales del Panel de Administración -->
-    <x-modal-agregar-reserva />
-    <x-modal-editar />
-    <x-modal-editar-reservas />
-    <x-modal-editar-espacios />
+    <?php if (isset($component)) { $__componentOriginalfcee4a8168611dd3e52a62079f65b11d = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalfcee4a8168611dd3e52a62079f65b11d = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal-agregar-reserva','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('modal-agregar-reserva'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalfcee4a8168611dd3e52a62079f65b11d)): ?>
+<?php $attributes = $__attributesOriginalfcee4a8168611dd3e52a62079f65b11d; ?>
+<?php unset($__attributesOriginalfcee4a8168611dd3e52a62079f65b11d); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalfcee4a8168611dd3e52a62079f65b11d)): ?>
+<?php $component = $__componentOriginalfcee4a8168611dd3e52a62079f65b11d; ?>
+<?php unset($__componentOriginalfcee4a8168611dd3e52a62079f65b11d); ?>
+<?php endif; ?>
+    <?php if (isset($component)) { $__componentOriginalfb026e28a83aac8198bf522a4440211b = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalfb026e28a83aac8198bf522a4440211b = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal-editar','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('modal-editar'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalfb026e28a83aac8198bf522a4440211b)): ?>
+<?php $attributes = $__attributesOriginalfb026e28a83aac8198bf522a4440211b; ?>
+<?php unset($__attributesOriginalfb026e28a83aac8198bf522a4440211b); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalfb026e28a83aac8198bf522a4440211b)): ?>
+<?php $component = $__componentOriginalfb026e28a83aac8198bf522a4440211b; ?>
+<?php unset($__componentOriginalfb026e28a83aac8198bf522a4440211b); ?>
+<?php endif; ?>
+    <?php if (isset($component)) { $__componentOriginal5cbfa67aec3af79886b65d6acd44ce1d = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5cbfa67aec3af79886b65d6acd44ce1d = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal-editar-reservas','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('modal-editar-reservas'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5cbfa67aec3af79886b65d6acd44ce1d)): ?>
+<?php $attributes = $__attributesOriginal5cbfa67aec3af79886b65d6acd44ce1d; ?>
+<?php unset($__attributesOriginal5cbfa67aec3af79886b65d6acd44ce1d); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5cbfa67aec3af79886b65d6acd44ce1d)): ?>
+<?php $component = $__componentOriginal5cbfa67aec3af79886b65d6acd44ce1d; ?>
+<?php unset($__componentOriginal5cbfa67aec3af79886b65d6acd44ce1d); ?>
+<?php endif; ?>
+    <?php if (isset($component)) { $__componentOriginalc37a16c17ba78bf30d7a4c1125fcf5bb = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalc37a16c17ba78bf30d7a4c1125fcf5bb = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.modal-editar-espacios','data' => []] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('modal-editar-espacios'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalc37a16c17ba78bf30d7a4c1125fcf5bb)): ?>
+<?php $attributes = $__attributesOriginalc37a16c17ba78bf30d7a4c1125fcf5bb; ?>
+<?php unset($__attributesOriginalc37a16c17ba78bf30d7a4c1125fcf5bb); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalc37a16c17ba78bf30d7a4c1125fcf5bb)): ?>
+<?php $component = $__componentOriginalc37a16c17ba78bf30d7a4c1125fcf5bb; ?>
+<?php unset($__componentOriginalc37a16c17ba78bf30d7a4c1125fcf5bb); ?>
+<?php endif; ?>
 
     <!-- JavaScript del Panel de Administración -->
-    <script src="{{ asset('js/admin-panel.js') }}"></script>
+    <script src="<?php echo e(asset('js/admin-panel.js')); ?>"></script>
 
-</x-show-layout>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal24ff33e87e9f6b0843d59cf5073d2121)): ?>
+<?php $attributes = $__attributesOriginal24ff33e87e9f6b0843d59cf5073d2121; ?>
+<?php unset($__attributesOriginal24ff33e87e9f6b0843d59cf5073d2121); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal24ff33e87e9f6b0843d59cf5073d2121)): ?>
+<?php $component = $__componentOriginal24ff33e87e9f6b0843d59cf5073d2121; ?>
+<?php unset($__componentOriginal24ff33e87e9f6b0843d59cf5073d2121); ?>
+<?php endif; ?>
+<?php /**PATH C:\Users\conym\OneDrive\Documentos\GitHub\AulaSync\resources\views/layouts/plano_digital/show.blade.php ENDPATH**/ ?>

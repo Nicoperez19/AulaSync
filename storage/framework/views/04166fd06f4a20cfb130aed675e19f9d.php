@@ -770,7 +770,28 @@
 <?php endif; ?>
             <?php endif; ?>
 
-            
+            <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('mantenedor de espacios')): ?>
+                <?php if (isset($component)) { $__componentOriginal064f6c9edbcdd6f4e7eb9faa53722c89 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal064f6c9edbcdd6f4e7eb9faa53722c89 = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.sidebar.sublink','data' => ['title' => 'Espacios','href' => ''.e(route('spaces_index')).'','isActive' => request()->routeIs('spaces_index') || request()->routeIs('spaces.*')]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? (array) $attributes->getIterator() : [])); ?>
+<?php $component->withName('sidebar.sublink'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag && $constructor = (new ReflectionClass(Illuminate\View\AnonymousComponent::class))->getConstructor()): ?>
+<?php $attributes = $attributes->except(collect($constructor->getParameters())->map->getName()->all()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Espacios','href' => ''.e(route('spaces_index')).'','isActive' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute(request()->routeIs('spaces_index') || request()->routeIs('spaces.*'))]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal064f6c9edbcdd6f4e7eb9faa53722c89)): ?>
+<?php $attributes = $__attributesOriginal064f6c9edbcdd6f4e7eb9faa53722c89; ?>
+<?php unset($__attributesOriginal064f6c9edbcdd6f4e7eb9faa53722c89); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal064f6c9edbcdd6f4e7eb9faa53722c89)): ?>
+<?php $component = $__componentOriginal064f6c9edbcdd6f4e7eb9faa53722c89; ?>
+<?php unset($__componentOriginal064f6c9edbcdd6f4e7eb9faa53722c89); ?>
+<?php endif; ?>
+            <?php endif; ?>
 
             <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('mantenedor de facultades')): ?>
                 <?php if (isset($component)) { $__componentOriginal064f6c9edbcdd6f4e7eb9faa53722c89 = $component; } ?>

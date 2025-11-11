@@ -171,12 +171,10 @@
                     :isActive="request()->routeIs('escuelas.*')" />
             @endcan
 
-            {{-- Comentado porque está disponible en Acciones Rápidas
             @can('mantenedor de espacios')
                 <x-sidebar.sublink title="Espacios" href="{{ route('spaces_index') }}"
-                    :isActive="request()->routeIs('espacios.index')" />
+                    :isActive="request()->routeIs('spaces_index') || request()->routeIs('spaces.*')" />
             @endcan
-            --}}
 
             @can('mantenedor de facultades')
                 <x-sidebar.sublink title="Facultades" href="{{ route('faculties.index') }}"

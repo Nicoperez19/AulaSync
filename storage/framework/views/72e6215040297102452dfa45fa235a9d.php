@@ -1,0 +1,1 @@
+<?php echo $__env->make('layouts.table-layout', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?> <?php /**PATH C:\Users\conym\OneDrive\Documentos\GitHub\AulaSync\resources\views/components/table-layout.blade.php ENDPATH**/ ?>

@@ -128,11 +128,21 @@ class PlanoDigitalController extends Controller
             $idEspacio = $bloque->id_espacio;
             $espacio = $bloque->espacio;
 
+            // Verificar si hay una clase sin asistentes (devuelta en primer módulo hoy)
+            $claseSinAsistentes = Reserva::where('id_espacio', $idEspacio)
+                ->where('fecha_reserva', now()->toDateString())
+                ->where('hubo_asistentes', false)
+                ->where('estado', 'finalizada')
+                ->exists();
+
             // 1. Si el campo estado es "Ocupado", siempre ocupado
             if ($espacio->estado === 'Ocupado') {
                 $estadoFinal = 'Ocupado';
+            } elseif ($claseSinAsistentes) {
+                // 2. Si hubo una clase sin asistentes hoy
+                $estadoFinal = 'ClaseSinAsistentes'; // Nuevo estado
             } else {
-                // 2. Si el campo estado es "Disponible"
+                // 3. Si el campo estado es "Disponible"
                 $planificacionActiva = $planificacionesActivas->firstWhere('id_espacio', $idEspacio);
                 $planificacionProxima = $planificacionesProximas->firstWhere('id_espacio', $idEspacio);
                 if ($planificacionActiva) {
@@ -159,7 +169,8 @@ class PlanoDigitalController extends Controller
                     ),
                     [
                         'estado' => $espacio->estado,
-                        'facultad' => $mapa->piso->facultad->nombre_facultad
+                        'facultad' => $mapa->piso->facultad->nombre_facultad,
+                        'clase_sin_asistentes' => $claseSinAsistentes
                     ]
                 )
             ];
@@ -556,6 +567,78 @@ class PlanoDigitalController extends Controller
 
 
 
+            // NUEVA LÓGICA: Verificar si es un profesor devolviendo durante el primer módulo de una clase
+            $devolucionPrimerModulo = false;
+            $infoClase = null;
+            
+            if ($reservaActiva->run_profesor) {
+                // Obtener hora actual y día
+                $horaActual = now()->format('H:i:s');
+                $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
+                
+                // Buscar planificaciones del profesor en este espacio para hoy
+                $planificaciones = Planificacion_Asignatura::with(['asignatura', 'modulo'])
+                    ->where('id_espacio', $idEspacio)
+                    ->whereHas('asignatura', function($query) use ($reservaActiva) {
+                        $query->where('run_profesor', $reservaActiva->run_profesor);
+                    })
+                    ->whereHas('modulo', function($query) use ($diaActual) {
+                        $query->where('dia', $diaActual);
+                    })
+                    ->orderBy('id_modulo')
+                    ->get();
+                
+                if ($planificaciones->count() > 0) {
+                    // Agrupar módulos consecutivos
+                    $secuenciasModulos = [];
+                    $secuenciaActual = [];
+                    
+                    foreach ($planificaciones as $planificacion) {
+                        if (empty($secuenciaActual)) {
+                            $secuenciaActual[] = $planificacion;
+                        } else {
+                            $ultimoModulo = end($secuenciaActual)->modulo;
+                            $moduloActual = $planificacion->modulo;
+                            
+                            // Verificar si son consecutivos
+                            if ($ultimoModulo->hora_termino === $moduloActual->hora_inicio) {
+                                $secuenciaActual[] = $planificacion;
+                            } else {
+                                if (!empty($secuenciaActual)) {
+                                    $secuenciasModulos[] = $secuenciaActual;
+                                }
+                                $secuenciaActual = [$planificacion];
+                            }
+                        }
+                    }
+                    
+                    if (!empty($secuenciaActual)) {
+                        $secuenciasModulos[] = $secuenciaActual;
+                    }
+                    
+                    // Buscar si estamos en el primer módulo de una secuencia de múltiples módulos
+                    foreach ($secuenciasModulos as $secuencia) {
+                        if (count($secuencia) > 1) { // Solo si tiene más de 1 módulo
+                            $primerModulo = $secuencia[0]->modulo;
+                            
+                            // Verificar si la hora actual está dentro del primer módulo
+                            if ($horaActual >= $primerModulo->hora_inicio && $horaActual <= $primerModulo->hora_termino) {
+                                $devolucionPrimerModulo = true;
+                                $infoClase = [
+                                    'asignatura' => $secuencia[0]->asignatura->nombre_asignatura,
+                                    'codigo_asignatura' => $secuencia[0]->asignatura->codigo_asignatura,
+                                    'total_modulos' => count($secuencia),
+                                    'modulo_actual' => 1,
+                                    'hora_inicio' => $primerModulo->hora_inicio,
+                                    'hora_termino' => $secuencia[count($secuencia) - 1]->modulo->hora_termino
+                                ];
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
             // Actualizar la reserva activa del usuario: establecer hora_salida y cambiar estado a finalizada
             if ($reservaActiva) {
                 $reservaActiva->hora_salida = now()->format('H:i:s');
@@ -608,7 +691,7 @@ class PlanoDigitalController extends Controller
                 ? 'Espacio desocupado forzosamente por el administrador'
                 : 'Espacio devuelto exitosamente';
 
-            return response()->json([
+            $respuesta = [
                 'success' => true,
                 'mensaje' => $mensajeRespuesta,
                 'tipo_desocupacion' => $tipoDesocupacion,
@@ -617,7 +700,18 @@ class PlanoDigitalController extends Controller
                     'nombre' => $espacio->nombre_espacio,
                     'estado' => $espacio->estado
                 ]
-            ]);
+            ];
+            
+            // Si es devolución en primer módulo, agregar información adicional
+            if ($devolucionPrimerModulo) {
+                $respuesta['devolucion_primer_modulo'] = true;
+                $respuesta['info_clase'] = $infoClase;
+                $respuesta['id_reserva'] = $reservaActiva->id_reserva;
+                
+                \Log::info("Devolución detectada en primer módulo - Reserva: {$reservaActiva->id_reserva}, Asignatura: {$infoClase['asignatura']}");
+            }
+
+            return response()->json($respuesta);
 
         } catch (\Exception $e) {
             \Log::error('Error al devolver espacio: ' . $e->getMessage());
@@ -625,6 +719,62 @@ class PlanoDigitalController extends Controller
             return response()->json([
                 'success' => false,
                 'mensaje' => 'Error al procesar la devolución: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Registrar si hubo o no asistentes en una clase
+     * (llamado cuando se devuelven llaves en el primer módulo)
+     */
+    public function registrarAsistenciaClase(Request $request)
+    {
+        try {
+            $request->validate([
+                'id_reserva' => 'required|integer',
+                'hubo_asistentes' => 'required|boolean'
+            ]);
+
+            $idReserva = $request->input('id_reserva');
+            $huboAsistentes = $request->input('hubo_asistentes');
+
+            // Buscar la reserva
+            $reserva = Reserva::find($idReserva);
+
+            if (!$reserva) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Reserva no encontrada'
+                ], 404);
+            }
+
+            // Agregar observación sobre asistencia
+            $mensajeAsistencia = $huboAsistentes 
+                ? "✓ Clase con asistentes confirmado por profesor" 
+                : "✗ Clase SIN asistentes - Devolución en primer módulo";
+            
+            $observacionActual = $reserva->observaciones ?? '';
+            $reserva->observaciones = trim($observacionActual . "\n" . $mensajeAsistencia);
+            
+            // Guardar en el campo dedicado
+            $reserva->hubo_asistentes = $huboAsistentes;
+            
+            $reserva->save();
+
+            \Log::info("Asistencia registrada para reserva {$idReserva}: " . ($huboAsistentes ? 'CON asistentes' : 'SIN asistentes'));
+
+            return response()->json([
+                'success' => true,
+                'mensaje' => 'Asistencia registrada correctamente',
+                'hubo_asistentes' => $huboAsistentes
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error al registrar asistencia de clase: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error al registrar asistencia: ' . $e->getMessage()
             ], 500);
         }
     }
