@@ -297,6 +297,9 @@ Route::get('/espacios/estados', [PlanoDigitalController::class, 'estadosEspacios
 // Ruta para devolver espacios
 Route::post('/devolver-espacio', [PlanoDigitalController::class, 'devolverEspacio']);
 
+// Ruta para registrar si hubo asistentes en una clase (devolución anticipada)
+Route::post('/registrar-asistencia-clase', [PlanoDigitalController::class, 'registrarAsistenciaClase']);
+
 // Ruta para devolver llaves (duplicada - removida)
 // Route::post('/reserva/devolver', [ApiReservaController::class, 'devolverLlaves']);
 

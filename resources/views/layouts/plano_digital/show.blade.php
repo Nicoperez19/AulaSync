@@ -152,6 +152,10 @@
                                 <span class="flex-1 text-xs text-white">Próximo</span>
                             </div>
                             <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-purple-600 border-2 border-white rounded-full"></div>
+                                <span class="flex-1 text-xs text-white">Clase sin asistentes</span>
+                            </div>
+                            <div class="flex items-center w-full gap-1">
                                 <div class="w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                                 <span class="flex-1 text-xs text-white">Disponible</span>
                             </div>
@@ -422,6 +426,66 @@
     </x-modal>
 
 
+
+    <!-- Modal para confirmar si hubo asistentes -->
+    <div id="modal-confirmar-asistentes" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="flex flex-col w-full max-w-md mx-2 overflow-hidden bg-white rounded-lg shadow-lg md:mx-8">
+            <!-- Encabezado -->
+            <div class="p-6 bg-gradient-to-r from-blue-500 to-blue-600">
+                <div class="flex items-center justify-center mb-2">
+                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-center text-white">Devolución anticipada</h3>
+                <p class="mt-2 text-sm text-center text-blue-100">Clase finalizada antes del primer módulo</p>
+            </div>
+
+            <!-- Contenido -->
+            <div class="p-6 bg-gray-50">
+                <div class="mb-6 text-center">
+                    <p class="mb-2 text-base font-medium text-gray-800">¿Hubo asistentes en la clase?</p>
+                    <p class="text-sm text-gray-600">Esta información ayuda a mejorar las estadísticas de uso</p>
+                </div>
+
+                <!-- Información de la clase -->
+                <div class="p-4 mb-6 bg-white border-l-4 border-blue-500 rounded-lg shadow-sm">
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span class="font-medium text-gray-600">Espacio:</span>
+                            <span id="asistentes-espacio" class="font-semibold text-gray-800"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="font-medium text-gray-600">Asignatura:</span>
+                            <span id="asistentes-asignatura" class="font-semibold text-gray-800"></span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="font-medium text-gray-600">Módulos programados:</span>
+                            <span id="asistentes-modulos" class="font-semibold text-gray-800"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de acción -->
+                <div class="grid grid-cols-2 gap-3">
+                    <button id="btn-sin-asistentes"
+                        class="flex items-center justify-center px-6 py-3 text-white transition-colors duration-200 bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span class="font-semibold">Sin asistentes</span>
+                    </button>
+                    <button id="btn-con-asistentes"
+                        class="flex items-center justify-center px-6 py-3 text-white transition-colors duration-200 bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span class="font-semibold">Con asistentes</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal para seleccionar cantidad de módulos -->
     <div id="modal-seleccionar-modulos" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
@@ -1609,29 +1673,43 @@
                 drawIndicators();
             }
 
-            // Mostrar Sweet Alert de éxito para devolución
-            Swal.fire({
-                title: '¡Devolución Exitosa!',
-                text: 'Las llaves han sido devueltas correctamente.',
-                icon: 'success',
-                confirmButtonText: 'Aceptar',
-                confirmButtonColor: '#059669',
-                timer: 1500,
-                timerProgressBar: true,
-                showConfirmButton: false
-            });
+            // Verificar si es devolución en el primer módulo
+            if (devolucion.devolucion_primer_modulo && devolucion.info_clase) {
+                // Mostrar modal para preguntar si hubo asistentes
+                mostrarModalAsistentes(devolucion.info_clase, devolucion.id_reserva, espacio);
+                
+                // Limpiar estado después de mostrar el modal
+                setTimeout(() => {
+                    limpiarEstadoLectura();
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 500);
+            } else {
+                // Devolución normal - mostrar Sweet Alert de éxito
+                Swal.fire({
+                    title: '¡Devolución Exitosa!',
+                    text: 'Las llaves han sido devueltas correctamente.',
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#059669',
+                    timer: 1500,
+                    timerProgressBar: true,
+                    showConfirmButton: false
+                });
 
-            // Mostrar mensaje de éxito
-            document.getElementById('qr-status').innerHTML = 'Devolución exitosa';
+                // Mostrar mensaje de éxito
+                document.getElementById('qr-status').innerHTML = 'Devolución exitosa';
 
-            // Limpiar solo el estado de lectura después de un delay
-            setTimeout(() => {
-                limpiarEstadoLectura();
-                // Restaurar autofocus del qr-input después de devolución exitosa
-                if (qrInputManager) {
-                    qrInputManager.setActiveInput('main');
-                }
-            }, 2000);
+                // Limpiar solo el estado de lectura después de un delay
+                setTimeout(() => {
+                    limpiarEstadoLectura();
+                    // Restaurar autofocus del qr-input después de devolución exitosa
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 2000);
+            }
 
             // IMPORTANTE: Detener completamente el procesamiento aquí
             procesandoDevolucion = false;
@@ -2066,6 +2144,8 @@
                     color = '#F59E0B'; // Naranja
                 } else if (estadoLower === 'proximo') {
                     color = '#3B82F6'; // Azul
+                } else if (estadoLower === 'clasesinasistentes') {
+                    color = '#9333EA'; // Púrpura/Morado - Clase sin asistentes
                 } else {
                     color = '#059669'; // Verde por defecto
                 }
@@ -2964,7 +3044,101 @@
             } else {
                 console.log('🔍 Espacio ocupado según indicator - Manteniendo botón desocupar visible');
             }
-        }        function cerrarModalEspacio() {
+        }
+
+        // Funciones para el modal de confirmación de asistentes
+        function mostrarModalAsistentes(infoClase, idReserva, idEspacio) {
+            const modal = document.getElementById('modal-confirmar-asistentes');
+            if (!modal) {
+                console.error('❌ Modal no encontrado en el DOM');
+                return;
+            }
+
+            console.log('🎯 Mostrando modal de asistentes', { infoClase, idReserva, idEspacio });
+
+            // Llenar información en el modal
+            document.getElementById('asistentes-espacio').textContent = idEspacio;
+            document.getElementById('asistentes-asignatura').textContent = infoClase.asignatura || 'No especificada';
+            document.getElementById('asistentes-modulos').textContent = `${infoClase.total_modulos} módulos`;
+
+            // Mostrar el modal
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+
+            // Configurar eventos de los botones
+            const btnSinAsistentes = document.getElementById('btn-sin-asistentes');
+            const btnConAsistentes = document.getElementById('btn-con-asistentes');
+
+            // Remover listeners antiguos si existen
+            const newBtnSin = btnSinAsistentes.cloneNode(true);
+            const newBtnCon = btnConAsistentes.cloneNode(true);
+            btnSinAsistentes.parentNode.replaceChild(newBtnSin, btnSinAsistentes);
+            btnConAsistentes.parentNode.replaceChild(newBtnCon, btnConAsistentes);
+
+            // Agregar nuevos listeners
+            newBtnSin.addEventListener('click', () => {
+                registrarAsistencia(idReserva, false);
+                cerrarModalAsistentes();
+            });
+
+            newBtnCon.addEventListener('click', () => {
+                registrarAsistencia(idReserva, true);
+                cerrarModalAsistentes();
+            });
+        }
+
+        function cerrarModalAsistentes() {
+            const modal = document.getElementById('modal-confirmar-asistentes');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+            }
+
+            // Mostrar mensaje de éxito de devolución
+            Swal.fire({
+                title: '¡Devolución Exitosa!',
+                text: 'Las llaves han sido devueltas correctamente.',
+                icon: 'success',
+                confirmButtonText: 'Aceptar',
+                confirmButtonColor: '#059669',
+                timer: 1500,
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+
+            // Restaurar el input QR activo
+            setTimeout(() => {
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }, 300);
+        }
+
+        async function registrarAsistencia(idReserva, huboAsistentes) {
+            try {
+                const response = await fetch('/api/registrar-asistencia-clase', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        id_reserva: idReserva,
+                        hubo_asistentes: huboAsistentes
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (!data.success) {
+                    console.error('Error al registrar asistencia:', data.mensaje);
+                }
+            } catch (error) {
+                console.error('Error en registrarAsistencia:', error);
+            }
+        }
+
+        function cerrarModalEspacio() {
             const modal = document.getElementById('modal-espacio-info');
             if (modal) {
                 modal.classList.add('hidden');
