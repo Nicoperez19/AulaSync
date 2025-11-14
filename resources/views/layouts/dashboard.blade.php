@@ -43,8 +43,19 @@
                     <span class="p-2 text-purple-500 bg-purple-100 rounded-full"><i
                             class="text-xl fa-solid fa-chart-column"></i></span>
                 </div>
-                <div class="flex items-end gap-2">
-                    <span class="text-3xl font-bold text-purple-600">{{ $ocupacionSemanal }}%</span>
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500">Diurno (8-19h):</span>
+                        <span id="ocupacion-semanal-diurno" class="text-lg font-bold text-purple-600">{{ $ocupacionSemanal['diurno'] }}%</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500">Vespertino (19-23h):</span>
+                        <span id="ocupacion-semanal-vespertino" class="text-lg font-bold text-indigo-600">{{ $ocupacionSemanal['vespertino'] }}%</span>
+                    </div>
+                    <div class="pt-1 mt-1 border-t border-gray-200">
+                        <span class="text-xs text-gray-400">Total: </span>
+                        <span id="ocupacion-semanal" class="text-2xl font-bold text-purple-700">{{ $ocupacionSemanal['total'] }}%</span>
+                    </div>
                 </div>
             </div>
 
@@ -56,12 +67,29 @@
                     <span class="p-2 text-green-500 bg-green-100 rounded-full"><i
                             class="text-xl fa-solid fa-door-open"></i></span>
                 </div>
-                <div class="flex items-end gap-2">
+                <div class="flex flex-col gap-1">
                     @php
-                        $totalSalas = ($salasOcupadas['ocupadas'] ?? 0) + ($salasOcupadas['libres'] ?? 0);
-                        $porcentajeDesocupadas = $totalSalas > 0 ? round((($salasOcupadas['libres'] ?? 0) / $totalSalas) * 100, 2) : 0;
+                        $totalSalasDiurno = ($salasOcupadas['diurno']['ocupadas'] ?? 0) + ($salasOcupadas['diurno']['libres'] ?? 0);
+                        $porcentajeDesocupadasDiurno = $totalSalasDiurno > 0 ? round((($salasOcupadas['diurno']['libres'] ?? 0) / $totalSalasDiurno) * 100, 2) : 0;
+                        
+                        $totalSalasVespertino = ($salasOcupadas['vespertino']['ocupadas'] ?? 0) + ($salasOcupadas['vespertino']['libres'] ?? 0);
+                        $porcentajeDesocupadasVespertino = $totalSalasVespertino > 0 ? round((($salasOcupadas['vespertino']['libres'] ?? 0) / $totalSalasVespertino) * 100, 2) : 0;
+                        
+                        $totalSalasTotal = ($salasOcupadas['total']['ocupadas'] ?? 0) + ($salasOcupadas['total']['libres'] ?? 0);
+                        $porcentajeDesocupadasTotal = $totalSalasTotal > 0 ? round((($salasOcupadas['total']['libres'] ?? 0) / $totalSalasTotal) * 100, 2) : 0;
                     @endphp
-                    <span class="text-3xl font-bold text-green-600">{{ $porcentajeDesocupadas }}%</span>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500">Diurno:</span>
+                        <span class="text-lg font-bold text-green-600">{{ $porcentajeDesocupadasDiurno }}%</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500">Vespertino:</span>
+                        <span class="text-lg font-bold text-emerald-600">{{ $porcentajeDesocupadasVespertino }}%</span>
+                    </div>
+                    <div class="pt-1 mt-1 border-t border-gray-200">
+                        <span class="text-xs text-gray-400">Total: </span>
+                        <span class="text-2xl font-bold text-green-700">{{ $porcentajeDesocupadasTotal }}%</span>
+                    </div>
                 </div>
             </div>
             <!-- Promedio Ocupación Mensual -->
@@ -72,8 +100,19 @@
                     <span class="p-2 text-orange-500 bg-orange-100 rounded-full"><i
                             class="text-xl fa-solid fa-wave-square"></i></span>
                 </div>
-                <div class="flex items-end gap-2">
-                    <span class="text-3xl font-bold text-orange-600">{{ $ocupacionMensual }}%</span>
+                <div class="flex flex-col gap-1">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500">Diurno (8-19h):</span>
+                        <span id="ocupacion-mensual-diurno" class="text-lg font-bold text-orange-600">{{ $ocupacionMensual['diurno'] }}%</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500">Vespertino (19-23h):</span>
+                        <span id="ocupacion-mensual-vespertino" class="text-lg font-bold text-red-600">{{ $ocupacionMensual['vespertino'] }}%</span>
+                    </div>
+                    <div class="pt-1 mt-1 border-t border-gray-200">
+                        <span class="text-xs text-gray-400">Total: </span>
+                        <span id="ocupacion-mensual" class="text-2xl font-bold text-orange-700">{{ $ocupacionMensual['total'] }}%</span>
+                    </div>
                 </div>
             </div>
             <!-- Sala Más Utilizada -->
@@ -231,8 +270,8 @@
                 </div>
             </div>
             <div id="salas-ocupadas" class="mt-4 text-2xl font-bold kpi-value" style="color:#a21caf;">
-                {{ $salasOcupadas['ocupadas'] }} <span class="text-gray-400"> de </span>
-                {{ $salasOcupadas['ocupadas'] + $salasOcupadas['libres'] }} <span class="text-gray-400"> en total</span>
+                {{ $salasOcupadas['total']['ocupadas'] }} <span class="text-gray-400"> de </span>
+                {{ $salasOcupadas['total']['ocupadas'] + $salasOcupadas['total']['libres'] }} <span class="text-gray-400"> en total</span>
             </div>
         </div>
     </div>
@@ -653,17 +692,33 @@
     function actualizarKPIs(data) {
         if (!data) return;
 
-        const kpis = [
-            { id: 'ocupacion-semanal', valor: (data.ocupacionSemanal || 0) + '%' },
-            { id: 'ocupacion-mensual', valor: (data.ocupacionMensual || 0) + '%' },
-            { id: 'usuarios-sin-escaneo', valor: (data.usuariosSinEscaneo || 0) + ' usuarios sin registrar asistencia hoy' },
-            { id: 'horas-utilizadas', valor: (data.horasUtilizadas?.utilizadas || 0) + ' / ' + (data.horasUtilizadas?.disponibles || 0) },
-            { id: 'salas-ocupadas', valor: (data.salasOcupadas?.ocupadas || 0) + ' / ' + (data.salasOcupadas?.libres || 0) }
-        ];
+        // Actualizar ocupación semanal (con turnos)
+        if (data.ocupacionSemanal) {
+            const elemDiurno = document.getElementById('ocupacion-semanal-diurno');
+            const elemVespertino = document.getElementById('ocupacion-semanal-vespertino');
+            const elemTotal = document.getElementById('ocupacion-semanal');
+            
+            if (elemDiurno) elemDiurno.textContent = (data.ocupacionSemanal.diurno || 0) + '%';
+            if (elemVespertino) elemVespertino.textContent = (data.ocupacionSemanal.vespertino || 0) + '%';
+            if (elemTotal) elemTotal.textContent = (data.ocupacionSemanal.total || 0) + '%';
+        }
 
-        kpis.forEach(kpi => {
-            actualizarKPI(kpi.id, kpi.valor);
-        });
+        // Actualizar ocupación mensual (con turnos)
+        if (data.ocupacionMensual) {
+            const elemDiurno = document.getElementById('ocupacion-mensual-diurno');
+            const elemVespertino = document.getElementById('ocupacion-mensual-vespertino');
+            const elemTotal = document.getElementById('ocupacion-mensual');
+            
+            if (elemDiurno) elemDiurno.textContent = (data.ocupacionMensual.diurno || 0) + '%';
+            if (elemVespertino) elemVespertino.textContent = (data.ocupacionMensual.vespertino || 0) + '%';
+            if (elemTotal) elemTotal.textContent = (data.ocupacionMensual.total || 0) + '%';
+        }
+
+        // Actualizar usuarios sin escaneo
+        if (data.usuariosSinEscaneo !== undefined) {
+            const elem = document.getElementById('usuarios-sin-escaneo');
+            if (elem) elem.textContent = data.usuariosSinEscaneo + ' usuarios sin registrar asistencia hoy';
+        }
     }
 
     // ========================================
@@ -832,9 +887,9 @@
     }
 
     function actualizarGraficoCircularSalas(salasOcupadas) {
-        if (window.graficoCircularSalas && salasOcupadas) {
-            const ocupadas = salasOcupadas.ocupadas || 0;
-            const libres = salasOcupadas.libres || 0;
+        if (window.graficoCircularSalas && salasOcupadas && salasOcupadas.total) {
+            const ocupadas = salasOcupadas.total.ocupadas || 0;
+            const libres = salasOcupadas.total.libres || 0;
 
             window.graficoCircularSalas.data.datasets[0].data = [ocupadas, libres];
             window.graficoCircularSalas.update('active');
@@ -1070,7 +1125,7 @@
         data: {
             labels: ['Ocupadas', 'Libres'],
             datasets: [{
-                data: [{{ $salasOcupadas['ocupadas'] }}, {{ $salasOcupadas['libres'] }}],
+                data: [{{ $salasOcupadas['total']['ocupadas'] }}, {{ $salasOcupadas['total']['libres'] }}],
                 backgroundColor: [
                     'rgba(239, 68, 68, 0.7)', // rojo
                     'rgba(16, 185, 129, 0.7)' // verde

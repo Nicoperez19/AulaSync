@@ -13,7 +13,7 @@
         </div>
     </x-slot>
     <div class="px-6 min-h-[80vh]" x-data="{ activeTab: 'resumen' }">
-        <!-- KPIs -->
+        <!-- KPIs Principales -->
         <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-4">
             <div class="flex flex-col justify-between p-3 bg-white rounded-lg shadow border border-gray-100">
                 <div class="flex items-center justify-between mb-1">
@@ -58,6 +58,94 @@
                 <div class="text-xl font-bold text-gray-800">{{ $espacios_ocupados }}/{{ $total_espacios }}</div>
                 <div class="text-xs text-gray-500">
                     {{ $total_espacios > 0 ? round(($espacios_ocupados / $total_espacios) * 100) : 0 }}% ocupación
+                </div>
+            </div>
+        </div>
+
+        <!-- KPIs por Turno -->
+        @php
+            $diurnoTotal = collect($estadisticasTurnos)->avg(fn($e) => $e['diurno']['promedio'] ?? 0);
+            $vespertinoTotal = collect($estadisticasTurnos)->avg(fn($e) => $e['vespertino']['promedio'] ?? 0);
+            $diurnoReservas = collect($estadisticasTurnos)->sum(fn($e) => $e['diurno']['total_reservas'] ?? 0);
+            $vespertinoReservas = collect($estadisticasTurnos)->sum(fn($e) => $e['vespertino']['total_reservas'] ?? 0);
+            $diurnoHoras = collect($estadisticasTurnos)->sum(fn($e) => $e['diurno']['horas_utilizadas'] ?? 0);
+            $vespertinoHoras = collect($estadisticasTurnos)->sum(fn($e) => $e['vespertino']['horas_utilizadas'] ?? 0);
+        @endphp
+        <div class="grid grid-cols-1 gap-4 mb-6 lg:grid-cols-3">
+            <!-- Ocupación Diurno -->
+            <div class="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow border border-blue-200">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="p-2 bg-blue-500 rounded-lg">
+                            <i class="text-lg text-white fas fa-sun"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-medium text-blue-700">Turno Diurno</div>
+                            <div class="text-xs text-blue-600">08:00 - 19:00 hrs</div>
+                        </div>
+                    </div>
+                    <div class="text-2xl font-bold text-blue-700">{{ number_format($diurnoTotal, 1) }}%</div>
+                </div>
+                <div class="flex items-center justify-between pt-2 border-t border-blue-200">
+                    <div class="text-xs text-blue-600">
+                        <i class="fas fa-calendar-check mr-1"></i>{{ $diurnoReservas }} reservas
+                    </div>
+                    <div class="text-xs text-blue-600">
+                        <i class="fas fa-clock mr-1"></i>{{ number_format($diurnoHoras, 1) }}h
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ocupación Vespertino -->
+            <div class="p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg shadow border border-purple-200">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <div class="p-2 bg-purple-500 rounded-lg">
+                            <i class="text-lg text-white fas fa-moon"></i>
+                        </div>
+                        <div>
+                            <div class="text-xs font-medium text-purple-700">Turno Vespertino</div>
+                            <div class="text-xs text-purple-600">19:00 - 23:00 hrs</div>
+                        </div>
+                    </div>
+                    <div class="text-2xl font-bold text-purple-700">{{ number_format($vespertinoTotal, 1) }}%</div>
+                </div>
+                <div class="flex items-center justify-between pt-2 border-t border-purple-200">
+                    <div class="text-xs text-purple-600">
+                        <i class="fas fa-calendar-check mr-1"></i>{{ $vespertinoReservas }} reservas
+                    </div>
+                    <div class="text-xs text-purple-600">
+                        <i class="fas fa-clock mr-1"></i>{{ number_format($vespertinoHoras, 1) }}h
+                    </div>
+                </div>
+            </div>
+
+            <!-- Comparativa -->
+            <div class="p-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg shadow border border-gray-200">
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="p-2 bg-gray-500 rounded-lg">
+                        <i class="text-lg text-white fas fa-balance-scale"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-medium text-gray-700">Comparativa</div>
+                        <div class="text-xs text-gray-600">Diferencia de turnos</div>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    @php
+                        $diff = $diurnoTotal - $vespertinoTotal;
+                        $mayorTurno = $diff > 0 ? 'Diurno' : 'Vespertino';
+                    @endphp
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-600">Mayor uso:</span>
+                        <span class="text-sm font-bold {{ $diff > 0 ? 'text-blue-700' : 'text-purple-700' }}">
+                            {{ $mayorTurno }}
+                        </span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-600">Diferencia:</span>
+                        <span class="text-sm font-bold text-gray-700">{{ number_format(abs($diff), 1) }}%</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -117,6 +205,18 @@
                     </div>
                 </div>
 
+                <!-- Nuevo gráfico: Comparativa Diurno vs Vespertino -->
+                <div class="mb-8 p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-lg border border-purple-200">
+                    <h2 class="mb-4 text-lg font-bold text-purple-800 flex items-center">
+                        <i class="mr-2 fas fa-chart-bar"></i>
+                        Comparativa de Ocupación: Turno Diurno vs Vespertino
+                    </h2>
+                    <p class="mb-4 text-sm text-purple-700">Comparación del porcentaje de uso entre horarios diurnos (8:00-19:00) y vespertinos (19:00-23:00)</p>
+                    <div class="h-80">
+                        <canvas id="chartTurnos"></canvas>
+                    </div>
+                </div>
+
                 <div class="p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl shadow-lg border border-gray-200">
                     <h2 class="mb-6 text-xl font-bold text-gray-800 border-b border-gray-300 pb-3">Resumen Detallado por
                         Tipo de Espacio</h2>
@@ -153,6 +253,83 @@
                                 @endforeach
                             </tbody>
                         </table>
+                    </div>
+                </div>
+
+                <!-- Nueva sección: Estadísticas por Turno (Diurno/Vespertino) -->
+                <div class="mt-8 p-6 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-xl shadow-lg border border-indigo-200">
+                    <h2 class="mb-6 text-xl font-bold text-indigo-800 border-b border-indigo-300 pb-3 flex items-center">
+                        <i class="mr-3 text-2xl fas fa-clock"></i>
+                        Estadísticas por Turno (Diurno y Vespertino)
+                    </h2>
+                    <p class="mb-4 text-sm text-indigo-700">Análisis de ocupación separado por horarios: Diurno (8:00 - 19:00) y Vespertino (19:00 - 23:00)</p>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full text-sm text-left bg-white rounded-lg shadow-sm">
+                            <thead class="bg-white border-b-2 border-indigo-400">
+                                <tr class="text-xs text-gray-600 uppercase">
+                                    <th class="px-6 py-4 font-semibold">Tipo de Espacio</th>
+                                    <th class="px-6 py-4 font-semibold text-center" colspan="3">Turno Diurno (8:00 - 19:00)</th>
+                                    <th class="px-6 py-4 font-semibold text-center" colspan="3">Turno Vespertino (19:00 - 23:00)</th>
+                                </tr>
+                                <tr class="text-xs text-gray-500 bg-gray-50">
+                                    <th class="px-6 py-3"></th>
+                                    <th class="px-4 py-3 text-center">Horas</th>
+                                    <th class="px-4 py-3 text-center">Reservas</th>
+                                    <th class="px-4 py-3 text-center">% Uso</th>
+                                    <th class="px-4 py-3 text-center">Horas</th>
+                                    <th class="px-4 py-3 text-center">Reservas</th>
+                                    <th class="px-4 py-3 text-center">% Uso</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-200">
+                                @foreach($resumen as $tipo)
+                                    @php
+                                        $statsDiurno = $estadisticasTurnos[$tipo['nombre']]['diurno'] ?? null;
+                                        $statsVespertino = $estadisticasTurnos[$tipo['nombre']]['vespertino'] ?? null;
+                                    @endphp
+                                    <tr class="hover:bg-gray-50 transition-colors duration-200">
+                                        <td class="px-6 py-4 font-semibold text-gray-800">{{ $tipo['nombre'] }}</td>
+                                        
+                                        <!-- Turno Diurno -->
+                                        <td class="px-4 py-4 text-center text-gray-700">
+                                            {{ $statsDiurno ? $statsDiurno['horas_utilizadas'] : 0 }} h
+                                        </td>
+                                        <td class="px-4 py-4 text-center text-gray-700">
+                                            {{ $statsDiurno ? $statsDiurno['total_reservas'] : 0 }}
+                                        </td>
+                                        <td class="px-4 py-4 text-center">
+                                            <span class="px-3 py-1 font-bold rounded-full shadow-sm
+                                                {{ ($statsDiurno ? $statsDiurno['promedio'] : 0) >= 60 ? 'bg-green-100 text-green-700' : (($statsDiurno ? $statsDiurno['promedio'] : 0) >= 30 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700') }}">
+                                                {{ $statsDiurno ? $statsDiurno['promedio'] : 0 }}%
+                                            </span>
+                                        </td>
+                                        
+                                        <!-- Turno Vespertino -->
+                                        <td class="px-4 py-4 text-center text-gray-700">
+                                            {{ $statsVespertino ? $statsVespertino['horas_utilizadas'] : 0 }} h
+                                        </td>
+                                        <td class="px-4 py-4 text-center text-gray-700">
+                                            {{ $statsVespertino ? $statsVespertino['total_reservas'] : 0 }}
+                                        </td>
+                                        <td class="px-4 py-4 text-center">
+                                            <span class="px-3 py-1 font-bold rounded-full shadow-sm
+                                                {{ ($statsVespertino ? $statsVespertino['promedio'] : 0) >= 60 ? 'bg-green-100 text-green-700' : (($statsVespertino ? $statsVespertino['promedio'] : 0) >= 30 ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700') }}">
+                                                {{ $statsVespertino ? $statsVespertino['promedio'] : 0 }}%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-4 p-4 bg-white rounded-lg border border-indigo-200">
+                        <h4 class="font-semibold text-indigo-800 mb-2">Información sobre los turnos:</h4>
+                        <ul class="text-sm text-gray-700 space-y-1">
+                            <li><i class="fas fa-sun text-yellow-500 mr-2"></i><strong>Turno Diurno:</strong> 08:00 - 19:00 (11 horas disponibles)</li>
+                            <li><i class="fas fa-moon text-indigo-500 mr-2"></i><strong>Turno Vespertino:</strong> 19:00 - 23:00 (4 horas disponibles)</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -542,6 +719,129 @@
             console.log('Error al crear gráfico de reservas:', {
                 canvas: canvasReservas,
                 resumenData: resumenData
+            });
+        }
+
+        // Gráfico comparativo de Turnos (Diurno vs Vespertino)
+        const canvasTurnos = document.getElementById('chartTurnos');
+        const estadisticasTurnos = @json($estadisticasTurnos ?? []);
+        
+        if (canvasTurnos && estadisticasTurnos && Object.keys(estadisticasTurnos).length > 0) {
+            const tiposEspacio = Object.keys(estadisticasTurnos);
+            const datosDiurno = tiposEspacio.map(tipo => estadisticasTurnos[tipo]?.diurno?.promedio || 0);
+            const datosVespertino = tiposEspacio.map(tipo => estadisticasTurnos[tipo]?.vespertino?.promedio || 0);
+            
+            new Chart(canvasTurnos.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: tiposEspacio,
+                    datasets: [
+                        {
+                            label: 'Turno Diurno (8:00-19:00)',
+                            data: datosDiurno,
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 2,
+                            borderRadius: 6,
+                        },
+                        {
+                            label: 'Turno Vespertino (19:00-23:00)',
+                            data: datosVespertino,
+                            backgroundColor: 'rgba(139, 92, 246, 0.7)',
+                            borderColor: 'rgba(139, 92, 246, 1)',
+                            borderWidth: 2,
+                            borderRadius: 6,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 20,
+                                font: {
+                                    size: 13,
+                                    weight: 'bold'
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            borderColor: '#8b5cf6',
+                            borderWidth: 1,
+                            cornerRadius: 8,
+                            displayColors: true,
+                            callbacks: {
+                                label: function (context) {
+                                    const tipo = context.label;
+                                    const turno = context.datasetIndex === 0 ? 'diurno' : 'vespertino';
+                                    const stats = estadisticasTurnos[tipo]?.[turno];
+                                    
+                                    if (stats) {
+                                        return [
+                                            `${context.dataset.label}`,
+                                            `Ocupación: ${stats.promedio}%`,
+                                            `Horas utilizadas: ${stats.horas_utilizadas}h`,
+                                            `Total reservas: ${stats.total_reservas}`
+                                        ];
+                                    }
+                                    return `${context.dataset.label}: ${context.parsed.y}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    size: 11,
+                                    weight: 'bold'
+                                }
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                },
+                                font: {
+                                    size: 11
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Porcentaje de Ocupación (%)',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    },
+                    animation: {
+                        duration: 2000,
+                        easing: 'easeInOutQuart'
+                    }
+                }
             });
         }
 
