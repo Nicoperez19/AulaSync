@@ -6,6 +6,7 @@
 /storage/*.key
 /vendor
 /node_modules
+/storage/framework/views/*
 .env
 .env.backup
 .env.production
