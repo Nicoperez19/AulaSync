@@ -283,9 +283,9 @@ class ModulosActualesTable extends Component
         $inicioModulo = Carbon::createFromTimeString($horaInicioPrimerModulo);
         $ahora = Carbon::createFromTimeString($horaActual);
 
-        // Solo marcar como no realizada si ha pasado 1 hora desde el inicio del primer módulo
+        // Solo marcar como no realizada si han pasado 20 minutos desde el inicio del primer módulo
         // Y si NO hay reserva con entrada del profesor (ni en este espacio ni en otro)
-        $hasPasadoUnaHora = $ahora->diffInMinutes($inicioModulo) >= 60;
+        $hasPasado20Minutos = $ahora->diffInMinutes($inicioModulo) >= 20;
 
         // Verificar nuevamente si registró entrada en otro espacio
         $tuvoEntradaEnOtroEspacio = false;
@@ -297,7 +297,7 @@ class ModulosActualesTable extends Component
                 ->exists();
         }
 
-        if ($moduloActual && $moduloActual['numero'] > $numeroPrimerModulo && ! $tuvoEntradaHoy && ! $tuvoEntradaEnOtroEspacio && $hasPasadoUnaHora) {
+        if ($moduloActual && ! $tuvoEntradaHoy && ! $tuvoEntradaEnOtroEspacio && $hasPasado20Minutos) {
             // Registrar la clase no realizada
             ClaseNoRealizada::registrarClaseNoRealizada([
                 'id_asignatura' => $planificacionActiva->id_asignatura,
@@ -306,7 +306,7 @@ class ModulosActualesTable extends Component
                 'run_profesor' => $planificacionActiva->asignatura->run_profesor ?? '',
                 'fecha_clase' => Carbon::now()->toDateString(),
                 'periodo' => $periodo,
-                'motivo' => 'No se registró ingreso después de 1 hora del primer módulo programado',
+                'motivo' => 'No se registró ingreso después de 20 minutos del primer módulo programado',
             ]);
 
             return true;

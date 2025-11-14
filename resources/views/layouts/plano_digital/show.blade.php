@@ -2263,7 +2263,9 @@
             const estadoConfig = {
                 'disponible': { texto: 'Disponible', pill: 'border-green-500 bg-green-50 text-green-700', icon: 'bg-green-500' },
                 'Disponible': { texto: 'Disponible', pill: 'border-green-500 bg-green-50 text-green-700', icon: 'bg-green-500' },
+                'libre': { texto: 'Disponible', pill: 'border-green-500 bg-green-50 text-green-700', icon: 'bg-green-500' },
                 '#059669': { texto: 'Disponible', pill: 'border-green-500 bg-green-50 text-green-700', icon: 'bg-green-500' },
+                '#10b981': { texto: 'Disponible', pill: 'border-green-500 bg-green-50 text-green-700', icon: 'bg-green-500' },
                 'ocupado': { texto: 'Ocupado', pill: 'border-red-500 bg-red-50 text-red-700', icon: 'bg-red-500' },
                 'Ocupado': { texto: 'Ocupado', pill: 'border-red-500 bg-red-50 text-red-700', icon: 'bg-red-500' },
                 '#FF0000': { texto: 'Ocupado', pill: 'border-red-500 bg-red-50 text-red-700', icon: 'bg-red-500' },
@@ -2272,8 +2274,11 @@
                 '#FFA500': { texto: 'Reservado', pill: 'border-yellow-400 bg-yellow-50 text-yellow-700', icon: 'bg-yellow-400' },
                 '#F59E0B': { texto: 'Reservado', pill: 'border-yellow-400 bg-yellow-50 text-yellow-700', icon: 'bg-yellow-400' },
                 'proximo': { texto: 'Próximo a ocuparse', pill: 'border-blue-500 bg-blue-50 text-blue-700', icon: 'bg-blue-500' },
+                'Proximo': { texto: 'Próximo a ocuparse', pill: 'border-blue-500 bg-blue-50 text-blue-700', icon: 'bg-blue-500' },
                 'Próximo': { texto: 'Próximo a ocuparse', pill: 'border-blue-500 bg-blue-50 text-blue-700', icon: 'bg-blue-500' },
-                '#3B82F6': { texto: 'Próximo a ocuparse', pill: 'border-blue-500 bg-blue-50 text-blue-700', icon: 'bg-blue-500' }
+                '#3B82F6': { texto: 'Próximo a ocuparse', pill: 'border-blue-500 bg-blue-50 text-blue-700', icon: 'bg-blue-500' },
+                'ClaseSinAsistentes': { texto: 'Clase sin asistentes', pill: 'border-purple-500 bg-purple-50 text-purple-700', icon: 'bg-purple-500' },
+                'clasesinasistentes': { texto: 'Clase sin asistentes', pill: 'border-purple-500 bg-purple-50 text-purple-700', icon: 'bg-purple-500' }
             };
 
             const config = estadoConfig[estadoReal] || {

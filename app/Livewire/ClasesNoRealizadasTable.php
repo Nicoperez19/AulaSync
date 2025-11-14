@@ -498,13 +498,13 @@ class ClasesNoRealizadasTable extends Component
 
         // Para clases de HOY, solo mostrar las que:
         // 1. Ya pasó su último módulo programado (la clase terminó su horario)
-        // 2. O que pasó más de 1 hora desde el inicio del primer módulo
+        // 2. O que pasaron más de 20 minutos desde el inicio del primer módulo
         $query->where(function($q) use ($moduloActual) {
             // Opción 1: La clase ya terminó su horario (módulo actual > último módulo de la clase)
             $q->whereRaw("CAST(SUBSTRING_INDEX(id_modulo, '.', -1) AS UNSIGNED) < ?", [$moduloActual['numero']])
-            // Opción 2: O ha pasado más de 1 hora desde la detección
+            // Opción 2: O han pasado más de 20 minutos desde la detección
             ->orWhere(function($subQ) {
-                $subQ->where('hora_deteccion', '<=', Carbon::now()->subHour());
+                $subQ->where('hora_deteccion', '<=', Carbon::now()->subMinutes(20));
             });
         });
     }
