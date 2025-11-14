@@ -16,6 +16,42 @@ use App\Exports\AccesosExport;
 
 class ReportController extends Controller
 {
+    /**
+     * Determina si una hora está en el turno diurno o vespertino
+     * Diurno: 08:00 - 19:00
+     * Vespertino: 19:00 - 23:00
+     */
+    private function esTurno($hora, $turno = null)
+    {
+        if ($turno === null) {
+            return true;
+        }
+
+        $horaInt = (int) substr($hora, 0, 2);
+        
+        if ($turno === 'diurno') {
+            return $horaInt >= 8 && $horaInt < 19;
+        } elseif ($turno === 'vespertino') {
+            return $horaInt >= 19 && $horaInt < 23;
+        }
+        
+        return true;
+    }
+
+    /**
+     * Calcula las horas disponibles por turno
+     */
+    private function horasPorTurno($turno = null)
+    {
+        if ($turno === 'diurno') {
+            return 11; // 08:00 - 19:00
+        } elseif ($turno === 'vespertino') {
+            return 4; // 19:00 - 23:00
+        }
+        
+        return 15; // Total
+    }
+
     public function tipoEspacio(Request $request)
     {
         $mes = now()->month;
@@ -166,6 +202,69 @@ class ReportController extends Controller
             $data_reservas_grafico[] = $total_reservas_tipo;
         }
 
+        // CALCULAR ESTADÍSTICAS POR TURNO (DIURNO Y VESPERTINO)
+        $estadisticasTurnos = [];
+        foreach ($tipos as $tipo) {
+            $espacios = Espacio::where('tipo_espacio', $tipo)->pluck('id_espacio');
+            $total_espacios_tipo = $espacios->count();
+            
+            // Para cada turno (diurno y vespertino)
+            foreach (['diurno', 'vespertino'] as $turno) {
+                $horas_disponibles_turno = $total_espacios_tipo * $dias_laborales * $this->horasPorTurno($turno);
+                
+                // Calcular horas desde planificaciones para este turno
+                $horas_plan_turno = 0;
+                $planificaciones_tipo = $planificaciones->filter(function($plan) use ($tipo) {
+                    return $plan->espacio && $plan->espacio->tipo_espacio === $tipo;
+                });
+                
+                for ($fecha = $inicioMes->copy(); $fecha->lte($finMes); $fecha->addDay()) {
+                    if (!$fecha->isWeekday()) continue;
+                    
+                    $diaSemana = strtolower($fecha->locale('es')->isoFormat('dddd'));
+                    $planificacionesDia = $planificaciones_tipo->filter(function($plan) use ($diaSemana) {
+                        return $plan->modulo && strtolower($plan->modulo->dia) === $diaSemana;
+                    });
+                    
+                    foreach ($planificacionesDia as $plan) {
+                        if ($plan->modulo && $plan->modulo->hora_inicio && $plan->modulo->hora_termino) {
+                            if ($this->esTurno($plan->modulo->hora_inicio, $turno)) {
+                                $inicio = Carbon::parse($plan->modulo->hora_inicio);
+                                $fin = Carbon::parse($plan->modulo->hora_termino);
+                                $horas_plan_turno += $inicio->diffInHours($fin, true);
+                            }
+                        }
+                    }
+                }
+                
+                // Calcular horas desde reservas para este turno
+                $reservas_tipo_turno = Reserva::whereIn('id_espacio', $espacios)
+                    ->whereMonth('fecha_reserva', $mes)
+                    ->whereYear('fecha_reserva', $anio)
+                    ->get()
+                    ->filter(function($r) use ($turno) {
+                        return $r->hora && $this->esTurno($r->hora, $turno);
+                    });
+                
+                $horas_reservas_turno = $reservas_tipo_turno->sum(function($r) {
+                    if ($r->hora && $r->hora_salida) {
+                        return Carbon::parse($r->hora)->diffInHours(Carbon::parse($r->hora_salida), true);
+                    }
+                    return 0.83;
+                });
+                
+                $horas_utilizadas_turno = $horas_plan_turno + $horas_reservas_turno;
+                $promedio_turno = $horas_disponibles_turno > 0 ? 
+                    round(($horas_utilizadas_turno / $horas_disponibles_turno) * 100) : 0;
+                
+                $estadisticasTurnos[$tipo][$turno] = [
+                    'horas_utilizadas' => round($horas_utilizadas_turno),
+                    'promedio' => $promedio_turno,
+                    'total_reservas' => $reservas_tipo_turno->count()
+                ];
+            }
+        }
+
         $diasDisponibles = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes','sabado'];
         $tiposEspacioDisponibles = $tipos;
         $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
@@ -203,7 +302,8 @@ class ReportController extends Controller
             'diasDisponibles',
             'tiposEspacioDisponibles',
             'diaActual',
-            'ocupacionHorarios'
+            'ocupacionHorarios',
+            'estadisticasTurnos'
         ));
     }
 

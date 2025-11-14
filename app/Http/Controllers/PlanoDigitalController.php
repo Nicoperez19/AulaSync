@@ -144,9 +144,21 @@ class PlanoDigitalController extends Controller
             if ($reservaActiva) {
                 // 1. Hay reserva activa = Ocupado
                 $estadoFinal = 'Ocupado';
+                
+                // Corregir BD si está inconsistente
+                if ($espacio->estado !== 'Ocupado') {
+                    $espacio->estado = 'Ocupado';
+                    $espacio->save();
+                }
             } elseif ($claseSinAsistentes) {
                 // 2. Hubo una clase sin asistentes hoy
                 $estadoFinal = 'ClaseSinAsistentes';
+                
+                // Corregir BD si está inconsistente
+                if ($espacio->estado !== 'Disponible') {
+                    $espacio->estado = 'Disponible';
+                    $espacio->save();
+                }
             } else {
                 // 3. Verificar planificaciones (actuales y próximas)
                 $planificacionActiva = $planificacionesActivas->firstWhere('id_espacio', $idEspacio);
@@ -156,8 +168,15 @@ class PlanoDigitalController extends Controller
                 } elseif ($planificacionProxima) {
                     $estadoFinal = 'Proximo'; // Azul (próximo)
                 } else {
-                    // 4. No hay actividad = Disponible (ignorar BD)
+                    // 4. No hay actividad = Disponible
                     $estadoFinal = 'Disponible';
+                    
+                    // Corregir BD si está marcado como Ocupado sin actividad
+                    if ($espacio->estado === 'Ocupado') {
+                        $espacio->estado = 'Disponible';
+                        $espacio->save();
+                        \Log::info("Espacio {$idEspacio} corregido: Ocupado → Disponible (sin actividad)");
+                    }
                 }
             }
 
