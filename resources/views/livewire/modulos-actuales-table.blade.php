@@ -85,7 +85,17 @@
                                     <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-gray-100 transition-colors duration-200 h-10 border-b border-gray-200">
                                         <!-- Columna 1: Modulo -->
                                             <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
-                                                @if(($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']) && !empty($espacio['datos_clase']['modulo_inicio']) && !empty($espacio['datos_clase']['modulo_fin']))
+                                                @if($espacio['estado'] === 'Disponible' && !empty($espacio['rango_disponibilidad']))
+                                                    {{-- Mostrar rango de disponibilidad cuando el espacio está disponible --}}
+                                                    <div class="font-medium text-gray-900 text-sm">
+                                                        <div class="flex items-center gap-2 text-base font-semibold text-green-600">
+                                                            {{ $espacio['rango_disponibilidad']['desde'] }} - {{ $espacio['rango_disponibilidad']['hasta'] }}
+                                                        </div>
+                                                        <div class="text-gray-600">
+                                                            {{ substr($espacio['rango_disponibilidad']['hora_desde'], 0, 5) }} - {{ substr($espacio['rango_disponibilidad']['hora_hasta'], 0, 5) }}
+                                                        </div>
+                                                    </div>
+                                                @elseif(($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']) && !empty($espacio['datos_clase']['modulo_inicio']) && !empty($espacio['datos_clase']['modulo_fin']))
                                                     <div class="font-medium text-gray-900 text-sm">
                                                         <div class="flex items-center gap-2 text-base font-semibold">
                                                                             
