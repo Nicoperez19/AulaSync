@@ -933,18 +933,37 @@ class EspacioController extends Controller
      */
     private function obtenerInformacionProfesor($reserva, $horaActual)
     {
-        $runProfesor = $reserva->run_profesor;
+        try {
+            $runProfesor = $reserva->run_profesor;
 
-        // Consulta optimizada para profesor desde la tabla profesors
-        $profesor = Profesor::select('name', 'run_profesor')
-            ->where('run_profesor', $runProfesor)
-            ->first();
+            // Consulta optimizada para profesor desde la tabla profesors
+            $profesor = Profesor::select('name', 'run_profesor')
+                ->where('run_profesor', $runProfesor)
+                ->first();
 
-        if (!$profesor) {
+            if (!$profesor) {
+                Log::warning("Profesor no encontrado en BD", ['run_profesor' => $runProfesor]);
+                return [
+                    'success' => true,
+                    'tipo_ocupacion' => 'ocupado_sin_info',
+                    'nombre' => 'Profesor no encontrado',
+                    'run_profesor' => $runProfesor,
+                    'tipo_reserva' => $reserva->tipo_reserva,
+                    'asignatura' => null,
+                    'hora_inicio' => $reserva->hora,
+                    'hora_salida' => $reserva->hora_salida
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::error("Error al obtener información del profesor", [
+                'run_profesor' => $reserva->run_profesor,
+                'error' => $e->getMessage()
+            ]);
             return [
                 'success' => true,
                 'tipo_ocupacion' => 'ocupado_sin_info',
-                'nombre' => 'Profesor no encontrado',
+                'nombre' => 'Error al cargar profesor',
+                'run_profesor' => $reserva->run_profesor,
                 'tipo_reserva' => $reserva->tipo_reserva,
                 'asignatura' => null,
                 'hora_inicio' => $reserva->hora,
@@ -952,30 +971,38 @@ class EspacioController extends Controller
             ];
         }
 
-        // Buscar planificación actual utilizando la relación 'modulo'
-        $diaActual = strtolower(now()->format('l'));
-        $codigosDias = [
-            'monday' => 'LU', 'tuesday' => 'MA', 'wednesday' => 'MI',
-            'thursday' => 'JU', 'friday' => 'VI', 'saturday' => 'SA', 'sunday' => 'DO'
-        ];
-        $codigoDia = $codigosDias[$diaActual] ?? 'LU';
+        try {
+            // Buscar planificación actual utilizando la relación 'modulo'
+            $diaActual = strtolower(now()->format('l'));
+            $codigosDias = [
+                'monday' => 'LU', 'tuesday' => 'MA', 'wednesday' => 'MI',
+                'thursday' => 'JU', 'friday' => 'VI', 'saturday' => 'SA', 'sunday' => 'DO'
+            ];
+            $codigoDia = $codigosDias[$diaActual] ?? 'LU';
 
-        // Cargar planificaciones del profesor para el día (usando la relación con horario)
-        $planificaciones = Planificacion_Asignatura::with(['asignatura:id_asignatura,nombre_asignatura', 'modulo', 'horario'])
-            ->whereHas('horario', function($query) use ($runProfesor) {
-                $query->where('run_profesor', $runProfesor);
-            })
-            ->where('id_modulo', 'like', $codigoDia . '.%')
-            ->get();
+            // Cargar planificaciones del profesor para el día (usando la relación con horario)
+            $planificaciones = Planificacion_Asignatura::with(['asignatura:id_asignatura,nombre_asignatura', 'modulo', 'horario'])
+                ->whereHas('horario', function($query) use ($runProfesor) {
+                    $query->where('run_profesor', $runProfesor);
+                })
+                ->where('id_modulo', 'like', $codigoDia . '.%')
+                ->get();
 
-        // Filtrar en memoria por los módulos cuyo horario contiene la hora actual
-        $planificacion = $planificaciones->first(function ($p) use ($horaActual) {
-            return isset($p->modulo->hora_inicio, $p->modulo->hora_termino)
-                && $p->modulo->hora_inicio <= $horaActual
-                && $p->modulo->hora_termino > $horaActual;
-        });
+            // Filtrar en memoria por los módulos cuyo horario contiene la hora actual
+            $planificacion = $planificaciones->first(function ($p) use ($horaActual) {
+                return isset($p->modulo->hora_inicio, $p->modulo->hora_termino)
+                    && $p->modulo->hora_inicio <= $horaActual
+                    && $p->modulo->hora_termino > $horaActual;
+            });
 
-        $asignatura = $planificacion ? $planificacion->asignatura->nombre_asignatura : null;
+            $asignatura = $planificacion ? $planificacion->asignatura->nombre_asignatura : null;
+        } catch (\Exception $e) {
+            Log::error("Error al obtener planificación del profesor", [
+                'run_profesor' => $runProfesor,
+                'error' => $e->getMessage()
+            ]);
+            $asignatura = null;
+        }
 
         return [
             'success' => true,

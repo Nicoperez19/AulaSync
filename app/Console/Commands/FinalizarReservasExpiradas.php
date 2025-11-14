@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 class FinalizarReservasExpiradas extends Command
 {
     protected $signature = 'reservas:finalizar-expiradas';
-    protected $description = 'Finaliza automáticamente las reservas que han excedido su tiempo de clase más 10 minutos de gracia';
+    protected $description = 'Finaliza automáticamente las reservas de tipo clase al término de cada módulo';
 
     // Horarios de módulos por día
     private $horariosModulos = [
@@ -136,11 +136,11 @@ class FinalizarReservasExpiradas extends Command
         $periodo = SemesterHelper::getCurrentPeriod();
         $this->info("Fecha: {$fechaHoy}, Hora: {$horaActual}, Día: {$diaKey}, Período: {$periodo}");
 
-        // Buscar reservas activas de hoy que son de tipo 'clase'
+        // Buscar reservas activas de hoy que son de tipo 'clase' (clases con horario)
         $reservasActivas = Reserva::where('estado', 'activa')
             ->where('fecha_reserva', $fechaHoy)
             ->where('tipo_reserva', 'clase')
-            ->whereNotNull('run_profesor')
+            ->whereNotNull('id_asignatura')
             ->get();
 
         $this->info("Total de reservas activas de clase: " . $reservasActivas->count());
@@ -210,17 +210,17 @@ class FinalizarReservasExpiradas extends Command
                 $ahora = Carbon::createFromTimeString($horaActual);
                 $minutosDesdeFinModulo = $finModulo->diffInMinutes($ahora, false);
 
-                // Si han pasado más de 10 minutos desde el fin del módulo
-                if ($minutosDesdeFinModulo >= 10) {
+                // Finalizar la reserva exactamente cuando termina la clase (sin tiempo de gracia)
+                if ($minutosDesdeFinModulo >= 0) {
                     DB::beginTransaction();
                     try {
                         // Finalizar la reserva
                         $reserva->estado = 'finalizada';
-                        $reserva->hora_salida = $horaActual;
+                        $reserva->hora_salida = $horaFinModulo; // Usar la hora de fin de la clase
                         
                         // Agregar observación
                         $observacionActual = $reserva->observaciones ?? '';
-                        $nuevaObservacion = "Reserva finalizó automáticamente por excederse en el tiempo y el profesor no ha devuelto la llave. Finalización automática a las {$horaActual}, {$minutosDesdeFinModulo} minutos después del término programado.";
+                        $nuevaObservacion = "Reserva finalizada automáticamente al término del módulo de clase a las {$horaFinModulo}.";
                         
                         $reserva->observaciones = $observacionActual 
                             ? $observacionActual . "\n" . $nuevaObservacion 
@@ -233,25 +233,23 @@ class FinalizarReservasExpiradas extends Command
                         if ($espacio && $espacio->estado === 'Ocupado') {
                             $espacio->estado = 'Disponible';
                             $espacio->save();
-                            $this->info("Espacio {$espacio->id_espacio} liberado");
+                            $this->info("✅ Espacio {$espacio->id_espacio} liberado automáticamente");
                         }
 
                         DB::commit();
                         
-                        $this->info("Reserva {$reserva->id_reserva} finalizada automáticamente ({$minutosDesdeFinModulo} minutos de retraso)");
+                        $this->info("✅ Reserva {$reserva->id_reserva} finalizada automáticamente al término de clase");
                         $finalizadas++;
                     } catch (\Exception $e) {
                         DB::rollBack();
                         Log::error("Error al finalizar reserva {$reserva->id_reserva}: " . $e->getMessage());
-                        $this->error("Error al finalizar reserva {$reserva->id_reserva}: " . $e->getMessage());
+                        $this->error("❌ Error al finalizar reserva {$reserva->id_reserva}: " . $e->getMessage());
                         $sinFinalizar++;
                     }
                 } else {
-                    // Aún está dentro del tiempo de gracia
-                    $tiempoRestante = 10 - $minutosDesdeFinModulo;
-                    if ($tiempoRestante > 0 && $tiempoRestante <= 10) {
-                        $this->info("Reserva {$reserva->id_reserva} aún tiene {$tiempoRestante} minutos de gracia");
-                    }
+                    // La clase aún no ha terminado
+                    $minutosRestantes = abs($minutosDesdeFinModulo);
+                    $this->info("⏱️  Reserva {$reserva->id_reserva} terminará en {$minutosRestantes} minutos (a las {$horaFinModulo})");
                     $sinFinalizar++;
                 }
 

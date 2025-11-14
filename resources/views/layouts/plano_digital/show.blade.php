@@ -303,17 +303,6 @@
                     </div>
                 </div>
 
-                <!-- Información de la clase actual -->
-                <div id="claseActualContainer" class="p-6 mb-6 bg-white border-l-4 border-orange-500 shadow-sm rounded-xl" style="display: none;">
-                    <h3 class="mb-4 text-xl font-semibold text-gray-800">
-                        <i class="mr-2 text-orange-500 fas fa-chalkboard-teacher"></i>
-                        Clase Actual
-                    </h3>
-                    <div id="claseActualInfo" class="space-y-3">
-                        <!-- La información se insertará dinámicamente -->
-                    </div>
-                </div>
-
                 <!-- Próxima clase programada -->
                 <div id="proximaClaseContainer" class="p-6 mb-6 bg-white border-l-4 border-purple-500 shadow-sm rounded-xl" style="display: none;">
                     <h3 class="mb-4 text-xl font-semibold text-gray-800">
@@ -2220,7 +2209,7 @@
         // Cargar información detallada en paralelo con timeout
         const dataPromise = cargarInformacionDetallada(indicator.id);
         const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Timeout')), 5000)
+            setTimeout(() => reject(new Error('Timeout')), 10000) // Aumentado a 10 segundos
         );
 
         try {
@@ -2233,12 +2222,12 @@
                 renderizarInformacionOcupante(elements, data, indicator);
             } else {
                 console.error('❌ API respondió con error:', data);
-                mostrarErrorCarga(elements, 'No se pudo cargar la información');
+                mostrarErrorCarga(elements, 'Sin información asociada');
             }
         } catch (error) {
             console.error('❌ Error al cargar información:', error);
             // Error al cargar información
-            mostrarErrorCarga(elements, 'Error de conexión');
+            mostrarErrorCarga(elements, 'Sin información asociada');
         }
         }
 
@@ -2342,6 +2331,7 @@
             return JSON.parse(solicitanteCached);
         }
 
+        try {
             const response = await fetch(`/api/espacio/${espacioId}/informacion-detallada`, {
                 method: 'GET',
                 headers: {
@@ -2350,20 +2340,30 @@
                 }
             });
 
-            const data = await response.json();
+            if (!response.ok) {
+                console.error('❌ Error HTTP:', response.status, response.statusText);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
 
-                    // Guardar en cache según el tipo de ocupación
-        if (data.success && data.tipo_ocupacion === 'solicitante') {
-            // Cache específico para solicitantes (5 minutos)
-            sessionStorage.setItem(solicitanteCacheKey, JSON.stringify(data));
-            sessionStorage.setItem(`${solicitanteCacheKey}_time`, Date.now().toString());
-        } else {
-            // Cache normal para otros tipos (30 segundos)
-            sessionStorage.setItem(cacheKey, JSON.stringify(data));
-            sessionStorage.setItem(`${cacheKey}_time`, Date.now().toString());
-        }
+            const data = await response.json();
+            console.log('📦 Datos recibidos del servidor:', data);
+
+            // Guardar en cache según el tipo de ocupación
+            if (data.success && data.tipo_ocupacion === 'solicitante') {
+                // Cache específico para solicitantes (5 minutos)
+                sessionStorage.setItem(solicitanteCacheKey, JSON.stringify(data));
+                sessionStorage.setItem(`${solicitanteCacheKey}_time`, Date.now().toString());
+            } else {
+                // Cache normal para otros tipos (30 segundos)
+                sessionStorage.setItem(cacheKey, JSON.stringify(data));
+                sessionStorage.setItem(`${cacheKey}_time`, Date.now().toString());
+            }
 
             return data;
+        } catch (error) {
+            console.error('❌ Error en fetch:', error);
+            throw error;
+        }
         }
 
         // Función para mostrar error de carga
@@ -2371,8 +2371,8 @@
             if (elements.ocupanteInfo) {
                 elements.ocupanteInfo.innerHTML = `
                     <div class="flex items-center justify-center py-4">
-                        <i class="mr-2 text-red-500 fas fa-exclamation-triangle"></i>
-                        <span class="text-sm text-red-600">${mensaje}</span>
+                        <i class="mr-2 text-gray-400 fas fa-info-circle"></i>
+                        <span class="text-sm text-gray-600">${mensaje}</span>
                     </div>
                 `;
             }
