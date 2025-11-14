@@ -119,12 +119,21 @@
                                                         </span>
                                                     @else
                                                         <div class="font-medium text-gray-900 text-sm">
-                                                            <div class="flex items-center gap-2 text-base font-semibold">
-                                                                {{ $this->moduloActual['numero'] }}
-                                                            </div>
-                                                            <div class="text-gray-600">
-                                                                {{ substr($this->moduloActual['inicio'], 0, 5) }} - {{ substr($this->moduloActual['fin'], 0, 5) }}
-                                                            </div>
+                                                            @if(!empty($espacio['rango_disponibilidad']))
+                                                                <div class="flex items-center gap-2 text-base font-semibold text-green-600">
+                                                                    {{ $espacio['rango_disponibilidad']['desde'] }} - {{ $espacio['rango_disponibilidad']['hasta'] }}
+                                                                </div>
+                                                                <div class="text-gray-600">
+                                                                    {{ substr($espacio['rango_disponibilidad']['hora_desde'], 0, 5) }} - {{ substr($espacio['rango_disponibilidad']['hora_hasta'], 0, 5) }}
+                                                                </div>
+                                                            @else
+                                                                <div class="flex items-center gap-2 text-base font-semibold">
+                                                                    {{ $this->moduloActual['numero'] }}
+                                                                </div>
+                                                                <div class="text-gray-600">
+                                                                    {{ substr($this->moduloActual['inicio'], 0, 5) }} - {{ substr($this->moduloActual['fin'], 0, 5) }}
+                                                                </div>
+                                                            @endif
                                                         </div>
                                                     @endif
                                                 @endif

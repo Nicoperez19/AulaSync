@@ -432,6 +432,86 @@ class ModulosActualesTable extends Component
         return null;
     }
 
+    /**
+     * Calcular el rango de disponibilidad de un espacio
+     */
+    private function calcularRangoDisponibilidad($idEspacio, $periodo, $reservasEspacio)
+    {
+        if (!$this->moduloActual) {
+            return null;
+        }
+
+        $moduloActualNumero = $this->moduloActual['numero'];
+        $diaActual = Carbon::now()->locale('es')->isoFormat('dddd');
+        $dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        $diaKey = strtolower($diaActual);
+        
+        $mapaDias = [
+            'lunes' => 'lunes',
+            'martes' => 'martes',
+            'miércoles' => 'miercoles',
+            'miercoles' => 'miercoles',
+            'jueves' => 'jueves',
+            'viernes' => 'viernes',
+        ];
+        
+        $diaKey = $mapaDias[$diaKey] ?? $diaKey;
+        $horariosDelDia = $this->horariosModulos[$diaKey] ?? null;
+
+        if (!$horariosDelDia) {
+            return null;
+        }
+
+        // Obtener todas las planificaciones futuras para este espacio hoy
+        $prefijoDia = strtoupper(substr($diaKey, 0, 2));
+        $planificacionesFuturas = Planificacion_Asignatura::whereHas('horario', function ($q) use ($periodo) {
+            $q->where('periodo', $periodo);
+        })
+        ->where('id_espacio', $idEspacio)
+        ->where('id_modulo', 'like', $prefijoDia . '.%')
+        ->get()
+        ->map(function ($plan) {
+            $moduloParts = explode('.', $plan->id_modulo);
+            return isset($moduloParts[1]) ? (int) $moduloParts[1] : 0;
+        })
+        ->filter(function ($numModulo) use ($moduloActualNumero) {
+            return $numModulo > $moduloActualNumero;
+        })
+        ->sort()
+        ->values();
+
+        // Obtener reservas futuras
+        $reservasFuturas = $reservasEspacio->filter(function ($reserva) {
+            return $reserva->estado === 'pendiente' || $reserva->estado === 'activa';
+        });
+
+        // Encontrar el próximo módulo ocupado
+        $proximoModuloOcupado = $planificacionesFuturas->first();
+
+        // Si no hay clases ni reservas futuras, disponible hasta el final del día
+        if ($proximoModuloOcupado === null && $reservasFuturas->isEmpty()) {
+            $ultimoModulo = max(array_keys($horariosDelDia));
+            return [
+                'desde' => $moduloActualNumero,
+                'hasta' => $ultimoModulo,
+                'hora_desde' => $horariosDelDia[$moduloActualNumero]['inicio'] ?? '--:--',
+                'hora_hasta' => $horariosDelDia[$ultimoModulo]['fin'] ?? '--:--',
+            ];
+        }
+
+        // Si hay un próximo módulo ocupado
+        if ($proximoModuloOcupado !== null) {
+            return [
+                'desde' => $moduloActualNumero,
+                'hasta' => $proximoModuloOcupado - 1,
+                'hora_desde' => $horariosDelDia[$moduloActualNumero]['inicio'] ?? '--:--',
+                'hora_hasta' => $horariosDelDia[$proximoModuloOcupado - 1]['fin'] ?? '--:--',
+            ];
+        }
+
+        return null;
+    }
+
     public function actualizarDatos()
     {
         try {
@@ -535,13 +615,21 @@ class ModulosActualesTable extends Component
 
                 // Obtener reservas de profesores para el día actual
                 // Solo considerar las que tienen entrada registrada (hora) y están activas O finalizadas hoy
-                $reservasProfesores = Reserva::with(['profesor', 'asignatura'])
+                $reservasProfesores = Reserva::with(['profesor', 'asignatura', 'asignatura.carrera'])
                     ->where('fecha_reserva', Carbon::now()->toDateString())
                     ->whereIn('estado', ['activa', 'finalizada'])
                     ->whereNotNull('run_profesor')
                     ->whereNotNull('hora') // Solo las que el profesor sí entró
                     ->get()
                     ->keyBy('id_espacio'); // Indexar por espacio para búsqueda rápida
+
+                // Crear índice de profesores que registraron entrada (para detectar cambios de sala)
+                $profesoresConEntrada = $reservasProfesores->pluck('run_profesor')->unique();
+
+                // Obtener TODAS las reservas del día (incluyendo las no activas) para calcular disponibilidad
+                $todasLasReservas = Reserva::where('fecha_reserva', Carbon::now()->toDateString())
+                    ->get()
+                    ->groupBy('id_espacio');
 
                 // Procesar espacios por piso con optimizaciones
                 $this->espacios = [];
@@ -567,6 +655,17 @@ class ModulosActualesTable extends Component
                         $datosClase = null;
                         $datosSolicitante = null;
                         $datosProfesor = null;
+                        $claseMovidaAOtraSala = false;
+                        $rangoDisponibilidad = null;
+
+                        // Verificar si hay una clase programada aquí pero el profesor la hizo en otro espacio
+                        if ($planificacionActiva && !$reservaProfesor) {
+                            $runProfesor = $planificacionActiva->asignatura->run_profesor ?? null;
+                            if ($runProfesor && $profesoresConEntrada->contains($runProfesor)) {
+                                // El profesor SÍ entró hoy, pero en otro espacio
+                                $claseMovidaAOtraSala = true;
+                            }
+                        }
 
                         if ($planificacionActiva) {
                             $tieneClase = true;
@@ -650,6 +749,11 @@ class ModulosActualesTable extends Component
                         //     $proximaClase = $this->obtenerProximaClase($espacio->id_espacio, $periodo);
                         // }
 
+                        // Calcular rango de disponibilidad si el espacio está disponible
+                        if (!$tieneClase && !$tieneReservaSolicitante && !$tieneReservaProfesor && !$claseMovidaAOtraSala) {
+                            $rangoDisponibilidad = $this->calcularRangoDisponibilidad($espacio->id_espacio, $periodo, $todasLasReservas->get($espacio->id_espacio, collect()));
+                        }
+
                         // Verificar si la clase debe marcarse como no realizada
                         $claseNoRealizada = false;
                         $claseFinalizada = false;
@@ -685,7 +789,12 @@ class ModulosActualesTable extends Component
                         }
 
                         // Determinar el estado dinámicamente
-                        if ($tieneClase && ($claseFinalizada || $claseTerminoAntes)) {
+                        if ($claseMovidaAOtraSala) {
+                            // Si la clase se movió a otro espacio, marcar como disponible
+                            $estado = 'Disponible';
+                            $tieneClase = false;
+                            $datosClase = null;
+                        } elseif ($tieneClase && ($claseFinalizada || $claseTerminoAntes)) {
                             // Si la clase ya terminó (por horario o porque el profesor se fue antes)
                             $estado = 'Clase finalizada';
                         } elseif ($tieneClase && $tieneReservaProfesor && ! $claseFinalizada && ! $claseTerminoAntes) {
@@ -741,6 +850,7 @@ class ModulosActualesTable extends Component
                             ],
                             'piso' => $piso->nombre_piso ?? 'N/A',
                             'proxima_clase' => $proximaClase,
+                            'rango_disponibilidad' => $rangoDisponibilidad,
                         ];
                     }
                     $this->espacios[$piso->id] = $espaciosPiso;
