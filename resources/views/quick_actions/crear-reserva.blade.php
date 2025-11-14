@@ -26,7 +26,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
             <!-- Información del Responsable -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="bg-white overflow-visible shadow-sm sm:rounded-lg">
                 <div class="p-4 sm:p-6">
                     <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Información del Responsable</h2>
                     
@@ -43,7 +43,7 @@
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                 autocomplete="off"
                             />
-                            <div id="autocomplete-results" class="absolute z-50 w-full bg-white border border-gray-300 rounded-md shadow-lg hidden max-h-60 overflow-y-auto">
+                            <div id="autocomplete-results" class="absolute z-[9999] w-full bg-white border border-gray-300 rounded-md shadow-xl hidden max-h-60 overflow-y-auto mt-1">
                                 <!-- Los resultados del autocompletado aparecerán aquí -->
                             </div>
                         </div>
@@ -104,6 +104,7 @@
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
                                     <option value="">Seleccione tipo</option>
                                     <option value="profesor">Profesor</option>
+                                    <option value="colaborador">Profesor Colaborador</option>
                                     <option value="solicitante">Solicitante externo</option>
                                 </select>
                             </div>
@@ -118,13 +119,31 @@
                                 </select>
                                 <p class="text-xs text-gray-500 mt-1">Seleccione la asignatura para esta reserva</p>
                             </div>
+                            
+                            <!-- Campo para buscar asignatura (solo visible cuando es colaborador) -->
+                            <div id="buscar-asignatura-field" class="hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Buscar Asignatura *</label>
+                                <div class="relative">
+                                    <input 
+                                        type="text" 
+                                        id="buscar-asignatura"
+                                        placeholder="Buscar por código o nombre de asignatura..."
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                        autocomplete="off"
+                                    />
+                                    <div id="autocomplete-asignaturas" class="absolute z-[9999] w-full bg-white border border-gray-300 rounded-md shadow-xl hidden max-h-60 overflow-y-auto mt-1">
+                                        <!-- Los resultados aparecerán aquí -->
+                                    </div>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Busque cualquier asignatura del instituto</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <!-- Información de la Reserva -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div class="bg-white overflow-visible shadow-sm sm:rounded-lg">
                 <div class="p-4 sm:p-6">
                     <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Detalles de la Reserva</h2>
                     
@@ -219,9 +238,9 @@ async function procesarCrearReserva(event) {
         nombre: document.getElementById('nombre-responsable').value.trim(),
         run: document.getElementById('run-responsable').value.trim(),
         correo: document.getElementById('correo-responsable').value.trim(),
-        telefono: document.getElementById('telefono-responsable').value.trim(),
+        telefono: document.getElementById('telefono-responsable').value.trim() || null,
         tipo: document.getElementById('tipo-responsable').value,
-        id_asignatura: document.getElementById('id-asignatura').value,
+        id_asignatura: document.getElementById('id-asignatura').value || null,
         espacio: document.getElementById('espacio-reserva').value,
         fecha: document.getElementById('fecha-reserva').value,
         modulo_inicial: parseInt(document.getElementById('modulo-inicial').value),
@@ -229,15 +248,24 @@ async function procesarCrearReserva(event) {
         observaciones: document.getElementById('observaciones-reserva').value.trim()
     };
 
+    console.log('📤 Datos a enviar:', formData);
+    console.log('🏢 ID Espacio seleccionado:', formData.espacio);
+
     // Validaciones
     if (!formData.nombre || !formData.run || !formData.correo || !formData.tipo) {
         Swal.fire('Error', 'Complete todos los campos obligatorios del responsable', 'error');
         return;
     }
 
-    // Validar asignatura si es profesor
+    // Validar asignatura si es profesor (no colaborador)
     if (formData.tipo === 'profesor' && !formData.id_asignatura) {
         Swal.fire('Error', 'Debe seleccionar una asignatura para la reserva del profesor', 'error');
+        return;
+    }
+
+    // Validar que se haya seleccionado un espacio válido
+    if (!formData.espacio) {
+        Swal.fire('Error', 'Debe seleccionar un espacio para la reserva', 'error');
         return;
     }
 
@@ -422,12 +450,18 @@ function mostrarResultadosAutocompletado(personas) {
     const resultsDiv = document.getElementById('autocomplete-results');
     resultsDiv.innerHTML = '';
     
+    if (personas.length === 0) {
+        resultsDiv.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500">No se encontraron personas</div>';
+        resultsDiv.classList.remove('hidden');
+        return;
+    }
+    
     personas.forEach(persona => {
         const item = document.createElement('div');
-        item.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0';
+        item.className = 'px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-200 last:border-b-0 transition-colors';
         item.innerHTML = `
-            <div class="font-medium text-gray-900">${persona.nombre}</div>
-            <div class="text-sm text-gray-600">${persona.run} - ${persona.tipo === 'profesor' ? 'Profesor' : 'Solicitante'}</div>
+            <div class="font-semibold text-sm text-gray-900">${persona.nombre}</div>
+            <div class="text-xs text-gray-600 mt-0.5">${persona.run} - ${persona.tipo === 'profesor' ? 'Profesor' : 'Solicitante'}</div>
         `;
         
         item.addEventListener('click', () => seleccionarPersona(persona));
@@ -591,14 +625,28 @@ function cargarModulosParaSeleccion() {
 function toggleAsignaturaField() {
     const tipoSelect = document.getElementById('tipo-responsable');
     const asignaturaField = document.getElementById('asignatura-field');
+    const buscarAsignaturaField = document.getElementById('buscar-asignatura-field');
     const asignaturaSelect = document.getElementById('id-asignatura');
+    const buscarAsignaturaInput = document.getElementById('buscar-asignatura');
+    
+    // Limpiar campos
+    asignaturaSelect.innerHTML = '<option value="">Seleccione una asignatura</option>';
+    buscarAsignaturaInput.value = '';
     
     if (tipoSelect.value === 'profesor') {
+        // Profesor regular: mostrar select de sus asignaturas
         asignaturaField.classList.remove('hidden');
+        buscarAsignaturaField.classList.add('hidden');
         cargarAsignaturasProfesor();
-    } else {
+    } else if (tipoSelect.value === 'colaborador') {
+        // Profesor colaborador: mostrar búsqueda de asignaturas
         asignaturaField.classList.add('hidden');
-        asignaturaSelect.innerHTML = '<option value="">Seleccione una asignatura</option>';
+        buscarAsignaturaField.classList.remove('hidden');
+        configurarBusquedaAsignaturas();
+    } else {
+        // Solicitante: ocultar ambos
+        asignaturaField.classList.add('hidden');
+        buscarAsignaturaField.classList.add('hidden');
     }
 }
 
@@ -642,6 +690,146 @@ async function cargarAsignaturasProfesor() {
         console.error('Error al cargar asignaturas:', error);
         asignaturaSelect.innerHTML = '<option value="">Error al cargar asignaturas</option>';
     }
+}
+
+// Función para buscar asignaturas (colaboradores)
+let timeoutAsignaturas = null;
+async function buscarAsignaturas(termino) {
+    if (termino.length < 2) {
+        document.getElementById('autocomplete-asignaturas').classList.add('hidden');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/quick-actions/api/buscar-asignaturas?q=${encodeURIComponent(termino)}`);
+        const data = await response.json();
+        
+        if (data.success && data.asignaturas.length > 0) {
+            mostrarResultadosAsignaturas(data.asignaturas);
+        } else {
+            document.getElementById('autocomplete-asignaturas').classList.add('hidden');
+        }
+    } catch (error) {
+        console.error('Error al buscar asignaturas:', error);
+        document.getElementById('autocomplete-asignaturas').classList.add('hidden');
+    }
+}
+
+// Mostrar resultados de búsqueda de asignaturas
+function mostrarResultadosAsignaturas(asignaturas) {
+    const resultsDiv = document.getElementById('autocomplete-asignaturas');
+    resultsDiv.innerHTML = '';
+    
+    if (asignaturas.length === 0) {
+        resultsDiv.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500">No se encontraron asignaturas</div>';
+        resultsDiv.classList.remove('hidden');
+        return;
+    }
+    
+    asignaturas.forEach(asignatura => {
+        const item = document.createElement('div');
+        item.className = 'px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-200 last:border-b-0 transition-colors';
+        item.innerHTML = `
+            <div class="font-semibold text-sm text-gray-900">${asignatura.codigo_asignatura}</div>
+            <div class="text-xs text-gray-600 mt-0.5">${asignatura.nombre_asignatura}</div>
+        `;
+        
+        item.addEventListener('click', () => seleccionarAsignatura(asignatura));
+        resultsDiv.appendChild(item);
+    });
+    
+    resultsDiv.classList.remove('hidden');
+    console.log('✅ Mostrando', asignaturas.length, 'asignaturas');
+}
+
+// Seleccionar asignatura del autocompletado
+function seleccionarAsignatura(asignatura) {
+    const buscarInput = document.getElementById('buscar-asignatura');
+    const asignaturaSelect = document.getElementById('id-asignatura');
+    
+    buscarInput.value = `${asignatura.codigo_asignatura} - ${asignatura.nombre_asignatura}`;
+    
+    // Guardar el ID en un campo oculto o en el select
+    asignaturaSelect.innerHTML = `<option value="${asignatura.id_asignatura}" selected>${asignatura.codigo_asignatura} - ${asignatura.nombre_asignatura}</option>`;
+    
+    document.getElementById('autocomplete-asignaturas').classList.add('hidden');
+    
+    console.log('✅ Asignatura seleccionada:', asignatura);
+}
+
+// Configurar búsqueda de asignaturas para colaboradores
+function configurarBusquedaAsignaturas() {
+    const input = document.getElementById('buscar-asignatura');
+    const resultsDiv = document.getElementById('autocomplete-asignaturas');
+    
+    if (!input || !resultsDiv) return;
+    
+    // Evento de escritura
+    input.addEventListener('input', function(e) {
+        const valor = e.target.value.trim();
+        
+        if (timeoutAsignaturas) {
+            clearTimeout(timeoutAsignaturas);
+        }
+        
+        timeoutAsignaturas = setTimeout(() => {
+            buscarAsignaturas(valor);
+        }, 300);
+    });
+    
+    // Ocultar resultados al hacer clic fuera
+    document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !resultsDiv.contains(e.target)) {
+            resultsDiv.classList.add('hidden');
+        }
+    });
+}
+
+// Función para cargar espacios disponibles
+async function cargarEspaciosDisponibles() {
+    const espacioSelect = document.getElementById('espacio-reserva');
+    
+    if (!espacioSelect) {
+        console.error('❌ No se encontró el select de espacios');
+        return;
+    }
+
+    try {
+        espacioSelect.innerHTML = '<option value="">Cargando espacios...</option>';
+        
+        const response = await fetch('/quick-actions/api/espacios');
+        const data = await response.json();
+
+        if (data.success && data.data) {
+            espacioSelect.innerHTML = '<option value="">Seleccione un espacio</option>' +
+                data.data.map(espacio => {
+                    const nombre = espacio.nombre_espacio || espacio.nombre_tipo_espacio || 'Sin nombre';
+                    return `<option value="${espacio.id_espacio}">${espacio.id_espacio} - ${nombre}</option>`;
+                }).join('');
+            
+            console.log('✅ Espacios cargados:', data.data.length);
+        } else {
+            espacioSelect.innerHTML = '<option value="">No hay espacios disponibles</option>';
+            console.warn('⚠️ No se encontraron espacios');
+        }
+    } catch (error) {
+        console.error('❌ Error al cargar espacios:', error);
+        espacioSelect.innerHTML = '<option value="">Error al cargar espacios</option>';
+    }
+}
+
+// Función para actualizar módulos disponibles según espacio (placeholder)
+function actualizarModulosDisponibles() {
+    // Por ahora, esta función solo recarga los módulos
+    // En el futuro podría filtrar módulos ocupados según el espacio y fecha
+    cargarModulosParaSeleccion();
+    console.log('🔄 Módulos actualizados para el espacio seleccionado');
+}
+
+// Función para actualizar módulos finales
+function actualizarModulosFinales() {
+    // Ya implementada en cargarModulosParaSeleccion
+    console.log('🔄 Actualizando módulos finales...');
 }
 
 // Inicializar al cargar la página

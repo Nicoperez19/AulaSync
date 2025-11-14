@@ -8,12 +8,23 @@
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
         <div class="p-4 sm:p-6">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div>
-                    <h1 class="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
-                        <i class="fas fa-calendar-check mr-2 sm:mr-3 text-blue-600"></i>
-                        Gestión de Reservas
-                    </h1>
-                    <p class="text-sm sm:text-base text-gray-600 mt-1">Administrar estados de reservas activas y finalizadas</p>
+                <div class="flex-1">
+                    <div class="flex items-center gap-4">
+                        <div>
+                            <h1 class="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
+                                <i class="fas fa-calendar-check mr-2 sm:mr-3 text-blue-600"></i>
+                                Gestión de Reservas
+                            </h1>
+                            <p class="text-sm sm:text-base text-gray-600 mt-1">Administrar estados de reservas activas y finalizadas</p>
+                        </div>
+                        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
+                            <i class="fa-solid fa-circle-check text-green-600 text-sm"></i>
+                            <div class="flex items-center gap-1">
+                                <span class="text-xs font-medium text-green-700">Activas:</span>
+                                <span class="text-sm font-bold text-green-900" id="stats-activas-header">0</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-2 sm:gap-3">
                     <a href="{{ route('quick-actions.crear-reserva') }}" 
@@ -27,6 +38,17 @@
                         Volver
                     </a>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Widget móvil de reservas activas -->
+    <div class="sm:hidden bg-white overflow-hidden shadow-sm rounded-lg">
+        <div class="p-3">
+            <div class="flex items-center justify-center gap-2">
+                <i class="fa-solid fa-circle-check text-green-600 text-lg"></i>
+                <span class="text-sm font-medium text-green-700">Activas:</span>
+                <span class="text-xl font-bold text-green-900" id="stats-activas-mobile">0</span>
             </div>
         </div>
     </div>
@@ -90,49 +112,41 @@
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
         <div class="p-4 sm:p-6">
             <!-- Versión Desktop -->
-            <div class="hidden lg:block overflow-x-auto -mx-4 sm:mx-0">
-                <div class="inline-block min-w-full align-middle">
-                    <div class="overflow-hidden">
-                        <table class="min-w-full divide-y divide-gray-200">
+            <div class="hidden lg:block">
+                <div class="overflow-x-auto">
+                    <table class="w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                    <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-10">
                                         <input type="checkbox" id="select-all-reservas" onchange="toggleSelectAllReservas(this)" class="rounded">
                                     </th>
-                                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 whitespace-nowrap" onclick="ordenarPor('estado')">
+                                    <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 w-20" onclick="ordenarPor('estado')">
                                         Estado
                                         <i class="fa-solid fa-sort ml-1 text-xs"></i>
                                     </th>
-                                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 whitespace-nowrap" onclick="ordenarPor('espacio')">
+                                    <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 w-24" onclick="ordenarPor('espacio')">
                                         Espacio
                                         <i class="fa-solid fa-sort ml-1 text-xs"></i>
                                     </th>
-                                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 whitespace-nowrap" onclick="ordenarPor('responsable')">
+                                    <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700" onclick="ordenarPor('responsable')">
                                         Responsable
                                         <i class="fa-solid fa-sort ml-1 text-xs"></i>
                                     </th>
-                                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 whitespace-nowrap" onclick="ordenarPor('asignatura')">
-                                        Asignatura
-                                        <i class="fa-solid fa-sort ml-1 text-xs"></i>
-                                    </th>
-                                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700 whitespace-nowrap" onclick="ordenarPor('fecha')">
+                                    <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 w-28" onclick="ordenarPor('fecha')">
                                         Fecha
                                         <i class="fa-solid fa-sort ml-1 text-xs"></i>
                                     </th>
-                                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                                        Módulos y Horarios
+                                    <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-32">
+                                        Módulos
                                     </th>
-                                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                                        Observaciones
-                                    </th>
-                                    <th class="px-3 sm:px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                                    <th class="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase w-32">
                                         Acciones
                                     </th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-reservas-body" class="bg-white divide-y divide-gray-200">
                                 <tr>
-                                    <td colspan="9" class="px-3 sm:px-6 py-12 text-center text-gray-500">
+                                    <td colspan="7" class="px-3 sm:px-6 py-12 text-center text-gray-500">
                                         <div class="flex flex-col items-center">
                                             <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
                                             <p>Cargando reservas...</p>
@@ -181,49 +195,144 @@
         </div>
     </div>
 
-    <!-- Estadísticas -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-4 sm:p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fa-solid fa-circle-check text-2xl sm:text-3xl text-green-600"></i>
-                    </div>
-                    <div class="ml-3 sm:ml-4">
-                        <div class="text-xs sm:text-sm font-medium text-gray-500">Reservas Activas</div>
-                        <div class="text-xl sm:text-2xl font-bold text-gray-900" id="stats-activas">0</div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-4 sm:p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fa-solid fa-circle-xmark text-2xl sm:text-3xl text-gray-600"></i>
-                    </div>
-                    <div class="ml-3 sm:ml-4">
-                        <div class="text-xs sm:text-sm font-medium text-gray-500">Reservas Finalizadas</div>
-                        <div class="text-xl sm:text-2xl font-bold text-gray-900" id="stats-finalizadas">0</div>
-                    </div>
-                </div>
-            </div>
-        </div>
+</div>
 
-        <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-            <div class="p-4 sm:p-6">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fa-solid fa-calendar text-2xl sm:text-3xl text-blue-600"></i>
+<!-- Modal para editar reserva -->
+<div id="modal-editar-reserva" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+    <div class="relative top-20 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+        <div class="flex justify-between items-center mb-4 pb-3 border-b">
+            <h3 class="text-xl font-bold text-gray-900">
+                <i class="fa-solid fa-edit text-blue-600 mr-2"></i>
+                Editar Reserva
+            </h3>
+            <button onclick="cerrarModalEditar()" class="text-gray-400 hover:text-gray-600">
+                <i class="fa-solid fa-times text-2xl"></i>
+            </button>
+        </div>
+        
+        <form id="form-editar-reserva-modal" onsubmit="guardarEdicionReserva(event)">
+            <input type="hidden" id="edit-reserva-id">
+            
+            <!-- Información del responsable (solo lectura) -->
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg">
+                <h4 class="text-sm font-semibold text-gray-700 mb-3">Información del Responsable</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div>
+                        <span class="font-medium text-gray-600">Nombre:</span>
+                        <span class="text-gray-900" id="edit-responsable-nombre">-</span>
                     </div>
-                    <div class="ml-3 sm:ml-4">
-                        <div class="text-xs sm:text-sm font-medium text-gray-500">Total Reservas</div>
-                        <div class="text-xl sm:text-2xl font-bold text-gray-900" id="stats-total">0</div>
+                    <div>
+                        <span class="font-medium text-gray-600">RUN:</span>
+                        <span class="text-gray-900" id="edit-responsable-run">-</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-600">Tipo:</span>
+                        <span class="text-gray-900" id="edit-responsable-tipo">-</span>
                     </div>
                 </div>
             </div>
-        </div>
+            
+            <!-- Campos editables -->
+            <div class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Espacio *</label>
+                        <select 
+                            id="edit-codigo-espacio"
+                            required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Cargando espacios...</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Fecha *</label>
+                        <input 
+                            type="date" 
+                            id="edit-fecha"
+                            required
+                            min="{{ date('Y-m-d') }}"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Módulo inicial *</label>
+                        <select 
+                            id="edit-modulo-inicial"
+                            required
+                            onchange="actualizarModulosFinalesModal()"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Seleccione módulo inicial</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Módulo final *</label>
+                        <select 
+                            id="edit-modulo-final"
+                            required
+                            onchange="actualizarPreviewHorario()"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">Seleccione módulo final</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Horario original (FIJO - no cambia) -->
+                <div class="bg-gray-50 border border-gray-300 rounded-lg p-3">
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-clock text-gray-600 mt-0.5"></i>
+                        <div class="text-sm">
+                            <span class="font-medium text-gray-700">Horario original (referencia):</span>
+                            <span class="text-gray-900" id="horario-original-fijo">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones originales</label>
+                    <textarea 
+                        id="edit-observaciones-originales"
+                        rows="2"
+                        disabled
+                        class="w-full px-3 py-2 border border-gray-200 rounded-md bg-gray-50 text-gray-600 text-sm"></textarea>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Agregar observaciones
+                        <span class="text-xs text-gray-500">(se agregará a las existentes)</span>
+                    </label>
+                    <textarea 
+                        id="edit-observaciones-nuevas"
+                        rows="2"
+                        placeholder="Escriba observaciones adicionales..."
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+            </div>
+
+            <!-- Botones -->
+            <div class="mt-6 flex justify-end gap-3">
+                <button 
+                    type="button"
+                    onclick="cerrarModalEditar()"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
+                    Cancelar
+                </button>
+                <button 
+                    type="submit"
+                    id="btn-guardar-edicion"
+                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-save mr-2"></i>
+                    Guardar cambios
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -232,6 +341,291 @@
 // Variables específicas para gestión de reservas
 let reservasOriginales = [];
 let ordenActual = {campo: 'fecha', direccion: 'desc'};
+
+// Función para editar reserva - Definida al inicio para estar disponible
+window.editarReserva = async function(idReserva) {
+    console.log('🟢 Abriendo modal de edición para reserva:', idReserva);
+    
+    // Buscar la reserva en los datos originales
+    const reserva = reservasOriginales.find(r => r.id == idReserva);
+    
+    if (!reserva) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'No se encontró la reserva'
+        });
+        return;
+    }
+    
+    if (reserva.estado !== 'activa') {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Advertencia',
+            text: 'Solo se pueden editar reservas activas'
+        });
+        return;
+    }
+    
+    // Cargar espacios y módulos si no están cargados
+    await cargarEspaciosParaModal();
+    await cargarModulosParaModal();
+    
+    // Llenar el modal con los datos de la reserva
+    document.getElementById('edit-reserva-id').value = reserva.id;
+    document.getElementById('edit-responsable-nombre').textContent = reserva.nombre_responsable || 'Sin nombre';
+    document.getElementById('edit-responsable-run').textContent = reserva.run_responsable || 'N/A';
+    document.getElementById('edit-responsable-tipo').textContent = reserva.tipo_responsable || 'N/A';
+    document.getElementById('edit-codigo-espacio').value = reserva.id_espacio;
+    document.getElementById('edit-fecha').value = reserva.fecha;
+    
+    // Guardar el horario original FIJO como referencia
+    const horarioOriginal = reserva.modulos_info && reserva.modulos_info.rango_horario 
+        ? `Módulo ${reserva.modulos_info.modulo_inicial || '?'} a Módulo ${reserva.modulos_info.modulo_final || '?'} (${reserva.modulos_info.rango_horario})`
+        : `Hora inicio: ${reserva.hora ? reserva.hora.substring(0, 5) : 'N/A'} - ${reserva.modulos || 1} módulo(s)`;
+    document.getElementById('horario-original-fijo').textContent = horarioOriginal;
+    
+    // Configurar módulos basado en la reserva actual
+    const cantModulos = parseInt(reserva.modulos || 1);
+    const horaInicio = reserva.hora ? reserva.hora.substring(0, 5) : '';
+    
+    // Intentar determinar módulo inicial basado en la hora
+    if (horaInicio && modulosCargados.length > 0) {
+        const moduloInicial = modulosCargados.find(m => m.hora_inicio === horaInicio + ':00');
+        if (moduloInicial) {
+            document.getElementById('edit-modulo-inicial').value = moduloInicial.id_modulo;
+            actualizarModulosFinalesModal();
+            
+            // Seleccionar módulo final basado en cantidad
+            const indexInicial = modulosCargados.findIndex(m => m.id_modulo === moduloInicial.id_modulo);
+            if (indexInicial >= 0 && indexInicial + cantModulos - 1 < modulosCargados.length) {
+                const moduloFinal = modulosCargados[indexInicial + cantModulos - 1];
+                document.getElementById('edit-modulo-final').value = moduloFinal.id_modulo;
+                actualizarPreviewHorario();
+            }
+        }
+    }
+    
+    // Observaciones - separar originales
+    const observacionesOriginales = reserva.observaciones || 'Sin observaciones';
+    document.getElementById('edit-observaciones-originales').value = observacionesOriginales;
+    document.getElementById('edit-observaciones-nuevas').value = '';
+    
+    // Mostrar el modal
+    document.getElementById('modal-editar-reserva').classList.remove('hidden');
+}
+
+// Cerrar modal de edición
+window.cerrarModalEditar = function() {
+    document.getElementById('modal-editar-reserva').classList.add('hidden');
+    document.getElementById('form-editar-reserva-modal').reset();
+}
+
+// Cargar espacios para el modal
+let espaciosCargados = [];
+async function cargarEspaciosParaModal() {
+    if (espaciosCargados.length > 0) {
+        return; // Ya están cargados
+    }
+    
+    try {
+        const response = await fetch('/quick-actions/api/espacios');
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+            espaciosCargados = data.data;
+            const select = document.getElementById('edit-codigo-espacio');
+            select.innerHTML = '<option value="">Seleccione un espacio</option>' +
+                espaciosCargados.map(espacio => {
+                    const nombre = espacio.nombre_espacio || espacio.nombre_tipo_espacio || 'Sin nombre';
+                    return `<option value="${espacio.id_espacio}">${espacio.id_espacio} - ${nombre}</option>`;
+                }).join('');
+        }
+    } catch (error) {
+        console.error('Error al cargar espacios:', error);
+    }
+}
+
+// Cargar módulos para el modal
+let modulosCargados = [];
+async function cargarModulosParaModal() {
+    if (modulosCargados.length > 0) {
+        return; // Ya están cargados
+    }
+    
+    try {
+        // Obtener módulos únicos ordenados por hora
+        const response = await fetch('/api/modulos'); // Necesitarás crear esta ruta
+        
+        // Fallback: crear módulos por defecto si la API no existe
+        modulosCargados = [
+            {id_modulo: '1', hora_inicio: '08:10:00', hora_termino: '09:00:00'},
+            {id_modulo: '2', hora_inicio: '09:10:00', hora_termino: '10:00:00'},
+            {id_modulo: '3', hora_inicio: '10:10:00', hora_termino: '11:00:00'},
+            {id_modulo: '4', hora_inicio: '11:10:00', hora_termino: '12:00:00'},
+            {id_modulo: '5', hora_inicio: '12:10:00', hora_termino: '13:00:00'},
+            {id_modulo: '6', hora_inicio: '13:10:00', hora_termino: '14:00:00'},
+            {id_modulo: '7', hora_inicio: '14:10:00', hora_termino: '15:00:00'},
+            {id_modulo: '8', hora_inicio: '15:10:00', hora_termino: '16:00:00'},
+            {id_modulo: '9', hora_inicio: '16:10:00', hora_termino: '17:00:00'},
+            {id_modulo: '10', hora_inicio: '17:10:00', hora_termino: '18:00:00'},
+            {id_modulo: '11', hora_inicio: '18:10:00', hora_termino: '19:00:00'},
+            {id_modulo: '12', hora_inicio: '19:10:00', hora_termino: '20:00:00'},
+            {id_modulo: '13', hora_inicio: '20:10:00', hora_termino: '21:00:00'},
+            {id_modulo: '14', hora_inicio: '21:10:00', hora_termino: '22:00:00'},
+            {id_modulo: '15', hora_inicio: '22:10:00', hora_termino: '23:00:00'}
+        ];
+        
+        const selectInicial = document.getElementById('edit-modulo-inicial');
+        selectInicial.innerHTML = '<option value="">Seleccione módulo inicial</option>' +
+            modulosCargados.map(modulo => 
+                `<option value="${modulo.id_modulo}">Módulo ${modulo.id_modulo} (${modulo.hora_inicio.substring(0,5)} - ${modulo.hora_termino.substring(0,5)})</option>`
+            ).join('');
+        
+    } catch (error) {
+        console.error('Error al cargar módulos:', error);
+    }
+}
+
+// Actualizar módulos finales disponibles
+window.actualizarModulosFinalesModal = function() {
+    const moduloInicial = document.getElementById('edit-modulo-inicial').value;
+    const selectFinal = document.getElementById('edit-modulo-final');
+    
+    if (!moduloInicial) {
+        selectFinal.innerHTML = '<option value="">Primero seleccione módulo inicial</option>';
+        document.getElementById('preview-horario').textContent = 'Seleccione los módulos';
+        return;
+    }
+    
+    const indexInicial = modulosCargados.findIndex(m => m.id_modulo === moduloInicial);
+    const modulosDisponibles = modulosCargados.slice(indexInicial);
+    
+    selectFinal.innerHTML = '<option value="">Seleccione módulo final</option>' +
+        modulosDisponibles.map(modulo => 
+            `<option value="${modulo.id_modulo}">Módulo ${modulo.id_modulo} (${modulo.hora_inicio.substring(0,5)} - ${modulo.hora_termino.substring(0,5)})</option>`
+        ).join('');
+    
+    actualizarPreviewHorario();
+}
+
+// Actualizar preview de horario
+function actualizarPreviewHorario() {
+    const moduloInicialId = document.getElementById('edit-modulo-inicial').value;
+    const moduloFinalId = document.getElementById('edit-modulo-final').value;
+    const preview = document.getElementById('preview-horario');
+    
+    if (!moduloInicialId || !moduloFinalId) {
+        preview.textContent = 'Seleccione los módulos';
+        return;
+    }
+    
+    const moduloInicial = modulosCargados.find(m => m.id_modulo === moduloInicialId);
+    const moduloFinal = modulosCargados.find(m => m.id_modulo === moduloFinalId);
+    
+    if (moduloInicial && moduloFinal) {
+        const horaInicio = moduloInicial.hora_inicio.substring(0,5);
+        const horaFin = moduloFinal.hora_termino.substring(0,5);
+        preview.textContent = `Módulo ${moduloInicialId} a Módulo ${moduloFinalId} (${horaInicio} - ${horaFin})`;
+    }
+}
+
+// Guardar edición de reserva
+window.guardarEdicionReserva = async function(event) {
+    event.preventDefault();
+    
+    const idReserva = document.getElementById('edit-reserva-id').value;
+    const codigoEspacio = document.getElementById('edit-codigo-espacio').value;
+    const fecha = document.getElementById('edit-fecha').value;
+    const moduloInicialId = document.getElementById('edit-modulo-inicial').value;
+    const moduloFinalId = document.getElementById('edit-modulo-final').value;
+    const observacionesOriginales = document.getElementById('edit-observaciones-originales').value;
+    const observacionesNuevas = document.getElementById('edit-observaciones-nuevas').value.trim();
+    
+    if (!codigoEspacio || !fecha || !moduloInicialId || !moduloFinalId) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Por favor complete todos los campos requeridos'
+        });
+        return;
+    }
+    
+    // Calcular hora y cantidad de módulos
+    const moduloInicial = modulosCargados.find(m => m.id_modulo === moduloInicialId);
+    const indexInicial = modulosCargados.findIndex(m => m.id_modulo === moduloInicialId);
+    const indexFinal = modulosCargados.findIndex(m => m.id_modulo === moduloFinalId);
+    const cantidadModulos = indexFinal - indexInicial + 1;
+    const hora = moduloInicial.hora_inicio;
+    
+    // Concatenar observaciones
+    let observacionesFinales = observacionesOriginales;
+    if (observacionesNuevas) {
+        const timestamp = new Date().toLocaleString('es-ES');
+        observacionesFinales = observacionesOriginales === 'Sin observaciones' 
+            ? `[${timestamp}] ${observacionesNuevas}`
+            : `${observacionesOriginales}\n\n[EDITADO ${timestamp}] ${observacionesNuevas}`;
+    }
+
+    // Deshabilitar botón
+    const btnGuardar = document.getElementById('btn-guardar-edicion');
+    btnGuardar.disabled = true;
+    
+    // Mostrar loading
+    Swal.fire({
+        title: 'Guardando cambios...',
+        allowOutsideClick: false,
+        didOpen: () => {
+            Swal.showLoading();
+        }
+    });
+
+    try {
+        const response = await fetch(`/quick-actions/api/reserva/${idReserva}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                id_espacio: codigoEspacio,
+                fecha: fecha,
+                hora: hora,
+                modulos: cantidadModulos,
+                observaciones: observacionesFinales
+            })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            Swal.fire({
+                icon: 'success',
+                title: '¡Éxito!',
+                text: data.mensaje || 'Reserva actualizada correctamente',
+                showConfirmButton: false,
+                timer: 1500
+            });
+            
+            // Cerrar modal
+            cerrarModalEditar();
+            
+            // Recargar tabla
+            await cargarReservas();
+        } else {
+            throw new Error(data.mensaje || 'Error al actualizar la reserva');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.message || 'Ocurrió un error al guardar los cambios'
+        });
+    } finally {
+        btnGuardar.disabled = false;
+    }
+}
 
 // Funciones globales para ordenamiento (necesarias para onclick en HTML)
 function ordenarPor(campo) {
@@ -282,8 +676,8 @@ function aplicarOrdenamiento() {
                 valorB = (b.nombre_responsable || '').toLowerCase();
                 break;
             case 'espacio':
-                valorA = a.codigo_espacio.toLowerCase();
-                valorB = b.codigo_espacio.toLowerCase();
+                valorA = (a.id_espacio || '').toLowerCase();
+                valorB = (b.id_espacio || '').toLowerCase();
                 break;
             case 'estado':
                 valorA = a.estado;
@@ -522,7 +916,7 @@ function verDetalleReserva(reservaId) {
         html: `
             <div class="text-left space-y-3">
                 <div><strong>Estado:</strong> <span class="px-2 py-1 rounded text-sm ${reserva.estado === 'activa' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${reserva.estado === 'activa' ? 'Activa' : 'Finalizada'}</span></div>
-                <div><strong>Espacio:</strong> ${reserva.codigo_espacio}</div>
+                <div><strong>Espacio:</strong> ${reserva.id_espacio}</div>
                 <div><strong>Responsable:</strong> ${reserva.nombre_responsable || 'Sin nombre'} <br><small class="text-gray-600">${reserva.tipo_responsable || 'N/A'} - RUN: ${reserva.run_responsable}</small></div>
                 <div><strong>Fecha:</strong> ${formatearFecha(reserva.fecha)}</div>
                 <div><strong>Módulos y Horario:</strong> ${infoModulos}</div>
@@ -569,7 +963,7 @@ async function cargarReservas() {
         const tbody = document.getElementById('tabla-reservas-body');
         tbody.innerHTML = `
             <tr>
-                <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                <td colspan="7" class="px-6 py-12 text-center text-gray-500">
                     <div class="flex flex-col items-center">
                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
                         <p>Cargando reservas...</p>
@@ -634,7 +1028,7 @@ function mostrarReservasEnTabla(reservas) {
         // Vista desktop
         tbody.innerHTML = `
             <tr>
-                <td colspan="9" class="px-6 py-12 text-center text-gray-500">
+                <td colspan="7" class="px-6 py-12 text-center text-gray-500">
                     <div class="flex flex-col items-center">
                         <i class="fa-solid fa-folder-open text-6xl text-gray-300 mb-4"></i>
                         <p>No hay reservas con los filtros aplicados</p>
@@ -656,51 +1050,55 @@ function mostrarReservasEnTabla(reservas) {
     // Vista Desktop (tabla)
     tbody.innerHTML = reservas.map(reserva => `
         <tr class="hover:bg-gray-50 transition-colors">
-            <td class="px-3 sm:px-4 py-3 whitespace-nowrap">
+            <td class="px-2 py-2">
                 <input type="checkbox" class="reserva-checkbox rounded" value="${reserva.id}" onchange="actualizarContadorSeleccionadas()">
             </td>
-            <td class="px-3 sm:px-4 py-3 whitespace-nowrap">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    reserva.estado === 'activa' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
-                }">
-                    ${reserva.estado === 'activa' ? 'Activa' : 'Finalizada'}
-                </span>
-            </td>
-            <td class="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">${reserva.codigo_espacio}</td>
-            <td class="px-3 sm:px-4 py-3 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900">${reserva.nombre_responsable || 'Sin nombre'}</div>
-                <div class="text-xs sm:text-sm text-gray-500">${reserva.tipo_responsable || 'N/A'} - RUN: ${reserva.run_responsable}</div>
-            </td>
-            <td class="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">${reserva.asignatura || 'Sin asignatura'}</td>
-            <td class="px-3 sm:px-4 py-3 whitespace-nowrap text-sm text-gray-900">${formatearFecha(reserva.fecha)}</td>
-            <td class="px-3 sm:px-4 py-3 text-sm text-gray-900">
-                ${formatearModulosInfo(reserva.modulos_info)}
-            </td>
-            <td class="px-3 sm:px-4 py-3 text-sm text-gray-900 max-w-xs">
-                <div class="truncate" title="${reserva.observaciones || 'Sin observaciones'}">
-                    ${reserva.observaciones || 'Sin observaciones'}
+            <td class="px-2 py-2">
+                <div class="flex flex-col gap-1">
+                    <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full ${
+                        reserva.estado === 'activa' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-gray-100 text-gray-800'
+                    }">
+                        ${reserva.estado === 'activa' ? 'Activa' : 'Fin.'}
+                    </span>
+                    ${reserva.editada ? '<span class="px-2 py-0.5 inline-flex text-xs font-medium rounded-full bg-blue-100 text-blue-700"><i class="fa-solid fa-pen-to-square text-xs mr-1"></i>Editada</span>' : ''}
                 </div>
             </td>
-            <td class="px-3 sm:px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
-                <div class="flex flex-col space-y-2">
+            <td class="px-2 py-2 text-sm text-gray-900 font-medium">${reserva.id_espacio}</td>
+            <td class="px-2 py-2">
+                <div class="text-sm font-medium text-gray-900">${reserva.nombre_responsable || 'Sin nombre'}</div>
+                <div class="text-xs text-gray-500">${reserva.tipo_responsable || 'N/A'}</div>
+            </td>
+            <td class="px-2 py-2 text-sm text-gray-900">${formatearFecha(reserva.fecha)}</td>
+            <td class="px-2 py-2 text-xs text-gray-900">
+                ${formatearModulosInfoCompacto(reserva.modulos_info)}
+            </td>
+            <td class="px-2 py-2 text-right">
+                <div class="flex justify-end gap-1">
                     ${reserva.estado === 'activa' 
                         ? `<button 
                             type="button"
+                            onclick="editarReserva('${reserva.id}')"
+                            class="inline-flex items-center justify-center p-1.5 border border-blue-300 text-xs font-medium rounded text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors"
+                            title="Editar reserva">
+                            <i class="fa-solid fa-edit w-3 h-3"></i>
+                        </button>
+                        <button 
+                            type="button"
                             onclick="cambiarEstadoReserva('${reserva.id}', 'finalizada')"
-                            class="inline-flex items-center justify-center px-2 py-1 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 transition-colors whitespace-nowrap">
-                            <i class="fa-solid fa-xmark w-3 h-3 mr-1"></i>
-                            Finalizar
+                            class="inline-flex items-center justify-center p-1.5 border border-red-300 text-xs font-medium rounded text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
+                            title="Finalizar reserva">
+                            <i class="fa-solid fa-xmark w-3 h-3"></i>
                         </button>`
-                        : `<span class="text-xs text-gray-500 italic">Finalizada</span>`
+                        : `<span class="text-xs text-gray-500 italic px-2">-</span>`
                     }
                     <button 
                         type="button"
                         onclick="verDetalleReserva('${reserva.id}')"
-                        class="inline-flex items-center justify-center px-2 py-1 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors whitespace-nowrap">
-                        <i class="fa-solid fa-eye w-3 h-3 mr-1"></i>
-                        Ver
+                        class="inline-flex items-center justify-center p-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                        title="Ver detalle">
+                        <i class="fa-solid fa-eye w-3 h-3"></i>
                     </button>
                 </div>
             </td>
@@ -714,14 +1112,17 @@ function mostrarReservasEnTabla(reservas) {
                 <div class="flex items-center gap-3">
                     <input type="checkbox" class="reserva-checkbox rounded mt-1" value="${reserva.id}" onchange="actualizarContadorSeleccionadas()">
                     <div>
-                        <h3 class="font-semibold text-gray-900 text-lg">${reserva.codigo_espacio}</h3>
-                        <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full mt-1 ${
-                            reserva.estado === 'activa' 
-                                ? 'bg-green-100 text-green-800' 
-                                : 'bg-gray-100 text-gray-800'
-                        }">
-                            ${reserva.estado === 'activa' ? 'Activa' : 'Finalizada'}
-                        </span>
+                        <h3 class="font-semibold text-gray-900 text-lg">${reserva.id_espacio}</h3>
+                        <div class="flex flex-wrap gap-1 mt-1">
+                            <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full ${
+                                reserva.estado === 'activa' 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-gray-100 text-gray-800'
+                            }">
+                                ${reserva.estado === 'activa' ? 'Activa' : 'Finalizada'}
+                            </span>
+                            ${reserva.editada ? '<span class="px-2 py-1 inline-flex text-xs font-medium rounded-full bg-blue-100 text-blue-700"><i class="fa-solid fa-pen-to-square text-xs mr-1"></i>Editada</span>' : ''}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -764,6 +1165,13 @@ function mostrarReservasEnTabla(reservas) {
                 ${reserva.estado === 'activa' 
                     ? `<button 
                         type="button"
+                        onclick="editarReserva('${reserva.id}')"
+                        class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                        <i class="fa-solid fa-edit w-4 h-4 mr-1"></i>
+                        Editar
+                    </button>
+                    <button 
+                        type="button"
                         onclick="cambiarEstadoReserva('${reserva.id}', 'finalizada')"
                         class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors">
                         <i class="fa-solid fa-xmark w-4 h-4 mr-1"></i>
@@ -786,6 +1194,43 @@ function mostrarReservasEnTabla(reservas) {
     setTimeout(() => {
         actualizarContadorSeleccionadas();
     }, 100);
+}
+
+// Formatear información de módulos de forma compacta
+function formatearModulosInfoCompacto(modulosInfo) {
+    // Si no hay datos
+    if (!modulosInfo) {
+        return '<span class="text-gray-400 text-xs">-</span>';
+    }
+
+    try {
+        let info = modulosInfo;
+        
+        // Si es string, intentar parsearlo como JSON
+        if (typeof modulosInfo === 'string') {
+            try {
+                info = JSON.parse(modulosInfo);
+            } catch (parseError) {
+                return `<span class="text-gray-700">${modulosInfo}</span>`;
+            }
+        }
+        
+        // Si tiene la estructura del backend
+        if (info && typeof info === 'object' && info.modulo_inicial && info.modulo_final) {
+            return `<div class="text-xs">M${info.modulo_inicial}-${info.modulo_final}</div>`;
+        }
+        
+        // Si solo tiene hora de inicio
+        if (info && info.hora_inicio) {
+            return `<span class="text-xs">${info.hora_inicio}</span>`;
+        }
+        
+        return '<span class="text-gray-400 text-xs">-</span>';
+        
+    } catch (e) {
+        console.warn('🔧 Error al formatear módulos info compacto:', e);
+        return '<span class="text-gray-400 text-xs">-</span>';
+    }
 }
 
 // Formatear información de módulos con horarios
@@ -856,12 +1301,18 @@ function formatearModulosInfo(modulosInfo) {
 // Actualizar estadísticas
 function actualizarEstadisticas(reservas) {
     const activas = reservas.filter(r => r.estado === 'activa').length;
-    const finalizadas = reservas.filter(r => r.estado === 'finalizada').length;
-    const total = reservas.length;
-
-    document.getElementById('stats-activas').textContent = activas;
-    document.getElementById('stats-finalizadas').textContent = finalizadas;
-    document.getElementById('stats-total').textContent = total;
+    
+    // Actualizar contador desktop
+    const headerCounter = document.getElementById('stats-activas-header');
+    if (headerCounter) {
+        headerCounter.textContent = activas;
+    }
+    
+    // Actualizar contador mobile
+    const mobileCounter = document.getElementById('stats-activas-mobile');
+    if (mobileCounter) {
+        mobileCounter.textContent = activas;
+    }
 }
 
 // Filtrar reservas
@@ -972,13 +1423,24 @@ window.cambiarEstadoReserva = async function(idReserva, nuevoEstado) {
 
 // Función para formatear fecha
 function formatearFecha(fecha) {
-    const date = new Date(fecha + 'T00:00:00');
-    return date.toLocaleDateString('es-ES', {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    });
+    if (!fecha) return 'Sin fecha';
+    try {
+        // Asegurarnos de que la fecha esté en formato correcto
+        const date = new Date(fecha.includes('T') ? fecha : fecha + 'T00:00:00');
+        if (isNaN(date.getTime())) {
+            console.warn('Fecha inválida:', fecha);
+            return fecha; // Devolver la fecha original si no se puede parsear
+        }
+        return date.toLocaleDateString('es-ES', {
+            weekday: 'short',
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    } catch (e) {
+        console.error('Error al formatear fecha:', e);
+        return fecha;
+    }
 }
 
 // Función de test para verificar funcionamiento
@@ -1003,6 +1465,7 @@ window.testCambiarEstado = function() {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('✅ DOM Cargado - Funciones disponibles:');
     console.log('- cambiarEstadoReserva:', typeof window.cambiarEstadoReserva);
+    console.log('- editarReserva:', typeof window.editarReserva);
     console.log('- SweetAlert:', typeof Swal);
     console.log('Para probar, ejecuta: testCambiarEstado()');
 });

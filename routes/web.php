@@ -367,6 +367,9 @@ Route::middleware(['auth'])->prefix('quick-actions')->name('quick-actions.')->gr
     // API para buscar personas por RUN (autocompletado)
     Route::get('/api/buscar-personas', [QuickActionsController::class, 'buscarPersonas'])->name('api.buscar-personas');
 
+    // API para buscar asignaturas (autocompletado)
+    Route::get('/api/buscar-asignaturas', [QuickActionsController::class, 'buscarAsignaturas'])->name('api.buscar-asignaturas');
+
     // API para crear reserva
     Route::post('/api/crear-reserva', [QuickActionsController::class, 'procesarCrearReserva'])->name('api.crear-reserva');
 
@@ -378,6 +381,10 @@ Route::middleware(['auth'])->prefix('quick-actions')->name('quick-actions.')->gr
 
     // API para cambiar estado de reserva
     Route::put('/api/reserva/{id}/estado', [QuickActionsController::class, 'cambiarEstadoReserva'])->name('quick-actions.api.cambiar-estado-reserva');
+
+    // Ruta para editar reserva
+    Route::get('/editar-reserva/{id}', [QuickActionsController::class, 'editarReserva'])->name('editar-reserva');
+    Route::put('/api/reserva/{id}', [QuickActionsController::class, 'actualizarReserva'])->name('api.actualizar-reserva');
 
     // Debug para verificar estructura de personas
     Route::get('/debug/personas', function () {
