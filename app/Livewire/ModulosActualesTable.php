@@ -749,11 +749,6 @@ class ModulosActualesTable extends Component
                         //     $proximaClase = $this->obtenerProximaClase($espacio->id_espacio, $periodo);
                         // }
 
-                        // Calcular rango de disponibilidad si el espacio está disponible
-                        if (!$tieneClase && !$tieneReservaSolicitante && !$tieneReservaProfesor && !$claseMovidaAOtraSala) {
-                            $rangoDisponibilidad = $this->calcularRangoDisponibilidad($espacio->id_espacio, $periodo, $todasLasReservas->get($espacio->id_espacio, collect()));
-                        }
-
                         // Verificar si la clase debe marcarse como no realizada
                         $claseNoRealizada = false;
                         $claseFinalizada = false;
@@ -826,7 +821,14 @@ class ModulosActualesTable extends Component
                         } elseif ($proximaClase) {
                             $estado = 'Clase por iniciar';
                         } else {
-                            $estado = $espacio->estado ?? 'Disponible';
+                            // Si no hay clase, ni reserva, ni nada, el espacio está disponible
+                            // NO confiar en el estado de la BD que puede estar desactualizado
+                            $estado = 'Disponible';
+                        }
+
+                        // Calcular rango de disponibilidad SOLO si el estado final es "Disponible"
+                        if ($estado === 'Disponible') {
+                            $rangoDisponibilidad = $this->calcularRangoDisponibilidad($espacio->id_espacio, $periodo, $todasLasReservas->get($espacio->id_espacio, collect()));
                         }
 
                         $espaciosPiso[] = [

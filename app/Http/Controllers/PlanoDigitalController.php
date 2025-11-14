@@ -128,6 +128,11 @@ class PlanoDigitalController extends Controller
             $idEspacio = $bloque->id_espacio;
             $espacio = $bloque->espacio;
 
+            // Verificar si hay una reserva activa en este espacio
+            $reservaActiva = Reserva::where('id_espacio', $idEspacio)
+                ->where('estado', 'activa')
+                ->exists();
+
             // Verificar si hay una clase sin asistentes (devuelta en primer módulo hoy)
             $claseSinAsistentes = Reserva::where('id_espacio', $idEspacio)
                 ->where('fecha_reserva', now()->toDateString())
@@ -135,14 +140,15 @@ class PlanoDigitalController extends Controller
                 ->where('estado', 'finalizada')
                 ->exists();
 
-            // 1. Si el campo estado es "Ocupado", siempre ocupado
-            if ($espacio->estado === 'Ocupado') {
+            // Determinar estado basado en actividad real (no en BD)
+            if ($reservaActiva) {
+                // 1. Hay reserva activa = Ocupado
                 $estadoFinal = 'Ocupado';
             } elseif ($claseSinAsistentes) {
-                // 2. Si hubo una clase sin asistentes hoy
-                $estadoFinal = 'ClaseSinAsistentes'; // Nuevo estado
+                // 2. Hubo una clase sin asistentes hoy
+                $estadoFinal = 'ClaseSinAsistentes';
             } else {
-                // 3. Si el campo estado es "Disponible"
+                // 3. Verificar planificaciones (actuales y próximas)
                 $planificacionActiva = $planificacionesActivas->firstWhere('id_espacio', $idEspacio);
                 $planificacionProxima = $planificacionesProximas->firstWhere('id_espacio', $idEspacio);
                 if ($planificacionActiva) {
@@ -150,7 +156,8 @@ class PlanoDigitalController extends Controller
                 } elseif ($planificacionProxima) {
                     $estadoFinal = 'Proximo'; // Azul (próximo)
                 } else {
-                    $estadoFinal = 'Disponible'; // Verde (disponible)
+                    // 4. No hay actividad = Disponible (ignorar BD)
+                    $estadoFinal = 'Disponible';
                 }
             }
 

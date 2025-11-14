@@ -14,9 +14,9 @@ class Kernel extends ConsoleKernel
     {
         // $schedule->command('inspire')->hourly();
 
-        // Actualizar estados de espacios cada 5 minutos
+        // Actualizar estados de espacios cada 15 minutos
         $schedule->command('espacios:actualizar-estado')
-                ->everyFiveMinutes()
+                ->everyFifteenMinutes()
                 ->withoutOverlapping()
                 ->runInBackground();
 
