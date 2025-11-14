@@ -96,7 +96,7 @@
                                      });
                                  }
                              })"
-                             x-transition:leave="transition-opacity ease-in-out duration-1000 absolute inset-0"
+                             x-transition:leave="transition-opacity ease-in-out duration-500 absolute inset-0"
                              x-transition:leave-start="opacity-100"
                              x-transition:leave-end="opacity-0"
                              @transitionstart.self="
@@ -121,7 +121,7 @@
                                 </colgroup>
                                 <tbody class="divide-y divide-gray-200">
                                 @foreach (array_slice($this->getTodosLosEspacios(), $i * 13, 13) as $index => $espacio)
-                                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-gray-100 h-10 border-b border-gray-200 transition-all duration-[1500ms] ease-in-out">
+                                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-gray-100 h-10 border-b border-gray-200 transition-all duration-1000 ease-in-out">
                                         <!-- Columna 1: Modulo -->
                                             <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
                                                 @if($espacio['estado'] === 'Disponible' && !empty($espacio['rango_disponibilidad']))
