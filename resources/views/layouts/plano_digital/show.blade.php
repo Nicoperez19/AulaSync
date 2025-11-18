@@ -3601,18 +3601,14 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
                     body: JSON.stringify({
-<<<<<<< HEAD
                         id_reserva: idReserva,
                         hubo_asistentes: huboAsistentes
-=======
                         id_espacio: espacioId,
                         run: run
->>>>>>> CorreosAsistentes
                     })
                 });
 
                 const data = await response.json();
-<<<<<<< HEAD
                 
                 if (!data.success) {
                     console.error('Error al registrar asistencia:', data.mensaje);
@@ -3622,7 +3618,6 @@
             }
         }
 
-=======
                 return data;
             } catch (error) {
                 console.error('❌ Error al registrar acceso:', error);
@@ -3810,7 +3805,6 @@
         // FIN FUNCIONES PARA MODAL DE SALA DE ESTUDIO
         // ============================================================================
 
->>>>>>> CorreosAsistentes
         function cerrarModalEspacio() {
             const modal = document.getElementById('modal-espacio-info');
             if (modal) {
