@@ -42,6 +42,11 @@
             </a>
         @endcan
 
+        <!-- Notificaciones - Para supervisores y administradores -->
+        @hasanyrole('Supervisor|Administrador')
+            @livewire('notificaciones-dropdown')
+        @endhasanyrole
+
    
 
         <x-dropdown align="right" width="48">

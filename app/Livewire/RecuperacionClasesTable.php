@@ -92,6 +92,9 @@ class RecuperacionClasesTable extends Component
             'gestionado_por' => Auth::user()->run,
         ]);
 
+        // Crear notificación de clase reagendada
+        \App\Models\Notificacion::crearNotificacionClaseReagendada($recuperacion);
+
         session()->flash('message', 'Clase reagendada exitosamente.');
         $this->closeReagendarModal();
     }
