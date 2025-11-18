@@ -601,10 +601,10 @@ class DashboardController extends Controller
             'cantidad' => $todosLosTipos->count()
         ]);
 
-        // Si no hay tipos de espacio, retornar colección vacía pero válida
+        // Si no hay tipos de espacio, retornar array vacío pero válido
         if ($todosLosTipos->isEmpty()) {
             Log::warning('obtenerComparativaTipos - No se encontraron tipos de espacio');
-            return collect([]);
+            return [];
         }
 
         $result = [];
@@ -678,7 +678,7 @@ class DashboardController extends Controller
             'result' => $result
         ]);
         
-        return collect($result);
+        return $result;
     }
 
     private function obtenerReservasPorTipo($facultad, $piso)

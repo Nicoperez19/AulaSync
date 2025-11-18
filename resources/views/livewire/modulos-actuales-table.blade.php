@@ -274,7 +274,7 @@
                                                     </div>
                                                 </div>
                                             @else
-                                                <span class="text-gray-400 text-sm">N/A</span>
+                                                <span class="text-gray-400 text-sm italic">Sin datos</span>
                                             @endif
                                         </td>
                                         

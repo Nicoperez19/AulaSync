@@ -660,7 +660,7 @@ class ModulosActualesTable extends Component
                         $esRecuperacion = false;
 
                         // Verificar si hay una clase de recuperación programada para este espacio hoy
-                        $recuperacionHoy = \App\Models\RecuperacionClase::where('fecha_reagendada', $fechaActual)
+                        $recuperacionHoy = \App\Models\RecuperacionClase::where('fecha_reagendada', Carbon::now()->toDateString())
                             ->where('id_espacio_reagendado', $espacio->id_espacio)
                             ->where('id_modulo_reagendado', $idModulo)
                             ->where('estado', 'reagendada')
