@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Helpers\SemesterHelper;
 use App\Models\ClaseNoRealizada;
-use App\Models\Modulo;
 use App\Models\Notificacion;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Reserva;
@@ -132,6 +131,7 @@ class DetectarClasesNoRealizadas extends Command
         // Solo ejecutar en días laborales
         if ($diaActual === 'sábado' || $diaActual === 'domingo') {
             $this->info('Hoy es fin de semana, no se ejecuta la detección.');
+
             return 0;
         }
 
@@ -140,14 +140,15 @@ class DetectarClasesNoRealizadas extends Command
 
         // Mapear el día a su prefijo
         $prefijoDia = $this->obtenerPrefijoDia($diaActual);
-        if (!$prefijoDia) {
+        if (! $prefijoDia) {
             $this->error('No se pudo determinar el prefijo del día.');
+
             return 1;
         }
 
         // Obtener todas las planificaciones del día actual
         $planificaciones = Planificacion_Asignatura::with(['asignatura.profesor', 'espacio'])
-            ->where('id_modulo', 'LIKE', $prefijoDia . '.%')
+            ->where('id_modulo', 'LIKE', $prefijoDia.'.%')
             ->whereHas('horario', function ($q) use ($periodo) {
                 $q->where('periodo', $periodo);
             })
@@ -160,21 +161,22 @@ class DetectarClasesNoRealizadas extends Command
             // Ordenar por módulo para obtener el último
             $planificacionesOrdenadas = $planificacionesAsignatura->sortBy(function ($plan) {
                 $moduloParts = explode('.', $plan->id_modulo);
-                return isset($moduloParts[1]) ? (int)$moduloParts[1] : 0;
+
+                return isset($moduloParts[1]) ? (int) $moduloParts[1] : 0;
             });
 
             $ultimaPlanificacion = $planificacionesOrdenadas->last();
             $primeraPlanificacion = $planificacionesOrdenadas->first();
 
-            if (!$ultimaPlanificacion || !$primeraPlanificacion) {
+            if (! $ultimaPlanificacion || ! $primeraPlanificacion) {
                 continue;
             }
 
             // Obtener el número del último módulo
             $ultimoModuloParts = explode('.', $ultimaPlanificacion->id_modulo);
-            $numeroUltimoModulo = isset($ultimoModuloParts[1]) ? (int)$ultimoModuloParts[1] : 0;
+            $numeroUltimoModulo = isset($ultimoModuloParts[1]) ? (int) $ultimoModuloParts[1] : 0;
 
-            if (!$numeroUltimoModulo) {
+            if (! $numeroUltimoModulo) {
                 continue;
             }
 
@@ -182,7 +184,7 @@ class DetectarClasesNoRealizadas extends Command
             $diaKey = $this->normalizarDia($diaActual);
             $horariosDelDia = $this->horariosModulos[$diaKey] ?? null;
 
-            if (!$horariosDelDia || !isset($horariosDelDia[$numeroUltimoModulo])) {
+            if (! $horariosDelDia || ! isset($horariosDelDia[$numeroUltimoModulo])) {
                 continue;
             }
 
@@ -195,7 +197,7 @@ class DetectarClasesNoRealizadas extends Command
 
             // Verificar si el profesor registró entrada en algún espacio
             $runProfesor = $ultimaPlanificacion->asignatura->run_profesor ?? null;
-            if (!$runProfesor) {
+            if (! $runProfesor) {
                 continue;
             }
 
@@ -205,7 +207,7 @@ class DetectarClasesNoRealizadas extends Command
                 ->exists();
 
             // Si el profesor NO registró entrada, marcar como clase no realizada
-            if (!$tuvoEntrada) {
+            if (! $tuvoEntrada) {
                 // Registrar la clase no realizada
                 $claseNoRealizada = ClaseNoRealizada::registrarClaseNoRealizada([
                     'id_asignatura' => $idAsignatura,
@@ -221,7 +223,7 @@ class DetectarClasesNoRealizadas extends Command
                     // Crear notificación para supervisores y administradores
                     Notificacion::crearNotificacionClaseNoRealizada($claseNoRealizada);
                     $clasesDetectadas++;
-                    
+
                     $this->info(sprintf(
                         'Clase no realizada detectada: %s - Profesor: %s',
                         $ultimaPlanificacion->asignatura->nombre_asignatura ?? 'Desconocida',

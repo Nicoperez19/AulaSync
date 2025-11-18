@@ -9,7 +9,9 @@ use Livewire\Component;
 class NotificacionesDropdown extends Component
 {
     public $notificaciones = [];
+
     public $contadorNoLeidas = 0;
+
     public $mostrarDropdown = false;
 
     protected $listeners = ['notificacionCreada' => 'cargarNotificaciones'];
@@ -21,14 +23,14 @@ class NotificacionesDropdown extends Component
 
     public function cargarNotificaciones()
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return;
         }
 
         $usuario = Auth::user();
 
         // Solo cargar notificaciones para supervisores y administradores
-        if (!$usuario->hasAnyRole(['Supervisor', 'Administrador'])) {
+        if (! $usuario->hasAnyRole(['Supervisor', 'Administrador'])) {
             return;
         }
 
@@ -43,7 +45,7 @@ class NotificacionesDropdown extends Component
     public function marcarComoLeida($notificacionId)
     {
         $notificacion = Notificacion::find($notificacionId);
-        
+
         if ($notificacion && $notificacion->run_usuario === Auth::user()->run) {
             $notificacion->marcarComoLeida();
             $this->cargarNotificaciones();
@@ -60,7 +62,7 @@ class NotificacionesDropdown extends Component
 
     public function toggleDropdown()
     {
-        $this->mostrarDropdown = !$this->mostrarDropdown;
+        $this->mostrarDropdown = ! $this->mostrarDropdown;
     }
 
     public function render()
