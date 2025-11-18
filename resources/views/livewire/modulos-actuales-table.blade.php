@@ -205,8 +205,17 @@
                                                 </span>
                                             @elseif (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']) && isset($espacio['datos_clase']['profesor']) && !empty($espacio['datos_clase']['profesor']['name']))
                                                 <div class="font-medium text-gray-900 text-sm">
+                                                    @if(!empty($espacio['es_recuperacion']) && $espacio['es_recuperacion'])
+                                                        <div class="flex items-center gap-1">
+                                                            <i class="fas fa-redo text-blue-600"></i>
+                                                            <span class="text-blue-600 font-semibold">Recuperación de clase</span>
+                                                        </div>
+                                                    @endif
                                                     <div>{{ $asignatura ?? 'Sin asignatura' }}</div>
                                                     <div>Prof: {{ $espacio['datos_clase']['profesor']['name'] ?? 'N/A' }}</div>
+                                                    @if(!empty($espacio['es_recuperacion']) && !empty($espacio['datos_clase']['fecha_original']))
+                                                        <div class="text-xs text-gray-600">Original: {{ $espacio['datos_clase']['fecha_original'] }}</div>
+                                                    @endif
                                                 </div>
                                             @elseif(!empty($espacio['proxima_clase']) && is_array($espacio['proxima_clase']))
                                                 <div class="font-medium text-gray-700 text-sm">

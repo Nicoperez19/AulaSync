@@ -657,6 +657,15 @@ class ModulosActualesTable extends Component
                         $datosProfesor = null;
                         $claseMovidaAOtraSala = false;
                         $rangoDisponibilidad = null;
+                        $esRecuperacion = false;
+
+                        // Verificar si hay una clase de recuperación programada para este espacio hoy
+                        $recuperacionHoy = \App\Models\RecuperacionClase::where('fecha_reagendada', $fechaActual)
+                            ->where('id_espacio_reagendado', $espacio->id_espacio)
+                            ->where('id_modulo_reagendado', $idModulo)
+                            ->where('estado', 'reagendada')
+                            ->with(['asignatura.profesor', 'asignatura.carrera'])
+                            ->first();
 
                         // Verificar si hay una clase programada aquí pero el profesor la hizo en otro espacio
                         if ($planificacionActiva && !$reservaProfesor) {
@@ -667,7 +676,28 @@ class ModulosActualesTable extends Component
                             }
                         }
 
-                        if ($planificacionActiva) {
+                        // Si hay recuperación programada, mostrarla
+                        if ($recuperacionHoy) {
+                            $esRecuperacion = true;
+                            $tieneClase = true;
+                            
+                            // Obtener información de la recuperación
+                            $datosClase = [
+                                'codigo_asignatura' => $recuperacionHoy->asignatura->codigo_asignatura ?? '-',
+                                'nombre_asignatura' => $recuperacionHoy->asignatura->nombre_asignatura ?? '-',
+                                'seccion' => $recuperacionHoy->asignatura->seccion ?? '-',
+                                'profesor' => [
+                                    'name' => $recuperacionHoy->profesor->name ?? '-',
+                                ],
+                                'carrera' => $recuperacionHoy->asignatura->carrera->nombre ?? '-',
+                                'modulo_inicio' => $this->moduloActual['numero'] ?? '--',
+                                'modulo_fin' => $this->moduloActual['numero'] ?? '--',
+                                'hora_inicio' => $this->moduloActual['inicio'] ?? '--:--',
+                                'hora_fin' => $this->moduloActual['fin'] ?? '--:--',
+                                'es_recuperacion' => true,
+                                'fecha_original' => $recuperacionHoy->fecha_clase_original ? $recuperacionHoy->fecha_clase_original->format('d/m/Y') : null,
+                            ];
+                        } elseif ($planificacionActiva) {
                             $tieneClase = true;
 
                             // Obtener todas las planificaciones de esta asignatura usando datos pre-cargados
@@ -853,6 +883,7 @@ class ModulosActualesTable extends Component
                             'piso' => $piso->nombre_piso ?? 'N/A',
                             'proxima_clase' => $proximaClase,
                             'rango_disponibilidad' => $rangoDisponibilidad,
+                            'es_recuperacion' => $esRecuperacion,
                         ];
                     }
                     $this->espacios[$piso->id] = $espaciosPiso;
