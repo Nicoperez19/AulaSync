@@ -186,6 +186,9 @@ class PlanoDigitalController extends Controller
                 'x' => $bloque->posicion_x,
                 'y' => $bloque->posicion_y,
                 'estado' => $estadoFinal,
+                'tipo' => $espacio->tipo_espacio,
+                'capacidad' => $espacio->capacidad_maxima,
+                'piso' => $mapa->piso->numero_piso,
                 'detalles' => array_merge(
                     $this->prepararDetallesBloque(
                         $bloque->espacio,

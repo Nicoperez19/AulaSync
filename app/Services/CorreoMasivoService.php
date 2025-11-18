@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\TipoCorreoMasivo;
 use App\Models\DestinatarioCorreo;
+use App\Models\AsistenteAcademico;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
 
@@ -17,6 +18,23 @@ use Illuminate\Support\Facades\Log;
  */
 class CorreoMasivoService
 {
+    /**
+     * Obtiene el ID del área académica si el usuario autenticado es asistente académico
+     * 
+     * @return string|null
+     */
+    private function obtenerAreaAcademicaAsistente(): ?string
+    {
+        if (!auth()->check()) {
+            return null;
+        }
+
+        $userEmail = auth()->user()->email;
+        $asistente = AsistenteAcademico::where('email', $userEmail)->first();
+        
+        return $asistente ? $asistente->id_area_academica : null;
+    }
+
     /**
      * Envía un correo masivo a los destinatarios habilitados para un tipo específico
      *

@@ -10,6 +10,7 @@ use App\Models\Profesor;
 use App\Models\Espacio;
 use App\Models\LicenciaProfesor;
 use App\Observers\LicenciaProfesorObserver;
+use App\View\Composers\LogoComposer;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -59,5 +60,11 @@ class AppServiceProvider extends ServiceProvider
             $view->with('tieneProfesores', $tieneProfesores);
             $view->with('tieneEspacios', $tieneEspacios);
         });
+
+        // Registrar el ViewComposer para el logo institucional
+        View::composer([
+            'components.application-logo-navbar',
+            'components.application-logo-navbar-bot'
+        ], LogoComposer::class);
     }
 }

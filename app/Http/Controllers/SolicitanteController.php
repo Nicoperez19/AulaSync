@@ -675,4 +675,27 @@ class SolicitanteController extends Controller
 
         return null;
     }
+
+    /**
+     * Verificar si un RUN existe en la tabla solicitantes
+     */
+    public function verificarExistencia($run)
+    {
+        try {
+            $runLimpio = preg_replace('/[^0-9]/', '', $run);
+            
+            $existe = Solicitante::where('run_solicitante', $run)
+                ->orWhere('run_solicitante', $runLimpio)
+                ->exists();
+
+            return response()->json([
+                'existe' => $existe
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'existe' => false,
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }

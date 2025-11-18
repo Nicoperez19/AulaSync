@@ -1,6 +1,6 @@
 <img 
-    src="{{ asset('images/logo_IT_talcahuano.png') }}" 
-    alt="Logo"
+    src="{{ $logoInstitucional }}" 
+    alt="Logo Institucional"
     class="block object-contain w-64"
 />
 

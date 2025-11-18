@@ -49,7 +49,7 @@ class UserSeeder extends Seeder
                 'direccion' => 'Calle Falsa 123',
                 'fecha_nacimiento' => '1985-05-20',
             ]
-        )->assignRole('Supervisor');
+        )->assignRole('Administrador');
 
        User::updateOrCreate(
             ['run' => '16600867'],

@@ -14,6 +14,7 @@ class AsistenteAcademico extends Model
     protected $fillable = [
         'nombre',
         'email',
+        'nombre_remitente',
         'telefono',
         'id_area_academica',
     ];

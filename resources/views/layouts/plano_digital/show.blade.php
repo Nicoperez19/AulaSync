@@ -17,6 +17,47 @@
         .parpadeo {
             animation: parpadeo 2s ease-in-out infinite;
         }
+
+        /* Estilos para modal de veto */
+        .swal-veto-popup {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+            padding: 0 !important;
+            border-radius: 1rem !important;
+            box-shadow: 0 20px 25px -5px rgba(239, 68, 68, 0.3), 0 10px 10px -5px rgba(239, 68, 68, 0.2) !important;
+        }
+
+        .swal-veto-close {
+            color: white !important;
+            font-size: 1.5em !important;
+            background: rgba(255, 255, 255, 0.2) !important;
+            border-radius: 50% !important;
+            width: 32px !important;
+            height: 32px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .swal-veto-close:hover {
+            background: rgba(255, 255, 255, 0.3) !important;
+            transform: rotate(90deg) !important;
+        }
+
+        .swal2-icon.swal2-error {
+            display: none !important;
+        }
+
+        /* Animación para el ícono de veto */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .swal-veto-icon {
+            animation: shake 0.5s ease-in-out;
+        }
     </style>
     <div class="flex h-screen overflow-hidden">
         <aside
@@ -324,6 +365,91 @@
                                 <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
                             </div>
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Sala de Estudio -->
+    <div id="modal-sala-estudio" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="flex flex-col w-full max-w-4xl max-h-screen mx-2 overflow-hidden bg-white rounded-lg shadow-lg md:mx-8">
+            <!-- Encabezado con diseño tipo banner -->
+            <div class="relative flex flex-col gap-6 p-8 bg-gradient-to-r bg-red-600 md:flex-row md:items-center md:justify-between">
+                <!-- Círculos decorativos -->
+                <span class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                <span class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+
+                <div class="flex items-center flex-1 min-w-0 gap-5">
+                    <div class="flex flex-col items-center justify-center flex-shrink-0">
+                        <div class="p-4 mb-2 bg-white rounded-full bg-opacity-20">
+                            <i class="text-3xl text-white fa-solid fa-book"></i>
+                        </div>
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                        <h1 id="modalSalaEstudioTitulo" class="text-3xl font-bold text-white truncate">Sala de Estudio</h1>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span id="modalSalaEstudioCapacidad" class="text-lg truncate text-white/80">Capacidad disponible</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
+                    <button onclick="cerrarModalSalaEstudio(); qrInputManager.setActiveInput('main')"
+                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
+                        title="Cerrar modal (Esc)"
+                        aria-label="Cerrar modal">&times;</button>
+                </div>
+            </div>
+
+            <!-- Contenido del modal -->
+            <div class="p-6 bg-gray-50 overflow-y-auto max-h-[70vh] flex-1">
+                <!-- Información de capacidad -->
+                <div class="p-6 mb-6 bg-white border-l-4 border-red-500 shadow-sm rounded-xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-semibold text-gray-800">
+                            <i class="mr-2 text-red-500 fas fa-users"></i>
+                            Capacidad
+                        </h3>
+                        <div class="flex items-center gap-4">
+                            <span class="text-sm text-gray-600">
+                                <span id="salaEstudioOcupados" class="text-2xl font-bold text-red-600">0</span>
+                                <span class="text-gray-500">/</span>
+                                <span id="salaEstudioCapacidadMax" class="text-lg font-semibold text-gray-700">0</span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-4">
+                        <div id="salaEstudioProgressBar" class="bg-red-600 h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Scanner QR -->
+                <div class="p-6 mb-6 bg-white border-l-4 border-blue-500 shadow-sm rounded-xl">
+                    <h3 class="mb-4 text-xl font-semibold text-gray-800">
+                        <i class="mr-2 text-blue-500 fas fa-qrcode"></i>
+                        Registrar Acceso
+                    </h3>
+                    <div class="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
+                        <div class="p-4 mb-4 bg-white rounded-full shadow-md">
+                            <i class="text-5xl text-blue-500 fa-solid fa-qrcode parpadeo"></i>
+                        </div>
+                        <p class="mb-2 text-lg font-semibold text-gray-700">Escanea tu carnet estudiantil</p>
+                        <p class="text-sm text-gray-500">El sistema registrará automáticamente tu acceso</p>
+                        <input type="text" id="qr-input-sala-estudio"
+                            class="absolute opacity-0 w-1 h-1"
+                            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    </div>
+                </div>
+
+                <!-- Alumnos registrados -->
+                <div class="p-6 bg-white border-l-4 border-green-500 shadow-sm rounded-xl">
+                    <h3 class="mb-4 text-xl font-semibold text-gray-800">
+                        <i class="mr-2 text-green-500 fas fa-user-check"></i>
+                        Alumnos Registrados
+                    </h3>
+                    <div id="listaSalaEstudioAlumnos" class="space-y-2">
+                        <p class="text-sm text-gray-500 text-center py-4">No hay alumnos registrados aún</p>
                     </div>
                 </div>
             </div>
@@ -712,7 +838,8 @@
                 this.qrInputs = {
                     main: document.getElementById('qr-input'),
                     devolucion: document.getElementById('qr-input-devolucion'),
-                    solicitud: document.getElementById('qr-input-solicitud')
+                    solicitud: document.getElementById('qr-input-solicitud'),
+                    salaEstudio: document.getElementById('qr-input-sala-estudio')
                 };
                 this.activeInput = null;
                 this.modalStates = new Map();
@@ -2162,6 +2289,13 @@
             console.log('🔍 Estado del indicator:', indicator.estado);
             console.log('🔍 Indicator completo:', indicator);
 
+            // Verificar si es una Sala de Estudio
+            if (indicator.tipo && (indicator.tipo.toLowerCase() === 'sala de estudio' || indicator.tipo.toLowerCase() === 'sala estudio')) {
+                console.log('📚 Es una Sala de Estudio - Abriendo modal especial');
+                mostrarModalSalaEstudio(indicator);
+                return;
+            }
+
                     // Mostrar el modal inmediatamente
         const modal = document.getElementById('modal-espacio-info');
         if (modal) {
@@ -3049,6 +3183,7 @@
             } else {
                 console.log('🔍 Espacio ocupado según indicator - Manteniendo botón desocupar visible');
             }
+<<<<<<< HEAD
         }
 
         // Funciones para el modal de confirmación de asistentes
@@ -3122,18 +3257,362 @@
         async function registrarAsistencia(idReserva, huboAsistentes) {
             try {
                 const response = await fetch('/api/registrar-asistencia-clase', {
+=======
+        }        
+
+        // ============================================================================
+        // FUNCIONES PARA MODAL DE SALA DE ESTUDIO
+        // ============================================================================
+        
+        let salaEstudioActual = {
+            id: null,
+            capacidadMaxima: 0,
+            alumnosRegistrados: [],
+            modalAbierto: false
+        };
+
+        async function mostrarModalSalaEstudio(indicator) {
+            console.log('📚 Abriendo modal de Sala de Estudio para:', indicator.id);
+            
+            // Guardar datos de la sala actual
+            salaEstudioActual.id = indicator.id;
+            salaEstudioActual.capacidadMaxima = indicator.capacidad || 0;
+            salaEstudioActual.alumnosRegistrados = [];
+
+            // Actualizar título del modal
+            const tituloModal = document.getElementById('modalSalaEstudioTitulo');
+            if (tituloModal) {
+                tituloModal.textContent = `${indicator.nombre} (${indicator.id})`;
+            }
+
+            // Actualizar capacidad
+            const capacidadTexto = document.getElementById('modalSalaEstudioCapacidad');
+            if (capacidadTexto) {
+                capacidadTexto.textContent = `Capacidad: ${indicator.capacidad || 0} personas`;
+            }
+
+            // Mostrar modal PRIMERO
+            const modal = document.getElementById('modal-sala-estudio');
+            if (modal) {
+                modal.classList.remove('hidden');
+                salaEstudioActual.modalAbierto = true;
+                bufferSalaEstudio = '';
+                
+                console.log('📚 Modal abierto - captura de teclado activada');
+                
+                // IMPORTANTE: Desactivar COMPLETAMENTE el input principal
+                const inputPrincipal = document.getElementById('qr-input');
+                if (inputPrincipal) {
+                    inputPrincipal.blur();
+                    inputPrincipal.disabled = true;
+                    inputPrincipal.style.display = 'none';
+                }
+                
+                // Desactivar todos los demás inputs
+                qrInputManager.desactivarTodosLosInputs();
+                
+                // Enfocar el input invisible para recibir eventos
+                const inputQR = document.getElementById('qr-input-sala-estudio');
+                if (inputQR) {
+                    inputQR.value = '';
+                    inputQR.disabled = false;
+                    setTimeout(() => {
+                        inputQR.focus();
+                        console.log('📚 Input invisible enfocado');
+                    }, 100);
+                }
+            }
+
+            // Cargar alumnos ya registrados
+            await cargarAlumnosRegistradosSalaEstudio(indicator.id);
+        }
+
+        function cerrarModalSalaEstudio() {
+            const modal = document.getElementById('modal-sala-estudio');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+            
+            // Marcar modal como cerrado
+            salaEstudioActual.modalAbierto = false;
+            bufferSalaEstudio = '';
+            
+            console.log('📚 Modal cerrado - captura de teclado desactivada');
+            
+            // Limpiar el input
+            const inputQR = document.getElementById('qr-input-sala-estudio');
+            if (inputQR) {
+                inputQR.value = '';
+                inputQR.blur();
+            }
+            
+            // RESTAURAR el input principal
+            const inputPrincipal = document.getElementById('qr-input');
+            if (inputPrincipal) {
+                inputPrincipal.disabled = false;
+                inputPrincipal.style.display = '';
+            }
+            
+            // Limpiar datos
+            salaEstudioActual = {
+                id: null,
+                capacidadMaxima: 0,
+                alumnosRegistrados: [],
+                modalAbierto: false
+            };
+            
+            // Restaurar el input QR principal
+            setTimeout(() => {
+                qrInputManager.setActiveInput('main');
+            }, 200);
+        }
+
+        let bufferSalaEstudio = '';
+        let processingTimeoutSala = null;
+        let lastKeySalaEstudio = Date.now();
+
+        // Captura global de eventos de teclado para el modal de sala de estudio
+        document.addEventListener('keydown', async function(event) {
+            // Solo procesar si el modal está abierto
+            if (!salaEstudioActual.modalAbierto) {
+                return;
+            }
+
+            const now = Date.now();
+            const timeSinceLastKey = now - lastKeySalaEstudio;
+            lastKeySalaEstudio = now;
+
+            console.log('📚 Tecla capturada en modal:', event.key, 'Buffer actual:', bufferSalaEstudio.substring(0, 20) + '...');
+
+            // Si es Enter, procesar el buffer
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                console.log('📚 Enter detectado - procesando buffer');
+                if (bufferSalaEstudio.length > 0) {
+                    await procesarQRSalaEstudio();
+                }
+                return;
+            }
+
+            // Si pasó más de 100ms desde la última tecla, resetear buffer (nuevo escaneo)
+            if (timeSinceLastKey > 100) {
+                bufferSalaEstudio = '';
+                console.log('📚 Nuevo escaneo detectado - buffer reseteado');
+            }
+
+            // Acumular caracteres imprimibles
+            if (event.key.length === 1) {
+                bufferSalaEstudio += event.key;
+                event.preventDefault();
+                
+                // Limpiar timeout anterior
+                if (processingTimeoutSala) {
+                    clearTimeout(processingTimeoutSala);
+                }
+                
+                // Auto-procesar después de 300ms sin nuevas teclas
+                processingTimeoutSala = setTimeout(async () => {
+                    if (bufferSalaEstudio.length > 10) {
+                        console.log('📚 Timeout - procesando buffer automáticamente');
+                        await procesarQRSalaEstudio();
+                    }
+                }, 300);
+            }
+        });
+
+        async function procesarQRSalaEstudio() {
+            // Validar que el buffer no esté vacío
+            if (!bufferSalaEstudio || bufferSalaEstudio.trim() === '') {
+                return;
+            }
+            
+            // Validar longitud mínima
+            if (bufferSalaEstudio.length < 5) {
+                bufferSalaEstudio = '';
+                return;
+            }
+
+            console.log('📚 Procesando QR de Sala de Estudio:', bufferSalaEstudio);
+
+            // Extraer RUN del QR
+            const runMatch = bufferSalaEstudio.match(/RUN[^0-9]*(\d+)/);
+            let run = null;
+
+            if (!runMatch) {
+                const runMatchAlt = bufferSalaEstudio.match(/(\d{7,8})/);
+                if (!runMatchAlt) {
+                    console.error('❌ No se pudo extraer RUN del QR');
+                    mostrarNotificacionSalaEstudio('QR inválido', 'error');
+                    bufferSalaEstudio = '';
+                    return;
+                }
+                run = runMatchAlt[1];
+            } else {
+                run = runMatch[1];
+            }
+
+            console.log('📚 RUN extraído:', run);
+
+            // El backend manejará si es entrada o salida
+            // No verificamos localmente si ya está registrado
+
+            console.log('✅ Llamando a registrarAccesoSalaEstudio...', salaEstudioActual.id, run);
+            // Registrar acceso del alumno (entrada o salida)
+            const resultado = await registrarAccesoSalaEstudio(salaEstudioActual.id, run);
+            console.log('📨 Resultado del registro:', resultado);
+            
+            if (resultado.success) {
+                if (resultado.accion === 'salida') {
+                    // Es una salida - eliminar de la lista
+                    salaEstudioActual.alumnosRegistrados = salaEstudioActual.alumnosRegistrados.filter(
+                        alumno => alumno.run !== run
+                    );
+
+                    // Actualizar UI
+                    actualizarListaAlumnosSalaEstudio();
+                    actualizarContadoresSalaEstudio();
+                    
+                    mostrarNotificacionSalaEstudio(
+                        `${resultado.nombre} - Salida registrada (${resultado.hora_entrada} - ${resultado.hora_salida})`, 
+                        'info'
+                    );
+                } else {
+                    // Es una entrada - agregar a la lista
+                    salaEstudioActual.alumnosRegistrados.push({
+                        run: run,
+                        nombre: resultado.nombre || `Alumno ${run}`,
+                        hora_registro: new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' })
+                    });
+
+                    // Actualizar UI
+                    actualizarListaAlumnosSalaEstudio();
+                    actualizarContadoresSalaEstudio();
+                    
+                    mostrarNotificacionSalaEstudio(`${resultado.nombre || 'Alumno'} registrado exitosamente`, 'success');
+                }
+            } else {
+                // Verificar si es un veto
+                if (resultado.vetado) {
+                    console.log('🚫 Usuario vetado:', resultado.veto);
+                    
+                    // Mostrar modal con información del veto con z-index superior
+                    const tipoVeto = resultado.veto.tipo === 'grupal' ? 'Grupal' : 'Individual';
+                    const mensaje = `
+                        <div class="text-white">
+                            <div class="mb-6 swal-veto-icon">
+                                <i class="fas fa-ban text-white" style="font-size: 4rem; text-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);"></i>
+                            </div>
+                            <h2 class="text-2xl font-bold mb-4 text-white">⚠️ ACCESO VETADO</h2>
+                            <div class="bg-white bg-opacity-10 backdrop-blur-sm rounded-lg p-6 text-left">
+                                <div class="space-y-4">
+                                    <div class="flex items-start gap-3">
+                                        <i class="fas fa-user-slash text-white text-xl mt-1"></i>
+                                        <div>
+                                            <p class="font-semibold text-white mb-1">Usuario:</p>
+                                            <p class="text-white text-opacity-90">${resultado.veto.solicitante?.nombre || 'Desconocido'}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start gap-3">
+                                        <i class="fas fa-tag text-white text-xl mt-1"></i>
+                                        <div>
+                                            <p class="font-semibold text-white mb-1">Tipo de veto:</p>
+                                            <p class="text-white text-opacity-90">${tipoVeto}</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-start gap-3">
+                                        <i class="fas fa-calendar text-white text-xl mt-1"></i>
+                                        <div>
+                                            <p class="font-semibold text-white mb-1">Fecha:</p>
+                                            <p class="text-white text-opacity-90">${resultado.veto.fecha_veto}</p>
+                                        </div>
+                                    </div>
+                                    <div class="pt-4 border-t border-white border-opacity-30">
+                                        <div class="flex items-start gap-3">
+                                            <i class="fas fa-exclamation-circle text-white text-xl mt-1"></i>
+                                            <div class="flex-1">
+                                                <p class="font-semibold text-white mb-2">Motivo del veto:</p>
+                                                <p class="text-white text-opacity-90 leading-relaxed">${resultado.veto.motivo}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    Swal.fire({
+                        html: mensaje,
+                        icon: null,
+                        confirmButtonText: '<i class="fas fa-check mr-2"></i>Entendido',
+                        confirmButtonColor: '#b91c1c',
+                        width: '550px',
+                        background: 'transparent',
+                        customClass: {
+                            container: 'swal-veto-container',
+                            popup: 'swal-veto-popup',
+                            closeButton: 'swal-veto-close',
+                            confirmButton: 'bg-red-800 hover:bg-red-900 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg'
+                        },
+                        showCloseButton: true,
+                        buttonsStyling: false,
+                        didOpen: () => {
+                            // Asegurar que el SweetAlert esté por encima del modal
+                            const swalContainer = document.querySelector('.swal-veto-container');
+                            if (swalContainer) {
+                                swalContainer.style.zIndex = '99999';
+                            }
+                        }
+                    });
+                    
+                } else if (resultado.mensaje && resultado.mensaje.includes('Usuario no encontrado')) {
+                    // Si el usuario no está registrado, el backend intentará crearlo desde solicitantes
+                    console.log('⚠️ Usuario no encontrado - el backend no pudo crearlo desde solicitantes');
+                    console.log('📝 Abriendo modal de registro para nuevo usuario');
+                    
+                    // Cerrar modal de sala de estudio
+                    cerrarModalSalaEstudio();
+                    
+                    // Abrir modal de registro con el RUN capturado
+                    setTimeout(() => {
+                        abrirModalRegistroConRun(run);
+                    }, 300);
+                } else {
+                    mostrarNotificacionSalaEstudio(resultado.mensaje || 'Error al registrar acceso', 'error');
+                }
+            }
+
+            // Limpiar buffer
+            bufferSalaEstudio = '';
+            
+            // Limpiar input
+            const inputQR = document.getElementById('qr-input-sala-estudio');
+            if (inputQR) {
+                inputQR.value = '';
+            }
+        }
+
+        async function registrarAccesoSalaEstudio(espacioId, run) {
+            try {
+                const response = await fetch('/api/sala-estudio/registrar-acceso', {
+>>>>>>> CorreosAsistentes
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
                     body: JSON.stringify({
+<<<<<<< HEAD
                         id_reserva: idReserva,
                         hubo_asistentes: huboAsistentes
+=======
+                        id_espacio: espacioId,
+                        run: run
+>>>>>>> CorreosAsistentes
                     })
                 });
 
                 const data = await response.json();
+<<<<<<< HEAD
                 
                 if (!data.success) {
                     console.error('Error al registrar asistencia:', data.mensaje);
@@ -3143,6 +3622,195 @@
             }
         }
 
+=======
+                return data;
+            } catch (error) {
+                console.error('❌ Error al registrar acceso:', error);
+                return {
+                    success: false,
+                    mensaje: 'Error de conexión'
+                };
+            }
+        }
+
+        async function verificarSolicitanteExistente(run) {
+            try {
+                const response = await fetch(`/api/verificar-solicitante/${run}`);
+                const data = await response.json();
+                return data.existe;
+            } catch (error) {
+                console.error('❌ Error al verificar solicitante:', error);
+                return false;
+            }
+        }
+
+        async function cargarAlumnosRegistradosSalaEstudio(espacioId) {
+            try {
+                console.log('📚 Cargando alumnos registrados para:', espacioId);
+                
+                const response = await fetch(`/api/sala-estudio/${espacioId}/alumnos-registrados`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success && data.alumnos) {
+                    console.log('📚 Alumnos cargados:', data.alumnos.length);
+                    salaEstudioActual.alumnosRegistrados = data.alumnos;
+                    actualizarListaAlumnosSalaEstudio();
+                    actualizarContadoresSalaEstudio();
+                } else {
+                    console.log('📚 No hay alumnos registrados');
+                    salaEstudioActual.alumnosRegistrados = [];
+                    // Si no hay alumnos, mostrar mensaje vacío
+                    const lista = document.getElementById('listaSalaEstudioAlumnos');
+                    if (lista) {
+                        lista.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No hay alumnos registrados aún</p>';
+                    }
+                    // Actualizar contadores con 0
+                    actualizarContadoresSalaEstudio();
+                }
+            } catch (error) {
+                console.error('❌ Error al cargar alumnos registrados:', error);
+                salaEstudioActual.alumnosRegistrados = [];
+                // Mostrar mensaje de error pero no bloquear la UI
+                const lista = document.getElementById('listaSalaEstudioAlumnos');
+                if (lista) {
+                    lista.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No hay alumnos registrados aún</p>';
+                }
+                // Actualizar contadores con 0
+                actualizarContadoresSalaEstudio();
+            }
+        }
+
+        function actualizarListaAlumnosSalaEstudio() {
+            const lista = document.getElementById('listaSalaEstudioAlumnos');
+            if (!lista) return;
+
+            if (salaEstudioActual.alumnosRegistrados.length === 0) {
+                lista.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No hay alumnos registrados aún</p>';
+                return;
+            }
+
+            lista.innerHTML = salaEstudioActual.alumnosRegistrados.map((alumno, index) => `
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center justify-center w-8 h-8 bg-green-500 text-white rounded-full font-semibold text-sm">
+                            ${index + 1}
+                        </div>
+                        <div>
+                            <p class="font-semibold text-gray-800">${alumno.nombre}</p>
+                            <p class="text-sm text-gray-500">RUN: ${alumno.run}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-medium text-gray-700">${alumno.hora_registro}</p>
+                        <p class="text-xs text-gray-500">Hora registro</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function actualizarContadoresSalaEstudio() {
+            const ocupados = salaEstudioActual.alumnosRegistrados.length;
+            const maxima = salaEstudioActual.capacidadMaxima;
+            const porcentaje = maxima > 0 ? (ocupados / maxima * 100) : 0;
+
+            // Actualizar números
+            const spanOcupados = document.getElementById('salaEstudioOcupados');
+            const spanMaxima = document.getElementById('salaEstudioCapacidadMax');
+            
+            if (spanOcupados) spanOcupados.textContent = ocupados;
+            if (spanMaxima) spanMaxima.textContent = maxima;
+
+            // Actualizar barra de progreso
+            const progressBar = document.getElementById('salaEstudioProgressBar');
+            if (progressBar) {
+                progressBar.style.width = `${porcentaje}%`;
+                
+                // Cambiar color según ocupación
+                if (porcentaje >= 90) {
+                    progressBar.className = 'bg-red-600 h-4 rounded-full transition-all duration-300';
+                } else if (porcentaje >= 70) {
+                    progressBar.className = 'bg-yellow-500 h-4 rounded-full transition-all duration-300';
+                } else {
+                    progressBar.className = 'bg-pink-600 h-4 rounded-full transition-all duration-300';
+                }
+            }
+        }
+
+        function mostrarNotificacionSalaEstudio(mensaje, tipo = 'info') {
+            const colores = {
+                success: 'bg-green-500',
+                error: 'bg-red-500',
+                warning: 'bg-yellow-500',
+                info: 'bg-blue-500'
+            };
+
+            const iconos = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 ${colores[tipo]} text-white px-6 py-3 rounded-lg shadow-lg z-[10000] transform transition-all duration-300 translate-x-full`;
+            toast.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <i class="fas ${iconos[tipo]}"></i>
+                    <span>${mensaje}</span>
+                </div>
+            `;
+            document.body.appendChild(toast);
+
+            // Animar entrada
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full');
+            }, 100);
+
+            // Remover después de 3 segundos
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+        // Función para abrir modal de registro desde sala de estudio
+        function abrirModalRegistroConRun(run) {
+            console.log('📝 Abriendo modal de registro para RUN:', run);
+            
+            // Guardar el RUN pendiente
+            runSolicitantePendiente = run;
+            
+            // Actualizar el texto en el modal
+            const runElement = document.getElementById('run-solicitante-no-registrado');
+            if (runElement) {
+                runElement.textContent = run;
+            }
+            
+            // Desactivar todos los inputs QR
+            qrInputManager.desactivarTodosLosInputs();
+            
+            // Abrir el modal de registro
+            window.dispatchEvent(new CustomEvent('open-modal', {
+                detail: 'registro-solicitante'
+            }));
+            
+            console.log('📝 Modal de registro abierto');
+        }
+
+        // ============================================================================
+        // FIN FUNCIONES PARA MODAL DE SALA DE ESTUDIO
+        // ============================================================================
+
+>>>>>>> CorreosAsistentes
         function cerrarModalEspacio() {
             const modal = document.getElementById('modal-espacio-info');
             if (modal) {

@@ -70,6 +70,18 @@
                             @error('email')
                                 <p class="text-sm text-red-600">{{ $message }}</p>
                             @enderror
+                            <p class="text-xs text-gray-500">Este correo se usará para enviar comunicaciones oficiales</p>
+                        </div>
+
+                        <div class="space-y-2">
+                            <x-form.label for="nombre_remitente" value="Nombre Remitente" />
+                            <x-form.input id="nombre_remitente" name="nombre_remitente" type="text"
+                                class="w-full @error('nombre_remitente') border-red-500 @enderror" maxlength="150"
+                                placeholder="Ej: Asistencia Académica - Escuela de Ingeniería" value="{{ old('nombre_remitente') }}" />
+                            @error('nombre_remitente')
+                                <p class="text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                            <p class="text-xs text-gray-500">Nombre formal que aparecerá en los correos enviados</p>
                         </div>
                     </div>
 

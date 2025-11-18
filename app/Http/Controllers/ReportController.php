@@ -2113,4 +2113,191 @@ class ReportController extends Controller
         }
         return 'N/A';
     }
-} 
+
+    /**
+     * Reporte de Salas de Estudio
+     */
+    public function salasEstudio(Request $request)
+    {
+        $fechaInicio = $request->input('fecha_inicio', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $fechaFin = $request->input('fecha_fin', Carbon::now()->endOfMonth()->format('Y-m-d'));
+        $salaId = $request->input('sala_id');
+
+        // Obtener todas las salas de estudio
+        $salasEstudio = Espacio::where('tipo_espacio', 'Sala de Estudio')->get();
+
+        // Construir query base
+        $query = Reserva::with(['solicitante', 'espacio'])
+            ->whereHas('espacio', function($q) {
+                $q->where('tipo_espacio', 'Sala de Estudio');
+            })
+            ->whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
+            ->where('observaciones', 'Sala de Estudio')
+            ->orderBy('fecha_reserva')
+            ->orderBy('hora');
+
+        if ($salaId) {
+            $query->where('id_espacio', $salaId);
+        }
+
+        $reservas = $query->get();
+
+        // Agrupar reservas por sesiones
+        $gruposPorSala = [];
+        
+        foreach ($salasEstudio as $sala) {
+            $reservasSala = $reservas->where('id_espacio', $sala->id_espacio);
+            $grupos = $this->agruparReservasPorSesion($reservasSala);
+            
+            if (count($grupos) > 0) {
+                $gruposPorSala[$sala->id_espacio] = [
+                    'sala' => $sala,
+                    'grupos' => $grupos
+                ];
+            }
+        }
+
+        // KPIs
+        $totalAccesos = $reservas->count();
+        $totalGrupos = collect($gruposPorSala)->sum(function($item) {
+            return count($item['grupos']);
+        });
+        $salasUsadas = count($gruposPorSala);
+        $promedioPersonasPorGrupo = $totalGrupos > 0 ? round($totalAccesos / $totalGrupos, 1) : 0;
+
+        return view('reportes.salas-estudio', compact(
+            'gruposPorSala',
+            'salasEstudio',
+            'fechaInicio',
+            'fechaFin',
+            'salaId',
+            'totalAccesos',
+            'totalGrupos',
+            'salasUsadas',
+            'promedioPersonasPorGrupo'
+        ));
+    }
+
+    /**
+     * Agrupar reservas por sesión
+     * Un grupo se forma cuando hay solapamiento de tiempo entre reservas
+     */
+    private function agruparReservasPorSesion($reservas)
+    {
+        $grupos = [];
+        $grupoActual = [];
+        $horaFinGrupo = null;
+
+        foreach ($reservas as $reserva) {
+            // Asegurar que fecha_reserva es un objeto Carbon
+            $fechaReserva = $reserva->fecha_reserva instanceof \Carbon\Carbon 
+                ? $reserva->fecha_reserva 
+                : Carbon::parse($reserva->fecha_reserva);
+            
+            $horaEntrada = Carbon::parse($fechaReserva->format('Y-m-d') . ' ' . $reserva->hora);
+            $horaSalida = $reserva->hora_salida 
+                ? Carbon::parse($fechaReserva->format('Y-m-d') . ' ' . $reserva->hora_salida)
+                : $horaEntrada->copy()->addHours(2);
+
+            // Si el grupo está vacío o hay solapamiento, agregar al grupo actual
+            if (empty($grupoActual) || ($horaFinGrupo && $horaEntrada->lte($horaFinGrupo))) {
+                $grupoActual[] = $reserva;
+                
+                // Actualizar hora fin del grupo (la más tardía)
+                if (!$horaFinGrupo || $horaSalida->gt($horaFinGrupo)) {
+                    $horaFinGrupo = $horaSalida;
+                }
+            } else {
+                // No hay solapamiento, guardar grupo anterior y crear uno nuevo
+                if (count($grupoActual) > 0) {
+                    $primeraReserva = $grupoActual[0];
+                    $primeraFecha = $primeraReserva->fecha_reserva instanceof \Carbon\Carbon 
+                        ? $primeraReserva->fecha_reserva 
+                        : Carbon::parse($primeraReserva->fecha_reserva);
+                    
+                    $grupos[] = [
+                        'reservas' => $grupoActual,
+                        'hora_inicio' => Carbon::parse($primeraFecha->format('Y-m-d') . ' ' . $primeraReserva->hora),
+                        'hora_fin' => $horaFinGrupo,
+                        'fecha' => $primeraFecha
+                    ];
+                }
+                
+                $grupoActual = [$reserva];
+                $horaFinGrupo = $horaSalida;
+            }
+        }
+
+        // Agregar el último grupo
+        if (count($grupoActual) > 0) {
+            $primeraReserva = $grupoActual[0];
+            $primeraFecha = $primeraReserva->fecha_reserva instanceof \Carbon\Carbon 
+                ? $primeraReserva->fecha_reserva 
+                : Carbon::parse($primeraReserva->fecha_reserva);
+            
+            $grupos[] = [
+                'reservas' => $grupoActual,
+                'hora_inicio' => Carbon::parse($primeraFecha->format('Y-m-d') . ' ' . $primeraReserva->hora),
+                'hora_fin' => $horaFinGrupo,
+                'fecha' => $primeraFecha
+            ];
+        }
+
+        return $grupos;
+    }
+
+    /**
+     * Exportar reporte de salas de estudio
+     */
+    public function exportSalasEstudio(Request $request, $format)
+    {
+        $fechaInicio = $request->input('fecha_inicio', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $fechaFin = $request->input('fecha_fin', Carbon::now()->endOfMonth()->format('Y-m-d'));
+        $salaId = $request->input('sala_id');
+
+        // Obtener datos (mismo código que en salasEstudio)
+        $salasEstudio = Espacio::where('tipo_espacio', 'Sala de Estudio')->get();
+
+        $query = Reserva::with(['solicitante', 'espacio'])
+            ->whereHas('espacio', function($q) {
+                $q->where('tipo_espacio', 'Sala de Estudio');
+            })
+            ->whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
+            ->where('observaciones', 'Sala de Estudio')
+            ->orderBy('fecha_reserva')
+            ->orderBy('hora');
+
+        if ($salaId) {
+            $query->where('id_espacio', $salaId);
+        }
+
+        $reservas = $query->get();
+
+        $gruposPorSala = [];
+        foreach ($salasEstudio as $sala) {
+            $reservasSala = $reservas->where('id_espacio', $sala->id_espacio);
+            $grupos = $this->agruparReservasPorSesion($reservasSala);
+            
+            if (count($grupos) > 0) {
+                $gruposPorSala[$sala->id_espacio] = [
+                    'sala' => $sala,
+                    'grupos' => $grupos
+                ];
+            }
+        }
+
+        // Obtener vetos activos
+        $vetosActivos = \App\Models\VetoSalaEstudio::with(['solicitante'])
+            ->where('estado', 'activo')
+            ->orderBy('fecha_veto', 'desc')
+            ->get();
+
+        if ($format === 'pdf') {
+            $pdf = PDF::loadView('reportes.salas-estudio-pdf', compact('gruposPorSala', 'fechaInicio', 'fechaFin', 'vetosActivos'));
+            return $pdf->download('reporte-salas-estudio-' . now()->format('Y-m-d') . '.pdf');
+        }
+
+        // Para Excel, crear Export class más tarde
+        return back()->with('error', 'Formato no soportado aún');
+    }
+}

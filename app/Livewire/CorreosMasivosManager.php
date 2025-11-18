@@ -8,6 +8,7 @@ use App\Models\TipoCorreoMasivo;
 use App\Models\DestinatarioCorreo;
 use App\Models\PlantillaCorreo;
 use App\Models\User;
+use App\Models\AsistenteAcademico;
 use App\Mail\CorreoPersonalizado;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
@@ -89,10 +90,24 @@ class CorreosMasivosManager extends Component
 
     public function mount()
     {
-        // Verificar que el usuario sea administrador
-        if (!auth()->user()->hasRole('Administrador')) {
+        // Verificar que el usuario sea Administrador o Supervisor
+        if (!auth()->user()->hasAnyRole(['Administrador', 'Supervisor'])) {
             abort(403, 'No tienes permisos para acceder a esta sección.');
         }
+    }
+
+    /**
+     * Obtiene el ID del área académica del asistente si el usuario autenticado es uno
+     * 
+     * @return string|null
+     */
+    private function obtenerAreaAcademicaAsistente(): ?string
+    {
+        $userEmail = auth()->user()->email;
+        
+        $asistente = AsistenteAcademico::where('email', $userEmail)->first();
+        
+        return $asistente ? $asistente->id_area_academica : null;
     }
 
     // ============ MÉTODOS PARA TIPOS DE CORREOS ============
@@ -510,10 +525,14 @@ class CorreosMasivosManager extends Component
                             $asuntoPersonalizado = $this->reemplazarVariables($this->envioAsunto, $datosDestinatario);
                             $contenidoPersonalizado = $this->reemplazarVariables($this->envioContenido, $datosDestinatario);
 
+                            // Obtener área académica del asistente si el usuario es uno
+                            $idAreaAcademica = $this->obtenerAreaAcademicaAsistente();
+
                             Mail::to($email)->send(new CorreoPersonalizado(
                                 $asuntoPersonalizado,
                                 $contenidoPersonalizado,
-                                $nombre
+                                $nombre,
+                                $idAreaAcademica
                             ));
                             $emailsEnviados++;
                         } catch (\Exception $e) {
@@ -542,9 +561,14 @@ class CorreosMasivosManager extends Component
                     $asuntoPersonalizado = $this->reemplazarVariables($this->envioAsunto, $datosExternos);
                     $contenidoPersonalizado = $this->reemplazarVariables($this->envioContenido, $datosExternos);
 
+                    // Obtener área académica del asistente si el usuario es uno
+                    $idAreaAcademica = $this->obtenerAreaAcademicaAsistente();
+
                     Mail::to($email)->send(new CorreoPersonalizado(
                         $asuntoPersonalizado,
-                        $contenidoPersonalizado
+                        $contenidoPersonalizado,
+                        null,
+                        $idAreaAcademica
                     ));
                     $emailsEnviados++;
                 } catch (\Exception $e) {

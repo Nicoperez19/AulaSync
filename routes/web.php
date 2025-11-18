@@ -66,8 +66,10 @@ Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::delete('/user/user_delete/{run}', [UserController::class, 'destroy'])->name('users.delete');
     Route::get('/user/user_edit/{run}', [UserController::class, 'edit'])->name('users.edit');
     Route::put('user/user_update/{run}', [UserController::class, 'update'])->name('users.update');
+});
 
-    // Administración de Correos Masivos
+// Administración de Correos Masivos - Administrador y Supervisor
+Route::middleware(['auth', 'role:Administrador|Supervisor'])->group(function () {
     Route::get('/correos-masivos', \App\Livewire\CorreosMasivosManager::class)->name('correos-masivos.index');
 });
 
@@ -322,6 +324,10 @@ Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(fu
     Route::get('espacios/export/{format}', [ReportController::class, 'exportEspacios'])->name('reportes.espacios.export');
     Route::get('accesos/export/{format}', [ReportController::class, 'exportAccesos'])->name('reportes.accesos.export');
     Route::post('accesos/export/{format}', [ReportController::class, 'exportAccesosConFiltros'])->name('reportes.accesos.export.filtros');
+    
+    // Reportes de Salas de Estudio
+    Route::get('salas-estudio', [ReportController::class, 'salasEstudio'])->name('reportes.salas-estudio');
+    Route::get('salas-estudio/export/{format}', [ReportController::class, 'exportSalasEstudio'])->name('reportes.salas-estudio.export');
 });
 
 require __DIR__ . '/auth.php';

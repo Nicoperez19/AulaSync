@@ -47,25 +47,64 @@
             </div>
             @endslot
 
-            <form method="POST" action="{{ route('configuracion.store') }}" class="p-6">
+            <form method="POST" action="{{ route('configuracion.store') }}" class="p-6" enctype="multipart/form-data">
                 @csrf
 
                 <div class="grid gap-4">
                     <div class="space-y-2">
                         <x-form.label for="clave" value="Clave *" />
-                        <x-form.input id="clave" name="clave" type="text"
-                            class="w-full @error('clave') border-red-500 @enderror" required maxlength="100"
-                            placeholder="Ej: logo_institucional" value="{{ old('clave') }}" />
+                        <select id="clave" name="clave" 
+                            class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 @error('clave') border-red-500 @enderror" 
+                            required onchange="toggleLogoUpload()">
+                            <option value="">Seleccione una configuración</option>
+                            <option value="logo_institucional" {{ old('clave') == 'logo_institucional' ? 'selected' : '' }}>Logo Institucional</option>
+                            <option value="other" {{ old('clave') && old('clave') !== 'logo_institucional' ? 'selected' : '' }}>Otra configuración</option>
+                        </select>
                         @error('clave')
                             <p class="text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
 
-                    <div class="space-y-2">
+                    <div id="sede-select-section" class="space-y-2" style="display: none;">
+                        <x-form.label for="id_sede" value="Sede *" />
+                        <select id="id_sede" name="id_sede" 
+                            class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 @error('id_sede') border-red-500 @enderror">
+                            <option value="">Seleccione una sede</option>
+                            @foreach(\App\Models\Sede::all() as $sede)
+                                <option value="{{ $sede->id_sede }}" {{ old('id_sede') == $sede->id_sede ? 'selected' : '' }}>
+                                    {{ $sede->nombre_sede }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('id_sede')
+                            <p class="text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div id="other-clave-input" class="space-y-2" style="display: none;">
+                        <x-form.label for="clave_custom" value="Nombre de la clave *" />
+                        <x-form.input id="clave_custom" name="clave_custom" type="text"
+                            class="w-full @error('clave_custom') border-red-500 @enderror" maxlength="100"
+                            placeholder="Ej: nombre_institucion" value="{{ old('clave_custom') }}" />
+                        @error('clave_custom')
+                            <p class="text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div id="logo-upload-section" class="space-y-2" style="display: none;">
+                        <x-form.label for="logo_create" value="Logo Institucional *" />
+                        <x-form.input id="logo_create" name="logo" type="file" 
+                            class="w-full @error('logo') border-red-500 @enderror" accept="image/*" />
+                        <p class="text-xs text-gray-500">Formatos permitidos: JPEG, PNG, JPG, GIF, SVG (máx. 2MB)</p>
+                        @error('logo')
+                            <p class="text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div id="valor-section" class="space-y-2">
                         <x-form.label for="valor" value="Valor *" />
                         <textarea id="valor" name="valor" rows="3"
-                            class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 @error('valor') border-red-500 @enderror" 
-                            required>{{ old('valor') }}</textarea>
+                            class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 @error('valor') border-red-500 @enderror">{{ old('valor') }}</textarea>
                         @error('valor')
                             <p class="text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -90,6 +129,46 @@
     </div>
 
     <script>
+        function toggleLogoUpload() {
+            var claveSelect = document.getElementById('clave');
+            var logoSection = document.getElementById('logo-upload-section');
+            var valorSection = document.getElementById('valor-section');
+            var otherClaveInput = document.getElementById('other-clave-input');
+            var sedeSection = document.getElementById('sede-select-section');
+            var valorTextarea = document.getElementById('valor');
+            var logoInput = document.getElementById('logo_create');
+            var sedeSelect = document.getElementById('id_sede');
+            
+            if (claveSelect.value === 'logo_institucional') {
+                logoSection.style.display = 'block';
+                valorSection.style.display = 'none';
+                otherClaveInput.style.display = 'none';
+                sedeSection.style.display = 'block';
+                
+                valorTextarea.removeAttribute('required');
+                logoInput.setAttribute('required', 'required');
+                sedeSelect.setAttribute('required', 'required');
+            } else if (claveSelect.value === 'other') {
+                logoSection.style.display = 'none';
+                valorSection.style.display = 'block';
+                otherClaveInput.style.display = 'block';
+                sedeSection.style.display = 'none';
+                
+                valorTextarea.setAttribute('required', 'required');
+                logoInput.removeAttribute('required');
+                sedeSelect.removeAttribute('required');
+            } else {
+                logoSection.style.display = 'none';
+                valorSection.style.display = 'none';
+                otherClaveInput.style.display = 'none';
+                sedeSection.style.display = 'none';
+                
+                valorTextarea.removeAttribute('required');
+                logoInput.removeAttribute('required');
+                sedeSelect.removeAttribute('required');
+            }
+        }
+
         function searchTable() {
             var input = document.getElementById("searchInput").value.toLowerCase();
             var table = document.getElementById("configuracion-table");

@@ -86,7 +86,8 @@
                 :isActive="request()->routeIs('reportes.espacios')" />
             <x-sidebar.sublink title="Análisis por tipo de espacio" href="{{ route('reportes.tipo-espacio') }}"
                 :isActive="request()->routeIs('reportes.tipo-espacio')" />
-
+             <x-sidebar.sublink title="Salas de Estudio" href="{{ route('reportes.salas-estudio') }}"
+                :isActive="request()->routeIs('reportes.salas-estudio')" />
         </x-sidebar.dropdown>
     @endcan
     <!-- Estadísticas Profesores - Solo Administrador y Supervisor -->
@@ -156,10 +157,10 @@
                     :isActive="request()->routeIs('configuracion.*')" />
             @endcan
 
-            @role('Administrador')
+            @hasanyrole('Administrador|Supervisor')
                 <x-sidebar.sublink title="Correos Masivos" href="{{ route('correos-masivos.index') }}"
                     :isActive="request()->routeIs('correos-masivos.*')" />
-            @endrole
+            @endhasanyrole
 
             @can('mantenedor de dias feriados')
                 <x-sidebar.sublink title="Días Feriados" href="{{ route('dias-feriados.index') }}"

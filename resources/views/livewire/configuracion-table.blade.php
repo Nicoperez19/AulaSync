@@ -17,10 +17,27 @@
                 @forelse ($configuraciones as $index => $configuracion)
                     <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
                         <td class="p-3 text-sm font-semibold text-blue-600 border border-white dark:border-white dark:text-blue-400">
-                            {{ $configuracion->clave }}
+                            @if(str_starts_with($configuracion->clave, 'logo_institucional_'))
+                                @php
+                                    $idSede = str_replace('logo_institucional_', '', $configuracion->clave);
+                                    $sede = \App\Models\Sede::find($idSede);
+                                @endphp
+                                <span class="block">{{ $configuracion->clave }}</span>
+                                <span class="block text-xs text-gray-500">Sede: {{ $sede ? $sede->nombre_sede : $idSede }}</span>
+                            @elseif(str_starts_with($configuracion->clave, 'correo_administrativo_') || str_starts_with($configuracion->clave, 'nombre_remitente_'))
+                                @php
+                                    $idFacultad = str_replace(['correo_administrativo_', 'nombre_remitente_'], '', $configuracion->clave);
+                                    $facultad = \App\Models\Facultad::find($idFacultad);
+                                    $tipo = str_starts_with($configuracion->clave, 'correo_administrativo_') ? 'Correo' : 'Nombre';
+                                @endphp
+                                <span class="block">{{ $configuracion->clave }}</span>
+                                <span class="block text-xs text-gray-500">{{ $tipo }} - Escuela: {{ $facultad ? $facultad->nombre_facultad : $idFacultad }}</span>
+                            @else
+                                {{ $configuracion->clave }}
+                            @endif
                         </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
-                            @if($configuracion->clave === 'logo_institucional' && $configuracion->valor)
+                            @if(str_starts_with($configuracion->clave, 'logo_institucional_') && $configuracion->valor)
                                 <img src="{{ asset('storage/images/logo/' . $configuracion->valor) }}" alt="Logo" class="h-10 mx-auto">
                             @else
                                 {{ Str::limit($configuracion->valor, 50) }}

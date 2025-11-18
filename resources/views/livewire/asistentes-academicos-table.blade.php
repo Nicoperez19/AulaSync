@@ -43,10 +43,13 @@
                     <th class="p-3" onclick="sortTable(1)"> Email
                         <span class="sort-icon">▼</span>
                     </th>
-                    <th class="p-3" onclick="sortTable(2)"> Teléfono
+                    <th class="p-3" onclick="sortTable(2)"> Nombre Remitente
                         <span class="sort-icon">▼</span>
                     </th>
-                    <th class="p-3" onclick="sortTable(3)"> Escuela
+                    <th class="p-3" onclick="sortTable(3)"> Teléfono
+                        <span class="sort-icon">▼</span>
+                    </th>
+                    <th class="p-3" onclick="sortTable(4)"> Escuela
                         <span class="sort-icon">▼</span>
                     </th>
                     <th class="p-3">Acciones</th>
@@ -60,6 +63,9 @@
                         </td>
                         <td class="p-3 text-sm font-semibold text-blue-600 border border-white dark:border-white dark:text-blue-400">
                             {{ $asistente->email }}
+                        </td>
+                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
+                            {{ $asistente->nombre_remitente ?? $asistente->nombre }}
                         </td>
                         <td class="p-3 border border-white dark:border-white whitespace-nowrap">
                             {{ $asistente->telefono ?? 'N/A' }}
@@ -88,7 +94,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="p-8 text-center text-gray-500">
+                        <td colspan="6" class="p-8 text-center text-gray-500">
                             <div class="flex flex-col items-center">
                                 <svg class="w-12 h-12 mb-4 text-gray-400" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">

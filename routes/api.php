@@ -404,3 +404,26 @@ Route::get('/tipos-espacios', [EspacioApiController::class, 'listarTiposEspacios
 // Obtener resumen de espacios agrupados por tipo y estado
 Route::get('/espacios/resumen', [EspacioApiController::class, 'resumenEspacios']);
 
+// ========================================
+// RUTAS DE SALAS DE ESTUDIO
+// ========================================
+
+use App\Http\Controllers\SalaEstudioController;
+
+// Registrar acceso a sala de estudio
+Route::post('/sala-estudio/registrar-acceso', [SalaEstudioController::class, 'registrarAcceso']);
+
+// Obtener alumnos registrados en sala de estudio
+Route::get('/sala-estudio/{id_espacio}/alumnos-registrados', [SalaEstudioController::class, 'obtenerAlumnosRegistrados']);
+
+// Gestión de vetos
+Route::post('/sala-estudio/vetar-individual', [SalaEstudioController::class, 'vetarIndividual']);
+Route::post('/sala-estudio/vetar-grupo', [SalaEstudioController::class, 'vetarGrupo']);
+Route::put('/sala-estudio/veto/{id}/liberar', [SalaEstudioController::class, 'liberarVeto']);
+Route::put('/sala-estudio/veto/{id}', [SalaEstudioController::class, 'actualizarVeto']);
+Route::get('/sala-estudio/vetos', [SalaEstudioController::class, 'listarVetados']);
+Route::get('/sala-estudio/vetos/export', [SalaEstudioController::class, 'exportarVetos']);
+
+// Verificar si un RUN existe en solicitantes
+Route::get('/verificar-solicitante/{run}', [App\Http\Controllers\SolicitanteController::class, 'verificarExistencia']);
+
