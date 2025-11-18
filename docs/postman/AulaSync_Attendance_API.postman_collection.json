@@ -1,0 +1,345 @@
+{
+  "info": {
+    "name": "AulaSync - Attendance API",
+    "description": "Collection de Postman para probar el sistema de registro de asistencia en tiempo real",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "api_base",
+      "value": "{{base_url}}/api",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Attendance",
+      "item": [
+        {
+          "name": "01 - Registrar Asistencia (Éxito)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_id\": \"12345678\",\n  \"room_id\": \"A101\",\n  \"student_name\": \"Juan Pérez González\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/attendance",
+              "host": ["{{api_base}}"],
+              "path": ["attendance"]
+            },
+            "description": "Registra exitosamente la asistencia de un estudiante en una sala con reserva activa"
+          },
+          "response": []
+        },
+        {
+          "name": "02 - Registrar Asistencia (con reservation_id)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_id\": \"87654321\",\n  \"reservation_id\": \"R20251118143001\",\n  \"student_name\": \"María López Soto\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/attendance",
+              "host": ["{{api_base}}"],
+              "path": ["attendance"]
+            },
+            "description": "Registra asistencia usando el ID de reserva directamente en lugar del room_id"
+          },
+          "response": []
+        },
+        {
+          "name": "03 - Registrar Asistencia (Sin nombre - Auto-detectar)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_id\": \"11223344\",\n  \"room_id\": \"A101\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/attendance",
+              "host": ["{{api_base}}"],
+              "path": ["attendance"]
+            },
+            "description": "El sistema intenta buscar el nombre del estudiante en la tabla users. Si no lo encuentra, genera uno automáticamente."
+          },
+          "response": []
+        },
+        {
+          "name": "04 - Error: Sin Reserva Activa (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_id\": \"12345678\",\n  \"room_id\": \"SALA_INEXISTENTE\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/attendance",
+              "host": ["{{api_base}}"],
+              "path": ["attendance"]
+            },
+            "description": "Intenta registrar asistencia en una sala sin reserva activa. Debe retornar error 404."
+          },
+          "response": []
+        },
+        {
+          "name": "05 - Error: Asistencia Duplicada (409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_id\": \"12345678\",\n  \"room_id\": \"A101\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/attendance",
+              "host": ["{{api_base}}"],
+              "path": ["attendance"]
+            },
+            "description": "Ejecutar esta request DOS VECES para el mismo estudiante. La segunda vez debe retornar error 409 (Conflict)."
+          },
+          "response": []
+        },
+        {
+          "name": "06 - Error: Validación - Sin student_id (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"room_id\": \"A101\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/attendance",
+              "host": ["{{api_base}}"],
+              "path": ["attendance"]
+            },
+            "description": "Envía request sin student_id. Debe retornar error de validación 422."
+          },
+          "response": []
+        },
+        {
+          "name": "07 - Error: Validación - Sin room_id ni reservation_id (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"student_id\": \"12345678\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/attendance",
+              "host": ["{{api_base}}"],
+              "path": ["attendance"]
+            },
+            "description": "Envía request sin room_id ni reservation_id. Debe retornar error de validación."
+          },
+          "response": []
+        },
+        {
+          "name": "08 - Obtener Asistencias por Reserva",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/attendance/reservation/:reservationId",
+              "host": ["{{api_base}}"],
+              "path": ["attendance", "reservation", ":reservationId"],
+              "variable": [
+                {
+                  "key": "reservationId",
+                  "value": "R20251118143001",
+                  "description": "ID de la reserva a consultar"
+                }
+              ]
+            },
+            "description": "Obtiene el listado completo de asistencias registradas para una reserva específica"
+          },
+          "response": []
+        },
+        {
+          "name": "09 - Error: Reserva No Encontrada (404)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/attendance/reservation/RESERVA_INEXISTENTE",
+              "host": ["{{api_base}}"],
+              "path": ["attendance", "reservation", "RESERVA_INEXISTENTE"]
+            },
+            "description": "Intenta obtener asistencias de una reserva inexistente. Debe retornar 404."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints para el registro y consulta de asistencia"
+    },
+    {
+      "name": "Helpers - Setup Testing",
+      "item": [
+        {
+          "name": "Obtener Reserva Activa de Sala",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/reserva-activa/:roomId",
+              "host": ["{{api_base}}"],
+              "path": ["reserva-activa", ":roomId"],
+              "variable": [
+                {
+                  "key": "roomId",
+                  "value": "A101"
+                }
+              ]
+            },
+            "description": "Helper para obtener información de la reserva activa actual de una sala (útil para testing)"
+          },
+          "response": []
+        },
+        {
+          "name": "Verificar Usuario Existe",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{api_base}}/user/:run",
+              "host": ["{{api_base}}"],
+              "path": ["user", ":run"],
+              "variable": [
+                {
+                  "key": "run",
+                  "value": "12345678"
+                }
+              ]
+            },
+            "description": "Verifica si un usuario/estudiante existe en el sistema"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints auxiliares para preparar el ambiente de testing"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Script pre-request global",
+          "console.log('Ejecutando request a:', pm.request.url.toString());"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Tests automáticos globales",
+          "pm.test('Response time is less than 2000ms', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+          "});",
+          "",
+          "pm.test('Content-Type is application/json', function () {",
+          "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+          "});"
+        ]
+      }
+    }
+  ]
+}
