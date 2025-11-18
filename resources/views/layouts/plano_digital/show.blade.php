@@ -2597,7 +2597,9 @@
                 console.log('🆓 Renderizando como libre');
                 renderizarInformacionLibre(elements, data, indicator);
             }
-        }        // Handler para los botones Desocupar usando delegación de eventos
+        }
+
+        // Handler para los botones Desocupar usando delegación de eventos
         document.addEventListener('DOMContentLoaded', function () {
             // Usar delegación de eventos para manejar todos los botones .btn-desocupar
             document.addEventListener('click', async function (event) {
@@ -2626,66 +2628,67 @@
                 }
 
                 try {
-                const res = await fetch('/api/devolver-espacio', {
-                    method: 'POST',
-                    headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({
-                        run_usuario: runOcupante,
-                        run_administrador: administradorRun,
-                        id_espacio: espacioId,
-                        tipo_desocupacion: 'forzosa'
-                    })
-                });
-
-                const json = await res.json();
-                if (json.success) {
-                    Swal.fire({
-                    title: 'Espacio desocupado',
-                    text: json.mensaje || 'Espacio desocupado correctamente',
-                    icon: 'success',
-                    confirmButtonText: 'Aceptar',
-                    timer: 1500,
-                    timerProgressBar: true,
-                    showConfirmButton: false
+                    const res = await fetch('/api/devolver-espacio', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                        },
+                        body: JSON.stringify({
+                            run_usuario: runOcupante,
+                            run_administrador: administradorRun,
+                            id_espacio: espacioId,
+                            tipo_desocupacion: 'forzosa'
+                        })
                     });
 
-                    // Cerrar modal primero
-                    cerrarModalEspacio();
 
-                    // Forzar actualización inmediata del estado del espacio
-                    const indicatorActual = state.indicators.find(b => b.id === espacioId);
-                    if (indicatorActual) {
-                        indicatorActual.estado = 'libre';
-                        indicatorActual.color = '#10b981'; // Verde para libre
+                    const json = await res.json();
+                    if (json.success) {
+                        Swal.fire({
+                            title: 'Espacio desocupado',
+                            text: json.mensaje || 'Espacio desocupado correctamente',
+                            icon: 'success',
+                            confirmButtonText: 'Aceptar',
+                            timer: 1500,
+                            timerProgressBar: true,
+                            showConfirmButton: false
+                        });
+
+                        // Cerrar modal primero
+                        cerrarModalEspacio();
+
+                        // Forzar actualización inmediata del estado del espacio
+                        const indicatorActual = state.indicators.find(b => b.id === espacioId);
+                        if (indicatorActual) {
+                            indicatorActual.estado = 'libre';
+                            indicatorActual.color = '#10b981'; // Verde para libre
+                        }
+
+                        // Resetear el timestamp para permitir actualización inmediata
+                        state.ultimoCambioLocal = 0;
+
+                        // Actualizar colores del mapa con actualización forzada
+                        await actualizarColoresEspacios(true);
+
+                        // Redibujar los indicadores inmediatamente
+                        drawIndicators();
+                    } else {
+                        Swal.fire({
+                            title: 'Error',
+                            text: json.mensaje || 'No se pudo desocupar el espacio',
+                            icon: 'error',
+                            confirmButtonText: 'Entendido'
+                        });
                     }
-
-                    // Resetear el timestamp para permitir actualización inmediata
-                    state.ultimoCambioLocal = 0;
-
-                    // Actualizar colores del mapa con actualización forzada
-                    await actualizarColoresEspacios(true);
-
-                    // Redibujar los indicadores inmediatamente
-                    drawIndicators();
-                } else {
-                    Swal.fire({
-                    title: 'Error',
-                    text: json.mensaje || 'No se pudo desocupar el espacio',
-                    icon: 'error',
-                    confirmButtonText: 'Entendido'
-                    });
-                }
                 } catch (e) {
-                console.error(e);
-                Swal.fire({
-                    title: 'Error',
-                    text: 'Error al desocupar el espacio',
-                    icon: 'error',
-                    confirmButtonText: 'Entendido'
-                });
+                    console.error(e);
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'Error al desocupar el espacio',
+                        icon: 'error',
+                        confirmButtonText: 'Entendido'
+                    });
                 }
             });
         });
@@ -3183,7 +3186,6 @@
             } else {
                 console.log('🔍 Espacio ocupado según indicator - Manteniendo botón desocupar visible');
             }
-<<<<<<< HEAD
         }
 
         // Funciones para el modal de confirmación de asistentes
@@ -3257,8 +3259,30 @@
         async function registrarAsistencia(idReserva, huboAsistentes) {
             try {
                 const response = await fetch('/api/registrar-asistencia-clase', {
-=======
-        }        
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        id_reserva: idReserva,
+                        hubo_asistentes: huboAsistentes
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    console.log('✅ Asistencia registrada correctamente');
+                    // Actualizar estado del espacio si es necesario
+                    await actualizarColoresEspacios(true);
+                } else {
+                    console.error('❌ Error al registrar asistencia:', data.mensaje);
+                }
+            } catch (error) {
+                console.error('❌ Error en registrarAsistencia:', error);
+            }
+        }
 
         // ============================================================================
         // FUNCIONES PARA MODAL DE SALA DE ESTUDIO
@@ -3594,7 +3618,6 @@
         async function registrarAccesoSalaEstudio(espacioId, run) {
             try {
                 const response = await fetch('/api/sala-estudio/registrar-acceso', {
->>>>>>> CorreosAsistentes
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -3602,7 +3625,7 @@
                     },
                     body: JSON.stringify({
                         id_reserva: idReserva,
-                        hubo_asistentes: huboAsistentes
+                        hubo_asistentes: huboAsistentes,
                         id_espacio: espacioId,
                         run: run
                     })
@@ -3615,16 +3638,6 @@
                 }
             } catch (error) {
                 console.error('Error en registrarAsistencia:', error);
-            }
-        }
-
-                return data;
-            } catch (error) {
-                console.error('❌ Error al registrar acceso:', error);
-                return {
-                    success: false,
-                    mensaje: 'Error de conexión'
-                };
             }
         }
 
