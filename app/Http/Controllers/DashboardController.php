@@ -135,8 +135,19 @@ class DashboardController extends Controller
      * @param string|null $turno 'diurno', 'vespertino' o null para todos
      * @return int Horas disponibles en el turno
      */
-    private function horasPorTurno($turno = null)
+    private function horasPorTurno($turno = null, $esSabado = false)
     {
+        // Si es sábado, solo considerar hasta las 13:00 (5 horas: 08:00 - 13:00)
+        if ($esSabado) {
+            if ($turno === 'diurno') {
+                return 5; // 08:00 - 13:00 = 5 horas
+            } elseif ($turno === 'vespertino') {
+                return 0; // No hay horario vespertino los sábados
+            }
+            return 5; // Total sábado: 08:00 - 13:00 = 5 horas
+        }
+        
+        // Días normales (lunes a viernes)
         if ($turno === 'diurno') {
             return 11; // 08:00 - 19:00 = 11 horas
         } elseif ($turno === 'vespertino') {
@@ -179,11 +190,12 @@ class DashboardController extends Controller
 
         // Iterar por cada día en el rango
         for ($fecha = $inicio->copy(); $fecha->lte($fin); $fecha->addDay()) {
-            // Solo contar días laborales (lunes a viernes)
-            if (!$fecha->isWeekday()) {
+            // Solo contar días laborales (lunes a viernes y sábado)
+            if (!$fecha->isWeekday() && !$fecha->isSaturday()) {
                 continue;
             }
-
+            
+            $esSabado = $fecha->isSaturday();
             $diaSemana = strtolower($fecha->locale('es')->isoFormat('dddd'));
 
             // Filtrar planificaciones para este día
@@ -194,13 +206,27 @@ class DashboardController extends Controller
             // Sumar horas de cada planificación
             foreach ($planificacionesDia as $plan) {
                 if ($plan->modulo && $plan->modulo->hora_inicio && $plan->modulo->hora_termino) {
+                    $horaInicio = $plan->modulo->hora_inicio;
+                    $horaTermino = $plan->modulo->hora_termino;
+                    
+                    // Si es sábado, solo considerar módulos que empiecen antes de las 13:00
+                    if ($esSabado) {
+                        if ($horaInicio >= '13:00:00') {
+                            continue; // Saltar este módulo
+                        }
+                        // Si termina después de las 13:00, cortar en 13:00
+                        if ($horaTermino > '13:00:00') {
+                            $horaTermino = '13:00:00';
+                        }
+                    }
+                    
                     // Filtrar por turno si está especificado
-                    if (!$this->esTurno($plan->modulo->hora_inicio, $turno)) {
+                    if (!$this->esTurno($horaInicio, $turno)) {
                         continue;
                     }
 
-                    $inicio_modulo = Carbon::parse($plan->modulo->hora_inicio);
-                    $fin_modulo = Carbon::parse($plan->modulo->hora_termino);
+                    $inicio_modulo = Carbon::parse($horaInicio);
+                    $fin_modulo = Carbon::parse($horaTermino);
                     $horasTotales += $inicio_modulo->diffInHours($fin_modulo, true);
                 }
             }
@@ -217,10 +243,16 @@ class DashboardController extends Controller
         // Obtener número total de espacios disponibles
         $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)->count();
 
-        // Calcular total de horas disponibles: espacios × días × horas por día (según turno)
-        $diasLaborales = 5; // Lunes a viernes
-        $horasPorDia = $this->horasPorTurno($turno);
-        $totalHoras = $totalEspacios * $diasLaborales * $horasPorDia;
+        // Calcular total de horas disponibles considerando que sábado solo hasta 13:00
+        $totalHoras = 0;
+        for ($dia = $inicioSemana->copy(); $dia->lte($finSemana); $dia->addDay()) {
+            // Solo días laborales (lunes a sábado)
+            if ($dia->isWeekday() || $dia->isSaturday()) {
+                $esSabado = $dia->isSaturday();
+                $horasPorDia = $this->horasPorTurno($turno, $esSabado);
+                $totalHoras += $totalEspacios * $horasPorDia;
+            }
+        }
 
         // 1. Calcular horas desde PLANIFICACIONES (clases programadas)
         $horasPlanificaciones = $this->calcularHorasDesdePlanificaciones($inicioSemana, $finSemana, $piso, null, $turno);
@@ -238,19 +270,46 @@ class DashboardController extends Controller
             ->get();
 
         $horasReservas = $reservas->sum(function($reserva) use ($turno) {
+            // Si es sábado, solo considerar reservas hasta las 13:00
+            $fechaReserva = Carbon::parse($reserva->fecha_reserva);
+            $esSabado = $fechaReserva->isSaturday();
+            
             if ($reserva->hora && $reserva->hora_salida) {
+                $horaInicio = Carbon::parse($reserva->hora)->format('H:i:s');
+                $horaFin = Carbon::parse($reserva->hora_salida)->format('H:i:s');
+                
+                // Si es sábado y la reserva empieza después de las 13:00, no contarla
+                if ($esSabado && $horaInicio >= '13:00:00') {
+                    return 0;
+                }
+                
+                // Si es sábado y termina después de las 13:00, cortar en 13:00
+                if ($esSabado && $horaFin > '13:00:00') {
+                    $horaFin = '13:00:00';
+                }
+                
                 // Filtrar por turno si está especificado
-                if ($turno && !$this->esTurno($reserva->hora, $turno)) {
+                if ($turno && !$this->esTurno($horaInicio, $turno)) {
                     return 0;
                 }
 
-                $inicio = Carbon::parse($reserva->hora);
-                $fin = Carbon::parse($reserva->hora_salida);
+                $inicio = Carbon::parse($horaInicio);
+                $fin = Carbon::parse($horaFin);
                 return $inicio->diffInHours($fin, true); // true para incluir decimales
             }
+            
             // Si no hay hora_salida, verificar turno y asumir 1 módulo de 50 minutos
-            if ($reserva->hora && $turno && !$this->esTurno($reserva->hora, $turno)) {
-                return 0;
+            if ($reserva->hora) {
+                $horaInicio = Carbon::parse($reserva->hora)->format('H:i:s');
+                
+                // Si es sábado y empieza después de las 13:00, no contarla
+                if ($esSabado && $horaInicio >= '13:00:00') {
+                    return 0;
+                }
+                
+                if ($turno && !$this->esTurno($horaInicio, $turno)) {
+                    return 0;
+                }
             }
             return 0.83; // 50/60 horas
         });
