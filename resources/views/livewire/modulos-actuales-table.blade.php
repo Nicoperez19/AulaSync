@@ -189,7 +189,8 @@
                                             </td>
                                         <!-- Columna 2: Espacio -->
                                         <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
-                                            <span class="font-semibold text-blue-700 text-sm">{{ $espacio['id_espacio'] }}</span>
+                                            <div class="font-semibold text-blue-700 text-sm">{{ $espacio['id_espacio'] }}</div>
+                                            <div class="text-gray-600 text-xs">Piso {{ $espacio['piso'] ?? 'N/A' }}</div>
                                         </td>
                                         <!-- Columna 3: Estado -->
                                          <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
@@ -211,16 +212,22 @@
                                                 </span>
                                             @elseif (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']))
                                                 @if($esColaborador)
-                                                    <!-- Clase Colaboradora: mostrar información básica -->
-                                                    <div class="font-medium text-purple-900 text-sm">
-                                                        <div class="flex items-center gap-1 mb-1">
-                                                            <span class="px-2 py-0.5 bg-purple-200 text-purple-700 text-xs font-semibold rounded">TEMPORAL</span>
+                                                    <!-- Clase Colaboradora: mostrar información básica con etiqueta a la derecha -->
+                                                    @php
+                                                        $tipoClase = $espacio['datos_clase']['tipo_clase'] ?? 'temporal';
+                                                        $etiquetaConfig = [
+                                                            'temporal' => ['bg' => 'bg-purple-200', 'text' => 'text-purple-700', 'label' => 'TEMPORAL'],
+                                                            'reforzamiento' => ['bg' => 'bg-orange-200', 'text' => 'text-orange-700', 'label' => 'REFORZAMIENTO'],
+                                                            'recuperacion' => ['bg' => 'bg-green-200', 'text' => 'text-green-700', 'label' => 'RECUPERACIÓN'],
+                                                        ];
+                                                        $etiqueta = $etiquetaConfig[$tipoClase] ?? $etiquetaConfig['temporal'];
+                                                    @endphp
+                                                    <div class="font-medium text-gray-900 text-sm flex items-start justify-between gap-2">
+                                                        <div class="flex-1">
+                                                            <div>{{ $asignatura ?? 'Clase Temporal' }}</div>
+                                                            <div>Prof: {{ $espacio['datos_clase']['profesor']['name'] ?? 'N/A' }}</div>
                                                         </div>
-                                                        <div>{{ $asignatura ?? 'Clase Temporal' }}</div>
-                                                        <div>Prof: {{ $espacio['datos_clase']['profesor']['name'] ?? 'N/A' }}</div>
-                                                        @if(!empty($espacio['datos_clase']['fecha_inicio']))
-                                                            <div class="text-xs text-gray-600">{{ $espacio['datos_clase']['fecha_inicio'] }} - {{ $espacio['datos_clase']['fecha_termino'] ?? '' }}</div>
-                                                        @endif
+                                                        <span class="px-2 py-0.5 {{ $etiqueta['bg'] }} {{ $etiqueta['text'] }} text-xs font-semibold rounded whitespace-nowrap">{{ $etiqueta['label'] }}</span>
                                                     </div>
                                                 @else
                                                     <!-- Clase Regular -->

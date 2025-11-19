@@ -52,7 +52,7 @@ class ProfesorColaboradorController extends Controller
 
         $profesores = Profesor::orderBy('name')->get();
 
-        return view('layouts.profesores_colaboradores.index', compact('profesoresColaboradores', 'profesores'));
+        return view('layouts.clases_temporales.index', compact('profesoresColaboradores', 'profesores'));
     }
 
     /**
@@ -64,7 +64,7 @@ class ProfesorColaboradorController extends Controller
         $asignaturas = Asignatura::with('carrera')->orderBy('nombre_asignatura')->get();
         $espacios = Espacio::with('piso')->orderBy('nombre_espacio')->get();
 
-        return view('layouts.profesores_colaboradores.create', compact('profesores', 'asignaturas', 'espacios'));
+        return view('layouts.clases_temporales.create', compact('profesores', 'asignaturas', 'espacios'));
     }
 
     /**
@@ -157,7 +157,7 @@ class ProfesorColaboradorController extends Controller
     {
         $profesorColaborador->load(['profesor', 'asignatura', 'planificaciones.modulo', 'planificaciones.espacio.piso']);
 
-        return view('layouts.profesores_colaboradores.show', compact('profesorColaborador'));
+        return view('layouts.clases_temporales.show', compact('profesorColaborador'));
     }
 
     /**
@@ -169,8 +169,17 @@ class ProfesorColaboradorController extends Controller
         $profesores = Profesor::orderBy('name')->get();
         $asignaturas = Asignatura::with('carrera')->orderBy('nombre_asignatura')->get();
         $espacios = Espacio::with('piso')->orderBy('nombre_espacio')->get();
+        
+        // Obtener módulos para pasar a la vista
+        $modulos = [
+            1 => '08:10 - 09:00', 2 => '09:10 - 10:00', 3 => '10:10 - 11:00',
+            4 => '11:10 - 12:00', 5 => '12:10 - 13:00', 6 => '13:10 - 14:00',
+            7 => '14:10 - 15:00', 8 => '15:10 - 16:00', 9 => '16:10 - 17:00',
+            10 => '17:10 - 18:00', 11 => '18:10 - 19:00', 12 => '19:10 - 20:00',
+            13 => '20:10 - 21:00', 14 => '21:10 - 22:00', 15 => '22:10 - 23:00',
+        ];
 
-        return view('layouts.profesores_colaboradores.edit', compact('profesorColaborador', 'profesores', 'asignaturas', 'espacios'));
+        return view('layouts.clases_temporales.edit', compact('profesorColaborador', 'profesores', 'asignaturas', 'espacios', 'modulos'));
     }
 
     /**
@@ -178,6 +187,14 @@ class ProfesorColaboradorController extends Controller
      */
     public function update(Request $request, ProfesorColaborador $profesorColaborador)
     {
+        // Si planificaciones viene como JSON string, decodificar
+        $planificaciones = $request->planificaciones;
+        if (is_string($planificaciones)) {
+            $planificaciones = json_decode($planificaciones, true);
+        }
+
+        $request->merge(['planificaciones' => $planificaciones]);
+
         $request->validate([
             'run_profesor_colaborador' => 'required|exists:profesors,run_profesor',
             'nombre_asignatura_temporal' => 'required|string|max:255',

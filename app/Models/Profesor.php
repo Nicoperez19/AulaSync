@@ -92,6 +92,12 @@ class Profesor extends Model
         return $this->hasMany(RecuperacionClase::class, 'run_profesor', 'run_profesor');
     }
 
+    // Relación con Clases Temporales (como colaborador)
+    public function clasesTemporalesColaborador()
+    {
+        return $this->hasMany(ProfesorColaborador::class, 'id_profesor', 'run_profesor');
+    }
+
   
     // Método para obtener el nombre completo
     public function getNombreCompleto()

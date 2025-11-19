@@ -21,6 +21,7 @@ class ProfesorColaborador extends Model
         'fecha_inicio',
         'fecha_termino',
         'estado',
+        'tipo_clase',
     ];
 
     protected $casts = [

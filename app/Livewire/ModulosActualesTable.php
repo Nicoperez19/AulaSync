@@ -544,6 +544,9 @@ class ModulosActualesTable extends Component
                 $this->pisos = collect();
             }
 
+            Log::info('ModulosActuales - Pisos cargados: ' . $this->pisos->count());
+            Log::info('ModulosActuales - Módulo actual: ' . json_encode($this->moduloActual));
+
             // Resto del procesamiento existente...
             if ($this->moduloActual) {
                 // Determinar el período actual usando el helper
@@ -554,10 +557,15 @@ class ModulosActualesTable extends Component
                 // Buscar el módulo en la base de datos para obtener el ID
                 // El id_modulo tiene formato "JU.1", "LU.10", etc. Necesitamos extraer el número
                 $diaActual = Carbon::now()->locale('es')->isoFormat('dddd');
+                
+                // Normalizar el día (quitar tildes)
+                $diaActual = strtolower($diaActual);
+                $diaActual = str_replace(['á', 'é', 'í', 'ó', 'ú'], ['a', 'e', 'i', 'o', 'u'], $diaActual);
+                
                 $prefijoDia = '';
 
                 // Mapear el día a su prefijo
-                switch (strtolower($diaActual)) {
+                switch ($diaActual) {
                     case 'lunes':
                         $prefijoDia = 'LU';
                         break;
@@ -580,6 +588,12 @@ class ModulosActualesTable extends Component
                     ->where('dia', $diaActual)
                     ->first();
 
+                Log::info('ModulosActuales - Buscando módulo:', [
+                    'id_modulo' => $idModulo,
+                    'dia' => $diaActual,
+                    'encontrado' => $moduloDB ? 'SÍ' : 'NO'
+                ]);
+
                 if ($moduloDB) {
                     // Obtener todas las planificaciones del módulo actual con eager loading optimizado
                     $planificacionesActivas = Planificacion_Asignatura::with([
@@ -594,6 +608,10 @@ class ModulosActualesTable extends Component
                         })
                         ->get()
                         ->keyBy('id_espacio'); // Indexar por espacio para búsqueda rápida
+
+                    Log::info('ModulosActuales - Planificaciones activas encontradas: ' . $planificacionesActivas->count());
+                    Log::info('ModulosActuales - ID Módulo buscado: ' . $moduloDB->id_modulo);
+                    Log::info('ModulosActuales - Periodo: ' . $periodo);
 
                     // Obtener planificaciones de profesores colaboradores vigentes
                     $planificacionesColaboradores = PlanificacionProfesorColaborador::with([
@@ -655,7 +673,9 @@ class ModulosActualesTable extends Component
 
                 foreach ($this->pisos as $piso) {
                     $espaciosPiso = [];
-                    foreach ($piso->espacios as $espacio) {
+                    // Ordenar espacios alfabéticamente por id_espacio
+                    $espaciosOrdenados = $piso->espacios->sortBy('id_espacio')->values();
+                    foreach ($espaciosOrdenados as $espacio) {
                         // Buscar si el espacio tiene una planificación activa (búsqueda O(1))
                         $planificacionActiva = $planificacionesActivas->get($espacio->id_espacio);
 
@@ -720,6 +740,17 @@ class ModulosActualesTable extends Component
                             $colaborador = $planificacionColaborador->profesorColaborador;
 
                             if ($colaborador) {
+                                $horaInicio = $this->moduloActual['inicio'] ?? '--:--';
+                                $horaFin = $this->moduloActual['fin'] ?? '--:--';
+                                
+                                // Eliminar segundos de las horas (formato HH:mm:ss a HH:mm)
+                                if (strlen($horaInicio) > 5) {
+                                    $horaInicio = substr($horaInicio, 0, 5);
+                                }
+                                if (strlen($horaFin) > 5) {
+                                    $horaFin = substr($horaFin, 0, 5);
+                                }
+                                
                                 $datosClase = [
                                     'codigo_asignatura' => 'TEMP',
                                     'nombre_asignatura' => $colaborador->nombre_asignatura ?? $colaborador->nombre_asignatura_temporal ?? '-',
@@ -730,14 +761,26 @@ class ModulosActualesTable extends Component
                                     'carrera' => ($colaborador->asignatura && $colaborador->asignatura->carrera) ? $colaborador->asignatura->carrera->nombre : 'Asignatura Temporal',
                                     'modulo_inicio' => $this->moduloActual['numero'] ?? '--',
                                     'modulo_fin' => $this->moduloActual['numero'] ?? '--',
-                                    'hora_inicio' => $this->moduloActual['inicio'] ?? '--:--',
-                                    'hora_fin' => $this->moduloActual['fin'] ?? '--:--',
+                                    'hora_inicio' => $horaInicio,
+                                    'hora_fin' => $horaFin,
                                     'es_colaborador' => true,
-                                    'fecha_inicio' => $colaborador->fecha_inicio ? $colaborador->fecha_inicio->format('d/m/Y') : '-',
-                                    'fecha_termino' => $colaborador->fecha_termino ? $colaborador->fecha_termino->format('d/m/Y') : '-',
+                                    'tipo_clase' => $colaborador->tipo_clase ?? 'temporal',
                                 ];
                             }
                         } elseif ($planificacionActiva) {
+                            // Validar que la planificación tenga asignatura
+                            if (!$planificacionActiva->asignatura) {
+                                Log::warning('Planificación sin asignatura', [
+                                    'id_planificacion' => $planificacionActiva->id,
+                                    'id_espacio' => $espacio->id_espacio,
+                                    'id_modulo' => $planificacionActiva->id_modulo
+                                ]);
+                                // Saltar esta planificación
+                                $planificacionActiva = null;
+                            }
+                        }
+                        
+                        if ($planificacionActiva && $planificacionActiva->asignatura) {
                             $tieneClase = true;
 
                             // Obtener todas las planificaciones de esta asignatura usando datos pre-cargados
@@ -825,7 +868,7 @@ class ModulosActualesTable extends Component
                         $claseFinalizada = false;
                         $claseTerminoAntes = false;
 
-                        if ($tieneClase) {
+                        if ($tieneClase && $planificacionActiva && $planificacionActiva->asignatura) {
                             // Obtener los números de módulos para verificar estado
                             $planificacionesAsignatura = $todasLasPlanificaciones->get($planificacionActiva->id_asignatura, collect())
                                 ->sortBy(function ($planificacion) {
@@ -881,14 +924,23 @@ class ModulosActualesTable extends Component
                             if ($this->moduloActual && isset($this->moduloActual['tipo'])) {
                                 if ($this->moduloActual['tipo'] === 'break') {
                                     // En break: verificar si el siguiente módulo es mayor al de inicio de la clase
-                                    $claseYaDebioEmpezar = $this->moduloActual['numero'] > $numeroModuloInicio;
+                                    $claseYaDebioEmpezar = $this->moduloActual['numero'] >= $numeroModuloInicio;
                                 } else {
                                     // En módulo: verificar si estamos en o después del módulo de inicio
                                     $claseYaDebioEmpezar = $this->moduloActual['numero'] >= $numeroModuloInicio;
                                 }
                             }
 
-                            $estado = $claseYaDebioEmpezar ? 'Clase por iniciar' : 'Disponible';
+                            // Si la clase ya debió empezar pero el profesor no ha llegado, marcarla como "Clase por iniciar"
+                            // Si la clase aún no debía empezar, el espacio está "Disponible" (con próxima clase)
+                            if ($claseYaDebioEmpezar) {
+                                $estado = 'Clase por iniciar';
+                            } else {
+                                // La clase es más tarde, mostrar como disponible pero conservar la información de la clase
+                                $estado = 'Disponible';
+                                // La información de la clase ya está en $datosClase, mantenerla
+                                // No modificar $tieneClase ni $datosClase para que se muestre en la vista
+                            }
                         } elseif ($proximaClase) {
                             $estado = 'Clase por iniciar';
                         } else {
@@ -911,19 +963,19 @@ class ModulosActualesTable extends Component
                             'capacidad_maxima' => (($tieneClase ?? false) && isset($datosClase['inscritos']) && $datosClase['inscritos'] > 0)
                                 ? $datosClase['inscritos']
                                 : ($espacio->capacidad_maxima ?? 0),
-                            // Solo mostrar información de clase si el estado no es simplemente "Disponible"
-                            'tiene_clase' => (($tieneClase ?? false) && $estado !== 'Disponible'),
+                            // Mostrar información de clase siempre que exista, independientemente del estado
+                            'tiene_clase' => $tieneClase ?? false,
                             'tiene_reserva_solicitante' => $tieneReservaSolicitante ?? false,
-                            'tiene_reserva_profesor' => (($tieneReservaProfesor ?? false) && $estado !== 'Disponible'),
-                            'datos_clase' => ($estado !== 'Disponible') ? $datosClase : null,
+                            'tiene_reserva_profesor' => $tieneReservaProfesor ?? false,
+                            'datos_clase' => $datosClase,
                             'datos_solicitante' => $datosSolicitante,
-                            'datos_profesor' => ($estado !== 'Disponible') ? $datosProfesor : null,
+                            'datos_profesor' => $datosProfesor,
                             'modulo' => [
                                 'numero' => $this->moduloActual['numero'] ?? '--',
                                 'inicio' => $this->moduloActual['inicio'] ?? '--:--',
                                 'fin' => $this->moduloActual['fin'] ?? '--:--',
                             ],
-                            'piso' => $piso->nombre_piso ?? 'N/A',
+                            'piso' => 'Piso ' . ($piso->numero_piso ?? 'N/A'),
                             'proxima_clase' => $proximaClase,
                             'rango_disponibilidad' => $rangoDisponibilidad,
                             'es_recuperacion' => $esRecuperacion,
@@ -931,12 +983,20 @@ class ModulosActualesTable extends Component
                     }
                     $this->espacios[$piso->id] = $espaciosPiso;
                 }
+
+                Log::info('ModulosActuales - Total espacios procesados: ' . count($this->espacios));
+                foreach ($this->pisos as $piso) {
+                    $count = isset($this->espacios[$piso->id]) ? count($this->espacios[$piso->id]) : 0;
+                    Log::info("  Piso {$piso->id}: {$count} espacios");
+                }
             } else {
                 // Procesar espacios cuando no hay módulo activo
                 $this->espacios = [];
                 foreach ($this->pisos as $piso) {
                     $espaciosPiso = [];
-                    foreach ($piso->espacios as $espacio) {
+                    // Ordenar espacios alfabéticamente por id_espacio
+                    $espaciosOrdenados = $piso->espacios->sortBy('id_espacio')->values();
+                    foreach ($espaciosOrdenados as $espacio) {
                         $espaciosPiso[] = [
                             'id_espacio' => $espacio->id_espacio ?? 'N/A',
                             'nombre_espacio' => $espacio->nombre_espacio ?? 'N/A',
@@ -951,7 +1011,7 @@ class ModulosActualesTable extends Component
                             'datos_solicitante' => null,
                             'datos_profesor' => null,
                             'modulo' => null,
-                            'piso' => $piso->nombre_piso ?? 'N/A',
+                            'piso' => 'Piso ' . ($piso->numero_piso ?? 'N/A'),
                             'proxima_clase' => null,
                         ];
                     }
@@ -984,15 +1044,18 @@ class ModulosActualesTable extends Component
                     continue;
                 }
 
-                // Excluir TH-AUD específicamente
-                if (isset($espacio['id_espacio']) && $espacio['id_espacio'] === 'TH-AUD') {
-                    continue;
-                }
-
-                $espacio['piso'] = $piso->numero_piso;
+                // Ya no es necesario asignar el piso aquí porque ya viene de actualizarDatos()
+                // $espacio['piso'] ya está definido como $piso->nombre_piso
                 $todosLosEspacios[] = $espacio;
             }
         }
+
+        // Ordenar todos los espacios alfabéticamente por id_espacio
+        usort($todosLosEspacios, function ($a, $b) {
+            return strcmp($a['id_espacio'], $b['id_espacio']);
+        });
+
+        Log::info('getTodosLosEspacios - Total espacios a mostrar: ' . count($todosLosEspacios));
 
         return $todosLosEspacios;
     }

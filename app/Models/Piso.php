@@ -31,4 +31,12 @@ class Piso extends Model
     {
         return $this->hasMany(Espacio::class);
     }
+
+    /**
+     * Accessor para obtener el nombre del piso
+     */
+    public function getNombrePisoAttribute()
+    {
+        return 'Piso ' . $this->numero_piso;
+    }
 }

@@ -202,6 +202,23 @@
                                            placeholder="Número de estudiantes">
                                 </div>
 
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                                        Tipo de Clase <span class="text-red-500">*</span>
+                                    </label>
+                                    <select name="tipo_clase" required id="tipo_clase"
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-red-500">
+                                        <option value="temporal">Temporal</option>
+                                        <option value="reforzamiento">Reforzamiento</option>
+                                        <option value="recuperacion">Recuperación</option>
+                                    </select>
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        <span class="inline-block px-2 py-0.5 bg-purple-200 text-purple-700 rounded mr-2">Temporal</span>
+                                        <span class="inline-block px-2 py-0.5 bg-orange-200 text-orange-700 rounded mr-2">Reforzamiento</span>
+                                        <span class="inline-block px-2 py-0.5 bg-green-200 text-green-700 rounded">Recuperación</span>
+                                    </p>
+                                </div>
+
                                 <div class="md:col-span-2">
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Descripción (opcional)</label>
                                     <textarea name="descripcion" rows="3" id="descripcion"

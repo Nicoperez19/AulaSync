@@ -343,12 +343,12 @@
 
                         <!-- Paso 2: Ahora -->
                         <div class="flex flex-col items-center flex-1">
-                            <div class="flex items-center justify-center w-12 h-12 mb-3 text-white bg-blue-500 rounded-full">
+                            <div id="pasoAhoraIcono" class="flex items-center justify-center w-12 h-12 mb-3 text-white bg-blue-500 rounded-full">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                             </div>
-                            <div class="text-xs font-medium text-blue-600 uppercase mb-3">Ahora</div>
+                            <div id="pasoAhoraEtiqueta" class="text-xs font-medium text-blue-600 uppercase mb-3">Ahora</div>
                             <div id="pasoEstadoActual" class="w-full px-4 py-3 text-sm text-center bg-blue-50 border border-blue-200 rounded-lg min-h-[80px] flex items-center justify-center">
                                 <p class="text-gray-400 text-xs">Sin información</p>
                             </div>
@@ -2366,6 +2366,8 @@
                 pasoClaseAnterior: document.getElementById('pasoClaseAnterior'),
                 pasoEstadoActual: document.getElementById('pasoEstadoActual'),
                 pasoClaseProxima: document.getElementById('pasoClaseProxima'),
+                pasoAhoraIcono: document.getElementById('pasoAhoraIcono'),
+                pasoAhoraEtiqueta: document.getElementById('pasoAhoraEtiqueta'),
                 tipoEspacio: document.getElementById('tipoEspacio'),
                 capacidadEspacio: document.getElementById('capacidadEspacio'),
                 pisoEspacio: document.getElementById('pisoEspacio'),
@@ -2771,6 +2773,36 @@
             if (elements.proximaClaseContainer) elements.proximaClaseContainer.style.display = 'none';
             if (elements.claseActualContainer) elements.claseActualContainer.style.display = 'none';
             
+            // Determinar si hay una reserva pendiente (espacio tiene reserva pero aún no inicia)
+            // Si existe proxima_clase pero NO hay asignatura activa, es una reserva pendiente
+            const tieneReservaPendiente = data.proxima_clase && data.proxima_clase.asignatura && !data.asignatura;
+            
+            console.log('🟡 ¿Tiene reserva pendiente?:', tieneReservaPendiente, {
+                proxima_clase: data.proxima_clase?.asignatura,
+                asignatura_actual: data.asignatura
+            });
+            
+            // Actualizar icono y etiqueta del paso "Ahora" según estado
+            if (elements.pasoAhoraIcono) {
+                if (tieneReservaPendiente) {
+                    // Amarillo para reserva pendiente
+                    elements.pasoAhoraIcono.className = 'flex items-center justify-center w-12 h-12 mb-3 text-white bg-yellow-500 rounded-full';
+                    console.log('🟡 Icono "Ahora" cambiado a AMARILLO - Reserva pendiente');
+                } else {
+                    // Azul por defecto
+                    elements.pasoAhoraIcono.className = 'flex items-center justify-center w-12 h-12 mb-3 text-white bg-blue-500 rounded-full';
+                    console.log('🔵 Icono "Ahora" mantenido en AZUL - Sin reserva pendiente');
+                }
+            }
+            
+            if (elements.pasoAhoraEtiqueta) {
+                if (tieneReservaPendiente) {
+                    elements.pasoAhoraEtiqueta.className = 'text-xs font-medium text-yellow-600 uppercase mb-3';
+                } else {
+                    elements.pasoAhoraEtiqueta.className = 'text-xs font-medium text-blue-600 uppercase mb-3';
+                }
+            }
+            
             // Clase Anterior
             if (elements.pasoClaseAnterior) {
                 const anterior = data.clase_anterior;
@@ -2791,7 +2823,26 @@
             // Estado Actual (Ahora)
             if (elements.pasoEstadoActual) {
                 console.log('📊 Estado actual - asignatura:', data.asignatura, 'nombre:', data.nombre);
-                if (data.asignatura) {
+                
+                // Actualizar clases del contenedor según estado
+                if (tieneReservaPendiente) {
+                    elements.pasoEstadoActual.className = 'w-full px-4 py-3 text-sm text-center bg-yellow-50 border border-yellow-200 rounded-lg min-h-[80px] flex items-center justify-center';
+                } else {
+                    elements.pasoEstadoActual.className = 'w-full px-4 py-3 text-sm text-center bg-blue-50 border border-blue-200 rounded-lg min-h-[80px] flex items-center justify-center';
+                }
+                
+                if (tieneReservaPendiente) {
+                    // Mostrar mensaje de reserva pendiente
+                    const proxima = data.proxima_clase;
+                    elements.pasoEstadoActual.innerHTML = `
+                        <div class="text-center">
+                            <div class="font-semibold text-yellow-700 mb-2">Aún no inicia la clase</div>
+                            <div class="text-xs text-gray-600 mb-1">${proxima.asignatura}</div>
+                            ${proxima.profesor ? `<div class="text-xs text-gray-500 mb-1">${proxima.profesor}</div>` : ''}
+                            ${proxima.hora_inicio ? `<div class="text-xs text-yellow-600">Inicia: ${proxima.hora_inicio}</div>` : ''}
+                        </div>
+                    `;
+                } else if (data.asignatura) {
                     const horario = data.hora_inicio && data.hora_termino ? 
                         `${data.hora_inicio} - ${data.hora_termino}` : 
                         (data.hora_inicio || '');
@@ -2818,7 +2869,8 @@
             if (elements.pasoClaseProxima) {
                 const proxima = data.proxima_clase;
                 console.log('📊 Próxima clase:', proxima);
-                if (proxima && proxima.asignatura) {
+                if (proxima && proxima.asignatura && !tieneReservaPendiente) {
+                    // Solo mostrar próxima clase si no está siendo mostrada en "Ahora"
                     elements.pasoClaseProxima.innerHTML = `
                         <div class="text-center">
                             <div class="font-semibold text-gray-800 mb-1">${proxima.asignatura}</div>

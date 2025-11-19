@@ -125,8 +125,22 @@ class PlanoDigitalController extends Controller
         $moduloActual = $this->obtenerModuloActual($estadoActual);
         $planificacionesActivas = $this->obtenerPlanificacionesActivas($mapa, $moduloActual);
         $planificacionesProximas = $this->obtenerPlanificacionesProximas($mapa, $estadoActual);
+        
+        // Obtener reservas próximas (próximos 10 minutos)
+        $horaActual = Carbon::now();
+        $horaLimite = $horaActual->copy()->addMinutes(10)->format('H:i:s');
+        $horaActualStr = $horaActual->format('H:i:s');
+        $fechaActual = now()->toDateString();
+        
+        $reservasProximas = Reserva::with(['asignatura', 'profesor', 'solicitante'])
+            ->where('fecha_reserva', $fechaActual)
+            ->where('estado', 'activa')
+            ->where('hora', '>', $horaActualStr)
+            ->where('hora', '<=', $horaLimite)
+            ->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'))
+            ->get();
 
-        return $mapa->bloques->map(function ($bloque) use ($planificacionesActivas, $planificacionesProximas, $mapa) {
+        return $mapa->bloques->map(function ($bloque) use ($planificacionesActivas, $planificacionesProximas, $reservasProximas, $mapa) {
             $idEspacio = $bloque->id_espacio;
             $espacio = $bloque->espacio;
 
@@ -165,10 +179,12 @@ class PlanoDigitalController extends Controller
                 // 3. Verificar planificaciones (actuales y próximas)
                 $planificacionActiva = $planificacionesActivas->firstWhere('id_espacio', $idEspacio);
                 $planificacionProxima = $planificacionesProximas->firstWhere('id_espacio', $idEspacio);
+                $reservaProxima = $reservasProximas->firstWhere('id_espacio', $idEspacio);
+                
                 if ($planificacionActiva) {
                     $estadoFinal = 'Reservado'; // Naranja (reservado)
-                } elseif ($planificacionProxima) {
-                    $estadoFinal = 'Proximo'; // Azul (próximo)
+                } elseif ($planificacionProxima || $reservaProxima) {
+                    $estadoFinal = 'Reservado'; // Naranja (reservado) - Cambiado de 'Proximo' a 'Reservado' para consistencia
                 } else {
                     // 4. No hay actividad = Disponible
                     $estadoFinal = 'Disponible';
@@ -457,13 +473,25 @@ class PlanoDigitalController extends Controller
             ->where('estado', 'activa')
             ->get();
 
+        // Obtener reservas próximas (próximos 10 minutos)
+        $horaLimite = $horaActual->copy()->addMinutes(10)->format('H:i:s');
+        $reservasProximas = Reserva::with(['asignatura', 'profesor', 'solicitante'])
+            ->where('fecha_reserva', $horaActual->toDateString())
+            ->where('estado', 'activa')
+            ->where('hora', '>', $horaActualStr)
+            ->where('hora', '<=', $horaLimite)
+            ->get();
+
         return response()->json([
             'success' => true,
-            'espacios' => $espacios->map(function($espacio) use ($horaActual, $horaActualStr, $diaActual, $planificacionesActivas, $reservasActivas) {
+            'espacios' => $espacios->map(function($espacio) use ($horaActual, $horaActualStr, $diaActual, $planificacionesActivas, $reservasActivas, $reservasProximas) {
                 $estadoTabla = $espacio->estado; // Estado actual en la tabla espacios
 
                 // Verificar si el espacio está ocupado por una reserva activa
                 $tieneReservaActiva = $reservasActivas->where('id_espacio', $espacio->id_espacio)->isNotEmpty();
+
+                // Verificar si el espacio tiene una reserva próxima
+                $tieneReservaProxima = $reservasProximas->where('id_espacio', $espacio->id_espacio)->isNotEmpty();
 
                 // Verificar si el espacio tiene una clase programada que debería estar en curso
                 $claseEnCurso = $planificacionesActivas->where('id_espacio', $espacio->id_espacio)
@@ -501,9 +529,9 @@ class PlanoDigitalController extends Controller
                 } elseif ($tieneClaseEnCurso && $estadoTabla !== 'Ocupado') {
                     // Clase en curso en el módulo actual - mostrar naranja
                     $estado = 'Reservado'; // Naranja
-                } elseif ($tieneClaseProxima) {
-                    // Clase próxima (siguiente módulo) - mostrar azul
-                    $estado = 'Proximo';
+                } elseif ($tieneClaseProxima || $tieneReservaProxima) {  // ← AGREGADO $tieneReservaProxima
+                    // Clase próxima o reserva próxima - mostrar Reservado
+                    $estado = 'Reservado'; // Cambiado de 'Proximo' a 'Reservado' para consistencia
                 } elseif ($estadoTabla === 'Disponible') {
                     $estado = 'Disponible';
                 } else {

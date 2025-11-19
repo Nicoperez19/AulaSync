@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('profesores_colaboradores', function (Blueprint $table) {
-            $table->integer('cantidad_inscritos')->unsigned()->default(0)->after('descripcion');
+            $table->enum('tipo_clase', ['temporal', 'reforzamiento', 'recuperacion'])->default('temporal')->after('estado');
         });
     }
 
@@ -22,7 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('profesores_colaboradores', function (Blueprint $table) {
-            $table->dropColumn('cantidad_inscritos');
+            $table->dropColumn('tipo_clase');
         });
     }
 };

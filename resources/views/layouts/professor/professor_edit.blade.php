@@ -154,6 +154,112 @@
         </form>
     </div>
 
+    <!-- Sección de Clases Temporales como Colaborador -->
+    @if($clasesTemporales->count() > 0)
+        <div class="mt-8 p-6 bg-white rounded-lg shadow-lg">
+            <div class="mb-6 pb-4 border-b border-gray-200">
+                <h3 class="text-2xl font-bold leading-tight flex items-center gap-3">
+                    <div class="p-2 rounded-lg" style="background-color: #cd1627;">
+                        <i class="text-lg text-white fa-solid fa-graduation-cap"></i>
+                    </div>
+                    Clases Temporales como Colaborador
+                </h3>
+                <p class="text-sm text-gray-600 mt-2">Clases donde este profesor colabora como profesor adicional</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                @foreach($clasesTemporales as $clase)
+                    <div class="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
+                        <!-- Header con color -->
+                        <div class="p-4" style="background-color: #cd1627;">
+                            <h4 class="text-lg font-semibold text-white truncate">
+                                {{ $clase->nombre_asignatura_temporal }}
+                            </h4>
+                            <p class="text-sm text-red-100">
+                                @if($clase->asignatura)
+                                    {{ $clase->asignatura->nombre_asignatura }}
+                                @else
+                                    Asignatura Temporal
+                                @endif
+                            </p>
+                        </div>
+
+                        <!-- Contenido -->
+                        <div class="p-4 space-y-3">
+                            <!-- Fechas -->
+                            <div class="flex items-start gap-2">
+                                <i class="text-red-600 fa-solid fa-calendar mt-1 text-sm"></i>
+                                <div class="text-sm">
+                                    <p class="text-gray-600">
+                                        <strong>{{ \Carbon\Carbon::parse($clase->fecha_inicio)->locale('es')->format('d M') }}</strong>
+                                        -
+                                        <strong>{{ \Carbon\Carbon::parse($clase->fecha_termino)->locale('es')->format('d M Y') }}</strong>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Horarios -->
+                            @if($clase->planificaciones->count() > 0)
+                                <div class="flex items-start gap-2">
+                                    <i class="text-red-600 fa-solid fa-clock mt-1 text-sm"></i>
+                                    <div class="text-sm flex-1">
+                                        <p class="text-gray-600">
+                                            <strong>{{ $clase->planificaciones->count() }}</strong> módulo(s) asignado(s)
+                                        </p>
+                                    </div>
+                                </div>
+                            @endif
+
+                            <!-- Cantidad de inscritos -->
+                            <div class="flex items-start gap-2">
+                                <i class="text-red-600 fa-solid fa-users mt-1 text-sm"></i>
+                                <div class="text-sm">
+                                    <p class="text-gray-600">
+                                        <strong>{{ $clase->cantidad_inscritos }}</strong> estudiante(s)
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Estado -->
+                            <div class="flex items-center gap-2">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                                    @if($clase->estado === 'Activo')
+                                        style="background-color: #d1fae5; color: #065f46;"
+                                    @else
+                                        style="background-color: #fee2e2; color: #991b1b;"
+                                    @endif
+                                >
+                                    {{ $clase->estado }}
+                                </span>
+                            </div>
+
+                            <!-- Enlace a clase -->
+                            <div class="pt-2 border-t border-gray-100">
+                                <a href="{{ route('clases-temporales.show', $clase->id) }}"
+                                   class="text-sm font-medium text-white rounded block text-center py-2 transition-opacity hover:opacity-90"
+                                   style="background-color: #cd1627;">
+                                    Ver Clase Temporal
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+    @else
+        @if($profesor->tipo_profesor === 'Profesor Colaborador')
+            <div class="mt-8 p-6 bg-blue-50 border border-blue-200 rounded-lg">
+                <div class="flex items-center gap-3">
+                    <i class="text-2xl text-blue-600 fa-solid fa-info-circle"></i>
+                    <div>
+                        <h3 class="font-semibold text-blue-900">Sin Clases Temporales</h3>
+                        <p class="text-sm text-blue-700">Este profesor aún no está asignado a ninguna clase temporal.</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+    @endif
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const form = document.getElementById('edit-professor-form');

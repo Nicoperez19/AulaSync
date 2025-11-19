@@ -81,9 +81,22 @@ Route::middleware(['auth', 'permission:reportes'])->group(function () {
     Route::get('/clases-no-realizadas', [\App\Http\Controllers\ClasesNoRealizadasController::class, 'index'])->name('clases-no-realizadas.index');
 });
 
-// Profesores Colaboradores - Administrador y Supervisor
+// Clases Temporales - Administrador y Supervisor
 Route::middleware(['auth', 'role:Administrador|Supervisor'])->group(function () {
-    Route::resource('profesores-colaboradores', ProfesorColaboradorController::class);
+    Route::get('/clases-temporales', [ProfesorColaboradorController::class, 'index'])->name('clases-temporales.index');
+    Route::post('/clases-temporales', [ProfesorColaboradorController::class, 'store'])->name('clases-temporales.store');
+    Route::get('/clases-temporales/create', [ProfesorColaboradorController::class, 'create'])->name('clases-temporales.create');
+    Route::get('/clases-temporales/{profesorColaborador}', [ProfesorColaboradorController::class, 'show'])->name('clases-temporales.show');
+    Route::get('/clases-temporales/{profesorColaborador}/edit', [ProfesorColaboradorController::class, 'edit'])->name('clases-temporales.edit');
+    Route::put('/clases-temporales/{profesorColaborador}', [ProfesorColaboradorController::class, 'update'])->name('clases-temporales.update');
+    Route::patch('/clases-temporales/{profesorColaborador}', [ProfesorColaboradorController::class, 'update']);
+    Route::delete('/clases-temporales/{profesorColaborador}', [ProfesorColaboradorController::class, 'destroy'])->name('clases-temporales.destroy');
+});
+
+// APIs de Clases Temporales
+Route::middleware(['auth', 'role:Administrador|Supervisor'])->group(function () {
+    Route::post('/api/clases-temporales/salas-disponibles', [ProfesorColaboradorController::class, 'getSalasDisponibles'])->name('clases-temporales.getSalasDisponibles');
+    Route::get('/api/clases-temporales/horarios-ocupados', [ProfesorColaboradorController::class, 'getHorariosOcupados'])->name('clases-temporales.getHorariosOcupados');
 });
 
 // Horarios profesores - Solo Administrador y Supervisor
