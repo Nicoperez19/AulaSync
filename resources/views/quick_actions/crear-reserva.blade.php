@@ -12,7 +12,7 @@
                     <h1 class="text-2xl font-bold text-gray-900">Crear Nueva Reserva</h1>
                     <p class="text-gray-600 mt-1">Registrar reserva para profesor o solicitante externo</p>
                 </div>
-                <a href="{{ route('quick-actions.index') }}" 
+                <a href="{{ route('quick-actions.index') }}"
                    class="inline-flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
                     <i class="fa-solid fa-arrow-left w-4 h-4 mr-2"></i>
                     Volver
@@ -24,20 +24,20 @@
     <!-- Formulario -->
     <form id="form-crear-reserva" onsubmit="procesarCrearReserva(event)">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
+
             <!-- Información del Responsable -->
             <div class="bg-white overflow-visible shadow-sm sm:rounded-lg">
                 <div class="p-4 sm:p-6">
                     <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Información del Responsable</h2>
-                    
+
                     <!-- Búsqueda por RUN con Autocompletado -->
                     <div class="mb-6">
                         <label class="block text-sm font-medium text-gray-700 mb-2">
                             Buscar persona por RUN o nombre
                         </label>
                         <div class="relative">
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 id="run-busqueda"
                                 placeholder="Ingrese RUN o nombre para buscar..."
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -52,52 +52,52 @@
 
                     <div class="border-t pt-6">
                         <p class="text-sm text-gray-600 mb-4">Complete la información del responsable:</p>
-                        
+
                         <div class="space-y-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Nombre completo *</label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     id="nombre-responsable"
                                     required
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                 />
                             </div>
-                            
+
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">RUN *</label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     id="run-responsable"
                                     required
                                     placeholder="Sin puntos ni guión"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                 />
                             </div>
-                            
+
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Correo electrónico *</label>
-                                <input 
-                                    type="email" 
+                                <input
+                                    type="email"
                                     id="correo-responsable"
                                     required
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                 />
                             </div>
-                            
+
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
-                                <input 
-                                    type="tel" 
+                                <input
+                                    type="tel"
                                     id="telefono-responsable"
                                     placeholder="9 dígitos"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                 />
                             </div>
-                            
+
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Tipo *</label>
-                                <select 
+                                <select
                                     id="tipo-responsable"
                                     required
                                     onchange="toggleAsignaturaField()"
@@ -108,24 +108,24 @@
                                     <option value="solicitante">Solicitante externo</option>
                                 </select>
                             </div>
-                            
+
                             <!-- Campo para seleccionar asignatura (solo visible cuando es profesor) -->
                             <div id="asignatura-field" class="hidden">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Asignatura *</label>
-                                <select 
+                                <select
                                     id="id-asignatura"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
                                     <option value="">Seleccione una asignatura</option>
                                 </select>
                                 <p class="text-xs text-gray-500 mt-1">Seleccione la asignatura para esta reserva</p>
                             </div>
-                            
+
                             <!-- Campo para buscar asignatura (solo visible cuando es colaborador) -->
                             <div id="buscar-asignatura-field" class="hidden">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Buscar Asignatura *</label>
                                 <div class="relative">
-                                    <input 
-                                        type="text" 
+                                    <input
+                                        type="text"
                                         id="buscar-asignatura"
                                         placeholder="Buscar por código o nombre de asignatura..."
                                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
@@ -146,11 +146,11 @@
             <div class="bg-white overflow-visible shadow-sm sm:rounded-lg">
                 <div class="p-4 sm:p-6">
                     <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Detalles de la Reserva</h2>
-                    
+
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Espacio *</label>
-                            <select 
+                            <select
                                 id="espacio-reserva"
                                 required
                                 onchange="actualizarModulosDisponibles()"
@@ -158,11 +158,11 @@
                                 <option value="">Cargando espacios...</option>
                             </select>
                         </div>
-                        
+
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Fecha *</label>
-                            <input 
-                                type="date" 
+                            <input
+                                type="date"
                                 id="fecha-reserva"
                                 required
                                 min="{{ date('Y-m-d') }}"
@@ -171,11 +171,11 @@
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                             />
                         </div>
-                        
+
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Módulo inicial *</label>
-                                <select 
+                                <select
                                     id="modulo-inicial"
                                     required
                                     onchange="actualizarModulosFinales()"
@@ -183,10 +183,10 @@
                                     <option value="">Seleccione módulo inicial</option>
                                 </select>
                             </div>
-                            
+
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Módulo final *</label>
-                                <select 
+                                <select
                                     id="modulo-final"
                                     required
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
@@ -194,10 +194,10 @@
                                 </select>
                             </div>
                         </div>
-                        
+
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
-                            <textarea 
+                            <textarea
                                 id="observaciones-reserva"
                                 rows="3"
                                 placeholder="Observaciones adicionales..."
@@ -216,7 +216,7 @@
                        class="inline-flex items-center justify-center px-6 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors">
                         Cancelar
                     </a>
-                    <button 
+                    <button
                         type="submit"
                         class="inline-flex items-center justify-center px-6 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 transition-colors">
                         <i class="fa-solid fa-plus w-4 h-4 mr-2 inline"></i>
@@ -233,7 +233,7 @@
 // Función específica para el mantenedor
 async function procesarCrearReserva(event) {
     event.preventDefault();
-    
+
     const formData = {
         nombre: document.getElementById('nombre-responsable').value.trim(),
         run: document.getElementById('run-responsable').value.trim(),
@@ -403,17 +403,17 @@ async function testConnectivity() {
         const response = await fetch('/quick-actions/debug/test');
         const data = await response.json();
         console.log('✅ Test de conectividad exitoso:', data);
-        
+
         // Test adicional de espacios
         const espaciosResponse = await fetch('/quick-actions/debug/espacios');
         const espaciosData = await espaciosResponse.json();
         console.log('🏢 Debug espacios:', espaciosData);
-        
+
         // Test adicional de personas
         const personasResponse = await fetch('/quick-actions/debug/personas');
         const personasData = await personasResponse.json();
         console.log('👥 Debug personas:', personasData);
-        
+
     } catch (error) {
         console.error('❌ Test de conectividad falló:', error);
     }
@@ -429,11 +429,11 @@ async function buscarPersonas(termino) {
         document.getElementById('autocomplete-results').classList.add('hidden');
         return;
     }
-    
+
     try {
         const response = await fetch(`/quick-actions/api/buscar-personas?q=${encodeURIComponent(termino)}`);
         const data = await response.json();
-        
+
         if (data.success && data.personas.length > 0) {
             mostrarResultadosAutocompletado(data.personas);
         } else {
@@ -449,13 +449,13 @@ async function buscarPersonas(termino) {
 function mostrarResultadosAutocompletado(personas) {
     const resultsDiv = document.getElementById('autocomplete-results');
     resultsDiv.innerHTML = '';
-    
+
     if (personas.length === 0) {
         resultsDiv.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500">No se encontraron personas</div>';
         resultsDiv.classList.remove('hidden');
         return;
     }
-    
+
     personas.forEach(persona => {
         const item = document.createElement('div');
         item.className = 'px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-200 last:border-b-0 transition-colors';
@@ -463,18 +463,18 @@ function mostrarResultadosAutocompletado(personas) {
             <div class="font-semibold text-sm text-gray-900">${persona.nombre}</div>
             <div class="text-xs text-gray-600 mt-0.5">${persona.run} - ${persona.tipo === 'profesor' ? 'Profesor' : 'Solicitante'}</div>
         `;
-        
+
         item.addEventListener('click', () => seleccionarPersona(persona));
         resultsDiv.appendChild(item);
     });
-    
+
     resultsDiv.classList.remove('hidden');
 }
 
 // Seleccionar una persona del autocompletado
 function seleccionarPersona(persona) {
     selectedPersona = persona;
-    
+
     // Completar campos automáticamente
     document.getElementById('run-busqueda').value = `${persona.run} - ${persona.nombre}`;
     document.getElementById('nombre-responsable').value = persona.nombre;
@@ -482,19 +482,19 @@ function seleccionarPersona(persona) {
     document.getElementById('correo-responsable').value = persona.email || '';
     document.getElementById('telefono-responsable').value = persona.telefono || '';
     document.getElementById('tipo-responsable').value = persona.tipo;
-    
+
     // Activar campo de asignatura si es profesor
     toggleAsignaturaField();
-    
+
     // Ocultar resultados
     document.getElementById('autocomplete-results').classList.add('hidden');
-    
+
     // Mostrar mensaje de confirmación
     document.getElementById('resultado-busqueda').innerHTML = `
         <i class="fa-solid fa-check-circle w-4 h-4 mr-1"></i>
         Información cargada para: ${persona.nombre} (${persona.tipo === 'profesor' ? 'Profesor' : 'Solicitante'})
     `;
-    
+
     console.log('✅ Persona seleccionada:', persona);
 }
 
@@ -502,29 +502,29 @@ function seleccionarPersona(persona) {
 function configurarAutocompletado() {
     const input = document.getElementById('run-busqueda');
     const resultsDiv = document.getElementById('autocomplete-results');
-    
+
     // Evento de escritura
     input.addEventListener('input', function(e) {
         const valor = e.target.value.trim();
-        
+
         // Cancelar búsqueda anterior
         if (timeoutId) {
             clearTimeout(timeoutId);
         }
-        
+
         // Nueva búsqueda con delay
         timeoutId = setTimeout(() => {
             buscarPersonas(valor);
         }, 300);
     });
-    
+
     // Ocultar resultados al hacer clic fuera
     document.addEventListener('click', function(e) {
         if (!input.contains(e.target) && !resultsDiv.contains(e.target)) {
             resultsDiv.classList.add('hidden');
         }
     });
-    
+
     // Limpiar información cuando se borra el campo
     input.addEventListener('input', function(e) {
         if (e.target.value.trim() === '') {
@@ -563,7 +563,7 @@ const horariosModulosCrearReserva = {
 function cargarModulosParaSeleccion() {
     const moduloInicialSelect = document.getElementById('modulo-inicial');
     const moduloFinalSelect = document.getElementById('modulo-final');
-    
+
     if (!moduloInicialSelect || !moduloFinalSelect) {
         console.error('❌ No se encontraron los selectores de módulos');
         return;
@@ -578,13 +578,13 @@ function cargarModulosParaSeleccion() {
         const horario = horariosModulosCrearReserva[i];
         const optionTextInicial = `Módulo ${i} (${horario})`;
         const optionTextFinal = `Módulo ${i} (${horario})`;
-        
+
         // Opción para módulo inicial
         const optionInicial = document.createElement('option');
         optionInicial.value = i;
         optionInicial.textContent = optionTextInicial;
         moduloInicialSelect.appendChild(optionInicial);
-        
+
         // Opción para módulo final
         const optionFinal = document.createElement('option');
         optionFinal.value = i;
@@ -593,26 +593,26 @@ function cargarModulosParaSeleccion() {
     }
 
     console.log('✅ Módulos con horarios cargados');
-    
+
     // Agregar listener para filtrar módulos finales según el inicial seleccionado
     moduloInicialSelect.addEventListener('change', function() {
         const moduloInicialSeleccionado = parseInt(this.value);
-        
+
         if (moduloInicialSeleccionado) {
             // Limpiar y recargar módulo final con opciones válidas
             moduloFinalSelect.innerHTML = '<option value="">Seleccionar módulo final</option>';
-            
+
             // Solo mostrar módulos finales >= al inicial
             for (let i = moduloInicialSeleccionado; i <= 12; i++) {
                 const horario = horariosModulosCrearReserva[i];
                 const optionText = `Módulo ${i} (${horario})`;
-                
+
                 const option = document.createElement('option');
                 option.value = i;
                 option.textContent = optionText;
                 moduloFinalSelect.appendChild(option);
             }
-            
+
             console.log(`📝 Módulos finales filtrados desde módulo ${moduloInicialSeleccionado}`);
         } else {
             // Si no hay módulo inicial, mostrar todos los módulos finales
@@ -628,11 +628,11 @@ function toggleAsignaturaField() {
     const buscarAsignaturaField = document.getElementById('buscar-asignatura-field');
     const asignaturaSelect = document.getElementById('id-asignatura');
     const buscarAsignaturaInput = document.getElementById('buscar-asignatura');
-    
+
     // Limpiar campos
     asignaturaSelect.innerHTML = '<option value="">Seleccione una asignatura</option>';
     buscarAsignaturaInput.value = '';
-    
+
     if (tipoSelect.value === 'profesor') {
         // Profesor regular: mostrar select de sus asignaturas
         asignaturaField.classList.remove('hidden');
@@ -654,26 +654,35 @@ function toggleAsignaturaField() {
 async function cargarAsignaturasProfesor() {
     const runProfesor = document.getElementById('run-responsable').value.trim();
     const asignaturaSelect = document.getElementById('id-asignatura');
-    
+
     if (!runProfesor) {
         asignaturaSelect.innerHTML = '<option value="">Primero seleccione un profesor</option>';
+        console.warn('⚠️ No hay RUN de profesor para cargar asignaturas');
         return;
     }
-    
+
     try {
+        console.log('📚 Cargando asignaturas para profesor:', runProfesor);
         asignaturaSelect.innerHTML = '<option value="">Cargando asignaturas...</option>';
-        
+
         const response = await fetch(`/api/profesor/${runProfesor}/asignaturas`, {
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
             }
         });
-        
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
         const data = await response.json();
-        
+        console.log('📦 Datos recibidos de asignaturas:', data);
+
         asignaturaSelect.innerHTML = '<option value="">Seleccione una asignatura</option>';
-        
-        if (data.success && data.asignaturas.length > 0) {
+
+        if (data.success && data.asignaturas && data.asignaturas.length > 0) {
+            console.log(`✅ Se encontraron ${data.asignaturas.length} asignaturas para el profesor`);
             data.asignaturas.forEach(asignatura => {
                 const option = document.createElement('option');
                 option.value = asignatura.id_asignatura;
@@ -681,14 +690,30 @@ async function cargarAsignaturasProfesor() {
                 asignaturaSelect.appendChild(option);
             });
         } else {
+            console.warn('⚠️ No se encontraron asignaturas para el profesor:', runProfesor);
             const option = document.createElement('option');
             option.value = '';
             option.textContent = 'No se encontraron asignaturas para este profesor';
             asignaturaSelect.appendChild(option);
+
+            // Mostrar notificación al usuario
+            Swal.fire({
+                title: 'Sin asignaturas',
+                text: 'Este profesor no tiene asignaturas asignadas. Puede contactar al administrador o usar el tipo "Profesor Colaborador" para buscar cualquier asignatura.',
+                icon: 'info',
+                confirmButtonText: 'Entendido'
+            });
         }
     } catch (error) {
-        console.error('Error al cargar asignaturas:', error);
+        console.error('❌ Error al cargar asignaturas:', error);
         asignaturaSelect.innerHTML = '<option value="">Error al cargar asignaturas</option>';
+
+        Swal.fire({
+            title: 'Error',
+            text: 'No se pudieron cargar las asignaturas. Por favor intente nuevamente.',
+            icon: 'error',
+            confirmButtonText: 'Entendido'
+        });
     }
 }
 
@@ -699,11 +724,11 @@ async function buscarAsignaturas(termino) {
         document.getElementById('autocomplete-asignaturas').classList.add('hidden');
         return;
     }
-    
+
     try {
         const response = await fetch(`/quick-actions/api/buscar-asignaturas?q=${encodeURIComponent(termino)}`);
         const data = await response.json();
-        
+
         if (data.success && data.asignaturas.length > 0) {
             mostrarResultadosAsignaturas(data.asignaturas);
         } else {
@@ -719,13 +744,13 @@ async function buscarAsignaturas(termino) {
 function mostrarResultadosAsignaturas(asignaturas) {
     const resultsDiv = document.getElementById('autocomplete-asignaturas');
     resultsDiv.innerHTML = '';
-    
+
     if (asignaturas.length === 0) {
         resultsDiv.innerHTML = '<div class="px-4 py-3 text-sm text-gray-500">No se encontraron asignaturas</div>';
         resultsDiv.classList.remove('hidden');
         return;
     }
-    
+
     asignaturas.forEach(asignatura => {
         const item = document.createElement('div');
         item.className = 'px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-200 last:border-b-0 transition-colors';
@@ -733,11 +758,11 @@ function mostrarResultadosAsignaturas(asignaturas) {
             <div class="font-semibold text-sm text-gray-900">${asignatura.codigo_asignatura}</div>
             <div class="text-xs text-gray-600 mt-0.5">${asignatura.nombre_asignatura}</div>
         `;
-        
+
         item.addEventListener('click', () => seleccionarAsignatura(asignatura));
         resultsDiv.appendChild(item);
     });
-    
+
     resultsDiv.classList.remove('hidden');
     console.log('✅ Mostrando', asignaturas.length, 'asignaturas');
 }
@@ -746,14 +771,14 @@ function mostrarResultadosAsignaturas(asignaturas) {
 function seleccionarAsignatura(asignatura) {
     const buscarInput = document.getElementById('buscar-asignatura');
     const asignaturaSelect = document.getElementById('id-asignatura');
-    
+
     buscarInput.value = `${asignatura.codigo_asignatura} - ${asignatura.nombre_asignatura}`;
-    
+
     // Guardar el ID en un campo oculto o en el select
     asignaturaSelect.innerHTML = `<option value="${asignatura.id_asignatura}" selected>${asignatura.codigo_asignatura} - ${asignatura.nombre_asignatura}</option>`;
-    
+
     document.getElementById('autocomplete-asignaturas').classList.add('hidden');
-    
+
     console.log('✅ Asignatura seleccionada:', asignatura);
 }
 
@@ -761,22 +786,22 @@ function seleccionarAsignatura(asignatura) {
 function configurarBusquedaAsignaturas() {
     const input = document.getElementById('buscar-asignatura');
     const resultsDiv = document.getElementById('autocomplete-asignaturas');
-    
+
     if (!input || !resultsDiv) return;
-    
+
     // Evento de escritura
     input.addEventListener('input', function(e) {
         const valor = e.target.value.trim();
-        
+
         if (timeoutAsignaturas) {
             clearTimeout(timeoutAsignaturas);
         }
-        
+
         timeoutAsignaturas = setTimeout(() => {
             buscarAsignaturas(valor);
         }, 300);
     });
-    
+
     // Ocultar resultados al hacer clic fuera
     document.addEventListener('click', function(e) {
         if (!input.contains(e.target) && !resultsDiv.contains(e.target)) {
@@ -788,7 +813,7 @@ function configurarBusquedaAsignaturas() {
 // Función para cargar espacios disponibles
 async function cargarEspaciosDisponibles() {
     const espacioSelect = document.getElementById('espacio-reserva');
-    
+
     if (!espacioSelect) {
         console.error('❌ No se encontró el select de espacios');
         return;
@@ -796,7 +821,7 @@ async function cargarEspaciosDisponibles() {
 
     try {
         espacioSelect.innerHTML = '<option value="">Cargando espacios...</option>';
-        
+
         const response = await fetch('/quick-actions/api/espacios');
         const data = await response.json();
 
@@ -806,7 +831,7 @@ async function cargarEspaciosDisponibles() {
                     const nombre = espacio.nombre_espacio || espacio.nombre_tipo_espacio || 'Sin nombre';
                     return `<option value="${espacio.id_espacio}">${espacio.id_espacio} - ${nombre}</option>`;
                 }).join('');
-            
+
             console.log('✅ Espacios cargados:', data.data.length);
         } else {
             espacioSelect.innerHTML = '<option value="">No hay espacios disponibles</option>';
@@ -835,14 +860,14 @@ function actualizarModulosFinales() {
 // Inicializar al cargar la página
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Iniciando carga de datos...');
-    
+
     // Verificar que SweetAlert esté disponible
     if (typeof Swal !== 'undefined') {
         console.log('✅ SweetAlert2 cargado correctamente');
     } else {
         console.error('❌ SweetAlert2 no está disponible');
     }
-    
+
     testConnectivity();
     cargarEspaciosDisponibles();
     cargarModulosParaSeleccion();

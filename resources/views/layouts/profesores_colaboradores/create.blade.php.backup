@@ -1,0 +1,426 @@
+<x-app-layout>
+    <x-slot name="header">
+        <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600">
+                    <i class="text-2xl text-white fa-solid fa-user-plus"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold leading-tight">
+                        {{ isset($profesorColaborador) ? 'Editar' : 'Nuevo' }} Profesor Colaborador
+                    </h2>
+                    <p class="text-sm text-gray-500">Define período y horarios para asignaturas temporales</p>
+                </div>
+            </div>
+            <a href="{{ route('profesores-colaboradores.index') }}" 
+               class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                <i class="mr-2 fa-solid fa-arrow-left"></i>Volver
+            </a>
+        </div>
+    </x-slot>
+
+    <div class="py-6">
+        <div class="mx-auto max-w-7xl sm:px-6 lg:px-8">
+            <form method="POST" 
+                  action="{{ isset($profesorColaborador) ? route('profesores-colaboradores.update', $profesorColaborador) : route('profesores-colaboradores.store') }}"
+                  id="formProfesorColaborador">
+                @csrf
+                @if(isset($profesorColaborador))
+                    @method('PUT')
+                @endif
+
+                <!-- Información General -->
+                <div class="mb-6 bg-white rounded-lg shadow overflow-hidden">
+                    <div class="px-6 py-4 bg-gradient-to-r from-indigo-500 to-purple-600">
+                        <h3 class="text-lg font-semibold text-white">
+                            <i class="fa-solid fa-info-circle mr-2"></i>Información General
+                        </h3>
+                    </div>
+                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Profesor -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Profesor <span class="text-red-500">*</span>
+                            </label>
+                            <select name="run_profesor_colaborador" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 @error('run_profesor_colaborador') border-red-500 @enderror">
+                                <option value="">Seleccionar profesor</option>
+                                @foreach($profesores as $profesor)
+                                    <option value="{{ $profesor->run_profesor }}" 
+                                            {{ (old('run_profesor_colaborador', $profesorColaborador->run_profesor_colaborador ?? '') == $profesor->run_profesor) ? 'selected' : '' }}>
+                                        {{ $profesor->name }} ({{ $profesor->run_profesor }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('run_profesor_colaborador')
+                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Nombre Asignatura -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Nombre Asignatura Temporal <span class="text-red-500">*</span>
+                            </label>
+                            <input type="text" name="nombre_asignatura_temporal" required
+                                   value="{{ old('nombre_asignatura_temporal', $profesorColaborador->nombre_asignatura_temporal ?? '') }}"
+                                   placeholder="Ej: Taller de Programación Avanzada"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 @error('nombre_asignatura_temporal') border-red-500 @enderror">
+                            @error('nombre_asignatura_temporal')
+                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Fecha Inicio -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Fecha Inicio <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" name="fecha_inicio" required id="fecha_inicio"
+                                   value="{{ old('fecha_inicio', isset($profesorColaborador) ? $profesorColaborador->fecha_inicio->format('Y-m-d') : '') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 @error('fecha_inicio') border-red-500 @enderror">
+                            @error('fecha_inicio')
+                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <!-- Fecha Término -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Fecha Término <span class="text-red-500">*</span>
+                            </label>
+                            <input type="date" name="fecha_termino" required id="fecha_termino"
+                                   value="{{ old('fecha_termino', isset($profesorColaborador) ? $profesorColaborador->fecha_termino->format('Y-m-d') : '') }}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500 @error('fecha_termino') border-red-500 @enderror">
+                            @error('fecha_termino')
+                                <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        @if(isset($profesorColaborador))
+                        <!-- Estado (solo en edición) -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Estado <span class="text-red-500">*</span>
+                            </label>
+                            <select name="estado" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="activo" {{ old('estado', $profesorColaborador->estado) == 'activo' ? 'selected' : '' }}>Activo</option>
+                                <option value="inactivo" {{ old('estado', $profesorColaborador->estado) == 'inactivo' ? 'selected' : '' }}>Inactivo</option>
+                            </select>
+                        </div>
+                        @endif
+
+                        <!-- Descripción (ocupa 2 columnas) -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                Descripción (Opcional)
+                            </label>
+                            <textarea name="descripcion" rows="3"
+                                      placeholder="Información adicional sobre la asignatura temporal..."
+                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">{{ old('descripcion', $profesorColaborador->descripcion ?? '') }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selector de Horarios -->
+                <div class="mb-6 bg-white rounded-lg shadow overflow-hidden">
+                    <div class="px-6 py-4 bg-gradient-to-r from-indigo-500 to-purple-600">
+                        <h3 class="text-lg font-semibold text-white">
+                            <i class="fa-solid fa-calendar-alt mr-2"></i>Selección de Horarios
+                        </h3>
+                        <p class="text-sm text-white/80 mt-1">Haz clic en las celdas para seleccionar días y módulos</p>
+                    </div>
+                    
+                    <div class="p-6">
+                        <!-- Selector de Espacio -->
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Espacio <span class="text-red-500">*</span>
+                            </label>
+                            <select id="espacio_selector" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="">Seleccionar espacio para todos los horarios</option>
+                                @foreach($espacios as $espacio)
+                                    <option value="{{ $espacio->id_espacio }}">
+                                        {{ $espacio->nombre }} - {{ $espacio->piso->nombre ?? 'Sin piso' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-sm text-gray-500">
+                                <i class="fa-solid fa-info-circle mr-1"></i>
+                                Selecciona un espacio y luego marca los horarios en el calendario
+                            </p>
+                        </div>
+
+                        <!-- Leyenda -->
+                        <div class="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <div class="flex flex-wrap gap-4 text-sm">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-6 h-6 bg-green-100 border-2 border-green-500 rounded"></div>
+                                    <span>Disponible</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-6 h-6 bg-indigo-500 border-2 border-indigo-700 rounded"></div>
+                                    <span>Seleccionado</span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="w-6 h-6 bg-red-100 border-2 border-red-300 rounded opacity-50"></div>
+                                    <span>Ocupado</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Grid de Horarios -->
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full border-collapse" id="horario-grid">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700">Módulo</th>
+                                        <th class="border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700">Lunes</th>
+                                        <th class="border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700">Martes</th>
+                                        <th class="border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700">Miércoles</th>
+                                        <th class="border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700">Jueves</th>
+                                        <th class="border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700">Viernes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="horario-tbody">
+                                    @php
+                                        $modulos = [
+                                            1 => '08:10-09:00', 2 => '09:10-10:00', 3 => '10:10-11:00',
+                                            4 => '11:10-12:00', 5 => '12:10-13:00', 6 => '13:10-14:00',
+                                            7 => '14:10-15:00', 8 => '15:10-16:00', 9 => '16:10-17:00',
+                                            10 => '17:10-18:00', 11 => '18:10-19:00', 12 => '19:10-20:00',
+                                            13 => '20:10-21:00', 14 => '21:10-22:00', 15 => '22:10-23:00'
+                                        ];
+                                        $dias = ['lunes' => 'LU', 'martes' => 'MA', 'miercoles' => 'MI', 'jueves' => 'JU', 'viernes' => 'VI'];
+                                    @endphp
+                                    
+                                    @foreach($modulos as $numModulo => $horario)
+                                        <tr>
+                                            <td class="border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 bg-gray-50">
+                                                M{{ $numModulo }}<br><span class="text-xs text-gray-500">{{ $horario }}</span>
+                                            </td>
+                                            @foreach($dias as $dia => $prefijo)
+                                                <td class="border border-gray-300 p-1">
+                                                    <button type="button"
+                                                            class="horario-cell w-full h-12 rounded transition-all duration-200 bg-green-100 border-2 border-green-500 hover:bg-green-200"
+                                                            data-dia="{{ $dia }}"
+                                                            data-prefijo="{{ $prefijo }}"
+                                                            data-modulo="{{ $numModulo }}"
+                                                            data-id-modulo="{{ $prefijo }}.{{ $numModulo }}">
+                                                        <span class="text-xs"></span>
+                                                    </button>
+                                                </td>
+                                            @endforeach
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Horarios Seleccionados (hidden inputs) -->
+                        <div id="planificaciones-container"></div>
+                        
+                        <!-- Lista de seleccionados -->
+                        <div class="mt-4">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-2">Horarios Seleccionados:</h4>
+                            <div id="seleccionados-list" class="flex flex-wrap gap-2 min-h-[40px] p-3 bg-gray-50 rounded border border-gray-200">
+                                <span class="text-sm text-gray-400">Ningún horario seleccionado</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div class="flex justify-end gap-3">
+                    <a href="{{ route('profesores-colaboradores.index') }}" 
+                       class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                        Cancelar
+                    </a>
+                    <button type="submit" 
+                            class="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-colors">
+                        <i class="fa-solid fa-save mr-2"></i>
+                        {{ isset($profesorColaborador) ? 'Actualizar' : 'Crear' }} Profesor Colaborador
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    @push('scripts')
+    <script>
+        let horariosSeleccionados = [];
+        let espacioActual = '';
+        let modulosOcupados = [];
+
+        // Cargar planificaciones existentes si estamos editando
+        @if(isset($profesorColaborador))
+            @foreach($profesorColaborador->planificaciones as $plan)
+                horariosSeleccionados.push({
+                    id_modulo: '{{ $plan->id_modulo }}',
+                    id_espacio: '{{ $plan->id_espacio }}'
+                });
+            @endforeach
+            espacioActual = '{{ $profesorColaborador->planificaciones->first()->id_espacio ?? '' }}';
+            if (espacioActual) {
+                document.getElementById('espacio_selector').value = espacioActual;
+            }
+        @endif
+
+        // Selector de espacio
+        document.getElementById('espacio_selector').addEventListener('change', function() {
+            espacioActual = this.value;
+            if (espacioActual) {
+                cargarModulosOcupados();
+            }
+        });
+
+        // Función para cargar módulos ocupados del espacio
+        async function cargarModulosOcupados() {
+            if (!espacioActual) return;
+
+            try {
+                const response = await fetch(`/api/profesores-colaboradores/horarios-ocupados?id_espacio=${espacioActual}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    modulosOcupados = data.ocupados.map(m => m.id_modulo);
+                    actualizarGridHorarios();
+                }
+            } catch (error) {
+                console.error('Error al cargar módulos ocupados:', error);
+            }
+        }
+
+        // Click en celdas del horario
+        document.querySelectorAll('.horario-cell').forEach(cell => {
+            cell.addEventListener('click', function() {
+                if (!espacioActual) {
+                    alert('Por favor, selecciona un espacio primero');
+                    return;
+                }
+
+                const idModulo = this.dataset.idModulo;
+                const estaOcupado = modulosOcupados.includes(idModulo);
+
+                if (estaOcupado) {
+                    alert('Este módulo ya está ocupado en el espacio seleccionado');
+                    return;
+                }
+
+                const index = horariosSeleccionados.findIndex(h => h.id_modulo === idModulo);
+                
+                if (index >= 0) {
+                    // Deseleccionar
+                    horariosSeleccionados.splice(index, 1);
+                    this.classList.remove('bg-indigo-500', 'border-indigo-700', 'text-white');
+                    this.classList.add('bg-green-100', 'border-green-500');
+                } else {
+                    // Seleccionar
+                    horariosSeleccionados.push({
+                        id_modulo: idModulo,
+                        id_espacio: espacioActual
+                    });
+                    this.classList.remove('bg-green-100', 'border-green-500');
+                    this.classList.add('bg-indigo-500', 'border-indigo-700', 'text-white');
+                }
+
+                actualizarListaSeleccionados();
+            });
+        });
+
+        function actualizarGridHorarios() {
+            document.querySelectorAll('.horario-cell').forEach(cell => {
+                const idModulo = cell.dataset.idModulo;
+                const estaSeleccionado = horariosSeleccionados.some(h => h.id_modulo === idModulo);
+                const estaOcupado = modulosOcupados.includes(idModulo);
+
+                // Reset
+                cell.classList.remove('bg-indigo-500', 'border-indigo-700', 'text-white', 'bg-red-100', 'border-red-300', 'opacity-50', 'cursor-not-allowed', 'bg-green-100', 'border-green-500');
+                cell.disabled = false;
+
+                if (estaOcupado) {
+                    cell.classList.add('bg-red-100', 'border-red-300', 'opacity-50', 'cursor-not-allowed');
+                    cell.disabled = true;
+                } else if (estaSeleccionado) {
+                    cell.classList.add('bg-indigo-500', 'border-indigo-700', 'text-white');
+                } else {
+                    cell.classList.add('bg-green-100', 'border-green-500');
+                }
+            });
+        }
+
+        function actualizarListaSeleccionados() {
+            const container = document.getElementById('planificaciones-container');
+            const list = document.getElementById('seleccionados-list');
+
+            container.innerHTML = '';
+            list.innerHTML = '';
+
+            if (horariosSeleccionados.length === 0) {
+                list.innerHTML = '<span class="text-sm text-gray-400">Ningún horario seleccionado</span>';
+                return;
+            }
+
+            horariosSeleccionados.forEach((horario, index) => {
+                // Hidden inputs
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `planificaciones[${index}][id_modulo]`;
+                input.value = horario.id_modulo;
+                container.appendChild(input);
+
+                const inputEspacio = document.createElement('input');
+                inputEspacio.type = 'hidden';
+                inputEspacio.name = `planificaciones[${index}][id_espacio]`;
+                inputEspacio.value = horario.id_espacio;
+                container.appendChild(inputEspacio);
+
+                // Badge visual
+                const badge = document.createElement('span');
+                badge.className = 'inline-flex items-center gap-2 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-sm font-medium';
+                badge.innerHTML = `
+                    <i class="fa-solid fa-calendar-check"></i>
+                    ${horario.id_modulo}
+                    <button type="button" onclick="eliminarHorario('${horario.id_modulo}')" class="text-indigo-500 hover:text-indigo-700">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                `;
+                list.appendChild(badge);
+            });
+        }
+
+        function eliminarHorario(idModulo) {
+            const index = horariosSeleccionados.findIndex(h => h.id_modulo === idModulo);
+            if (index >= 0) {
+                horariosSeleccionados.splice(index, 1);
+                actualizarGridHorarios();
+                actualizarListaSeleccionados();
+            }
+        }
+
+        // Validación del formulario
+        document.getElementById('formProfesorColaborador').addEventListener('submit', function(e) {
+            if (horariosSeleccionados.length === 0) {
+                e.preventDefault();
+                alert('Debes seleccionar al menos un horario');
+                return false;
+            }
+
+            if (!espacioActual) {
+                e.preventDefault();
+                alert('Debes seleccionar un espacio');
+                return false;
+            }
+        });
+
+        // Inicializar vista
+        if (espacioActual) {
+            cargarModulosOcupados();
+        }
+        actualizarListaSeleccionados();
+        actualizarGridHorarios();
+    </script>
+    @endpush
+</x-app-layout>

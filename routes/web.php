@@ -15,6 +15,7 @@ use App\Http\Controllers\AsignaturaController;
 use App\Http\Controllers\DataLoadController;
 use App\Http\Controllers\PlanoDigitalController;
 use App\Http\Controllers\ProfesorController;
+use App\Http\Controllers\ProfesorColaboradorController;
 use App\Http\Controllers\VisitanteController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\NotificationController;
@@ -58,6 +59,8 @@ Route::middleware(['auth', 'permission:dashboard', 'extend.execution:300'])->gro
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/widget-data', [DashboardController::class, 'getWidgetData'])->name('dashboard.widget-data');
     Route::get('/dashboard/horarios-semana', [DashboardController::class, 'horariosSemana'])->name('dashboard.horarios-semana');
+    Route::get('/dashboard/utilizacion-data', [DashboardController::class, 'getUtilizacionData'])->name('dashboard.utilizacion-data');
+    Route::get('/dashboard/accesos-data', [DashboardController::class, 'getAccesosData'])->name('dashboard.accesos-data');
 });
 
 Route::middleware(['auth', 'role:Administrador'])->group(function () {
@@ -76,6 +79,11 @@ Route::middleware(['auth', 'role:Administrador|Supervisor'])->group(function () 
 // Estadísticas de clases no realizadas - Administrador y Supervisor
 Route::middleware(['auth', 'permission:reportes'])->group(function () {
     Route::get('/clases-no-realizadas', [\App\Http\Controllers\ClasesNoRealizadasController::class, 'index'])->name('clases-no-realizadas.index');
+});
+
+// Profesores Colaboradores - Administrador y Supervisor
+Route::middleware(['auth', 'role:Administrador|Supervisor'])->group(function () {
+    Route::resource('profesores-colaboradores', ProfesorColaboradorController::class);
 });
 
 // Horarios profesores - Solo Administrador y Supervisor
@@ -324,7 +332,7 @@ Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(fu
     Route::get('espacios/export/{format}', [ReportController::class, 'exportEspacios'])->name('reportes.espacios.export');
     Route::get('accesos/export/{format}', [ReportController::class, 'exportAccesos'])->name('reportes.accesos.export');
     Route::post('accesos/export/{format}', [ReportController::class, 'exportAccesosConFiltros'])->name('reportes.accesos.export.filtros');
-    
+
     // Reportes de Salas de Estudio
     Route::get('salas-estudio', [ReportController::class, 'salasEstudio'])->name('reportes.salas-estudio');
     Route::get('salas-estudio/export/{format}', [ReportController::class, 'exportSalasEstudio'])->name('reportes.salas-estudio.export');

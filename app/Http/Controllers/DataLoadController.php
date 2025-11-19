@@ -30,7 +30,7 @@ class DataLoadController extends Controller
     {
         $semestreFiltro = $request->input('semestre');
         $anioFiltro = $request->input('anio');
-        
+
         $periodosDisponibles = Horario::select('periodo')
             ->whereNotNull('periodo')
             ->where('periodo', '!=', '')
@@ -38,33 +38,33 @@ class DataLoadController extends Controller
             ->pluck('periodo')
             ->sort()
             ->values();
-        
+
         $aniosDisponibles = [];
         $semestresDisponibles = [];
-        
+
         foreach ($periodosDisponibles as $periodo) {
             if (preg_match('/^(\d{4})-(\d+)$/', $periodo, $matches)) {
                 $anio = $matches[1];
                 $semestre = $matches[2];
-                
+
                 if (!in_array($anio, $aniosDisponibles)) {
                     $aniosDisponibles[] = $anio;
                 }
-                
+
                 if (!in_array($semestre, $semestresDisponibles)) {
                     $semestresDisponibles[] = $semestre;
                 }
             }
         }
-        
+
         sort($aniosDisponibles);
         sort($semestresDisponibles);
-        
+
         $query = DataLoad::latest();
-        
+
         if ($semestreFiltro && $anioFiltro) {
             $periodoFiltro = $anioFiltro . '-' . $semestreFiltro;
-            
+
             $query->whereHas('profesor.horarios', function ($q) use ($periodoFiltro) {
                 $q->where('periodo', $periodoFiltro);
             });
@@ -73,12 +73,12 @@ class DataLoadController extends Controller
                 $q->where('periodo', 'like', $anioFiltro . '-%');
             });
         }
-        
+
         $dataLoads = $query->paginate(10);
-        
+
         return view('layouts.data.data_index', compact(
-            'dataLoads', 
-            'aniosDisponibles', 
+            'dataLoads',
+            'aniosDisponibles',
             'semestresDisponibles',
             'semestreFiltro',
             'anioFiltro'
@@ -159,7 +159,7 @@ class DataLoadController extends Controller
                     $email = $row[13];
                     $tipoProfesor = $row[16];
                     $existingProfesor = Profesor::where('run_profesor', $run)->first();
-                    
+
                     if ($existingProfesor) {
                         // ACTUALIZACIÓN COMPLETA del profesor
                         $existingProfesor->update([
@@ -176,7 +176,7 @@ class DataLoadController extends Controller
                             'name' => $name,
                             'email' => $email,
                             'id_carrera' => $idCarrera,
-                            'tipo_profesor' => $tipoProfesor 
+                            'tipo_profesor' => $tipoProfesor
                         ]);
                         $processedUsersCount++;
                     }
@@ -186,13 +186,14 @@ class DataLoadController extends Controller
                     $nombreAsignatura = preg_replace('/^[a-z]{2}:\s*/i', '', $row[2]);
 
                     $numeroSeccion = trim($row[3]); // Columna D
-                    
+                    $inscritos = isset($row[9]) ? (int)$row[9] : null; // Columna J - Inscritos
+
                     // Validar que la sección sea un número de hasta 4 dígitos
                     if (!empty($numeroSeccion) && !preg_match('/^\d{1,4}$/', $numeroSeccion)) {
                         $errors[] = "Fila " . ($index + 1) . ": Sección inválida - debe ser un número de 1 a 4 dígitos (valor: " . $numeroSeccion . ")";
                         continue;
                     }
-                    
+
                     // Si la sección está vacía, asignar un valor por defecto
                     if (empty($numeroSeccion)) {
                         $numeroSeccion = '1';
@@ -219,7 +220,7 @@ class DataLoadController extends Controller
                         ]);
                         $asignatura = $existingAsignatura;
                     }
-                  
+
                     $processedAsignaturasCount++;
 
                     $horarioProfesor = $row[20];
@@ -229,17 +230,17 @@ class DataLoadController extends Controller
                         $idHorario = 'HOR_' . $run . '_' . $periodo;
 
                         $existingHorario = Horario::where('id_horario', $idHorario)->first();
-                        
+
                         if (!$existingHorario) {
                             $oldIdHorario = 'HOR_' . $run;
                             $existingHorario = Horario::where('id_horario', $oldIdHorario)->first();
-                            
+
                             if ($existingHorario) {
                                 // Migrar horario existente al nuevo formato
                                 $existingHorario->id_horario = $idHorario;
                                 $existingHorario->periodo = $periodo;
                                 $existingHorario->save();
-                                
+
                                 // Actualizar planificaciones asociadas
                                 Planificacion_Asignatura::where('id_horario', $oldIdHorario)
                                     ->update(['id_horario' => $idHorario]);
@@ -286,19 +287,20 @@ class DataLoadController extends Controller
                                     $modulo = $matches[2];
                                     $grupo = $matches[3];
                                     $espacio = preg_replace('/^[a-z]{2}:\s*/i', '', $matches[4]);
-                                    
+
                                     $espacioExiste = Espacio::where('id_espacio', $espacio)->exists();
-                                    
+
                                     if (!$espacioExiste) {
                                         continue; // Saltar esta planificación si el espacio no existe
                                     }
-                                    
+
                                     // CREAR planificación (ya se hizo limpieza previa)
                                         $planificacion = new Planificacion_Asignatura();
                                         $planificacion->id_asignatura = $idAsignatura;
                                         $planificacion->id_horario = $horario->id_horario;
                                         $planificacion->id_modulo = $dia . '.' . $modulo;
                                         $planificacion->id_espacio = $espacio;
+                                        $planificacion->inscritos = $inscritos;
 
                                         if (!$planificacion->save()) {
                                             throw new \Exception("Error al guardar la planificación");
@@ -394,7 +396,7 @@ class DataLoadController extends Controller
     public function download($id)
     {
         $dataLoad = DataLoad::findOrFail($id);
-        
+
         if (!$dataLoad->ruta_archivo || !Storage::disk('public')->exists($dataLoad->ruta_archivo)) {
             return back()->withErrors(['error' => 'El archivo no existe o ha sido eliminado.']);
         }
@@ -406,7 +408,7 @@ class DataLoadController extends Controller
     {
         try {
             $dataLoad = DataLoad::findOrFail($id);
-            
+
             return response()->json([
                 'estado' => $dataLoad->estado,
                 'registros_cargados' => $dataLoad->registros_cargados,

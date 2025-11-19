@@ -35,4 +35,9 @@ class Modulo extends Model
     {
         return $this->hasMany(Planificacion_Asignatura::class, 'id_modulo', 'id_modulo');
     }
+
+    public function planificacionesColaboradores()
+    {
+        return $this->hasMany(PlanificacionProfesorColaborador::class, 'id_modulo', 'id_modulo');
+    }
 }

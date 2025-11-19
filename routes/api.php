@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ApiReservaController;
 use App\Http\Controllers\Api\AttendanceController;
 use App\Http\Controllers\Api\ProgramacionSemanalController;
+use App\Http\Controllers\ProfesorColaboradorController;
 use App\Models\User;
 use App\Http\Controllers\EspacioController;
 use Illuminate\Support\Facades\DB;
@@ -40,6 +41,10 @@ Route::post('/attendance', [AttendanceController::class, 'store']);
 Route::get('/attendance/reservation/{reservationId}', [AttendanceController::class, 'show']);
 
 // Route for key return notifications moved to web.php to use session authentication
+
+// API para profesores colaboradores
+Route::get('/profesores-colaboradores/horarios-ocupados', [ProfesorColaboradorController::class, 'getHorariosOcupados']);
+Route::post('/profesores-colaboradores/salas-disponibles', [ProfesorColaboradorController::class, 'getSalasDisponibles']);
 
 // Ruta para verificar si un profesor tiene asignado un espacio
 Route::get('/verificar-espacio/{profesorId}/{espacioId}', function ($profesorId, $espacioId, Request $request) {

@@ -9,15 +9,16 @@ class Planificacion_Asignatura extends Model
 {
     use HasFactory;
 
-    protected $table = 'planificacion_asignaturas'; 
+    protected $table = 'planificacion_asignaturas';
 
-    protected $primaryKey = 'id'; 
+    protected $primaryKey = 'id';
 
     protected $fillable = [
         'id_asignatura',
         'id_horario',
         'id_modulo',
         'id_espacio',
+        'inscritos',
     ];
 
     protected $casts = [

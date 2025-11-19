@@ -170,7 +170,7 @@
                 <!-- Círculos decorativos -->
                 <span class="absolute top-0 left-0 w-32 h-32 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
                 <span class="absolute top-0 right-0 w-32 h-32 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
-                
+
                 <div class="flex items-center flex-1 min-w-0 gap-5">
                     <div class="flex flex-col items-center justify-center flex-shrink-0">
                         <div class="p-4 mb-2 bg-white rounded-full bg-opacity-20">
@@ -184,12 +184,12 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
                     <button onclick="cerrarModal()" class="ml-2 text-3xl font-bold text-white hover:text-gray-200">&times;</button>
                 </div>
             </div>
-            
+
             <!-- Contenido del modal -->
             <div class="p-6 bg-gray-50 overflow-y-auto max-h-[70vh] flex-1">
                 <!-- Información principal en 2 columnas -->
@@ -460,6 +460,38 @@
             }
 
             semestreSelector.addEventListener('change', checkFormComplete);
+
+            // Drag and Drop functionality
+            const dropZone = document.querySelector('.border-2.border-gray-300.border-dashed');
+
+            if (dropZone) {
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.add('border-blue-500', 'bg-blue-50', 'border-2');
+                    dropZone.classList.remove('border-gray-300');
+                });
+
+                dropZone.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+                    dropZone.classList.add('border-gray-300');
+                });
+
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.remove('border-blue-500', 'bg-blue-50');
+                    dropZone.classList.add('border-gray-300');
+
+                    const files = e.dataTransfer.files;
+                    if (files && files.length > 0) {
+                        fileInput.files = files;
+                        handleFileSelect(fileInput);
+                    }
+                });
+            }
         });
 
         // Función para abrir el modal y cargar los datos

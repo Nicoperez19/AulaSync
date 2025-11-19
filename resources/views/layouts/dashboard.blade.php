@@ -13,6 +13,14 @@
         </div>
     </x-slot>
 
+    <!-- Loading Spinner Overlay -->
+    <div id="dashboard-loading" class="fixed inset-0 z-50 flex items-center justify-center bg-white bg-opacity-90" style="display: flex;">
+        <div class="text-center">
+            <div class="inline-block w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+            <p class="mt-4 text-lg font-semibold text-gray-700">Cargando Dashboard...</p>
+        </div>
+    </div>
+
     <!-- Modal fijo de reloj digital y módulo actual -->
     <div id="modal-reloj"
         class="fixed bottom-6 right-8 z-50 bg-light-cloud-blue shadow-lg rounded-xl border border-gray-200 px-5 py-3 flex flex-col items-center gap-1 min-w-[162px] text-white">
@@ -21,17 +29,29 @@
     </div>
 
     <div class="w-full px-8 pb-6">
-    <div class="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-5">
-            <!-- Total de reservas hoy -->
+    <div class="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
+            <!-- Estadísticas de Reservas y Salas -->
             <div
                 class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="font-semibold text-gray-500">Total de Reservas Hoy</span>
+                <div class="flex items-center justify-between mb-3">
+                    <span class="font-semibold text-gray-500">Estadísticas de Hoy</span>
                     <span class="p-2 text-blue-500 bg-blue-100 rounded-full"><i
-                            class="text-xl fa-regular fa-calendar"></i></span>
+                            class="text-xl fa-solid fa-chart-line"></i></span>
                 </div>
-                <div class="flex items-end gap-2">
-                    <span class="text-3xl font-bold text-blue-600">{{ $totalReservasHoy }}</span>
+                <div class="flex flex-col gap-2">
+                    <div class="flex items-center justify-between pb-2 border-b border-gray-200">
+                        <span class="text-xs text-gray-500">Total Reservas:</span>
+                        <span class="text-2xl font-bold text-blue-600">{{ $totalReservasHoy }}</span>
+                    </div>
+                    @if($salaMasUtilizada)
+                        <div class="mt-1">
+                            <span class="text-xs text-gray-400">Sala más usada:</span>
+                            <div class="text-sm font-bold text-yellow-600">{{ $salaMasUtilizada->espacio->id_espacio ?? 'N/A' }}</div>
+                            <div class="text-xs text-gray-500">{{ $salaMasUtilizada->total }} reservas</div>
+                        </div>
+                    @else
+                        <div class="mt-1 text-xs text-gray-400">Sin datos de salas</div>
+                    @endif
                 </div>
             </div>
 
@@ -46,15 +66,15 @@
                 <div class="flex flex-col gap-1">
                     <div class="flex items-center justify-between">
                         <span class="text-xs text-gray-500">Diurno (8-19h):</span>
-                        <span id="ocupacion-semanal-diurno" class="text-lg font-bold text-purple-600">{{ $ocupacionSemanal['diurno'] }}%</span>
+                        <span id="ocupacion-semanal-diurno" class="text-lg font-bold text-purple-600">{{ is_numeric($ocupacionSemanal['diurno']) ? $ocupacionSemanal['diurno'] : 0 }}%</span>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-xs text-gray-500">Vespertino (19-23h):</span>
-                        <span id="ocupacion-semanal-vespertino" class="text-lg font-bold text-indigo-600">{{ $ocupacionSemanal['vespertino'] }}%</span>
+                        <span id="ocupacion-semanal-vespertino" class="text-lg font-bold text-indigo-600">{{ is_numeric($ocupacionSemanal['vespertino']) ? $ocupacionSemanal['vespertino'] : 0 }}%</span>
                     </div>
                     <div class="pt-1 mt-1 border-t border-gray-200">
                         <span class="text-xs text-gray-400">Total: </span>
-                        <span id="ocupacion-semanal" class="text-2xl font-bold text-purple-700">{{ $ocupacionSemanal['total'] }}%</span>
+                        <span id="ocupacion-semanal" class="text-2xl font-bold text-purple-700">{{ is_numeric($ocupacionSemanal['total']) ? $ocupacionSemanal['total'] : 0 }}%</span>
                     </div>
                 </div>
             </div>
@@ -71,10 +91,10 @@
                     @php
                         $totalSalasDiurno = ($salasOcupadas['diurno']['ocupadas'] ?? 0) + ($salasOcupadas['diurno']['libres'] ?? 0);
                         $porcentajeDesocupadasDiurno = $totalSalasDiurno > 0 ? round((($salasOcupadas['diurno']['libres'] ?? 0) / $totalSalasDiurno) * 100, 2) : 0;
-                        
+
                         $totalSalasVespertino = ($salasOcupadas['vespertino']['ocupadas'] ?? 0) + ($salasOcupadas['vespertino']['libres'] ?? 0);
                         $porcentajeDesocupadasVespertino = $totalSalasVespertino > 0 ? round((($salasOcupadas['vespertino']['libres'] ?? 0) / $totalSalasVespertino) * 100, 2) : 0;
-                        
+
                         $totalSalasTotal = ($salasOcupadas['total']['ocupadas'] ?? 0) + ($salasOcupadas['total']['libres'] ?? 0);
                         $porcentajeDesocupadasTotal = $totalSalasTotal > 0 ? round((($salasOcupadas['total']['libres'] ?? 0) / $totalSalasTotal) * 100, 2) : 0;
                     @endphp
@@ -103,55 +123,18 @@
                 <div class="flex flex-col gap-1">
                     <div class="flex items-center justify-between">
                         <span class="text-xs text-gray-500">Diurno (8-19h):</span>
-                        <span id="ocupacion-mensual-diurno" class="text-lg font-bold text-orange-600">{{ $ocupacionMensual['diurno'] }}%</span>
+                        <span id="ocupacion-mensual-diurno" class="text-lg font-bold text-orange-600">{{ is_numeric($ocupacionMensual['diurno']) ? $ocupacionMensual['diurno'] : 0 }}%</span>
                     </div>
                     <div class="flex items-center justify-between">
                         <span class="text-xs text-gray-500">Vespertino (19-23h):</span>
-                        <span id="ocupacion-mensual-vespertino" class="text-lg font-bold text-red-600">{{ $ocupacionMensual['vespertino'] }}%</span>
+                        <span id="ocupacion-mensual-vespertino" class="text-lg font-bold text-red-600">{{ is_numeric($ocupacionMensual['vespertino']) ? $ocupacionMensual['vespertino'] : 0 }}%</span>
                     </div>
                     <div class="pt-1 mt-1 border-t border-gray-200">
                         <span class="text-xs text-gray-400">Total: </span>
-                        <span id="ocupacion-mensual" class="text-2xl font-bold text-orange-700">{{ $ocupacionMensual['total'] }}%</span>
+                        <span id="ocupacion-mensual" class="text-2xl font-bold text-orange-700">{{ is_numeric($ocupacionMensual['total']) ? $ocupacionMensual['total'] : 0 }}%</span>
                     </div>
                 </div>
             </div>
-            <!-- Sala Más Utilizada -->
-            <div
-                class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="font-semibold text-gray-500">Sala Más Utilizada</span>
-                    <span class="p-2 text-yellow-500 bg-yellow-100 rounded-full"><i
-                            class="text-xl fa-solid fa-star"></i></span>
-                </div>
-                <div class="flex flex-col gap-1 mt-2">
-                    @if($salaMasUtilizada)
-                        <span class="text-xl font-bold text-yellow-600">
-                            {{ $salaMasUtilizada->nombre_espacio }} ({{ $salaMasUtilizada->id_espacio }})
-                        </span>
-                    @else
-                        <span class="text-gray-400">Sin datos</span>
-                    @endif
-
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Grid de gráficos secundarios -->
-    <div class="grid w-full grid-cols-1 gap-8 px-8 md:grid-cols-2">
-        <!-- Gráfico de barras: Uso por Día -->
-        <div
-            class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition w-full">
-            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Gráfico de Barras: Uso por Día </h4>
-            <p class="text-sm text-gray-500 mb-4 rango-fechas-grafico">Semana del {{ $usoPorDia['rango_fechas']['inicio'] }} al {{ $usoPorDia['rango_fechas']['fin'] }}</p>
-            <canvas id="grafico-barras" width="500" height="300"></canvas>
-        </div>
-
-        <!-- Gráfico de línea: Promedio mensual -->
-        <div
-            class="p-8 bg-white rounded-xl shadow-lg flex flex-col items-center min-h-[260px] relative widget-transition w-full">
-            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Evolución semanal de ocupación </h4>
-            <canvas id="grafico-mensual" width="500" height="300"></canvas>
         </div>
     </div>
 
@@ -164,14 +147,14 @@
                     <i class="fas fa-bolt mr-2 text-blue-600"></i>
                     Acciones Rápidas
                 </h4>
-                <a href="{{ route('quick-actions.index') }}" 
+                <a href="{{ route('quick-actions.index') }}"
                    class="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center">
                     Ver todas
                     <i class="fas fa-arrow-right ml-1"></i>
                 </a>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <a href="{{ route('quick-actions.crear-reserva') }}" 
+                <a href="{{ route('quick-actions.crear-reserva') }}"
                    class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors border border-green-200">
                     <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center mr-3">
                         <i class="fas fa-plus text-white"></i>
@@ -181,8 +164,8 @@
                         <p class="text-sm text-gray-600">Nueva reserva rápida</p>
                     </div>
                 </a>
-                
-                <a href="{{ route('quick-actions.gestionar-reservas') }}" 
+
+                <a href="{{ route('quick-actions.gestionar-reservas') }}"
                    class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
                     <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center mr-3">
                         <i class="fas fa-calendar-check text-white"></i>
@@ -192,8 +175,8 @@
                         <p class="text-sm text-gray-600">Administrar estados</p>
                     </div>
                 </a>
-                
-                <a href="{{ route('quick-actions.gestionar-espacios') }}" 
+
+                <a href="{{ route('quick-actions.gestionar-espacios') }}"
                    class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors border border-purple-200">
                     <div class="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center mr-3">
                         <i class="fas fa-building text-white"></i>
@@ -208,9 +191,118 @@
     </div>
     @endcan
 
-    <div class="flex flex-col w-full gap-8 p-8 md:p-8 md:flex-row">
-        <div class="flex flex-col flex-1 gap-6">
-            <div class="p-4 bg-white rounded-lg shadow-md md:p-6 dark:bg-gray-800">
+    <!-- Widget de Reportes -->
+    @can('reportes')
+    <div class="px-8 mt-8">
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h4 class="text-lg font-bold text-gray-700 flex items-center">
+                    <i class="fas fa-chart-bar mr-2 text-blue-600"></i>
+                    Reportes
+                </h4>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <a href="{{ route('reportes.accesos') }}"
+                   class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
+                    <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-sign-in-alt text-white"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900">Accesos</p>
+                        <p class="text-sm text-gray-600">Registros de entrada</p>
+                    </div>
+                </a>
+
+                <a href="{{ route('reportes.espacios') }}"
+                   class="flex items-center p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition-colors border border-purple-200">
+                    <div class="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-door-open text-white"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900">Espacios</p>
+                        <p class="text-sm text-gray-600">Análisis por espacios</p>
+                    </div>
+                </a>
+
+                <a href="{{ route('reportes.tipo-espacio') }}"
+                   class="flex items-center p-4 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors border border-indigo-200">
+                    <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-layer-group text-white"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900">Tipo Espacio</p>
+                        <p class="text-sm text-gray-600">Por categoría</p>
+                    </div>
+                </a>
+
+                <a href="{{ route('reportes.salas-estudio') }}"
+                   class="flex items-center p-4 bg-green-50 rounded-lg hover:bg-green-100 transition-colors border border-green-200">
+                    <div class="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-book text-white"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900">Salas Estudio</p>
+                        <p class="text-sm text-gray-600">Análisis de uso</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+    @endcan
+
+    <!-- Sistema de pestañas para estadísticas -->
+    <div class="px-8 mt-8 mb-8">
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-chart-line mr-2 text-blue-600"></i>
+                Estadísticas Detalladas
+            </h3>
+
+            <!-- Tabs -->
+            <div class="border-b border-gray-200 mb-6" x-data="{ activeTab: 'graficos' }">
+                <nav class="flex space-x-4" aria-label="Tabs">
+                    <button @click="activeTab = 'graficos'"
+                            :class="activeTab === 'graficos' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                            class="whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors">
+                        <i class="fas fa-chart-bar mr-2"></i>
+                        Gráficos
+                    </button>
+                    <button @click="activeTab = 'utilizacion'; cargarTabUtilizacion();"
+                            :class="activeTab === 'utilizacion' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                            class="whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors">
+                        <i class="fas fa-building mr-2"></i>
+                        Utilización
+                    </button>
+                    <button @click="activeTab = 'accesos'; cargarTabAccesos();"
+                            :class="activeTab === 'accesos' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                            class="whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors">
+                        <i class="fas fa-users mr-2"></i>
+                        Accesos
+                    </button>
+                </nav>
+
+                <!-- Tab Content: Gráficos -->
+                <div x-show="activeTab === 'graficos'" class="mt-6">
+                    <div class="grid w-full grid-cols-1 gap-8 md:grid-cols-2">
+                        <!-- Gráfico de barras: Uso por Día -->
+                        <div class="p-8 bg-gray-50 rounded-xl shadow flex flex-col items-center min-h-[260px] relative widget-transition w-full">
+                            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Gráfico de Barras: Uso por Día </h4>
+                            <p class="text-sm text-gray-500 mb-4 rango-fechas-grafico">Semana del {{ $usoPorDia['rango_fechas']['inicio'] }} al {{ $usoPorDia['rango_fechas']['fin'] }}</p>
+                            <canvas id="grafico-barras" width="500" height="300"></canvas>
+                        </div>
+
+                        <!-- Gráfico de línea: Promedio mensual -->
+                        <div class="p-8 bg-gray-50 rounded-xl shadow flex flex-col items-center min-h-[260px] relative widget-transition w-full">
+                            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Evolución semanal de ocupación </h4>
+                            <canvas id="grafico-mensual" width="500" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab Content: Utilización -->
+                <div x-show="activeTab === 'utilizacion'" x-cloak class="mt-6">
+                    <div class="flex flex-col w-full gap-8 md:flex-row">
+                            <div class="p-4 bg-gray-50 rounded-lg shadow md:p-6">
                 <!-- Encabezado con título y botón alineados -->
                 <div class="flex items-center justify-between mb-4">
                     <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100">
@@ -252,10 +344,9 @@
                 <div id="tabla-utilizacion-tipo-espacio" class="overflow-x-auto">
                     @include('partials.tabla_utilizacion_tipo_espacio', ['comparativaTipos' => $comparativaTipos])
                 </div>
-            </div>
-        </div>
-        <div
-            class="flex flex-col items-center justify-center w-full md:w-[260px] lg:w-[340px] bg-white rounded-xl shadow-lg p-6 md:p-8 widget-transition flex-shrink-0 md:mt-0 mt-8">
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-center justify-center w-full md:w-[260px] lg:w-[340px] bg-gray-50 rounded-xl shadow p-6 md:p-8 widget-transition flex-shrink-0 md:mt-0 mt-8">
             <h4 class="mb-4 text-lg font-bold text-center text-gray-700">Salas ocupadas / libres (hoy)</h4>
             <canvas id="grafico-circular-salas" class="mb-2 w-full max-w-[220px] h-auto aspect-square"
                 style="max-width:220px;"></canvas>
@@ -272,15 +363,16 @@
             <div id="salas-ocupadas" class="mt-4 text-2xl font-bold kpi-value" style="color:#a21caf;">
                 {{ $salasOcupadas['total']['ocupadas'] }} <span class="text-gray-400"> de </span>
                 {{ $salasOcupadas['total']['ocupadas'] + $salasOcupadas['total']['libres'] }} <span class="text-gray-400"> en total</span>
-            </div>
-        </div>
-    </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-    <!-- Tablas -->
-    <div class="w-full gap-8 px-4 md:px-8">
-        <div class="flex flex-col gap-6 md:flex-row">
-            <!-- Reservas Pendientes -->
-            <div class="w-full p-8 mb-8 bg-white shadow-lg rounded-xl md:w-1/2">
+                <!-- Tab Content: Accesos -->
+                <div x-show="activeTab === 'accesos'" x-cloak class="mt-6">
+                    <div class="flex flex-col gap-6 md:flex-row">
+                        <!-- Reservas Pendientes -->
+                        <div class="w-full p-8 bg-white shadow-lg rounded-xl md:w-1/2">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2">
                         <span
@@ -349,7 +441,7 @@
                 </div>
             </div>
             <!-- Registro de Accesos -->
-            <div class="w-full p-8 mb-8 bg-white shadow-lg rounded-xl md:w-1/2">
+            <div class="w-full p-8 bg-white shadow-lg rounded-xl md:w-1/2">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2">
                         <span
@@ -446,11 +538,15 @@
                 </div>
             </div>
         </div>
-        <!-- Widget de Reservas canceladas o no utilizadas en una fila aparte -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
         {{-- <div class="w-full p-8 mb-8 bg-white shadow-lg rounded-xl">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="flex items-center gap-2 text-lg font-bold text-gray-700">Reservas canceladas o no utilizadas
-                  
+
                 </h3>
                 <div>
                     <label for="filtro_fecha_no_utilizadas" class="mr-2 font-semibold">Fecha:</label>
@@ -622,6 +718,58 @@
     };
 
     // ========================================
+    // LAZY LOADING DE TABS
+    // ========================================
+
+    window.tabLoaded = {
+        utilizacion: false,
+        accesos: false
+    };
+
+    function cargarTabUtilizacion() {
+        if (window.tabLoaded.utilizacion) return;
+
+        const contenedor = document.getElementById('tabla-utilizacion-tipo-espacio');
+        if (!contenedor) return;
+
+        contenedor.innerHTML = '<div class="flex items-center justify-center p-8"><div class="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin"></div><span class="ml-2">Cargando datos...</span></div>';
+
+        fetch('/dashboard/utilizacion-data')
+            .then(response => response.json())
+            .then(data => {
+                actualizarTablaUtilizacionTipoEspacio(data.comparativaTipos);
+                if (data.salasOcupadas && window.graficoCircularSalas) {
+                    actualizarGraficoCircularSalas(data.salasOcupadas);
+                }
+                window.tabLoaded.utilizacion = true;
+            })
+            .catch(error => {
+                console.error('Error cargando datos de utilización:', error);
+                contenedor.innerHTML = '<div class="p-4 text-center text-red-500">Error al cargar los datos</div>';
+            });
+    }
+
+    function cargarTabAccesos() {
+        if (window.tabLoaded.accesos) return;
+
+        const contenedor = document.getElementById('accesos-tab-content');
+        if (!contenedor) return;
+
+        contenedor.innerHTML = '<div class="flex items-center justify-center p-8"><div class="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin"></div><span class="ml-2">Cargando accesos...</span></div>';
+
+        fetch('/dashboard/accesos-data')
+            .then(response => response.text())
+            .then(html => {
+                contenedor.innerHTML = html;
+                window.tabLoaded.accesos = true;
+            })
+            .catch(error => {
+                console.error('Error cargando datos de accesos:', error);
+                contenedor.innerHTML = '<div class="p-4 text-center text-red-500">Error al cargar los accesos</div>';
+            });
+    }
+
+    // ========================================
     // DATOS PARA LOS GRÁFICOS
     // ========================================
 
@@ -684,7 +832,7 @@
                 mostrarNotificacion(`${errores.length} errores en la actualización.`, 'error', 5000);
             }
         } else {
-    
+
         }
     }
 
@@ -697,10 +845,15 @@
             const elemDiurno = document.getElementById('ocupacion-semanal-diurno');
             const elemVespertino = document.getElementById('ocupacion-semanal-vespertino');
             const elemTotal = document.getElementById('ocupacion-semanal');
-            
-            if (elemDiurno) elemDiurno.textContent = (data.ocupacionSemanal.diurno || 0) + '%';
-            if (elemVespertino) elemVespertino.textContent = (data.ocupacionSemanal.vespertino || 0) + '%';
-            if (elemTotal) elemTotal.textContent = (data.ocupacionSemanal.total || 0) + '%';
+
+            // Ensure we're getting numeric values, not objects
+            const diurno = typeof data.ocupacionSemanal.diurno === 'number' ? data.ocupacionSemanal.diurno : 0;
+            const vespertino = typeof data.ocupacionSemanal.vespertino === 'number' ? data.ocupacionSemanal.vespertino : 0;
+            const total = typeof data.ocupacionSemanal.total === 'number' ? data.ocupacionSemanal.total : 0;
+
+            if (elemDiurno) elemDiurno.textContent = diurno + '%';
+            if (elemVespertino) elemVespertino.textContent = vespertino + '%';
+            if (elemTotal) elemTotal.textContent = total + '%';
         }
 
         // Actualizar ocupación mensual (con turnos)
@@ -708,16 +861,22 @@
             const elemDiurno = document.getElementById('ocupacion-mensual-diurno');
             const elemVespertino = document.getElementById('ocupacion-mensual-vespertino');
             const elemTotal = document.getElementById('ocupacion-mensual');
-            
-            if (elemDiurno) elemDiurno.textContent = (data.ocupacionMensual.diurno || 0) + '%';
-            if (elemVespertino) elemVespertino.textContent = (data.ocupacionMensual.vespertino || 0) + '%';
-            if (elemTotal) elemTotal.textContent = (data.ocupacionMensual.total || 0) + '%';
+
+            // Ensure we're getting numeric values, not objects
+            const diurno = typeof data.ocupacionMensual.diurno === 'number' ? data.ocupacionMensual.diurno : 0;
+            const vespertino = typeof data.ocupacionMensual.vespertino === 'number' ? data.ocupacionMensual.vespertino : 0;
+            const total = typeof data.ocupacionMensual.total === 'number' ? data.ocupacionMensual.total : 0;
+
+            if (elemDiurno) elemDiurno.textContent = diurno + '%';
+            if (elemVespertino) elemVespertino.textContent = vespertino + '%';
+            if (elemTotal) elemTotal.textContent = total + '%';
         }
 
         // Actualizar usuarios sin escaneo
         if (data.usuariosSinEscaneo !== undefined) {
             const elem = document.getElementById('usuarios-sin-escaneo');
-            if (elem) elem.textContent = data.usuariosSinEscaneo + ' usuarios sin registrar asistencia hoy';
+            const value = typeof data.usuariosSinEscaneo === 'number' ? data.usuariosSinEscaneo : 0;
+            if (elem) elem.textContent = value + ' usuarios sin registrar asistencia hoy';
         }
     }
 
@@ -751,7 +910,7 @@
 
         if (nuevoModulo !== moduloActual) {
             if (moduloActual !== null) {
-        
+
                 actualizarHorariosSemana();
                 actualizarIndicadorModuloInfo(nuevoModulo);
             }
@@ -807,7 +966,7 @@
         if (moduloCheckInterval) {
             clearInterval(moduloCheckInterval);
             moduloCheckInterval = null;
-    
+
         }
     }
 
@@ -867,7 +1026,7 @@
 
             window.graficoBarras.data.datasets[0].data = datos;
             window.graficoBarras.update('active');
-            
+
             // Actualizar el rango de fechas si está disponible
             if (usoPorDia.rango_fechas) {
                 const rangoElement = document.querySelector('.rango-fechas-grafico');
@@ -932,7 +1091,7 @@
         }
 
         let html = '<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">';
-        
+
         comparativaTipos.forEach(data => {
             const icono = iconos[data.nombre] || iconos[data.tipo] || 'fa-door-closed';
             const nombre = data.nombre || data.tipo || 'Tipo no especificado';
@@ -990,7 +1149,7 @@
         if (autoRefreshInterval) {
             clearInterval(autoRefreshInterval);
             autoRefreshInterval = null;
-    
+
         }
     }
 
@@ -1056,71 +1215,90 @@
     }
 
     // ========================================
-    // INICIALIZACIÓN DE GRÁFICOS
+    // INICIALIZACIÓN DE GRÁFICOS (LAZY LOADING)
     // ========================================
 
-    // Gráfico de barras: Uso por Día
-    window.graficoBarras = new Chart(document.getElementById('grafico-barras'), {
-        type: 'bar',
-        data: {
-            labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
-            datasets: [{
-                label: 'Cantidad de reservas',
-                data: {!! json_encode(array_values($usoPorDia['datos'])) !!},
-                backgroundColor: 'rgba(59, 130, 246, 0.7)'
-            }]
-        },
-        options: {
-            responsive: false,
-            plugins: {
-                legend: { display: false }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Cantidad de reservas'
-                    }
-                }
-            }
-        }
-    });
+    // Variables globales para los gráficos
+    window.graficoBarras = null;
+    window.graficoMensual = null;
+    window.graficoCircularSalas = null;
+    window.chartsInitialized = false;
 
-    // Gráfico de línea: Evolución mensual
-    window.graficoMensual = new Chart(document.getElementById('grafico-mensual'), {
-        type: 'line',
-        data: {
-            labels: {!! json_encode($evolucionMensual['dias']) !!},
-            datasets: [{
-                label: 'Ocupación (%)',
-                data: {!! json_encode($evolucionMensual['ocupacion']) !!},
-                borderColor: 'rgba(59,130,246,1)',
-                backgroundColor: 'rgba(59,130,246,0.2)',
-                fill: true,
-                tension: 0.4
-            }]
-        },
-        options: {
-            responsive: false,
-            plugins: {
-                legend: { position: 'bottom' }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    max: 100,
-                    title: {
-                        display: true,
-                        text: 'Porcentaje de ocupación'
-                    }
-                }
-            }
-        }
-    });
+    // Función para inicializar gráficos de forma diferida
+    function initializeCharts() {
+        if (window.chartsInitialized) return;
 
-    // Gráfico circular: Salas ocupadas/libres
-    window.graficoCircularSalas = new Chart(document.getElementById('grafico-circular-salas'), {
+        try {
+            // Gráfico de barras: Uso por Día
+            const canvasBarras = document.getElementById('grafico-barras');
+            if (canvasBarras && !window.graficoBarras) {
+                window.graficoBarras = new Chart(canvasBarras, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+                        datasets: [{
+                            label: 'Cantidad de reservas',
+                            data: {!! json_encode(array_values($usoPorDia['datos'])) !!},
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)'
+                        }]
+                    },
+                    options: {
+                        responsive: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'Cantidad de reservas'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Gráfico de línea: Evolución mensual
+            const canvasMensual = document.getElementById('grafico-mensual');
+            if (canvasMensual && !window.graficoMensual) {
+                window.graficoMensual = new Chart(canvasMensual, {
+                    type: 'line',
+                    data: {
+                        labels: {!! json_encode($evolucionMensual['dias']) !!},
+                        datasets: [{
+                            label: 'Ocupación (%)',
+                            data: {!! json_encode($evolucionMensual['ocupacion']) !!},
+                            borderColor: 'rgba(59,130,246,1)',
+                            backgroundColor: 'rgba(59,130,246,0.2)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: false,
+                        plugins: {
+                            legend: { position: 'bottom' }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                title: {
+                                    display: true,
+                                    text: 'Porcentaje de ocupación'
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Gráfico circular: Salas ocupadas/libres
+            const canvasCircular = document.getElementById('grafico-circular-salas');
+            if (canvasCircular && !window.graficoCircularSalas) {
+                window.graficoCircularSalas = new Chart(canvasCircular, {
         type: 'doughnut',
         data: {
             labels: ['Ocupadas', 'Libres'],
@@ -1177,12 +1355,34 @@
             }
         }]
     });
+            }
+
+            window.chartsInitialized = true;
+        } catch (error) {
+            console.error('Error initializing charts:', error);
+        }
+    }
 
     // ========================================
     // INICIALIZACIÓN Y EVENT LISTENERS
     // ========================================
 
     document.addEventListener('DOMContentLoaded', function () {
+        // Ocultar spinner de carga cuando todo esté listo
+        setTimeout(function() {
+            const loadingElement = document.getElementById('dashboard-loading');
+            if (loadingElement) {
+                loadingElement.style.opacity = '0';
+                loadingElement.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => {
+                    loadingElement.style.display = 'none';
+                }, 300);
+            }
+        }, 500);
+
+        // Inicializar gráficos con un pequeño delay para mejorar la carga inicial
+        setTimeout(initializeCharts, 100);
+
         // Iniciar auto-refresh
         iniciarAutoRefresh();
 

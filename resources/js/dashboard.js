@@ -102,7 +102,7 @@ function mostrarNotificacion(mensaje, tipo = 'info', duracion = 3000) {
     // Crear el elemento de notificación
     const notificacion = document.createElement('div');
     notificacion.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
-    
+
     // Configurar colores según el tipo
     let bgColor, textColor, icon;
     switch (tipo) {
@@ -126,7 +126,7 @@ function mostrarNotificacion(mensaje, tipo = 'info', duracion = 3000) {
             textColor = 'text-white';
             icon = 'ℹ';
     }
-    
+
     notificacion.className += ` ${bgColor} ${textColor}`;
     notificacion.innerHTML = `
         <div class="flex items-center gap-3">
@@ -134,15 +134,15 @@ function mostrarNotificacion(mensaje, tipo = 'info', duracion = 3000) {
             <span>${mensaje}</span>
         </div>
     `;
-    
+
     // Agregar al DOM
     document.body.appendChild(notificacion);
-    
+
     // Animar entrada
     setTimeout(() => {
         notificacion.classList.remove('translate-x-full');
     }, 100);
-    
+
     // Auto-remover después del tiempo especificado
     setTimeout(() => {
         notificacion.classList.add('translate-x-full');
@@ -273,17 +273,9 @@ function actualizarWidgets(data) {
 function actualizarKPIs(data) {
     if (!data) return;
 
-    const kpis = [
-        { id: 'ocupacion-semanal', valor: data.ocupacionSemanal },
-        { id: 'ocupacion-diaria', valor: data.ocupacionDiaria },
-        { id: 'ocupacion-mensual', valor: data.ocupacionMensual },
-        { id: 'usuarios-sin-escaneo', valor: data.usuariosSinEscaneo },
-        { id: 'horas-utilizadas', valor: data.horasUtilizadas }
-    ];
-
-    kpis.forEach(kpi => {
-        actualizarKPI(kpi.id, kpi.valor);
-    });
+    // KPIs are handled in the inline script in dashboard.blade.php
+    // This function is kept for compatibility but doesn't update any elements
+    // since ocupacionSemanal and ocupacionMensual are updated there
 }
 
 function actualizarKPI(id, valor) {
@@ -318,10 +310,10 @@ function actualizarGraficoCircularSalas(salasOcupadas) {
     if (window.graficoCircularSalas && salasOcupadas) {
         const ocupadas = salasOcupadas.ocupadas || 0;
         const libres = salasOcupadas.libres || 0;
-        
+
         window.graficoCircularSalas.data.datasets[0].data = [ocupadas, libres];
         window.graficoCircularSalas.update();
-        
+
         // Actualizar el texto de salas ocupadas
         const elementoSalas = document.getElementById('salas-ocupadas');
         if (elementoSalas) {
@@ -429,7 +421,7 @@ function actualizarModalReloj() {
     if (elementoHora) {
         elementoHora.textContent = hora;
     }
-    
+
     // Módulo actual
     let modulo = '-';
     if (typeof obtenerModuloActual === 'function') {
@@ -449,7 +441,7 @@ function actualizarDiaActual() {
     const ahora = new Date();
     const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
     const diaActual = diasSemana[ahora.getDay()];
-    
+
     // Actualizar elementos que muestren el día actual si existen
     const elementos = document.querySelectorAll('[data-dia-actual]');
     elementos.forEach(elemento => {
@@ -537,7 +529,7 @@ function inicializarGraficos(data) {
     if (document.getElementById('grafico-circular-salas')) {
         const ocupadas = data.salasOcupadas?.ocupadas || 0;
         const libres = data.salasOcupadas?.libres || 0;
-        
+
         window.graficoCircularSalas = new Chart(document.getElementById('grafico-circular-salas'), {
             type: 'doughnut',
             data: {
@@ -585,12 +577,12 @@ function inicializarGraficos(data) {
 // ========================================
 
 document.addEventListener('DOMContentLoaded', function () {
-    
+
     // Inicializar gráficos con datos desde el servidor
     if (window.dashboardData) {
         inicializarGraficos(window.dashboardData);
     }
-    
+
     // Iniciar auto-refresh
     iniciarAutoRefresh();
 

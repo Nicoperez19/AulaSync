@@ -73,23 +73,7 @@
         </x-sidebar.link>
     @endcan
 
-    <!-- Reportería - Solo Administrador y Supervisor -->
-    @can('reportes')
-        <x-sidebar.dropdown title="Reportes" :active="Str::startsWith(request()->route()->uri(), 'reportes')">
-            <x-slot name="icon">
-                <x-icons.chart-bar class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
-            </x-slot>
-
-            <x-sidebar.sublink title="Accesos registrados" href="{{ route('reportes.accesos') }}"
-                :isActive="request()->routeIs('reportes.accesos')" />
-            <x-sidebar.sublink title="Análisis por espacios" href="{{ route('reportes.espacios') }}"
-                :isActive="request()->routeIs('reportes.espacios')" />
-            <x-sidebar.sublink title="Análisis por tipo de espacio" href="{{ route('reportes.tipo-espacio') }}"
-                :isActive="request()->routeIs('reportes.tipo-espacio')" />
-             <x-sidebar.sublink title="Salas de Estudio" href="{{ route('reportes.salas-estudio') }}"
-                :isActive="request()->routeIs('reportes.salas-estudio')" />
-        </x-sidebar.dropdown>
-    @endcan
+    <!-- Reportería movido al Dashboard -->
     <!-- Estadísticas Profesores - Solo Administrador y Supervisor -->
     @role('Administrador|Supervisor')
         <x-sidebar.link title="Clases no realizadas" href="{{ route('clases-no-realizadas.index') }}"

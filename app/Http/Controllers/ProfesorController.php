@@ -104,7 +104,7 @@ class ProfesorController extends Controller
 
             // Obtener la asignatura principal del profesor (primera asignatura activa)
             $asignatura = $profesor->asignaturas()->first();
-            
+
             // Crear la reserva
             $reserva = new Reserva();
             $reserva->id_reserva = Reserva::generarIdUnico();
@@ -319,7 +319,7 @@ class ProfesorController extends Controller
             // Obtener profesor y su asignatura principal
             $profesor = Profesor::where('run_profesor', $run)->first();
             $asignatura = $profesor ? $profesor->asignaturas()->first() : null;
-            
+
             // Crear la reserva
             $reserva = new Reserva();
             $reserva->id_reserva = Reserva::generarIdUnico();
@@ -372,31 +372,50 @@ class ProfesorController extends Controller
 
     /**
      * Obtener asignaturas de un profesor
+     * Asegura que SIEMPRE se retornen las asignaturas con eager loading
      */
     public function getAsignaturasProfesor($run)
     {
         try {
-            $profesor = Profesor::where('run_profesor', $run)->first();
-            
+            Log::info('📚 Buscando asignaturas para profesor: ' . $run);
+
+            // Buscar profesor con eager loading de asignaturas
+            // IMPORTANTE: Incluir run_profesor en el select para que funcione el eager loading
+            $profesor = Profesor::with(['asignaturas' => function($query) {
+                $query->select('asignaturas.id_asignatura', 'asignaturas.codigo_asignatura', 'asignaturas.nombre_asignatura', 'asignaturas.run_profesor')
+                      ->orderBy('asignaturas.codigo_asignatura');
+            }])->where('run_profesor', $run)->first();
+
             if (!$profesor) {
+                Log::warning('⚠️ Profesor no encontrado: ' . $run);
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'Profesor no encontrado'
                 ], 404);
             }
 
-            $asignaturas = $profesor->asignaturas()->select('id_asignatura', 'codigo_asignatura', 'nombre_asignatura')->get();
+            // Obtener asignaturas - usar la relación cargada
+            $asignaturas = $profesor->asignaturas;
+
+            Log::info('✅ Asignaturas encontradas: ' . $asignaturas->count() . ' para profesor ' . $run);
 
             return response()->json([
                 'success' => true,
-                'asignaturas' => $asignaturas
+                'asignaturas' => $asignaturas,
+                'count' => $asignaturas->count(),
+                'profesor' => [
+                    'run' => $profesor->run_profesor,
+                    'nombre' => $profesor->name
+                ]
             ]);
 
         } catch (\Exception $e) {
-            Log::error('Error al obtener asignaturas del profesor: ' . $e->getMessage());
+            Log::error('❌ Error al obtener asignaturas del profesor: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
             return response()->json([
                 'success' => false,
-                'mensaje' => 'Error al obtener asignaturas: ' . $e->getMessage()
+                'mensaje' => 'Error al obtener asignaturas: ' . $e->getMessage(),
+                'asignaturas' => []
             ], 500);
         }
     }

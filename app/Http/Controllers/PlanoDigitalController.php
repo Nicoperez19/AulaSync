@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Mapa;
 use App\Models\Bloque;
 use App\Models\Planificacion_Asignatura;
+use App\Models\PlanificacionProfesorColaborador;
 use App\Models\Modulo;
 use App\Models\Reserva;
 use App\Models\Sede;
@@ -16,6 +17,7 @@ use App\Helpers\SemesterHelper;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PlanoDigitalController extends Controller
 {
@@ -225,7 +227,8 @@ class PlanoDigitalController extends Controller
         // Obtener la hora actual
         $horaActual = Carbon::now()->format('H:i:s');
 
-        return Planificacion_Asignatura::with(['horario', 'asignatura.profesor', 'modulo', 'espacio'])
+        // Obtener planificaciones de asignaturas regulares
+        $planificacionesRegulares = Planificacion_Asignatura::with(['horario', 'asignatura.profesor', 'modulo', 'espacio'])
             ->where('id_modulo', $moduloActual->id_modulo)
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
@@ -237,6 +240,19 @@ class PlanoDigitalController extends Controller
                 $query->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'));
             })
             ->get();
+
+        // Obtener planificaciones de profesores colaboradores
+        $planificacionesTemporales = PlanificacionProfesorColaborador::with(['profesorColaborador', 'modulo', 'espacio'])
+            ->where('id_modulo', $moduloActual->id_modulo)
+            ->whereHas('modulo', function ($query) use ($horaActual) {
+                $query->where('hora_termino', '>=', $horaActual); // Solo módulos que no han terminado
+            })
+            ->whereHas('espacio', function ($query) use ($mapa) {
+                $query->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'));
+            })
+            ->get();
+
+        return $planificacionesRegulares->merge($planificacionesTemporales);
     }
 
     private function obtenerPlanificacionesProximas(Mapa $mapa, array $estadoActual)
@@ -260,7 +276,8 @@ class PlanoDigitalController extends Controller
             $horaFinBusqueda = $horaActual->copy()->addMinutes(9)->format('H:i:s');
         }
 
-        return Planificacion_Asignatura::with(['horario', 'asignatura.profesor', 'modulo', 'espacio'])
+        // Obtener planificaciones regulares próximas
+        $planificacionesRegularesProximas = Planificacion_Asignatura::with(['horario', 'asignatura.profesor', 'modulo', 'espacio'])
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
             })
@@ -280,6 +297,27 @@ class PlanoDigitalController extends Controller
                 $query->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'));
             })
             ->get();
+
+        // Obtener planificaciones de profesores colaboradores próximas
+        $planificacionesTemporalesProximas = PlanificacionProfesorColaborador::with(['profesorColaborador', 'modulo', 'espacio'])
+            ->whereHas('modulo', function ($query) use ($horaInicioBusqueda, $horaFinBusqueda, $diaActual, $esRangoEspecial) {
+                $query->where('dia', $diaActual);
+
+                if ($esRangoEspecial) {
+                    // Para el rango 05:00-05:10, buscar módulos que empiecen a las 05:10
+                    $query->where('hora_inicio', '=', '05:10:00');
+                } else {
+                    // Para otros horarios, buscar módulos que empiecen en los próximos 10 minutos
+                    $query->where('hora_inicio', '>', $horaInicioBusqueda)
+                          ->where('hora_inicio', '<=', $horaFinBusqueda);
+                }
+            })
+            ->whereHas('espacio', function ($query) use ($mapa) {
+                $query->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'));
+            })
+            ->get();
+
+        return $planificacionesRegularesProximas->merge($planificacionesTemporalesProximas);
     }
 
     private function prepararDetallesBloque($espacio, $planificacion, $reserva, $planificacionProxima): array

@@ -29,6 +29,9 @@
             display: none !important;
         }
     </style>
+
+    <!-- Custom Styles -->
+    @stack('styles')
 </head>
 
 <body class="font-sans antialiased">
@@ -247,6 +250,9 @@
 
         // Alpine.js se carga a través de Vite en app.js
     </script>
+
+    <!-- Custom Scripts -->
+    @stack('scripts')
 </body>
 
 </html>

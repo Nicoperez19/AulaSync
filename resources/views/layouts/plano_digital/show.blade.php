@@ -293,6 +293,24 @@
                 </div>
 
                 <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
+                    <!-- Grupo: Estado Badge + Botón Desocupar -->
+                    <div class="flex flex-col items-center gap-1">
+                        <!-- Badge de estado -->
+                        <div class="flex items-center gap-2">
+                            <span id="estadoIcon" class="w-3 h-3 rounded-full"></span>
+                            <span id="modalEstado" class="text-sm font-semibold text-white">Cargando...</span>
+                        </div>
+                        
+                        <!-- Botón desocupar -->
+                        <button class="btn-desocupar group relative px-3 py-1 text-xs font-semibold text-white bg-red-600 rounded hover:bg-red-700 hidden transition-all duration-200" data-tipo="espacio" title="Desocupar sala">
+                            <div class="flex items-center space-x-1">
+                                <x-heroicon-s-logout class="w-3 h-3" />
+                                <span class="hidden sm:inline">Desocupar</span>
+                            </div>
+                        </button>
+                    </div>
+                    
+                    <!-- Botón cerrar -->
                     <button onclick="cerrarModalEspacio(); qrInputManager.setActiveInput('main')"
                         class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
                         title="Cerrar modal (Esc)"
@@ -302,34 +320,55 @@
 
             <!-- Contenido del modal -->
             <div class="p-6 bg-gray-50 overflow-y-auto max-h-[70vh] flex-1">
-                <!-- Estado del espacio -->
-                <div class="p-6 mb-6 bg-white border-l-4 border-blue-500 shadow-sm rounded-xl">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-xl font-semibold text-gray-800">
-                            <i class="mr-2 text-blue-500 fas fa-info-circle"></i>
-                            Estado Actual
-                        </h3>
-                        <span id="estadoPill" class="inline-flex items-center px-4 py-2 text-sm font-bold border rounded-full">
-                            <span id="estadoIcon" class="w-3 h-3 mr-2 rounded-full"></span>
-                            <span id="modalEstado" class="font-semibold"></span>
-                        </span>
-                    </div>
-                    <div id="estadoDetalles" class="text-sm text-gray-600">
-                        <!-- Información adicional del estado se insertará aquí -->
-                    </div>
+                <!-- Vista de Pasos: Clase Anterior - Próxima Clase -->
+                <div id="pasoClasesContainer" class="p-6 mb-6 bg-white shadow-sm rounded-xl" style="display: none;">
+                    <h3 class="mb-6 text-lg font-semibold text-gray-800">Cronología de Clases</h3>
                     
-                    <div class="mt-4 flex justify-end">
-                        <button class="btn-desocupar group relative px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded hover:bg-red-700 hidden transition-all duration-200" data-tipo="espacio" title="Desocupar sala">
-                            <div class="flex items-center space-x-2">
-                                <x-heroicon-s-logout class="w-4 h-4" />
-                                <span>Desocupar</span>
+                    <div class="flex items-center justify-between">
+                        <!-- Paso 1: Clase Anterior -->
+                        <div class="flex flex-col items-center flex-1">
+                            <div class="flex items-center justify-center w-12 h-12 mb-3 text-white bg-gray-400 rounded-full">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
                             </div>
-                            <!-- Tooltip -->
-                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
-                                Desocupar sala
-                                <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                            <div class="text-xs font-medium text-gray-500 uppercase mb-3">Clase Anterior</div>
+                            <div id="pasoClaseAnterior" class="w-full px-4 py-3 text-sm text-center bg-gray-50 border border-gray-200 rounded-lg min-h-[80px] flex items-center justify-center">
+                                <p class="text-gray-400 text-xs">Sin información</p>
                             </div>
-                        </button>
+                        </div>
+
+                        <!-- Línea conectora 1 -->
+                        <div class="flex-shrink-0 w-12 h-0.5 bg-gray-300 mx-2"></div>
+
+                        <!-- Paso 2: Ahora -->
+                        <div class="flex flex-col items-center flex-1">
+                            <div class="flex items-center justify-center w-12 h-12 mb-3 text-white bg-blue-500 rounded-full">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div class="text-xs font-medium text-blue-600 uppercase mb-3">Ahora</div>
+                            <div id="pasoEstadoActual" class="w-full px-4 py-3 text-sm text-center bg-blue-50 border border-blue-200 rounded-lg min-h-[80px] flex items-center justify-center">
+                                <p class="text-gray-400 text-xs">Sin información</p>
+                            </div>
+                        </div>
+
+                        <!-- Línea conectora 2 -->
+                        <div class="flex-shrink-0 w-12 h-0.5 bg-gray-300 mx-2"></div>
+
+                        <!-- Paso 3: Próxima Clase -->
+                        <div class="flex flex-col items-center flex-1">
+                            <div class="flex items-center justify-center w-12 h-12 mb-3 text-gray-400 bg-white border-2 border-gray-300 rounded-full">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                            </div>
+                            <div class="text-xs font-medium text-gray-500 uppercase mb-3">Próxima Clase</div>
+                            <div id="pasoClaseProxima" class="w-full px-4 py-3 text-sm text-center bg-gray-50 border border-gray-200 rounded-lg min-h-[80px] flex items-center justify-center">
+                                <p class="text-gray-400 text-xs">Sin información</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -2323,6 +2362,10 @@
                 claseActualInfo: document.getElementById('claseActualInfo'),
                 proximaClaseContainer: document.getElementById('proximaClaseContainer'),
                 proximaClaseInfo: document.getElementById('proximaClaseInfo'),
+                pasoClasesContainer: document.getElementById('pasoClasesContainer'),
+                pasoClaseAnterior: document.getElementById('pasoClaseAnterior'),
+                pasoEstadoActual: document.getElementById('pasoEstadoActual'),
+                pasoClaseProxima: document.getElementById('pasoClaseProxima'),
                 tipoEspacio: document.getElementById('tipoEspacio'),
                 capacidadEspacio: document.getElementById('capacidadEspacio'),
                 pisoEspacio: document.getElementById('pisoEspacio'),
@@ -2340,10 +2383,10 @@
                     // Mostrar loading optimizado
         mostrarLoadingOptimizado(elements);
 
-        // Cargar información detallada en paralelo con timeout
+        // Cargar información detallada en paralelo con timeout optimizado
         const dataPromise = cargarInformacionDetallada(indicator.id);
         const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Timeout')), 10000) // Aumentado a 10 segundos
+            setTimeout(() => reject(new Error('Timeout')), 5000) // Reducido a 5 segundos
         );
 
         try {
@@ -2395,34 +2438,36 @@
             // Estado real del espacio
 
             const estadoConfig = {
-                'disponible': { texto: 'Disponible', pill: 'border-green-500 bg-green-50 text-green-700', icon: 'bg-green-500' },
-                'Disponible': { texto: 'Disponible', pill: 'border-green-500 bg-green-50 text-green-700', icon: 'bg-green-500' },
-                'libre': { texto: 'Disponible', pill: 'border-green-500 bg-green-50 text-green-700', icon: 'bg-green-500' },
-                '#059669': { texto: 'Disponible', pill: 'border-green-500 bg-green-50 text-green-700', icon: 'bg-green-500' },
-                '#10b981': { texto: 'Disponible', pill: 'border-green-500 bg-green-50 text-green-700', icon: 'bg-green-500' },
-                'ocupado': { texto: 'Ocupado', pill: 'border-red-500 bg-red-50 text-red-700', icon: 'bg-red-500' },
-                'Ocupado': { texto: 'Ocupado', pill: 'border-red-500 bg-red-50 text-red-700', icon: 'bg-red-500' },
-                '#FF0000': { texto: 'Ocupado', pill: 'border-red-500 bg-red-50 text-red-700', icon: 'bg-red-500' },
-                'reservado': { texto: 'Reservado', pill: 'border-yellow-400 bg-yellow-50 text-yellow-700', icon: 'bg-yellow-400' },
-                'Reservado': { texto: 'Reservado', pill: 'border-yellow-400 bg-yellow-50 text-yellow-700', icon: 'bg-yellow-400' },
-                '#FFA500': { texto: 'Reservado', pill: 'border-yellow-400 bg-yellow-50 text-yellow-700', icon: 'bg-yellow-400' },
-                '#F59E0B': { texto: 'Reservado', pill: 'border-yellow-400 bg-yellow-50 text-yellow-700', icon: 'bg-yellow-400' },
-                'proximo': { texto: 'Próximo a ocuparse', pill: 'border-blue-500 bg-blue-50 text-blue-700', icon: 'bg-blue-500' },
-                'Proximo': { texto: 'Próximo a ocuparse', pill: 'border-blue-500 bg-blue-50 text-blue-700', icon: 'bg-blue-500' },
-                'Próximo': { texto: 'Próximo a ocuparse', pill: 'border-blue-500 bg-blue-50 text-blue-700', icon: 'bg-blue-500' },
-                '#3B82F6': { texto: 'Próximo a ocuparse', pill: 'border-blue-500 bg-blue-50 text-blue-700', icon: 'bg-blue-500' },
-                'ClaseSinAsistentes': { texto: 'Clase sin asistentes', pill: 'border-purple-500 bg-purple-50 text-purple-700', icon: 'bg-purple-500' },
-                'clasesinasistentes': { texto: 'Clase sin asistentes', pill: 'border-purple-500 bg-purple-50 text-purple-700', icon: 'bg-purple-500' }
+                'disponible': { texto: 'Disponible', pill: 'border-2 border-green-500 bg-green-100 text-green-700', icon: 'bg-green-500' },
+                'Disponible': { texto: 'Disponible', pill: 'border-2 border-green-500 bg-green-100 text-green-700', icon: 'bg-green-500' },
+                'libre': { texto: 'Disponible', pill: 'border-2 border-green-500 bg-green-100 text-green-700', icon: 'bg-green-500' },
+                '#059669': { texto: 'Disponible', pill: 'border-2 border-green-500 bg-green-100 text-green-700', icon: 'bg-green-500' },
+                '#10b981': { texto: 'Disponible', pill: 'border-2 border-green-500 bg-green-100 text-green-700', icon: 'bg-green-500' },
+                'ocupado': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                'Ocupado': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                '#FF0000': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                '#ef4444': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                '#dc2626': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                'reservado': { texto: 'Reservado', pill: 'border-2 border-yellow-500 bg-yellow-100 text-yellow-700', icon: 'bg-yellow-500' },
+                'Reservado': { texto: 'Reservado', pill: 'border-2 border-yellow-500 bg-yellow-100 text-yellow-700', icon: 'bg-yellow-500' },
+                '#FFA500': { texto: 'Reservado', pill: 'border-2 border-yellow-500 bg-yellow-100 text-yellow-700', icon: 'bg-yellow-500' },
+                '#F59E0B': { texto: 'Reservado', pill: 'border-2 border-yellow-500 bg-yellow-100 text-yellow-700', icon: 'bg-yellow-500' },
+                'proximo': { texto: 'Próximo a ocuparse', pill: 'border-2 border-blue-500 bg-blue-100 text-blue-700', icon: 'bg-blue-500' },
+                'Proximo': { texto: 'Próximo a ocuparse', pill: 'border-2 border-blue-500 bg-blue-100 text-blue-700', icon: 'bg-blue-500' },
+                'Próximo': { texto: 'Próximo a ocuparse', pill: 'border-2 border-blue-500 bg-blue-100 text-blue-700', icon: 'bg-blue-500' },
+                '#3B82F6': { texto: 'Próximo a ocuparse', pill: 'border-2 border-blue-500 bg-blue-100 text-blue-700', icon: 'bg-blue-500' },
+                'ClaseSinAsistentes': { texto: 'Clase sin asistentes', pill: 'border-2 border-purple-500 bg-purple-100 text-purple-700', icon: 'bg-purple-500' },
+                'clasesinasistentes': { texto: 'Clase sin asistentes', pill: 'border-2 border-purple-500 bg-purple-100 text-purple-700', icon: 'bg-purple-500' }
             };
 
             const config = estadoConfig[estadoReal] || {
                 texto: 'Sin estado',
-                pill: 'border-gray-400 bg-gray-50 text-gray-700',
+                pill: 'border-2 border-gray-400 bg-gray-100 text-gray-700',
                 icon: 'bg-gray-400'
             };
 
             if (elements.estadoPill) {
-                elements.estadoPill.className = `inline-flex items-center px-4 py-2 text-sm font-bold border rounded-full ${config.pill}`;
+                elements.estadoPill.className = `inline-flex items-center px-4 py-2 text-sm font-bold rounded-full ${config.pill}`;
             }
 
             if (elements.estadoIcon) {
@@ -2436,15 +2481,18 @@
 
         // Función para mostrar loading optimizado
         function mostrarLoadingOptimizado(elements) {
-            if (elements.ocupanteContainer) {
-                elements.ocupanteContainer.style.display = 'block';
-                if (elements.ocupanteInfo) {
-                    elements.ocupanteInfo.innerHTML = `
-                        <div class="flex items-center justify-center py-4">
-                            <div class="w-6 h-6 border-b-2 border-blue-500 rounded-full animate-spin"></div>
-                            <span class="ml-2 text-sm text-gray-600">Cargando...</span>
-                        </div>
-                    `;
+            // NO mostrar contenedores antiguos - solo mostrar cronología con loading
+            if (elements.pasoClasesContainer) {
+                elements.pasoClasesContainer.style.display = 'block';
+                // Mostrar un placeholder de carga
+                if (elements.pasoClaseAnterior) {
+                    elements.pasoClaseAnterior.innerHTML = '<div class="flex items-center justify-center"><div class="w-4 h-4 border-b-2 border-blue-500 rounded-full animate-spin"></div></div>';
+                }
+                if (elements.pasoEstadoActual) {
+                    elements.pasoEstadoActual.innerHTML = '<div class="flex items-center justify-center"><div class="w-4 h-4 border-b-2 border-blue-500 rounded-full animate-spin"></div></div>';
+                }
+                if (elements.pasoClaseProxima) {
+                    elements.pasoClaseProxima.innerHTML = '<div class="flex items-center justify-center"><div class="w-4 h-4 border-b-2 border-blue-500 rounded-full animate-spin"></div></div>';
                 }
             }
         }
@@ -2543,16 +2591,28 @@
             }
 
             // Solo si el espacio NO está disponible, mostrar según tipo de ocupación
-            console.log('🔴 Espacio ocupado - Renderizando según tipo');
+            console.log('🔴 Espacio no disponible - Renderizando según tipo');
 
-            // IMPORTANTE: Si el espacio está ocupado, SIEMPRE mostrar el botón desocupar
-            // independientemente del tipo de ocupación o si tenemos datos del ocupante
+            // SOLO mostrar botón desocupar si el estado es EXACTAMENTE "Ocupado"
+            const espacioOcupado = indicator && (
+                indicator.estado === 'Ocupado' || 
+                indicator.estado === 'ocupado' ||
+                indicator.estado === '#ef4444' ||
+                indicator.estado === '#dc2626'
+            );
+            
             const btnsDesocupar = document.querySelectorAll('.btn-desocupar[data-tipo="espacio"]');
             console.log('🔍 Botones desocupar encontrados:', btnsDesocupar.length);
+            console.log('🔍 ¿Espacio realmente ocupado?:', espacioOcupado);
             
             btnsDesocupar.forEach((btn, index) => {
-                btn.classList.remove('hidden');
-                console.log(`🔧 Botón desocupar ${index + 1} activado - Espacio ocupado`);
+                if (espacioOcupado) {
+                    btn.classList.remove('hidden');
+                    console.log(`🔧 Botón desocupar ${index + 1} MOSTRADO - Espacio Ocupado`);
+                } else {
+                    btn.classList.add('hidden');
+                    console.log(`🔧 Botón desocupar ${index + 1} OCULTO - Espacio NO es Ocupado (es ${indicator?.estado})`);
+                }
             });
 
             // Asegurar que tengamos un RUN para el botón desocupar
@@ -2582,6 +2642,9 @@
                     console.log('🔍 Input RUN creado:', newInput.value);
                 }
             }
+
+            // Mostrar vista de pasos (SIEMPRE)
+            mostrarVistaPasos(elements, data, indicator);
 
             // Mostrar información según el tipo de ocupación
             if (data.tipo_ocupacion === 'profesor') {
@@ -2693,6 +2756,82 @@
             });
         });
 
+        // Función para mostrar la vista de pasos
+        function mostrarVistaPasos(elements, data, indicator) {
+            if (!elements.pasoClasesContainer) return;
+            
+            console.log('📊 mostrarVistaPasos - Datos recibidos:', data);
+            console.log('📊 Indicator:', indicator);
+            
+            // MOSTRAR la cronología
+            elements.pasoClasesContainer.style.display = 'block';
+            
+            // OCULTAR los contenedores antiguos
+            if (elements.ocupanteContainer) elements.ocupanteContainer.style.display = 'none';
+            if (elements.proximaClaseContainer) elements.proximaClaseContainer.style.display = 'none';
+            if (elements.claseActualContainer) elements.claseActualContainer.style.display = 'none';
+            
+            // Clase Anterior
+            if (elements.pasoClaseAnterior) {
+                const anterior = data.clase_anterior;
+                console.log('📊 Clase anterior:', anterior);
+                if (anterior && anterior.asignatura) {
+                    elements.pasoClaseAnterior.innerHTML = `
+                        <div class="text-center">
+                            <div class="font-semibold text-gray-800 mb-1">${anterior.asignatura}</div>
+                            ${anterior.profesor ? `<div class="text-xs text-gray-600 mb-1">${anterior.profesor}</div>` : ''}
+                            ${anterior.hora_inicio ? `<div class="text-xs text-gray-500">${anterior.hora_inicio}</div>` : ''}
+                        </div>
+                    `;
+                } else {
+                    elements.pasoClaseAnterior.innerHTML = '<p class="text-gray-400 text-xs">Sin información</p>';
+                }
+            }
+            
+            // Estado Actual (Ahora)
+            if (elements.pasoEstadoActual) {
+                console.log('📊 Estado actual - asignatura:', data.asignatura, 'nombre:', data.nombre);
+                if (data.asignatura) {
+                    const horario = data.hora_inicio && data.hora_termino ? 
+                        `${data.hora_inicio} - ${data.hora_termino}` : 
+                        (data.hora_inicio || '');
+                    elements.pasoEstadoActual.innerHTML = `
+                        <div class="text-center">
+                            <div class="font-semibold text-blue-700 mb-1">${data.asignatura}</div>
+                            ${data.nombre ? `<div class="text-xs text-gray-700 mb-1">${data.nombre}</div>` : ''}
+                            ${horario ? `<div class="text-xs text-blue-600">${horario}</div>` : ''}
+                        </div>
+                    `;
+                } else if (indicator?.estado === 'Ocupado' && data.nombre) {
+                    elements.pasoEstadoActual.innerHTML = `
+                        <div class="text-center">
+                            <div class="font-semibold text-blue-700 mb-1">${data.nombre}</div>
+                            <div class="text-xs text-gray-500">En uso</div>
+                        </div>
+                    `;
+                } else {
+                    elements.pasoEstadoActual.innerHTML = '<p class="text-gray-400 text-xs">Sin información</p>';
+                }
+            }
+            
+            // Próxima Clase
+            if (elements.pasoClaseProxima) {
+                const proxima = data.proxima_clase;
+                console.log('📊 Próxima clase:', proxima);
+                if (proxima && proxima.asignatura) {
+                    elements.pasoClaseProxima.innerHTML = `
+                        <div class="text-center">
+                            <div class="font-semibold text-gray-800 mb-1">${proxima.asignatura}</div>
+                            ${proxima.profesor ? `<div class="text-xs text-gray-600 mb-1">${proxima.profesor}</div>` : ''}
+                            ${proxima.hora_inicio ? `<div class="text-xs text-gray-500">${proxima.hora_inicio}</div>` : ''}
+                        </div>
+                    `;
+                } else {
+                    elements.pasoClaseProxima.innerHTML = '<p class="text-gray-400 text-xs">Sin información</p>';
+                }
+            }
+        }
+
         // Función para renderizar información de profesor
         function renderizarInformacionProfesor(elements, data, indicator) {
             const tituloEl = document.getElementById('ocupanteTitulo');
@@ -2700,8 +2839,8 @@
             if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
 
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
-                // Mostrar el contenedor
-                elements.ocupanteContainer.style.display = 'block';
+                // NO mostrar - ahora se usa la cronología
+                // elements.ocupanteContainer.style.display = 'block';
 
                 elements.ocupanteInfo.innerHTML = `
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -2743,7 +2882,8 @@
 
             // Mostrar información de la clase actual
             if (elements.claseActualContainer && elements.claseActualInfo) {
-                elements.claseActualContainer.style.display = 'block';
+                // NO mostrar - ahora se usa la cronología
+                // elements.claseActualContainer.style.display = 'block';
                 elements.claseActualInfo.innerHTML = `
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="flex items-center">
@@ -2767,7 +2907,8 @@
 
             // Mostrar próxima clase si existe
             if (data.proxima_clase && elements.proximaClaseContainer && elements.proximaClaseInfo) {
-                elements.proximaClaseContainer.style.display = 'block';
+                // NO mostrar - ahora se usa la cronología
+                // elements.proximaClaseContainer.style.display = 'block';
                 elements.proximaClaseInfo.innerHTML = `
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="flex items-center">
@@ -2861,8 +3002,8 @@
                 // Aplicar HTML de una sola vez
                 elements.ocupanteInfo.innerHTML = html;
 
-                // Mostrar el contenedor
-                elements.ocupanteContainer.style.display = 'block';
+                // NO mostrar - ahora se usa la cronología
+                // elements.ocupanteContainer.style.display = 'block';
             }
 
             // Ocultar secciones de planificación para solicitantes
@@ -2883,8 +3024,8 @@
             if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
 
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
-                // Siempre mostrar el contenedor cuando llegamos aquí
-                elements.ocupanteContainer.style.display = 'block';
+                // NO mostrar - ahora se usa la cronología
+                // elements.ocupanteContainer.style.display = 'block';
 
                 elements.ocupanteInfo.innerHTML = `
                     <input type="hidden" id="run-ocupante-modal" value="${data.run_profesor || data.run_solicitante || ''}">
@@ -2946,6 +3087,10 @@
         function renderizarInformacionLibre(elements, data, indicator) {
             const tituloEl = document.getElementById('ocupanteTitulo');
 
+            // PRIMERO: Mostrar la cronología (SIEMPRE se debe mostrar)
+            console.log('📊 Espacio disponible - Mostrando cronología');
+            mostrarVistaPasos(elements, data, indicator);
+
             // Determinar si el espacio está realmente disponible según el indicator
             const espacioDisponible = indicator && (
                 indicator.estado === 'Disponible' ||
@@ -2956,20 +3101,29 @@
 
             console.log('🔍 DEBUG renderizarInformacionLibre - Estado del espacio disponible:', espacioDisponible, 'Estado indicator:', indicator?.estado);
 
-            // IMPORTANTE: Si el indicator dice que está ocupado, aunque la API diga "libre",
-            // mantener el botón desocupar visible para permitir desocupación forzosa
-            // Esto sucede cuando hay reservas vencidas o estados inconsistentes
-            if (!espacioDisponible) {
-                console.log('🔧 CASO ESPECIAL: API dice libre pero indicator dice ocupado - Manteniendo botón desocupar');
-                
-                // Asegurar que el botón desocupar esté visible para espacios "ocupados" según indicator
-                const btnsDesocupar = document.querySelectorAll('.btn-desocupar[data-tipo="espacio"]');
-                btnsDesocupar.forEach(btn => {
+            // NUNCA mostrar botón desocupar para espacios no ocupados
+            // SOLO mostrar si el estado es EXACTAMENTE "Ocupado"
+            const espacioOcupado = indicator && (
+                indicator.estado === 'Ocupado' || 
+                indicator.estado === 'ocupado' ||
+                indicator.estado === '#ef4444' ||
+                indicator.estado === '#dc2626'
+            );
+            
+            const btnsDesocupar = document.querySelectorAll('.btn-desocupar[data-tipo="espacio"]');
+            btnsDesocupar.forEach(btn => {
+                if (espacioOcupado) {
                     btn.classList.remove('hidden');
-                    console.log('🔧 Botón desocupar forzado a visible - Indicator dice ocupado');
-                });
+                    console.log('🔧 Botón desocupar visible - Espacio Ocupado');
+                } else {
+                    btn.classList.add('hidden');
+                    console.log('🔧 Botón desocupar oculto - Espacio NO es Ocupado (estado: ' + indicator?.estado + ')');
+                }
+            });
 
-                // Crear o actualizar el input RUN para desocupación forzosa
+            // Si el espacio está ocupado, manejar RUN para desocupación
+            if (espacioOcupado) {
+                // Crear o actualizar el input RUN para desocupación
                 const runInput = document.querySelector('#run-ocupante-modal');
                 const runValue = data.run_profesor || data.run_solicitante || `FORCE_${indicator.id}`;
                 
@@ -2984,37 +3138,37 @@
                         elements.ocupanteInfo.appendChild(newInput);
                     }
                 }
-                console.log('🔍 RUN para desocupación forzosa configurado:', runValue);
+                console.log('🔍 RUN para desocupación configurado:', runValue);
                 
-                // Mostrar información del último ocupante o información mínima
+                // Mostrar información del último ocupante
                 if (tituloEl) tituloEl.textContent = 'Último Ocupante';
                 
-                if (elements.ocupanteContainer) {
-                    elements.ocupanteContainer.style.display = 'block';
-                    if (elements.ocupanteInfo) {
-                        const infoHtml = `
-                            <input type="hidden" id="run-ocupante-modal" value="${runValue}">
-                            <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                <div class="flex items-center">
-                                    <i class="mr-3 text-orange-500 fas fa-exclamation-triangle"></i>
-                                    <div>
-                                        <div class="font-medium text-gray-800">Estado inconsistente</div>
-                                        <div class="text-sm text-gray-600">El espacio requiere desocupación manual</div>
-                                    </div>
+                // Mostrar información del ocupante si está ocupado
+                if (elements.ocupanteContainer && elements.ocupanteInfo) {
+                    // NO mostrar - ahora se usa la cronología
+                    // elements.ocupanteContainer.style.display = 'block';
+                    const infoHtml = `
+                        <input type="hidden" id="run-ocupante-modal" value="${runValue}">
+                        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div class="flex items-center">
+                                <i class="mr-3 text-orange-500 fas fa-exclamation-triangle"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">Estado inconsistente</div>
+                                    <div class="text-sm text-gray-600">El espacio requiere desocupación manual</div>
                                 </div>
-                                ${data.hora_inicio ? `
-                                <div class="flex items-center">
-                                    <i class="mr-3 text-gray-500 fas fa-clock"></i>
-                                    <div>
-                                        <div class="font-medium text-gray-800">${data.hora_inicio}</div>
-                                        <div class="text-sm text-gray-600">Última hora de inicio</div>
-                                    </div>
-                                </div>
-                                ` : ''}
                             </div>
-                        `;
-                        elements.ocupanteInfo.innerHTML = infoHtml;
-                    }
+                            ${data.hora_inicio ? `
+                            <div class="flex items-center">
+                                <i class="mr-3 text-gray-500 fas fa-clock"></i>
+                                <div>
+                                    <div class="font-medium text-gray-800">${data.hora_inicio}</div>
+                                    <div class="text-sm text-gray-600">Última hora de inicio</div>
+                                </div>
+                            </div>
+                            ` : ''}
+                        </div>
+                    `;
+                    elements.ocupanteInfo.innerHTML = infoHtml;
                 }
                 
                 // Ocultar próxima clase en este caso especial
@@ -3022,8 +3176,11 @@
                     elements.proximaClaseContainer.style.display = 'none';
                 }
                 
-                // IMPORTANTE: Retornar aquí para evitar que el código posterior oculte el botón
+                // Retornar aquí para evitar que el código posterior oculte el botón
                 return;
+            } else {
+                // Si el espacio está disponible, asegurar que no hay RUN y el título es correcto
+                if (tituloEl) tituloEl.textContent = 'Estado del Espacio';
             }
 
             // Si el espacio está disponible, NO mostrar información de ocupante ni botón desocupar
@@ -3037,13 +3194,14 @@
                 }
 
                 // Ocultar botón desocupar
-                const btnsDesocupar = document.querySelectorAll('.btn-desocupar');
-                btnsDesocupar.forEach(btn => btn.classList.add('hidden'));
+                const btnsDesocupar2 = document.querySelectorAll('.btn-desocupar');
+                btnsDesocupar2.forEach(btn => btn.classList.add('hidden'));
 
                 // SIEMPRE intentar mostrar próxima clase/reserva si existe
                 if (data.proxima_clase && elements.proximaClaseContainer && elements.proximaClaseInfo) {
                     console.log('📅 Mostrando próxima clase:', data.proxima_clase);
-                    elements.proximaClaseContainer.style.display = 'block';
+                    // NO mostrar - ahora se usa la cronología
+                    // elements.proximaClaseContainer.style.display = 'block';
                     elements.proximaClaseInfo.innerHTML = `
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div class="flex items-center">
@@ -3103,7 +3261,8 @@
                 // Solo mostrar contenedor si hay datos del último ocupante Y no es solo informativo
                 if (elements.ocupanteContainer && !esInformativo &&
                     (data.nombre || data.detalles || data.hora_inicio || data.hora_salida || data.run_solicitante)) {
-                    elements.ocupanteContainer.style.display = 'block';
+                    // NO mostrar - ahora se usa la cronología
+                    // elements.ocupanteContainer.style.display = 'block';
                     // Reutilizar la plantilla de "ocupado sin info" para mostrar detalles mínimos
                     elements.ocupanteInfo.innerHTML = `
                         <input type="hidden" id="run-ocupante-modal" value="${data.run_profesor || data.run_solicitante || ''}">
@@ -3157,7 +3316,8 @@
 
             // Mostrar próxima clase si existe
             if (data.proxima_clase && elements.proximaClaseContainer && elements.proximaClaseInfo) {
-                elements.proximaClaseContainer.style.display = 'block';
+                // NO mostrar - ahora se usa la cronología
+                // elements.proximaClaseContainer.style.display = 'block';
                 elements.proximaClaseInfo.innerHTML = `
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="flex items-center">

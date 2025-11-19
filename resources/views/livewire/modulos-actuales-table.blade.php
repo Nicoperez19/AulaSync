@@ -1,21 +1,21 @@
-<div class="p-6" x-data="{ 
-        pagina: 0, 
+<div class="p-6" x-data="{
+        pagina: 0,
         paginaAnterior: -1,
         totalPaginas: Math.ceil({{ count($this->getTodosLosEspacios()) }} / 13),
         transicionando: false
-    }" 
+    }"
     x-init="
         // Emitir página inicial
         window.dispatchEvent(new CustomEvent('actualizar-pagina', { detail: { pagina: pagina + 1, total: totalPaginas } }));
-        
+
         // Emitir información de feriado
-        window.dispatchEvent(new CustomEvent('actualizar-feriado', { 
-            detail: { 
-                esFeriado: {{ $esFeriado ? 'true' : 'false' }}, 
-                nombreFeriado: '{{ $nombreFeriado }}' 
-            } 
+        window.dispatchEvent(new CustomEvent('actualizar-feriado', {
+            detail: {
+                esFeriado: {{ $esFeriado ? 'true' : 'false' }},
+                nombreFeriado: '{{ $nombreFeriado }}'
+            }
         }));
-        
+
         // Animación inicial
         setTimeout(() => {
             const initialPage = document.querySelector('[data-pagina=\'0\']');
@@ -30,7 +30,7 @@
                 });
             }
         }, 100);
-        
+
         // Actualizar página cada 12 segundos con animación
         setInterval(() => {
             if (totalPaginas > 1) {
@@ -40,9 +40,9 @@
             }
         }, 12000)
     ">
-    
+
     @if (count($pisos) > 0)
-    
+
         <div class="relative w-full bg-gray-100 rounded-lg shadow-sm border border-gray-300 overflow-hidden">
             @if (count($this->getTodosLosEspacios()) > 0)
                 @php $totalPaginas = ceil(count($this->getTodosLosEspacios()) / 13); @endphp
@@ -70,7 +70,7 @@
                                 <i class="fas fa-graduation-cap mr-2"></i>Carrera
                             </th>
                             <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300">
-                                <i class="fas fa-users mr-2"></i>Capacidad
+                                <i class="fas fa-users mr-2"></i>Asistencia
                             </th>
                             <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider">
                                 <i class="fas fa-circle-info mr-2"></i>Status
@@ -137,12 +137,12 @@
                                                 @elseif(($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']) && !empty($espacio['datos_clase']['modulo_inicio']) && !empty($espacio['datos_clase']['modulo_fin']))
                                                     <div class="font-medium text-gray-900 text-sm">
                                                         <div class="flex items-center gap-2 text-base font-semibold">
-                                                                            
+
                                                            {{ preg_replace('/^[A-Z]{2}\./', '', $espacio['datos_clase']['modulo_inicio']) }} - {{ preg_replace('/^[A-Z]{2}\./', '', $espacio['datos_clase']['modulo_fin']) }}
-                                                          
+
                                                         </div>
                                                         <div class="text-gray-600">
-                                                             
+
                                                             {{ $espacio['datos_clase']['hora_inicio'] ?? '--:--' }} - {{ $espacio['datos_clase']['hora_fin'] ?? '--:--' }}
                                                         </div>
                                                     </div>
@@ -154,7 +154,7 @@
                                                     </div>
                                                 @elseif(!empty($espacio['proxima_clase']) && is_array($espacio['proxima_clase']))
                                                      <div class="flex items-center gap-2 text-base font-semibold">
-                                                                         
+
                                                            {{ preg_replace('/^[A-Z]{2}\./', '', $espacio['proxima_clase']['modulo_inicio'] ?? '--') }} - {{ preg_replace('/^[A-Z]{2}\./', '', $espacio['proxima_clase']['modulo_fin'] ?? '--') }}
                                                         </div>
                                                         <div class="text-gray-600">
@@ -195,31 +195,62 @@
                                          <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
                                             @php
                                                 $asignatura = $espacio['datos_clase']['nombre_asignatura'] ?? $espacio['proxima_clase']['nombre_asignatura'] ?? null;
+                                                $esColaborador = $espacio['datos_clase']['es_colaborador'] ?? false;
                                             @endphp
                                             @if (($espacio['tiene_reserva_solicitante'] ?? false) && !empty($espacio['datos_solicitante']))
                                                 <span class="font-medium text--700 text-sm">Solicitante: {{ $espacio['datos_solicitante']['nombre'] ?? 'N/A' }}</span>
                                             @elseif (($espacio['tiene_reserva_profesor'] ?? false) && !empty($espacio['datos_profesor']) && !empty($espacio['datos_profesor']['nombre']))
                                                 <span class="font-medium text-gray-700 text-sm">
-                                                    <div>{{ $espacio['datos_profesor']['nombre_asignatura'] ?? $asignatura ?? 'Sin asignatura' }}</div>
+                                                    <div>
+                                                        @if(!empty($espacio['datos_profesor']['codigo_asignatura']))
+                                                            <span class="font-semibold text-blue-600">[{{ $espacio['datos_profesor']['codigo_asignatura'] }}]</span>
+                                                        @endif
+                                                        {{ $espacio['datos_profesor']['nombre_asignatura'] ?? $asignatura ?? 'Sin asignatura' }}
+                                                    </div>
                                                     <div>Profesor: {{ $espacio['datos_profesor']['nombre'] ?? 'N/A' }}</div>
                                                 </span>
-                                            @elseif (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']) && isset($espacio['datos_clase']['profesor']) && !empty($espacio['datos_clase']['profesor']['name']))
-                                                <div class="font-medium text-gray-900 text-sm">
-                                                    @if(!empty($espacio['es_recuperacion']) && $espacio['es_recuperacion'])
-                                                        <div class="flex items-center gap-1">
-                                                            <i class="fas fa-redo text-blue-600"></i>
-                                                            <span class="text-blue-600 font-semibold">Recuperación de clase</span>
+                                            @elseif (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']))
+                                                @if($esColaborador)
+                                                    <!-- Clase Colaboradora: mostrar información básica -->
+                                                    <div class="font-medium text-purple-900 text-sm">
+                                                        <div class="flex items-center gap-1 mb-1">
+                                                            <span class="px-2 py-0.5 bg-purple-200 text-purple-700 text-xs font-semibold rounded">TEMPORAL</span>
                                                         </div>
-                                                    @endif
-                                                    <div>{{ $asignatura ?? 'Sin asignatura' }}</div>
-                                                    <div>Prof: {{ $espacio['datos_clase']['profesor']['name'] ?? 'N/A' }}</div>
-                                                    @if(!empty($espacio['es_recuperacion']) && !empty($espacio['datos_clase']['fecha_original']))
-                                                        <div class="text-xs text-gray-600">Original: {{ $espacio['datos_clase']['fecha_original'] }}</div>
-                                                    @endif
-                                                </div>
+                                                        <div>{{ $asignatura ?? 'Clase Temporal' }}</div>
+                                                        <div>Prof: {{ $espacio['datos_clase']['profesor']['name'] ?? 'N/A' }}</div>
+                                                        @if(!empty($espacio['datos_clase']['fecha_inicio']))
+                                                            <div class="text-xs text-gray-600">{{ $espacio['datos_clase']['fecha_inicio'] }} - {{ $espacio['datos_clase']['fecha_termino'] ?? '' }}</div>
+                                                        @endif
+                                                    </div>
+                                                @else
+                                                    <!-- Clase Regular -->
+                                                    <div class="font-medium text-gray-900 text-sm">
+                                                        @if(!empty($espacio['es_recuperacion']) && $espacio['es_recuperacion'])
+                                                            <div class="flex items-center gap-1">
+                                                                <i class="fas fa-redo text-blue-600"></i>
+                                                                <span class="text-blue-600 font-semibold">Recuperación de clase</span>
+                                                            </div>
+                                                        @endif
+                                                        <div>
+                                                            @if(!empty($espacio['datos_clase']['codigo_asignatura']))
+                                                                <span class="font-semibold ">{{ $espacio['datos_clase']['codigo_asignatura'] }} - </span>
+                                                            @endif
+                                                            {{ $asignatura ?? 'Sin asignatura' }}
+                                                        </div>
+                                                        <div>Prof: {{ $espacio['datos_clase']['profesor']['name'] ?? 'N/A' }}</div>
+                                                        @if(!empty($espacio['es_recuperacion']) && !empty($espacio['datos_clase']['fecha_original']))
+                                                            <div class="text-xs text-gray-600">Original: {{ $espacio['datos_clase']['fecha_original'] }}</div>
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             @elseif(!empty($espacio['proxima_clase']) && is_array($espacio['proxima_clase']))
                                                 <div class="font-medium text-gray-700 text-sm">
-                                                    <div>Próxima: {{ $asignatura ?? 'Clase programada' }}</div>
+                                                    <div>
+                                                        @if(!empty($espacio['proxima_clase']['codigo_asignatura']))
+                                                            <span class="font-semibold ">{{ $espacio['proxima_clase']['codigo_asignatura'] }} - </span>
+                                                        @endif
+                                                        Próxima: {{ $asignatura ?? 'Clase programada' }}
+                                                    </div>
                                                     <div>Prof: {{ $espacio['proxima_clase']['profesor'] ?? '-' }}</div>
                                                 </div>
                                             @elseif($asignatura)
@@ -230,10 +261,16 @@
                                                 <span class="text-gray-400 italic text-sm">-</span>
                                             @endif
                                         </td>
-                                        
+
                                         <!-- Columna 4: Carrera -->
                                         <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
-                                            @if (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']['carrera']))
+                                            @php
+                                                $esColaborador = $espacio['datos_clase']['es_colaborador'] ?? false;
+                                            @endphp
+                                            @if($esColaborador)
+                                                <!-- No mostrar carrera para clases colaboradoras -->
+                                                <span class="text-gray-400 italic text-sm">-</span>
+                                            @elseif (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']['carrera']))
                                                 <span class="font-medium text-gray-700 text-sm">{{ $espacio['datos_clase']['carrera'] }}</span>
                                             @elseif (($espacio['tiene_reserva_profesor'] ?? false) && !empty($espacio['datos_profesor']['carrera']))
                                                 <span class="font-medium text-gray-700 text-sm">{{ $espacio['datos_profesor']['carrera'] }}</span>
@@ -241,7 +278,7 @@
                                                 <span class="text-gray-400 italic text-sm">-</span>
                                             @endif
                                         </td>
-                                        
+
                                         <!-- Columna 5: Capacidad -->
                                         <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
                                             @php
@@ -249,7 +286,7 @@
                                                 $puestosDisponibles = $espacio['puestos_disponibles'] ?? 0;
                                                 $capacidadUtilizada = max(0, $capacidadMax - $puestosDisponibles);
                                                 $porcentaje = $capacidadMax > 0 ? round(($capacidadUtilizada / $capacidadMax) * 100) : 0;
-                                                
+
                                                 // Determinar color según ocupación
                                                 $colorClase = '';
                                                 if ($porcentaje >= 90) {
@@ -262,14 +299,14 @@
                                                     $colorClase = 'text-green-600';
                                                 }
                                             @endphp
-                                            
+
                                             @if($capacidadMax > 0)
                                                 <div class="flex flex-col gap-1">
                                                     <div class="{{ $colorClase }} text-sm">
                                                         {{ $capacidadUtilizada }}/{{ $capacidadMax }}
                                                     </div>
                                                     <div class="w-full bg-gray-200 rounded-full h-2">
-                                                        <div class="h-2 rounded-full {{ $porcentaje >= 90 ? 'bg-red-600' : ($porcentaje >= 70 ? 'bg-orange-500' : ($porcentaje >= 50 ? 'bg-yellow-500' : 'bg-green-500')) }}" 
+                                                        <div class="h-2 rounded-full {{ $porcentaje >= 90 ? 'bg-red-600' : ($porcentaje >= 70 ? 'bg-orange-500' : ($porcentaje >= 50 ? 'bg-yellow-500' : 'bg-green-500')) }}"
                                                              style="width: {{ $porcentaje }}%"></div>
                                                     </div>
                                                 </div>
@@ -277,7 +314,7 @@
                                                 <span class="text-gray-400 text-sm italic">Sin datos</span>
                                             @endif
                                         </td>
-                                        
+
                                         <!-- Columna 6: Status -->
                                       <td class="px-3 py-1 text-sm align-middle">
                                             <span class="w-4 h-4 rounded-full {{ $this->getEstadoColor($espacio['estado'], $espacio['tiene_clase'] ?? false, $espacio['tiene_reserva_solicitante'] ?? false, $espacio['tiene_reserva_profesor'] ?? false) }} flex-shrink-0 inline-block mr-2"></span>
@@ -295,7 +332,7 @@
     @endif
 
     <!-- Leyenda de colores -->
-    
+
     </div>
 
     <script>
@@ -303,15 +340,15 @@
         setInterval(function() {
             @this.actualizarAutomaticamente();
         }, 60000); // Aumentado a 60 segundos
-        
+
         // Escuchar eventos de Livewire para actualizar el feriado cuando se recarguen los datos
         document.addEventListener('livewire:load', function() {
             Livewire.on('datosActualizados', function() {
-                window.dispatchEvent(new CustomEvent('actualizar-feriado', { 
-                    detail: { 
-                        esFeriado: {{ $esFeriado ? 'true' : 'false' }}, 
-                        nombreFeriado: '{{ $nombreFeriado }}' 
-                    } 
+                window.dispatchEvent(new CustomEvent('actualizar-feriado', {
+                    detail: {
+                        esFeriado: {{ $esFeriado ? 'true' : 'false' }},
+                        nombreFeriado: '{{ $nombreFeriado }}'
+                    }
                 }));
             });
         });
