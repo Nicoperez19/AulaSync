@@ -138,7 +138,8 @@
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32">Profesor</th>
                                 <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40">Asignatura</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Espacio</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Módulo</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mód. Inicio</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mód. Fin</th>
                                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                                     wire:click="sortBy('estado')">
                                     Estado
@@ -152,6 +153,12 @@
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             @forelse($clasesNoRealizadas as $clase)
+                                @php
+                                    // Parsear módulos inicio y fin
+                                    $modulos = explode(',', $clase->id_modulo);
+                                    $moduloInicio = preg_replace('/^[A-Z]{2}\./', '', $modulos[0]);
+                                    $moduloFin = count($modulos) > 1 ? preg_replace('/^[A-Z]{2}\./', '', end($modulos)) : $moduloInicio;
+                                @endphp
                                 <tr class="table-row hover:bg-gray-50 {{ $clase->estado === 'pendiente' ? 'bg-yellow-50' : '' }}">
                                     <td class="px-3 py-4 text-sm text-gray-900 w-24">
                                         <div class="flex items-center gap-1">
@@ -175,7 +182,10 @@
                                         {{ $clase->id_espacio }}
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ preg_replace('/^[A-Z]{2}\./', '', $clase->id_modulo) }}
+                                        {{ $moduloInicio }}
+                                    </td>
+                                    <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        {{ $moduloFin }}
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap">
                                         <div class="flex flex-col gap-1">
@@ -340,34 +350,11 @@ document.addEventListener('DOMContentLoaded', function() {
     Livewire.on('show-reagendar-modal', (data) => {
         const clase = data[0];
         
-        // Debug: Verificar que los datos lleguen correctamente
         console.log('Datos completos recibidos:', clase);
-        console.log('Espacios específicos:', clase.espacios);
-        console.log('Tipo de espacios:', typeof clase.espacios);
-        console.log('Es array?', Array.isArray(clase.espacios));
         
-        // Crear las opciones de espacios de forma más robusta
-        let espaciosOptions = '';
-        if (clase.espacios && Array.isArray(clase.espacios) && clase.espacios.length > 0) {
-            espaciosOptions = clase.espacios.map(espacio => {
-                const id = espacio.id_espacio || 'Sin ID';
-                const nombre = espacio.nombre_espacio || espacio.id_espacio || 'Sin nombre';
-                const tipo = espacio.tipo_espacio ? ` - ${espacio.tipo_espacio}` : '';
-                console.log('Procesando espacio:', { id, nombre, tipo });
-                return `<option value="${id}">${nombre}${tipo} (${id})</option>`;
-            }).join('');
-            console.log('Opciones generadas:', espaciosOptions);
-        } else {
-            // Fallback con espacios de ejemplo
-            console.warn('No se recibieron espacios válidos, usando fallback');
-            espaciosOptions = `
-                <option value="">Seleccionar espacio</option>
-                <option value="A101">Aula A101 (A101)</option>
-                <option value="A102">Aula A102 (A102)</option>
-                <option value="B201">Aula B201 (B201)</option>
-                <option value="LAB1">Laboratorio 1 (LAB1)</option>
-            `;
-        }
+        // Variable global para almacenar módulos
+        let modulosDisponibles = [];
+        const fechaOriginal = clase.fecha_original; // formato: "dd/mm/yyyy"
 
         Swal.fire({
             title: '<strong><i class="fas fa-calendar-plus"></i> Reagendar Clase</strong>',
@@ -397,34 +384,38 @@ document.addEventListener('DOMContentLoaded', function() {
                         <p><strong>Módulo:</strong> ${clase.modulo_original}</p>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-2">Nueva Fecha <span class="text-red-500">*</span></label>
                             <input type="date" id="swal-nueva-fecha" class="w-full p-2 border border-gray-300 rounded-md" min="${new Date().toISOString().split('T')[0]}">
                         </div>
                         
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">Nuevo Módulo <span class="text-red-500">*</span></label>
-                            <select id="swal-nuevo-modulo" class="w-full p-2 border border-gray-300 rounded-md">
-                                <option value="">Seleccionar módulo</option>
-                                <option value="1">Módulo 1 (08:00-09:30)</option>
-                                <option value="2">Módulo 2 (09:40-11:10)</option>
-                                <option value="3">Módulo 3 (11:20-12:50)</option>
-                                <option value="4">Módulo 4 (13:50-15:20)</option>
-                                <option value="5">Módulo 5 (15:30-17:00)</option>
-                                <option value="6">Módulo 6 (17:10-18:40)</option>
-                                <option value="7">Módulo 7 (18:50-20:20)</option>
-                                <option value="8">Módulo 8 (20:30-22:00)</option>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Cantidad de Módulos <span class="text-red-500">*</span></label>
+                            <input type="number" id="swal-cantidad-modulos" class="w-full p-2 border border-gray-300 rounded-md" min="1" max="8" value="${clase.totalModulosProgramados}">
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Módulo Inicio <span class="text-red-500">*</span></label>
+                            <select id="swal-nuevo-modulo-inicio" class="w-full p-2 border border-gray-300 rounded-md">
+                                <option value="">Cargando módulos...</option>
                             </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Módulo Final (Automático)</label>
+                        <div class="p-3 bg-gray-50 border border-gray-300 rounded-md">
+                            <span id="swal-modulo-final-display" class="text-gray-700">Selecciona un módulo inicial</span>
                         </div>
                     </div>
 
                     <div class="mb-4">
                         <label class="block text-sm font-medium text-gray-700 mb-2">Nuevo Espacio <span class="text-red-500">*</span></label>
                         <select id="swal-nuevo-espacio" class="w-full p-2 border border-gray-300 rounded-md">
-                            <option value="">Seleccionar espacio</option>
-                            ${espaciosOptions}
+                            <option value="">Selecciona fecha y módulo primero</option>
                         </select>
+                        <p id="espacios-disponibles-info" class="text-xs text-gray-500 mt-1"></p>
                     </div>
                     
                     <div class="mb-4">
@@ -439,17 +430,144 @@ document.addEventListener('DOMContentLoaded', function() {
             cancelButtonText: '<i class="fas fa-times"></i> Cancelar',
             confirmButtonColor: '#10B981',
             cancelButtonColor: '#6B7280',
-            didOpen: () => {
-                document.getElementById('swal-nueva-fecha').focus();
+            didOpen: async () => {
+                const dateInput = document.getElementById('swal-nueva-fecha');
+                const hoy = new Date().toISOString().split('T')[0];
+                dateInput.min = hoy;
+                dateInput.focus();
+                
+                // Cargar módulos desde la API
+                try {
+                    const response = await fetch('/api/modulos');
+                    modulosDisponibles = await response.json();
+                    console.log('Módulos cargados:', modulosDisponibles);
+                    
+                    // Llenar select de módulos iniciales
+                    const selectModuloInicio = document.getElementById('swal-nuevo-modulo-inicio');
+                    selectModuloInicio.innerHTML = '<option value="">Seleccionar módulo</option>';
+                    
+                    modulosDisponibles.forEach(modulo => {
+                        const option = document.createElement('option');
+                        option.value = modulo.id_modulo;
+                        option.textContent = `Módulo ${modulo.id_modulo} (${modulo.hora_inicio} - ${modulo.hora_termino})`;
+                        selectModuloInicio.appendChild(option);
+                    });
+                } catch (error) {
+                    console.error('Error cargando módulos:', error);
+                }
+                
+                // Variables para controlar el cálculo
+                const moduloInicio = document.getElementById('swal-nuevo-modulo-inicio');
+                const moduloFinalDisplay = document.getElementById('swal-modulo-final-display');
+                const cantidadModulos = document.getElementById('swal-cantidad-modulos');
+                const dateInput2 = document.getElementById('swal-nueva-fecha');
+                const selectEspacios = document.getElementById('swal-nuevo-espacio');
+                const infoParagraph = document.getElementById('espacios-disponibles-info');
+                
+                // Función para cargar espacios disponibles
+                const cargarEspaciosDisponibles = async () => {
+                    const fecha = dateInput2.value;
+                    const modulo = moduloInicio.value;
+                    
+                    if (!fecha || !modulo) {
+                        selectEspacios.innerHTML = '<option value="">Selecciona fecha y módulo primero</option>';
+                        infoParagraph.textContent = '';
+                        return;
+                    }
+
+                    // Validar que no sea el mismo día
+                    const [dia, mes, anio] = fechaOriginal.split('/');
+                    const fechaOriginalFormato = anio + '-' + mes + '-' + dia;
+                    if (fecha === fechaOriginalFormato) {
+                        selectEspacios.innerHTML = '<option value="">No puedes reagendar para el mismo día</option>';
+                        infoParagraph.textContent = 'El reagendamiento debe ser en una fecha diferente';
+                        return;
+                    }
+
+                    // Calcular módulo final
+                    const inicio = parseInt(modulo);
+                    const cantidad = parseInt(cantidadModulos.value) || clase.totalModulosProgramados;
+                    const fin = Math.min(inicio + cantidad - 1, modulosDisponibles.length);
+
+                    try {
+                        const url = '/api/espacios-disponibles/' + fecha + '/' + inicio + '/' + fin;
+                        const response = await fetch(url);
+                        const data = await response.json();
+                        
+                        if (data.error) {
+                            selectEspacios.innerHTML = '<option value="">Error: ' + data.error + '</option>';
+                            infoParagraph.textContent = '';
+                            return;
+                        }
+
+                        console.log('Espacios disponibles:', data);
+
+                        if (data.espacios.length === 0) {
+                            selectEspacios.innerHTML = '<option value="">No hay espacios disponibles para esta fecha y módulos</option>';
+                            infoParagraph.textContent = 'Intenta con otra fecha o módulo';
+                            return;
+                        }
+
+                        selectEspacios.innerHTML = '<option value="">Seleccionar espacio</option>';
+                        data.espacios.forEach(espacio => {
+                            const option = document.createElement('option');
+                            option.value = espacio.id_espacio;
+                            option.textContent = espacio.display_name;
+                            selectEspacios.appendChild(option);
+                        });
+
+                        infoParagraph.textContent = 'Disponibles: ' + data.total_disponibles + ' espacio(s) • Módulo: ' + data.hora_inicio + ' - ' + data.hora_fin;
+                    } catch (error) {
+                        console.error('Error cargando espacios:', error);
+                        selectEspacios.innerHTML = '<option value="">Error al cargar espacios</option>';
+                    }
+                };
+                
+                // Función para recalcular el módulo final y mostrar horarios
+                const recalcularModuloFinal = () => {
+                    if (moduloInicio.value && modulosDisponibles.length > 0) {
+                        const inicio = parseInt(moduloInicio.value);
+                        const cantidad = parseInt(cantidadModulos.value) || clase.totalModulosProgramados;
+                        const fin = Math.min(inicio + cantidad - 1, modulosDisponibles.length);
+                        
+                        // Buscar horarios de inicio y fin
+                        const moduloInicial = modulosDisponibles.find(m => m.id_modulo == inicio);
+                        const moduloFinal = modulosDisponibles.find(m => m.id_modulo == fin);
+                        
+                        if (moduloInicial && moduloFinal) {
+                            const texto = 'Módulos ' + inicio + ' - ' + fin + ' (' + moduloInicial.hora_inicio + ' - ' + moduloFinal.hora_termino + ')';
+                            moduloFinalDisplay.textContent = texto;
+                        }
+                        
+                        // Cargar espacios disponibles cuando se selecciona módulo
+                        cargarEspaciosDisponibles();
+                    } else {
+                        moduloFinalDisplay.textContent = 'Selecciona un módulo inicial';
+                    }
+                };
+                
+                dateInput2.addEventListener('change', cargarEspaciosDisponibles);
+                moduloInicio.addEventListener('change', recalcularModuloFinal);
+                cantidadModulos.addEventListener('change', recalcularModuloFinal);
+                cantidadModulos.addEventListener('input', recalcularModuloFinal);
             },
             preConfirm: () => {
                 const nuevaFecha = document.getElementById('swal-nueva-fecha').value;
                 const nuevoEspacio = document.getElementById('swal-nuevo-espacio').value;
-                const nuevoModulo = document.getElementById('swal-nuevo-modulo').value;
+                const nuevoModulo = document.getElementById('swal-nuevo-modulo-inicio').value;
+                const cantidadModulos = document.getElementById('swal-cantidad-modulos').value;
                 const motivo = document.getElementById('swal-motivo-reagendamiento').value;
                 
                 if (!nuevaFecha) {
                     Swal.showValidationMessage('Por favor selecciona una fecha');
+                    return false;
+                }
+                
+                // Validar que no sea el mismo día
+                const [dia, mes, anio] = fechaOriginal.split('/');
+                const fechaOriginalFormato = anio + '-' + mes + '-' + dia;
+                if (nuevaFecha === fechaOriginalFormato) {
+                    Swal.showValidationMessage('No puedes reagendar para el mismo día');
                     return false;
                 }
                 
@@ -459,7 +577,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 if (!nuevoModulo) {
-                    Swal.showValidationMessage('Por favor selecciona un módulo');
+                    Swal.showValidationMessage('Por favor selecciona un módulo de inicio');
+                    return false;
+                }
+                
+                if (!cantidadModulos || parseInt(cantidadModulos) < 1 || parseInt(cantidadModulos) > 15) {
+                    Swal.showValidationMessage('Por favor ingresa una cantidad válida de módulos (1-15)');
                     return false;
                 }
                 
@@ -472,12 +595,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     return false;
                 }
                 
-                return { nuevaFecha, nuevoEspacio, nuevoModulo, motivo };
+                return { nuevaFecha, nuevoEspacio, nuevoModulo, cantidadModulos, motivo };
             }
         }).then((result) => {
             if (result.isConfirmed) {
-                const { nuevaFecha, nuevoEspacio, nuevoModulo, motivo } = result.value;
-                window.Livewire.find('{{ $this->getId() }}').call('reagendarClase', clase.id, nuevaFecha, nuevoEspacio, nuevoModulo, motivo);
+                const { nuevaFecha, nuevoEspacio, nuevoModulo, cantidadModulos, motivo } = result.value;
+                window.Livewire.find('{{ $this->getId() }}').call('reagendarClase', clase.id, nuevaFecha, nuevoEspacio, nuevoModulo, cantidadModulos, motivo);
             }
         });
     });

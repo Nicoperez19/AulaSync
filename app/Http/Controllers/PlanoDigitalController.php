@@ -126,11 +126,13 @@ class PlanoDigitalController extends Controller
         $planificacionesActivas = $this->obtenerPlanificacionesActivas($mapa, $moduloActual);
         $planificacionesProximas = $this->obtenerPlanificacionesProximas($mapa, $estadoActual);
         
-        // Obtener reservas próximas (próximos 10 minutos)
-        $horaActual = Carbon::now();
-        $horaLimite = $horaActual->copy()->addMinutes(10)->format('H:i:s');
-        $horaActualStr = $horaActual->format('H:i:s');
-        $fechaActual = now()->toDateString();
+        // USAR EL MISMO $estadoActual para consistencia
+        $horaActualStr = $estadoActual['hora'];
+        $fechaActual = $estadoActual['fecha'];
+        
+        // Obtener reservas próximas (próximos 10 minutos) - MISMO CÁLCULO DE HORA
+        $horaActualCarbon = Carbon::createFromFormat('H:i:s', $horaActualStr);
+        $horaLimite = $horaActualCarbon->copy()->addMinutes(10)->format('H:i:s');
         
         $reservasProximas = Reserva::with(['asignatura', 'profesor', 'solicitante'])
             ->where('fecha_reserva', $fechaActual)
@@ -140,7 +142,7 @@ class PlanoDigitalController extends Controller
             ->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'))
             ->get();
 
-        return $mapa->bloques->map(function ($bloque) use ($planificacionesActivas, $planificacionesProximas, $reservasProximas, $mapa) {
+        return $mapa->bloques->map(function ($bloque) use ($planificacionesActivas, $planificacionesProximas, $reservasProximas, $mapa, $horaActualStr, $fechaActual) {
             $idEspacio = $bloque->id_espacio;
             $espacio = $bloque->espacio;
 
@@ -149,15 +151,27 @@ class PlanoDigitalController extends Controller
                 ->where('estado', 'activa')
                 ->exists();
 
-            // Verificar si hay una clase sin asistentes (devuelta en primer módulo hoy)
-            $claseSinAsistentes = Reserva::where('id_espacio', $idEspacio)
-                ->where('fecha_reserva', now()->toDateString())
-                ->where('hubo_asistentes', false)
-                ->where('estado', 'finalizada')
-                ->exists();
+            // Verificar si hay una clase no realizada en la tabla clases_no_realizadas para hoy
+            $clasesNoRealizadasHoy = \App\Models\ClaseNoRealizada::with('modulo')
+                ->where('id_espacio', $idEspacio)
+                ->where('fecha_clase', $fechaActual)
+                ->get();
+            
+            // Verificar si hay alguna clase no realizada cuyo módulo AÚN NO HA TERMINADO
+            $claseSinAsistentesActiva = false;
+            foreach ($clasesNoRealizadasHoy as $clase) {
+                if ($clase->modulo && $clase->modulo->hora_termino > $horaActualStr) {
+                    // El módulo aún no ha terminado, mostrar como no realizada
+                    $claseSinAsistentesActiva = true;
+                    break;
+                }
+            }
 
             // Determinar estado basado en actividad real (no en BD)
-            if ($reservaActiva) {
+            if ($espacio->estado === 'Mantención' || $espacio->estado === 'Mantenimiento') {
+                // Espacio en mantención - no permitir reservas
+                $estadoFinal = 'Mantención';
+            } elseif ($reservaActiva) {
                 // 1. Hay reserva activa = Ocupado
                 $estadoFinal = 'Ocupado';
                 
@@ -166,8 +180,8 @@ class PlanoDigitalController extends Controller
                     $espacio->estado = 'Ocupado';
                     $espacio->save();
                 }
-            } elseif ($claseSinAsistentes) {
-                // 2. Hubo una clase sin asistentes hoy
+            } elseif ($claseSinAsistentesActiva) {
+                // 2. Hubo una clase sin asistentes y el módulo aún no termina
                 $estadoFinal = 'ClaseSinAsistentes';
                 
                 // Corregir BD si está inconsistente
@@ -181,10 +195,28 @@ class PlanoDigitalController extends Controller
                 $planificacionProxima = $planificacionesProximas->firstWhere('id_espacio', $idEspacio);
                 $reservaProxima = $reservasProximas->firstWhere('id_espacio', $idEspacio);
                 
+                // Verificar que la planificación próxima realmente esté en rango (validación EXTRA agresiva)
+                if ($planificacionProxima && isset($planificacionProxima->modulo->hora_inicio)) {
+                    // Calcular diferencia de minutos
+                    $horaActualCarbon = Carbon::createFromFormat('H:i:s', $horaActualStr);
+                    $horaProximaCarbon = Carbon::createFromFormat('H:i:s', $planificacionProxima->modulo->hora_inicio);
+                    $diferencia = $horaProximaCarbon->diffInMinutes($horaActualCarbon, false);
+                    
+                    // Si la diferencia es > 10 min, NO es próxima, es futura
+                    if ($diferencia > 10 || $diferencia < 0) {
+                        \Log::debug("Planificación filtrada para espacio {$idEspacio}: diferencia={$diferencia} min (próxima a {$planificacionProxima->modulo->hora_inicio}, actual {$horaActualStr})");
+                        $planificacionProxima = null;
+                    } else {
+                        \Log::debug("Planificación MANTENIDA para espacio {$idEspacio}: diferencia={$diferencia} min (próxima a {$planificacionProxima->modulo->hora_inicio}, actual {$horaActualStr})");
+                    }
+                }
+                
                 if ($planificacionActiva) {
-                    $estadoFinal = 'Reservado'; // Naranja (reservado)
+                    // Hay clase en curso = Reservado (naranja)
+                    $estadoFinal = 'Reservado';
                 } elseif ($planificacionProxima || $reservaProxima) {
-                    $estadoFinal = 'Reservado'; // Naranja (reservado) - Cambiado de 'Proximo' a 'Reservado' para consistencia
+                    // Solo hay clase próxima (próximos 10 min) = Reservado (naranja)
+                    $estadoFinal = 'Reservado'; // Naranja (reservado)
                 } else {
                     // 4. No hay actividad = Disponible
                     $estadoFinal = 'Disponible';
@@ -217,7 +249,8 @@ class PlanoDigitalController extends Controller
                     [
                         'estado' => $espacio->estado,
                         'facultad' => $mapa->piso->facultad->nombre_facultad,
-                        'clase_sin_asistentes' => $claseSinAsistentes
+                        'clase_sin_asistentes' => $claseSinAsistentesActiva,
+                        'clases_no_realizadas' => $clasesNoRealizadasHoy
                     ]
                 )
             ];
@@ -289,7 +322,7 @@ class PlanoDigitalController extends Controller
         } else {
             // Para otros horarios, usar la lógica normal (10 minutos después)
             $horaInicioBusqueda = $horaActual->format('H:i:s');
-            $horaFinBusqueda = $horaActual->copy()->addMinutes(9)->format('H:i:s');
+            $horaFinBusqueda = $horaActual->copy()->addMinutes(10)->format('H:i:s');
         }
 
         // Obtener planificaciones regulares próximas
@@ -305,7 +338,8 @@ class PlanoDigitalController extends Controller
                     $query->where('hora_inicio', '=', '05:10:00');
                 } else {
                     // Para otros horarios, buscar módulos que empiecen en los próximos 10 minutos
-                    $query->where('hora_inicio', '>', $horaInicioBusqueda)
+                    // IMPORTANTE: >= para incluir clases que comienzan AHORA también
+                    $query->where('hora_inicio', '>=', $horaInicioBusqueda)
                           ->where('hora_inicio', '<=', $horaFinBusqueda);
                 }
             })
@@ -324,7 +358,8 @@ class PlanoDigitalController extends Controller
                     $query->where('hora_inicio', '=', '05:10:00');
                 } else {
                     // Para otros horarios, buscar módulos que empiecen en los próximos 10 minutos
-                    $query->where('hora_inicio', '>', $horaInicioBusqueda)
+                    // IMPORTANTE: >= para incluir clases que comienzan AHORA también
+                    $query->where('hora_inicio', '>=', $horaInicioBusqueda)
                           ->where('hora_inicio', '<=', $horaFinBusqueda);
                 }
             })
@@ -450,33 +485,40 @@ class PlanoDigitalController extends Controller
         $horaActual = Carbon::now();
         $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
         $horaActualStr = $horaActual->format('H:i:s');
+        $fechaActual = $horaActual->toDateString();
 
         // Determinar el período actual usando el helper
         $periodo = SemesterHelper::getCurrentPeriod();
 
+        // Obtener el módulo actual (importante para filtrar correctamente)
+        $estadoActual = $this->obtenerEstadoActual($horaActual);
+        $moduloActual = $this->obtenerModuloActual($estadoActual);
+
         // Obtener todos los espacios
         $espacios = Espacio::all();
 
-        // Obtener todas las planificaciones activas para el período actual
-        $planificacionesActivas = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.profesor'])
-            ->whereHas('horario', function ($query) use ($periodo) {
-                $query->where('periodo', $periodo);
-            })
-            ->whereHas('modulo', function ($query) use ($diaActual) {
-                $query->where('dia', $diaActual);
-            })
-            ->get();
+        // Obtener SOLO las planificaciones del módulo actual (no todas del período)
+        if ($moduloActual) {
+            $planificacionesActivas = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.profesor'])
+                ->where('id_modulo', $moduloActual->id_modulo)
+                ->whereHas('horario', function ($query) use ($periodo) {
+                    $query->where('periodo', $periodo);
+                })
+                ->get();
+        } else {
+            $planificacionesActivas = collect([]);
+        }
 
         // Obtener reservas activas para hoy
         $reservasActivas = Reserva::with(['asignatura', 'profesor', 'solicitante'])
-            ->where('fecha_reserva', $horaActual->toDateString())
+            ->where('fecha_reserva', $fechaActual)
             ->where('estado', 'activa')
             ->get();
 
         // Obtener reservas próximas (próximos 10 minutos)
         $horaLimite = $horaActual->copy()->addMinutes(10)->format('H:i:s');
         $reservasProximas = Reserva::with(['asignatura', 'profesor', 'solicitante'])
-            ->where('fecha_reserva', $horaActual->toDateString())
+            ->where('fecha_reserva', $fechaActual)
             ->where('estado', 'activa')
             ->where('hora', '>', $horaActualStr)
             ->where('hora', '<=', $horaLimite)
@@ -484,7 +526,7 @@ class PlanoDigitalController extends Controller
 
         return response()->json([
             'success' => true,
-            'espacios' => $espacios->map(function($espacio) use ($horaActual, $horaActualStr, $diaActual, $planificacionesActivas, $reservasActivas, $reservasProximas) {
+            'espacios' => $espacios->map(function($espacio) use ($horaActual, $horaActualStr, $diaActual, $planificacionesActivas, $reservasActivas, $reservasProximas, $moduloActual) {
                 $estadoTabla = $espacio->estado; // Estado actual en la tabla espacios
 
                 // Verificar si el espacio está ocupado por una reserva activa
@@ -492,6 +534,22 @@ class PlanoDigitalController extends Controller
 
                 // Verificar si el espacio tiene una reserva próxima
                 $tieneReservaProxima = $reservasProximas->where('id_espacio', $espacio->id_espacio)->isNotEmpty();
+
+                // Verificar si hay una clase no realizada en la tabla clases_no_realizadas para hoy
+                $clasesNoRealizadasHoy = \App\Models\ClaseNoRealizada::with('modulo')
+                    ->where('id_espacio', $espacio->id_espacio)
+                    ->where('fecha_clase', $horaActual->toDateString())
+                    ->get();
+                
+                // Verificar si hay alguna clase no realizada cuyo módulo AÚN NO HA TERMINADO
+                $tieneClaseSinAsistentes = false;
+                foreach ($clasesNoRealizadasHoy as $clase) {
+                    if ($clase->modulo && $clase->modulo->hora_termino > $horaActualStr) {
+                        // El módulo aún no ha terminado, mostrar como no realizada
+                        $tieneClaseSinAsistentes = true;
+                        break;
+                    }
+                }
 
                 // Verificar si el espacio tiene una clase programada que debería estar en curso
                 $claseEnCurso = $planificacionesActivas->where('id_espacio', $espacio->id_espacio)
@@ -511,17 +569,28 @@ class PlanoDigitalController extends Controller
                     $horaActualCarbon = \Carbon\Carbon::createFromFormat('H:i:s', $horaActualStr);
                     $horaInicioCarbon = \Carbon\Carbon::createFromFormat('H:i:s', $horaInicioModulo);
 
+                    $diferencia = $horaInicioCarbon->diffInMinutes($horaActualCarbon);
+                    
                     // Si la clase comienza dentro de los próximos 10 minutos Y no está actualmente en curso
                     if ($horaInicioCarbon->gt($horaActualCarbon) &&
-                        $horaInicioCarbon->diffInMinutes($horaActualCarbon) <= 10 &&
+                        $diferencia <= 10 &&
                         !$tieneClaseEnCurso) {
                         $tieneClaseProxima = true;
+                        \Log::debug("Clase próxima encontrada para {$espacio->id_espacio}: {$horaInicioModulo} (diferencia: {$diferencia} min)");
                         break;
+                    } else {
+                        \Log::debug("Clase descartada para {$espacio->id_espacio}: hora={$horaInicioModulo}, diferencia={$diferencia}, gt={$horaInicioCarbon->gt($horaActualCarbon)}, tieneEnCurso={$tieneClaseEnCurso}");
                     }
                 }
 
                 // Determinar el estado final según la lógica correcta
-                if ($estadoTabla === 'Ocupado') {
+                if ($estadoTabla === 'Mantención' || $estadoTabla === 'Mantenimiento') {
+                    // Si el espacio está en mantención, no permitir reservas
+                    $estado = 'Mantención';
+                } elseif ($tieneClaseSinAsistentes) {
+                    // Si hay una clase sin asistentes hoy, mostrar estado especial
+                    $estado = 'ClaseSinAsistentes';
+                } elseif ($estadoTabla === 'Ocupado') {
                     // Si el estado en la tabla es "Ocupado", mostrar rojo y mantenerlo hasta devolución
                     $estado = 'Ocupado';
                 } elseif ($tieneReservaActiva) {

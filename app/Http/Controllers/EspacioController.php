@@ -926,6 +926,13 @@ class EspacioController extends Controller
                 ]);
             }
 
+            // TAMBIÉN obtener la clase anterior
+            $response['clase_anterior'] = $this->obtenerClaseAnterior($idEspacio, $horaActual);
+            Log::info("Búsqueda de clase anterior", [
+                'espacio' => $idEspacio,
+                'clase_anterior' => $response['clase_anterior']
+            ]);
+
             Log::info("Respuesta final para espacio {$idEspacio}", [
                 'tipo_ocupacion' => $response['tipo_ocupacion'] ?? 'libre',
                 'tiene_asignatura' => isset($response['asignatura']) && $response['asignatura'] !== null,
@@ -1197,6 +1204,97 @@ class EspacioController extends Controller
             'profesor_run' => $proxima->asignatura->run_profesor ?? null,
             'hora_inicio' => $proxima->modulo->hora_inicio ?? null,
             'hora_termino' => $proxima->modulo->hora_termino ?? null
+        ];
+    }
+
+    private function obtenerClaseAnterior($idEspacio, $horaActual)
+    {
+        $fechaActual = now()->format('Y-m-d');
+        
+        Log::info("🔍 obtenerClaseAnterior llamada", [
+            'espacio' => $idEspacio,
+            'hora_actual' => $horaActual,
+            'fecha_actual' => $fechaActual
+        ]);
+        
+        // PRIMERO: Buscar reservas anteriores del día actual
+        $reservaAnterior = Reserva::select('id_reserva', 'run_profesor', 'run_solicitante', 'hora', 'hora_salida', 'id_asignatura')
+            ->with(['asignatura:id_asignatura,nombre_asignatura', 'profesor:run_profesor,name'])
+            ->where('id_espacio', $idEspacio)
+            ->where('fecha_reserva', $fechaActual)
+            ->where('hora', '<', $horaActual)
+            ->where('estado', 'activa')
+            ->orderBy('hora', 'desc')
+            ->first();
+        
+        Log::info("🔍 Búsqueda de reserva anterior completada", [
+            'encontrada' => $reservaAnterior ? 'SÍ' : 'NO',
+            'id_reserva' => $reservaAnterior?->id_reserva,
+            'hora' => $reservaAnterior?->hora,
+            'asignatura_id' => $reservaAnterior?->id_asignatura
+        ]);
+        
+        if ($reservaAnterior) {
+            Log::info("Clase anterior encontrada en RESERVAS", [
+                'espacio' => $idEspacio,
+                'hora' => $reservaAnterior->hora,
+                'asignatura' => $reservaAnterior->asignatura?->nombre_asignatura
+            ]);
+            
+            return [
+                'asignatura' => $reservaAnterior->asignatura?->nombre_asignatura ?? 'Reserva sin asignatura',
+                'profesor' => $reservaAnterior->profesor?->name ?? 'No especificado',
+                'profesor_run' => $reservaAnterior->run_profesor ?? null,
+                'hora_inicio' => $reservaAnterior->hora ?? null,
+                'hora_termino' => $reservaAnterior->hora_salida ?? null
+            ];
+        }
+        
+        // SEGUNDO: Si no hay reservas anteriores, buscar en planificaciones
+        $diaActual = strtolower(now()->format('l'));
+        $codigosDias = [
+            'monday' => 'LU', 'tuesday' => 'MA', 'wednesday' => 'MI',
+            'thursday' => 'JU', 'friday' => 'VI', 'saturday' => 'SA', 'sunday' => 'DO'
+        ];
+        $codigoDia = $codigosDias[$diaActual] ?? 'LU';
+
+        // Cargar planificaciones del espacio para el día (filtrando por id_modulo que comienza con el código de día)
+        $planificaciones = Planificacion_Asignatura::with(['modulo', 'asignatura.profesor'])
+            ->where('id_espacio', $idEspacio)
+            ->where('id_modulo', 'like', $codigoDia . '.%')
+            ->get();
+
+        if ($planificaciones->isEmpty()) {
+            Log::info("No hay clase anterior en PLANIFICACIONES", ['espacio' => $idEspacio]);
+            return null;
+        }
+
+        // Filtrar por módulo cuya hora de TERMINO sea anterior a la hora actual
+        $candidatas = $planificaciones->filter(function ($p) use ($horaActual) {
+            return isset($p->modulo->hora_termino) && $p->modulo->hora_termino <= $horaActual;
+        });
+
+        if ($candidatas->isEmpty()) {
+            return null;
+        }
+
+        // Ordenar por hora de termino y tomar la última
+        $anterior = $candidatas->sortBy(function ($p) {
+            return $p->modulo->hora_termino ?? '00:00:00';
+        })->last();
+
+        Log::info("Clase anterior encontrada en PLANIFICACIONES", [
+            'espacio' => $idEspacio,
+            'hora' => $anterior->modulo->hora_termino,
+            'asignatura' => $anterior->asignatura->nombre_asignatura
+        ]);
+
+        return [
+            'asignatura' => $anterior->asignatura->nombre_asignatura ?? 'Sin asignatura',
+            'profesor' => $anterior->asignatura->profesor->name ?? 'No especificado',
+            'profesor_run' => $anterior->asignatura->run_profesor ?? null,
+            'hora_inicio' => $anterior->modulo->hora_inicio ?? null,
+            'hora_termino' => $anterior->modulo->hora_termino ?? null
         ];
     }
 }

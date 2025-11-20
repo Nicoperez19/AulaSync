@@ -244,10 +244,26 @@ class ModulosActualesTable extends Component
         // Verificar si la clase ya terminó completamente
         if ($this->verificarClaseFinalizada($numeroUltimoModulo, $moduloActual)) {
             // Si la clase terminó y NO hubo entrada, es clase no realizada
+            // Construir el id_modulo completo con todos los módulos de la asignatura programados hoy
+            // Extraer el prefijo del día (ej: "MI" de "MI.2")
+            $prefijoDia = explode('.', $primeraPlanificacion->id_modulo)[0] ?? '';
+            
+            $todosModulos = Planificacion_Asignatura::where('id_asignatura', $planificacionActiva->id_asignatura)
+                ->where('id_modulo', 'LIKE', $prefijoDia . '.%')
+                ->pluck('id_modulo')
+                ->sort()
+                ->values()
+                ->toArray();
+            
+            // Si hay múltiples módulos, crear un string con el rango
+            $idModuloCompleto = count($todosModulos) > 1 
+                ? implode(',', $todosModulos) 
+                : $primeraPlanificacion->id_modulo;
+            
             ClaseNoRealizada::registrarClaseNoRealizada([
                 'id_asignatura' => $planificacionActiva->id_asignatura,
                 'id_espacio' => $planificacionActiva->id_espacio,
-                'id_modulo' => $primeraPlanificacion->id_modulo,
+                'id_modulo' => $idModuloCompleto,
                 'run_profesor' => $planificacionActiva->asignatura->run_profesor ?? '',
                 'fecha_clase' => Carbon::now()->toDateString(),
                 'periodo' => $periodo,
@@ -301,10 +317,26 @@ class ModulosActualesTable extends Component
 
         if ($moduloActual && ! $tuvoEntradaHoy && ! $tuvoEntradaEnOtroEspacio && $hasPasado20Minutos) {
             // Registrar la clase no realizada
+            // Construir el id_modulo completo con todos los módulos de la asignatura programados hoy
+            // Extraer el prefijo del día (ej: "MI" de "MI.2")
+            $prefijoDia = explode('.', $primeraPlanificacion->id_modulo)[0] ?? '';
+            
+            $todosModulos = Planificacion_Asignatura::where('id_asignatura', $planificacionActiva->id_asignatura)
+                ->where('id_modulo', 'LIKE', $prefijoDia . '.%')
+                ->pluck('id_modulo')
+                ->sort()
+                ->values()
+                ->toArray();
+            
+            // Si hay múltiples módulos, crear un string con el rango
+            $idModuloCompleto = count($todosModulos) > 1 
+                ? implode(',', $todosModulos) 
+                : $primeraPlanificacion->id_modulo;
+            
             ClaseNoRealizada::registrarClaseNoRealizada([
                 'id_asignatura' => $planificacionActiva->id_asignatura,
                 'id_espacio' => $planificacionActiva->id_espacio,
-                'id_modulo' => $primeraPlanificacion->id_modulo,
+                'id_modulo' => $idModuloCompleto,
                 'run_profesor' => $planificacionActiva->asignatura->run_profesor ?? '',
                 'fecha_clase' => Carbon::now()->toDateString(),
                 'periodo' => $periodo,
@@ -695,12 +727,21 @@ class ModulosActualesTable extends Component
                         $rangoDisponibilidad = null;
                         $esRecuperacion = false;
 
-                        // Verificar si hay una clase de recuperación programada para este espacio hoy
-                        $recuperacionHoy = \App\Models\RecuperacionClase::where('fecha_reagendada', Carbon::now()->toDateString())
-                            ->where('id_espacio_reagendado', $espacio->id_espacio)
-                            ->where('id_modulo_reagendado', $idModulo)
-                            ->where('estado', 'reagendada')
-                            ->with(['asignatura.profesor', 'asignatura.carrera'])
+                        // Verificar si hay una clase de recuperación pendiente para este espacio hoy
+                        // Una clase está pendiente de recuperación cuando: estado='pendiente' y fecha_clase=hoy y id_espacio coincide
+                        // El id_modulo puede ser un solo módulo "LU.1" o múltiples "LU.1,LU.2,LU.3"
+                        $claseRecuperacionPendiente = \App\Models\ClaseNoRealizada::where('fecha_clase', Carbon::now()->toDateString())
+                            ->where('id_espacio', $espacio->id_espacio)
+                            ->where('estado', 'pendiente') // Está esperando ser recuperada
+                            ->where(function($query) use ($idModulo) {
+                                // Buscar si id_modulo es exactamente el módulo actual
+                                // O si contiene el módulo actual en una lista separada por comas
+                                $query->where('id_modulo', $idModulo)
+                                      ->orWhere('id_modulo', 'LIKE', $idModulo . ',%')
+                                      ->orWhere('id_modulo', 'LIKE', '%,' . $idModulo)
+                                      ->orWhere('id_modulo', 'LIKE', '%,' . $idModulo . ',%');
+                            })
+                            ->with(['profesor', 'asignatura.carrera'])
                             ->first();
 
                         // Verificar si hay una clase programada aquí pero el profesor la hizo en otro espacio
@@ -713,26 +754,129 @@ class ModulosActualesTable extends Component
                         }
 
                         // Si hay recuperación programada, mostrarla
-                        if ($recuperacionHoy) {
-                            $esRecuperacion = true;
-                            $tieneClase = true;
+                        if ($claseRecuperacionPendiente) {
+                            // Verificar regla de 20 minutos para recuperación
+                            $runProfesor = $claseRecuperacionPendiente->run_profesor;
+                            $horaActual = Carbon::now()->format('H:i:s');
+                            $horaInicioModulo = $this->moduloActual['inicio'] ?? null;
+                            
+                            $debeMarcarNoRealizada = false;
+                            if ($horaInicioModulo && $runProfesor) {
+                                $inicioModulo = Carbon::createFromTimeString($horaInicioModulo);
+                                $ahora = Carbon::createFromTimeString($horaActual);
+                                $hasPasado20Minutos = $ahora->diffInMinutes($inicioModulo) >= 20;
+                                
+                                // Verificar si el profesor ha registrado entrada hoy
+                                $tuvoEntradaHoy = \App\Models\Reserva::where('fecha_reserva', Carbon::now()->toDateString())
+                                    ->where('id_espacio', $espacio->id_espacio)
+                                    ->where('run_profesor', $runProfesor)
+                                    ->whereNotNull('hora')
+                                    ->exists();
+                                
+                                $tuvoEntradaEnOtroEspacio = false;
+                                if (!$tuvoEntradaHoy) {
+                                    $tuvoEntradaEnOtroEspacio = \App\Models\Reserva::where('id_espacio', '!=', $espacio->id_espacio)
+                                        ->where('fecha_reserva', Carbon::now()->toDateString())
+                                        ->where('run_profesor', $runProfesor)
+                                        ->whereNotNull('hora')
+                                        ->exists();
+                                }
+                                
+                                if ($hasPasado20Minutos && !$tuvoEntradaHoy && !$tuvoEntradaEnOtroEspacio) {
+                                    $debeMarcarNoRealizada = true;
+                                }
+                            }
+                            
+                            // Si no debe marcar como no realizada, mostrar la recuperación
+                            if (!$debeMarcarNoRealizada) {
+                                $esRecuperacion = true;
+                                $tieneClase = true;
 
-                            // Obtener información de la recuperación
-                            $datosClase = [
-                                'codigo_asignatura' => $recuperacionHoy->asignatura->codigo_asignatura ?? '-',
-                                'nombre_asignatura' => $recuperacionHoy->asignatura->nombre_asignatura ?? '-',
-                                'seccion' => $recuperacionHoy->asignatura->seccion ?? '-',
-                                'profesor' => [
-                                    'name' => $recuperacionHoy->profesor->name ?? '-',
-                                ],
-                                'carrera' => $recuperacionHoy->asignatura->carrera->nombre ?? '-',
-                                'modulo_inicio' => $this->moduloActual['numero'] ?? '--',
-                                'modulo_fin' => $this->moduloActual['numero'] ?? '--',
-                                'hora_inicio' => $this->moduloActual['inicio'] ?? '--:--',
-                                'hora_fin' => $this->moduloActual['fin'] ?? '--:--',
-                                'es_recuperacion' => true,
-                                'fecha_original' => $recuperacionHoy->fecha_clase_original ? $recuperacionHoy->fecha_clase_original->format('d/m/Y') : null,
-                            ];
+                                // Parsear id_modulo para obtener el rango de módulos
+                                $idModuloOriginal = $claseRecuperacionPendiente->id_modulo;
+                                $moduloInicio = $this->moduloActual['numero'];
+                                $moduloFin = $moduloInicio;
+                                
+                                // El id_modulo puede ser:
+                                // - Un solo módulo: "LU.1"
+                                // - Múltiples módulos separados por comas: "LU.1,LU.2,LU.3"
+                                if (str_contains($idModuloOriginal, ',')) {
+                                    // Múltiples módulos separados por comas
+                                    $modulos = explode(',', $idModuloOriginal);
+                                    $numeros = [];
+                                    foreach ($modulos as $modulo) {
+                                        if (preg_match('/\.(\d+)/', $modulo, $match)) {
+                                            $numeros[] = (int)$match[1];
+                                        }
+                                    }
+                                    if (count($numeros) > 0) {
+                                        $moduloInicio = min($numeros);
+                                        $moduloFin = max($numeros);
+                                    }
+                                } elseif (preg_match('/\.(\d+)/', $idModuloOriginal, $match)) {
+                                    // Un solo módulo
+                                    $moduloInicio = $moduloFin = (int)$match[1];
+                                }
+
+                                // Calcular hora de fin correcta basada en el módulo final
+                                $horaInicio = $this->moduloActual['inicio'] ?? '--:--';
+                                $horaFin = $this->moduloActual['fin'] ?? '--:--';
+                                
+                                if ($moduloFin > $moduloInicio) {
+                                    // Construir id_modulo del último módulo (ej: "MI.3" si estamos en miércoles)
+                                    $dias = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+                                    $prefijoDia = $dias[Carbon::now()->dayOfWeek];
+                                    $idModuloFinal = $prefijoDia . '.' . $moduloFin;
+                                    
+                                    $moduloFinal = \App\Models\Modulo::where('id_modulo', $idModuloFinal)->first();
+                                    if ($moduloFinal) {
+                                        $horaFin = $moduloFinal->hora_termino;
+                                    }
+                                }
+                                
+                                // Eliminar segundos de las horas
+                                if (strlen($horaInicio) > 5) {
+                                    $horaInicio = substr($horaInicio, 0, 5);
+                                }
+                                if (strlen($horaFin) > 5) {
+                                    $horaFin = substr($horaFin, 0, 5);
+                                }
+
+                                // Obtener inscritos desde la planificación original
+                                // Para recuperaciones, buscar SOLO por id_asignatura (sin filtrar por id_modulo)
+                                // porque el id_modulo de la recuperación es diferente al original
+                                $inscritos = null;
+                                    
+                                $planificacionOriginal = \App\Models\Planificacion_Asignatura::where('id_asignatura', $claseRecuperacionPendiente->id_asignatura)
+                                    ->first(); // Tomar cualquier planificación de esta asignatura
+                                
+                                if ($planificacionOriginal) {
+                                    $inscritos = $planificacionOriginal->inscritos;
+                                }
+
+                                // Obtener información de la recuperación
+                                $datosClase = [
+                                    'codigo_asignatura' => $claseRecuperacionPendiente->asignatura->codigo_asignatura ?? '-',
+                                    'nombre_asignatura' => $claseRecuperacionPendiente->asignatura->nombre_asignatura ?? '-',
+                                    'seccion' => $claseRecuperacionPendiente->asignatura->seccion ?? '-',
+                                    'profesor' => [
+                                        'name' => $claseRecuperacionPendiente->profesor->name ?? '-',
+                                    ],
+                                    'carrera' => $claseRecuperacionPendiente->asignatura->carrera->nombre ?? '-',
+                                    'modulo_inicio' => $moduloInicio,
+                                    'modulo_fin' => $moduloFin,
+                                    'hora_inicio' => $horaInicio,
+                                    'hora_fin' => $horaFin,
+                                    'inscritos' => $inscritos,
+                                    'es_recuperacion' => true,
+                                ];
+                            } else {
+                                // Marcar recuperación como no realizada nuevamente
+                                $claseRecuperacionPendiente->update([
+                                    'motivo' => 'Recuperación no realizada: No se registró ingreso después de 20 minutos',
+                                    'observaciones' => ($claseRecuperacionPendiente->observaciones ?? '') . ' | Intento de recuperación el ' . Carbon::now()->format('d/m/Y') . ' sin éxito',
+                                ]);
+                            }
                         } elseif ($planificacionColaborador = $planificacionesColaboradores->firstWhere('id_espacio', $espacio->id_espacio)) {
                             // Clase de profesor colaborador vigente
                             $tieneClase = true;
@@ -867,6 +1011,10 @@ class ModulosActualesTable extends Component
                         $claseNoRealizada = false;
                         $claseFinalizada = false;
                         $claseTerminoAntes = false;
+                        
+                        // Inicializar variables de módulos (necesarias para todas las rutas de lógica)
+                        $numeroModuloInicio = 0;
+                        $numeroModuloFin = 0;
 
                         if ($tieneClase && $planificacionActiva && $planificacionActiva->asignatura) {
                             // Obtener los números de módulos para verificar estado
@@ -975,7 +1123,7 @@ class ModulosActualesTable extends Component
                                 'inicio' => $this->moduloActual['inicio'] ?? '--:--',
                                 'fin' => $this->moduloActual['fin'] ?? '--:--',
                             ],
-                            'piso' => 'Piso ' . ($piso->numero_piso ?? 'N/A'),
+                            'piso' => $piso->getNombrePisoAttribute(),
                             'proxima_clase' => $proximaClase,
                             'rango_disponibilidad' => $rangoDisponibilidad,
                             'es_recuperacion' => $esRecuperacion,
@@ -1011,7 +1159,7 @@ class ModulosActualesTable extends Component
                             'datos_solicitante' => null,
                             'datos_profesor' => null,
                             'modulo' => null,
-                            'piso' => 'Piso ' . ($piso->numero_piso ?? 'N/A'),
+                            'piso' => $piso->getNombrePisoAttribute(),
                             'proxima_clase' => null,
                         ];
                     }
@@ -1074,7 +1222,7 @@ class ModulosActualesTable extends Component
         } elseif (strtolower($estado) === 'reservado' || $estado === 'Reservado') {
             return 'bg-yellow-400';
         } elseif (strtolower($estado) === 'clase por iniciar' || $estado === 'Clase por iniciar') {
-            return 'bg-yellow-400';
+            return 'bg-yellow-500'; // Amarillo más brillante para que sea visible el puntito
         } elseif (strtolower($estado) === 'en programa' || $estado === 'En Programa') {
             return 'bg-yellow-500';
         } elseif (strtolower($estado) === 'disponible' || $estado === 'Disponible') {

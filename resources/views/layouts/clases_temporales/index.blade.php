@@ -11,7 +11,7 @@
                 </div>
             </div>
             <div>
-                <a href="{{ route('profesores-colaboradores.create') }}" 
+                <a href="{{ route('clases-temporales.create') }}" 
                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition-colors duration-150 border border-transparent rounded-lg bg-light-cloud-blue hover:bg-[#b10718] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
                     <i class="mr-2 fa-solid fa-plus"></i>
                     Nueva Asignatura Temporal
@@ -39,7 +39,7 @@
 
             <!-- Filtros -->
             <div class="mb-6 p-6 bg-white rounded-lg shadow">
-                <form method="GET" action="{{ route('profesores-colaboradores.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <form method="GET" action="{{ route('clases-temporales.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
                         <input type="text" name="search" value="{{ request('search') }}" 
@@ -69,7 +69,7 @@
                         <button type="submit" class="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors">
                             <i class="fa-solid fa-filter mr-2"></i>Filtrar
                         </button>
-                        <a href="{{ route('profesores-colaboradores.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
+                        <a href="{{ route('clases-temporales.index') }}" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors">
                             <i class="fa-solid fa-times"></i>
                         </a>
                     </div>
@@ -148,15 +148,15 @@
                                     </td>
                                     <td class="px-6 py-4 text-right text-sm font-medium">
                                         <div class="flex items-center justify-end gap-2">
-                                            <a href="{{ route('profesores-colaboradores.show', $pc) }}" 
+                                            <a href="{{ route('clases-temporales.show', $pc) }}" 
                                                class="text-indigo-600 hover:text-indigo-900" title="Ver detalles">
                                                 <i class="fa-solid fa-eye"></i>
                                             </a>
-                                            <a href="{{ route('profesores-colaboradores.edit', $pc) }}" 
+                                            <a href="{{ route('clases-temporales.edit', $pc) }}" 
                                                class="text-blue-600 hover:text-blue-900" title="Editar">
                                                 <i class="fa-solid fa-edit"></i>
                                             </a>
-                                            <form action="{{ route('profesores-colaboradores.destroy', $pc) }}" 
+                                            <form action="{{ route('clases-temporales.destroy', $pc) }}" 
                                                   method="POST" 
                                                   onsubmit="return confirm('¿Estás seguro de eliminar este profesor colaborador?');"
                                                   class="inline">

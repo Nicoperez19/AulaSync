@@ -58,6 +58,47 @@
         .swal-veto-icon {
             animation: shake 0.5s ease-in-out;
         }
+
+        /* Estilos para el estado de mantención */
+        @keyframes rotarEngranaje {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .mantenimiento-icon {
+            animation: rotarEngranaje 2s linear infinite;
+        }
+
+        .espacio-mantenimiento {
+            opacity: 0.7;
+            filter: grayscale(50%);
+        }
+
+        .espacio-mantenimiento-overlay {
+            position: relative;
+            pointer-events: none;
+        }
+
+        .espacio-mantenimiento-overlay::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(107, 114, 128, 0.1) 10px,
+                rgba(107, 114, 128, 0.1) 20px
+            );
+            pointer-events: none;
+        }
     </style>
     <div class="flex h-screen overflow-hidden">
         <aside
@@ -193,8 +234,12 @@
                                 <span class="flex-1 text-xs text-white">Próximo</span>
                             </div>
                             <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-purple-600 border-2 border-white rounded-full"></div>
-                                <span class="flex-1 text-xs text-white">Clase sin asistentes</span>
+                                <div class="w-3 h-3 bg-gray-700 border-2 border-white rounded-full"></div>
+                                <span class="flex-1 text-xs text-white">Clase no realizada (20+ min)</span>
+                            </div>
+                            <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-gray-400 border-2 border-white rounded-full"></div>
+                                <span class="flex-1 text-xs text-white">En Mantención</span>
                             </div>
                             <div class="flex items-center w-full gap-1">
                                 <div class="w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
@@ -2291,7 +2336,9 @@
                 // Convertir estado a minúsculas para comparación
                 const estadoLower = indicator.estado.toLowerCase();
 
-                if (estadoLower === 'disponible' || estadoLower === 'libre') {
+                if (estadoLower === 'mantención' || estadoLower === 'mantenimiento') {
+                    color = '#6B7280'; // Gris - Mantenimiento
+                } else if (estadoLower === 'disponible' || estadoLower === 'libre') {
                     color = '#059669'; // Verde
                 } else if (estadoLower === 'ocupado') {
                     color = '#FF0000'; // Rojo
@@ -2300,7 +2347,7 @@
                 } else if (estadoLower === 'proximo') {
                     color = '#3B82F6'; // Azul
                 } else if (estadoLower === 'clasesinasistentes') {
-                    color = '#9333EA'; // Púrpura/Morado - Clase sin asistentes
+                    color = '#1F2937'; // Negro oscuro - Clase sin asistentes (después de 20 min)
                 } else {
                     color = '#059669'; // Verde por defecto
                 }
@@ -2327,6 +2374,14 @@
             console.log('🔍 DEBUG - mostrarModalEspacio llamada para:', indicator.id);
             console.log('🔍 Estado del indicator:', indicator.estado);
             console.log('🔍 Indicator completo:', indicator);
+
+            // Verificar si está en mantención
+            const estadoLower = (indicator.estado || '').toLowerCase();
+            if (estadoLower === 'mantención' || estadoLower === 'mantenimiento') {
+                console.log('⚠️ El espacio está en mantención - Mostrando modal de advertencia');
+                mostrarModalMantención(indicator);
+                return;
+            }
 
             // Verificar si es una Sala de Estudio
             if (indicator.tipo && (indicator.tipo.toLowerCase() === 'sala de estudio' || indicator.tipo.toLowerCase() === 'sala estudio')) {
@@ -2458,8 +2513,14 @@
                 'Proximo': { texto: 'Próximo a ocuparse', pill: 'border-2 border-blue-500 bg-blue-100 text-blue-700', icon: 'bg-blue-500' },
                 'Próximo': { texto: 'Próximo a ocuparse', pill: 'border-2 border-blue-500 bg-blue-100 text-blue-700', icon: 'bg-blue-500' },
                 '#3B82F6': { texto: 'Próximo a ocuparse', pill: 'border-2 border-blue-500 bg-blue-100 text-blue-700', icon: 'bg-blue-500' },
-                'ClaseSinAsistentes': { texto: 'Clase sin asistentes', pill: 'border-2 border-purple-500 bg-purple-100 text-purple-700', icon: 'bg-purple-500' },
-                'clasesinasistentes': { texto: 'Clase sin asistentes', pill: 'border-2 border-purple-500 bg-purple-100 text-purple-700', icon: 'bg-purple-500' }
+                'mantención': { texto: 'En Mantención', pill: 'border-2 border-gray-500 bg-gray-100 text-gray-700', icon: 'bg-gray-500' },
+                'Mantención': { texto: 'En Mantención', pill: 'border-2 border-gray-500 bg-gray-100 text-gray-700', icon: 'bg-gray-500' },
+                'mantenimiento': { texto: 'En Mantención', pill: 'border-2 border-gray-500 bg-gray-100 text-gray-700', icon: 'bg-gray-500' },
+                'Mantenimiento': { texto: 'En Mantención', pill: 'border-2 border-gray-500 bg-gray-100 text-gray-700', icon: 'bg-gray-500' },
+                '#6B7280': { texto: 'En Mantención', pill: 'border-2 border-gray-500 bg-gray-100 text-gray-700', icon: 'bg-gray-500' },
+                'ClaseSinAsistentes': { texto: 'Clase no realizada (20+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' },
+                'clasesinasistentes': { texto: 'Clase no realizada (20+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' },
+                '#1F2937': { texto: 'Clase no realizada (20+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' }
             };
 
             const config = estadoConfig[estadoReal] || {
@@ -2773,30 +2834,64 @@
             if (elements.proximaClaseContainer) elements.proximaClaseContainer.style.display = 'none';
             if (elements.claseActualContainer) elements.claseActualContainer.style.display = 'none';
             
-            // Determinar si hay una reserva pendiente (espacio tiene reserva pero aún no inicia)
-            // Si existe proxima_clase pero NO hay asignatura activa, es una reserva pendiente
-            const tieneReservaPendiente = data.proxima_clase && data.proxima_clase.asignatura && !data.asignatura;
+            // Determinar si hay una reserva pendiente verificando la HORA
+            // Una reserva está "AHORA" solo si su hora_inicio está en los próximos 10 minutos
+            let tieneReservaPendiente = false;
+            let reservaEstaAhora = false;
+            
+            if (data.proxima_clase && data.proxima_clase.asignatura && !data.asignatura) {
+                tieneReservaPendiente = true;
+                
+                // Verificar si la próxima clase está en los próximos 10 minutos
+                if (data.proxima_clase.hora_inicio) {
+                    const ahora = new Date();
+                    const horaActual = ahora.toLocaleTimeString('es-ES', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                    
+                    // Convertir a minutos para comparación
+                    const [horaAct, minAct, segAct] = horaActual.split(':').map(Number);
+                    const [horaProx, minProx, segProx] = data.proxima_clase.hora_inicio.split(':').map(Number);
+                    
+                    const minutoActual = horaAct * 60 + minAct;
+                    const minutoProximo = horaProx * 60 + minProx;
+                    const diferencia = minutoProximo - minutoActual;
+                    
+                    // La clase está "AHORA" si comienza en los próximos 10 minutos (rango flexible)
+                    reservaEstaAhora = diferencia >= 0 && diferencia <= 10;
+                    
+                    console.log('⏰ Análisis de hora:', {
+                        hora_actual: horaActual,
+                        hora_proxima: data.proxima_clase.hora_inicio,
+                        minutos_diferencia: diferencia,
+                        esta_ahora: reservaEstaAhora
+                    });
+                }
+            }
             
             console.log('🟡 ¿Tiene reserva pendiente?:', tieneReservaPendiente, {
                 proxima_clase: data.proxima_clase?.asignatura,
-                asignatura_actual: data.asignatura
+                asignatura_actual: data.asignatura,
+                esta_en_ahora: reservaEstaAhora
             });
             
             // Actualizar icono y etiqueta del paso "Ahora" según estado
             if (elements.pasoAhoraIcono) {
-                if (tieneReservaPendiente) {
-                    // Amarillo para reserva pendiente
+                if (tieneReservaPendiente && reservaEstaAhora) {
+                    // Amarillo para reserva pendiente que ESTÁ AHORA (próximos 10 min)
                     elements.pasoAhoraIcono.className = 'flex items-center justify-center w-12 h-12 mb-3 text-white bg-yellow-500 rounded-full';
-                    console.log('🟡 Icono "Ahora" cambiado a AMARILLO - Reserva pendiente');
+                    console.log('🟡 Icono "Ahora" cambiado a AMARILLO - Reserva pendiente EN AHORA (próximos 10 min)');
                 } else {
                     // Azul por defecto
                     elements.pasoAhoraIcono.className = 'flex items-center justify-center w-12 h-12 mb-3 text-white bg-blue-500 rounded-full';
-                    console.log('🔵 Icono "Ahora" mantenido en AZUL - Sin reserva pendiente');
+                    console.log('🔵 Icono "Ahora" mantenido en AZUL - Sin reserva en los próximos 10 minutos');
                 }
             }
             
             if (elements.pasoAhoraEtiqueta) {
-                if (tieneReservaPendiente) {
+                if (tieneReservaPendiente && reservaEstaAhora) {
                     elements.pasoAhoraEtiqueta.className = 'text-xs font-medium text-yellow-600 uppercase mb-3';
                 } else {
                     elements.pasoAhoraEtiqueta.className = 'text-xs font-medium text-blue-600 uppercase mb-3';
@@ -2825,14 +2920,14 @@
                 console.log('📊 Estado actual - asignatura:', data.asignatura, 'nombre:', data.nombre);
                 
                 // Actualizar clases del contenedor según estado
-                if (tieneReservaPendiente) {
+                if (tieneReservaPendiente && reservaEstaAhora) {
                     elements.pasoEstadoActual.className = 'w-full px-4 py-3 text-sm text-center bg-yellow-50 border border-yellow-200 rounded-lg min-h-[80px] flex items-center justify-center';
                 } else {
                     elements.pasoEstadoActual.className = 'w-full px-4 py-3 text-sm text-center bg-blue-50 border border-blue-200 rounded-lg min-h-[80px] flex items-center justify-center';
                 }
                 
-                if (tieneReservaPendiente) {
-                    // Mostrar mensaje de reserva pendiente
+                if (tieneReservaPendiente && reservaEstaAhora) {
+                    // Mostrar mensaje de reserva pendiente que ESTÁ AHORA
                     const proxima = data.proxima_clase;
                     elements.pasoEstadoActual.innerHTML = `
                         <div class="text-center">
@@ -2868,9 +2963,12 @@
             // Próxima Clase
             if (elements.pasoClaseProxima) {
                 const proxima = data.proxima_clase;
-                console.log('📊 Próxima clase:', proxima);
-                if (proxima && proxima.asignatura && !tieneReservaPendiente) {
-                    // Solo mostrar próxima clase si no está siendo mostrada en "Ahora"
+                console.log('📊 Próxima clase:', proxima, 'reservaEstaAhora:', reservaEstaAhora);
+                
+                // Mostrar próxima clase solo si:
+                // 1. Existe próxima clase Y
+                // 2. NO está siendo mostrada en "Ahora" (es decir, NO está en próximos 10 min) O no hay reserva pendiente
+                if (proxima && proxima.asignatura && (!tieneReservaPendiente || !reservaEstaAhora)) {
                     elements.pasoClaseProxima.innerHTML = `
                         <div class="text-center">
                             <div class="font-semibold text-gray-800 mb-1">${proxima.asignatura}</div>
@@ -3493,6 +3591,68 @@
                 }
             } catch (error) {
                 console.error('❌ Error en registrarAsistencia:', error);
+            }
+        }
+
+        // ============================================================================
+        // FUNCIONES PARA MODAL DE MANTENCIÓN
+        // ============================================================================
+
+        function mostrarModalMantención(indicator) {
+            console.log('⚠️ Mostrando modal de mantención para:', indicator.id);
+            
+            // Crear modal dinámicamente
+            const modalHTML = `
+                <div id="modal-mantenimiento" class="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-50">
+                    <div class="flex flex-col w-full max-w-md mx-2 bg-white rounded-lg shadow-lg overflow-hidden">
+                        <!-- Encabezado con ícono de mantenimiento -->
+                        <div class="flex flex-col items-center gap-4 p-8 bg-gradient-to-r from-gray-600 to-gray-700">
+                            <div class="p-4 bg-white rounded-full bg-opacity-20">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                            </div>
+                            <div class="text-center">
+                                <h2 class="text-2xl font-bold text-white mb-2">Espacio en Mantención</h2>
+                                <p class="text-gray-200 text-sm">${indicator.nombre} (${indicator.id})</p>
+                            </div>
+                        </div>
+
+                        <!-- Contenido -->
+                        <div class="p-8">
+                            <div class="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-500 rounded">
+                                <p class="text-gray-800 font-medium">
+                                    Este espacio se encuentra actualmente en mantención y no está disponible para reservas.
+                                </p>
+                            </div>
+                            
+                            <p class="text-gray-600 text-sm mb-6">
+                                Por favor, intenta nuevamente en unos momentos o contacta con administración si tienes dudas.
+                            </p>
+                        </div>
+
+                        <!-- Botón de cerrar -->
+                        <div class="flex justify-end px-8 py-4 bg-gray-50 border-t border-gray-200">
+                            <button onclick="cerrarModalMantención()" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                                Entendido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Insertar modal en el DOM
+            const container = document.createElement('div');
+            container.innerHTML = modalHTML;
+            document.body.appendChild(container.querySelector('#modal-mantenimiento'));
+        }
+
+        function cerrarModalMantención() {
+            const modal = document.getElementById('modal-mantenimiento');
+            if (modal) {
+                modal.remove();
+                console.log('✅ Modal de mantención cerrado');
             }
         }
 

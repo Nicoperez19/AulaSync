@@ -445,3 +445,131 @@ Route::get('/sala-estudio/vetos/export', [SalaEstudioController::class, 'exporta
 // Verificar si un RUN existe en solicitantes
 Route::get('/verificar-solicitante/{run}', [App\Http\Controllers\SolicitanteController::class, 'verificarExistencia']);
 
+// Obtener todos los módulos del sistema
+Route::get('/modulos', function () {
+    $modulos = \App\Models\Modulo::distinct()
+        ->select('id_modulo', 'hora_inicio', 'hora_termino')
+        ->orderBy('hora_inicio')
+        ->get()
+        ->map(function ($modulo) {
+            // Extraer el número del módulo del id (ej: "JU.1" -> 1)
+            $partes = explode('.', $modulo->id_modulo);
+            $numeroModulo = isset($partes[1]) ? $partes[1] : 1;
+            
+            return [
+                'id_modulo' => $numeroModulo,
+                'hora_inicio' => substr($modulo->hora_inicio, 0, 5),
+                'hora_termino' => substr($modulo->hora_termino, 0, 5)
+            ];
+        })
+        ->unique('id_modulo')
+        ->values()
+        ->toArray();
+
+    return response()->json($modulos);
+});
+
+// Obtener espacios disponibles para una fecha y rango de módulos
+Route::get('/espacios-disponibles/{fecha}/{moduloInicio}/{moduloFin}', function ($fecha, $moduloInicio, $moduloFin) {
+    try {
+        // Obtener todos los espacios disponibles (excluyendo salas de estudio, talleres y laboratorios excepto computación)
+        $espacios = \App\Models\Espacio::where('estado', 'Disponible')
+            ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%sala de estudio%'")
+            ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%sala estudio%'")
+            ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%taller%'")
+            ->whereRaw("LOWER(tipo_espacio) NOT LIKE '%laboratorio%' OR LOWER(tipo_espacio) LIKE '%laboratorio de computacion%' OR LOWER(tipo_espacio) LIKE '%laboratorio computacion%'")
+            ->whereRaw("LOWER(nombre_espacio) NOT LIKE '%estudio%'")
+            ->whereRaw("LOWER(nombre_espacio) NOT LIKE '%taller%'")
+            ->select('id_espacio', 'nombre_espacio', 'tipo_espacio')
+            ->orderBy('nombre_espacio')
+            ->get();
+
+        // Convertir fecha a día de la semana
+        $fechaParsed = \Carbon\Carbon::parse($fecha);
+        $nombreDia = strtolower($fechaParsed->format('l'));
+        
+        // Mapear nombre del día en inglés a prefijo en BD (mayúsculas)
+        $diasMap = [
+            'monday' => 'LU',
+            'tuesday' => 'MA',
+            'wednesday' => 'MI',
+            'thursday' => 'JU',
+            'friday' => 'VI',
+            'saturday' => 'SA',
+            'sunday' => 'DO'
+        ];
+        $prefijoDia = $diasMap[$nombreDia] ?? 'LU';
+
+        // Crear array de módulos a verificar
+        $modulosAVerificar = range((int)$moduloInicio, (int)$moduloFin);
+        $modulosIds = array_map(function($num) use ($prefijoDia) {
+            return "{$prefijoDia}.{$num}";
+        }, $modulosAVerificar);
+
+        // Obtener horarios del primer y último módulo
+        $primerModuloObj = \App\Models\Modulo::find($modulosIds[0]);
+        $ultimoModuloObj = \App\Models\Modulo::find(end($modulosIds));
+        
+        if (!$primerModuloObj || !$ultimoModuloObj) {
+            return response()->json([
+                'error' => 'Módulo no encontrado',
+                'debug' => [
+                    'modulos_construidos' => $modulosIds
+                ]
+            ], 404);
+        }
+
+        $horaInicio = substr($primerModuloObj->hora_inicio, 0, 5);
+        $horaFin = substr($ultimoModuloObj->hora_termino, 0, 5);
+
+        // Filtrar espacios que NO tengan reserva o planificación en NINGUNO de los módulos del rango
+        $espaciosDisponibles = $espacios->filter(function ($espacio) use ($fecha, $modulosIds, $modulosAVerificar) {
+            // Verificar si hay PLANIFICACIÓN (clases programadas) en este espacio para CUALQUIERA de los módulos
+            foreach ($modulosIds as $moduloId) {
+                $planificado = \App\Models\Planificacion_Asignatura::where('id_espacio', $espacio->id_espacio)
+                    ->where('id_modulo', $moduloId)
+                    ->exists();
+                
+                if ($planificado) {
+                    return false; // Si tiene clase planificada en cualquier módulo, no está disponible
+                }
+            }
+            
+            // Verificar si hay RESERVA en este espacio para esta fecha en CUALQUIERA de los módulos
+            foreach ($modulosAVerificar as $numModulo) {
+                $reservado = \App\Models\Reserva::where('id_espacio', $espacio->id_espacio)
+                    ->whereDate('fecha_reserva', $fecha)
+                    ->whereRaw("modulos LIKE ?", ["%{$numModulo}%"])
+                    ->whereIn('estado', ['confirmada', 'en_curso', 'activa'])
+                    ->exists();
+                
+                if ($reservado) {
+                    return false; // Si está reservado en cualquier módulo, no está disponible
+                }
+            }
+            
+            return true; // Solo está disponible si está libre en TODOS los módulos (sin planificación ni reserva)
+        })->values();
+
+        return response()->json([
+            'espacios' => $espaciosDisponibles->map(function($espacio) {
+                return [
+                    'id_espacio' => $espacio->id_espacio,
+                    'nombre_espacio' => $espacio->nombre_espacio,
+                    'tipo_espacio' => $espacio->tipo_espacio,
+                    'display_name' => "{$espacio->id_espacio} - {$espacio->nombre_espacio}"
+                ];
+            }),
+            'modulos_verificados' => $modulosIds,
+            'hora_inicio' => $horaInicio,
+            'hora_fin' => $horaFin,
+            'fecha' => $fecha,
+            'total_disponibles' => count($espaciosDisponibles),
+            'total_espacios_base' => $espacios->count()
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
+    }
+});
+

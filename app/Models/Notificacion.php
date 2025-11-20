@@ -95,36 +95,45 @@ class Notificacion extends Model
      */
     public static function crearNotificacionClaseNoRealizada($claseNoRealizada)
     {
-        // Obtener usuarios supervisores y administradores
-        $usuarios = User::role(['Supervisor', 'Administrador'])->get();
+        try {
+            // Obtener usuarios supervisores y administradores
+            $usuarios = User::role(['Supervisor', 'Administrador'])->get();
 
-        $asignatura = $claseNoRealizada->asignatura;
-        $profesor = $claseNoRealizada->profesor;
-        $espacio = $claseNoRealizada->espacio;
+            \Log::info('Creando notificaciones de clase no realizada - Usuarios encontrados: ' . $usuarios->count());
 
-        $titulo = 'Clase no realizada';
-        $mensaje = sprintf(
-            'El profesor %s no realizó la clase de %s en %s el %s',
-            $profesor->name ?? 'Desconocido',
-            $asignatura->nombre_asignatura ?? 'Desconocida',
-            $espacio->nombre_espacio ?? 'Desconocido',
-            $claseNoRealizada->fecha_clase->format('d/m/Y')
-        );
+            $asignatura = $claseNoRealizada->asignatura;
+            $profesor = $claseNoRealizada->profesor;
+            $espacio = $claseNoRealizada->espacio;
 
-        foreach ($usuarios as $usuario) {
-            static::create([
-                'run_usuario' => $usuario->run,
-                'tipo' => 'clase_no_realizada',
-                'titulo' => $titulo,
-                'mensaje' => $mensaje,
-                'url' => route('recuperacion-clases.index'),
-                'datos_adicionales' => [
-                    'id_clase_no_realizada' => $claseNoRealizada->id,
-                    'id_asignatura' => $claseNoRealizada->id_asignatura,
-                    'run_profesor' => $claseNoRealizada->run_profesor,
-                    'fecha_clase' => $claseNoRealizada->fecha_clase->toDateString(),
-                ],
-            ]);
+            $titulo = 'Clase no realizada';
+            $mensaje = sprintf(
+                'El profesor %s no realizó la clase de %s en %s el %s',
+                $profesor->name ?? 'Desconocido',
+                $asignatura->nombre_asignatura ?? 'Desconocida',
+                $espacio->id_espacio ?? 'Desconocido',
+                $claseNoRealizada->fecha_clase->format('d/m/Y')
+            );
+
+            foreach ($usuarios as $usuario) {
+                static::create([
+                    'run_usuario' => $usuario->run,
+                    'tipo' => 'clase_no_realizada',
+                    'titulo' => $titulo,
+                    'mensaje' => $mensaje,
+                    'url' => route('recuperacion-clases.index'),
+                    'datos_adicionales' => [
+                        'id_clase_no_realizada' => $claseNoRealizada->id,
+                        'id_asignatura' => $claseNoRealizada->id_asignatura,
+                        'run_profesor' => $claseNoRealizada->run_profesor,
+                        'fecha_clase' => $claseNoRealizada->fecha_clase->toDateString(),
+                        'id_espacio' => $claseNoRealizada->id_espacio,
+                    ],
+                ]);
+
+                \Log::info('Notificación creada para usuario: ' . $usuario->run);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error al crear notificación de clase no realizada: ' . $e->getMessage());
         }
     }
 
@@ -141,10 +150,11 @@ class Notificacion extends Model
 
         $titulo = 'Clase reagendada';
         $mensaje = sprintf(
-            'Se ha reagendado la clase de %s (profesor: %s) para el %s',
+            'Se ha reagendado la clase de %s (profesor: %s) para el %s en %s',
             $asignatura->nombre_asignatura ?? 'Desconocida',
             $profesor->name ?? 'Desconocido',
-            $recuperacion->fecha_reagendada ? $recuperacion->fecha_reagendada->format('d/m/Y') : 'fecha pendiente'
+            $recuperacion->fecha_reagendada ? $recuperacion->fecha_reagendada->format('d/m/Y') : 'fecha pendiente',
+            $recuperacion->id_espacio_reagendado ?? 'Espacio pendiente'
         );
 
         foreach ($usuarios as $usuario) {
@@ -159,6 +169,7 @@ class Notificacion extends Model
                     'id_asignatura' => $recuperacion->id_asignatura,
                     'run_profesor' => $recuperacion->run_profesor,
                     'fecha_reagendada' => $recuperacion->fecha_reagendada ? $recuperacion->fecha_reagendada->toDateString() : null,
+                    'id_espacio_reagendado' => $recuperacion->id_espacio_reagendado,
                 ],
             ]);
         }

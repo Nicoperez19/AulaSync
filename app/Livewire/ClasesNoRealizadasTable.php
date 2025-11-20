@@ -194,55 +194,13 @@ class ClasesNoRealizadasTable extends Component
     {
         $clase = ClaseNoRealizada::with(['asignatura', 'profesor'])->findOrFail($id);
         
-        // Debug: Verificar conexión a base de datos y tabla espacios
-        try {
-            // Intentar diferentes consultas para obtener espacios
-            $espacios = collect();
-            
-            // Primer intento: espacios activos
-            $espacios = \App\Models\Espacio::select('id_espacio', 'nombre_espacio', 'tipo_espacio', 'estado')
-                ->where('estado', 'activo')
-                ->orderBy('nombre_espacio')
-                ->get();
-
-            // Si no hay espacios activos, probar con todos los espacios
-            if ($espacios->isEmpty()) {
-                $espacios = \App\Models\Espacio::select('id_espacio', 'nombre_espacio', 'tipo_espacio', 'estado')
-                    ->orderBy('id_espacio')
-                    ->get();
-            }
-
-            // Log para debugging
-            Log::info('Espacios encontrados: ' . $espacios->count());
-            
-        } catch (\Exception $e) {
-            Log::error('Error al cargar espacios: ' . $e->getMessage());
-            $espacios = collect();
-        }
-
-        // Si aún no hay espacios, crear algunos espacios de ejemplo
-        if ($espacios->isEmpty()) {
-            Log::warning('No se encontraron espacios en la base de datos, usando fallback');
-            $espacios = collect([
-                (object)['id_espacio' => 'A101', 'nombre_espacio' => 'Aula A101', 'tipo_espacio' => 'Aula'],
-                (object)['id_espacio' => 'A102', 'nombre_espacio' => 'Aula A102', 'tipo_espacio' => 'Aula'],
-                (object)['id_espacio' => 'B201', 'nombre_espacio' => 'Aula B201', 'tipo_espacio' => 'Aula'],
-                (object)['id_espacio' => 'LAB1', 'nombre_espacio' => 'Laboratorio 1', 'tipo_espacio' => 'Laboratorio'],
-                (object)['id_espacio' => 'C301', 'nombre_espacio' => 'Aula C301', 'tipo_espacio' => 'Aula'],
-            ]);
-        }
-
-        // Preparar los datos de espacios para el frontend
-        $espaciosData = $espacios->map(function ($espacio) {
-            return [
-                'id_espacio' => $espacio->id_espacio,
-                'nombre_espacio' => $espacio->nombre_espacio ?? $espacio->id_espacio,
-                'tipo_espacio' => $espacio->tipo_espacio ?? 'Aula'
-            ];
-        })->toArray();
-
-        // Log final para debugging
-        Log::info('Espacios enviados al frontend: ' . json_encode($espaciosData));
+        // Detectar automáticamente cuántos módulos no se realizaron
+        // Contar todos los módulos programados para esta asignatura
+        $totalModulosProgramados = \App\Models\Planificacion_Asignatura::where('id_asignatura', $clase->id_asignatura)
+            ->count();
+        
+        // Log para debugging
+        Log::info("Clase no realizada: {$clase->id}, Asignatura: {$clase->id_asignatura}, Total módulos programados: {$totalModulosProgramados}");
 
         $this->dispatch('show-reagendar-modal', [
             'id' => $id,
@@ -251,14 +209,17 @@ class ClasesNoRealizadasTable extends Component
             'fecha_original' => $clase->fecha_clase->format('d/m/Y'),
             'espacio_original' => $clase->id_espacio,
             'modulo_original' => $clase->id_modulo,
-            'espacios' => $espaciosData,
+            'totalModulosProgramados' => $totalModulosProgramados,
         ]);
     }
 
-    public function reagendarClase($id, $nuevaFecha, $nuevoEspacio, $nuevoModulo, $observaciones = '')
+    public function reagendarClase($id, $nuevaFecha, $nuevoEspacio, $nuevoModulo, $cantidadModulos = 1, $observaciones = '')
     {
         try {
             $clase = ClaseNoRealizada::findOrFail($id);
+            
+            // Convertir cantidadModulos a entero y validar
+            $cantidadModulos = max(1, min(15, (int)$cantidadModulos));
             
             // Validar que la nueva fecha no sea anterior a hoy
             if (Carbon::parse($nuevaFecha)->lt(Carbon::today())) {
@@ -266,10 +227,40 @@ class ClasesNoRealizadasTable extends Component
                 return;
             }
             
+            // Obtener el día de la nueva fecha
+            $fechaParsed = Carbon::parse($nuevaFecha);
+            $nombreDia = strtolower($fechaParsed->format('l'));
+            
+            // Mapear nombre del día en inglés a prefijo en BD (mayúsculas)
+            $diasMap = [
+                'monday' => 'LU',
+                'tuesday' => 'MA',
+                'wednesday' => 'MI',
+                'thursday' => 'JU',
+                'friday' => 'VI',
+                'saturday' => 'SA',
+                'sunday' => 'DO'
+            ];
+            $prefijoDia = $diasMap[$nombreDia] ?? 'LU';
+            
+            // Construir el id_modulo completo con todos los módulos seleccionados
+            if ($cantidadModulos > 1) {
+                // Múltiples módulos: construir array LU.1,LU.2,LU.3
+                $modulosNuevos = [];
+                for ($i = 0; $i < $cantidadModulos; $i++) {
+                    $numeroModulo = $nuevoModulo + $i;
+                    $modulosNuevos[] = "{$prefijoDia}.{$numeroModulo}";
+                }
+                $nuevoModuloId = implode(',', $modulosNuevos);
+            } else {
+                // Un solo módulo
+                $nuevoModuloId = "{$prefijoDia}.{$nuevoModulo}";
+            }
+            
             // Crear observación completa indicando que debe recuperarse
             $observacionReagendamiento = "⚠️ CLASE PENDIENTE DE RECUPERACIÓN - ";
             $observacionReagendamiento .= "Reagendada desde {$clase->fecha_clase->format('d/m/Y')} ({$clase->id_espacio}, módulo {$clase->id_modulo}) ";
-            $observacionReagendamiento .= "a {$nuevaFecha} ({$nuevoEspacio}, módulo {$nuevoModulo}). ";
+            $observacionReagendamiento .= "a {$nuevaFecha} ({$nuevoEspacio}, módulo {$nuevoModuloId}). ";
             $observacionReagendamiento .= "El profesor debe recuperar esta clase en la nueva fecha programada.";
             
             if ($observaciones) {
@@ -280,7 +271,7 @@ class ClasesNoRealizadasTable extends Component
             $clase->update([
                 'fecha_clase' => $nuevaFecha,
                 'id_espacio' => $nuevoEspacio,
-                'id_modulo' => $nuevoModulo,
+                'id_modulo' => $nuevoModuloId,
                 'estado' => 'pendiente', // Estado específico para clases reagendadas
                 'observaciones' => $observacionReagendamiento,
             ]);
@@ -292,7 +283,7 @@ class ClasesNoRealizadasTable extends Component
                 'espacio_original' => $clase->id_espacio,
                 'espacio_nuevo' => $nuevoEspacio,
                 'modulo_original' => $clase->id_modulo,
-                'modulo_nuevo' => $nuevoModulo,
+                'modulo_nuevo' => $nuevoModuloId,
                 'estado' => 'pendiente',
             ]);
             
@@ -392,19 +383,15 @@ class ClasesNoRealizadasTable extends Component
             $query->whereBetween('fecha_clase', [$this->fecha_inicio, $this->fecha_fin]);
         }
 
-        // Aplicar el mismo filtro corregido para las estadísticas
-        // IMPORTANTE: Las clases pendientes se cuentan siempre (incluso futuras)
+        // Aplicar el mismo filtro simplificado - mostrar todas las clases
         $hoy = Carbon::now()->toDateString();
         $query->where(function($q) use ($hoy) {
             // OPCIÓN 1: Clases pendientes (reagendadas) - mostrar SIEMPRE
             $q->where('estado', 'pendiente')
             // OPCIÓN 2: Mostrar TODOS los registros de días anteriores
             ->orWhereDate('fecha_clase', '<', $hoy)
-            // OPCIÓN 3: PARA registros de hoy, aplicar filtro especial
-            ->orWhere(function($subQ) use ($hoy) {
-                $subQ->whereDate('fecha_clase', $hoy);
-                $this->filtrarClasesFinalizadasDeHoy($subQ);
-            });
+            // OPCIÓN 3: Mostrar TODAS las clases de hoy
+            ->orWhereDate('fecha_clase', $hoy);
         });
 
         return [
@@ -425,7 +412,8 @@ class ClasesNoRealizadasTable extends Component
                     $subQ->where('name', 'like', '%' . $this->search . '%');
                 })
                 ->orWhereHas('asignatura', function($subQ) {
-                    $subQ->where('nombre_asignatura', 'like', '%' . $this->search . '%');
+                    $subQ->where('nombre_asignatura', 'like', '%' . $this->search . '%')
+                         ->orWhere('codigo_asignatura', 'like', '%' . $this->search . '%');
                 })
                 ->orWhere('id_espacio', 'like', '%' . $this->search . '%');
             });
@@ -452,11 +440,8 @@ class ClasesNoRealizadasTable extends Component
             $q->where('estado', 'pendiente')
             // OPCIÓN 2: Mostrar TODOS los registros de días anteriores
             ->orWhereDate('fecha_clase', '<', $hoy)
-            // OPCIÓN 3: PARA registros de hoy, aplicar filtro especial
-            ->orWhere(function($subQ) use ($hoy) {
-                $subQ->whereDate('fecha_clase', $hoy);
-                $this->filtrarClasesFinalizadasDeHoy($subQ);
-            });
+            // OPCIÓN 3: Mostrar TODAS las clases de hoy (sin filtro restrictivo)
+            ->orWhereDate('fecha_clase', $hoy);
         });
 
         $query->orderBy($this->sortField, $this->sortDirection);
@@ -500,8 +485,15 @@ class ClasesNoRealizadasTable extends Component
         // 1. Ya pasó su último módulo programado (la clase terminó su horario)
         // 2. O que pasaron más de 20 minutos desde el inicio del primer módulo
         $query->where(function($q) use ($moduloActual) {
-            // Opción 1: La clase ya terminó su horario (módulo actual > último módulo de la clase)
-            $q->whereRaw("CAST(SUBSTRING_INDEX(id_modulo, '.', -1) AS UNSIGNED) < ?", [$moduloActual['numero']])
+            // Opción 1: La clase ya terminó su horario
+            // Manejar tanto módulos simples "LU.1" como múltiples "LU.1,LU.2,LU.3"
+            $q->where(function($subQ) use ($moduloActual) {
+                // Si id_modulo contiene comas, extraer el último módulo
+                $subQ->whereRaw("CASE 
+                    WHEN id_modulo LIKE '%,%' THEN CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(id_modulo, ',', -1), '.', -1) AS UNSIGNED)
+                    ELSE CAST(SUBSTRING_INDEX(id_modulo, '.', -1) AS UNSIGNED)
+                END < ?", [$moduloActual['numero']]);
+            })
             // Opción 2: O han pasado más de 20 minutos desde la detección
             ->orWhere(function($subQ) {
                 $subQ->where('hora_deteccion', '<=', Carbon::now()->subMinutes(20));

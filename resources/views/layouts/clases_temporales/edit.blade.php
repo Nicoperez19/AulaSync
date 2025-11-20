@@ -417,7 +417,7 @@
                         class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
                     Cancelar
                 </button>
-                <form method="POST" action="{{ route('profesores-colaboradores.destroy', $profesorColaborador) }}" style="display: inline;">
+                <form method="POST" action="{{ route('clases-temporales.destroy', $profesorColaborador) }}" style="display: inline;">
                     @csrf
                     @method('DELETE')
                     <button type="submit" 
@@ -616,7 +616,7 @@
             const modulosArray = Object.keys(seleccionados);
             
             try {
-                const response = await fetch('{{ route("profesores-colaboradores.getSalasDisponibles") }}', {
+                const response = await fetch('{{ route("clases-temporales.getSalasDisponibles") }}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

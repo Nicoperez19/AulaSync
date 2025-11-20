@@ -190,7 +190,7 @@
                                         <!-- Columna 2: Espacio -->
                                         <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
                                             <div class="font-semibold text-blue-700 text-sm">{{ $espacio['id_espacio'] }}</div>
-                                            <div class="text-gray-600 text-xs">Piso {{ $espacio['piso'] ?? 'N/A' }}</div>
+                                            <div class="text-gray-600 text-xs">{{ $espacio['piso'] ?? 'N/A' }}</div>
                                         </td>
                                         <!-- Columna 3: Estado -->
                                          <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
@@ -233,20 +233,28 @@
                                                     <!-- Clase Regular -->
                                                     <div class="font-medium text-gray-900 text-sm">
                                                         @if(!empty($espacio['es_recuperacion']) && $espacio['es_recuperacion'])
-                                                            <div class="flex items-center gap-1">
-                                                                <i class="fas fa-redo text-blue-600"></i>
-                                                                <span class="text-blue-600 font-semibold">Recuperación de clase</span>
+                                                            <!-- Clase de recuperación con tag a la derecha -->
+                                                            <div class="flex items-start justify-between gap-2">
+                                                                <div class="flex-1">
+                                                                    <div>
+                                                                        @if(!empty($espacio['datos_clase']['codigo_asignatura']))
+                                                                            <span class="font-semibold">{{ $espacio['datos_clase']['codigo_asignatura'] }} - </span>
+                                                                        @endif
+                                                                        {{ $asignatura ?? 'Sin asignatura' }}
+                                                                    </div>
+                                                                    <div>Prof: {{ $espacio['datos_clase']['profesor']['name'] ?? 'N/A' }}</div>
+                                                                </div>
+                                                                <span class="px-2 py-0.5 bg-green-200 text-green-700 text-xs font-semibold rounded whitespace-nowrap">RECUPERACIÓN</span>
                                                             </div>
-                                                        @endif
-                                                        <div>
-                                                            @if(!empty($espacio['datos_clase']['codigo_asignatura']))
-                                                                <span class="font-semibold ">{{ $espacio['datos_clase']['codigo_asignatura'] }} - </span>
-                                                            @endif
-                                                            {{ $asignatura ?? 'Sin asignatura' }}
-                                                        </div>
-                                                        <div>Prof: {{ $espacio['datos_clase']['profesor']['name'] ?? 'N/A' }}</div>
-                                                        @if(!empty($espacio['es_recuperacion']) && !empty($espacio['datos_clase']['fecha_original']))
-                                                            <div class="text-xs text-gray-600">Original: {{ $espacio['datos_clase']['fecha_original'] }}</div>
+                                                        @else
+                                                            <!-- Clase normal -->
+                                                            <div>
+                                                                @if(!empty($espacio['datos_clase']['codigo_asignatura']))
+                                                                    <span class="font-semibold ">{{ $espacio['datos_clase']['codigo_asignatura'] }} - </span>
+                                                                @endif
+                                                                {{ $asignatura ?? 'Sin asignatura' }}
+                                                            </div>
+                                                            <div>Prof: {{ $espacio['datos_clase']['profesor']['name'] ?? 'N/A' }}</div>
                                                         @endif
                                                     </div>
                                                 @endif

@@ -15,12 +15,43 @@
     </x-slot>
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
-        <div class="flex items-center justify-end gap-3 mb-6">
-            <a href="{{ route('profesores-colaboradores.index') }}" 
+        <div class="flex items-center justify-end gap-3 mb-6 flex-wrap">
+            <a href="{{ route('clases-temporales.index') }}" 
                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors bg-purple-600 rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2">
                 <i class="fas fa-user-clock"></i>
                 Clases Temporales
             </a>
+
+            <!-- Clases No Registradas -->
+            @role('Administrador|Supervisor')
+            <a href="{{ route('clases-no-realizadas.index') }}"
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+               style="background-color: #cd1627;">
+                <i class="fa-solid fa-chart-bar"></i>
+                Clases no registradas
+            </a>
+            @endrole
+
+
+            <!-- Recuperación de Clases -->
+            @can('gestionar recuperacion clases')
+            <a href="{{ route('recuperacion-clases.index') }}"
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+               style="background-color: #cd1627;">
+                <i class="fa-solid fa-calendar-check"></i>
+                Recuperación de Clases
+            </a>
+            @endcan
+            
+            <!-- Licencias Profesores -->
+            @can('gestionar licencias profesores')
+            <a href="{{ route('licencias.index') }}"
+               class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+               style="background-color: #cd1627;">
+                <i class="fa-solid fa-file-medical"></i>
+                Licencias Profesores
+            </a>
+            @endcan
             <x-button variant="add" class="max-w-xs gap-2" x-on:click.prevent="$dispatch('open-modal', 'add-professor')">
                 <x-icons.add class="w-6 h-6" aria-hidden="true" />
                 Agregar Profesor

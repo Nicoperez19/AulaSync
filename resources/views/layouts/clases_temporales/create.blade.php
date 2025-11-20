@@ -12,7 +12,7 @@
                     <p class="text-sm text-gray-500">Configure profesor, horarios y sala para la asignatura temporal</p>
                 </div>
             </div>
-            <a href="{{ route('profesores-colaboradores.index') }}" 
+            <a href="{{ route('clases-temporales.index') }}" 
                class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                 <i class="mr-2 fa-solid fa-arrow-left"></i>Volver
             </a>
@@ -63,10 +63,10 @@
             </div>
 
             <form method="POST" 
-                  action="{{ isset($profesorColaborador) ? route('profesores-colaboradores.update', $profesorColaborador) : route('profesores-colaboradores.store') }}"
+                  action="{{ isset($profesorColaborador) ? route('clases-temporales.update', $profesorColaborador) : route('clases-temporales.store') }}"
                   id="formProfesorColaborador">
                 @csrf
-                @if(isset($profesorColaborador))
+                @method('PUT' if isset($profesorColaborador))
                     @method('PUT')
                 @endif
 
@@ -378,7 +378,7 @@
                     </button>
                     <div></div>
                     <div class="flex gap-2">
-                        <a href="{{ route('profesores-colaboradores.index') }}" 
+                        <a href="{{ route('clases-temporales.index') }}" 
                            class="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                             Cancelar
                         </a>
@@ -703,7 +703,7 @@
 
         function loadSalasDisponibles() {
             const container = document.getElementById('salas-disponibles-container');
-            fetch('/api/profesores-colaboradores/salas-disponibles', {
+            fetch('/api/clases-temporales/salas-disponibles', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json', 

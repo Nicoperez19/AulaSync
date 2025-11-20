@@ -37,7 +37,30 @@ class NotificacionesDropdown extends Component
         $this->notificaciones = Notificacion::where('run_usuario', $usuario->run)
             ->orderBy('created_at', 'desc')
             ->take(10)
-            ->get();
+            ->get()
+            ->map(function ($notificacion) {
+                // Regenerar URL dinámicamente para evitar localhost
+                $notificacion->url = route('recuperacion-clases.index');
+                
+                // Reconstruir mensaje con ID de espacio si está disponible
+                if ($notificacion->tipo === 'clase_no_realizada' && isset($notificacion->datos_adicionales['id_espacio'])) {
+                    $datos = $notificacion->datos_adicionales;
+                    $notificacion->mensaje = sprintf(
+                        'El profesor no realizó la clase en %s el %s',
+                        $datos['id_espacio'] ?? 'Desconocido',
+                        $datos['fecha_clase'] ?? 'fecha desconocida'
+                    );
+                } elseif ($notificacion->tipo === 'clase_reagendada' && isset($notificacion->datos_adicionales['id_espacio_reagendado'])) {
+                    $datos = $notificacion->datos_adicionales;
+                    $notificacion->mensaje = sprintf(
+                        'Clase reagendada para el %s en %s',
+                        $datos['fecha_reagendada'] ?? 'fecha pendiente',
+                        $datos['id_espacio_reagendado'] ?? 'Espacio pendiente'
+                    );
+                }
+                
+                return $notificacion;
+            });
 
         $this->contadorNoLeidas = Notificacion::contadorNoLeidas($usuario->run);
     }

@@ -75,16 +75,21 @@
 
     <!-- Reportería movido al Dashboard -->
     <!-- Estadísticas Profesores - Solo Administrador y Supervisor -->
+    <!-- MOVIDO A MANTENEDOR DE PROFESORES -->
+    <!--
     @role('Administrador|Supervisor')
-        <x-sidebar.link title="Clases no realizadas" href="{{ route('clases-no-realizadas.index') }}"
+        <x-sidebar.link title="Clases no registradas" href="{{ route('clases-no-realizadas.index') }}"
             :isActive="request()->routeIs('clases-no-realizadas.*')">
             <x-slot name="icon">
                 <x-icons.chart-bar class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
             </x-slot>
         </x-sidebar.link>
     @endrole
+    -->
 
     <!-- Gestión de Licencias - Protegido por permiso -->
+    <!-- MOVIDO A MANTENEDOR DE PROFESORES -->
+    <!--
     @can('gestionar licencias profesores')
         <x-sidebar.link title="Licencias Profesores" href="{{ route('licencias.index') }}"
             :isActive="request()->routeIs('licencias.*')">
@@ -93,8 +98,11 @@
             </x-slot>
         </x-sidebar.link>
     @endcan
+    -->
 
     <!-- Recuperación de Clases - Protegido por permiso -->
+    <!-- MOVIDO A MANTENEDOR DE PROFESORES -->
+    <!--
     @can('gestionar recuperacion clases')
         <x-sidebar.link title="Recuperación de Clases" href="{{ route('recuperacion-clases.index') }}"
             :isActive="request()->routeIs('recuperacion-clases.*')">
@@ -103,6 +111,7 @@
             </x-slot>
         </x-sidebar.link>
     @endcan
+    -->
 
     <!-- Mantenedores - Solo Administrador -->
     @canany(['mantenedor de roles', 'mantenedor de permisos', 'mantenedor de universidades', 'mantenedor de facultades', 'mantenedor de areas academicas', 'mantenedor de carreras', 'mantenedor de pisos', 'mantenedor de espacios', 'mantenedor de reservas', 'mantenedor de asignaturas', 'mantenedor de mapas', 'mantenedor de campus', 'mantenedor de sedes', 'mantenedor de profesores', 'mantenedor de visitantes', 'mantenedor de feriados', 'mantenedor de configuracion', 'mantenedor de escuelas', 'mantenedor de jefes de carrera', 'mantenedor de asistentes academicos'])

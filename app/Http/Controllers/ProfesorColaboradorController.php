@@ -139,7 +139,7 @@ class ProfesorColaboradorController extends Controller
 
             DB::commit();
 
-            return redirect()->route('profesores-colaboradores.index')
+            return redirect()->route('clases-temporales.index')
                 ->with('success', 'Profesor colaborador creado exitosamente.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -236,7 +236,7 @@ class ProfesorColaboradorController extends Controller
 
             DB::commit();
 
-            return redirect()->route('profesores-colaboradores.index')
+            return redirect()->route('clases-temporales.index')
                 ->with('success', 'Profesor colaborador actualizado exitosamente.');
         } catch (\Exception $e) {
             DB::rollBack();
@@ -255,7 +255,7 @@ class ProfesorColaboradorController extends Controller
         try {
             $profesorColaborador->delete();
 
-            return redirect()->route('profesores-colaboradores.index')
+            return redirect()->route('clases-temporales.index')
                 ->with('success', 'Profesor colaborador eliminado exitosamente.');
         } catch (\Exception $e) {
             Log::error('Error al eliminar profesor colaborador: ' . $e->getMessage());
