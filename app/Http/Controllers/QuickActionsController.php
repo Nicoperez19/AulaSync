@@ -414,51 +414,62 @@ class QuickActionsController extends Controller
                 ], 400);
             }
 
-            // Mapeo de módulos a horarios
-            $horariosModulos = [
-                1 => '08:00:00', 2 => '08:45:00', 3 => '09:45:00', 4 => '10:30:00',
-                5 => '11:30:00', 6 => '12:15:00', 7 => '14:00:00', 8 => '14:45:00',
-                9 => '15:45:00', 10 => '16:30:00', 11 => '17:30:00', 12 => '18:15:00'
-            ];
+            // Obtener día de la semana de la fecha de la reserva
+            $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+            $diaReserva = $diasSemana[\Carbon\Carbon::parse($request->fecha)->dayOfWeek];
+            
+            // Prefijo del día (ej: "JU" para jueves)
+            $prefijosDias = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+            $prefijoReserva = $prefijosDias[\Carbon\Carbon::parse($request->fecha)->dayOfWeek];
 
-            // Calcular hora de inicio basada en el módulo inicial
-            $horaInicio = $horariosModulos[$request->modulo_inicial] ?? '08:00:00';
+            // Construir id_modulo inicial (ej: "JU.5")
+            $idModuloInicial = $prefijoReserva . '.' . $request->modulo_inicial;
+            $idModuloFinal = $prefijoReserva . '.' . $request->modulo_final;
+
+            // Obtener módulo inicial desde la tabla Modulo
+            $moduloInicial = \App\Models\Modulo::where('id_modulo', $idModuloInicial)->first();
+
+            if (!$moduloInicial) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No se encontró el módulo inicial especificado (id_modulo: ' . $idModuloInicial . ')'
+                ], 400);
+            }
+
+            // Obtener módulo final desde la tabla Modulo
+            $moduloFinal = \App\Models\Modulo::where('id_modulo', $idModuloFinal)->first();
+
+            if (!$moduloFinal) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No se encontró el módulo final especificado (id_modulo: ' . $idModuloFinal . ')'
+                ], 400);
+            }
+
+            // Calcular hora de inicio y fin correctas desde la tabla Modulo
+            $horaInicio = $moduloInicial->hora_inicio;
+            $horaFin = $moduloFinal->hora_termino;
             $duracionModulos = $request->modulo_final - $request->modulo_inicial + 1;
 
             // VALIDAR QUE NO EXISTA UNA RESERVA ACTIVA EN ESE ESPACIO, FECHA Y HORARIO
             $reservaExistente = Reserva::where('id_espacio', $request->espacio)
                 ->where('fecha_reserva', $request->fecha)
                 ->where('estado', 'activa')
-                ->get()
-                ->filter(function($reserva) use ($request, $horariosModulos) {
-                    // Obtener módulos de la reserva existente
-                    $moduloInicialExistente = null;
-                    $moduloFinalExistente = null;
-
-                    // Determinar módulos según la hora de inicio
-                    foreach ($horariosModulos as $modulo => $hora) {
-                        if ($reserva->hora === $hora) {
-                            $moduloInicialExistente = $modulo;
-                            $moduloFinalExistente = $modulo + ($reserva->modulos - 1);
-                            break;
-                        }
-                    }
-
-                    if (!$moduloInicialExistente) {
-                        return false;
-                    }
-
-                    // Verificar si hay traslape de módulos
-                    $nuevaInicio = $request->modulo_inicial;
-                    $nuevaFin = $request->modulo_final;
-
-                    // Hay conflicto si:
-                    // - El nuevo inicio está entre el inicio y fin existente
-                    // - El nuevo fin está entre el inicio y fin existente
-                    // - El nuevo inicio es antes y el nuevo fin es después (envuelve la existente)
-                    return ($nuevaInicio >= $moduloInicialExistente && $nuevaInicio <= $moduloFinalExistente) ||
-                           ($nuevaFin >= $moduloInicialExistente && $nuevaFin <= $moduloFinalExistente) ||
-                           ($nuevaInicio <= $moduloInicialExistente && $nuevaFin >= $moduloFinalExistente);
+                ->where(function($query) use ($horaInicio, $horaFin) {
+                    // Verificar solapamiento de horarios
+                    $query->where(function($q) use ($horaInicio, $horaFin) {
+                        // La reserva existente empieza antes y termina durante la nueva
+                        $q->where('hora', '<=', $horaInicio)
+                          ->where('hora_salida', '>', $horaInicio);
+                    })->orWhere(function($q) use ($horaInicio, $horaFin) {
+                        // La reserva existente empieza durante la nueva
+                        $q->where('hora', '>=', $horaInicio)
+                          ->where('hora', '<', $horaFin);
+                    })->orWhere(function($q) use ($horaInicio, $horaFin) {
+                        // La nueva reserva contiene completamente la existente
+                        $q->where('hora', '>=', $horaInicio)
+                          ->where('hora_salida', '<=', $horaFin);
+                    });
                 })
                 ->first();
 
@@ -498,6 +509,7 @@ class QuickActionsController extends Controller
                 'id_asignatura' => $request->id_asignatura,
                 'modulos' => $duracionModulos,
                 'hora' => $horaInicio,
+                'hora_salida' => $horaFin,
                 'tipo_reserva' => $request->tipo === 'profesor' || $request->tipo === 'colaborador' ? 'clase' : 'espontanea',
                 'estado' => 'activa',
                 'observaciones' => $observacionesCompletas,

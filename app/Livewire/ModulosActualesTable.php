@@ -680,10 +680,10 @@ class ModulosActualesTable extends Component
                     ->keyBy('id_espacio'); // Indexar por espacio para búsqueda rápida
 
                 // Obtener reservas de profesores para el día actual
-                // Solo considerar las que tienen entrada registrada (hora) y están activas O finalizadas hoy
+                // Solo considerar las que tienen entrada registrada (hora) y están ACTIVAS
                 $reservasProfesores = Reserva::with(['profesor', 'asignatura', 'asignatura.carrera'])
                     ->where('fecha_reserva', Carbon::now()->toDateString())
-                    ->whereIn('estado', ['activa', 'finalizada'])
+                    ->where('estado', 'activa') // Solo activas, no finalizadas
                     ->whereNotNull('run_profesor')
                     ->whereNotNull('hora') // Solo las que el profesor sí entró
                     ->get()
@@ -989,6 +989,15 @@ class ModulosActualesTable extends Component
 
                         if ($reservaProfesor) {
                             $tieneReservaProfesor = true;
+                            
+                            // Obtener inscritos de la asignatura si existe
+                            $inscritos = null;
+                            if ($reservaProfesor->asignatura) {
+                                $planificacion = Planificacion_Asignatura::where('id_asignatura', $reservaProfesor->asignatura->id_asignatura)
+                                    ->first();
+                                $inscritos = $planificacion ? $planificacion->inscritos : null;
+                            }
+                            
                             $datosProfesor = [
                                 'nombre' => $reservaProfesor->profesor->name ?? '-',
                                 'run' => $reservaProfesor->run_profesor ?? '-',
@@ -997,6 +1006,7 @@ class ModulosActualesTable extends Component
                                 'nombre_asignatura' => $reservaProfesor->asignatura->nombre_asignatura ?? 'Sin asignatura',
                                 'codigo_asignatura' => $reservaProfesor->asignatura->codigo_asignatura ?? '-',
                                 'carrera' => $reservaProfesor->asignatura->carrera->nombre ?? '-',
+                                'inscritos' => $inscritos,
                             ];
                         }
 
@@ -1110,7 +1120,7 @@ class ModulosActualesTable extends Component
                             'puestos_disponibles' => $espacio->puestos_disponibles ?? 0,
                             'capacidad_maxima' => (($tieneClase ?? false) && isset($datosClase['inscritos']) && $datosClase['inscritos'] > 0)
                                 ? $datosClase['inscritos']
-                                : ($espacio->capacidad_maxima ?? 0),
+                                : (($tieneReservaProfesor ?? false) && !empty($datosProfesor['inscritos']) ? $datosProfesor['inscritos'] : ($espacio->capacidad_maxima ?? 0)),
                             // Mostrar información de clase siempre que exista, independientemente del estado
                             'tiene_clase' => $tieneClase ?? false,
                             'tiene_reserva_solicitante' => $tieneReservaSolicitante ?? false,

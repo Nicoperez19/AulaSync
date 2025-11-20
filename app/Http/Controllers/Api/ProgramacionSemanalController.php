@@ -469,10 +469,44 @@ class ProgramacionSemanalController extends Controller
                 })
             ];
 
+            // Si no hay hora_salida, obtenerla desde la tabla Modulo
+            $horaFin = $reserva->hora_salida;
+            if (!$horaFin && $reserva->modulos > 0) {
+                // Obtener el día de la semana de la reserva
+                $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+                $diaReserva = $diasSemana[Carbon::parse($reserva->fecha_reserva)->dayOfWeek];
+                
+                // Obtener el módulo final desde la tabla Modulo
+                $numeroModuloFinal = $this->extraerNumeroModulo($reserva->hora, $diaReserva, $reserva->modulos);
+                if ($numeroModuloFinal) {
+                    $moduloFinal = \App\Models\Modulo::where('dia', $diaReserva)
+                        ->where('numero_modulo', $numeroModuloFinal)
+                        ->first();
+                    if ($moduloFinal) {
+                        $horaFin = $moduloFinal->hora_termino;
+                    }
+                }
+            }
+
             // Calcular duración de la reserva
             $horaInicio = Carbon::parse($reserva->hora);
-            $horaFin = $reserva->hora_salida ? Carbon::parse($reserva->hora_salida) : Carbon::parse($horaActual);
-            $duracion = $horaInicio->diffInMinutes($horaFin);
+            $horaFinCalc = $horaFin ? Carbon::parse($horaFin) : Carbon::parse($horaActual);
+            $duracion = $horaInicio->diffInMinutes($horaFinCalc);
+
+            // Preparar datos de inscritos (no asistencia registrada)
+            $inscritosData = [];
+            if ($reserva->asignatura && $reserva->asignatura->id_asignatura) {
+                // Obtener inscritos de la asignatura
+                $inscritos = \App\Models\Planificacion_Asignatura::where('id_asignatura', $reserva->asignatura->id_asignatura)
+                    ->first();
+                if ($inscritos) {
+                    $inscritosData = [
+                        'total_inscritos' => $inscritos->inscritos ?? 0,
+                        'presentes' => $reserva->asistencias->count(),
+                        'ausentes' => ($inscritos->inscritos ?? 0) - $reserva->asistencias->count()
+                    ];
+                }
+            }
 
             // Respuesta exitosa con toda la información
             return response()->json([
@@ -485,7 +519,7 @@ class ProgramacionSemanalController extends Controller
                         'estado' => $reserva->estado,
                         'fecha' => $reserva->fecha_reserva,
                         'hora_inicio' => $reserva->hora,
-                        'hora_salida' => $reserva->hora_salida,
+                        'hora_salida' => $horaFin,
                         'duracion_minutos' => $duracion,
                         'modulos' => $reserva->modulos,
                         'observaciones' => $reserva->observaciones,
@@ -501,7 +535,8 @@ class ProgramacionSemanalController extends Controller
                     ],
                     'usuario_reserva' => $usuarioReserva,
                     'asignatura' => $asignaturaData,
-                    'asistencia' => $asistenciaData,
+                    'inscritos' => $inscritosData,
+                    'asistencia_registrada' => $asistenciaData,
                     'fecha_consulta' => $fechaActual,
                     'hora_consulta' => $horaActual
                 ]
@@ -515,5 +550,30 @@ class ProgramacionSemanalController extends Controller
                 'trace' => config('app.debug') ? $e->getTraceAsString() : null
             ], 500);
         }
+    }
+
+    /**
+     * Extraer el número de módulo final basado en hora inicial y cantidad de módulos
+     */
+    private function extraerNumeroModulo($horaInicio, $diaActual, $cantidadModulos)
+    {
+        // Prefijo del día
+        $prefijosDias = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+        $diasArray = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        $indexDia = array_search($diaActual, $diasArray);
+        $prefijo = $indexDia !== false ? $prefijosDias[$indexDia] : 'LU';
+        
+        // Buscar el módulo que comienza con esta hora
+        for ($i = 1; $i <= 15; $i++) {
+            $idModulo = $prefijo . '.' . $i;
+            $modulo = \App\Models\Modulo::where('id_modulo', $idModulo)->first();
+            
+            if ($modulo && $modulo->hora_inicio === $horaInicio) {
+                // Calcular el módulo final
+                return $i + ($cantidadModulos - 1);
+            }
+        }
+
+        return null;
     }
 }

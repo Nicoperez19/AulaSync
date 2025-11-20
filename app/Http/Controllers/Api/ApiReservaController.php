@@ -108,11 +108,21 @@ class ApiReservaController extends Controller
                 $profesor = \App\Models\Profesor::where('run_profesor', $request->run)->first();
                 $asignaturaLibre = $profesor ? $profesor->asignaturas()->first() : null;
                 
+                // Buscar el módulo actual según la hora
+                $moduloActual = \App\Models\Modulo::where('dia', $diaActual)
+                    ->where('hora_inicio', '<=', $horaActualStr)
+                    ->where('hora_termino', '>=', $horaActualStr)
+                    ->first();
+                
+                // Si no hay módulo actual, usar horarios por defecto
+                $horaInicio = $moduloActual ? $moduloActual->hora_inicio : $horaActualStr;
+                $horaTermino = $moduloActual ? $moduloActual->hora_termino : Carbon::parse($horaActualStr)->addMinutes(50)->format('H:i:s');
+                
                 $tieneClase = (object)[
                     'id_asignatura' => $asignaturaLibre ? $asignaturaLibre->id_asignatura : null,
                     'nombre_asignatura' => 'Uso libre',
-                    'hora_inicio' => $horaActualStr,
-                    'hora_termino' => Carbon::parse($horaActualStr)->addMinutes(50)->format('H:i:s')
+                    'hora_inicio' => $horaInicio,
+                    'hora_termino' => $horaTermino
                 ];
             }
 

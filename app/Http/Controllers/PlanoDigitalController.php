@@ -2242,4 +2242,66 @@ class PlanoDigitalController extends Controller
         }
     }
 
+    /**
+     * Obtener la información actual del espacio (ocupante) para desocupación
+     * Este endpoint es llamado ANTES de desocupar, para obtener el RUN desde el servidor
+     * Esto asegura que funcione correctamente en múltiples máquinas
+     */
+    public function obtenerInfoEspacioParaDesocupar(Request $request)
+    {
+        try {
+            $request->validate([
+                'id_espacio' => 'required|string'
+            ]);
+
+            $idEspacio = $request->input('id_espacio');
+
+            // Buscar el espacio
+            $espacio = Espacio::where('id_espacio', $idEspacio)->first();
+
+            if (!$espacio) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Espacio no encontrado'
+                ], 404);
+            }
+
+            // Obtener la reserva activa actual en este espacio
+            $reservaActiva = Reserva::where('id_espacio', $idEspacio)
+                ->where('estado', 'activa')
+                ->where('fecha_reserva', Carbon::today())
+                ->first();
+
+            if (!$reservaActiva) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No hay una reserva activa en este espacio',
+                    'data' => null
+                ]);
+            }
+
+            // Retornar el RUN del ocupante actual (convertir a string para validación)
+            $runOcupante = (string) ($reservaActiva->run_profesor ?? $reservaActiva->run_solicitante);
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id_espacio' => $idEspacio,
+                    'run_usuario' => $runOcupante,
+                    'nombre_ocupante' => $reservaActiva->nombre_usuario ?? 'No especificado',
+                    'tipo_reserva' => $reservaActiva->tipo_reserva ?? 'normal'
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error en obtenerInfoEspacioParaDesocupar: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error al obtener información del espacio'
+            ], 500);
+        }
+    }
+
 }
+
+

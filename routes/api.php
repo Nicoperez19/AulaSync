@@ -312,6 +312,9 @@ Route::post('/crear-reserva-solicitante', [App\Http\Controllers\SolicitanteContr
 
 Route::get('/espacios/estados', [PlanoDigitalController::class, 'estadosEspacios']);
 
+// Ruta para obtener la información del espacio actual (para desocupar - desde servidor)
+Route::post('/obtener-info-espacio-desocupar', [PlanoDigitalController::class, 'obtenerInfoEspacioParaDesocupar']);
+
 // Ruta para devolver espacios
 Route::post('/devolver-espacio', [PlanoDigitalController::class, 'devolverEspacio']);
 

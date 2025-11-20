@@ -314,6 +314,16 @@
         </div>
     </div>
 
+    <!-- Contenedor flotante para botones de acción (Desocupar) - Fuera del modal para evitar problemas de eventos -->
+    <div id="modal-action-buttons-container" class="fixed top-0 right-0 z-[10000] p-4 hidden pointer-events-none">
+        <button id="btn-desocupar-flotante" class="btn-desocupar px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded hover:bg-red-700 transition-all duration-200 pointer-events-auto hidden shadow-lg" data-tipo="espacio" title="Desocupar sala">
+            <div class="flex items-center space-x-2">
+                <x-heroicon-s-logout class="w-4 h-4" />
+                <span>Desocupar</span>
+            </div>
+        </button>
+    </div>
+
     <!-- Modal para mostrar información del espacio -->
     <div id="modal-espacio-info" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
         <div class="flex flex-col w-full max-w-4xl max-h-screen mx-2 overflow-hidden bg-white rounded-lg shadow-lg md:mx-8">
@@ -338,21 +348,13 @@
                 </div>
 
                 <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
-                    <!-- Grupo: Estado Badge + Botón Desocupar -->
+                    <!-- Grupo: Estado Badge -->
                     <div class="flex flex-col items-center gap-1">
                         <!-- Badge de estado -->
                         <div class="flex items-center gap-2">
                             <span id="estadoIcon" class="w-3 h-3 rounded-full"></span>
                             <span id="modalEstado" class="text-sm font-semibold text-white">Cargando...</span>
                         </div>
-                        
-                        <!-- Botón desocupar -->
-                        <button class="btn-desocupar group relative px-3 py-1 text-xs font-semibold text-white bg-red-600 rounded hover:bg-red-700 hidden transition-all duration-200" data-tipo="espacio" title="Desocupar sala">
-                            <div class="flex items-center space-x-1">
-                                <x-heroicon-s-logout class="w-3 h-3" />
-                                <span class="hidden sm:inline">Desocupar</span>
-                            </div>
-                        </button>
                     </div>
                     
                     <!-- Botón cerrar -->
@@ -450,6 +452,17 @@
                             </div>
                         </button>
                     </div>
+                </div>
+
+                <!-- Footer del modal (Barbilla) con botón Desocupar -->
+                <div id="modal-footer-actions" class="hidden border-t border-red-800 px-6 py-4 bg-gradient-to-r from-red-700 to-red-800 rounded-b-lg">
+                    <button id="btn-desocupar-footer" 
+                            class="btn-desocupar w-full px-6 py-3 text-base font-semibold text-white bg-red-900 rounded-lg hover:bg-red-950 shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
+                            data-tipo="espacio" 
+                            title="Desocupar sala">
+                        <x-heroicon-s-logout class="w-5 h-5" />
+                        <span>Desocupar Espacio</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -1092,7 +1105,8 @@
             hoveredIndicator: null,
             lastLocalChange: null,
             ultimoCambioLocal: null,
-            currentIndicatorId: null
+            currentIndicatorId: null,
+            currentOccupantRun: null
         };
 
         let elements = {
@@ -2396,6 +2410,15 @@
             modal.classList.remove('hidden');
             // Desactivar todos los inputs QR cuando se abre el modal
             qrInputManager.desactivarTodosLosInputs();
+            
+            // Bloquear completamente los clics en el input QR para que no interfiera con el modal
+            const qrInput = document.getElementById('qr-input');
+            if (qrInput) {
+                qrInput.style.pointerEvents = 'none';
+                qrInput.blur(); // Remover el focus del input
+                console.log('🔒 Input QR bloqueado - pointer-events: none');
+            }
+            
             console.log('✅ Modal mostrado correctamente');
         } else {
             console.error('❌ No se encontró el modal de espacio');
@@ -2664,19 +2687,20 @@
                 indicator.estado === '#dc2626'
             );
             
-            const btnsDesocupar = document.querySelectorAll('.btn-desocupar[data-tipo="espacio"]');
-            console.log('🔍 Botones desocupar encontrados:', btnsDesocupar.length);
+            // Controlar visibilidad del footer con el botón Desocupar
+            const modalFooter = document.getElementById('modal-footer-actions');
+            
             console.log('🔍 ¿Espacio realmente ocupado?:', espacioOcupado);
             
-            btnsDesocupar.forEach((btn, index) => {
+            if (modalFooter) {
                 if (espacioOcupado) {
-                    btn.classList.remove('hidden');
-                    console.log(`🔧 Botón desocupar ${index + 1} MOSTRADO - Espacio Ocupado`);
+                    modalFooter.classList.remove('hidden');
+                    console.log('🔧 Footer del modal MOSTRADO - Espacio Ocupado');
                 } else {
-                    btn.classList.add('hidden');
-                    console.log(`🔧 Botón desocupar ${index + 1} OCULTO - Espacio NO es Ocupado (es ${indicator?.estado})`);
+                    modalFooter.classList.add('hidden');
+                    console.log('🔧 Footer del modal OCULTO - Espacio NO es Ocupado');
                 }
-            });
+            }
 
             // Asegurar que tengamos un RUN para el botón desocupar
             let runParaDesocupar = data.run_profesor || data.run_solicitante;
@@ -2689,7 +2713,10 @@
 
             console.log('🔍 RUN para desocupar:', runParaDesocupar);
 
-            // Agregar el input hidden con el RUN (o identificador de forzado)
+            // Guardar en el state como fuente de verdad principal
+            state.currentOccupantRun = runParaDesocupar || null;
+
+            // También intentar actualizar el input como fallback (compatible con código antiguo)
             const runInput = document.querySelector('#run-ocupante-modal');
             if (runInput) {
                 runInput.value = runParaDesocupar || 'unknown';
@@ -2726,97 +2753,150 @@
         }
 
         // Handler para los botones Desocupar usando delegación de eventos
-        document.addEventListener('DOMContentLoaded', function () {
-            // Usar delegación de eventos para manejar todos los botones .btn-desocupar
-            document.addEventListener('click', async function (event) {
-                if (!event.target.matches('.btn-desocupar')) return;
-                
-                const espacioId = state.currentIndicatorId || null;
-                const tipoDesocupacion = event.target.dataset.tipo || 'espacio';
+        // Registrar el listener FUERA de DOMContentLoaded para que esté disponible siempre
+        document.addEventListener('click', async function (event) {
+            if (!event.target.matches('.btn-desocupar')) return;
+            
+            const espacioId = state.currentIndicatorId || null;
+            const tipoDesocupacion = event.target.dataset.tipo || 'espacio';
 
-                // Obtener información del usuario autenticado (administrador)
-                const administradorRun = '{{ auth()->user()->run ?? "admin" }}';
+            if (!espacioId) {
+                Swal.fire({
+                    title: 'Error',
+                    text: 'No se encontró el ID del espacio',
+                    icon: 'error',
+                    confirmButtonText: 'Entendido'
+                });
+                return;
+            }
 
-                // Tomar el último RUN mostrado en el modal (el usuario que ocupa el espacio)
-                let runOcupante = null;
-                const runEl = document.querySelector('#run-ocupante-modal');
-                if (runEl && runEl.value && runEl.value.trim() !== '') {
-                    runOcupante = runEl.value.trim();
-                } else {
-                    // Si no se encuentra el RUN, mostrar error
+            // Mostrar spinner (máximo 5 segundos, pero desaparece cuando llega la respuesta)
+            Swal.fire({
+                title: 'Desocupando espacio...',
+                html: '<div class="flex justify-center items-center"><svg class="animate-spin h-12 w-12 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                timer: 5000,
+                customClass: {
+                    container: 'swal-high-z-index'
+                },
+                didOpen: () => {
+                    Swal.showLoading();
+                    // Asegurar que el spinner tenga z-index muy alto
+                    const swalContainer = document.querySelector('.swal2-container');
+                    if (swalContainer) {
+                        swalContainer.style.zIndex = '99999';
+                    }
+                }
+            });
+
+            try {
+                // PASO 1: Obtener la información actual del espacio desde el SERVIDOR
+                // Esto asegura que funcione correctamente incluso si la reserva fue creada en otra máquina
+                const resInfo = await fetch('/api/obtener-info-espacio-desocupar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        id_espacio: espacioId
+                    })
+                });
+
+                const infoData = await resInfo.json();
+
+                if (!infoData.success || !infoData.data) {
                     Swal.fire({
                         title: 'Error',
-                        text: 'No se encontró información del ocupante del espacio',
+                        text: infoData.mensaje || 'No se pudo obtener la información del ocupante',
                         icon: 'error',
                         confirmButtonText: 'Entendido'
                     });
                     return;
                 }
 
-                try {
-                    const res = await fetch('/api/devolver-espacio', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                        },
-                        body: JSON.stringify({
-                            run_usuario: runOcupante,
-                            run_administrador: administradorRun,
-                            id_espacio: espacioId,
-                            tipo_desocupacion: 'forzosa'
-                        })
-                    });
+                // Obtener el RUN del servidor
+                const runOcupante = infoData.data.run_usuario;
 
-
-                    const json = await res.json();
-                    if (json.success) {
-                        Swal.fire({
-                            title: 'Espacio desocupado',
-                            text: json.mensaje || 'Espacio desocupado correctamente',
-                            icon: 'success',
-                            confirmButtonText: 'Aceptar',
-                            timer: 1500,
-                            timerProgressBar: true,
-                            showConfirmButton: false
-                        });
-
-                        // Cerrar modal primero
-                        cerrarModalEspacio();
-
-                        // Forzar actualización inmediata del estado del espacio
-                        const indicatorActual = state.indicators.find(b => b.id === espacioId);
-                        if (indicatorActual) {
-                            indicatorActual.estado = 'libre';
-                            indicatorActual.color = '#10b981'; // Verde para libre
-                        }
-
-                        // Resetear el timestamp para permitir actualización inmediata
-                        state.ultimoCambioLocal = 0;
-
-                        // Actualizar colores del mapa con actualización forzada
-                        await actualizarColoresEspacios(true);
-
-                        // Redibujar los indicadores inmediatamente
-                        drawIndicators();
-                    } else {
-                        Swal.fire({
-                            title: 'Error',
-                            text: json.mensaje || 'No se pudo desocupar el espacio',
-                            icon: 'error',
-                            confirmButtonText: 'Entendido'
-                        });
-                    }
-                } catch (e) {
-                    console.error(e);
+                if (!runOcupante) {
                     Swal.fire({
                         title: 'Error',
-                        text: 'Error al desocupar el espacio',
+                        text: 'No se encontró el RUN del ocupante en el servidor',
+                        icon: 'error',
+                        confirmButtonText: 'Entendido'
+                    });
+                    return;
+                }
+
+                // Obtener información del usuario autenticado (administrador)
+                const administradorRun = '{{ auth()->user()->run ?? "admin" }}';
+
+                // PASO 2: Desocupar usando el RUN obtenido del servidor
+                const res = await fetch('/api/devolver-espacio', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        run_usuario: runOcupante,
+                        run_administrador: administradorRun,
+                        id_espacio: espacioId,
+                        tipo_desocupacion: 'forzosa'
+                    })
+                });
+
+                const json = await res.json();
+                if (json.success) {
+                    Swal.fire({
+                        title: 'Espacio desocupado',
+                        text: json.mensaje || 'Espacio desocupado correctamente',
+                        icon: 'success',
+                        confirmButtonText: 'Aceptar',
+                        timer: 1500,
+                        timerProgressBar: true,
+                        showConfirmButton: false
+                    });
+
+                    // Cerrar modal primero
+                    cerrarModalEspacio();
+
+                    // Forzar actualización inmediata del estado del espacio
+                    const indicatorActual = state.indicators.find(b => b.id === espacioId);
+                    if (indicatorActual) {
+                        indicatorActual.estado = 'libre';
+                        indicatorActual.color = '#10b981'; // Verde para libre
+                    }
+
+                    // Resetear el RUN del ocupante en state
+                    state.currentOccupantRun = null;
+
+                    // Resetear el timestamp para permitir actualización inmediata
+                    state.ultimoCambioLocal = 0;
+
+                    // Actualizar colores del mapa con actualización forzada
+                    await actualizarColoresEspacios(true);
+
+                    // Redibujar los indicadores inmediatamente
+                    drawIndicators();
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: json.mensaje || 'No se pudo desocupar el espacio',
                         icon: 'error',
                         confirmButtonText: 'Entendido'
                     });
                 }
-            });
+            } catch (e) {
+                console.error(e);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Error al desocupar el espacio: ' + e.message,
+                    icon: 'error',
+                    confirmButtonText: 'Entendido'
+                });
+            }
         });
 
         // Función para mostrar la vista de pasos
@@ -2903,11 +2983,14 @@
                 const anterior = data.clase_anterior;
                 console.log('📊 Clase anterior:', anterior);
                 if (anterior && anterior.asignatura) {
+                    const horarioAnterior = anterior.hora_inicio && anterior.hora_termino ? 
+                        `${anterior.hora_inicio.substring(0, 5)} - ${anterior.hora_termino.substring(0, 5)}` : 
+                        (anterior.hora_inicio ? anterior.hora_inicio.substring(0, 5) : '');
                     elements.pasoClaseAnterior.innerHTML = `
                         <div class="text-center">
                             <div class="font-semibold text-gray-800 mb-1">${anterior.asignatura}</div>
                             ${anterior.profesor ? `<div class="text-xs text-gray-600 mb-1">${anterior.profesor}</div>` : ''}
-                            ${anterior.hora_inicio ? `<div class="text-xs text-gray-500">${anterior.hora_inicio}</div>` : ''}
+                            ${horarioAnterior ? `<div class="text-xs text-gray-500">${horarioAnterior}</div>` : ''}
                         </div>
                     `;
                 } else {
@@ -2929,17 +3012,20 @@
                 if (tieneReservaPendiente && reservaEstaAhora) {
                     // Mostrar mensaje de reserva pendiente que ESTÁ AHORA
                     const proxima = data.proxima_clase;
+                    const horarioInicio = proxima.hora_inicio && proxima.hora_termino ? 
+                        `${proxima.hora_inicio.substring(0, 5)} - ${proxima.hora_termino.substring(0, 5)}` : 
+                        (proxima.hora_inicio ? proxima.hora_inicio.substring(0, 5) : '');
                     elements.pasoEstadoActual.innerHTML = `
                         <div class="text-center">
                             <div class="font-semibold text-yellow-700 mb-2">Aún no inicia la clase</div>
                             <div class="text-xs text-gray-600 mb-1">${proxima.asignatura}</div>
                             ${proxima.profesor ? `<div class="text-xs text-gray-500 mb-1">${proxima.profesor}</div>` : ''}
-                            ${proxima.hora_inicio ? `<div class="text-xs text-yellow-600">Inicia: ${proxima.hora_inicio}</div>` : ''}
+                            ${horarioInicio ? `<div class="text-xs text-yellow-600">${horarioInicio}</div>` : ''}
                         </div>
                     `;
                 } else if (data.asignatura) {
                     const horario = data.hora_inicio && data.hora_termino ? 
-                        `${data.hora_inicio} - ${data.hora_termino}` : 
+                        `${data.hora_inicio.substring(0, 5)} - ${data.hora_termino.substring(0, 5)}` : 
                         (data.hora_inicio || '');
                     elements.pasoEstadoActual.innerHTML = `
                         <div class="text-center">
@@ -2969,11 +3055,14 @@
                 // 1. Existe próxima clase Y
                 // 2. NO está siendo mostrada en "Ahora" (es decir, NO está en próximos 10 min) O no hay reserva pendiente
                 if (proxima && proxima.asignatura && (!tieneReservaPendiente || !reservaEstaAhora)) {
+                    const horarioProxima = proxima.hora_inicio && proxima.hora_termino ? 
+                        `${proxima.hora_inicio.substring(0, 5)} - ${proxima.hora_termino.substring(0, 5)}` : 
+                        (proxima.hora_inicio ? proxima.hora_inicio.substring(0, 5) : '');
                     elements.pasoClaseProxima.innerHTML = `
                         <div class="text-center">
                             <div class="font-semibold text-gray-800 mb-1">${proxima.asignatura}</div>
                             ${proxima.profesor ? `<div class="text-xs text-gray-600 mb-1">${proxima.profesor}</div>` : ''}
-                            ${proxima.hora_inicio ? `<div class="text-xs text-gray-500">${proxima.hora_inicio}</div>` : ''}
+                            ${horarioProxima ? `<div class="text-xs text-gray-500">${horarioProxima}</div>` : ''}
                         </div>
                     `;
                 } else {
@@ -2987,6 +3076,9 @@
             const tituloEl = document.getElementById('ocupanteTitulo');
             // Ajustar título según existencia de próxima clase
             if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
+
+            // Guardar el RUN en el state para acceso desde el evento del botón desocupar
+            state.currentOccupantRun = data.run_profesor || null;
 
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
                 // NO mostrar - ahora se usa la cronología
@@ -3088,6 +3180,9 @@
             // Ajustar título si no hay próxima clase
             if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
 
+            // Guardar el RUN en el state para acceso desde el evento del botón desocupar
+            state.currentOccupantRun = data.run_solicitante || null;
+
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
                 // Crear HTML optimizado usando template literal
                 const html = `
@@ -3172,6 +3267,9 @@
             const tituloEl = document.getElementById('ocupanteTitulo');
             // Ajustar título según si hay próxima clase
             if (tituloEl) tituloEl.textContent = data.proxima_clase ? 'Ocupante Actual' : 'Último Ocupante';
+
+            // Guardar el RUN en el state para acceso desde el evento del botón desocupar
+            state.currentOccupantRun = data.run_profesor || data.run_solicitante || null;
 
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
                 // NO mostrar - ahora se usa la cronología
@@ -4195,6 +4293,14 @@
             if (modal) {
                 modal.classList.add('hidden');
             }
+            
+            // Restaurar el input QR (permitir clics nuevamente)
+            const qrInput = document.getElementById('qr-input');
+            if (qrInput) {
+                qrInput.style.pointerEvents = 'auto';
+                console.log('🔓 Input QR desbloqueado - pointer-events: auto');
+            }
+            
             // Restaurar el input QR activo usando el gestor
             setTimeout(() => {
                 qrInputManager.restaurarInputActivo();

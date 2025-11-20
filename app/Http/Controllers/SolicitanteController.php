@@ -305,20 +305,17 @@ class SolicitanteController extends Controller
                 ], 400);
             }
 
-            // Calcular horarios
-            $horariosModulos = [
-                'lunes' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
-                'martes' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
-                'miercoles' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
-                'jueves' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
-                'viernes' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
-                'sabado' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']],
-                'domingo' => [1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'], 2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'], 3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'], 4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'], 5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'], 6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'], 7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'], 8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'], 9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'], 10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'], 11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'], 12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'], 13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'], 14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'], 15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']]
-            ];
+            // Obtener horarios desde la tabla Modulo
+            $moduloInicio = \App\Models\Modulo::where('dia', $diaActual)
+                ->where('numero_modulo', $moduloActual)
+                ->first();
 
-            $horariosDia = $horariosModulos[$diaActual] ?? null;
-            $horaInicio = $horariosDia[$moduloActual]['inicio'] ?? $horaActual;
-            $horaFin = $horariosDia[$moduloActual + $modulosSolicitados - 1]['fin'] ?? null;
+            $moduloFin = \App\Models\Modulo::where('dia', $diaActual)
+                ->where('numero_modulo', $moduloActual + $modulosSolicitados - 1)
+                ->first();
+
+            $horaInicio = $moduloInicio ? $moduloInicio->hora_inicio : $horaActual;
+            $horaFin = $moduloFin ? $moduloFin->hora_termino : null;
 
             // Verificar que no haya reservas simultáneas en el tiempo
             $reservasSimultaneas = Reserva::where('run_solicitante', $request->run_solicitante)
@@ -414,143 +411,30 @@ class SolicitanteController extends Controller
      */
     private function determinarModuloActual($horaActual, $diaActual)
     {
-        $horariosModulos = [
-            'lunes' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ],
-            'martes' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ],
-            'miercoles' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ],
-            'jueves' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ],
-            'viernes' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ],
-            'sabado' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ],
-            'domingo' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ]
-        ];
-
-        $horariosDia = $horariosModulos[$diaActual] ?? null;
-        if (!$horariosDia) return null;
-
-        // Primero verificar si estamos en un módulo activo
-        foreach ($horariosDia as $modulo => $horario) {
-            if ($horaActual >= $horario['inicio'] && $horaActual < $horario['fin']) {
-                return $modulo;
+        // Prefijo del día
+        $prefijosDias = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+        $diasArray = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        $indexDia = array_search($diaActual, $diasArray);
+        $prefijo = $indexDia !== false ? $prefijosDias[$indexDia] : 'LU';
+        
+        // Buscar un módulo que contenga la hora actual
+        // Probar módulos del 1 al 15
+        for ($i = 1; $i <= 15; $i++) {
+            $idModulo = $prefijo . '.' . $i;
+            $modulo = \App\Models\Modulo::where('id_modulo', $idModulo)->first();
+            
+            if ($modulo && $horaActual >= $modulo->hora_inicio && $horaActual < $modulo->hora_termino) {
+                return $i;
             }
         }
-
-        // Si no estamos en ningún módulo (break), buscar el siguiente módulo disponible
-        // Esto permite hacer reservas durante los breaks
-        foreach ($horariosDia as $modulo => $horario) {
-            if ($horaActual < $horario['inicio']) {
-                return $modulo; // Retornar el siguiente módulo
+        
+        // Si no hay módulo activo, buscar el siguiente disponible
+        for ($i = 1; $i <= 15; $i++) {
+            $idModulo = $prefijo . '.' . $i;
+            $modulo = \App\Models\Modulo::where('id_modulo', $idModulo)->first();
+            
+            if ($modulo && $horaActual < $modulo->hora_inicio) {
+                return $i;
             }
         }
 
@@ -562,95 +446,23 @@ class SolicitanteController extends Controller
      */
     private function obtenerHorarioModulo($modulo, $diaActual)
     {
-        $horariosModulos = [
-            'lunes' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ],
-            'martes' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ],
-            'miercoles' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ],
-            'jueves' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ],
-            'viernes' => [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
-            ]
-        ];
+        // Prefijo del día
+        $prefijosDias = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+        $diasArray = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        $indexDia = array_search($diaActual, $diasArray);
+        $prefijo = $indexDia !== false ? $prefijosDias[$indexDia] : 'LU';
+        
+        $idModulo = $prefijo . '.' . $modulo;
+        $moduloData = \App\Models\Modulo::where('id_modulo', $idModulo)->first();
 
-        return $horariosModulos[$diaActual][$modulo] ?? null;
+        if (!$moduloData) {
+            return null;
+        }
+
+        return [
+            'inicio' => $moduloData->hora_inicio,
+            'fin' => $moduloData->hora_termino
+        ];
     }
 
     /**

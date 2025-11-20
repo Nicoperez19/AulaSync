@@ -148,8 +148,11 @@
                                                     </div>
                                                 @elseif(($espacio['tiene_reserva_profesor'] ?? false) && !empty($espacio['datos_profesor']))
                                                     <div class="font-medium text-gray-900 text-sm">
+                                                        <div class="flex items-center gap-2 text-base font-semibold">
+                                                            {{ $this->moduloActual['numero'] ?? '--' }}
+                                                        </div>
                                                         <div class="text-gray-600">
-                                                            Reserva Profesor
+                                                            {{ isset($espacio['datos_profesor']['hora_inicio']) ? substr($espacio['datos_profesor']['hora_inicio'], 0, 5) : '--:--' }} - {{ isset($espacio['datos_profesor']['hora_salida']) ? substr($espacio['datos_profesor']['hora_salida'], 0, 5) : '--:--' }}
                                                         </div>
                                                     </div>
                                                 @elseif(!empty($espacio['proxima_clase']) && is_array($espacio['proxima_clase']))
@@ -201,15 +204,15 @@
                                             @if (($espacio['tiene_reserva_solicitante'] ?? false) && !empty($espacio['datos_solicitante']))
                                                 <span class="font-medium text--700 text-sm">Solicitante: {{ $espacio['datos_solicitante']['nombre'] ?? 'N/A' }}</span>
                                             @elseif (($espacio['tiene_reserva_profesor'] ?? false) && !empty($espacio['datos_profesor']) && !empty($espacio['datos_profesor']['nombre']))
-                                                <span class="font-medium text-gray-700 text-sm">
+                                                <div class="font-medium text-gray-900 text-sm">
                                                     <div>
                                                         @if(!empty($espacio['datos_profesor']['codigo_asignatura']))
-                                                            <span class="font-semibold text-blue-600">[{{ $espacio['datos_profesor']['codigo_asignatura'] }}]</span>
+                                                            <span class="font-semibold">{{ $espacio['datos_profesor']['codigo_asignatura'] }} - </span>
                                                         @endif
                                                         {{ $espacio['datos_profesor']['nombre_asignatura'] ?? $asignatura ?? 'Sin asignatura' }}
                                                     </div>
-                                                    <div>Profesor: {{ $espacio['datos_profesor']['nombre'] ?? 'N/A' }}</div>
-                                                </span>
+                                                    <div>Prof: {{ $espacio['datos_profesor']['nombre'] ?? 'N/A' }}</div>
+                                                </div>
                                             @elseif (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']))
                                                 @if($esColaborador)
                                                     <!-- Clase Colaboradora: mostrar información básica con etiqueta a la derecha -->
@@ -294,7 +297,7 @@
                                             @endif
                                         </td>
 
-                                        <!-- Columna 5: Capacidad -->
+                                        <!-- Columna 5: Capacidad/Asistencia -->
                                         <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
                                             @php
                                                 $capacidadMax = $espacio['capacidad_maxima'] ?? 0;
@@ -326,7 +329,7 @@
                                                     </div>
                                                 </div>
                                             @else
-                                                <span class="text-gray-400 text-sm italic">Sin datos</span>
+                                                <span class="text-gray-500 text-sm italic">Uso Libre</span>
                                             @endif
                                         </td>
 
