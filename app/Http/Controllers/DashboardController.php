@@ -1797,6 +1797,11 @@ class DashboardController extends Controller
         $porcentajeNoRealizadas = $totalPlaneadas > 0 ? round(($totalNoRealizadas / $totalPlaneadas) * 100, 1) : 0;
         $porcentajeRealizadas = $totalPlaneadas > 0 ? round(($totalRealizadas / $totalPlaneadas) * 100, 1) : 0;
 
+        // Preparar arrays para el gráfico
+        $diasLabels = array_keys($diasDelMes);
+        $datosRealizadas = array_values(array_map(function($d) { return $d['realizadas']; }, $diasDelMes));
+        $datosNoRealizadas = array_values(array_map(function($d) { return $d['no_realizadas']; }, $diasDelMes));
+
         return view('partials.clases_no_realizadas_tab_content', compact(
             'diasDelMes',
             'totalRealizadas',
@@ -1804,6 +1809,9 @@ class DashboardController extends Controller
             'totalRecuperadas',
             'porcentajeRealizadas',
             'porcentajeNoRealizadas',
+            'diasLabels',
+            'datosRealizadas',
+            'datosNoRealizadas',
             'mes',
             'anio'
         ))->render();

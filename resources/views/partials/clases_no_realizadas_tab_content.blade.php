@@ -143,9 +143,9 @@
     // Gráfico de comparativa
     const ctxClasesNoRealizadas = document.getElementById('chart-clases-no-realizadas');
     if (ctxClasesNoRealizadas) {
-        const diasLabels = @json(array_keys($diasDelMes));
-        const datosRealizadas = @json(array_column($diasDelMes, 'realizadas'));
-        const datosNoRealizadas = @json(array_column($diasDelMes, 'no_realizadas'));
+        const diasLabels = @json($diasLabels);
+        const datosRealizadas = @json($datosRealizadas);
+        const datosNoRealizadas = @json($datosNoRealizadas);
 
         new Chart(ctxClasesNoRealizadas.getContext('2d'), {
             type: 'bar',
