@@ -41,8 +41,19 @@ class ReportController extends Controller
     /**
      * Calcula las horas disponibles por turno
      */
-    private function horasPorTurno($turno = null)
+    private function horasPorTurno($turno = null, $fecha = null)
     {
+        // Si es sábado, solo hay clases hasta las 13:00 (5 horas en turno diurno)
+        if ($fecha && $fecha->isSaturday()) {
+            if ($turno === 'diurno') {
+                return 5; // 08:00 - 13:00 los sábados
+            } elseif ($turno === 'vespertino') {
+                return 0; // No hay clases vespertinas los sábados
+            }
+            return 5; // Total los sábados
+        }
+        
+        // Días normales (lunes a viernes)
         if ($turno === 'diurno') {
             return 11; // 08:00 - 19:00
         } elseif ($turno === 'vespertino') {
@@ -93,7 +104,7 @@ class ReportController extends Controller
         
         // Calcular horas de planificaciones para el mes
         for ($fecha = $inicioMes->copy(); $fecha->lte($finMes); $fecha->addDay()) {
-            if (!$fecha->isWeekday()) continue;
+            if (!$fecha->isWeekday() && !$fecha->isSaturday()) continue;
             
             $diaSemana = strtolower($fecha->locale('es')->isoFormat('dddd'));
             $planificacionesDia = $planificaciones->filter(function($plan) use ($diaSemana) {
@@ -126,8 +137,13 @@ class ReportController extends Controller
         // Total de horas utilizadas
         $horas_utilizadas = $horas_planificaciones + $horas_reservas;
         
-        // Calcular promedio basado en horas disponibles vs horas utilizadas
-        $horas_totales_disponibles = $total_espacios * $dias_laborales * 15; // 15 horas por día laboral
+        // Calcular horas totales disponibles considerando sábados (5 horas) vs días normales (15 horas)
+        $horas_totales_disponibles = 0;
+        for ($fecha = $inicioMes->copy(); $fecha->lte($finMes); $fecha->addDay()) {
+            if ($fecha->isWeekday() || $fecha->isSaturday()) {
+                $horas_totales_disponibles += $total_espacios * $this->horasPorTurno(null, $fecha);
+            }
+        }
         $promedio_utilizacion = $horas_totales_disponibles > 0 ? 
             round(($horas_utilizadas / $horas_totales_disponibles) * 100) : 0;
 
@@ -148,7 +164,7 @@ class ReportController extends Controller
             });
             
             for ($fecha = $inicioMes->copy(); $fecha->lte($finMes); $fecha->addDay()) {
-                if (!$fecha->isWeekday()) continue;
+                if (!$fecha->isWeekday() && !$fecha->isSaturday()) continue;
                 
                 $diaSemana = strtolower($fecha->locale('es')->isoFormat('dddd'));
                 $planificacionesDia = $planificaciones_tipo->filter(function($plan) use ($diaSemana) {
@@ -181,8 +197,13 @@ class ReportController extends Controller
             // Total de horas utilizadas = planificaciones + reservas
             $horas_utilizadas = $horas_plan_tipo + $horas_reservas_tipo;
             
-            // Calcular horas totales disponibles para este tipo de espacio
-            $horas_disponibles_tipo = $total_espacios_tipo * $dias_laborales * 15; // 15 horas por día
+            // Calcular horas disponibles considerando sábados (5 horas) vs días normales (15 horas)
+            $horas_disponibles_tipo = 0;
+            for ($fecha = $inicioMes->copy(); $fecha->lte($finMes); $fecha->addDay()) {
+                if ($fecha->isWeekday() || $fecha->isSaturday()) {
+                    $horas_disponibles_tipo += $total_espacios_tipo * $this->horasPorTurno(null, $fecha);
+                }
+            }
             
             // Calcular porcentaje real basado en horas utilizadas vs disponibles
             $promedio = $horas_disponibles_tipo > 0 ? 
@@ -210,7 +231,13 @@ class ReportController extends Controller
             
             // Para cada turno (diurno y vespertino)
             foreach (['diurno', 'vespertino'] as $turno) {
-                $horas_disponibles_turno = $total_espacios_tipo * $dias_laborales * $this->horasPorTurno($turno);
+                // Calcular horas disponibles por turno considerando sábados
+                $horas_disponibles_turno = 0;
+                for ($fecha = $inicioMes->copy(); $fecha->lte($finMes); $fecha->addDay()) {
+                    if ($fecha->isWeekday() || $fecha->isSaturday()) {
+                        $horas_disponibles_turno += $total_espacios_tipo * $this->horasPorTurno($turno, $fecha);
+                    }
+                }
                 
                 // Calcular horas desde planificaciones para este turno
                 $horas_plan_turno = 0;
@@ -219,7 +246,7 @@ class ReportController extends Controller
                 });
                 
                 for ($fecha = $inicioMes->copy(); $fecha->lte($finMes); $fecha->addDay()) {
-                    if (!$fecha->isWeekday()) continue;
+                    if (!$fecha->isWeekday() && !$fecha->isSaturday()) continue;
                     
                     $diaSemana = strtolower($fecha->locale('es')->isoFormat('dddd'));
                     $planificacionesDia = $planificaciones_tipo->filter(function($plan) use ($diaSemana) {

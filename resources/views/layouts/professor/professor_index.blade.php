@@ -43,13 +43,13 @@
             </a>
             @endcan
             
-            <!-- Licencias Profesores -->
+            <!-- Ausencias de Profesores -->
             @can('gestionar licencias profesores')
             <a href="{{ route('licencias.index') }}"
                class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-lg hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                style="background-color: #cd1627;">
-                <i class="fa-solid fa-file-medical"></i>
-                Licencias Profesores
+                <i class="fa-solid fa-calendar-xmark"></i>
+                Ausencias de Profesores
             </a>
             @endcan
             <x-button variant="add" class="max-w-xs gap-2" x-on:click.prevent="$dispatch('open-modal', 'add-professor')">

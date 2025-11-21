@@ -155,7 +155,7 @@
                     :isActive="request()->routeIs('correos-masivos.*')" />
             @endhasanyrole
 
-            @can('mantenedor de dias feriados')
+            @can('mantenedor de feriados')
                 <x-sidebar.sublink title="Días Feriados" href="{{ route('dias-feriados.index') }}"
                     :isActive="request()->routeIs('dias-feriados.*')" />
             @endcan

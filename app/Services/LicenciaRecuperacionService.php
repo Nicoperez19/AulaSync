@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Models\LicenciaProfesor;
 use App\Models\RecuperacionClase;
+use App\Models\ClaseNoRealizada;
 use App\Models\Planificacion_Asignatura;
+use App\Helpers\SemesterHelper;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -51,6 +53,26 @@ class LicenciaRecuperacionService
                         'estado' => 'pendiente',
                         'notificado' => false,
                     ]);
+
+                    // También crear en clases_no_realizadas para que aparezca en el listado de reagendar
+                    $periodo = SemesterHelper::getCurrentPeriod();
+                    $tipoAusencia = $this->obtenerTipoAusencia($licencia);
+                    
+                    ClaseNoRealizada::updateOrCreate(
+                        [
+                            'id_asignatura' => $planificacion->id_asignatura,
+                            'id_espacio' => $planificacion->id_espacio,
+                            'id_modulo' => $planificacion->id_modulo,
+                            'fecha_clase' => $planificacion->fecha_clase,
+                        ],
+                        [
+                            'run_profesor' => $licencia->run_profesor,
+                            'periodo' => $periodo,
+                            'motivo' => $tipoAusencia,
+                            'observaciones' => "Generado automáticamente por {$tipoAusencia} del {$licencia->fecha_inicio->format('d/m/Y')} al {$licencia->fecha_fin->format('d/m/Y')}. Motivo: {$licencia->motivo}",
+                            'estado' => 'no_realizada', // Estado para que aparezca en el listado de reagendar
+                        ]
+                    );
 
                     $clasesGeneradas++;
                 }
@@ -197,6 +219,27 @@ class LicenciaRecuperacionService
     }
 
     /**
+     * Determina el tipo de ausencia basado en la licencia
+     * 
+     * @param LicenciaProfesor $licencia
+     * @return string
+     */
+    protected function obtenerTipoAusencia(LicenciaProfesor $licencia)
+    {
+        // Mapear tipos de licencia a descripciones más amigables
+        $tiposAusencia = [
+            'medica' => 'Licencia Médica',
+            'administrativa' => 'Permiso Administrativo',
+            'capacitacion' => 'Capacitación',
+            'comision_servicio' => 'Comisión de Servicio',
+            'personal' => 'Permiso Personal',
+            'otro' => 'Ausencia Programada',
+        ];
+        
+        return $tiposAusencia[$licencia->tipo_licencia] ?? 'Ausencia del Profesor';
+    }
+
+    /**
      * Elimina las clases a recuperar pendientes de una licencia
      * (No elimina las que ya están en proceso o reagendadas)
      * 
@@ -205,6 +248,25 @@ class LicenciaRecuperacionService
      */
     public function eliminarClasesARecuperar(LicenciaProfesor $licencia)
     {
+        // Obtener las clases de recuperación antes de eliminarlas
+        $clasesRecuperacion = RecuperacionClase::where('id_licencia', $licencia->id_licencia)
+            ->where('estado', 'pendiente')
+            ->get();
+        
+        // Eliminar los registros correspondientes en clases_no_realizadas
+        foreach ($clasesRecuperacion as $clase) {
+            ClaseNoRealizada::where('id_asignatura', $clase->id_asignatura)
+                ->where('id_espacio', $clase->id_espacio)
+                ->where('id_modulo', $clase->id_modulo_original)
+                ->where('fecha_clase', $clase->fecha_clase_original)
+                ->where('run_profesor', $clase->run_profesor)
+                ->where('estado', 'no_realizada')
+                ->where('motivo', 'LIKE', '%Licencia%')
+                ->orWhere('motivo', 'LIKE', '%Permiso%')
+                ->orWhere('motivo', 'LIKE', '%Ausencia%')
+                ->delete();
+        }
+        
         return RecuperacionClase::where('id_licencia', $licencia->id_licencia)
             ->where('estado', 'pendiente')
             ->delete();

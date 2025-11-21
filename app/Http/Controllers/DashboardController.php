@@ -943,6 +943,13 @@ class DashboardController extends Controller
             })
             ->orderBy('fecha_reserva', 'desc')
             ->get();
+            
+        Log::info('getAccesosData - Datos cargados', [
+            'reservasSinDevolucion' => $reservasSinDevolucion->count(),
+            'accesosActuales' => $accesosActuales->count(),
+            'piso' => $piso,
+            'facultad' => $facultad
+        ]);
 
         return view('partials.accesos_tab_content', compact('reservasSinDevolucion', 'accesosActuales'))->render();
     }
@@ -1026,8 +1033,8 @@ class DashboardController extends Controller
 
     private function obtenerReservasActivasSinDevolucion($facultad, $piso)
     {
-        return Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
-            ->where('estado', 'activa')           // Solo reservas activas
+        $reservas = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad', 'modulo'])
+            ->where('estado', 'activa')
             ->whereHas('espacio', function($query) use ($facultad, $piso) {
                 $query->whereHas('piso', function($q) use ($facultad, $piso) {
                     $q->where('id_facultad', $facultad);
@@ -1040,6 +1047,14 @@ class DashboardController extends Controller
             ->latest('fecha_reserva')
             ->latest('hora')
             ->get();
+            
+        Log::info('Reservas sin devolución encontradas', [
+            'total' => $reservas->count(),
+            'facultad' => $facultad,
+            'piso' => $piso
+        ]);
+        
+        return $reservas;
     }
 
     public function getKeyReturnNotifications()
