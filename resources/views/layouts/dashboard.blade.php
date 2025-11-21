@@ -301,68 +301,77 @@
 
                 <!-- Tab Content: Utilización -->
                 <div x-show="activeTab === 'utilizacion'" x-cloak class="mt-6">
-                    <div class="flex flex-col w-full gap-8 md:flex-row">
-                            <div class="p-4 bg-gray-50 rounded-lg shadow md:p-6">
-                <!-- Encabezado con título y botón alineados -->
-                <div class="flex items-center justify-between mb-4">
-                    <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100">
-                        Utilización de Espacios por Tipo
-                    </h1>
-                    <x-button class="inline-flex items-center gap-2 px-4 py-2 mt-3 text-sm font-medium hover:bg-red-700"
-                        variant="primary" href="{{ route('reportes.tipo-espacio') }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
-                            <path fill-rule="evenodd"
-                                d="M12.97 3.97a.75.75 0 0 1 1.06 0l7.5 7.5a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06l6.22-6.22H3a.75.75 0 0 1 0-1.5h16.19l-6.22-6.22a.75.75 0 0 1 0-1.06Z"
-                                clip-rule="evenodd" />
-                        </svg>
-                        Ver detalles
-                    </x-button>
-                </div>
-                <div class="flex flex-wrap items-center justify-between gap-4 text-sm text-gray-500 dark:text-gray-300">
-                    <div class="flex flex-wrap items-center gap-4">
-                        <span id="modulo-actual-info"
-                            class="inline-flex items-center gap-2 px-3 py-1 text-gray-500 dark:text-gray-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600" fill="none"
-                                viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            <span id="modulo-actual-text">Cargando módulo...</span>
-                        </span>
-                        <span class="inline-flex items-center gap-2 px-3 py-1 text-gray-500 dark:text-gray-300">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-600 dark:text-gray-300"
-                                fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span id="dia-actual-text">Cargando...</span>, {{ \Carbon\Carbon::now()->format('d/m/Y') }}
-                        </span>
+                    <!-- Header con información del día -->
+                    <div class="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+                        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                            <div>
+                                <h2 class="text-2xl font-bold text-gray-800 mb-2">
+                                    <i class="fas fa-chart-bar text-blue-600 mr-2"></i>
+                                    Utilización de Espacios por Tipo
+                                </h2>
+                                <div class="flex flex-wrap items-center gap-4 text-sm">
+                                    <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg shadow-sm">
+                                        <i class="fas fa-clock text-blue-600"></i>
+                                        <span id="modulo-actual-text" class="font-medium text-gray-700">Cargando módulo...</span>
+                                    </span>
+                                    <span class="inline-flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg shadow-sm">
+                                        <i class="fas fa-calendar-day text-blue-600"></i>
+                                        <span class="font-medium text-gray-700">
+                                            <span id="dia-actual-text">Cargando...</span>, {{ \Carbon\Carbon::now()->format('d/m/Y') }}
+                                        </span>
+                                    </span>
+                                </div>
+                            </div>
+                            <x-button class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold shadow-md hover:shadow-lg transition-all"
+                                variant="primary" href="{{ route('reportes.tipo-espacio') }}">
+                                <i class="fas fa-file-alt"></i>
+                                Ver Reporte Completo
+                            </x-button>
+                        </div>
                     </div>
-                </div>
-            </div>
-            <div class="p-4 bg-white rounded-lg shadow-md md:p-6 dark:bg-gray-800">
-                <div id="tabla-utilizacion-tipo-espacio" class="overflow-x-auto">
-                    @include('partials.tabla_utilizacion_tipo_espacio', ['comparativaTipos' => $comparativaTipos])
-                </div>
+
+                    <div class="flex flex-col xl:flex-row gap-6">
+                        <!-- Panel principal de utilización -->
+                        <div class="flex-1">
+                            <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+                                <div id="tabla-utilizacion-tipo-espacio">
+                                    @include('partials.tabla_utilizacion_tipo_espacio', ['comparativaTipos' => $comparativaTipos])
+                                </div>
                             </div>
                         </div>
-                        <div class="flex flex-col items-center justify-center w-full md:w-[260px] lg:w-[340px] bg-gray-50 rounded-xl shadow p-6 md:p-8 widget-transition flex-shrink-0 md:mt-0 mt-8">
-            <h4 class="mb-4 text-lg font-bold text-center text-gray-700">Salas ocupadas / libres (hoy)</h4>
-            <canvas id="grafico-circular-salas" class="mb-2 w-full max-w-[220px] h-auto aspect-square"
-                style="max-width:220px;"></canvas>
-            <div class="flex justify-center gap-4 mt-2">
-                <div class="flex items-center gap-1">
-                    <span class="inline-block w-4 h-4 rounded-full" style="background-color: #10b981;"></span>
-                    <span class="text-sm text-gray-700">Libres</span>
-                </div>
-                <div class="flex items-center gap-1">
-                    <span class="inline-block w-4 h-4 rounded-full" style="background-color: #ef4444;"></span>
-                    <span class="text-sm text-gray-700">Ocupadas</span>
-                </div>
-            </div>
-            <div id="salas-ocupadas" class="mt-4 text-2xl font-bold kpi-value" style="color:#a21caf;">
-                {{ $salasOcupadas['total']['ocupadas'] }} <span class="text-gray-400"> de </span>
-                {{ $salasOcupadas['total']['ocupadas'] + $salasOcupadas['total']['libres'] }} <span class="text-gray-400"> en total</span>
+
+                        <!-- Widget lateral de salas -->
+                        <div class="xl:w-[340px] flex-shrink-0">
+                            <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6 sticky top-6">
+                                <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                    <i class="fas fa-door-open text-blue-600"></i>
+                                    Estado Actual de Salas
+                                </h4>
+                                <div class="flex justify-center items-center mb-4">
+                                    <div class="w-[220px] h-[220px]">
+                                        <canvas id="grafico-circular-salas" width="220" height="220"></canvas>
+                                    </div>
+                                </div>
+                                <div class="flex justify-center gap-6 mb-4">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-4 h-4 rounded-full bg-green-500"></span>
+                                        <span class="text-sm font-medium text-gray-700">Libres</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-4 h-4 rounded-full bg-red-500"></span>
+                                        <span class="text-sm font-medium text-gray-700">Ocupadas</span>
+                                    </div>
+                                </div>
+                                <div class="pt-4 border-t border-gray-200">
+                                    <div id="salas-ocupadas" class="text-center">
+                                        <div class="text-3xl font-bold text-purple-600">
+                                            {{ $salasOcupadas['total']['ocupadas'] }}
+                                        </div>
+                                        <div class="text-sm text-gray-500 mt-1">
+                                            de {{ $salasOcupadas['total']['ocupadas'] + $salasOcupadas['total']['libres'] }} salas en total
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -1,38 +1,46 @@
-{{-- Debug: {{ json_encode($comparativaTipos) }} --}}
 @if($comparativaTipos && (is_array($comparativaTipos) ? count($comparativaTipos) > 0 : $comparativaTipos->isNotEmpty()))
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         @foreach($comparativaTipos as $data)
-            <div class="flex flex-col justify-between p-4 bg-white rounded-lg shadow border border-gray-200 min-h-[120px]">
-                <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center gap-2">
-                        {{-- Icono por tipo (puedes personalizar según el tipo) --}}
-                        @php
-                            $iconos = [
-                                'Aula' => 'fa-graduation-cap',
-                                'Laboratorio' => 'fa-flask',
-                                'Auditorio' => 'fa-volume-up',
-                                'Sala de Estudio' => 'fa-book',
-                                'Taller' => 'fa-tools',
-                                'Sala de Reuniones' => 'fa-comments',
-                                'Sala de Clases' => 'fa-chalkboard-teacher',
-                            ];
-                            $icono = $iconos[$data['nombre'] ?? $data['tipo'] ?? ''] ?? 'fa-door-closed';
-                        @endphp
-                        <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100">
-                            <i class="fas {{ $icono }} text-xl text-gray-400"></i>
+            @php
+                $porcentaje = $data['porcentaje'] ?? 0;
+                $colorBarra = $porcentaje >= 80 ? '#ef4444' : ($porcentaje >= 50 ? '#f59e0b' : '#10b981');
+                $iconos = [
+                    'Aula' => ['icon' => 'fa-graduation-cap', 'color' => 'blue'],
+                    'Laboratorio' => ['icon' => 'fa-flask', 'color' => 'purple'],
+                    'Auditorio' => ['icon' => 'fa-volume-up', 'color' => 'red'],
+                    'Sala de Estudio' => ['icon' => 'fa-book', 'color' => 'green'],
+                    'Taller' => ['icon' => 'fa-tools', 'color' => 'orange'],
+                    'Sala de Reuniones' => ['icon' => 'fa-comments', 'color' => 'indigo'],
+                    'Sala de Clases' => ['icon' => 'fa-chalkboard-teacher', 'color' => 'teal'],
+                ];
+                $tipoData = $iconos[$data['nombre'] ?? $data['tipo'] ?? ''] ?? ['icon' => 'fa-door-closed', 'color' => 'gray'];
+            @endphp
+            <div class="group flex flex-col justify-between p-5 bg-gradient-to-br from-white to-gray-50 rounded-xl border-2 border-gray-200 hover:border-{{ $tipoData['color'] }}-400 hover:shadow-lg transition-all duration-300 min-h-[140px]">
+                <div class="flex items-start justify-between mb-3">
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center justify-center w-11 h-11 rounded-xl bg-{{ $tipoData['color'] }}-100 group-hover:bg-{{ $tipoData['color'] }}-200 transition-colors">
+                            <i class="fas {{ $tipoData['icon'] }} text-xl text-{{ $tipoData['color'] }}-600"></i>
                         </span>
-                        <span class="font-semibold text-gray-900">{{ $data['nombre'] ?? $data['tipo'] ?? 'Tipo no especificado' }}</span>
+                        <div>
+                            <h3 class="font-bold text-gray-900 text-base">{{ $data['nombre'] ?? $data['tipo'] ?? 'Tipo no especificado' }}</h3>
+                            <p class="text-xs text-gray-500 mt-0.5">{{ $data['total'] ?? 0 }} espacios totales</p>
+                        </div>
                     </div>
-                    <span class="text-xs font-bold text-gray-500">{{ $data['porcentaje'] ?? 0 }}%</span>
-                </div>
-                <div class="flex items-center gap-2 mb-1">
-                    <span class="text-xs text-gray-500">{{ $data['ocupados'] ?? 0 }} de {{ $data['total'] ?? 0 }} ocupadas</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="relative w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div class="absolute left-0 top-0 h-2 rounded-full" style="width: {{ $data['porcentaje'] ?? 0 }}%; background: #8C0303;"></div>
+                    <div class="text-right">
+                        <div class="text-2xl font-bold" style="color: {{ $colorBarra }}">{{ $porcentaje }}%</div>
+                        <div class="text-xs text-gray-500 font-medium">Ocupación</div>
                     </div>
-                    <span class="ml-2 text-xs text-gray-600 font-semibold">{{ $data['ocupados'] ?? 0 }}/{{ $data['total'] ?? 0 }}</span>
+                </div>
+                
+                <div class="space-y-2">
+                    <div class="flex items-center justify-between text-sm">
+                        <span class="text-gray-600 font-medium">{{ $data['ocupados'] ?? 0 }} ocupadas</span>
+                        <span class="text-gray-400">{{ $data['total'] - ($data['ocupados'] ?? 0) }} libres</span>
+                    </div>
+                    <div class="relative w-full h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
+                        <div class="absolute left-0 top-0 h-full rounded-full transition-all duration-500 ease-out" 
+                             style="width: {{ $porcentaje }}%; background: {{ $colorBarra }};"></div>
+                    </div>
                 </div>
             </div>
         @endforeach
