@@ -437,7 +437,8 @@ class DashboardController extends Controller
 
     private function obtenerSalasOcupadas($facultad, $piso, $turno = null)
     {
-        $espaciosQuery = $this->obtenerEspaciosQuery($facultad, $piso);
+        $espaciosQuery = $this->obtenerEspaciosQuery($facultad, $piso)
+            ->where('tipo_espacio', 'Sala de Clases');
 
         // Si se especifica turno, contar solo las salas ocupadas en ese turno
         if ($turno !== null) {

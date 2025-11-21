@@ -87,28 +87,23 @@
                     <span class="p-2 text-green-500 bg-green-100 rounded-full"><i
                             class="text-xl fa-solid fa-door-open"></i></span>
                 </div>
-                <div class="flex flex-col gap-1">
+                <div class="flex flex-col gap-2">
                     @php
-                        $totalSalasDiurno = ($salasOcupadas['diurno']['ocupadas'] ?? 0) + ($salasOcupadas['diurno']['libres'] ?? 0);
-                        $porcentajeDesocupadasDiurno = $totalSalasDiurno > 0 ? round((($salasOcupadas['diurno']['libres'] ?? 0) / $totalSalasDiurno) * 100, 2) : 0;
-
-                        $totalSalasVespertino = ($salasOcupadas['vespertino']['ocupadas'] ?? 0) + ($salasOcupadas['vespertino']['libres'] ?? 0);
-                        $porcentajeDesocupadasVespertino = $totalSalasVespertino > 0 ? round((($salasOcupadas['vespertino']['libres'] ?? 0) / $totalSalasVespertino) * 100, 2) : 0;
-
                         $totalSalasTotal = ($salasOcupadas['total']['ocupadas'] ?? 0) + ($salasOcupadas['total']['libres'] ?? 0);
                         $porcentajeDesocupadasTotal = $totalSalasTotal > 0 ? round((($salasOcupadas['total']['libres'] ?? 0) / $totalSalasTotal) * 100, 2) : 0;
                     @endphp
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs text-gray-500">Diurno:</span>
-                        <span class="text-lg font-bold text-green-600">{{ $porcentajeDesocupadasDiurno }}%</span>
+                    <div class="text-center">
+                        <div class="text-5xl font-bold text-green-600">{{ $porcentajeDesocupadasTotal }}%</div>
                     </div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs text-gray-500">Vespertino:</span>
-                        <span class="text-lg font-bold text-emerald-600">{{ $porcentajeDesocupadasVespertino }}%</span>
-                    </div>
-                    <div class="pt-1 mt-1 border-t border-gray-200">
-                        <span class="text-xs text-gray-400">Total: </span>
-                        <span class="text-2xl font-bold text-green-700">{{ $porcentajeDesocupadasTotal }}%</span>
+                    <div class="flex items-center justify-between pt-2 mt-2 border-t border-gray-200">
+                        <div class="text-center flex-1">
+                            <div class="text-xs text-gray-400">Ocupadas</div>
+                            <div class="text-xl font-bold text-red-600">{{ $salasOcupadas['total']['ocupadas'] ?? 0 }}</div>
+                        </div>
+                        <div class="text-center flex-1">
+                            <div class="text-xs text-gray-400">Libres</div>
+                            <div class="text-xl font-bold text-green-600">{{ $salasOcupadas['total']['libres'] ?? 0 }}</div>
+                        </div>
                     </div>
                 </div>
             </div>
