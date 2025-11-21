@@ -147,9 +147,11 @@ class PlanoDigitalController extends Controller
             $espacio = $bloque->espacio;
 
             // Verificar si hay una reserva activa en este espacio
-            $reservaActiva = Reserva::where('id_espacio', $idEspacio)
+            // Obtener la reserva completa con relaciones para mostrar la información correcta
+            $reservaActiva = Reserva::with(['profesor', 'asignatura.carrera', 'solicitante'])
+                ->where('id_espacio', $idEspacio)
                 ->where('estado', 'activa')
-                ->exists();
+                ->first();
 
             // Verificar si hay una clase no realizada en la tabla clases_no_realizadas para hoy
             $clasesNoRealizadasHoy = \App\Models\ClaseNoRealizada::with('modulo')
@@ -243,7 +245,7 @@ class PlanoDigitalController extends Controller
                     $this->prepararDetallesBloque(
                         $bloque->espacio,
                         $planificacionActiva ?? null,
-                        null,
+                        $reservaActiva, // Pasar la reserva activa completa
                         $planificacionProxima ?? null
                     ),
                     [
@@ -381,10 +383,26 @@ class PlanoDigitalController extends Controller
             'planificacion_proxima' => null
         ];
 
-        if ($planificacion && $planificacion->asignatura) {
+        // PRIORIDAD 1: Si hay reserva activa de profesor con asignatura, mostrar ESA información
+        // Esto asegura que se muestre la clase que realmente se está dando, no la programada
+        if ($reserva && $reserva->run_profesor && $reserva->asignatura) {
+            // El profesor está dando esta asignatura (puede ser diferente a la planificada)
+            $detalles['planificacion'] = [
+                'asignatura' => $reserva->asignatura->nombre_asignatura ?? 'Sin asignatura',
+                'codigo_asignatura' => $reserva->asignatura->codigo_asignatura ?? '-',
+                'profesor' => ucwords($reserva->profesor->name ?? 'No asignado'),
+                'carrera' => $reserva->asignatura->carrera->nombre ?? '-',
+                'es_reserva_activa' => true, // Flag para identificar que viene de reserva
+                'modulos' => [] // No mostrar módulos ya que es la clase actual
+            ];
+        } elseif ($planificacion && $planificacion->asignatura) {
+            // PRIORIDAD 2: Si NO hay reserva, mostrar la planificación del espacio
             $detalles['planificacion'] = [
                 'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'Sin asignatura',
+                'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? '-',
                 'profesor' => ucwords($planificacion->asignatura->profesor->name ?? 'No asignado'),
+                'carrera' => $planificacion->asignatura->carrera->nombre ?? '-',
+                'es_reserva_activa' => false,
                 'modulos' => $planificacion->asignatura->planificaciones()
                     ->where('id_espacio', $espacio->id_espacio)
                     ->with('modulo')

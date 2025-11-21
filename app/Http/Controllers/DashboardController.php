@@ -53,10 +53,17 @@ class DashboardController extends Controller
         ];
 
         // Total de reservas hoy y sala más utilizada (solo queries ligeras)
-        $totalReservasHoy = Reserva::whereDate('fecha_reserva', today())->count();
+        $totalReservasHoy = Reserva::whereDate('fecha_reserva', today())
+            ->whereHas('espacio', function($query) {
+                $query->where('tipo_espacio', 'Sala de Clases');
+            })
+            ->count();
 
         $salaMasUtilizada = Reserva::select('id_espacio', DB::raw('count(*) as total'))
             ->whereDate('fecha_reserva', '>=', Carbon::now()->subDays(7))
+            ->whereHas('espacio', function($query) {
+                $query->where('tipo_espacio', 'Sala de Clases');
+            })
             ->groupBy('id_espacio')
             ->orderByDesc('total')
             ->with('espacio:id_espacio,nombre_espacio')
@@ -133,10 +140,24 @@ class DashboardController extends Controller
     /**
      * Calcula las horas totales disponibles para un turno
      * @param string|null $turno 'diurno', 'vespertino' o null para todos
-     * @return int Horas disponibles en el turno
+     * @param Carbon|null $fecha Fecha para determinar si es sábado
+     * @return int|float Horas disponibles en el turno
      */
-    private function horasPorTurno($turno = null)
+    private function horasPorTurno($turno = null, $fecha = null)
     {
+        // Verificar si es sábado (clases solo hasta 13:00)
+        $esSabado = $fecha ? $fecha->isSaturday() : false;
+        
+        if ($esSabado) {
+            if ($turno === 'diurno') {
+                return 5; // Sábado: 08:00 - 13:00 = 5 horas
+            } elseif ($turno === 'vespertino') {
+                return 0; // Sábado: no hay clases vespertinas
+            }
+            return 5; // Sábado total: 08:00 - 13:00 = 5 horas
+        }
+        
+        // Días normales (lunes a viernes)
         if ($turno === 'diurno') {
             return 11; // 08:00 - 19:00 = 11 horas
         } elseif ($turno === 'vespertino') {
@@ -171,16 +192,19 @@ class DashboardController extends Controller
                         $q->where('numero_piso', $piso);
                     });
                 }
+                // Filtrar por tipo de espacio: si no se especifica, usar solo Sala de Clases
                 if ($tipoEspacio) {
                     $query->where('tipo_espacio', $tipoEspacio);
+                } else {
+                    $query->where('tipo_espacio', 'Sala de Clases');
                 }
             })
             ->get();
 
         // Iterar por cada día en el rango
         for ($fecha = $inicio->copy(); $fecha->lte($fin); $fecha->addDay()) {
-            // Solo contar días laborales (lunes a viernes)
-            if (!$fecha->isWeekday()) {
+            // Solo contar días laborales (lunes a viernes) y sábados
+            if (!$fecha->isWeekday() && !$fecha->isSaturday()) {
                 continue;
             }
 
@@ -217,10 +241,14 @@ class DashboardController extends Controller
         // Obtener número total de espacios disponibles
         $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)->count();
 
-        // Calcular total de horas disponibles: espacios × días × horas por día (según turno)
-        $diasLaborales = 5; // Lunes a viernes
-        $horasPorDia = $this->horasPorTurno($turno);
-        $totalHoras = $totalEspacios * $diasLaborales * $horasPorDia;
+        // Calcular total de horas disponibles considerando cada día de la semana
+        $totalHoras = 0;
+        for ($fecha = $inicioSemana->copy(); $fecha->lte($finSemana); $fecha->addDay()) {
+            if ($fecha->isWeekday() || $fecha->isSaturday()) {
+                $horasPorDia = $this->horasPorTurno($turno, $fecha);
+                $totalHoras += $totalEspacios * $horasPorDia;
+            }
+        }
 
         // 1. Calcular horas desde PLANIFICACIONES (clases programadas)
         $horasPlanificaciones = $this->calcularHorasDesdePlanificaciones($inicioSemana, $finSemana, $piso, null, $turno);
@@ -234,6 +262,8 @@ class DashboardController extends Controller
                         $q->where('numero_piso', $piso);
                     });
                 }
+                // Solo considerar Salas de Clases
+                $query->where('tipo_espacio', 'Sala de Clases');
             })
             ->get();
 
@@ -290,6 +320,8 @@ class DashboardController extends Controller
                             $q->where('numero_piso', $piso);
                         });
                     }
+                    // Solo considerar Salas de Clases
+                    $query->where('tipo_espacio', 'Sala de Clases');
                 })
                 ->whereHas('espacio', function($query) {
                     $query->where('estado', 'Ocupado');
@@ -314,17 +346,14 @@ class DashboardController extends Controller
         // Obtener número total de espacios disponibles
         $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)->count();
 
-        // Calcular días laborales del mes
-        $diasLaborales = 0;
+        // Calcular total de horas disponibles considerando cada día del mes
+        $totalHoras = 0;
         for ($dia = $inicioMes->copy(); $dia->lte($finMes); $dia->addDay()) {
-            if ($dia->isWeekday()) {
-                $diasLaborales++;
+            if ($dia->isWeekday() || $dia->isSaturday()) {
+                $horasPorDia = $this->horasPorTurno($turno, $dia);
+                $totalHoras += $totalEspacios * $horasPorDia;
             }
         }
-
-        // Calcular total de horas disponibles: espacios × días laborales × horas por día (según turno)
-        $horasPorDia = $this->horasPorTurno($turno);
-        $totalHoras = $totalEspacios * $diasLaborales * $horasPorDia;
 
         // 1. Calcular horas desde PLANIFICACIONES (clases programadas)
         $horasPlanificaciones = $this->calcularHorasDesdePlanificaciones($inicioMes, $finMes, $piso, null, $turno);
@@ -338,6 +367,8 @@ class DashboardController extends Controller
                         $q->where('numero_piso', $piso);
                     });
                 }
+                // Solo considerar Salas de Clases
+                $query->where('tipo_espacio', 'Sala de Clases');
             })
             ->get();
 
@@ -369,7 +400,6 @@ class DashboardController extends Controller
             'horasReservas' => round($horasReservas, 2),
             'horasOcupadas' => round($horasOcupadas, 2),
             'totalEspacios' => $totalEspacios,
-            'diasLaborales' => $diasLaborales,
             'totalHoras' => $totalHoras,
             'porcentaje' => $porcentaje
         ]);
@@ -396,7 +426,7 @@ class DashboardController extends Controller
 
         // Obtener total de espacios para calcular horas disponibles correctamente
         $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)->count();
-        $horasPorDia = $this->horasPorTurno($turno);
+        $horasPorDia = $this->horasPorTurno($turno, $hoy);
         $totalHorasDisponibles = $totalEspacios * $horasPorDia;
 
         // Calcular horas REALES utilizadas (no solo contar reservas)
@@ -408,6 +438,8 @@ class DashboardController extends Controller
                         $q->where('numero_piso', $piso);
                     });
                 }
+                // Solo considerar Salas de Clases
+                $query->where('tipo_espacio', 'Sala de Clases');
             })
             ->get();
 
@@ -437,8 +469,7 @@ class DashboardController extends Controller
 
     private function obtenerSalasOcupadas($facultad, $piso, $turno = null)
     {
-        $espaciosQuery = $this->obtenerEspaciosQuery($facultad, $piso)
-            ->where('tipo_espacio', 'Sala de Clases');
+        $espaciosQuery = $this->obtenerEspaciosQuery($facultad, $piso);
 
         // Si se especifica turno, contar solo las salas ocupadas en ese turno
         if ($turno !== null) {
@@ -485,6 +516,8 @@ class DashboardController extends Controller
                             $q->where('numero_piso', $piso);
                         });
                     }
+                    // Solo considerar Salas de Clases
+                    $query->where('tipo_espacio', 'Sala de Clases');
                 })
                 ->count();
 
@@ -505,16 +538,6 @@ class DashboardController extends Controller
         // Cambiar a período mensual en lugar de semanal
         $inicioMes = Carbon::now()->startOfMonth();
         $finMes = Carbon::now()->endOfMonth();
-
-        // Calcular días laborales del mes
-        $diasLaborales = 0;
-        for ($dia = $inicioMes->copy(); $dia->lte($finMes); $dia->addDay()) {
-            if ($dia->isWeekday()) {
-                $diasLaborales++;
-            }
-        }
-
-        $horasPorDia = 15;
 
         // 1. Obtener todos los tipos de espacio distintos para el piso y facultad seleccionados
         $tiposDeEspacioQuery = Espacio::query()
@@ -552,7 +575,14 @@ class DashboardController extends Controller
                 })->count();
 
             // Calcular horas totales disponibles para este tipo de espacio en el mes
-            $totalHorasDisponibles = $totalEspaciosTipo * $diasLaborales * $horasPorDia;
+            // Considerando que sábados solo tienen 5 horas
+            $totalHorasDisponibles = 0;
+            for ($dia = $inicioMes->copy(); $dia->lte($finMes); $dia->addDay()) {
+                if ($dia->isWeekday() || $dia->isSaturday()) {
+                    $horasPorDia = $this->horasPorTurno(null, $dia);
+                    $totalHorasDisponibles += $totalEspaciosTipo * $horasPorDia;
+                }
+            }
 
             // 1. Calcular horas desde PLANIFICACIONES para este tipo de espacio
             $horasPlanificaciones = $this->calcularHorasDesdePlanificaciones($inicioMes, $finMes, $piso, $tipo);
@@ -664,12 +694,14 @@ class DashboardController extends Controller
 
         // Obtener total de espacios para calcular el porcentaje correctamente
         $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)->count();
-        $horasPorDia = 15;
-        $totalHorasPorDia = $totalEspacios * $horasPorDia;
 
         for ($i = 0; $i < 7; $i++) {
             $dia = $inicioSemana->copy()->addDays($i);
             $diasSemana[] = $dia->format('d/m');
+
+            // Calcular horas disponibles para este día específico (considerando sábados)
+            $horasPorDia = $this->horasPorTurno(null, $dia);
+            $totalHorasPorDia = $totalEspacios * $horasPorDia;
 
             // 1. Calcular horas desde PLANIFICACIONES para este día
             $horasPlanificaciones = $this->calcularHorasDesdePlanificaciones($dia, $dia, $piso);
@@ -683,6 +715,8 @@ class DashboardController extends Controller
                             $q->where('numero_piso', $piso);
                         });
                     }
+                    // Solo considerar Salas de Clases
+                    $query->where('tipo_espacio', 'Sala de Clases');
                 })
                 ->get();
 
@@ -723,6 +757,8 @@ class DashboardController extends Controller
                         $q->where('numero_piso', $piso);
                     });
                 }
+                // Solo considerar Salas de Clases
+                $query->where('tipo_espacio', 'Sala de Clases');
             })
             ->get()
             ->map(function($reserva) {
@@ -802,6 +838,8 @@ class DashboardController extends Controller
                         $q->where('numero_piso', $piso);
                     });
                 }
+                // Solo considerar Salas de Clases
+                $query->where('tipo_espacio', 'Sala de Clases');
             })
             ->get();
 
@@ -858,7 +896,9 @@ class DashboardController extends Controller
             if ($piso) {
                 $query->where('numero_piso', $piso);
             }
-        });
+        })
+        // Solo considerar Salas de Clases (excluir Taller, Laboratorio y Sala de Estudio)
+        ->where('tipo_espacio', 'Sala de Clases');
     }
 
     /**
@@ -899,6 +939,7 @@ class DashboardController extends Controller
                         $q->where('numero_piso', $piso);
                     }
                 });
+                // Pestaña de Accesos muestra TODOS los tipos de espacios
             })
             ->orderBy('fecha_reserva', 'desc')
             ->get();
@@ -987,6 +1028,15 @@ class DashboardController extends Controller
     {
         return Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
             ->where('estado', 'activa')           // Solo reservas activas
+            ->whereHas('espacio', function($query) use ($facultad, $piso) {
+                $query->whereHas('piso', function($q) use ($facultad, $piso) {
+                    $q->where('id_facultad', $facultad);
+                    if ($piso) {
+                        $q->where('numero_piso', $piso);
+                    }
+                });
+                // Pestaña de Accesos muestra TODOS los tipos de espacios
+            })
             ->latest('fecha_reserva')
             ->latest('hora')
             ->get();
@@ -1055,6 +1105,8 @@ class DashboardController extends Controller
                         $q->where('numero_piso', $piso);
                     }
                 });
+                // Solo considerar Salas de Clases
+                $query->where('tipo_espacio', 'Sala de Clases');
             })
             ->get();
 
@@ -1082,6 +1134,8 @@ class DashboardController extends Controller
                         $q->where('numero_piso', $piso);
                     }
                 });
+                // Solo considerar Salas de Clases
+                $query->where('tipo_espacio', 'Sala de Clases');
             });
 
         $totalReservas = (clone $baseQuery)->count();
@@ -1116,6 +1170,8 @@ class DashboardController extends Controller
                         $q->where('numero_piso', $piso);
                     }
                 });
+                // Solo considerar Salas de Clases
+                $query->where('tipo_espacio', 'Sala de Clases');
             })
             ->get()
             ->groupBy('espacio.tipo_espacio')
