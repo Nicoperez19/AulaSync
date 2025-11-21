@@ -8,6 +8,8 @@ use App\Models\Asignatura;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Modulo;
 use App\Models\Piso;
+use App\Models\ClaseNoRealizada;
+use App\Models\RecuperacionClase;
 use App\Helpers\SemesterHelper;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -618,20 +620,14 @@ class DashboardController extends Controller
             $porcentaje = $totalHorasDisponibles > 0 ?
                 round(($horasUtilizadas / $totalHorasDisponibles) * 100) : 0;
 
-            // Contar espacios ocupados actualmente (no horas)
-            $espaciosOcupados = Espacio::where('tipo_espacio', $tipo)
-                ->where('estado', 'Ocupado')
-                ->whereHas('piso', function($query) use ($facultad, $piso) {
-                    $query->where('id_facultad', $facultad);
-                    if ($piso) {
-                        $query->where('numero_piso', $piso);
-                    }
-                })->count();
+            // Calcular espacios ocupados basándose en el porcentaje de ocupación
+            // Esto asegura que la tarjeta muestre una ocupación consistente
+            $espaciosOcupados = ceil(($porcentaje / 100) * $totalEspaciosTipo);
 
             $result[] = [
                 'nombre' => $tipo,
                 'porcentaje' => $porcentaje,
-                'ocupados' => $espaciosOcupados,  // Espacios ocupados, no horas
+                'ocupados' => $espaciosOcupados,  // Basado en porcentaje de horas
                 'total' => $totalEspaciosTipo
             ];
         }
@@ -1729,5 +1725,87 @@ class DashboardController extends Controller
         }
         // Si no hay hora_salida, asumir 1 módulo de 50 minutos
         return 0.83; // 50/60 horas
+    }
+
+    public function getClasesNoRealizadasData(Request $request)
+    {
+        $piso = $request->session()->get('piso');
+        $facultad = 'IT_TH';
+        $mes = now()->month;
+        $anio = now()->year;
+
+        // Obtener clases no realizadas del mes actual
+        $clasesNoRealizadas = ClaseNoRealizada::whereMonth('fecha_clase', $mes)
+            ->whereYear('fecha_clase', $anio)
+            ->get();
+
+        // Obtener clases recuperadas del mes
+        $clasesRecuperadas = RecuperacionClase::whereMonth('created_at', $mes)
+            ->whereYear('created_at', $anio)
+            ->where('estado', 'recuperada')
+            ->get();
+
+        // Agrupar por día para el gráfico de barras
+        $diasDelMes = [];
+        $inicio = Carbon::create($anio, $mes, 1);
+        $fin = $inicio->copy()->endOfMonth();
+
+        for ($fecha = $inicio->copy(); $fecha->lte($fin); $fecha->addDay()) {
+            if ($fecha->isWeekday() || $fecha->isSaturday()) {
+                $dia = $fecha->format('d/m');
+                $diasDelMes[$dia] = [
+                    'realizadas' => 0,
+                    'no_realizadas' => 0
+                ];
+            }
+        }
+
+        // Contar clases por día
+        $planificacionesMes = Planificacion_Asignatura::whereHas('horario', function($q) use ($anio, $mes) {
+            $q->where('periodo', Carbon::create($anio, $mes, 1)->format('Y-m'));
+        })->get();
+
+        foreach ($planificacionesMes as $plan) {
+            if ($plan->modulo) {
+                $dia = $plan->modulo->dia;
+                // Encontrar todas las fechas con este día de semana en el mes
+                for ($fecha = $inicio->copy(); $fecha->lte($fin); $fecha->addDay()) {
+                    if (strtolower($fecha->locale('es')->isoFormat('dddd')) === strtolower($dia)) {
+                        $diaFormato = $fecha->format('d/m');
+                        if (isset($diasDelMes[$diaFormato])) {
+                            $diasDelMes[$diaFormato]['realizadas']++;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Contar clases no realizadas por día
+        foreach ($clasesNoRealizadas as $clase) {
+            $diaFormato = $clase->fecha_clase->format('d/m');
+            if (isset($diasDelMes[$diaFormato])) {
+                $diasDelMes[$diaFormato]['no_realizadas']++;
+                $diasDelMes[$diaFormato]['realizadas']--;
+            }
+        }
+
+        // Calcular totales y estadísticas
+        $totalPlaneadas = $planificacionesMes->count();
+        $totalNoRealizadas = $clasesNoRealizadas->count();
+        $totalRealizadas = $totalPlaneadas - $totalNoRealizadas;
+        $totalRecuperadas = $clasesRecuperadas->count();
+        $porcentajeNoRealizadas = $totalPlaneadas > 0 ? round(($totalNoRealizadas / $totalPlaneadas) * 100, 1) : 0;
+        $porcentajeRealizadas = $totalPlaneadas > 0 ? round(($totalRealizadas / $totalPlaneadas) * 100, 1) : 0;
+
+        return view('partials.clases_no_realizadas_tab_content', compact(
+            'diasDelMes',
+            'totalRealizadas',
+            'totalNoRealizadas',
+            'totalRecuperadas',
+            'porcentajeRealizadas',
+            'porcentajeNoRealizadas',
+            'mes',
+            'anio'
+        ))->render();
     }
 }

@@ -61,6 +61,7 @@ Route::middleware(['auth', 'permission:dashboard', 'extend.execution:300'])->gro
     Route::get('/dashboard/horarios-semana', [DashboardController::class, 'horariosSemana'])->name('dashboard.horarios-semana');
     Route::get('/dashboard/utilizacion-data', [DashboardController::class, 'getUtilizacionData'])->name('dashboard.utilizacion-data');
     Route::get('/dashboard/accesos-data', [DashboardController::class, 'getAccesosData'])->name('dashboard.accesos-data');
+    Route::get('/dashboard/clases-no-realizadas-data', [DashboardController::class, 'getClasesNoRealizadasData'])->name('dashboard.clases-no-realizadas-data');
 });
 
 Route::middleware(['auth', 'role:Administrador'])->group(function () {

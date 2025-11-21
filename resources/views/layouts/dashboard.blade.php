@@ -274,6 +274,12 @@
                         <i class="fas fa-users mr-2"></i>
                         Accesos
                     </button>
+                    <button @click="activeTab = 'clases-no-realizadas'; cargarTabClasesNoRealizadas();"
+                            :class="activeTab === 'clases-no-realizadas' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                            class="whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors">
+                        <i class="fas fa-exclamation-circle mr-2"></i>
+                        Clases No Realizadas
+                    </button>
                 </nav>
 
                 <!-- Tab Content: Gráficos -->
@@ -545,6 +551,16 @@
                     </div>
                 </div>
             </div>
+
+                <!-- Tab Content: Clases No Realizadas -->
+                <div x-show="activeTab === 'clases-no-realizadas'" x-cloak class="mt-6">
+                    <div id="clases-no-realizadas-tab-content" class="p-8 text-center text-gray-500">
+                        <div class="flex items-center justify-center">
+                            <div class="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin"></div>
+                            <span class="ml-2">Cargando estadísticas...</span>
+                        </div>
+                    </div>
+                </div>
         </div>
     </div>
         {{-- <div class="w-full p-8 mb-8 bg-white shadow-lg rounded-xl">
@@ -762,14 +778,44 @@
         contenedor.innerHTML = '<div class="flex items-center justify-center p-8"><div class="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin"></div><span class="ml-2">Cargando accesos...</span></div>';
 
         fetch('/dashboard/accesos-data')
-            .then(response => response.text())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text();
+            })
             .then(html => {
                 contenedor.innerHTML = html;
                 window.tabLoaded.accesos = true;
             })
             .catch(error => {
                 console.error('Error cargando datos de accesos:', error);
-                contenedor.innerHTML = '<div class="p-4 text-center text-red-500">Error al cargar los accesos</div>';
+                contenedor.innerHTML = '<div class="p-4 text-center text-red-500">Error al cargar los accesos: ' + error.message + '</div>';
+            });
+    }
+
+    function cargarTabClasesNoRealizadas() {
+        if (window.tabLoaded.clasesNoRealizadas) return;
+
+        const contenedor = document.getElementById('clases-no-realizadas-tab-content');
+        if (!contenedor) return;
+
+        contenedor.innerHTML = '<div class="flex items-center justify-center p-8"><div class="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin"></div><span class="ml-2">Cargando estadísticas...</span></div>';
+
+        fetch('/dashboard/clases-no-realizadas-data')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text();
+            })
+            .then(html => {
+                contenedor.innerHTML = html;
+                window.tabLoaded.clasesNoRealizadas = true;
+            })
+            .catch(error => {
+                console.error('Error cargando clases no realizadas:', error);
+                contenedor.innerHTML = '<div class="p-4 text-center text-red-500">Error al cargar los datos: ' + error.message + '</div>';
             });
     }
 

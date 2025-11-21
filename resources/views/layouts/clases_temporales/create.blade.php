@@ -66,7 +66,7 @@
                   action="{{ isset($profesorColaborador) ? route('clases-temporales.update', $profesorColaborador) : route('clases-temporales.store') }}"
                   id="formProfesorColaborador">
                 @csrf
-                @method('PUT' if isset($profesorColaborador))
+                @if(isset($profesorColaborador))
                     @method('PUT')
                 @endif
 
