@@ -2049,10 +2049,10 @@
                         drawIndicators();
                     }
 
-                    // Mostrar Sweet Alert de éxito para asistencia registrada
+                    // Mostrar Sweet Alert de éxito para sala reservada
                     Swal.fire({
-                        title: '¡Asistencia Registrada!',
-                        text: 'El profesor ha registrado su asistencia correctamente.',
+                        title: '¡Sala Reservada!',
+                        text: 'La sala ha sido reservada correctamente.',
                         icon: 'success',
                         confirmButtonText: 'Aceptar',
                         confirmButtonColor: '#059669',
@@ -2061,8 +2061,8 @@
                         showConfirmButton: false
                     });
 
-                    // Mostrar mensaje de asistencia registrada
-                    document.getElementById('qr-status').innerHTML = 'Asistencia registrada';
+                    // Mostrar mensaje de sala reservada
+                    document.getElementById('qr-status').innerHTML = 'Sala reservada';
                     document.getElementById('qr-status').classList.remove('parpadeo');
 
                     // Limpiar solo el estado de lectura después de un delay
@@ -3223,6 +3223,33 @@
                                 <div class="text-sm text-gray-600">${data.tipo_solicitante || 'No especificado'}</div>
                             </div>
                         </div>
+                        ${data.hora_inicio ? `
+                        <div class="flex items-center">
+                            <i class="mr-3 text-cyan-500 fas fa-clock"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">Hora inicio</div>
+                                <div class="text-sm text-gray-600">${data.hora_inicio}</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${data.hora_salida ? `
+                        <div class="flex items-center">
+                            <i class="mr-3 text-pink-500 fas fa-clock"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">Hora salida</div>
+                                <div class="text-sm text-gray-600">${data.hora_salida}</div>
+                            </div>
+                        </div>
+                        ` : ''}
+                        ${data.detalles ? `
+                        <div class="flex items-center">
+                            <i class="mr-3 text-amber-500 fas fa-info-circle"></i>
+                            <div>
+                                <div class="font-medium text-gray-800">Detalles</div>
+                                <div class="text-sm text-gray-600">${data.detalles}</div>
+                            </div>
+                        </div>
+                        ` : ''}
                         ${data.activo !== undefined ? `
                         <div class="flex items-center">
                             <i class="fas fa-check-circle mr-3 ${data.activo ? 'text-green-500' : 'text-red-500'}"></i>
@@ -3369,6 +3396,13 @@
                 indicator.estado === '#ef4444' ||
                 indicator.estado === '#dc2626'
             );
+            
+            console.log('🔍 DEBUG Botón Desocupar:', {
+                espacioId: espacioId,
+                espacioOcupado: espacioOcupado,
+                indicatorEstado: indicator?.estado,
+                tipoOcupante: data.run_profesor ? 'profesor' : data.run_solicitante ? 'solicitante' : 'desconocido'
+            });
             
             const btnsDesocupar = document.querySelectorAll('.btn-desocupar[data-tipo="espacio"]');
             btnsDesocupar.forEach(btn => {
