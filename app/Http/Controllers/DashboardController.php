@@ -1345,10 +1345,15 @@ class DashboardController extends Controller
         $periodo = SemesterHelper::getCurrentPeriod();
 
         // Obtener los usuarios asignados por espacio para el módulo actual
+        // Construir id_modulo usando el formato correcto (ej: "LU.5")
+        $prefijosDias = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+        $diasArray = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        $indexDia = array_search($diaActual, $diasArray);
+        $prefijo = $indexDia !== false ? $prefijosDias[$indexDia] : 'LU';
+        $idModulo = $prefijo . '.' . $moduloActualNum;
+        
         $asignaciones = Planificacion_Asignatura::with(['espacio.piso', 'asignatura.profesor'])
-            ->whereHas('modulo', function($q) use ($diaActual, $moduloActualNum) {
-                $q->where('dia', $diaActual)->where('numero_modulo', $moduloActualNum);
-            })
+            ->where('id_modulo', $idModulo)
             ->whereHas('horario', function($q) use ($periodo) {
                 $q->where('periodo', $periodo);
             })

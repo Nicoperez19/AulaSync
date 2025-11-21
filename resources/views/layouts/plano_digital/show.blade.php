@@ -3349,6 +3349,18 @@
 
             console.log('🔍 DEBUG renderizarInformacionLibre - Estado del espacio disponible:', espacioDisponible, 'Estado indicator:', indicator?.estado);
 
+            // LOGGING TEMPORAL PARA TH-08
+            if (espacioId === 'TH-08') {
+                console.log('🔥 TH-08 DEBUG:', {
+                    espacioId: espacioId,
+                    indicatorFull: indicator,
+                    estadoValue: indicator?.estado,
+                    estadoType: typeof indicator?.estado,
+                    indicatorExists: !!indicator,
+                    dataObject: data
+                });
+            }
+
             // NUNCA mostrar botón desocupar para espacios no ocupados
             // SOLO mostrar si el estado es EXACTAMENTE "Ocupado"
             const espacioOcupado = indicator && (

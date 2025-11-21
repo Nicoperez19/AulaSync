@@ -476,12 +476,18 @@ class ProgramacionSemanalController extends Controller
                 $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
                 $diaReserva = $diasSemana[Carbon::parse($reserva->fecha_reserva)->dayOfWeek];
                 
-                // Obtener el módulo final desde la tabla Modulo
+                // Obtener el módulo final desde la tabla Modulo usando id_modulo
                 $numeroModuloFinal = $this->extraerNumeroModulo($reserva->hora, $diaReserva, $reserva->modulos);
                 if ($numeroModuloFinal) {
-                    $moduloFinal = \App\Models\Modulo::where('dia', $diaReserva)
-                        ->where('numero_modulo', $numeroModuloFinal)
-                        ->first();
+                    // Construir id_modulo (ej: "JU.10")
+                    $prefijosDias = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+                    $diasArray = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+                    $indexDia = array_search($diaReserva, $diasArray);
+                    $prefijo = $indexDia !== false ? $prefijosDias[$indexDia] : 'LU';
+                    
+                    $idModuloFinal = $prefijo . '.' . $numeroModuloFinal;
+                    $moduloFinal = \App\Models\Modulo::where('id_modulo', $idModuloFinal)->first();
+                    
                     if ($moduloFinal) {
                         $horaFin = $moduloFinal->hora_termino;
                     }

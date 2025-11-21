@@ -305,14 +305,18 @@ class SolicitanteController extends Controller
                 ], 400);
             }
 
-            // Obtener horarios desde la tabla Modulo
-            $moduloInicio = \App\Models\Modulo::where('dia', $diaActual)
-                ->where('numero_modulo', $moduloActual)
-                ->first();
-
-            $moduloFin = \App\Models\Modulo::where('dia', $diaActual)
-                ->where('numero_modulo', $moduloActual + $modulosSolicitados - 1)
-                ->first();
+            // Obtener horarios desde la tabla Modulo usando id_modulo
+            // Construir id_modulo (ej: "JU.7")
+            $prefijosDias = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+            $diasArray = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+            $indexDia = array_search($diaActual, $diasArray);
+            $prefijo = $indexDia !== false ? $prefijosDias[$indexDia] : 'LU';
+            
+            $idModuloInicio = $prefijo . '.' . $moduloActual;
+            $idModuloFin = $prefijo . '.' . ($moduloActual + $modulosSolicitados - 1);
+            
+            $moduloInicio = \App\Models\Modulo::where('id_modulo', $idModuloInicio)->first();
+            $moduloFin = \App\Models\Modulo::where('id_modulo', $idModuloFin)->first();
 
             $horaInicio = $moduloInicio ? $moduloInicio->hora_inicio : $horaActual;
             $horaFin = $moduloFin ? $moduloFin->hora_termino : null;
