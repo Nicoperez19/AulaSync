@@ -1,113 +1,181 @@
-<div class="space-y-6">
-    <!-- Reservas sin devolución de llaves -->
-    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-        <div class="p-6">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                Reservas sin devolución de llaves ({{ $reservasSinDevolucion->count() }})
-            </h3>
+<div class="flex flex-col gap-6 md:flex-row">
+    <!-- Reservas Pendientes -->
+    <div class="w-full p-8 bg-white shadow-lg rounded-xl md:w-1/2">
+        <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center justify-center w-6 h-6 text-orange-600 bg-orange-100 rounded-full">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </span>
+                <h3 class="text-lg font-bold text-gray-700">Reservas Activas Pendientes</h3>
+            </div>
+            <span class="px-3 py-1 text-xs font-semibold text-orange-700 bg-orange-100 rounded-full">
+                {{ $reservasSinDevolucion->count() }} pendiente
+            </span>
+        </div>
+        <div class="mb-4 text-xs text-gray-500">Reservas activas que requieren atención (sin devolver)</div>
+        <div class="flex flex-col gap-4">
+            @forelse($reservasSinDevolucion as $reserva)
+                <div class="flex flex-row items-center gap-6 p-4 bg-white border border-gray-100 rounded-lg shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center justify-center w-8 h-8 text-gray-400 bg-gray-100 rounded-full">
+                            <i class="fas fa-user"></i>
+                        </span>
+                        <div>
+                            @if($reserva->run_profesor)
+                                <div class="font-semibold text-gray-800">
+                                    {{ $reserva->profesor->name ?? 'Profesor no encontrado' }}
+                                </div>
+                                <div class="text-xs text-gray-500">RUN: {{ $reserva->profesor->run_profesor ?? 'N/A' }}</div>
+                                <div class="text-xs text-blue-600">Tipo: Profesor</div>
+                            @elseif($reserva->run_solicitante)
+                                <div class="font-semibold text-gray-800">
+                                    {{ $reserva->solicitante->nombre ?? 'Solicitante no encontrado' }}
+                                </div>
+                                <div class="text-xs text-gray-500">RUN: {{ $reserva->solicitante->run_solicitante ?? 'N/A' }}</div>
+                                <div class="text-xs text-green-600">Tipo: Solicitante</div>
+                            @else
+                                <div class="font-semibold text-gray-800">Usuario no identificado</div>
+                                <div class="text-xs text-gray-500">RUN: N/A</div>
+                            @endif
+                        </div>
+                    </div>
 
-            @if($reservasSinDevolucion->isEmpty())
-                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-                    <svg class="mx-auto h-12 w-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <p>No hay reservas pendientes de devolución</p>
+                    <!-- Detalles de la reserva -->
+                    <div class="flex flex-wrap gap-6 text-xs text-gray-600">
+                        <div class="flex items-center gap-1">
+                            <i class="fas fa-map-marker-alt"></i>
+                            {{ $reserva->espacio->id_espacio }}
+                            <span class="ml-1 text-gray-400">{{ $reserva->espacio->nombre_espacio }}</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <i class="fas fa-calendar-alt"></i>
+                            {{ \Carbon\Carbon::parse($reserva->fecha_reserva)->format('d/m/Y') }}
+                            <span class="ml-1 text-gray-400">Fecha reserva</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <i class="fas fa-clock"></i>
+                            {{ $reserva->hora }}
+                            <span class="ml-1 text-gray-400">Hora ingreso</span>
+                        </div>
+                    </div>
                 </div>
-            @else
-                <div class="overflow-x-auto">
-                    <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                        <thead class="bg-gray-50 dark:bg-gray-700">
-                            <tr>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Espacio</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Usuario</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Hora Inicio</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Hora Fin</th>
-                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Tiempo Transcurrido</th>
-                            </tr>
-                        </thead>
-                        <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            @foreach($reservasSinDevolucion as $reserva)
-                                <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                        {{ $reserva->espacio->nombre }}
-                                    </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                        {{ $reserva->user->name }}
-                                    </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                        {{ \Carbon\Carbon::parse($reserva->fecha_reserva . ' ' . $reserva->modulo->hora_inicio)->format('H:i') }}
-                                    </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                                        {{ \Carbon\Carbon::parse($reserva->fecha_reserva . ' ' . $reserva->modulo->hora_fin)->format('H:i') }}
-                                    </td>
-                                    <td class="px-4 py-3 whitespace-nowrap text-sm">
-                                        @php
-                                            $horaFin = \Carbon\Carbon::parse($reserva->fecha_reserva . ' ' . $reserva->modulo->hora_fin);
-                                            $minutos = $horaFin->diffInMinutes(now());
-                                        @endphp
-                                        <span class="px-2 py-1 rounded-full text-xs font-semibold
-                                            @if($minutos < 15) bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200
-                                            @elseif($minutos < 30) bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200
-                                            @else bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200
-                                            @endif">
-                                            {{ $minutos }} min
-                                        </span>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            @endif
+            @empty
+                <div class="py-8 text-center text-gray-500">No hay reservas activas que requieran atención.</div>
+            @endforelse
         </div>
     </div>
 
-    <!-- Accesos actuales en espacios -->
-    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-sm sm:rounded-lg">
-        <div class="p-6">
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                Accesos actuales en espacios ({{ $accesosActuales->count() }})
-            </h3>
-
-            @if($accesosActuales->isEmpty())
-                <div class="text-center py-8 text-gray-500 dark:text-gray-400">
-                    <svg class="mx-auto h-12 w-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                    </svg>
-                    <p>No hay accesos registrados en este momento</p>
-                </div>
-            @else
-                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    @foreach($accesosActuales as $acceso)
-                        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <div class="flex items-start justify-between mb-2">
-                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">
-                                    {{ $acceso->espacio->nombre }}
-                                </h4>
-                                <span class="px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs rounded-full">
-                                    Activo
-                                </span>
+    <!-- Registro de Accesos -->
+    <div class="w-full p-8 bg-white shadow-lg rounded-xl md:w-1/2">
+        <div class="flex items-center justify-between mb-2">
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center justify-center w-6 h-6 text-blue-600 bg-blue-100 rounded-full">
+                    <i class="fas fa-eye"></i>
+                </span>
+                <h3 class="text-lg font-bold text-gray-700">Registro de Accesos</h3>
+            </div>
+            <x-button class="inline-flex items-center gap-2 px-4 py-2 mt-3 text-sm font-medium hover:bg-red-700"
+                variant="primary" href="{{ route('reportes.accesos') }}">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                    <path fill-rule="evenodd"
+                        d="M12.97 3.97a.75.75 0 0 1 1.06 0l7.5 7.5a.75.75 0 0 1 0 1.06l-7.5 7.5a.75.75 0 1 1-1.06-1.06l6.22-6.22H3a.75.75 0 0 1 0-1.5h16.19l-6.22-6.22a.75.75 0 0 1 0-1.06Z"
+                        clip-rule="evenodd" />
+                </svg>
+                Ver detalles
+            </x-button>
+        </div>
+        <div class="flex flex-col gap-4">
+            @forelse($accesosActuales as $acceso)
+                <div class="flex flex-col gap-2 p-4 bg-white border border-gray-100 rounded-lg shadow-sm">
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="inline-flex items-center justify-center w-8 h-8 text-gray-400 bg-gray-100 rounded-full">
+                            <i class="fas fa-user"></i>
+                        </span>
+                        <div>
+                            @if($acceso->run_profesor)
+                                <div class="font-semibold text-gray-800">
+                                    {{ $acceso->profesor->name ?? 'Profesor no encontrado' }}
+                                </div>
+                                <div class="text-xs text-gray-500">
+                                    <span class="mx-1">•</span> 
+                                    <span class="text-blue-700">{{ $acceso->profesor->email ?? 'N/A' }}</span>
+                                </div>
+                                <div class="text-xs text-blue-600">Tipo: Profesor</div>
+                            @elseif($acceso->run_solicitante)
+                                <div class="font-semibold text-gray-800">
+                                    {{ $acceso->solicitante->nombre ?? 'Solicitante no encontrado' }}
+                                </div>
+                                <div class="text-xs text-gray-500">
+                                    <span class="mx-1">•</span> 
+                                    <span class="text-blue-700">{{ $acceso->solicitante->correo ?? 'N/A' }}</span>
+                                </div>
+                                <div class="text-xs text-green-600">Tipo: Solicitante</div>
+                            @else
+                                <div class="font-semibold text-gray-800">Usuario no identificado</div>
+                                <div class="text-xs text-gray-500">
+                                    <span class="mx-1">•</span> 
+                                    <span class="text-blue-700">N/A</span>
+                                </div>
+                            @endif
+                        </div>
+                        <span class="flex items-center gap-1 ml-auto text-xs text-green-600">
+                            <span class="w-2 h-2 bg-green-400 rounded-full"></span> En curso
+                        </span>
+                    </div>
+                    <div class="flex flex-col gap-4 p-3 mb-2 text-xs text-gray-700 rounded-md md:flex-row md:items-start md:justify-between bg-gray-50">
+                        <!-- Bloque: Información del espacio -->
+                        <div class="flex flex-col gap-1">
+                            <div class="flex items-center gap-1">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span class="font-semibold">{{ $acceso->espacio->id_espacio }}</span> -
+                                {{ $acceso->espacio->nombre_espacio }}
                             </div>
-                            <div class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
-                                <p>
-                                    <span class="font-medium">Usuario:</span> {{ $acceso->user->name }}
-                                </p>
-                                <p>
-                                    <span class="font-medium">Entrada:</span>
-                                    {{ \Carbon\Carbon::parse($acceso->hora_entrada)->format('d/m/Y H:i') }}
-                                </p>
-                                @if($acceso->modulo)
-                                    <p>
-                                        <span class="font-medium">Horario:</span>
-                                        {{ \Carbon\Carbon::parse($acceso->modulo->hora_inicio)->format('H:i') }} -
-                                        {{ \Carbon\Carbon::parse($acceso->modulo->hora_fin)->format('H:i') }}
-                                    </p>
-                                @endif
+                            <div class="text-gray-500">
+                                Piso {{ $acceso->espacio->piso->numero_piso ?? '-' }},
+                                {{ $acceso->espacio->piso->facultad->nombre_facultad ?? '' }}
                             </div>
                         </div>
-                    @endforeach
+
+                        <!-- Bloque: Fechas y horas -->
+                        <div class="flex flex-wrap gap-6 text-xs text-gray-600">
+                            <div>
+                                <span class="block text-gray-400">Fecha</span>
+                                <span class="font-semibold text-gray-800">
+                                    {{ \Carbon\Carbon::parse($acceso->fecha_reserva)->format('d/m/Y') }}
+                                </span>
+                            </div>
+                            <div>
+                                <span class="block text-gray-400">Entrada</span>
+                                <span class="font-semibold text-gray-800">{{ $acceso->hora }}</span>
+                            </div>
+                            <div>
+                                <span class="block text-gray-400">Salida</span>
+                                <span class="font-semibold text-gray-800">{{ $acceso->hora_salida ?? 'En curso' }}</span>
+                            </div>
+                            <div>
+                                <span class="block text-gray-400">Tipo</span>
+                                <span class="font-semibold text-gray-800">{{ ucfirst($acceso->tipo_reserva) }}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            @endif
+            @empty
+                <div class="py-8 text-center text-gray-500 bg-white ">
+                    <i class="fas fa-info-circle text-blue-500 mb-2"></i>
+                    <p class="font-medium">No hay usuarios actualmente en espacios.</p>
+                </div>
+            @endforelse
         </div>
     </div>
 </div>
+
+<?php
+$reserva = new App\Models\Reserva();
+$reserva->run_profesor = $profesor->run_profesor;
+$reserva->fecha_reserva = today();
+$reserva->hora = now()->format('H:i:s');
+$reserva->estado = 'activa';
+$reserva->tipo_reserva = 'clase';
+$reserva->hora_salida = null;
+$reserva->save();
+?>

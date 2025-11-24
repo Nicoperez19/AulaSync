@@ -889,7 +889,7 @@ class DashboardController extends Controller
         $facultad = 'IT_TH';
 
         $reservasSinDevolucion = $this->obtenerReservasActivasSinDevolucion($facultad, $piso);
-        $accesosActuales = Reserva::with(['user', 'espacio.piso.facultad', 'modulo'])
+        $accesosActuales = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
             ->where('estado', 'activa')
             ->whereNull('hora_salida')
             ->whereHas('espacio', function($query) use ($facultad, $piso) {
@@ -986,7 +986,16 @@ class DashboardController extends Controller
     private function obtenerReservasActivasSinDevolucion($facultad, $piso)
     {
         return Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
-            ->where('estado', 'activa')           // Solo reservas activas
+            ->where('estado', 'activa')
+            ->whereNull('hora_salida')
+            ->whereHas('espacio', function($query) use ($facultad, $piso) {
+                $query->whereHas('piso', function($q) use ($facultad, $piso) {
+                    $q->where('id_facultad', $facultad);
+                    if ($piso) {
+                        $q->where('numero_piso', $piso);
+                    }
+                });
+            })
             ->latest('fecha_reserva')
             ->latest('hora')
             ->get();
