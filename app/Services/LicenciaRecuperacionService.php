@@ -21,7 +21,13 @@ class LicenciaRecuperacionService
      */
     public function generarClasesARecuperar(LicenciaProfesor $licencia)
     {
+        Log::info("=== INICIO: Generando clases a recuperar para licencia ID: {$licencia->id_licencia} ===");
+        Log::info("Genera recuperación: " . ($licencia->genera_recuperacion ? 'SI' : 'NO'));
+        Log::info("Profesor: {$licencia->run_profesor}");
+        Log::info("Rango: {$licencia->fecha_inicio} a {$licencia->fecha_fin}");
+        
         if (!$licencia->genera_recuperacion) {
+            Log::info("Licencia no genera recuperación. Saliendo.");
             return 0;
         }
 
@@ -32,6 +38,7 @@ class LicenciaRecuperacionService
 
             // Obtener todas las planificaciones del profesor en el rango de fechas de la licencia
             $planificaciones = $this->obtenerPlanificacionesEnRango($licencia);
+            Log::info("Planificaciones encontradas: " . $planificaciones->count());
 
             foreach ($planificaciones as $planificacion) {
                 // Verificar si ya existe una recuperación para esta clase
