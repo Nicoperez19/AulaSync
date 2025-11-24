@@ -78,9 +78,21 @@ class DashboardController extends Controller
         // Datos para pestaña "Utilización" (se cargarán on-demand, pero incluimos valores vacíos)
         $comparativaTipos = [];
 
-        // Datos para pestaña "Accesos" (se cargarán on-demand)
-        $reservasSinDevolucion = collect();
-        $accesosActuales = collect();
+        // Datos para pestaña "Accesos"
+        $reservasSinDevolucion = $this->obtenerReservasActivasSinDevolucion($facultad, $piso);
+        $accesosActuales = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
+            ->where('estado', 'activa')
+            ->whereNull('hora_salida')
+            ->whereHas('espacio', function($query) use ($facultad, $piso) {
+                $query->whereHas('piso', function($q) use ($facultad, $piso) {
+                    $q->where('id_facultad', $facultad);
+                    if ($piso) {
+                        $q->where('numero_piso', $piso);
+                    }
+                });
+            })
+            ->orderBy('fecha_reserva', 'desc')
+            ->get();
 
         // Obtener módulo actual
         $moduloActual = Modulo::where('dia', Carbon::now()->format('l'))
