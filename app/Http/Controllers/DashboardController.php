@@ -506,8 +506,10 @@ class DashboardController extends Controller
             // Solo contar ocupados si la hora actual está en el turno solicitado
             if ($this->esTurno($horaActual, $turno)) {
                 $ocupados = (clone $reservasActivasQuery)
-                    ->distinct('id_espacio')
-                    ->count('id_espacio');
+                    ->select('id_espacio')
+                    ->groupBy('id_espacio')
+                    ->get()
+                    ->count();
             } else {
                 // Si no estamos en el turno, todas están libres
                 $ocupados = 0;
@@ -515,8 +517,10 @@ class DashboardController extends Controller
         } else {
             // Sin filtro de turno: contar todas las reservas activas
             $ocupados = (clone $reservasActivasQuery)
-                ->distinct('id_espacio')
-                ->count('id_espacio');
+                ->select('id_espacio')
+                ->groupBy('id_espacio')
+                ->get()
+                ->count();
         }
 
         $libres = $totalEspacios - $ocupados;
@@ -651,6 +655,7 @@ class DashboardController extends Controller
 
             // IMPORTANTE: Contar espacios ocupados AHORA basándose SOLO en reservas activas del día actual
             // Esto incluye TODAS las reservas: de profesores (run_profesor) Y espontáneas (run_solicitante)
+            // CORRECCIÓN: usar groupBy para contar espacios únicos correctamente
             $espaciosOcupados = Reserva::where('estado', 'activa')
                 ->where('fecha_reserva', Carbon::today())
                 ->whereHas('espacio', function($query) use ($tipo, $facultad, $piso) {
@@ -662,8 +667,10 @@ class DashboardController extends Controller
                             }
                         });
                 })
-                ->distinct('id_espacio')
-                ->count('id_espacio');
+                ->select('id_espacio')
+                ->groupBy('id_espacio')
+                ->get()
+                ->count();
 
             $result[] = [
                 'nombre' => $tipo,
