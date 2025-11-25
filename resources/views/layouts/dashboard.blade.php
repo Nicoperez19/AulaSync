@@ -278,7 +278,7 @@
                             :class="activeTab === 'clases-no-realizadas' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                             class="whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors">
                         <i class="fas fa-exclamation-circle mr-2"></i>
-                        Clases registradas
+                        Clases no registradas
                     </button>
                 </nav>
 
@@ -346,7 +346,7 @@
                             <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6 sticky top-6">
                                 <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                                     <i class="fas fa-door-open text-blue-600"></i>
-                                    Estado Actual de Salas
+                                    Estado Actual de Espacios
                                 </h4>
                                 <div class="flex justify-center items-center mb-4">
                                     <div class="w-[220px] h-[220px]">

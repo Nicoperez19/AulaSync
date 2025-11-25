@@ -493,14 +493,17 @@ class DashboardController extends Controller
 
     private function obtenerSalasOcupadas($facultad, $piso, $turno = null)
     {
-        $espaciosQuery = $this->obtenerEspaciosQuery($facultad, $piso);
+        // SOLO contar Salas de Clases para el KPI de % Ocupación
+        $espaciosQuery = $this->obtenerEspaciosQuery($facultad, $piso)
+            ->where('tipo_espacio', 'Sala de Clases');
+        
         $totalEspacios = (clone $espaciosQuery)->count();
         
         // Obtener IDs de los espacios que cumplen el filtro (solo Salas de Clases)
         $idsEspaciosValidos = (clone $espaciosQuery)->pluck('id_espacio');
 
         // CORRECCIÓN CRÍTICA: Contar espacios ocupados basándose en RESERVAS ACTIVAS del día actual
-        // SOLO de los espacios que devuelve obtenerEspaciosQuery (Salas de Clases)
+        // SOLO de los espacios que son Salas de Clases
         $reservasActivasQuery = Reserva::where('estado', 'activa')
             ->where('fecha_reserva', Carbon::today())
             ->whereIn('id_espacio', $idsEspaciosValidos);
