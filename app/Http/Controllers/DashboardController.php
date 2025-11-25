@@ -486,9 +486,9 @@ class DashboardController extends Controller
         $espaciosQuery = $this->obtenerEspaciosQuery($facultad, $piso);
         $totalEspacios = (clone $espaciosQuery)->count();
 
-        // Contar espacios ocupados basándose en reservas activas del día actual
-        // Incluye tanto reservas de profesores como reservas espontáneas
-        $espaciosOcupadosQuery = Reserva::where('estado', 'activa')
+        // CORRECCIÓN CRÍTICA: Contar espacios ocupados basándose en RESERVAS ACTIVAS del día actual
+        // Incluye TODAS las reservas: de profesores (run_profesor) Y espontáneas (run_solicitante)
+        $reservasActivasQuery = Reserva::where('estado', 'activa')
             ->where('fecha_reserva', Carbon::today())
             ->whereHas('espacio', function($query) use ($facultad, $piso) {
                 $query->whereHas('piso', function($q) use ($facultad, $piso) {
@@ -505,15 +505,16 @@ class DashboardController extends Controller
 
             // Solo contar ocupados si la hora actual está en el turno solicitado
             if ($this->esTurno($horaActual, $turno)) {
-                $ocupados = (clone $espaciosOcupadosQuery)
+                $ocupados = (clone $reservasActivasQuery)
                     ->distinct('id_espacio')
                     ->count('id_espacio');
             } else {
-                // Si no estamos en el turno, todas están libres para ese turno
+                // Si no estamos en el turno, todas están libres
                 $ocupados = 0;
             }
         } else {
-            $ocupados = (clone $espaciosOcupadosQuery)
+            // Sin filtro de turno: contar todas las reservas activas
+            $ocupados = (clone $reservasActivasQuery)
                 ->distinct('id_espacio')
                 ->count('id_espacio');
         }
@@ -644,12 +645,12 @@ class DashboardController extends Controller
             // Total horas utilizadas = planificaciones + reservas espontáneas
             $horasUtilizadas = $horasPlanificaciones + $horasReservas;
 
-            // Calcular porcentaje real basado en horas
+            // Calcular porcentaje real basado en horas (para el reporte mensual)
             $porcentaje = $totalHorasDisponibles > 0 ?
                 round(($horasUtilizadas / $totalHorasDisponibles) * 100) : 0;
 
-            // Contar espacios ocupados actualmente basándose SOLO en reservas activas del día actual
-            // Incluye tanto reservas de profesores como reservas espontáneas
+            // IMPORTANTE: Contar espacios ocupados AHORA basándose SOLO en reservas activas del día actual
+            // Esto incluye TODAS las reservas: de profesores (run_profesor) Y espontáneas (run_solicitante)
             $espaciosOcupados = Reserva::where('estado', 'activa')
                 ->where('fecha_reserva', Carbon::today())
                 ->whereHas('espacio', function($query) use ($tipo, $facultad, $piso) {
@@ -965,10 +966,9 @@ class DashboardController extends Controller
         $facultad = 'IT_TH';
 
         $reservasSinDevolucion = $this->obtenerReservasActivasSinDevolucion($facultad, $piso);
-        // Incluir TODAS las reservas activas: de profesores (run_profesor) y espontáneas (run_solicitante)
-        $accesosActuales = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad', 'asignatura'])
+        $accesosActuales = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
             ->where('estado', 'activa')
-            ->where('fecha_reserva', Carbon::today())
+            ->whereNull('hora_salida')
             ->whereHas('espacio', function($query) use ($facultad, $piso) {
                 $query->whereHas('piso', function($q) use ($facultad, $piso) {
                     $q->where('id_facultad', $facultad);
@@ -979,7 +979,6 @@ class DashboardController extends Controller
                 // Pestaña de Accesos muestra TODOS los tipos de espacios
             })
             ->orderBy('fecha_reserva', 'desc')
-            ->orderBy('hora', 'desc')
             ->get();
             
         Log::info('getAccesosData - Datos cargados', [

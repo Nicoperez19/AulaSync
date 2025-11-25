@@ -720,9 +720,6 @@ class ModulosActualesTable extends Component
                         $tieneClase = false;
                         $tieneReservaSolicitante = false;
                         $tieneReservaProfesor = false;
-                        
-                        // Si hay reserva de profesor o solicitante activa, el espacio está ocupado
-                        $tieneReservaActiva = $reservaProfesor || $reservaSolicitante;
                         $datosClase = null;
                         $datosSolicitante = null;
                         $datosProfesor = null;
@@ -983,7 +980,6 @@ class ModulosActualesTable extends Component
 
                         if ($reservaSolicitante) {
                             $tieneReservaSolicitante = true;
-                            $tieneReservaActiva = true;
                             $datosSolicitante = [
                                 'nombre' => $reservaSolicitante->solicitante->nombre ?? '-',
                                 'run' => $reservaSolicitante->run_solicitante ?? '-',
@@ -996,7 +992,6 @@ class ModulosActualesTable extends Component
                         // PRIORIDAD 1: Procesar reserva de profesor PRIMERO (es la clase que realmente está dando)
                         if ($reservaProfesor) {
                             $tieneReservaProfesor = true;
-                            $tieneReservaActiva = true;
                             
                             // Si la reserva tiene asignatura, usarla para obtener la planificación correcta
                             if ($reservaProfesor->asignatura) {
@@ -1120,8 +1115,9 @@ class ModulosActualesTable extends Component
                             $estado = 'Disponible';
                             $tieneClase = false;
                             $datosClase = null;
-                        } elseif ($tieneReservaActiva && ($tieneReservaProfesor || $tieneReservaSolicitante)) {
-                            // PRIORIDAD: Si hay una reserva activa (profesor o solicitante), el espacio está ocupado
+                        } elseif ($tieneReservaSolicitante) {
+                            // CORRECIÓN BUG 2: Si hay reserva espontánea activa, SIEMPRE mostrar como Ocupado
+                            // Esto debe evaluarse ANTES que las verificaciones de clase finalizada
                             $estado = 'Ocupado';
                         } elseif ($tieneClase && ($claseFinalizada || $claseTerminoAntes)) {
                             // Si la clase ya terminó (por horario o porque el profesor se fue antes)
@@ -1143,9 +1139,6 @@ class ModulosActualesTable extends Component
                                 $tieneReservaProfesor = false;
                                 $datosProfesor = null;
                             }
-                        } elseif ($tieneReservaSolicitante) {
-                            // Si hay reserva de solicitante
-                            $estado = 'Ocupado';
                         } elseif ($tieneClase && ! $tieneReservaProfesor && $claseNoRealizada) {
                             // Si hay clase programada pero se detectó que no fue realizada
                             $estado = 'Clase no realizada';

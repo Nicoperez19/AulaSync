@@ -101,7 +101,7 @@ class Notificacion extends Model
 
             \Log::info('Creando notificaciones de clase no realizada - Usuarios encontrados: ' . $usuarios->count());
 
-            // Cargar relaciones necesarias
+            // Cargar relaciones necesarias con eager loading
             $claseNoRealizada->load(['asignatura', 'profesor', 'espacio', 'modulo']);
             
             $asignatura = $claseNoRealizada->asignatura;
@@ -109,29 +109,32 @@ class Notificacion extends Model
             $espacio = $claseNoRealizada->espacio;
             $modulo = $claseNoRealizada->modulo;
             
-            // Obtener el nombre completo del profesor
+            // Obtener nombre completo del profesor con fallback a múltiples campos
             $nombreProfesor = 'Desconocido';
             if ($profesor) {
-                if (isset($profesor->name)) {
+                if (isset($profesor->name) && !empty($profesor->name)) {
                     $nombreProfesor = $profesor->name;
                 } else if (isset($profesor->nombres) && isset($profesor->apellido_paterno)) {
                     $nombreProfesor = trim($profesor->nombres . ' ' . $profesor->apellido_paterno);
+                } else if (isset($profesor->run)) {
+                    $nombreProfesor = 'Profesor RUN: ' . $profesor->run;
                 }
             }
             
-            // Obtener la hora de inicio del módulo
-            $horaClase = 'hora desconocida';
+            // Construir hora del módulo
+            $horaModulo = 'hora no especificada';
             if ($modulo && $modulo->hora_inicio) {
-                $horaClase = substr($modulo->hora_inicio, 0, 5);
+                $horaModulo = substr($modulo->hora_inicio, 0, 5); // HH:MM
             }
 
             $titulo = 'Clase no realizada';
             $mensaje = sprintf(
-                'El profesor %s no registró clase en %s el %s a las %s',
+                'El profesor %s no registró clase de %s en %s el %s a las %s',
                 $nombreProfesor,
+                $asignatura->nombre_asignatura ?? 'Desconocida',
                 $espacio->id_espacio ?? 'Desconocido',
                 $claseNoRealizada->fecha_clase->format('d/m/Y'),
-                $horaClase
+                $horaModulo
             );
 
             foreach ($usuarios as $usuario) {
@@ -146,9 +149,11 @@ class Notificacion extends Model
                         'id_asignatura' => $claseNoRealizada->id_asignatura,
                         'run_profesor' => $claseNoRealizada->run_profesor,
                         'nombre_profesor' => $nombreProfesor,
+                        'nombre_asignatura' => $asignatura->nombre_asignatura ?? 'Desconocida',
                         'fecha_clase' => $claseNoRealizada->fecha_clase->toDateString(),
                         'id_espacio' => $claseNoRealizada->id_espacio,
-                        'hora_clase' => $horaClase,
+                        'hora_modulo' => $horaModulo,
+                        'id_modulo' => $claseNoRealizada->id_modulo,
                     ],
                 ]);
 

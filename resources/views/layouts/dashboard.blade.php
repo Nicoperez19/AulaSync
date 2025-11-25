@@ -1346,14 +1346,19 @@
             }
 
             // Gráfico circular: Salas ocupadas/libres
+            // CORRECCIÓN BUG 6: Solo inicializar cuando los datos estén disponibles
             const canvasCircular = document.getElementById('grafico-circular-salas');
-            if (canvasCircular && !window.graficoCircularSalas) {
+            const ocupadasInicial = {{ $salasOcupadas['total']['ocupadas'] ?? 0 }};
+            const libresInicial = {{ $salasOcupadas['total']['libres'] ?? 0 }};
+            
+            // Validar que los datos sean válidos antes de crear el gráfico
+            if (canvasCircular && !window.graficoCircularSalas && (ocupadasInicial + libresInicial) > 0) {
                 window.graficoCircularSalas = new Chart(canvasCircular, {
         type: 'doughnut',
         data: {
             labels: ['Ocupadas', 'Libres'],
             datasets: [{
-                data: [{{ $salasOcupadas['total']['ocupadas'] }}, {{ $salasOcupadas['total']['libres'] }}],
+                data: [ocupadasInicial, libresInicial],
                 backgroundColor: [
                     'rgba(239, 68, 68, 0.7)', // rojo
                     'rgba(16, 185, 129, 0.7)' // verde
@@ -1363,6 +1368,10 @@
         },
         options: {
             cutout: '70%',
+            animation: {
+                duration: 750, // Animación suave de 750ms
+                easing: 'easeInOutQuart'
+            },
             plugins: {
                 legend: { display: false },
                 tooltip: {
