@@ -34,7 +34,18 @@
             <div
                 class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="font-semibold text-gray-500">Estadísticas de Hoy</span>
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-gray-500">Estadísticas de Hoy</span>
+                        <div class="group relative cursor-help">
+                            <i class="text-sm text-gray-400 fa-solid fa-circle-info hover:text-blue-500 transition-colors"></i>
+                            <div class="invisible group-hover:visible absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-56 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-lg z-50 whitespace-normal">
+                                <p class="font-semibold mb-2">Estadísticas de Hoy:</p>
+                                <p class="mb-2"><strong>Total Reservas:</strong> Contabiliza todas las reservas registradas durante el día actual.</p>
+                                <p class="text-gray-300"><strong>Sala más usada:</strong> La sala con más reservas registradas en el día.</p>
+                                <div class="absolute -top-1 left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
+                            </div>
+                        </div>
+                    </div>
                     <span class="p-2 text-blue-500 bg-blue-100 rounded-full"><i
                             class="text-xl fa-solid fa-chart-line"></i></span>
                 </div>
@@ -59,7 +70,23 @@
             <div
                 class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="font-semibold text-gray-500">% Ocupación Semanal</span>
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-gray-500">% Ocupación Semanal </span>
+                        <div class="group relative cursor-help">
+                            <i class="text-sm text-gray-400 fa-solid fa-circle-info hover:text-blue-500 transition-colors"></i>
+                            <div class="invisible group-hover:visible absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-60 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-lg z-50 whitespace-normal">
+                                <p class="font-semibold mb-2">Cálculo de Ocupación Semanal:</p>
+                                <p class="mb-2">Promedio de ocupación de espacios de lunes a sábado (sábado hasta las 13:00hrs).</p>
+                                <p class="font-semibold text-gray-200 mb-1">Fórmula:</p>
+                                <p class="bg-gray-700 p-2 rounded text-gray-100 mb-2 font-mono text-xs">Promedio del promedio de ocupación por hora (Solo Reservas)</p>
+                                <p class="text-gray-300 mb-1"><strong>Diurno:</strong> 8:00 - 19:00 (11 horas)</p>
+                                <p class="text-gray-300 mb-1"><strong>Vespertino:</strong> 19:00 - 23:00 (4 horas)</p>
+                                <p class="text-gray-300"><strong>Sábado:</strong> 8:00 - 13:00 (5 horas)</p>
+                                <p class="text-gray-300 mt-2">Se promedian todos los valores horarios de la semana. No incluye clases regulares.</p>
+                                <div class="absolute -top-1 left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
+                            </div>
+                        </div>
+                    </div>
                     <span class="p-2 text-purple-500 bg-purple-100 rounded-full"><i
                             class="text-xl fa-solid fa-chart-column"></i></span>
                 </div>
@@ -83,7 +110,20 @@
             <div
                 class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="font-semibold text-gray-500">% Salas Desocupadas</span>
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-gray-500">% Salas de Clases Desocupadas</span>
+                        <div class="group relative cursor-help">
+                            <i class="text-sm text-gray-400 fa-solid fa-circle-info hover:text-green-500 transition-colors"></i>
+                            <div class="invisible group-hover:visible absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-56 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-lg z-50 whitespace-normal">
+                                <p class="font-semibold mb-2">Cálculo de Salas Desocupadas:</p>
+                                <p class="mb-2">Porcentaje de salas libres en el momento actual.</p>
+                                <p class="font-semibold text-gray-200 mb-1">Fórmula:</p>
+                                <p class="bg-gray-700 p-2 rounded text-gray-100 mb-2 font-mono text-xs">(Salas Libres / Total Salas) × 100</p>
+                                <p class="text-gray-300">Se contabiliza en tiempo real basado en el estado actual de todas las salas.</p>
+                                <div class="absolute -top-1 left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
+                            </div>
+                        </div>
+                    </div>
                     <span class="p-2 text-green-500 bg-green-100 rounded-full"><i
                             class="text-xl fa-solid fa-door-open"></i></span>
                 </div>
@@ -111,7 +151,22 @@
             <div
                 class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
                 <div class="flex items-center justify-between mb-2">
-                    <span class="font-semibold text-gray-500">Promedio Ocupación Mensual</span>
+                    <div class="flex items-center gap-2">
+                        <span class="font-semibold text-gray-500">Promedio Ocupación Mensual</span>
+                        <div class="group relative cursor-help">
+                            <i class="text-sm text-gray-400 fa-solid fa-circle-info hover:text-orange-500 transition-colors"></i>
+                            <div class="invisible group-hover:visible absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-60 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-lg z-50 whitespace-normal">
+                                <p class="font-semibold mb-2">Cálculo de Ocupación Mensual Promedio:</p>
+                                <p class="mb-2">Porcentaje promedio de ocupación de espacios durante todo el mes actual (Solo Reservas).</p>
+                                <p class="font-semibold text-gray-200 mb-1">Fórmula:</p>
+                                <p class="bg-gray-700 p-2 rounded text-gray-100 mb-2 font-mono text-xs">(Total Horas Reservadas / Total Horas Disponibles) × 100</p>
+                                <p class="text-gray-300 mb-1"><strong>Diurno:</strong> 8:00 - 19:00 (11 horas)</p>
+                                <p class="text-gray-300"><strong>Vespertino:</strong> 19:00 - 23:00 (4 horas)</p>
+                                <p class="text-gray-300 mt-2">Se promedia entre todos los días del mes. No incluye clases regulares.</p>
+                                <div class="absolute -top-1 left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
+                            </div>
+                        </div>
+                    </div>
                     <span class="p-2 text-orange-500 bg-orange-100 rounded-full"><i
                             class="text-xl fa-solid fa-wave-square"></i></span>
                 </div>

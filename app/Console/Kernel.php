@@ -78,6 +78,14 @@ class Kernel extends ConsoleKernel
                 ->withoutOverlapping()
                 ->runInBackground()
                 ->appendOutputTo(storage_path('logs/clases-no-realizadas.log'));
+
+        // Finalizar reservas sin devolución de llave después de 1 hora del término del módulo
+        // Se ejecuta cada 5 minutos para verificar las reservas que han excedido la hora de gracia
+        $schedule->command('reservas:finalizar-no-devueltas')
+                ->everyFiveMinutes()
+                ->withoutOverlapping()
+                ->runInBackground()
+                ->appendOutputTo(storage_path('logs/reservas-no-devueltas.log'));
     }
 
     /**
