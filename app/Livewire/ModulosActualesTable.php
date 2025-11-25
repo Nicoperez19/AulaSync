@@ -410,12 +410,10 @@ class ModulosActualesTable extends Component
             return false;
         }
 
-        // Si estamos en break, la clase NO está en curso
-        if (isset($moduloActual['tipo']) && $moduloActual['tipo'] === 'break') {
-            return false;
-        }
-
+        // CORRECCIÓN: Durante breaks, verificar si estamos dentro del rango horario de la clase
+        // Una clase que va del módulo 3 al 5 sigue ocupando la sala durante el break entre módulos
         // La clase está en curso si estamos entre el módulo de inicio y fin (inclusive)
+        // Esto aplica tanto para módulos regulares como para breaks entre ellos
         return $moduloActual['numero'] >= $numeroModuloInicio && $moduloActual['numero'] <= $numeroModuloFin;
     }
 

@@ -252,8 +252,10 @@ class DashboardController extends Controller
         $inicioSemana = Carbon::now()->startOfWeek();
         $finSemana = Carbon::now()->endOfWeek();
 
-        // Obtener número total de espacios disponibles
-        $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)->count();
+        // Obtener número total de SALAS DE CLASES disponibles (no todos los espacios)
+        $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)
+            ->where('tipo_espacio', 'Sala de Clases')
+            ->count();
 
         // Calcular total de horas disponibles considerando cada día de la semana
         $totalHoras = 0;
@@ -329,20 +331,22 @@ class DashboardController extends Controller
         foreach ($modulos as $modulo) {
             $espaciosOcupados = Planificacion_Asignatura::where('id_modulo', $modulo->id_modulo)
                 ->whereHas('espacio', function($query) use ($piso) {
+                    // Solo Salas de Clases
+                    $query->where('tipo_espacio', 'Sala de Clases');
                     if ($piso) {
                         $query->whereHas('piso', function($q) use ($piso) {
                             $q->where('numero_piso', $piso);
                         });
                     }
-                    // Solo considerar Salas de Clases
-                    $query->where('tipo_espacio', 'Sala de Clases');
                 })
                 ->whereHas('espacio', function($query) {
                     $query->where('estado', 'Ocupado');
                 })
                 ->count();
 
-            $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)->count();
+            $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)
+                ->where('tipo_espacio', 'Sala de Clases')
+                ->count();
 
             $porcentaje = $totalEspacios > 0 ? ($espaciosOcupados / $totalEspacios) * 100 : 0;
 
@@ -357,8 +361,10 @@ class DashboardController extends Controller
         $inicioMes = Carbon::now()->startOfMonth();
         $finMes = Carbon::now()->endOfMonth();
 
-        // Obtener número total de espacios disponibles
-        $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)->count();
+        // Obtener número total de SALAS DE CLASES disponibles (no todos los espacios)
+        $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)
+            ->where('tipo_espacio', 'Sala de Clases')
+            ->count();
 
         // Calcular total de horas disponibles considerando cada día del mes
         $totalHoras = 0;
@@ -424,8 +430,10 @@ class DashboardController extends Controller
     {
         $hoy = Carbon::today();
 
-        // Obtener los espacios de la facultad y piso especificados
-        $espacios = $this->obtenerEspaciosQuery($facultad, $piso)->pluck('id_espacio');
+        // Obtener los espacios de la facultad y piso especificados (solo Salas de Clases)
+        $espacios = $this->obtenerEspaciosQuery($facultad, $piso)
+            ->where('tipo_espacio', 'Sala de Clases')
+            ->pluck('id_espacio');
 
         // Obtener profesores que no tienen reservas hoy en los espacios especificados
         return Profesor::whereDoesntHave('reservas', function($query) use ($hoy, $espacios) {
@@ -438,8 +446,10 @@ class DashboardController extends Controller
     {
         $hoy = Carbon::today();
 
-        // Obtener total de espacios para calcular horas disponibles correctamente
-        $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)->count();
+        // Obtener total de SALAS DE CLASES para calcular horas disponibles correctamente
+        $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)
+            ->where('tipo_espacio', 'Sala de Clases')
+            ->count();
         $horasPorDia = $this->horasPorTurno($turno, $hoy);
         $totalHorasDisponibles = $totalEspacios * $horasPorDia;
 
@@ -485,19 +495,15 @@ class DashboardController extends Controller
     {
         $espaciosQuery = $this->obtenerEspaciosQuery($facultad, $piso);
         $totalEspacios = (clone $espaciosQuery)->count();
+        
+        // Obtener IDs de los espacios que cumplen el filtro (solo Salas de Clases)
+        $idsEspaciosValidos = (clone $espaciosQuery)->pluck('id_espacio');
 
         // CORRECCIÓN CRÍTICA: Contar espacios ocupados basándose en RESERVAS ACTIVAS del día actual
-        // Incluye TODAS las reservas: de profesores (run_profesor) Y espontáneas (run_solicitante)
+        // SOLO de los espacios que devuelve obtenerEspaciosQuery (Salas de Clases)
         $reservasActivasQuery = Reserva::where('estado', 'activa')
             ->where('fecha_reserva', Carbon::today())
-            ->whereHas('espacio', function($query) use ($facultad, $piso) {
-                $query->whereHas('piso', function($q) use ($facultad, $piso) {
-                    $q->where('id_facultad', $facultad);
-                    if ($piso) {
-                        $q->where('numero_piso', $piso);
-                    }
-                });
-            });
+            ->whereIn('id_espacio', $idsEspaciosValidos);
 
         // Si se especifica turno, filtrar por hora actual
         if ($turno !== null) {
@@ -935,14 +941,15 @@ class DashboardController extends Controller
 
     private function obtenerEspaciosQuery($facultad, $piso)
     {
+        // IMPORTANTE: Este método devuelve TODOS los tipos de espacio (no solo Salas de Clases)
+        // Se usa para el gráfico "Estado Actual de Espacios" que debe mostrar TODOS los tipos
         return Espacio::whereHas('piso', function($query) use ($facultad, $piso) {
             $query->where('id_facultad', $facultad);
             if ($piso) {
                 $query->where('numero_piso', $piso);
             }
-        })
-        // Solo considerar Salas de Clases (excluir Taller, Laboratorio y Sala de Estudio)
-        ->where('tipo_espacio', 'Sala de Clases');
+        });
+        // NO filtrar por tipo_espacio aquí, se filtra en cada método según necesidad
     }
 
     /**

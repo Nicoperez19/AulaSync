@@ -278,7 +278,7 @@
                             :class="activeTab === 'clases-no-realizadas' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                             class="whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors">
                         <i class="fas fa-exclamation-circle mr-2"></i>
-                        Clases No Realizadas
+                        Clases registradas
                     </button>
                 </nav>
 
@@ -548,9 +548,6 @@
                 </div>
             </div>
         </div>
-                    </div>
-                </div>
-            </div>
 
                 <!-- Tab Content: Clases No Realizadas -->
                 <div x-show="activeTab === 'clases-no-realizadas'" x-cloak class="mt-6">
@@ -561,6 +558,9 @@
                         </div>
                     </div>
                 </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
         {{-- <div class="w-full p-8 mb-8 bg-white shadow-lg rounded-xl">
@@ -850,6 +850,7 @@
         try {
             actualizarGraficoCircularSalas(data.salasOcupadas);
         } catch (error) {
+            console.warn('Error actualizando gráfico circular:', error);
             errores.push(`Error al actualizar gráfico circular de salas: ${error.message}`);
         }
 
@@ -881,8 +882,6 @@
             } else {
                 mostrarNotificacion(`${errores.length} errores en la actualización.`, 'error', 5000);
             }
-        } else {
-
         }
     }
 
@@ -1099,15 +1098,25 @@
         if (window.graficoCircularSalas && salasOcupadas && salasOcupadas.total) {
             const ocupadas = salasOcupadas.total.ocupadas || 0;
             const libres = salasOcupadas.total.libres || 0;
+            
+            // Solo actualizar si tenemos datos válidos (evitar resetear a 0)
+            if (ocupadas >= 0 && libres >= 0 && (ocupadas + libres) > 0) {
+                window.graficoCircularSalas.data.datasets[0].data = [libres, ocupadas];
+                window.graficoCircularSalas.update('active');
 
-            window.graficoCircularSalas.data.datasets[0].data = [ocupadas, libres];
-            window.graficoCircularSalas.update('active');
-
-            // Actualizar el elemento HTML que muestra las salas ocupadas
-            const elementoSalas = document.getElementById('salas-ocupadas');
-            if (elementoSalas) {
-                const total = ocupadas + libres;
-                elementoSalas.innerHTML = `${ocupadas} <span class="text-gray-400"> de </span> ${total} <span class="text-gray-400"> en total</span>`;
+                // Actualizar el elemento HTML que muestra las salas ocupadas
+                const elementoSalas = document.getElementById('salas-ocupadas');
+                if (elementoSalas) {
+                    const total = ocupadas + libres;
+                    elementoSalas.innerHTML = `
+                        <div class="text-3xl font-bold text-purple-600">
+                            ${ocupadas}
+                        </div>
+                        <div class="text-sm text-gray-500 mt-1">
+                            de ${total} salas en total
+                        </div>
+                    `;
+                }
             }
         }
     }
@@ -1346,79 +1355,89 @@
             }
 
             // Gráfico circular: Salas ocupadas/libres
-            // CORRECCIÓN BUG 6: Solo inicializar cuando los datos estén disponibles
             const canvasCircular = document.getElementById('grafico-circular-salas');
-            const ocupadasInicial = {{ $salasOcupadas['total']['ocupadas'] ?? 0 }};
-            const libresInicial = {{ $salasOcupadas['total']['libres'] ?? 0 }};
-            
-            // Validar que los datos sean válidos antes de crear el gráfico
-            if (canvasCircular && !window.graficoCircularSalas && (ocupadasInicial + libresInicial) > 0) {
+            if (canvasCircular && !window.graficoCircularSalas) {
                 window.graficoCircularSalas = new Chart(canvasCircular, {
-        type: 'doughnut',
-        data: {
-            labels: ['Ocupadas', 'Libres'],
-            datasets: [{
-                data: [ocupadasInicial, libresInicial],
-                backgroundColor: [
-                    'rgba(239, 68, 68, 0.7)', // rojo
-                    'rgba(16, 185, 129, 0.7)' // verde
-                ],
-                borderWidth: 2
-            }]
-        },
-        options: {
-            cutout: '70%',
-            animation: {
-                duration: 750, // Animación suave de 750ms
-                easing: 'easeInOutQuart'
-            },
-            plugins: {
-                legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: function (context) {
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const porcentaje = ((context.parsed / total) * 100).toFixed(1);
-                            return context.label + ': ' + context.parsed + ' (' + porcentaje + '%)';
-                        },
-                        afterLabel: function (context) {
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const porcentajeOcupacion = ((context.dataset.data[0] / total) * 100).toFixed(1);
-                            return 'Porcentaje de ocupación del día: ' + porcentajeOcupacion + '%';
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Libres', 'Ocupadas'],
+                        datasets: [{
+                            data: [{{ $salasOcupadas['total']['libres'] }}, {{ $salasOcupadas['total']['ocupadas'] }}],
+                            backgroundColor: [
+                                'rgba(16, 185, 129, 0.7)', // verde para libres
+                                'rgba(239, 68, 68, 0.7)' // rojo para ocupadas
+                            ],
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        cutout: '70%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function (context) {
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const porcentaje = ((context.parsed / total) * 100).toFixed(1);
+                                        return context.label + ': ' + context.parsed + ' (' + porcentaje + '%)';
+                                    },
+                                    afterLabel: function (context) {
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const porcentajeOcupacion = ((context.dataset.data[0] / total) * 100).toFixed(1);
+                                        return 'Porcentaje de ocupación del día: ' + porcentajeOcupacion + '%';
+                                    }
+                                }
+                            }
                         }
-                    }
-                }
-            }
-        },
-        plugins: [{
-            id: 'centerText',
-            beforeDraw: function (chart) {
-                const { ctx, chartArea: { left, top, width, height } } = chart;
-                ctx.save();
+                    },
+                    plugins: [{
+                        id: 'centerText',
+                        beforeDraw: function (chart) {
+                            const { ctx, chartArea: { left, top, width, height } } = chart;
+                            ctx.save();
 
-                const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
-                const ocupadas = chart.data.datasets[0].data[0];
-                const porcentajeOcupacion = total > 0 ? ((ocupadas / total) * 100).toFixed(1) : '0';
+                            const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+                            const ocupadas = chart.data.datasets[0].data[0];
+                            const porcentajeOcupacion = total > 0 ? ((ocupadas / total) * 100).toFixed(1) : '0';
 
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.font = 'bold 24px Arial';
-                ctx.fillStyle = '#374151';
-                ctx.fillText(porcentajeOcupacion + '%', left + width / 2, top + height / 2 - 10);
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.font = 'bold 24px Arial';
+                            ctx.fillStyle = '#374151';
+                            ctx.fillText(porcentajeOcupacion + '%', left + width / 2, top + height / 2 - 10);
 
-                ctx.font = '14px Arial';
-                ctx.fillStyle = '#6B7280';
-                ctx.fillText('Ocupación', left + width / 2, top + height / 2 + 15);
+                            ctx.font = '14px Arial';
+                            ctx.fillStyle = '#6B7280';
+                            ctx.fillText('Ocupación', left + width / 2, top + height / 2 + 15);
 
-                ctx.restore();
-            }
-        }]
-    });
+                            ctx.restore();
+                        }
+                    }]
+                });
             }
 
             window.chartsInitialized = true;
+            console.log('✓ Charts initialized successfully');
+            
+            // Ocultar spinner después de que los gráficos estén listos
+            setTimeout(function() {
+                const loadingElement = document.getElementById('dashboard-loading');
+                if (loadingElement) {
+                    loadingElement.style.opacity = '0';
+                    loadingElement.style.transition = 'opacity 0.3s ease';
+                    setTimeout(() => {
+                        loadingElement.style.display = 'none';
+                        console.log('✓ Loading spinner hidden');
+                    }, 300);
+                }
+            }, 200);
         } catch (error) {
             console.error('Error initializing charts:', error);
+            // Ocultar spinner incluso si hay error
+            const loadingElement = document.getElementById('dashboard-loading');
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
         }
     }
 
@@ -1427,18 +1446,8 @@
     // ========================================
 
     document.addEventListener('DOMContentLoaded', function () {
-        // Ocultar spinner de carga cuando todo esté listo
-        setTimeout(function() {
-            const loadingElement = document.getElementById('dashboard-loading');
-            if (loadingElement) {
-                loadingElement.style.opacity = '0';
-                loadingElement.style.transition = 'opacity 0.3s ease';
-                setTimeout(() => {
-                    loadingElement.style.display = 'none';
-                }, 300);
-            }
-        }, 500);
-
+        console.log('✓ DOM Content Loaded');
+        
         // Inicializar gráficos con un pequeño delay para mejorar la carga inicial
         setTimeout(initializeCharts, 100);
 
