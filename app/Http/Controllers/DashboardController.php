@@ -54,6 +54,9 @@ class DashboardController extends Controller
             'total' => $this->obtenerSalasOcupadas($facultad, $piso)
         ];
 
+        // Obtener TODOS los espacios ocupados (incluyendo laboratorios, talleres, etc.) para el gráfico de torta
+        $espaciosOcupadosTotal = $this->obtenerEspaciosOcupadosTotal($facultad, $piso);
+
         // Total de reservas hoy y sala más utilizada (solo queries ligeras)
         $totalReservasHoy = Reserva::whereDate('fecha_reserva', today())
             ->whereHas('espacio', function($query) {
@@ -110,6 +113,7 @@ class DashboardController extends Controller
             'ocupacionSemanal',
             'ocupacionMensual',
             'salasOcupadas',
+            'espaciosOcupadosTotal',
             'usoPorDia',
             'evolucionMensual',
             'comparativaTipos',
@@ -531,6 +535,36 @@ class DashboardController extends Controller
                 ->get()
                 ->count();
         }
+
+        $libres = $totalEspacios - $ocupados;
+
+        return [
+            'ocupadas' => $ocupados,
+            'libres' => $libres,
+            'modulo_actual' => null
+        ];
+    }
+
+    /**
+     * Obtener espacios ocupados/libres contando TODOS los tipos (para gráfico de torta)
+     */
+    private function obtenerEspaciosOcupadosTotal($facultad, $piso)
+    {
+        // Obtener TODOS los espacios (incluyendo laboratorios, talleres, etc.)
+        $espaciosQuery = $this->obtenerEspaciosQuery($facultad, $piso);
+        $totalEspacios = (clone $espaciosQuery)->count();
+        
+        // Obtener IDs de todos los espacios
+        $idsEspaciosValidos = (clone $espaciosQuery)->pluck('id_espacio');
+
+        // Contar espacios ocupados de TODOS los tipos basándose en reservas activas
+        $ocupados = Reserva::where('estado', 'activa')
+            ->where('fecha_reserva', Carbon::today())
+            ->whereIn('id_espacio', $idsEspaciosValidos)
+            ->select('id_espacio')
+            ->groupBy('id_espacio')
+            ->get()
+            ->count();
 
         $libres = $totalEspacios - $ocupados;
 
@@ -1797,38 +1831,48 @@ class DashboardController extends Controller
             ->whereYear('fecha_clase', $anio)
             ->get();
 
-        // Obtener clases recuperadas del mes
-        $clasesRecuperadas = RecuperacionClase::whereMonth('created_at', $mes)
-            ->whereYear('created_at', $anio)
-            ->where('estado', 'recuperada')
-            ->get();
+        // Obtener clases que están programadas para recuperación (estado = 'pendiente')
+        $clasesParaRecuperar = $clasesNoRealizadas->where('estado', 'pendiente')->count();
+        
+        // Obtener clases ya recuperadas (estado = 'recuperada')
+        $clasesRecuperadas = $clasesNoRealizadas->where('estado', 'recuperada')->count();
+
+        // Obtener todas las planificaciones del mes (clases programadas)
+        $planificacionesMes = Planificacion_Asignatura::whereHas('horario', function($q) use ($anio, $mes) {
+            $q->where('periodo', Carbon::create($anio, $mes, 1)->format('Y-m'));
+        })->get();
+
+        $totalPlaneadas = $planificacionesMes->count();
+        $totalNoRealizadas = $clasesNoRealizadas->count();
+        $totalRealizadas = $totalPlaneadas - $totalNoRealizadas;
+        $porcentajeNoRealizadas = $totalPlaneadas > 0 ? round(($totalNoRealizadas / $totalPlaneadas) * 100, 1) : 0;
+        $porcentajeRealizadas = $totalPlaneadas > 0 ? round(($totalRealizadas / $totalPlaneadas) * 100, 1) : 0;
+        $porcentajeRecuperadas = $totalNoRealizadas > 0 ? round(($clasesRecuperadas / $totalNoRealizadas) * 100, 1) : 0;
 
         // Agrupar por día para el gráfico de barras
         $diasDelMes = [];
         $inicio = Carbon::create($anio, $mes, 1);
         $fin = $inicio->copy()->endOfMonth();
+        $dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
 
         for ($fecha = $inicio->copy(); $fecha->lte($fin); $fecha->addDay()) {
             if ($fecha->isWeekday() || $fecha->isSaturday()) {
                 $dia = $fecha->format('d/m');
                 $diasDelMes[$dia] = [
                     'realizadas' => 0,
-                    'no_realizadas' => 0
+                    'no_realizadas' => 0,
+                    'recuperadas' => 0
                 ];
             }
         }
 
-        // Contar clases por día
-        $planificacionesMes = Planificacion_Asignatura::whereHas('horario', function($q) use ($anio, $mes) {
-            $q->where('periodo', Carbon::create($anio, $mes, 1)->format('Y-m'));
-        })->get();
-
+        // Contar clases realizadas por día
         foreach ($planificacionesMes as $plan) {
             if ($plan->modulo) {
-                $dia = $plan->modulo->dia;
+                $dia = strtolower($plan->modulo->dia);
                 // Encontrar todas las fechas con este día de semana en el mes
                 for ($fecha = $inicio->copy(); $fecha->lte($fin); $fecha->addDay()) {
-                    if (strtolower($fecha->locale('es')->isoFormat('dddd')) === strtolower($dia)) {
+                    if (strtolower($dias[$fecha->dayOfWeek]) === $dia) {
                         $diaFormato = $fecha->format('d/m');
                         if (isset($diasDelMes[$diaFormato])) {
                             $diasDelMes[$diaFormato]['realizadas']++;
@@ -1844,32 +1888,33 @@ class DashboardController extends Controller
             if (isset($diasDelMes[$diaFormato])) {
                 $diasDelMes[$diaFormato]['no_realizadas']++;
                 $diasDelMes[$diaFormato]['realizadas']--;
+                
+                // Contar recuperadas
+                if ($clase->estado === 'recuperada') {
+                    $diasDelMes[$diaFormato]['recuperadas']++;
+                }
             }
         }
-
-        // Calcular totales y estadísticas
-        $totalPlaneadas = $planificacionesMes->count();
-        $totalNoRealizadas = $clasesNoRealizadas->count();
-        $totalRealizadas = $totalPlaneadas - $totalNoRealizadas;
-        $totalRecuperadas = $clasesRecuperadas->count();
-        $porcentajeNoRealizadas = $totalPlaneadas > 0 ? round(($totalNoRealizadas / $totalPlaneadas) * 100, 1) : 0;
-        $porcentajeRealizadas = $totalPlaneadas > 0 ? round(($totalRealizadas / $totalPlaneadas) * 100, 1) : 0;
 
         // Preparar arrays para el gráfico
         $diasLabels = array_keys($diasDelMes);
         $datosRealizadas = array_values(array_map(function($d) { return $d['realizadas']; }, $diasDelMes));
         $datosNoRealizadas = array_values(array_map(function($d) { return $d['no_realizadas']; }, $diasDelMes));
+        $datosRecuperadas = array_values(array_map(function($d) { return $d['recuperadas']; }, $diasDelMes));
 
         return view('partials.clases_no_realizadas_tab_content', compact(
             'diasDelMes',
             'totalRealizadas',
             'totalNoRealizadas',
-            'totalRecuperadas',
+            'clasesRecuperadas',
+            'clasesParaRecuperar',
             'porcentajeRealizadas',
             'porcentajeNoRealizadas',
+            'porcentajeRecuperadas',
             'diasLabels',
             'datosRealizadas',
             'datosNoRealizadas',
+            'datosRecuperadas',
             'mes',
             'anio'
         ))->render();

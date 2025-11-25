@@ -27,8 +27,8 @@
                         </div>
                     </div>
                     <div class="text-right">
-                        <div class="text-2xl font-bold" style="color: {{ $colorBarra }}">{{ $porcentaje }}%</div>
-                        <div class="text-xs text-gray-500 font-medium">Ocupación</div>
+                        <div class="text-xl font-semibold text-gray-700">{{ $data['ocupados'] ?? 0 }} de {{ $data['total'] ?? 0 }}</div>
+                        <div class="text-xs text-gray-500 font-medium">Ocupadas</div>
                     </div>
                 </div>
                 

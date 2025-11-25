@@ -97,31 +97,6 @@ class ClasesNoRealizadasTable extends Component
         $this->render();
     }
 
-    public function updatingSearch()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingEstado()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingPeriodo()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingFechaInicio()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingFechaFin()
-    {
-        $this->resetPage();
-    }
-
     public function refresh()
     {
         // Método para refrescar manualmente los datos
@@ -129,10 +104,24 @@ class ClasesNoRealizadasTable extends Component
         $this->render();
     }
 
+    public function aplicarFiltros()
+    {
+        // Validar fechas si ambas están establecidas
+        if ($this->fecha_inicio && $this->fecha_fin) {
+            if (Carbon::parse($this->fecha_inicio)->gt(Carbon::parse($this->fecha_fin))) {
+                $this->dispatch('show-error', ['message' => 'La fecha inicio no puede ser mayor que la fecha fin']);
+                return;
+            }
+        }
+        
+        $this->resetPage();
+    }
+
     public function limpiarFiltros()
     {
         $this->search = '';
         $this->estado = '';
+        $this->periodo = '';
         $this->fecha_inicio = Carbon::now()->startOfMonth()->format('Y-m-d');
         $this->fecha_fin = Carbon::now()->endOfMonth()->format('Y-m-d');
         $this->resetPage();

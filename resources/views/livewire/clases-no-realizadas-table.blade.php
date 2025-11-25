@@ -56,7 +56,7 @@
                     <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
                     <div class="relative">
                         <input type="text" 
-                               wire:model.live="search" 
+                               wire:model="search" 
                                id="search"
                                class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                placeholder="Profesor, Asignatura...">
@@ -67,7 +67,7 @@
                 <!-- Estado -->
                 <div class="mb-4">
                     <label for="estado" class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
-                    <select wire:model.live="estado" 
+                    <select wire:model="estado" 
                             id="estado"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         <option value="">Todos</option>
@@ -81,7 +81,7 @@
                 <div class="mb-4">
                     <label for="periodo" class="block text-sm font-medium text-gray-700 mb-2">Período</label>
                     <input type="text" 
-                           wire:model.live="periodo" 
+                           wire:model="periodo" 
                            id="periodo"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                            placeholder="2024-1">
@@ -91,7 +91,7 @@
                 <div class="mb-4">
                     <label for="fecha_inicio" class="block text-sm font-medium text-gray-700 mb-2">Fecha Inicio</label>
                     <input type="date" 
-                           wire:model.live="fecha_inicio" 
+                           wire:model="fecha_inicio" 
                            id="fecha_inicio"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 </div>
@@ -100,16 +100,22 @@
                 <div class="mb-4">
                     <label for="fecha_fin" class="block text-sm font-medium text-gray-700 mb-2">Fecha Fin</label>
                     <input type="date" 
-                           wire:model.live="fecha_fin" 
+                           wire:model="fecha_fin" 
                            id="fecha_fin"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 </div>
 
-                <!-- Botón para limpiar filtros -->
-                <button wire:click="limpiarFiltros" 
-                        class="w-full mt-4 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-                    <i class="fas fa-times mr-2"></i>Limpiar Filtros
-                </button>
+                <!-- Botones de Acción -->
+                <div class="flex gap-2 mt-6">
+                    <button wire:click="aplicarFiltros" 
+                            class="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                        <i class="fas fa-filter mr-2"></i>Aplicar
+                    </button>
+                    <button wire:click="limpiarFiltros" 
+                            class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
+                        <i class="fas fa-times mr-2"></i>Limpiar
+                    </button>
+                </div>
             </div>
         </div>
 

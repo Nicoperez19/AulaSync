@@ -366,10 +366,10 @@
                                 <div class="pt-4 border-t border-gray-200">
                                     <div id="salas-ocupadas" class="text-center">
                                         <div class="text-3xl font-bold text-purple-600">
-                                            {{ $salasOcupadas['total']['ocupadas'] }}
+                                            {{ $espaciosOcupadosTotal['ocupadas'] }}
                                         </div>
                                         <div class="text-sm text-gray-500 mt-1">
-                                            de {{ $salasOcupadas['total']['ocupadas'] + $salasOcupadas['total']['libres'] }} salas en total
+                                            de {{ $espaciosOcupadosTotal['ocupadas'] + $espaciosOcupadosTotal['libres'] }} espacios en total
                                         </div>
                                     </div>
                                 </div>
@@ -1354,15 +1354,18 @@
                 });
             }
 
-            // Gráfico circular: Salas ocupadas/libres
+            // Gráfico circular: TODOS los espacios ocupados/libres
             const canvasCircular = document.getElementById('grafico-circular-salas');
             if (canvasCircular && !window.graficoCircularSalas) {
+                const libresTotal = @json($espaciosOcupadosTotal['libres']);
+                const ocupadasTotal = @json($espaciosOcupadosTotal['ocupadas']);
+                
                 window.graficoCircularSalas = new Chart(canvasCircular, {
                     type: 'doughnut',
                     data: {
                         labels: ['Libres', 'Ocupadas'],
                         datasets: [{
-                            data: [{{ $salasOcupadas['total']['libres'] }}, {{ $salasOcupadas['total']['ocupadas'] }}],
+                            data: [libresTotal, ocupadasTotal],
                             backgroundColor: [
                                 'rgba(16, 185, 129, 0.7)', // verde para libres
                                 'rgba(239, 68, 68, 0.7)' // rojo para ocupadas

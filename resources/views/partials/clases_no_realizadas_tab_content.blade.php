@@ -31,8 +31,8 @@
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-sm text-gray-600">Clases Recuperadas</p>
-                    <p class="text-2xl font-bold text-blue-600">{{ $totalRecuperadas }}</p>
-                    <p class="text-xs text-gray-500">Este mes</p>
+                    <p class="text-2xl font-bold text-blue-600">{{ $clasesRecuperadas }}</p>
+                    <p class="text-xs text-gray-500">{{ $porcentajeRecuperadas }}% de no realizadas</p>
                 </div>
                 <div class="p-3 bg-blue-100 rounded-lg">
                     <i class="fas fa-redo text-blue-600 text-xl"></i>
@@ -43,12 +43,12 @@
         <div class="p-4 bg-white rounded-lg shadow border border-gray-200">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm text-gray-600">Total Planeadas</p>
-                    <p class="text-2xl font-bold text-gray-800">{{ $totalRealizadas + $totalNoRealizadas }}</p>
-                    <p class="text-xs text-gray-500">Noviembre 2025</p>
+                    <p class="text-sm text-gray-600">Pendientes de Recuperar</p>
+                    <p class="text-2xl font-bold text-orange-600">{{ $clasesParaRecuperar }}</p>
+                    <p class="text-xs text-gray-500">Por reagendar</p>
                 </div>
-                <div class="p-3 bg-gray-100 rounded-lg">
-                    <i class="fas fa-list text-gray-600 text-xl"></i>
+                <div class="p-3 bg-orange-100 rounded-lg">
+                    <i class="fas fa-clock text-orange-600 text-xl"></i>
                 </div>
             </div>
         </div>
@@ -78,6 +78,7 @@
                         <th class="px-6 py-3 font-semibold text-gray-700">Fecha</th>
                         <th class="px-6 py-3 font-semibold text-gray-700 text-center">Realizadas</th>
                         <th class="px-6 py-3 font-semibold text-gray-700 text-center">No Realizadas</th>
+                        <th class="px-6 py-3 font-semibold text-gray-700 text-center">Recuperadas</th>
                         <th class="px-6 py-3 font-semibold text-gray-700 text-center">Total</th>
                         <th class="px-6 py-3 font-semibold text-gray-700 text-center">% Completadas</th>
                     </tr>
@@ -99,6 +100,11 @@
                             <td class="px-6 py-4 text-center">
                                 <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full font-semibold text-xs">
                                     {{ $datos['no_realizadas'] }}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-semibold text-xs">
+                                    {{ $datos['recuperadas'] ?? 0 }}
                                 </span>
                             </td>
                             <td class="px-6 py-4 text-center font-semibold text-gray-800">{{ $total }}</td>
@@ -146,6 +152,7 @@
         const diasLabels = @json($diasLabels);
         const datosRealizadas = @json($datosRealizadas);
         const datosNoRealizadas = @json($datosNoRealizadas);
+        const datosRecuperadas = @json($datosRecuperadas);
 
         new Chart(ctxClasesNoRealizadas.getContext('2d'), {
             type: 'bar',
@@ -165,6 +172,14 @@
                         data: datosNoRealizadas,
                         backgroundColor: '#ef4444',
                         borderColor: '#dc2626',
+                        borderWidth: 2,
+                        borderRadius: 4
+                    },
+                    {
+                        label: 'Clases Recuperadas',
+                        data: datosRecuperadas,
+                        backgroundColor: '#3b82f6',
+                        borderColor: '#1d4ed8',
                         borderWidth: 2,
                         borderRadius: 4
                     }
