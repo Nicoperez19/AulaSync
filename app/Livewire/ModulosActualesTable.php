@@ -720,6 +720,9 @@ class ModulosActualesTable extends Component
                         $tieneClase = false;
                         $tieneReservaSolicitante = false;
                         $tieneReservaProfesor = false;
+                        
+                        // Si hay reserva de profesor o solicitante activa, el espacio está ocupado
+                        $tieneReservaActiva = $reservaProfesor || $reservaSolicitante;
                         $datosClase = null;
                         $datosSolicitante = null;
                         $datosProfesor = null;
@@ -980,6 +983,7 @@ class ModulosActualesTable extends Component
 
                         if ($reservaSolicitante) {
                             $tieneReservaSolicitante = true;
+                            $tieneReservaActiva = true;
                             $datosSolicitante = [
                                 'nombre' => $reservaSolicitante->solicitante->nombre ?? '-',
                                 'run' => $reservaSolicitante->run_solicitante ?? '-',
@@ -992,6 +996,7 @@ class ModulosActualesTable extends Component
                         // PRIORIDAD 1: Procesar reserva de profesor PRIMERO (es la clase que realmente está dando)
                         if ($reservaProfesor) {
                             $tieneReservaProfesor = true;
+                            $tieneReservaActiva = true;
                             
                             // Si la reserva tiene asignatura, usarla para obtener la planificación correcta
                             if ($reservaProfesor->asignatura) {
@@ -1115,6 +1120,9 @@ class ModulosActualesTable extends Component
                             $estado = 'Disponible';
                             $tieneClase = false;
                             $datosClase = null;
+                        } elseif ($tieneReservaActiva && ($tieneReservaProfesor || $tieneReservaSolicitante)) {
+                            // PRIORIDAD: Si hay una reserva activa (profesor o solicitante), el espacio está ocupado
+                            $estado = 'Ocupado';
                         } elseif ($tieneClase && ($claseFinalizada || $claseTerminoAntes)) {
                             // Si la clase ya terminó (por horario o porque el profesor se fue antes)
                             // Limpiar información de la clase y marcar como disponible

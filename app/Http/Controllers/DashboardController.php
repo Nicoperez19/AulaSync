@@ -484,25 +484,41 @@ class DashboardController extends Controller
     private function obtenerSalasOcupadas($facultad, $piso, $turno = null)
     {
         $espaciosQuery = $this->obtenerEspaciosQuery($facultad, $piso);
+        $totalEspacios = (clone $espaciosQuery)->count();
 
-        // Si se especifica turno, contar solo las salas ocupadas en ese turno
+        // Contar espacios ocupados basándose en reservas activas del día actual
+        // Incluye tanto reservas de profesores como reservas espontáneas
+        $espaciosOcupadosQuery = Reserva::where('estado', 'activa')
+            ->where('fecha_reserva', Carbon::today())
+            ->whereHas('espacio', function($query) use ($facultad, $piso) {
+                $query->whereHas('piso', function($q) use ($facultad, $piso) {
+                    $q->where('id_facultad', $facultad);
+                    if ($piso) {
+                        $q->where('numero_piso', $piso);
+                    }
+                });
+            });
+
+        // Si se especifica turno, filtrar por hora actual
         if ($turno !== null) {
             $horaActual = Carbon::now()->format('H:i:s');
 
             // Solo contar ocupados si la hora actual está en el turno solicitado
             if ($this->esTurno($horaActual, $turno)) {
-                $ocupados = (clone $espaciosQuery)->where('estado', 'Ocupado')->count();
-                $libres = (clone $espaciosQuery)->where('estado', 'Disponible')->count();
+                $ocupados = (clone $espaciosOcupadosQuery)
+                    ->distinct('id_espacio')
+                    ->count('id_espacio');
             } else {
                 // Si no estamos en el turno, todas están libres para ese turno
-                $totalEspacios = $espaciosQuery->count();
                 $ocupados = 0;
-                $libres = $totalEspacios;
             }
         } else {
-            $ocupados = (clone $espaciosQuery)->where('estado', 'Ocupado')->count();
-            $libres = (clone $espaciosQuery)->where('estado', 'Disponible')->count();
+            $ocupados = (clone $espaciosOcupadosQuery)
+                ->distinct('id_espacio')
+                ->count('id_espacio');
         }
+
+        $libres = $totalEspacios - $ocupados;
 
         return [
             'ocupadas' => $ocupados,
@@ -632,9 +648,21 @@ class DashboardController extends Controller
             $porcentaje = $totalHorasDisponibles > 0 ?
                 round(($horasUtilizadas / $totalHorasDisponibles) * 100) : 0;
 
-            // Calcular espacios ocupados basándose en el porcentaje de ocupación
-            // Esto asegura que la tarjeta muestre una ocupación consistente
-            $espaciosOcupados = ceil(($porcentaje / 100) * $totalEspaciosTipo);
+            // Contar espacios ocupados actualmente basándose SOLO en reservas activas del día actual
+            // Incluye tanto reservas de profesores como reservas espontáneas
+            $espaciosOcupados = Reserva::where('estado', 'activa')
+                ->where('fecha_reserva', Carbon::today())
+                ->whereHas('espacio', function($query) use ($tipo, $facultad, $piso) {
+                    $query->where('tipo_espacio', $tipo)
+                        ->whereHas('piso', function($q) use ($facultad, $piso) {
+                            $q->where('id_facultad', $facultad);
+                            if ($piso) {
+                                $q->where('numero_piso', $piso);
+                            }
+                        });
+                })
+                ->distinct('id_espacio')
+                ->count('id_espacio');
 
             $result[] = [
                 'nombre' => $tipo,
@@ -937,9 +965,10 @@ class DashboardController extends Controller
         $facultad = 'IT_TH';
 
         $reservasSinDevolucion = $this->obtenerReservasActivasSinDevolucion($facultad, $piso);
-        $accesosActuales = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
+        // Incluir TODAS las reservas activas: de profesores (run_profesor) y espontáneas (run_solicitante)
+        $accesosActuales = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad', 'asignatura'])
             ->where('estado', 'activa')
-            ->whereNull('hora_salida')
+            ->where('fecha_reserva', Carbon::today())
             ->whereHas('espacio', function($query) use ($facultad, $piso) {
                 $query->whereHas('piso', function($q) use ($facultad, $piso) {
                     $q->where('id_facultad', $facultad);
@@ -950,6 +979,7 @@ class DashboardController extends Controller
                 // Pestaña de Accesos muestra TODOS los tipos de espacios
             })
             ->orderBy('fecha_reserva', 'desc')
+            ->orderBy('hora', 'desc')
             ->get();
             
         Log::info('getAccesosData - Datos cargados', [

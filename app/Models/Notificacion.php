@@ -101,17 +101,37 @@ class Notificacion extends Model
 
             \Log::info('Creando notificaciones de clase no realizada - Usuarios encontrados: ' . $usuarios->count());
 
+            // Cargar relaciones necesarias
+            $claseNoRealizada->load(['asignatura', 'profesor', 'espacio', 'modulo']);
+            
             $asignatura = $claseNoRealizada->asignatura;
             $profesor = $claseNoRealizada->profesor;
             $espacio = $claseNoRealizada->espacio;
+            $modulo = $claseNoRealizada->modulo;
+            
+            // Obtener el nombre completo del profesor
+            $nombreProfesor = 'Desconocido';
+            if ($profesor) {
+                if (isset($profesor->name)) {
+                    $nombreProfesor = $profesor->name;
+                } else if (isset($profesor->nombres) && isset($profesor->apellido_paterno)) {
+                    $nombreProfesor = trim($profesor->nombres . ' ' . $profesor->apellido_paterno);
+                }
+            }
+            
+            // Obtener la hora de inicio del módulo
+            $horaClase = 'hora desconocida';
+            if ($modulo && $modulo->hora_inicio) {
+                $horaClase = substr($modulo->hora_inicio, 0, 5);
+            }
 
             $titulo = 'Clase no realizada';
             $mensaje = sprintf(
-                'El profesor %s no realizó la clase de %s en %s el %s',
-                $profesor->name ?? 'Desconocido',
-                $asignatura->nombre_asignatura ?? 'Desconocida',
+                'El profesor %s no registró clase en %s el %s a las %s',
+                $nombreProfesor,
                 $espacio->id_espacio ?? 'Desconocido',
-                $claseNoRealizada->fecha_clase->format('d/m/Y')
+                $claseNoRealizada->fecha_clase->format('d/m/Y'),
+                $horaClase
             );
 
             foreach ($usuarios as $usuario) {
@@ -120,13 +140,15 @@ class Notificacion extends Model
                     'tipo' => 'clase_no_realizada',
                     'titulo' => $titulo,
                     'mensaje' => $mensaje,
-                    'url' => route('recuperacion-clases.index'),
+                    'url' => route('clases-no-realizadas.index'),
                     'datos_adicionales' => [
                         'id_clase_no_realizada' => $claseNoRealizada->id,
                         'id_asignatura' => $claseNoRealizada->id_asignatura,
                         'run_profesor' => $claseNoRealizada->run_profesor,
+                        'nombre_profesor' => $nombreProfesor,
                         'fecha_clase' => $claseNoRealizada->fecha_clase->toDateString(),
                         'id_espacio' => $claseNoRealizada->id_espacio,
+                        'hora_clase' => $horaClase,
                     ],
                 ]);
 
