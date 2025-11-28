@@ -64,7 +64,8 @@ class DashboardController extends Controller
             })
             ->count();
 
-        $salaMasUtilizada = Reserva::select('id_espacio', DB::raw('count(*) as total'))
+        // Sala con más reservas hoy
+        $salaMasReservas = Reserva::select('id_espacio', DB::raw('count(*) as total'))
             ->whereDate('fecha_reserva', today())
             ->whereHas('espacio', function($query) {
                 $query->where('tipo_espacio', 'Sala de Clases');
@@ -74,9 +75,38 @@ class DashboardController extends Controller
             ->with('espacio:id_espacio,nombre_espacio')
             ->first();
 
+        // Sala con mayor ocupación (módulos utilizados / 15)
+        $salaMasUtilizada = Reserva::select('id_espacio', DB::raw('count(*) as total'))
+            ->whereDate('fecha_reserva', today())
+            ->whereHas('espacio', function($query) {
+                $query->where('tipo_espacio', 'Sala de Clases');
+            })
+            ->groupBy('id_espacio')
+            ->with('espacio:id_espacio,nombre_espacio')
+            ->get()
+            ->map(function($item) {
+                $item->ocupacion_modulos = ($item->total / 15) * 100;
+                return $item;
+            })
+            ->sortByDesc('ocupacion_modulos')
+            ->first();
+
         // Datos para gráficos de la primera pestaña (se cargan inicialmente)
         $usoPorDia = $this->obtenerUsoPorDia($facultad, $piso);
+        $salasUtilizadasPorDia = $this->obtenerSalasUtilizadasPorDia($facultad, $piso);
+        $ocupacionPorDia = $this->obtenerOcupacionPorDia($facultad, $piso);
+        $salasPorTipoPorDia = $this->obtenerSalasPorTipoPorDia($facultad, $piso);
+        $ocupacionPorTurno = $this->obtenerOcupacionPorTurno($facultad, $piso);
+        $ocupacionPorTipo = $this->obtenerOcupacionPorTipo($facultad, $piso);
+        $ocupacionPorSala = $this->obtenerOcupacionPorSala($facultad, $piso);
+        $disponibilidadSalas = $this->obtenerDisponibilidadSalas($facultad, $piso);
         $evolucionMensual = $this->obtenerEvolucionMensual($facultad, $piso);
+
+        // Array con ambas salas más utilizadas
+        $salasUtilizadas = [
+            'mas_reservas' => $salaMasReservas,
+            'mas_ocupada' => $salaMasUtilizada
+        ];
 
         // Datos para pestaña "Utilización" (se cargarán on-demand, pero incluimos valores vacíos)
         $comparativaTipos = [];
@@ -115,6 +145,13 @@ class DashboardController extends Controller
             'salasOcupadas',
             'espaciosOcupadosTotal',
             'usoPorDia',
+            'salasUtilizadasPorDia',
+            'ocupacionPorDia',
+            'salasPorTipoPorDia',
+            'ocupacionPorTurno',
+            'ocupacionPorTipo',
+            'ocupacionPorSala',
+            'disponibilidadSalas',
             'evolucionMensual',
             'comparativaTipos',
             'facultad',
@@ -124,7 +161,7 @@ class DashboardController extends Controller
             'moduloActual',
             'accesosActuales',
             'totalReservasHoy',
-            'salaMasUtilizada',
+            'salasUtilizadas',
             'horariosAgrupados',
             'noUtilizadasDia'
         ));
@@ -361,7 +398,11 @@ class DashboardController extends Controller
                 */
 
                 // Obtener todas las reservas que incluyan esta hora
-                $reservasEnHora = Reserva::whereBetween('fecha_reserva', [$fecha->copy()->setHour($hora), $fecha->copy()->setHour($hora + 1)])
+                $horaInicioFormato = sprintf('%02d:00:00', $hora);
+                $horaFinFormato = sprintf('%02d:59:59', $hora);
+                
+                $reservasEnHora = Reserva::where('fecha_reserva', $fecha->format('Y-m-d'))
+                    ->whereBetween('hora', [$horaInicioFormato, $horaFinFormato])
                     ->whereIn('estado', ['activa', 'finalizada'])
                     ->whereHas('espacio', function($query) use ($facultad, $piso) {
                         if ($piso) {
@@ -378,46 +419,67 @@ class DashboardController extends Controller
                     })
                     ->count();
 
-                // Calcular ocupación de esta hora (Solo reservas)
-                $ocupacionEnHora = ($planificacionesEnHora + $reservasEnHora) / $totalEspacios;
-                // Convertir a porcentaje (0-100)
-                $ocupacionEnHora = min($ocupacionEnHora * 100, 100);
+                // Calcular ocupación de esta hora (Solo reservas, planificaciones = 0)
+                // SOLO registrar si hay al menos 1 reserva
+                if ($reservasEnHora > 0) {
+                    $ocupacionEnHora = $reservasEnHora / $totalEspacios;
+                    // Convertir a porcentaje (0-100)
+                    $ocupacionEnHora = min($ocupacionEnHora * 100, 100);
 
-                if (!isset($ocupacionPorHora[$hora])) {
-                    $ocupacionPorHora[$hora] = [];
+                    if (!isset($ocupacionPorHora[$hora])) {
+                        $ocupacionPorHora[$hora] = [];
+                    }
+                    $ocupacionPorHora[$hora][] = $ocupacionEnHora;
                 }
-                $ocupacionPorHora[$hora][] = $ocupacionEnHora;
             }
         }
 
-        // Calcular el promedio de ocupación de cada hora
-        $promedioTotal = 0;
-        $contadorHoras = 0;
-
-        foreach ($ocupacionPorHora as $hora => $ocupaciones) {
-            if (count($ocupaciones) > 0) {
-                $promedioHora = array_sum($ocupaciones) / count($ocupaciones);
-                $promedioTotal += $promedioHora;
-                $contadorHoras++;
-            }
-        }
-
-        // Retornar el promedio general
-        $resultado = $contadorHoras > 0 ? round($promedioTotal / $contadorHoras, 2) : 0;
-
-        // Si no hay horas registradas, retornar 0
-        if ($totalHoras === 0 || $contadorHoras === 0) {
+        // Si no hay datos de ocupación, retornar 0 inmediatamente
+        if (count($ocupacionPorHora) === 0) {
             Log::warning('Sin datos de ocupación para calcular promedio', [
                 'turno' => $turno ?? 'todos',
                 'totalEspacios' => $totalEspacios,
                 'totalHoras' => $totalHoras,
-                'contadorHoras' => $contadorHoras,
                 'periodo' => $inicio->format('Y-m-d') . ' a ' . $fin->format('Y-m-d'),
                 'facultad' => $facultad,
                 'piso' => $piso
             ]);
             return 0;
         }
+
+        // Calcular el promedio de ocupación de cada hora
+        // Primero: obtener el MÁXIMO de cada hora (de todos los días)
+        $maximosPorHora = [];
+        
+        foreach ($ocupacionPorHora as $hora => $ocupaciones) {
+            if (count($ocupaciones) > 0) {
+                // Obtener el máximo porcentaje para esta hora
+                $maximoHora = max($ocupaciones);
+                $maximosPorHora[$hora] = $maximoHora;
+            }
+        }
+
+        // Segundo: promediar los máximos de todas las horas
+        $promedioTotal = 0;
+        $contadorHoras = count($maximosPorHora);
+
+        if ($contadorHoras === 0) {
+            Log::warning('Sin datos de ocupación máxima para calcular promedio', [
+                'turno' => $turno ?? 'todos',
+                'totalEspacios' => $totalEspacios,
+                'periodo' => $inicio->format('Y-m-d') . ' a ' . $fin->format('Y-m-d'),
+                'facultad' => $facultad,
+                'piso' => $piso
+            ]);
+            return 0;
+        }
+
+        foreach ($maximosPorHora as $hora => $maximo) {
+            $promedioTotal += $maximo;
+        }
+
+        // Retornar el promedio de los máximos
+        $resultado = $contadorHoras > 0 ? round($promedioTotal / $contadorHoras, 2) : 0;
 
         Log::info('Ocupación promedio por hora calculada', [
             'turno' => $turno ?? 'todos',
@@ -648,13 +710,18 @@ class DashboardController extends Controller
         for ($i = 0; $i < 6; $i++) {
             $dia = $inicioSemana->copy()->addDays($i);
 
-            // Contar CANTIDAD DE RESERVAS (no horas)
+            // Contar CANTIDAD DE RESERVAS (volver a como era antes)
             $cantidadReservas = Reserva::whereDate('fecha_reserva', $dia)
                 ->whereIn('estado', ['activa', 'finalizada'])
-                ->whereHas('espacio', function($query) use ($piso) {
+                ->whereHas('espacio', function($query) use ($piso, $facultad) {
                     if ($piso) {
-                        $query->whereHas('piso', function($q) use ($piso) {
+                        $query->whereHas('piso', function($q) use ($piso, $facultad) {
+                            $q->where('id_facultad', $facultad);
                             $q->where('numero_piso', $piso);
+                        });
+                    } elseif ($facultad) {
+                        $query->whereHas('piso', function($q) use ($facultad) {
+                            $q->where('id_facultad', $facultad);
                         });
                     }
                     // Solo considerar Salas de Clases
@@ -672,6 +739,492 @@ class DashboardController extends Controller
                 'fin' => $finSemana->format('d/m/Y')
             ]
         ];
+    }
+
+    private function obtenerSalasUtilizadasPorDia($facultad, $piso)
+    {
+        $inicioSemana = Carbon::now()->startOfWeek();
+        $finSemana = Carbon::now()->endOfWeek();
+        $diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+        // Obtener todas las salas distintas en el período
+        $salas = Espacio::whereHas('piso', function($query) use ($facultad, $piso) {
+            if ($piso) {
+                $query->where('id_facultad', $facultad);
+                $query->where('numero_piso', $piso);
+            } elseif ($facultad) {
+                $query->where('id_facultad', $facultad);
+            }
+        })
+        ->where('tipo_espacio', 'Sala de Clases')
+        ->orderBy('id_espacio')
+        ->get();
+
+        $dataPorSala = [];
+        
+        // Para cada sala, contar reservas por día
+        foreach ($salas as $sala) {
+            $reservasPorDia = [];
+            
+            for ($i = 0; $i < 6; $i++) {
+                $dia = $inicioSemana->copy()->addDays($i);
+                
+                $cantidadReservas = Reserva::whereDate('fecha_reserva', $dia)
+                    ->where('id_espacio', $sala->id_espacio)
+                    ->whereIn('estado', ['activa', 'finalizada'])
+                    ->count();
+                
+                $reservasPorDia[] = $cantidadReservas;
+            }
+            
+            // Solo incluir salas que tengan al menos 1 reserva en la semana
+            if (array_sum($reservasPorDia) > 0) {
+                $dataPorSala[] = [
+                    'sala' => $sala->id_espacio,
+                    'datos' => $reservasPorDia
+                ];
+            }
+        }
+
+        return [
+            'salas' => $dataPorSala,
+            'dias' => $diasSemana,
+            'rango_fechas' => [
+                'inicio' => $inicioSemana->format('d/m/Y'),
+                'fin' => $finSemana->format('d/m/Y')
+            ]
+        ];
+    }
+
+    private function obtenerOcupacionPorDia($facultad, $piso)
+    {
+        $inicioSemana = Carbon::now()->startOfWeek();
+        $finSemana = Carbon::now()->endOfWeek();
+        $diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        $ocupacionPorDia = [];
+
+        for ($i = 0; $i < 6; $i++) {
+            $dia = $inicioSemana->copy()->addDays($i);
+            // Calcular el promedio de promedios por hora para ese día específico
+            $ocupacion = $this->calcularOcupacionPromediosHoraPorDia(
+                $dia->copy(),
+                $facultad,
+                $piso
+            );
+            $ocupacionPorDia[$diasSemana[$i]] = $ocupacion;
+        }
+
+        return [
+            'datos' => $ocupacionPorDia,
+            'rango_fechas' => [
+                'inicio' => $inicioSemana->format('d/m/Y'),
+                'fin' => $finSemana->format('d/m/Y')
+            ]
+        ];
+    }
+
+    private function calcularOcupacionPromediosHoraPorDia($fecha, $facultad = null, $piso = null)
+    {
+        $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)
+            ->where('tipo_espacio', 'Sala de Clases')
+            ->count();
+
+        if ($totalEspacios === 0) {
+            return 0;
+        }
+
+        // Array para almacenar los porcentajes de ocupación de cada hora
+        $ocupacionesPorHora = [];
+
+        $horaInicio = 8;
+        if ($fecha->isSaturday()) {
+            $horaFin = 13; // Sábado: 8 a 13
+        } else {
+            $horaFin = 23; // Lunes a viernes: 8 a 23
+        }
+
+        // Iterar por cada hora del día
+        for ($hora = $horaInicio; $hora < $horaFin; $hora++) {
+            $horaInicioFormato = sprintf('%02d:00:00', $hora);
+            $horaFinFormato = sprintf('%02d:59:59', $hora);
+            
+            // Obtener todas las reservas que incluyan esta hora
+            $reservasEnHora = Reserva::where('fecha_reserva', $fecha->format('Y-m-d'))
+                ->whereBetween('hora', [$horaInicioFormato, $horaFinFormato])
+                ->whereIn('estado', ['activa', 'finalizada'])
+                ->whereHas('espacio', function($query) use ($facultad, $piso) {
+                    if ($piso) {
+                        $query->whereHas('piso', function($q) use ($facultad, $piso) {
+                            $q->where('id_facultad', $facultad);
+                            $q->where('numero_piso', $piso);
+                        });
+                    } elseif ($facultad) {
+                        $query->whereHas('piso', function($q) use ($facultad) {
+                            $q->where('id_facultad', $facultad);
+                        });
+                    }
+                    $query->where('tipo_espacio', 'Sala de Clases');
+                })
+                ->count();
+
+            // Calcular ocupación de esta hora en porcentaje (0-100)
+            $ocupacionEnHora = ($reservasEnHora / $totalEspacios) * 100;
+            $ocupacionesPorHora[] = min($ocupacionEnHora, 100);
+        }
+
+        // Retornar el promedio de todos los porcentajes por hora
+        if (count($ocupacionesPorHora) === 0) {
+            return 0;
+        }
+
+        $promedioTotal = array_sum($ocupacionesPorHora) / count($ocupacionesPorHora);
+        return round($promedioTotal, 2);
+    }
+
+    private function obtenerSalasPorTipoPorDia($facultad, $piso)
+    {
+        $inicioSemana = Carbon::now()->startOfWeek();
+        $finSemana = Carbon::now()->endOfWeek();
+        $diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+        // Inicializar estructura de datos
+        $dataPorTipo = [];
+
+        // Obtener TODOS los datos en UNA sola consulta
+        $reservas = Reserva::whereBetween('fecha_reserva', [$inicioSemana, $finSemana])
+            ->whereIn('estado', ['activa', 'finalizada'])
+            ->with(['espacio' => function($q) {
+                $q->select('id_espacio', 'tipo_espacio', 'piso_id');
+            }, 'espacio.piso' => function($q) {
+                $q->select('id', 'id_facultad', 'numero_piso');
+            }])
+            ->get();
+
+        // Filtrar por facultad/piso en PHP (después de que lleguen)
+        $reservasFiltradas = $reservas->filter(function($reserva) use ($facultad, $piso) {
+            if (!$reserva->espacio || !$reserva->espacio->piso) {
+                return false;
+            }
+            
+            if ($piso) {
+                return $reserva->espacio->piso->id_facultad == $facultad && 
+                       $reserva->espacio->piso->numero_piso == $piso;
+            } elseif ($facultad) {
+                return $reserva->espacio->piso->id_facultad == $facultad;
+            }
+            return true;
+        })->filter(function($reserva) {
+            return $reserva->espacio && $reserva->espacio->tipo_espacio === 'Sala de Clases';
+        });
+
+        // Agrupar por tipo de espacio y día
+        $agrupadoPorTipo = $reservasFiltradas->groupBy(function($reserva) {
+            return $reserva->espacio->tipo_espacio;
+        })->map(function($reservasPorTipo) use ($inicioSemana, $diasSemana) {
+            $reservasPorDia = array_fill(0, 6, 0);
+            
+            foreach ($reservasPorTipo as $reserva) {
+                $dia = Carbon::parse($reserva->fecha_reserva);
+                $indexDia = $dia->diffInDays($inicioSemana);
+                
+                if ($indexDia >= 0 && $indexDia < 6) {
+                    $reservasPorDia[$indexDia]++;
+                }
+            }
+            
+            return $reservasPorDia;
+        });
+
+        // Construir resultado
+        foreach ($agrupadoPorTipo as $tipo => $datos) {
+            if (array_sum($datos) > 0) {
+                $dataPorTipo[] = [
+                    'tipo' => $tipo,
+                    'datos' => $datos
+                ];
+            }
+        }
+
+        return [
+            'tipos' => $dataPorTipo,
+            'dias' => $diasSemana,
+            'rango_fechas' => [
+                'inicio' => $inicioSemana->format('d/m/Y'),
+                'fin' => $finSemana->format('d/m/Y')
+            ]
+        ];
+    }
+
+    private function obtenerOcupacionPorTurno($facultad, $piso)
+    {
+        $inicioSemana = Carbon::now()->startOfWeek();
+        $finSemana = Carbon::now()->endOfWeek();
+        $diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        
+        $ocupacionDiurno = [];
+        $ocupacionVespertino = [];
+
+        for ($i = 0; $i < 6; $i++) {
+            $dia = $inicioSemana->copy()->addDays($i);
+            
+            $diurno = $this->calcularOcupacionPromedioHora($dia->copy(), $dia->copy(), $facultad, $piso, 'diurno');
+            $vespertino = $this->calcularOcupacionPromedioHora($dia->copy(), $dia->copy(), $facultad, $piso, 'vespertino');
+            
+            $ocupacionDiurno[] = $diurno;
+            $ocupacionVespertino[] = $vespertino;
+        }
+
+        return [
+            'datos' => [
+                'diurno' => $ocupacionDiurno,
+                'vespertino' => $ocupacionVespertino,
+                'total' => array_map(function($d, $v) { return ($d + $v) / 2; }, $ocupacionDiurno, $ocupacionVespertino)
+            ],
+            'dias' => $diasSemana,
+            'rango_fechas' => [
+                'inicio' => $inicioSemana->format('d/m/Y'),
+                'fin' => $finSemana->format('d/m/Y')
+            ]
+        ];
+    }
+
+    private function obtenerOcupacionPorTipo($facultad, $piso)
+    {
+        $inicioSemana = Carbon::now()->startOfWeek();
+        $finSemana = Carbon::now()->endOfWeek();
+        $diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        
+        // Obtener todos los tipos de sala
+        $tipos = Espacio::whereHas('piso', function($query) use ($facultad, $piso) {
+            if ($piso) {
+                $query->where('id_facultad', $facultad);
+                $query->where('numero_piso', $piso);
+            } elseif ($facultad) {
+                $query->where('id_facultad', $facultad);
+            }
+        })
+        ->where('tipo_espacio', 'Sala de Clases')
+        ->distinct('tipo_espacio')
+        ->pluck('tipo_espacio');
+
+        $ocupacionPorTipo = [];
+        
+        foreach ($tipos as $tipo) {
+            $datosOcupacion = [];
+            
+            for ($i = 0; $i < 6; $i++) {
+                $dia = $inicioSemana->copy()->addDays($i);
+                
+                // Obtener total de espacios de este tipo
+                $totalEspacios = Espacio::whereHas('piso', function($query) use ($facultad, $piso) {
+                    if ($piso) {
+                        $query->where('id_facultad', $facultad);
+                        $query->where('numero_piso', $piso);
+                    } elseif ($facultad) {
+                        $query->where('id_facultad', $facultad);
+                    }
+                })
+                ->where('tipo_espacio', $tipo)
+                ->count();
+
+                // Obtener máximo de espacios ocupados en cualquier hora del día
+                $maxOcupados = Reserva::where('fecha_reserva', $dia->format('Y-m-d'))
+                    ->whereIn('estado', ['activa', 'finalizada'])
+                    ->whereHas('espacio', function($query) use ($facultad, $piso, $tipo) {
+                        if ($piso) {
+                            $query->whereHas('piso', function($q) use ($facultad, $piso) {
+                                $q->where('id_facultad', $facultad);
+                                $q->where('numero_piso', $piso);
+                            });
+                        } elseif ($facultad) {
+                            $query->whereHas('piso', function($q) use ($facultad) {
+                                $q->where('id_facultad', $facultad);
+                            });
+                        }
+                        $query->where('tipo_espacio', $tipo);
+                    })
+                    ->distinct('id_espacio')
+                    ->count('id_espacio');
+                
+                $ocupacion = $totalEspacios > 0 ? ($maxOcupados / $totalEspacios) * 100 : 0;
+                $datosOcupacion[] = round($ocupacion, 2);
+            }
+            
+            // Incluir todos los tipos, incluso los vacíos, para mostrar en la leyenda
+            $ocupacionPorTipo[] = [
+                'tipo' => $tipo,
+                'datos' => $datosOcupacion
+            ];
+        }
+
+        return [
+            'tipos' => $ocupacionPorTipo,
+            'dias' => $diasSemana,
+            'rango_fechas' => [
+                'inicio' => $inicioSemana->format('d/m/Y'),
+                'fin' => $finSemana->format('d/m/Y')
+            ]
+        ];
+    }
+
+    private function obtenerOcupacionPorSala($facultad, $piso)
+    {
+        $inicioSemana = Carbon::now()->startOfWeek();
+        $finSemana = Carbon::now()->endOfWeek();
+        $diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        
+        // Obtener todas las salas de clases
+        $salas = Espacio::whereHas('piso', function($query) use ($facultad, $piso) {
+            if ($piso) {
+                $query->where('id_facultad', $facultad);
+                $query->where('numero_piso', $piso);
+            } elseif ($facultad) {
+                $query->where('id_facultad', $facultad);
+            }
+        })
+        ->where('tipo_espacio', 'Sala de Clases')
+        ->orderBy('id_espacio')
+        ->get();
+
+        $ocupacionPorSala = [];
+        
+        foreach ($salas as $sala) {
+            $datosOcupacion = [];
+            $modulosTotales = 0;
+            
+            for ($i = 0; $i < 6; $i++) {
+                $dia = $inicioSemana->copy()->addDays($i);
+                
+                // Contar el número de reservas en esta sala ese día
+                $numReservas = Reserva::where('fecha_reserva', $dia->format('Y-m-d'))
+                    ->where('id_espacio', $sala->id_espacio)
+                    ->whereIn('estado', ['activa', 'finalizada'])
+                    ->count();
+                
+                $modulosTotales += $numReservas;
+                
+                // Calcular ocupación: (reservas / 15) * 100
+                // 15 es el total de módulos disponibles por día
+                $ocupacion = 15 > 0 ? ($numReservas / 15) * 100 : 0;
+                $datosOcupacion[] = round($ocupacion, 2);
+            }
+            
+            // Solo incluir salas que tengan al menos 1 reserva
+            if ($modulosTotales > 0) {
+                $ocupacionPorSala[] = [
+                    'sala' => $sala->id_espacio,
+                    'modulos' => $modulosTotales,
+                    'datos' => $datosOcupacion
+                ];
+            }
+        }
+
+        return [
+            'salas' => $ocupacionPorSala,
+            'dias' => $diasSemana,
+            'rango_fechas' => [
+                'inicio' => $inicioSemana->format('d/m/Y'),
+                'fin' => $finSemana->format('d/m/Y')
+            ]
+        ];
+    }
+
+    private function obtenerDisponibilidadSalas($facultad, $piso)
+    {
+        $inicioSemana = Carbon::now()->startOfWeek();
+        $finSemana = Carbon::now()->endOfWeek();
+        $diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        
+        $disponibilidadPorDia = [];
+
+        for ($i = 0; $i < 6; $i++) {
+            $dia = $inicioSemana->copy()->addDays($i);
+            // Calcular el promedio de promedios de desocupación para ese día
+            $disponibilidad = $this->calcularDisponibilidadPromediosHoraPorDia(
+                $dia->copy(),
+                $facultad,
+                $piso
+            );
+            $disponibilidadPorDia[$diasSemana[$i]] = $disponibilidad;
+        }
+
+        return [
+            'datos' => $disponibilidadPorDia,
+            'dias' => $diasSemana,
+            'totalSalas' => Espacio::whereHas('piso', function($query) use ($facultad, $piso) {
+                if ($piso) {
+                    $query->where('id_facultad', $facultad);
+                    $query->where('numero_piso', $piso);
+                } elseif ($facultad) {
+                    $query->where('id_facultad', $facultad);
+                }
+            })
+            ->where('tipo_espacio', 'Sala de Clases')
+            ->count(),
+            'rango_fechas' => [
+                'inicio' => $inicioSemana->format('d/m/Y'),
+                'fin' => $finSemana->format('d/m/Y')
+            ]
+        ];
+    }
+
+    private function calcularDisponibilidadPromediosHoraPorDia($fecha, $facultad = null, $piso = null)
+    {
+        $totalEspacios = $this->obtenerEspaciosQuery($facultad, $piso)
+            ->where('tipo_espacio', 'Sala de Clases')
+            ->count();
+
+        if ($totalEspacios === 0) {
+            return 100; // Si no hay espacios, está 100% disponible
+        }
+
+        // Array para almacenar los porcentajes de desocupación de cada hora
+        $desocupacionesPorHora = [];
+
+        $horaInicio = 8;
+        if ($fecha->isSaturday()) {
+            $horaFin = 13; // Sábado: 8 a 13
+        } else {
+            $horaFin = 23; // Lunes a viernes: 8 a 23
+        }
+
+        // Iterar por cada hora del día
+        for ($hora = $horaInicio; $hora < $horaFin; $hora++) {
+            $horaInicioFormato = sprintf('%02d:00:00', $hora);
+            $horaFinFormato = sprintf('%02d:59:59', $hora);
+            
+            // Obtener todas las reservas que incluyan esta hora
+            $reservasEnHora = Reserva::where('fecha_reserva', $fecha->format('Y-m-d'))
+                ->whereBetween('hora', [$horaInicioFormato, $horaFinFormato])
+                ->whereIn('estado', ['activa', 'finalizada'])
+                ->whereHas('espacio', function($query) use ($facultad, $piso) {
+                    if ($piso) {
+                        $query->whereHas('piso', function($q) use ($facultad, $piso) {
+                            $q->where('id_facultad', $facultad);
+                            $q->where('numero_piso', $piso);
+                        });
+                    } elseif ($facultad) {
+                        $query->whereHas('piso', function($q) use ($facultad) {
+                            $q->where('id_facultad', $facultad);
+                        });
+                    }
+                    $query->where('tipo_espacio', 'Sala de Clases');
+                })
+                ->count();
+
+            // Calcular desocupación de esta hora en porcentaje (100% - ocupación%)
+            $ocupacionEnHora = ($reservasEnHora / $totalEspacios) * 100;
+            $desocupacionEnHora = 100 - min($ocupacionEnHora, 100);
+            $desocupacionesPorHora[] = $desocupacionEnHora;
+        }
+
+        // Retornar el promedio de todos los porcentajes de desocupación por hora
+        if (count($desocupacionesPorHora) === 0) {
+            return 100;
+        }
+
+        $promedioTotal = array_sum($desocupacionesPorHora) / count($desocupacionesPorHora);
+        return round($promedioTotal, 2);
     }
 
     private function obtenerComparativaTipos($facultad, $piso)
@@ -1981,5 +2534,24 @@ class DashboardController extends Controller
             'mes',
             'anio'
         ))->render();
+    }
+
+    public function obtenerDatosGraficosAjax(Request $request)
+    {
+        $facultad = $request->query('facultad');
+        $piso = $request->query('piso');
+        $tipo = $request->query('tipo');
+
+        $datos = [];
+
+        if ($tipo === 'ocupacion_turno') {
+            $datos = $this->obtenerOcupacionPorTurno($facultad, $piso);
+        } elseif ($tipo === 'ocupacion_tipo') {
+            $datos = $this->obtenerOcupacionPorTipo($facultad, $piso);
+        } elseif ($tipo === 'salas_tipo') {
+            $datos = $this->obtenerSalasPorTipoPorDia($facultad, $piso);
+        }
+
+        return response()->json($datos);
     }
 }

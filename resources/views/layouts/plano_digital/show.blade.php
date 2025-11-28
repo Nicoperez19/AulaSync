@@ -1184,7 +1184,7 @@
             const qrStatus = getQrStatus();
             if (qrStatus) {
                 qrStatus.classList.add('parpadeo');
-                qrStatus.innerHTML = 'Esperando... Escanea el código QR';
+                qrStatus.innerHTML = 'Escanea el carnet';
             }
 
             // Limpiar cualquier input de QR que pueda tener datos
@@ -1711,20 +1711,20 @@
 
         if (tieneClases === true) {
             // Profesor CON clases - solo registra solicitud
-            document.getElementById('qr-status').innerHTML = 'Profesor con clases verificado. Escanee el espacio para registrar asistencia.';
+            document.getElementById('qr-status').innerHTML = 'Escanea el QR de la sala';
             mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
             usuarioEscaneado = run;
             ordenEscaneo = 'espacio';
         } else {
             // Profesor SIN clases - solicita con módulos
-            document.getElementById('qr-status').innerHTML = 'Profesor sin clases. Escanee el espacio para solicitar.';
+            document.getElementById('qr-status').innerHTML = 'Escanea el QR de la sala';
             mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
             usuarioEscaneado = run;
             ordenEscaneo = 'espacio';
         }
                 } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
                             // Es solicitante registrado - solicita con módulos
-        document.getElementById('qr-status').innerHTML = 'Solicitante verificado. Escanee el espacio para solicitar.';
+        document.getElementById('qr-status').innerHTML = 'Escanea el QR de la sala';
         mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
         usuarioEscaneado = run;
         ordenEscaneo = 'espacio';
@@ -1982,24 +1982,35 @@
                     return;
                 }
 
-                let mensajeDetallado = resultadoVerificacion.mensaje;
+                // Construir contenido del SweetAlert
+                let htmlContent = `<div class="text-left">
+                    <p class="mb-4 text-lg font-semibold text-red-600">La sala está ocupada por una reserva anterior</p>`;
+                
                 if (resultadoVerificacion.ocupante) {
                     const ocupante = resultadoVerificacion.ocupante;
                     const tipoUsuario = ocupante.tipo === 'profesor' ? 'Profesor' : 'Solicitante';
-                    mensajeDetallado = `
-                        <div class="text-left">
-                            <p class="mb-2"><strong>${resultadoVerificacion.mensaje}</strong></p>
-                            <div class="p-3 bg-gray-100 rounded-lg">
-                                <p><strong>${tipoUsuario}:</strong> ${ocupante.nombre}</p>
-                                <p><strong>RUN:</strong> ${ocupante.run}</p>
-                                <p><strong>Hora de inicio:</strong> ${ocupante.hora_inicio}</p>
-                                <p><strong>Fecha:</strong> ${ocupante.fecha}</p>
-                            </div>
+                    htmlContent += `
+                        <div class="p-4 mb-4 bg-red-50 border-l-4 border-red-500 rounded">
+                            <p class="mb-2"><strong>${tipoUsuario}:</strong> ${ocupante.nombre}</p>
+                            <p class="mb-2"><strong>RUN:</strong> ${ocupante.run}</p>
+                            <p class="mb-2"><strong>Hora de inicio:</strong> ${ocupante.hora_inicio}</p>
+                            <p class="mb-2"><strong>Fecha:</strong> ${ocupante.fecha}</p>
                         </div>
                     `;
                 }
+                
+                htmlContent += `<p class="mt-4 text-sm text-gray-700 font-semibold">Debe desmarcar la reserva anterior antes de volver a solicitar esta sala.</p></div>`;
 
-
+                // Mostrar SweetAlert
+                Swal.fire({
+                    title: 'Sala Ocupada',
+                    html: htmlContent,
+                    icon: 'error',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#dc2626',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                });
 
                 // Limpiar estado después de mostrar el mensaje
                 setTimeout(() => {
@@ -2008,7 +2019,7 @@
                     if (qrInputManager) {
                         qrInputManager.setActiveInput('main');
                     }
-                }, 1000);
+                }, 500);
 
                 ordenEscaneo = 'usuario';
                 return;

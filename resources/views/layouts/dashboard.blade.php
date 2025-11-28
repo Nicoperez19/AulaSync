@@ -32,7 +32,7 @@
     <div class="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
             <!-- Estadísticas de Reservas y Salas -->
             <div
-                class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
+                class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-visible">
                 <div class="flex items-center justify-between mb-3">
                     <div class="flex items-center gap-2">
                         <span class="font-semibold text-gray-500">Estadísticas de Hoy</span>
@@ -41,7 +41,8 @@
                             <div class="invisible group-hover:visible absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-56 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-lg z-50 whitespace-normal">
                                 <p class="font-semibold mb-2">Estadísticas de Hoy:</p>
                                 <p class="mb-2"><strong>Total Reservas:</strong> Contabiliza todas las reservas registradas durante el día actual.</p>
-                                <p class="text-gray-300"><strong>Sala más usada:</strong> La sala con más reservas registradas en el día.</p>
+                                <p class="text-gray-300"><strong>Mayor cantidad de reservas:</strong> La sala con más reservas registradas en el día.</p>
+                                <p class="text-gray-300"><strong>Mayor ocupación de módulos:</strong> La sala con mayor porcentaje de ocupación calculado como (módulos utilizados / 15) × 100.</p>
                                 <div class="absolute -top-1 left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
                             </div>
                         </div>
@@ -54,21 +55,32 @@
                         <span class="text-xs text-gray-500">Total Reservas:</span>
                         <span class="text-2xl font-bold text-blue-600">{{ $totalReservasHoy }}</span>
                     </div>
-                    @if($salaMasUtilizada)
-                        <div class="mt-1">
-                            <span class="text-xs text-gray-400">Sala más usada:</span>
-                            <div class="text-sm font-bold text-yellow-600">{{ $salaMasUtilizada->espacio->id_espacio ?? 'N/A' }}</div>
-                            <div class="text-xs text-gray-500">{{ $salaMasUtilizada->total }} reservas</div>
-                        </div>
-                    @else
-                        <div class="mt-1 text-xs text-gray-400">Sin datos de salas</div>
-                    @endif
+                    <div class="flex flex-row gap-4 mt-1">
+                        @if($salasUtilizadas['mas_reservas'])
+                            <div class="flex-1">
+                                <span class="text-xs text-gray-400">Mayor cantidad de reservas:</span>
+                                <div class="text-sm font-bold text-yellow-600">{{ $salasUtilizadas['mas_reservas']->espacio->id_espacio ?? 'N/A' }}</div>
+                                <div class="text-xs text-gray-500">{{ $salasUtilizadas['mas_reservas']->total }} reservas</div>
+                            </div>
+                        @endif
+                        @if($salasUtilizadas['mas_ocupada'])
+                            <div class="flex-1">
+                                <span class="text-xs text-gray-400">Mayor ocupación de módulos:</span>
+                                <div class="text-sm font-bold text-orange-600">{{ $salasUtilizadas['mas_ocupada']->espacio->id_espacio ?? 'N/A' }}</div>
+                                <div class="text-xs text-gray-500">{{ number_format(($salasUtilizadas['mas_ocupada']->total / 15) * 100, 2) }}% ocupación</div>
+                            </div>
+                        @else
+                            @if($salasUtilizadas['mas_reservas'])
+                                <div class="text-xs text-gray-400">Sin datos para módulos</div>
+                            @endif
+                        @endif
+                    </div>
                 </div>
             </div>
 
             <!-- % Ocupación Semanal -->
             <div
-                class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
+                class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-visible">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2">
                         <span class="font-semibold text-gray-500">% Ocupación Semanal </span>
@@ -108,7 +120,7 @@
 
             <!-- % Salas Desocupadas -->
             <div
-                class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
+                class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-visible">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2">
                         <span class="font-semibold text-gray-500">% Salas de Clases Desocupadas</span>
@@ -149,7 +161,7 @@
             </div>
             <!-- Promedio Ocupación Mensual -->
             <div
-                class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-hidden">
+                class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-visible">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2">
                         <span class="font-semibold text-gray-500">Promedio Ocupación Mensual</span>
@@ -309,7 +321,7 @@
             </h3>
 
             <!-- Tabs -->
-            <div class="border-b border-gray-200 mb-6" x-data="{ activeTab: 'graficos' }">
+            <div class="border-b border-gray-200 mb-6" x-data="{ activeTab: 'graficos', salasViewMode: 'individual', ocupacionViewMode: 'total' }">
                 <nav class="flex space-x-4" aria-label="Tabs">
                     <button @click="activeTab = 'graficos'"
                             :class="activeTab === 'graficos' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
@@ -340,17 +352,103 @@
                 <!-- Tab Content: Gráficos -->
                 <div x-show="activeTab === 'graficos'" class="mt-6">
                     <div class="grid w-full grid-cols-1 gap-8 md:grid-cols-2">
-                        <!-- Gráfico de barras: Uso por Día -->
-                        <div class="p-8 bg-gray-50 rounded-xl shadow flex flex-col items-center min-h-[260px] relative widget-transition w-full">
-                            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Gráfico de Barras: Uso por Día </h4>
-                            <p class="text-sm text-gray-500 mb-4 rango-fechas-grafico">Semana del {{ $usoPorDia['rango_fechas']['inicio'] }} al {{ $usoPorDia['rango_fechas']['fin'] }}</p>
-                            <canvas id="grafico-barras" width="500" height="300"></canvas>
+                        <!-- Gráfico 1: Línea - % Ocupación por Día (INTERCAMBIADO) -->
+                        <div class="p-8 bg-gray-50 rounded-xl shadow flex flex-col items-center min-h-[300px] relative widget-transition w-full">
+                            <h4 class="flex items-center gap-2 mb-2 font-semibold text-gray-700">
+                                <i class="fas fa-percentage text-purple-600"></i>
+                                % Ocupación por Día
+                                <div class="group relative inline-block">
+                                    <i class="fas fa-info-circle text-gray-400 hover:text-gray-600 cursor-help text-sm"></i>
+                                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded-lg p-2 w-60 z-50">
+                                        <p class="font-semibold mb-1">Cálculo:</p>
+                                        <p><strong>Total:</strong> Promedio de los porcentajes de ocupación de cada hora del día</p>
+                                        <p class="mt-1"><strong>Por Turno:</strong> Ocupación del turno diurno (8-19h) y vespertino (19-23h) por separado</p>
+                                        <p class="mt-1"><strong>Por Tipo:</strong> Ocupación por cada tipo de espacio (máximo de espacios ocupados / total)</p>
+                                        <p class="mt-1"><strong>Por Sala:</strong> (Módulos utilizados / 15) × 100 por cada sala</p>
+                                        <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                                    </div>
+                                </div>
+                            </h4>
+                            <div class="flex gap-2 flex-wrap">
+                                <button @click="ocupacionViewMode = 'total'; document.dispatchEvent(new CustomEvent('ocupacionViewModeChange', {detail: {modo: 'total'}}))" :class="{'bg-blue-500 text-white': ocupacionViewMode === 'total', 'bg-gray-200 text-gray-700': ocupacionViewMode !== 'total'}" class="px-3 py-1 rounded text-sm font-medium transition">
+                                    Total
+                                </button>
+                                <button @click="ocupacionViewMode = 'turno'; document.dispatchEvent(new CustomEvent('ocupacionViewModeChange', {detail: {modo: 'turno'}}))" :class="{'bg-blue-500 text-white': ocupacionViewMode === 'turno', 'bg-gray-200 text-gray-700': ocupacionViewMode !== 'turno'}" class="px-3 py-1 rounded text-sm font-medium transition">
+                                    Por Turno
+                                </button>
+                                <button @click="ocupacionViewMode = 'tipo'; document.dispatchEvent(new CustomEvent('ocupacionViewModeChange', {detail: {modo: 'tipo'}}))" :class="{'bg-blue-500 text-white': ocupacionViewMode === 'tipo', 'bg-gray-200 text-gray-700': ocupacionViewMode !== 'tipo'}" class="px-3 py-1 rounded text-sm font-medium transition">
+                                    Por Tipo
+                                </button>
+                                <button @click="ocupacionViewMode = 'sala'; document.dispatchEvent(new CustomEvent('ocupacionViewModeChange', {detail: {modo: 'sala'}}))" :class="{'bg-blue-500 text-white': ocupacionViewMode === 'sala', 'bg-gray-200 text-gray-700': ocupacionViewMode !== 'sala'}" class="px-3 py-1 rounded text-sm font-medium transition">
+                                    Por Sala
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-500 mb-4 rango-fechas-ocupacion">Semana del {{ $ocupacionPorDia['rango_fechas']['inicio'] }} al {{ $ocupacionPorDia['rango_fechas']['fin'] }}</p>
+                            <canvas id="grafico-ocupacion-por-dia" width="500" height="250"></canvas>
                         </div>
 
-                        <!-- Gráfico de línea: Promedio mensual -->
-                        <div class="p-8 bg-gray-50 rounded-xl shadow flex flex-col items-center min-h-[260px] relative widget-transition w-full">
-                            <h4 class="flex items-center gap-2 mb-4 font-semibold text-gray-700">Evolución semanal de ocupación </h4>
-                            <canvas id="grafico-mensual" width="500" height="300"></canvas>
+                        <!-- Gráfico 2: Línea - Salas Individuales por Día -->
+                        <div class="p-8 bg-gray-50 rounded-xl shadow flex flex-col items-center min-h-[300px] relative widget-transition w-full">
+                            <h4 class="flex items-center gap-2 mb-2 font-semibold text-gray-700">
+                                <i class="fas fa-chart-line text-green-600"></i>
+                                Reservas por Sala
+                                <div class="group relative inline-block">
+                                    <i class="fas fa-info-circle text-gray-400 hover:text-gray-600 cursor-help text-sm"></i>
+                                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded-lg p-2 w-48 z-50">
+                                        <p class="font-semibold mb-1">Cálculo:</p>
+                                        <p><strong>Individual:</strong> Número de reservas por cada sala de forma individual.</p>
+                                        <p class="mt-1"><strong>Por Tipo:</strong> Total de reservas agrupadas por tipo de espacio.</p>
+                                        <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                                    </div>
+                                </div>
+                            </h4>
+                            <div class="flex gap-2">
+                                <button @click="salasViewMode = 'individual'; document.dispatchEvent(new CustomEvent('salasViewModeChange', {detail: {modo: 'individual'}}))" :class="{'bg-blue-500 text-white': salasViewMode === 'individual', 'bg-gray-200 text-gray-700': salasViewMode !== 'individual'}" class="px-3 py-1 rounded text-sm font-medium transition">
+                                    Individual
+                                </button>
+                                <button @click="salasViewMode = 'tipo'; document.dispatchEvent(new CustomEvent('salasViewModeChange', {detail: {modo: 'tipo'}}))" :class="{'bg-blue-500 text-white': salasViewMode === 'tipo', 'bg-gray-200 text-gray-700': salasViewMode !== 'tipo'}" class="px-3 py-1 rounded text-sm font-medium transition">
+                                    Por Tipo
+                                </button>
+                            </div>
+                            <p class="text-xs text-gray-500 mb-4 rango-fechas-grafico-salas">Semana del {{ $salasUtilizadasPorDia['rango_fechas']['inicio'] }} al {{ $salasUtilizadasPorDia['rango_fechas']['fin'] }}</p>
+                            <canvas id="grafico-salas-individuales" width="500" height="250"></canvas>
+                        </div>
+
+                        <!-- Gráfico 3: Barras - Cantidad de Reservas por Día (INTERCAMBIADO) -->
+                        <div class="p-8 bg-gray-50 rounded-xl shadow flex flex-col items-center min-h-[300px] relative widget-transition w-full">
+                            <h4 class="flex items-center gap-2 mb-2 font-semibold text-gray-700">
+                                <i class="fas fa-chart-bar text-blue-600"></i>
+                                Cantidad de Reservas por Día
+                                <div class="group relative inline-block">
+                                    <i class="fas fa-info-circle text-gray-400 hover:text-gray-600 cursor-help text-sm"></i>
+                                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded-lg p-2 w-48 z-50">
+                                        <p class="font-semibold mb-1">Cálculo:</p>
+                                        <p>Muestra el número total de reservas registradas para cada día de la semana.</p>
+                                        <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                                    </div>
+                                </div>
+                            </h4>
+                            <p class="text-xs text-gray-500 mb-4 rango-fechas-grafico">Semana del {{ $usoPorDia['rango_fechas']['inicio'] }} al {{ $usoPorDia['rango_fechas']['fin'] }}</p>
+                            <canvas id="grafico-reservas-por-dia" width="500" height="250"></canvas>
+                        </div>
+
+                        <!-- Gráfico 4: Barras - Disponibilidad de Salas (INTERCAMBIADO) -->
+                        <div class="p-8 bg-gray-50 rounded-xl shadow flex flex-col items-center min-h-[300px] relative widget-transition w-full">
+                            <h4 class="flex items-center gap-2 mb-2 font-semibold text-gray-700">
+                                <i class="fas fa-chart-bar text-green-600"></i>
+                                Disponibilidad de Salas
+                                <div class="group relative inline-block">
+                                    <i class="fas fa-info-circle text-gray-400 hover:text-gray-600 cursor-help text-sm"></i>
+                                    <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded-lg p-2 w-48 z-50">
+                                        <p class="font-semibold mb-1">Cálculo:</p>
+                                        <p>Porcentaje promedio de salas desocupadas (disponibles) por cada día de la semana.</p>
+                                        <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
+                                    </div>
+                                </div>
+                            </h4>
+                            <p class="text-xs text-gray-500 mb-2">Total de salas: <strong>{{ $disponibilidadSalas['totalSalas'] }}</strong></p>
+                            <p class="text-xs text-gray-500 mb-4 rango-fechas-disponibilidad">Semana del {{ $disponibilidadSalas['rango_fechas']['inicio'] }} al {{ $disponibilidadSalas['rango_fechas']['fin'] }}</p>
+                            <canvas id="grafico-disponibilidad-salas" width="500" height="250"></canvas>
                         </div>
                     </div>
                 </div>
@@ -687,12 +785,10 @@
             </div>
         </div>
     </div>
-</x-app-layout>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-@vite(['resources/js/dashboard.js'])
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<script>
+    <script>
     // ========================================
     // VARIABLES GLOBALES
     // ========================================
@@ -1343,65 +1439,379 @@
         if (window.chartsInitialized) return;
 
         try {
-            // Gráfico de barras: Uso por Día
-            const canvasBarras = document.getElementById('grafico-barras');
-            if (canvasBarras && !window.graficoBarras) {
-                window.graficoBarras = new Chart(canvasBarras, {
+            // ============================================
+            // GRÁFICO 1: Barras - Cantidad de Reservas por Día
+            // ============================================
+            const canvasReservasPerDia = document.getElementById('grafico-reservas-por-dia');
+            if (canvasReservasPerDia && !window.graficoReservasPerDia) {
+                window.graficoReservasPerDia = new Chart(canvasReservasPerDia, {
                     type: 'bar',
                     data: {
                         labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
                         datasets: [{
                             label: 'Cantidad de reservas',
                             data: {!! json_encode(array_values($usoPorDia['datos'])) !!},
-                            backgroundColor: 'rgba(59, 130, 246, 0.7)'
+                            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1
                         }]
                     },
                     options: {
                         responsive: false,
                         plugins: {
-                            legend: { display: false }
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'Reservas: ' + context.parsed.y;
+                                    }
+                                }
+                            }
                         },
                         scales: {
                             y: {
                                 beginAtZero: true,
-                                title: {
-                                    display: true,
-                                    text: 'Cantidad de reservas'
-                                }
+                                ticks: { stepSize: 1 }
                             }
                         }
                     }
                 });
             }
 
-            // Gráfico de línea: Evolución mensual
-            const canvasMensual = document.getElementById('grafico-mensual');
-            if (canvasMensual && !window.graficoMensual) {
-                window.graficoMensual = new Chart(canvasMensual, {
+            // ============================================
+            // GRÁFICO 2: Línea - Salas Individuales por Día
+            // ============================================
+            const canvasSalasIndividuales = document.getElementById('grafico-salas-individuales');
+            if (canvasSalasIndividuales && !window.graficoSalasIndividuales) {
+                // Paleta de colores vibrante y variada
+                const colores = [
+                    'rgb(59, 130, 246)',    // Azul vibrante
+                    'rgb(239, 68, 68)',     // Rojo coral
+                    'rgb(34, 197, 94)',     // Verde esmeralda
+                    'rgb(168, 85, 247)',    // Púrpura profundo
+                    'rgb(245, 158, 11)',    // Ámbar dorado
+                    'rgb(59, 130, 246)',    // Cian brillante
+                    'rgb(236, 72, 153)',    // Rosa vibrante
+                    'rgb(249, 115, 22)',    // Naranja quemado
+                    'rgb(6, 182, 212)',     // Turquesa brillante
+                    'rgb(139, 92, 246)',    // Violeta profundo
+                    'rgb(34, 197, 94)',     // Verde Lima
+                    'rgb(239, 68, 68)',     // Rojo claro
+                    'rgb(244, 63, 94)',     // Fresa
+                    'rgb(251, 146, 60)',    // Naranja suave
+                    'rgb(107, 114, 128)',   // Gris pizarra
+                    'rgb(236, 72, 153)',    // Fuchsia
+                ];
+                
+                // Datos para vista individual
+                const datasetsIndividual = [];
+                const salasData = {!! json_encode($salasUtilizadasPorDia['salas'] ?? []) !!};
+                if (salasData && Array.isArray(salasData)) {
+                    salasData.forEach((sala, index) => {
+                    const color = colores[index % colores.length];
+                    datasetsIndividual.push({
+                        label: 'Sala: ' + sala.sala,
+                        data: sala.datos,
+                        borderColor: color,
+                        backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.08)'),
+                        fill: false,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: color,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        borderWidth: 2.5
+                    });
+                });
+                }
+
+                // Datos para vista por tipo
+                const datasetsPorTipo = [];
+                const tiposData = {!! json_encode($salasPorTipoPorDia['tipos'] ?? []) !!};
+                if (tiposData && Array.isArray(tiposData)) {
+                    tiposData.forEach((tipo, index) => {
+                        const color = colores[index % colores.length];
+                        datasetsPorTipo.push({
+                            label: 'Tipo: ' + tipo.tipo,
+                            data: tipo.datos,
+                            borderColor: color,
+                            backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.08)'),
+                            fill: false,
+                            tension: 0.4,
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            pointBackgroundColor: color,
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            borderWidth: 2.5
+                        });
+                    });
+                }
+
+                window.graficoSalasIndividuales = new Chart(canvasSalasIndividuales, {
                     type: 'line',
                     data: {
-                        labels: {!! json_encode($evolucionMensual['dias']) !!},
-                        datasets: [{
-                            label: 'Ocupación (%)',
-                            data: {!! json_encode($evolucionMensual['ocupacion']) !!},
-                            borderColor: 'rgba(59,130,246,1)',
-                            backgroundColor: 'rgba(59,130,246,0.2)',
-                            fill: true,
-                            tension: 0.4
-                        }]
+                        labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+                        datasets: datasetsIndividual
                     },
                     options: {
                         responsive: false,
                         plugins: {
-                            legend: { position: 'bottom' }
+                            legend: { position: 'bottom', maxHeight: 50 },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.parsed.y + ' reservas';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1 }
+                            }
+                        }
+                    }
+                });
+
+                // Guardar los datos para cambiar de modo
+                window.salasDatasets = {
+                    individual: datasetsIndividual,
+                    tipo: datasetsPorTipo
+                };
+            }
+
+            // ============================================
+            // GRÁFICO 3: Línea - % Ocupación por Día
+            // ============================================
+            const canvasOcupacionPerDia = document.getElementById('grafico-ocupacion-por-dia');
+            if (canvasOcupacionPerDia && !window.graficoOcupacionPerDia) {
+                const ocupacionTotalData = {!! json_encode(array_values($ocupacionPorDia['datos'] ?? [])) !!};
+                const ocupacionPorTurnoData = {!! json_encode($ocupacionPorTurno['datos'] ?? []) !!};
+
+                // Datasets para vista Total
+                const datasetTotal = [{
+                    label: 'Ocupación (%)',
+                    data: ocupacionTotalData,
+                    borderColor: 'rgba(168, 85, 247, 1)',
+                    backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: 'rgba(168, 85, 247, 1)',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }];
+
+                // Datasets para vista Por Turno
+                const datasetsTurno = [
+                    {
+                        label: 'Diurno (%)',
+                        data: ocupacionPorTurnoData.diurno,
+                        borderColor: 'rgba(251, 191, 36, 1)',
+                        backgroundColor: 'rgba(251, 191, 36, 0.2)',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: 'rgba(251, 191, 36, 1)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    },
+                    {
+                        label: 'Vespertino (%)',
+                        data: ocupacionPorTurnoData.vespertino,
+                        borderColor: 'rgba(168, 85, 247, 1)',
+                        backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: 'rgba(168, 85, 247, 1)',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }
+                ];
+
+                // Datasets para vista Por Tipo
+                const coloresTipo = [
+                    'rgba(59, 130, 246, 1)',     // Azul
+                    'rgba(239, 68, 68, 1)',      // Rojo
+                    'rgba(34, 197, 94, 1)',      // Verde
+                    'rgba(168, 85, 247, 1)',     // Púrpura
+                    'rgba(245, 158, 11, 1)',     // Ámbar
+                    'rgba(6, 182, 212, 1)',      // Cian
+                    'rgba(236, 72, 153, 1)',     // Rosa
+                    'rgba(249, 115, 22, 1)'      // Naranja
+                ];
+                
+                const datasetsTipo = [];
+                const tipoOcupacionData = {!! json_encode($ocupacionPorTipo['tipos'] ?? []) !!};
+                tipoOcupacionData.forEach((tipo, index) => {
+                    const colorBase = coloresTipo[index % coloresTipo.length];
+                    
+                    datasetsTipo.push({
+                        label: tipo.tipo + ' (%)',
+                        data: tipo.datos,
+                        borderColor: colorBase,
+                        backgroundColor: 'rgba(0, 0, 0, 0)',
+                        fill: false,
+                        tension: 0.4,
+                        pointBackgroundColor: colorBase,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        borderWidth: 2.5
+                    });
+                });
+
+                // Datasets para vista Por Sala - Usar los mismos colores que en "Individual" de Reservas por Sala
+                const coloresSala = [
+                    'rgb(59, 130, 246)',    // Azul vibrante
+                    'rgb(239, 68, 68)',     // Rojo coral
+                    'rgb(34, 197, 94)',     // Verde esmeralda
+                    'rgb(168, 85, 247)',    // Púrpura profundo
+                    'rgb(245, 158, 11)',    // Ámbar dorado
+                    'rgb(59, 130, 246)',    // Cian brillante
+                    'rgb(236, 72, 153)',    // Rosa vibrante
+                    'rgb(249, 115, 22)',    // Naranja quemado
+                    'rgb(6, 182, 212)',     // Turquesa brillante
+                    'rgb(139, 92, 246)',    // Violeta profundo
+                    'rgb(34, 197, 94)',     // Verde Lima
+                    'rgb(239, 68, 68)',     // Rojo claro
+                    'rgb(244, 63, 94)',     // Fresa
+                    'rgb(251, 146, 60)',    // Naranja suave
+                    'rgb(107, 114, 128)',   // Gris pizarra
+                    'rgb(236, 72, 153)',    // Fuchsia
+                ];
+                
+                const datasetsSala = [];
+                const salaOcupacionData = {!! json_encode($ocupacionPorSala['salas'] ?? []) !!};
+                salaOcupacionData.forEach((sala, index) => {
+                    const colorBase = coloresSala[index % coloresSala.length];
+                    
+                    datasetsSala.push({
+                        label: sala.sala + ' (' + sala.modulos + ' módulos)',
+                        data: sala.datos,
+                        borderColor: colorBase,
+                        backgroundColor: 'rgba(0, 0, 0, 0)',
+                        fill: false,
+                        tension: 0.4,
+                        pointBackgroundColor: colorBase,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        borderWidth: 2.5,
+                        pointHoverBorderWidth: 3
+                    });
+                });
+
+                window.graficoOcupacionPerDia = new Chart(canvasOcupacionPerDia, {
+                    type: 'line',
+                    data: {
+                        labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+                        datasets: datasetTotal
+                    },
+                    options: {
+                        responsive: false,
+                        plugins: {
+                            legend: { display: window.graficoOcupacionPerDia ? false : true },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                                    }
+                                }
+                            }
+                        },
+                        onHover: (event, activeElements) => {
+                            if (window.graficoOcupacionPerDia) {
+                                const canvas = window.graficoOcupacionPerDia.canvas;
+                                if (activeElements.length > 0) {
+                                    const datasetIndex = activeElements[0].datasetIndex;
+                                    window.graficoOcupacionPerDia.data.datasets.forEach((dataset, i) => {
+                                        dataset.borderWidth = i === datasetIndex ? 4 : 2.5;
+                                        dataset.pointRadius = i === datasetIndex ? 7 : 5;
+                                        dataset.opacity = i === datasetIndex ? 1 : 0.3;
+                                    });
+                                } else {
+                                    window.graficoOcupacionPerDia.data.datasets.forEach((dataset) => {
+                                        dataset.borderWidth = 2.5;
+                                        dataset.pointRadius = 5;
+                                        dataset.opacity = 1;
+                                    });
+                                }
+                                window.graficoOcupacionPerDia.update('none');
+                            }
                         },
                         scales: {
                             y: {
                                 beginAtZero: true,
                                 max: 100,
-                                title: {
-                                    display: true,
-                                    text: 'Porcentaje de ocupación'
+                                ticks: { 
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
+                // Guardar los datos para cambiar de modo
+                window.ocupacionDatasets = {
+                    total: datasetTotal,
+                    turno: datasetsTurno,
+                    tipo: datasetsTipo,
+                    sala: datasetsSala
+                };
+            }
+
+            // ============================================
+            // GRÁFICO 4: Barras - Disponibilidad de Salas
+            // ============================================
+            const canvasDisponibilidad = document.getElementById('grafico-disponibilidad-salas');
+            if (canvasDisponibilidad && !window.graficoDisponibilidad) {
+                const datosDisponibilidad = {!! json_encode($disponibilidadSalas['datos'] ?? []) !!};
+
+                window.graficoDisponibilidad = new Chart(canvasDisponibilidad, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+                        datasets: [{
+                            label: 'Disponibilidad (%)',
+                            data: datosDisponibilidad,
+                            backgroundColor: 'rgba(34, 197, 94, 0.7)',
+                            borderColor: 'rgba(34, 197, 94, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: false,
+                        indexAxis: 'x',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return 'Disponible: ' + context.parsed.y.toFixed(2) + '%';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
                                 }
                             }
                         }
@@ -1412,8 +1822,8 @@
             // Gráfico circular: TODOS los espacios ocupados/libres
             const canvasCircular = document.getElementById('grafico-circular-salas');
             if (canvasCircular && !window.graficoCircularSalas) {
-                const libresTotal = @json($espaciosOcupadosTotal['libres']);
-                const ocupadasTotal = @json($espaciosOcupadosTotal['ocupadas']);
+                const libresTotal = @json($espaciosOcupadosTotal['libres'] ?? 0);
+                const ocupadasTotal = @json($espaciosOcupadosTotal['ocupadas'] ?? 0);
                 
                 window.graficoCircularSalas = new Chart(canvasCircular, {
                     type: 'doughnut',
@@ -1499,6 +1909,113 @@
         }
     }
 
+    // ============================================
+    // EVENT LISTENERS PARA TOGGLES DE GRÁFICOS
+    // ============================================
+    
+    // Toggle de Salas: Individual vs Por Tipo
+    document.addEventListener('salasViewModeChange', function(e) {
+        if (window.graficoSalasIndividuales && window.salasDatasets) {
+            const modo = e.detail.modo;
+            window.graficoSalasIndividuales.data.datasets = window.salasDatasets[modo];
+            window.graficoSalasIndividuales.update();
+        }
+    });
+
+    // Toggle de Ocupación: Total vs Por Turno vs Por Tipo
+    document.addEventListener('ocupacionViewModeChange', function(e) {
+        if (window.graficoOcupacionPerDia) {
+            const modo = e.detail.modo;
+            
+            // Si ya tenemos los datos, usarlos
+            if (window.ocupacionDatasets && window.ocupacionDatasets[modo]) {
+                window.graficoOcupacionPerDia.data.datasets = window.ocupacionDatasets[modo];
+                window.graficoOcupacionPerDia.options.plugins.legend.display = (modo === 'turno' || modo === 'tipo');
+                window.graficoOcupacionPerDia.update();
+            } else if (modo === 'turno' || modo === 'tipo') {
+                // Cargar datos via AJAX
+                const tipoData = modo === 'turno' ? 'ocupacion_turno' : 'ocupacion_tipo';
+                const facultad = new URLSearchParams(window.location.search).get('facultad') || '';
+                const piso = new URLSearchParams(window.location.search).get('piso') || '';
+                
+                fetch(`/dashboard/graficos-ajax?tipo=${tipoData}&facultad=${facultad}&piso=${piso}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (modo === 'turno') {
+                            const datasetsTurno = [
+                                {
+                                    label: 'Diurno (%)',
+                                    data: data.datos.diurno,
+                                    borderColor: 'rgba(251, 191, 36, 1)',
+                                    backgroundColor: 'rgba(251, 191, 36, 0.2)',
+                                    fill: true,
+                                    tension: 0.4,
+                                    pointBackgroundColor: 'rgba(251, 191, 36, 1)',
+                                    pointBorderColor: '#fff',
+                                    pointBorderWidth: 2,
+                                    pointRadius: 5,
+                                    pointHoverRadius: 7
+                                },
+                                {
+                                    label: 'Vespertino (%)',
+                                    data: data.datos.vespertino,
+                                    borderColor: 'rgba(168, 85, 247, 1)',
+                                    backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                                    fill: true,
+                                    tension: 0.4,
+                                    pointBackgroundColor: 'rgba(168, 85, 247, 1)',
+                                    pointBorderColor: '#fff',
+                                    pointBorderWidth: 2,
+                                    pointRadius: 5,
+                                    pointHoverRadius: 7
+                                }
+                            ];
+                            window.graficoOcupacionPerDia.data.datasets = datasetsTurno;
+                        } else if (modo === 'tipo') {
+                            const coloresTipo = [
+                                'rgba(59, 130, 246, 1)',
+                                'rgba(239, 68, 68, 1)',
+                                'rgba(34, 197, 94, 1)',
+                                'rgba(168, 85, 247, 1)',
+                                'rgba(245, 158, 11, 1)',
+                                'rgba(6, 182, 212, 1)',
+                                'rgba(236, 72, 153, 1)',
+                                'rgba(249, 115, 22, 1)'
+                            ];
+                            const datasetsTipo = [];
+                            data.tipos.forEach((tipo, index) => {
+                                const colorBase = coloresTipo[index % coloresTipo.length];
+                                datasetsTipo.push({
+                                    label: tipo.tipo + ' (%)',
+                                    data: tipo.datos,
+                                    borderColor: colorBase,
+                                    backgroundColor: colorBase.replace(')', ', 0.15)'),
+                                    fill: true,
+                                    tension: 0.4,
+                                    pointBackgroundColor: colorBase,
+                                    pointBorderColor: '#fff',
+                                    pointBorderWidth: 2,
+                                    pointRadius: 5,
+                                    pointHoverRadius: 7,
+                                    borderWidth: 2.5
+                                });
+                            });
+                            window.graficoOcupacionPerDia.data.datasets = datasetsTipo;
+                        }
+                        window.graficoOcupacionPerDia.options.plugins.legend.display = true;
+                        window.graficoOcupacionPerDia.update();
+                    })
+                    .catch(error => console.error('Error cargando datos:', error));
+            }
+        }
+    });
+
+    // ============================================
+    // HOVER EFFECTS PARA LÍNEAS
+    // ============================================
+    
+    // Efecto de hover para el gráfico de salas individuales - se inicializa en DOMContentLoaded principal
+
     // ========================================
     // INICIALIZACIÓN Y EVENT LISTENERS
     // ========================================
@@ -1549,6 +2066,48 @@
                     });
             });
         }
+
+        // ============================================
+        // HOVER EFFECTS PARA LÍNEAS
+        // ============================================
+        
+        // Efecto de hover para el gráfico de salas individuales
+        if (window.graficoSalasIndividuales) {
+            const canvasSalasIndividuales = document.getElementById('grafico-salas-individuales');
+            if (canvasSalasIndividuales) {
+                canvasSalasIndividuales.addEventListener('mousemove', function(evt) {
+                    const points = window.graficoSalasIndividuales.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true);
+                    const datasets = window.graficoSalasIndividuales.data.datasets;
+                    
+                    datasets.forEach((dataset, index) => {
+                        dataset.borderWidth = 1;
+                        const color = dataset.borderColor;
+                        dataset.borderColor = color.replace(/[\d.]+\)$/, '0.2)');
+                    });
+                    
+                    if (points.length > 0) {
+                        const activeDatasetIndex = points[0].datasetIndex;
+                        if (datasets[activeDatasetIndex]) {
+                            datasets[activeDatasetIndex].borderWidth = 3;
+                            const color = datasets[activeDatasetIndex].borderColor;
+                            datasets[activeDatasetIndex].borderColor = color.replace(/[\d.]+\)$/, '1)');
+                        }
+                    }
+                    
+                    window.graficoSalasIndividuales.update('none');
+                });
+
+                canvasSalasIndividuales.addEventListener('mouseleave', function() {
+                    const datasets = window.graficoSalasIndividuales.data.datasets;
+                    datasets.forEach((dataset) => {
+                        dataset.borderWidth = 2;
+                        const color = dataset.borderColor;
+                        dataset.borderColor = color.replace(/[\d.]+\)$/, '1)');
+                    });
+                    window.graficoSalasIndividuales.update('none');
+                });
+            }
+        }
     });
 
     // Modal fijo de reloj digital y módulo actual
@@ -1568,6 +2127,8 @@
     actualizarModalReloj();
     setInterval(actualizarModalReloj, 1000);
 </script>
+
+</x-app-layout>
 
 <!-- Estilos adicionales -->
 <style>
