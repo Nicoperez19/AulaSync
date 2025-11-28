@@ -131,15 +131,20 @@ class SimularReservas extends Command
         $this->info('🚀 Iniciando simulación...');
         $this->newLine();
 
+        // Cargar planificaciones del día una vez para reducir consultas a la base de datos
+        $diaActual = $this->getDiaActual();
+        $planificacionesDia = $this->cargarPlanificacionesDia($diaActual, $periodo);
+        $this->info("📚 Cargadas {$planificacionesDia->count()} planificaciones para hoy");
+        $this->newLine();
+
         while (true) {
             $ahora = Carbon::now();
-            $diaActual = $this->getDiaActual();
             $horaActual = $ahora->format('H:i:s');
 
             $this->line("⏰ [{$ahora->format('Y-m-d H:i:s')}] Verificando actividad...");
 
-            // 1. Verificar clases que deberían iniciar ahora
-            $this->verificarInicioClases($diaActual, $horaActual, $periodo, $probFalta, $reservasActivas);
+            // 1. Verificar clases que deberían iniciar ahora (usando planificaciones cacheadas)
+            $this->verificarInicioClases($horaActual, $probFalta, $probTemprano, $probTarde, $reservasActivas, $planificacionesDia);
 
             // 2. Verificar reservas que deberían finalizar
             $this->verificarFinalizacionReservas($ahora, $probTemprano, $probTarde, $reservasActivas);
@@ -153,23 +158,35 @@ class SimularReservas extends Command
     }
 
     /**
-     * Verificar e iniciar clases que deberían comenzar ahora
+     * Cargar todas las planificaciones del día para evitar consultas repetidas
      */
-    private function verificarInicioClases(string $diaActual, string $horaActual, string $periodo, int $probFalta, array &$reservasActivas): void
+    private function cargarPlanificacionesDia(string $diaActual, string $periodo)
     {
-        // Buscar planificaciones que inician en este momento (con margen de 2 minutos)
-        $horaInicio = Carbon::parse($horaActual)->subMinutes(1)->format('H:i:s');
-        $horaFin = Carbon::parse($horaActual)->addMinutes(1)->format('H:i:s');
-
-        $planificaciones = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura', 'horario.profesor'])
+        return Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura', 'horario.profesor'])
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
             })
-            ->whereHas('modulo', function ($query) use ($diaActual, $horaInicio, $horaFin) {
-                $query->where('dia', $diaActual)
-                    ->whereBetween('hora_inicio', [$horaInicio, $horaFin]);
+            ->whereHas('modulo', function ($query) use ($diaActual) {
+                $query->where('dia', $diaActual);
             })
             ->get();
+    }
+
+    /**
+     * Verificar e iniciar clases que deberían comenzar ahora
+     */
+    private function verificarInicioClases(string $horaActual, int $probFalta, int $probTemprano, int $probTarde, array &$reservasActivas, $planificacionesDia): void
+    {
+        // Filtrar planificaciones que inician en este momento (con margen de 2 minutos)
+        $horaInicio = Carbon::parse($horaActual)->subMinutes(1)->format('H:i:s');
+        $horaFin = Carbon::parse($horaActual)->addMinutes(1)->format('H:i:s');
+
+        // Filtrar en memoria desde las planificaciones cacheadas
+        $planificaciones = $planificacionesDia->filter(function ($planificacion) use ($horaInicio, $horaFin) {
+            $horaModulo = $planificacion->modulo->hora_inicio;
+
+            return $horaModulo >= $horaInicio && $horaModulo <= $horaFin;
+        });
 
         foreach ($planificaciones as $planificacion) {
             $profesor = $planificacion->horario->profesor ?? null;
@@ -201,14 +218,14 @@ class SimularReservas extends Command
             }
 
             // Crear la reserva
-            $this->crearReservaSimulada($profesor, $planificacion, $reservasActivas);
+            $this->crearReservaSimulada($profesor, $planificacion, $probTemprano, $probTarde, $reservasActivas);
         }
     }
 
     /**
      * Crear una reserva simulada para un profesor
      */
-    private function crearReservaSimulada(Profesor $profesor, Planificacion_Asignatura $planificacion, array &$reservasActivas): void
+    private function crearReservaSimulada(Profesor $profesor, Planificacion_Asignatura $planificacion, int $probTemprano, int $probTarde, array &$reservasActivas): void
     {
         $espacio = $planificacion->espacio;
 
@@ -249,11 +266,18 @@ class SimularReservas extends Command
 
         // Registrar en reservas activas con hora de finalización prevista
         $horaTermino = Carbon::parse($planificacion->modulo->hora_termino);
+        // Pre-determinar comportamiento de finalización usando los parámetros de probabilidad
+        $minutosRetrasoAleatorio = rand(1, 30);
+        $terminaTemprano = rand(1, 100) <= $probTemprano;
+        $terminaTarde = rand(1, 100) <= $probTarde;
         $reservasActivas[$reserva->id_reserva] = [
             'reserva' => $reserva,
             'hora_termino_prevista' => $horaTermino,
             'profesor_nombre' => $profesor->name,
             'espacio_nombre' => $espacio->nombre_espacio,
+            'minutos_retraso_aleatorio' => $minutosRetrasoAleatorio,
+            'termina_temprano_aleatorio' => $terminaTemprano,
+            'termina_tarde_aleatorio' => $terminaTarde,
         ];
 
         $this->estadisticas['reservas_creadas']++;
@@ -286,21 +310,23 @@ class SimularReservas extends Command
             $tipoFinalizacion = 'normal';
             $minutosAjuste = 0;
 
+            // Usar valores pre-determinados para consistencia
+            $terminaTemprano = $infoReserva['termina_temprano_aleatorio'] ?? false;
+            $terminaTarde = $infoReserva['termina_tarde_aleatorio'] ?? false;
+            $minutosRetraso = $infoReserva['minutos_retraso_aleatorio'] ?? rand(1, 30);
+
             // Verificar si termina temprano (20 minutos antes)
             $horaTerminoTemprano = $horaTerminoPrevista->copy()->subMinutes(20);
-            if ($ahora >= $horaTerminoTemprano && $ahora < $horaTerminoPrevista) {
-                if (rand(1, 100) <= $probTemprano) {
-                    $debeTerminar = true;
-                    $tipoFinalizacion = 'temprano';
-                    $minutosAjuste = -20;
-                }
+            if ($terminaTemprano && $ahora >= $horaTerminoTemprano && $ahora < $horaTerminoPrevista) {
+                $debeTerminar = true;
+                $tipoFinalizacion = 'temprano';
+                $minutosAjuste = -20;
             }
 
-            // Verificar si termina en su hora normal
+            // Verificar si termina en su hora normal o tarde
             if (! $debeTerminar && $ahora >= $horaTerminoPrevista) {
-                // Verificar si termina tarde (hasta 30 minutos después)
-                if (rand(1, 100) <= $probTarde) {
-                    $minutosRetraso = rand(1, 30);
+                if ($terminaTarde) {
+                    // Usar el retraso aleatorio pre-determinado
                     $horaTerminoTarde = $horaTerminoPrevista->copy()->addMinutes($minutosRetraso);
 
                     if ($ahora >= $horaTerminoTarde) {
