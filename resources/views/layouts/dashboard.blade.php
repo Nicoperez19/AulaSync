@@ -784,6 +784,78 @@
 
             </div>
         </div>
+
+        <!-- Clases No Realizadas Hoy -->
+        <div class="p-6 bg-white shadow-lg rounded-xl">
+            <div class="flex items-center gap-3 mb-6">
+                <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                <h3 class="text-lg font-bold text-gray-700">Clases No Realizadas Hoy</h3>
+                @if($clasesNoRealizadasHoy->count() > 0)
+                    <span class="inline-flex items-center justify-center px-3 py-1 ml-auto text-sm font-bold text-white bg-red-600 rounded-full">{{ $clasesNoRealizadasHoy->count() }}</span>
+                @endif
+            </div>
+
+            @if($clasesNoRealizadasHoy->count() > 0)
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-4">
+                    @foreach($clasesNoRealizadasHoy as $clase)
+                        <div class="p-3 transition-shadow border-l-4 rounded shadow-sm hover:shadow-md bg-red-50 border-red-500">
+                            <div class="flex items-start justify-between gap-2 mb-2">
+                                <h4 class="font-semibold text-gray-800 text-xs leading-tight flex-1">
+                                    {{ $clase->asignatura->nombre_asignatura ?? 'N/A' }}
+                                </h4>
+                                @if($clase->estado === 'recuperada')
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold text-white bg-green-600 flex-shrink-0">
+                                        <i class="fas fa-check mr-0.5"></i> Recuperada
+                                    </span>
+                                @endif
+                            </div>
+
+                            <div class="text-xs text-gray-700 space-y-1">
+                                <div class="flex items-center gap-1">
+                                    <i class="fas fa-user text-red-600 w-3"></i>
+                                    <span class="font-medium truncate">{{ $clase->profesor->name ?? 'N/A' }}</span>
+                                </div>
+
+                                <div class="flex items-center gap-1">
+                                    <i class="fas fa-door-open text-red-600 w-3"></i>
+                                    <span class="font-medium">{{ $clase->espacio->id_espacio ?? 'N/A' }}</span>
+                                </div>
+
+                                <div class="flex items-center gap-1">
+                                    <i class="fas fa-clock text-red-600 w-3"></i>
+                                    @php
+                                        $idModulo = $clase->id_modulo;
+                                        if ($idModulo) {
+                                            $modulos = explode(',', $idModulo);
+                                            $primerModulo = trim($modulos[0]);
+                                            $partes = explode('.', $primerModulo);
+                                            $numeroModulo = $partes[1] ?? $primerModulo;
+                                        } else {
+                                            $numeroModulo = 'N/A';
+                                        }
+                                    @endphp
+                                    <span class="font-medium">Módulo {{ $numeroModulo }}</span>
+                                </div>
+
+                                @if($clase->motivo)
+                                    <div class="pt-1 mt-1 border-t border-red-200">
+                                        <p class="text-xs text-gray-600 italic">{{ $clase->motivo }}</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <div class="flex items-center justify-center p-8">
+                    <div class="text-center">
+                        <i class="fas fa-check-circle text-5xl text-green-600 mb-3"></i>
+                        <p class="text-lg font-medium text-gray-700">No hay clases no realizadas para hoy</p>
+                        <p class="text-sm text-gray-500 mt-1">Todas las clases programadas se han realizado correctamente</p>
+                    </div>
+                </div>
+            @endif
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

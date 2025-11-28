@@ -136,6 +136,11 @@ class DashboardController extends Controller
         // Obtener horarios agrupados del día actual
         $horariosAgrupados = $this->obtenerHorariosAgrupados($facultad, $piso);
 
+        // Obtener clases no realizadas de hoy
+        $clasesNoRealizadasHoy = ClaseNoRealizada::whereDate('fecha_clase', today())
+            ->with(['asignatura', 'profesor', 'modulo', 'espacio'])
+            ->get();
+
         // Inicializar noUtilizadasDia vacío (se cargará on-demand si es necesario)
         $noUtilizadasDia = [];
 
@@ -163,6 +168,7 @@ class DashboardController extends Controller
             'totalReservasHoy',
             'salasUtilizadas',
             'horariosAgrupados',
+            'clasesNoRealizadasHoy',
             'noUtilizadasDia'
         ));
     }
@@ -1101,7 +1107,11 @@ class DashboardController extends Controller
                     ->whereIn('estado', ['activa', 'finalizada'])
                     ->count();
                 
-                $modulosTotales += $numReservas;
+                // Solo contar módulos de lunes a viernes (primeros 5 días de la semana)
+                // Sábado no se incluye en el total de módulos
+                if ($i < 5) {
+                    $modulosTotales += $numReservas;
+                }
                 
                 // Calcular ocupación: (reservas / 15) * 100
                 // 15 es el total de módulos disponibles por día
