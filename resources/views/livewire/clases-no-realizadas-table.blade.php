@@ -5,6 +5,16 @@
         
         <!-- Botones de Exportación -->
         <div class="flex gap-3">
+            <a href="{{ route('clases-no-realizadas.export-excel', [
+                    'fecha_inicio' => $fecha_inicio,
+                    'fecha_fin' => $fecha_fin,
+                    'periodo' => $periodo,
+                    'estado' => $estado
+                ]) }}" 
+               class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
+                <i class="fas fa-file-excel mr-2"></i>
+                Exportar Excel
+            </a>
             <button wire:click="exportarPDFSemanal" 
                     class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
                 <i class="fas fa-file-pdf mr-2"></i>
