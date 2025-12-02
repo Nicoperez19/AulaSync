@@ -1767,7 +1767,7 @@
                     const colorBase = coloresSala[index % coloresSala.length];
                     
                     datasetsSala.push({
-                        label: sala.sala + ' (' + sala.modulos + ' módulos)',
+                        label: sala.sala,
                         data: sala.datos,
                         borderColor: colorBase,
                         backgroundColor: 'rgba(0, 0, 0, 0)',
@@ -1796,7 +1796,16 @@
                             tooltip: {
                                 callbacks: {
                                     label: function(context) {
-                                        return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + '%';
+                                        const porcentaje = context.parsed.y;
+                                        const label = context.dataset.label;
+                                        
+                                        // Si es una sala (label empieza con TH-), calcular módulos del día
+                                        if (label && label.startsWith('TH-')) {
+                                            const modulosDia = Math.round((porcentaje / 100) * 15);
+                                            return label + ': ' + porcentaje.toFixed(2) + '% (' + modulosDia + ' módulos)';
+                                        }
+                                        
+                                        return label + ': ' + porcentaje.toFixed(2) + '%';
                                     }
                                 }
                             }
