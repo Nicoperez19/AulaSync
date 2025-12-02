@@ -1,8 +1,11 @@
 @if($comparativaTipos && (is_array($comparativaTipos) ? count($comparativaTipos) > 0 : $comparativaTipos->isNotEmpty()))
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         @foreach($comparativaTipos as $data)
             @php
-                $porcentaje = $data['porcentaje'] ?? 0;
+                $ocupados = $data['ocupados'] ?? 0;
+                $total = $data['total'] ?? 0;
+                // Calcular porcentaje basado en ocupados/total actual
+                $porcentaje = $total > 0 ? round(($ocupados / $total) * 100) : 0;
                 $colorBarra = $porcentaje >= 80 ? '#ef4444' : ($porcentaje >= 50 ? '#f59e0b' : '#10b981');
                 $iconos = [
                     'Aula' => ['icon' => 'fa-graduation-cap', 'color' => 'blue'],
@@ -23,19 +26,18 @@
                         </span>
                         <div>
                             <h3 class="font-bold text-gray-900 text-base">{{ $data['nombre'] ?? $data['tipo'] ?? 'Tipo no especificado' }}</h3>
-                            <p class="text-xs text-gray-500 mt-0.5">{{ $data['total'] ?? 0 }} espacios totales</p>
+                            <p class="text-xs text-gray-500 mt-0.5">{{ $ocupados }} de {{ $total }} ocupadas</p>
                         </div>
                     </div>
                     <div class="text-right">
-                        <div class="text-xl font-semibold text-gray-700">{{ $data['ocupados'] ?? 0 }} de {{ $data['total'] ?? 0 }}</div>
-                        <div class="text-xs text-gray-500 font-medium">Ocupadas</div>
+                        <div class="text-xl font-bold" style="color: {{ $colorBarra }}">{{ $porcentaje }}%</div>
+                        <div class="text-xs text-gray-500 font-medium">Ocupación</div>
                     </div>
                 </div>
                 
                 <div class="space-y-2">
-                    <div class="flex items-center justify-between text-sm">
-                        <span class="text-gray-600 font-medium">{{ $data['ocupados'] ?? 0 }} ocupadas</span>
-                        <span class="text-gray-400">{{ $data['total'] - ($data['ocupados'] ?? 0) }} libres</span>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-gray-500">{{ $ocupados }}/{{ $total }}</span>
                     </div>
                     <div class="relative w-full h-3 bg-gray-200 rounded-full overflow-hidden shadow-inner">
                         <div class="absolute left-0 top-0 h-full rounded-full transition-all duration-500 ease-out" 

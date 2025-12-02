@@ -768,26 +768,27 @@ class DashboardController extends Controller
 
         $dataPorSala = [];
         
-        // Para cada sala, contar reservas por día
+        // Para cada sala, sumar módulos por día
         foreach ($salas as $sala) {
-            $reservasPorDia = [];
+            $modulosPorDia = [];
             
             for ($i = 0; $i < 6; $i++) {
                 $dia = $inicioSemana->copy()->addDays($i);
                 
-                $cantidadReservas = Reserva::whereDate('fecha_reserva', $dia)
+                // Sumar el número de MÓDULOS reales (no solo contar reservas)
+                $cantidadModulos = Reserva::whereDate('fecha_reserva', $dia)
                     ->where('id_espacio', $sala->id_espacio)
                     ->whereIn('estado', ['activa', 'finalizada'])
-                    ->count();
+                    ->sum('modulos') ?? 0;
                 
-                $reservasPorDia[] = $cantidadReservas;
+                $modulosPorDia[] = $cantidadModulos;
             }
             
-            // Solo incluir salas que tengan al menos 1 reserva en la semana
-            if (array_sum($reservasPorDia) > 0) {
+            // Solo incluir salas que tengan al menos 1 módulo en la semana
+            if (array_sum($modulosPorDia) > 0) {
                 $dataPorSala[] = [
                     'sala' => $sala->id_espacio,
-                    'datos' => $reservasPorDia
+                    'datos' => $modulosPorDia
                 ];
             }
         }
@@ -907,6 +908,7 @@ class DashboardController extends Controller
             ->get();
 
         // Filtrar por facultad/piso en PHP (después de que lleguen)
+        // Se eliminó el filtro que limitaba solo a 'Sala de Clases' para mostrar todos los tipos
         $reservasFiltradas = $reservas->filter(function($reserva) use ($facultad, $piso) {
             if (!$reserva->espacio || !$reserva->espacio->piso) {
                 return false;
@@ -919,26 +921,25 @@ class DashboardController extends Controller
                 return $reserva->espacio->piso->id_facultad == $facultad;
             }
             return true;
-        })->filter(function($reserva) {
-            return $reserva->espacio && $reserva->espacio->tipo_espacio === 'Sala de Clases';
         });
 
-        // Agrupar por tipo de espacio y día
+        // Agrupar por tipo de espacio y día (sumando módulos, no contando reservas)
         $agrupadoPorTipo = $reservasFiltradas->groupBy(function($reserva) {
             return $reserva->espacio->tipo_espacio;
         })->map(function($reservasPorTipo) use ($inicioSemana, $diasSemana) {
-            $reservasPorDia = array_fill(0, 6, 0);
+            $modulosPorDia = array_fill(0, 6, 0);
             
             foreach ($reservasPorTipo as $reserva) {
                 $dia = Carbon::parse($reserva->fecha_reserva);
                 $indexDia = $dia->diffInDays($inicioSemana);
                 
                 if ($indexDia >= 0 && $indexDia < 6) {
-                    $reservasPorDia[$indexDia]++;
+                    // Sumar módulos de la reserva en lugar de contar +1
+                    $modulosPorDia[$indexDia] += $reserva->modulos ?? 1;
                 }
             }
             
-            return $reservasPorDia;
+            return $modulosPorDia;
         });
 
         // Construir resultado
@@ -1000,7 +1001,7 @@ class DashboardController extends Controller
         $finSemana = Carbon::now()->endOfWeek();
         $diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
         
-        // Obtener todos los tipos de sala
+        // Obtener todos los tipos de espacio (no solo Salas de Clases)
         $tipos = Espacio::whereHas('piso', function($query) use ($facultad, $piso) {
             if ($piso) {
                 $query->where('id_facultad', $facultad);
@@ -1009,7 +1010,6 @@ class DashboardController extends Controller
                 $query->where('id_facultad', $facultad);
             }
         })
-        ->where('tipo_espacio', 'Sala de Clases')
         ->distinct('tipo_espacio')
         ->pluck('tipo_espacio');
 
@@ -1101,21 +1101,22 @@ class DashboardController extends Controller
             for ($i = 0; $i < 6; $i++) {
                 $dia = $inicioSemana->copy()->addDays($i);
                 
-                // Contar el número de reservas en esta sala ese día
-                $numReservas = Reserva::where('fecha_reserva', $dia->format('Y-m-d'))
+                // Sumar el número de MÓDULOS reales (no solo contar reservas)
+                // Una reserva puede abarcar múltiples módulos
+                $numModulos = Reserva::where('fecha_reserva', $dia->format('Y-m-d'))
                     ->where('id_espacio', $sala->id_espacio)
                     ->whereIn('estado', ['activa', 'finalizada'])
-                    ->count();
+                    ->sum('modulos') ?? 0;
                 
                 // Solo contar módulos de lunes a viernes (primeros 5 días de la semana)
                 // Sábado no se incluye en el total de módulos
                 if ($i < 5) {
-                    $modulosTotales += $numReservas;
+                    $modulosTotales += $numModulos;
                 }
                 
-                // Calcular ocupación: (reservas / 15) * 100
+                // Calcular ocupación: (módulos usados / 15) * 100
                 // 15 es el total de módulos disponibles por día
-                $ocupacion = 15 > 0 ? ($numReservas / 15) * 100 : 0;
+                $ocupacion = 15 > 0 ? ($numModulos / 15) * 100 : 0;
                 $datosOcupacion[] = round($ocupacion, 2);
             }
             
@@ -1343,8 +1344,9 @@ class DashboardController extends Controller
 
             $result[] = [
                 'nombre' => $tipo,
-                'porcentaje' => $porcentaje,
-                'ocupados' => $espaciosOcupados,  // Basado en porcentaje de horas
+                'porcentaje' => $totalEspaciosTipo > 0 ? round(($espaciosOcupados / $totalEspaciosTipo) * 100) : 0,  // Basado en ocupación actual
+                'porcentaje_mensual' => $porcentaje,  // Guardar también el porcentaje mensual por si se necesita
+                'ocupados' => $espaciosOcupados,
                 'total' => $totalEspaciosTipo
             ];
         }
@@ -2451,6 +2453,9 @@ class DashboardController extends Controller
         $facultad = 'IT_TH';
         $mes = now()->month;
         $anio = now()->year;
+        
+        // Usar el período académico correcto (formato YYYY-S, ej: 2025-2)
+        $periodo = SemesterHelper::getCurrentPeriod();
 
         // Obtener clases no realizadas del mes actual
         $clasesNoRealizadas = ClaseNoRealizada::whereMonth('fecha_clase', $mes)
@@ -2463,9 +2468,9 @@ class DashboardController extends Controller
         // Obtener clases ya recuperadas (estado = 'recuperada')
         $clasesRecuperadas = $clasesNoRealizadas->where('estado', 'recuperada')->count();
 
-        // Obtener todas las planificaciones del mes (clases programadas)
-        $planificacionesMes = Planificacion_Asignatura::whereHas('horario', function($q) use ($anio, $mes) {
-            $q->where('periodo', Carbon::create($anio, $mes, 1)->format('Y-m'));
+        // Obtener todas las planificaciones del período actual (no del mes)
+        $planificacionesMes = Planificacion_Asignatura::whereHas('horario', function($q) use ($periodo) {
+            $q->where('periodo', $periodo);
         })->get();
 
         $totalPlaneadas = $planificacionesMes->count();
@@ -2542,7 +2547,8 @@ class DashboardController extends Controller
             'datosNoRealizadas',
             'datosRecuperadas',
             'mes',
-            'anio'
+            'anio',
+            'periodo'
         ))->render();
     }
 

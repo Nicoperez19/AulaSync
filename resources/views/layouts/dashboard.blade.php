@@ -850,7 +850,7 @@
                 <div class="flex items-center justify-center p-8">
                     <div class="text-center">
                         <i class="fas fa-check-circle text-5xl text-green-600 mb-3"></i>
-                        <p class="text-lg font-medium text-gray-700">No hay clases no realizadas para hoy</p>
+                        <p class="text-lg font-medium text-gray-700">No hay clases no registradas hoy</p>
                         <p class="text-sm text-gray-500 mt-1">Todas las clases programadas se han realizado correctamente</p>
                     </div>
                 </div>

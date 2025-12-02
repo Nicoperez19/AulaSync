@@ -1,4 +1,24 @@
 <div class="space-y-6">
+    <!-- Información del período -->
+    <div class="p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <div class="flex items-center gap-2 text-blue-700">
+            <i class="fas fa-info-circle"></i>
+            <span class="font-medium">Período académico: {{ $periodo ?? 'No definido' }} | Mes: {{ \Carbon\Carbon::create($anio, $mes, 1)->translatedFormat('F Y') }}</span>
+        </div>
+    </div>
+
+    @if($totalRealizadas == 0 && $totalNoRealizadas == 0)
+    <!-- Mensaje cuando no hay datos -->
+    <div class="p-8 bg-gray-50 rounded-lg border border-gray-200 text-center">
+        <div class="flex flex-col items-center gap-4">
+            <div class="p-4 bg-gray-200 rounded-full">
+                <i class="fas fa-calendar-times text-gray-400 text-4xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-600">No hay datos de clases para este período</h3>
+            <p class="text-gray-500 max-w-md">No se encontraron planificaciones de asignaturas para el período <strong>{{ $periodo ?? 'actual' }}</strong>. Esto puede deberse a que no hay horarios cargados o el período aún no tiene datos.</p>
+        </div>
+    </div>
+    @else
     <!-- Header con estadísticas principales -->
     <div class="grid grid-cols-1 gap-4 md:grid-cols-4">
         <div class="p-4 bg-white rounded-lg shadow border border-gray-200">
@@ -213,3 +233,4 @@
         });
     }
 </script>
+@endif
