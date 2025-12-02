@@ -288,10 +288,12 @@
                                             @if($esColaborador)
                                                 <!-- No mostrar carrera para clases colaboradoras -->
                                                 <span class="text-gray-400 italic text-sm">-</span>
-                                            @elseif (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']['carrera']))
-                                                <span class="font-medium text-gray-700 text-sm">{{ $espacio['datos_clase']['carrera'] }}</span>
                                             @elseif (($espacio['tiene_reserva_profesor'] ?? false) && !empty($espacio['datos_profesor']['carrera']))
+                                                {{-- PRIORIDAD 1: Si hay reserva de profesor activa, mostrar SU carrera (ej: adelantó clase) --}}
                                                 <span class="font-medium text-gray-700 text-sm">{{ $espacio['datos_profesor']['carrera'] }}</span>
+                                            @elseif (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']['carrera']))
+                                                {{-- PRIORIDAD 2: Si hay clase programada sin reserva activa, mostrar carrera de la planificación --}}
+                                                <span class="font-medium text-gray-700 text-sm">{{ $espacio['datos_clase']['carrera'] }}</span>
                                             @else
                                                 <span class="text-gray-400 italic text-sm">-</span>
                                             @endif

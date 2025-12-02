@@ -2453,13 +2453,16 @@ class DashboardController extends Controller
         $facultad = 'IT_TH';
         $mes = now()->month;
         $anio = now()->year;
+        $hoy = Carbon::now()->startOfDay();
         
         // Usar el período académico correcto (formato YYYY-S, ej: 2025-2)
         $periodo = SemesterHelper::getCurrentPeriod();
 
-        // Obtener clases no realizadas del mes actual
+        // Obtener clases no realizadas del mes actual (solo hasta hoy)
         $clasesNoRealizadas = ClaseNoRealizada::whereMonth('fecha_clase', $mes)
             ->whereYear('fecha_clase', $anio)
+            ->where('fecha_clase', '<=', $hoy)
+            ->with(['asignatura', 'profesor', 'modulo'])
             ->get();
 
         // Obtener clases que están programadas para recuperación (estado = 'pendiente')
@@ -2468,40 +2471,37 @@ class DashboardController extends Controller
         // Obtener clases ya recuperadas (estado = 'recuperada')
         $clasesRecuperadas = $clasesNoRealizadas->where('estado', 'recuperada')->count();
 
-        // Obtener todas las planificaciones del período actual (no del mes)
+        // Obtener todas las planificaciones del período actual
         $planificacionesMes = Planificacion_Asignatura::whereHas('horario', function($q) use ($periodo) {
             $q->where('periodo', $periodo);
-        })->get();
+        })->with(['modulo', 'asignatura'])->get();
 
-        $totalPlaneadas = $planificacionesMes->count();
-        $totalNoRealizadas = $clasesNoRealizadas->count();
-        $totalRealizadas = $totalPlaneadas - $totalNoRealizadas;
-        $porcentajeNoRealizadas = $totalPlaneadas > 0 ? round(($totalNoRealizadas / $totalPlaneadas) * 100, 1) : 0;
-        $porcentajeRealizadas = $totalPlaneadas > 0 ? round(($totalRealizadas / $totalPlaneadas) * 100, 1) : 0;
-        $porcentajeRecuperadas = $totalNoRealizadas > 0 ? round(($clasesRecuperadas / $totalNoRealizadas) * 100, 1) : 0;
-
-        // Agrupar por día para el gráfico de barras
+        // Agrupar por día para el gráfico de barras - SOLO HASTA HOY
         $diasDelMes = [];
         $inicio = Carbon::create($anio, $mes, 1);
-        $fin = $inicio->copy()->endOfMonth();
+        $fin = $hoy->copy(); // Solo hasta hoy, no fin de mes
         $dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
-
+        
+        // Inicializar días (de lunes a sábado, excluyendo domingo, solo hasta hoy)
         for ($fecha = $inicio->copy(); $fecha->lte($fin); $fecha->addDay()) {
+            // Solo días laborales (Lun-Vie y Sábados), NO domingos
             if ($fecha->isWeekday() || $fecha->isSaturday()) {
                 $dia = $fecha->format('d/m');
                 $diasDelMes[$dia] = [
                     'realizadas' => 0,
                     'no_realizadas' => 0,
-                    'recuperadas' => 0
+                    'recuperadas' => 0,
+                    'fecha' => $fecha->format('Y-m-d'),
+                    'clases_no_realizadas_detalle' => []
                 ];
             }
         }
 
-        // Contar clases realizadas por día
+        // Contar clases planificadas solo para días que ya pasaron o es hoy
         foreach ($planificacionesMes as $plan) {
             if ($plan->modulo) {
                 $dia = strtolower($plan->modulo->dia);
-                // Encontrar todas las fechas con este día de semana en el mes
+                // Encontrar todas las fechas con este día de semana HASTA HOY
                 for ($fecha = $inicio->copy(); $fecha->lte($fin); $fecha->addDay()) {
                     if (strtolower($dias[$fecha->dayOfWeek]) === $dia) {
                         $diaFormato = $fecha->format('d/m');
@@ -2513,28 +2513,53 @@ class DashboardController extends Controller
             }
         }
 
-        // Contar clases no realizadas por día
+        // Contar clases no realizadas por día y agregar detalle
         foreach ($clasesNoRealizadas as $clase) {
             $diaFormato = $clase->fecha_clase->format('d/m');
             if (isset($diasDelMes[$diaFormato])) {
                 $diasDelMes[$diaFormato]['no_realizadas']++;
-                $diasDelMes[$diaFormato]['realizadas']--;
+                $diasDelMes[$diaFormato]['realizadas'] = max(0, $diasDelMes[$diaFormato]['realizadas'] - 1);
                 
                 // Contar recuperadas
                 if ($clase->estado === 'recuperada') {
                     $diasDelMes[$diaFormato]['recuperadas']++;
                 }
+                
+                // Agregar detalle del profesor para el modal
+                $diasDelMes[$diaFormato]['clases_no_realizadas_detalle'][] = [
+                    'id' => $clase->id,
+                    'asignatura' => $clase->asignatura ? $clase->asignatura->nombre_asignatura : 'Sin asignatura',
+                    'profesor' => $clase->profesor ? $clase->profesor->name : 'Sin profesor',
+                    'profesor_id' => $clase->run_profesor ?? null,
+                    'modulo' => $clase->id_modulo ?? 'N/A',
+                    'hora' => $clase->modulo ? (substr($clase->modulo->hora_inicio, 0, 5) . ' - ' . substr($clase->modulo->hora_termino, 0, 5)) : '',
+                    'estado' => $clase->estado,
+                    'motivo' => $clase->motivo ?? 'No especificado'
+                ];
             }
         }
 
-        // Preparar arrays para el gráfico
+        // Calcular totales solo con los días procesados (hasta hoy)
+        $totalRealizadas = collect($diasDelMes)->sum('realizadas');
+        $totalNoRealizadas = collect($diasDelMes)->sum('no_realizadas');
+        $totalClases = $totalRealizadas + $totalNoRealizadas;
+        
+        $porcentajeRealizadas = $totalClases > 0 ? round(($totalRealizadas / $totalClases) * 100, 1) : 0;
+        $porcentajeNoRealizadas = $totalClases > 0 ? round(($totalNoRealizadas / $totalClases) * 100, 1) : 0;
+        $porcentajeRecuperadas = $totalNoRealizadas > 0 ? round(($clasesRecuperadas / $totalNoRealizadas) * 100, 1) : 0;
+
+        // Preparar arrays para el gráfico (solo días hasta hoy)
         $diasLabels = array_keys($diasDelMes);
-        $datosRealizadas = array_values(array_map(function($d) { return $d['realizadas']; }, $diasDelMes));
+        $datosRealizadas = array_values(array_map(function($d) { return max(0, $d['realizadas']); }, $diasDelMes));
         $datosNoRealizadas = array_values(array_map(function($d) { return $d['no_realizadas']; }, $diasDelMes));
         $datosRecuperadas = array_values(array_map(function($d) { return $d['recuperadas']; }, $diasDelMes));
+        
+        // Convertir detalle a JSON para pasar a la vista (escapado para JavaScript)
+        $diasDelMesJson = json_encode($diasDelMes, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_UNESCAPED_UNICODE);
 
         return view('partials.clases_no_realizadas_tab_content', compact(
             'diasDelMes',
+            'diasDelMesJson',
             'totalRealizadas',
             'totalNoRealizadas',
             'clasesRecuperadas',
@@ -2550,6 +2575,104 @@ class DashboardController extends Controller
             'anio',
             'periodo'
         ))->render();
+    }
+
+    /**
+     * Obtiene estadísticas filtradas por rango de fechas
+     */
+    public function getEstadisticasFiltradas(Request $request)
+    {
+        $fechaInicio = Carbon::parse($request->get('fecha_inicio', now()->startOfMonth()->format('Y-m-d')));
+        $fechaFin = Carbon::parse($request->get('fecha_fin', now()->format('Y-m-d')));
+        
+        // Usar el período académico correcto
+        $periodo = SemesterHelper::getCurrentPeriod();
+
+        // Obtener clases no realizadas en el rango
+        $clasesNoRealizadas = ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicio, $fechaFin])->get();
+
+        // Obtener todas las planificaciones del período
+        $planificaciones = Planificacion_Asignatura::whereHas('horario', function($q) use ($periodo) {
+            $q->where('periodo', $periodo);
+        })->with('modulo')->get();
+
+        // Calcular días laborales en el rango (Lun-Vie + Sábados hasta 13:00)
+        $diasTotales = 0;
+        $diasLaborales = 0;
+        $porDiaSemana = [
+            'Lunes' => ['realizadas' => 0, 'no_realizadas' => 0, 'total' => 0],
+            'Martes' => ['realizadas' => 0, 'no_realizadas' => 0, 'total' => 0],
+            'Miércoles' => ['realizadas' => 0, 'no_realizadas' => 0, 'total' => 0],
+            'Jueves' => ['realizadas' => 0, 'no_realizadas' => 0, 'total' => 0],
+            'Viernes' => ['realizadas' => 0, 'no_realizadas' => 0, 'total' => 0],
+            'Sábado' => ['realizadas' => 0, 'no_realizadas' => 0, 'total' => 0],
+        ];
+        
+        $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        $diasSemanaES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        
+        // Contar clases planeadas por día de semana en el rango
+        for ($fecha = $fechaInicio->copy(); $fecha->lte($fechaFin); $fecha->addDay()) {
+            $diasTotales++;
+            
+            // Solo días laborales (Lun-Vie y Sábados)
+            if ($fecha->isWeekday() || $fecha->isSaturday()) {
+                $diasLaborales++;
+                $diaSemanaIndex = $fecha->dayOfWeek;
+                $diaSemanaKey = $diasSemanaES[$diaSemanaIndex];
+                
+                if ($diaSemanaKey !== 'Domingo') {
+                    // Contar clases planeadas para este día de la semana
+                    $diaIngles = strtolower($diasSemana[$diaSemanaIndex]);
+                    $clasesDelDia = $planificaciones->filter(function($plan) use ($diaIngles) {
+                        return $plan->modulo && strtolower($plan->modulo->dia) === $diaIngles;
+                    })->count();
+                    
+                    $porDiaSemana[$diaSemanaKey]['total'] += $clasesDelDia;
+                    $porDiaSemana[$diaSemanaKey]['realizadas'] += $clasesDelDia;
+                }
+            }
+        }
+
+        // Restar clases no realizadas
+        foreach ($clasesNoRealizadas as $clase) {
+            $diaSemanaIndex = $clase->fecha_clase->dayOfWeek;
+            $diaSemanaKey = $diasSemanaES[$diaSemanaIndex];
+            
+            if (isset($porDiaSemana[$diaSemanaKey])) {
+                $porDiaSemana[$diaSemanaKey]['no_realizadas']++;
+                $porDiaSemana[$diaSemanaKey]['realizadas']--;
+            }
+        }
+
+        // Calcular totales
+        $totalRealizadas = collect($porDiaSemana)->sum('realizadas');
+        $totalNoRealizadas = $clasesNoRealizadas->count();
+        $clasesRecuperadas = $clasesNoRealizadas->where('estado', 'recuperada')->count();
+        $clasesPendientes = $clasesNoRealizadas->where('estado', 'pendiente')->count();
+        $total = $totalRealizadas + $totalNoRealizadas;
+        
+        $porcentajeRealizadas = $total > 0 ? round(($totalRealizadas / $total) * 100, 1) : 0;
+        $porcentajeNoRealizadas = $total > 0 ? round(($totalNoRealizadas / $total) * 100, 1) : 0;
+        $porcentajeRecuperadas = $totalNoRealizadas > 0 ? round(($clasesRecuperadas / $totalNoRealizadas) * 100, 1) : 0;
+        $promedioDiario = $diasLaborales > 0 ? round($total / $diasLaborales, 1) : 0;
+
+        return response()->json([
+            'realizadas' => max(0, $totalRealizadas),
+            'no_realizadas' => $totalNoRealizadas,
+            'recuperadas' => $clasesRecuperadas,
+            'pendientes' => $clasesPendientes,
+            'total' => max(0, $total),
+            'porcentaje_realizadas' => $porcentajeRealizadas,
+            'porcentaje_no_realizadas' => $porcentajeNoRealizadas,
+            'porcentaje_recuperadas' => $porcentajeRecuperadas,
+            'dias_totales' => $diasTotales,
+            'dias_laborales' => $diasLaborales,
+            'promedio_diario' => $promedioDiario,
+            'por_dia_semana' => $porDiaSemana,
+            'fecha_inicio' => $fechaInicio->format('d/m/Y'),
+            'fecha_fin' => $fechaFin->format('d/m/Y')
+        ]);
     }
 
     public function obtenerDatosGraficosAjax(Request $request)

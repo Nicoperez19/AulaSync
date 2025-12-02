@@ -8,6 +8,8 @@ use App\Models\ClaseNoRealizada;
 use App\Helpers\SemesterHelper;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 use App\Services\ClasesNoRealizadasReportService;
 
 class ClasesNoRealizadasTable extends Component
@@ -24,6 +26,11 @@ class ClasesNoRealizadasTable extends Component
     public $sortDirection = 'desc';
     private $autoRefresh = true; // Auto-refresh siempre activo
     public $lastRecordCount = 0;
+    
+    // Cache para estadísticas (evitar múltiples consultas)
+    private $cachedEstadisticas = null;
+
+    public $reagendar_id = null; // ID de clase para abrir modal automáticamente
 
     protected $queryString = [
         'search' => ['except' => ''],
@@ -31,6 +38,7 @@ class ClasesNoRealizadasTable extends Component
         'fecha_inicio' => ['except' => ''],
         'fecha_fin' => ['except' => ''],
         'periodo' => ['except' => ''],
+        'reagendar_id' => ['except' => ''],
     ];
 
     protected $listeners = [
@@ -89,19 +97,20 @@ class ClasesNoRealizadasTable extends Component
         $this->fecha_inicio = Carbon::now()->startOfMonth()->format('Y-m-d');
         $this->fecha_fin = Carbon::now()->endOfMonth()->format('Y-m-d');
         
-        // Inicializar el conteo de registros
-        $estadisticas = $this->getEstadisticas();
-        $this->lastRecordCount = $estadisticas['total'];
+        // Inicializar el conteo de registros usando cache
+        $this->lastRecordCount = $this->getEstadisticasOptimizadas()['total'];
         
-        // Forzar refresh inicial
-        $this->render();
+        // Si viene un reagendar_id desde URL, abrir modal automáticamente
+        if ($this->reagendar_id) {
+            $this->dispatch('auto-open-reagendar', ['id' => $this->reagendar_id]);
+        }
     }
 
     public function refresh()
     {
         // Método para refrescar manualmente los datos
+        $this->cachedEstadisticas = null; // Limpiar cache
         $this->resetPage();
-        $this->render();
     }
 
     public function aplicarFiltros()
@@ -124,6 +133,7 @@ class ClasesNoRealizadasTable extends Component
         $this->periodo = '';
         $this->fecha_inicio = Carbon::now()->startOfMonth()->format('Y-m-d');
         $this->fecha_fin = Carbon::now()->endOfMonth()->format('Y-m-d');
+        $this->cachedEstadisticas = null; // Limpiar cache
         $this->resetPage();
     }
 
@@ -362,81 +372,114 @@ class ClasesNoRealizadasTable extends Component
 
     public function getEstadisticas()
     {
-        $query = ClaseNoRealizada::with(['asignatura', 'profesor', 'espacio']);
+        return $this->getEstadisticasOptimizadas();
+    }
 
-        if ($this->periodo) {
-            $query->where('periodo', $this->periodo);
+    /**
+     * Obtener estadísticas de forma optimizada usando una sola consulta con agregación
+     */
+    private function getEstadisticasOptimizadas()
+    {
+        // Retornar cache si existe
+        if ($this->cachedEstadisticas !== null) {
+            return $this->cachedEstadisticas;
         }
 
-        if ($this->fecha_inicio && $this->fecha_fin) {
-            $query->whereBetween('fecha_clase', [$this->fecha_inicio, $this->fecha_fin]);
-        }
-
-        // Aplicar el mismo filtro simplificado - mostrar todas las clases
         $hoy = Carbon::now()->toDateString();
-        $query->where(function($q) use ($hoy) {
-            // OPCIÓN 1: Clases pendientes (reagendadas) - mostrar SIEMPRE
-            $q->where('estado', 'pendiente')
-            // OPCIÓN 2: Mostrar TODOS los registros de días anteriores
-            ->orWhereDate('fecha_clase', '<', $hoy)
-            // OPCIÓN 3: Mostrar TODAS las clases de hoy
-            ->orWhereDate('fecha_clase', $hoy);
-        });
+        
+        // Una sola consulta con agregación condicional
+        $stats = DB::table('clases_no_realizadas')
+            ->select([
+                DB::raw('COUNT(*) as total'),
+                DB::raw("SUM(CASE WHEN estado = 'no_realizada' THEN 1 ELSE 0 END) as no_realizadas"),
+                DB::raw("SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) as pendientes"),
+                DB::raw("SUM(CASE WHEN estado = 'justificado' THEN 1 ELSE 0 END) as justificados"),
+            ])
+            ->when($this->periodo, function($q) {
+                $q->where('periodo', $this->periodo);
+            })
+            ->when($this->fecha_inicio && $this->fecha_fin, function($q) {
+                $q->whereBetween('fecha_clase', [$this->fecha_inicio, $this->fecha_fin]);
+            })
+            ->where(function($q) use ($hoy) {
+                $q->where('estado', 'pendiente')
+                    ->orWhereDate('fecha_clase', '<', $hoy)
+                    ->orWhereDate('fecha_clase', $hoy);
+            })
+            ->first();
 
-        return [
-            'total' => $query->count(),
-            'no_realizadas' => $query->clone()->where('estado', 'no_realizada')->count(),
-            'pendientes' => $query->clone()->where('estado', 'pendiente')->count(),
-            'justificados' => $query->clone()->where('estado', 'justificado')->count(),
+        $this->cachedEstadisticas = [
+            'total' => (int) ($stats->total ?? 0),
+            'no_realizadas' => (int) ($stats->no_realizadas ?? 0),
+            'pendientes' => (int) ($stats->pendientes ?? 0),
+            'justificados' => (int) ($stats->justificados ?? 0),
         ];
+
+        return $this->cachedEstadisticas;
+    }
+
+    /**
+     * Construir la query base con filtros aplicados (reutilizable)
+     */
+    private function buildBaseQuery()
+    {
+        $hoy = Carbon::now()->toDateString();
+        
+        $query = ClaseNoRealizada::query()
+            ->select('clases_no_realizadas.*')
+            ->when($this->periodo, function($q) {
+                $q->where('clases_no_realizadas.periodo', $this->periodo);
+            })
+            ->when($this->fecha_inicio && $this->fecha_fin, function($q) {
+                $q->whereBetween('clases_no_realizadas.fecha_clase', [$this->fecha_inicio, $this->fecha_fin]);
+            })
+            ->when($this->estado, function($q) {
+                $q->where('clases_no_realizadas.estado', $this->estado);
+            })
+            ->where(function($q) use ($hoy) {
+                $q->where('clases_no_realizadas.estado', 'pendiente')
+                    ->orWhereDate('clases_no_realizadas.fecha_clase', '<', $hoy)
+                    ->orWhereDate('clases_no_realizadas.fecha_clase', $hoy);
+            });
+
+        // Optimizar búsqueda usando JOINs en lugar de whereHas
+        if ($this->search) {
+            $searchTerm = '%' . $this->search . '%';
+            $query->leftJoin('profesores', 'clases_no_realizadas.run_profesor', '=', 'profesores.run_profesor')
+                  ->leftJoin('asignaturas', 'clases_no_realizadas.id_asignatura', '=', 'asignaturas.id_asignatura')
+                  ->where(function($q) use ($searchTerm) {
+                      $q->where('profesores.name', 'like', $searchTerm)
+                        ->orWhere('asignaturas.nombre_asignatura', 'like', $searchTerm)
+                        ->orWhere('asignaturas.codigo_asignatura', 'like', $searchTerm)
+                        ->orWhere('clases_no_realizadas.id_espacio', 'like', $searchTerm);
+                  });
+        }
+
+        return $query;
     }
 
     public function render()
     {        
-        $query = ClaseNoRealizada::with(['asignatura', 'profesor', 'espacio']);
+        // Limpiar cache de estadísticas para este render
+        $this->cachedEstadisticas = null;
+        
+        $query = $this->buildBaseQuery();
 
-        if ($this->search) {
-            $query->where(function($q) {
-                $q->whereHas('profesor', function($subQ) {
-                    $subQ->where('name', 'like', '%' . $this->search . '%');
-                })
-                ->orWhereHas('asignatura', function($subQ) {
-                    $subQ->where('nombre_asignatura', 'like', '%' . $this->search . '%')
-                         ->orWhere('codigo_asignatura', 'like', '%' . $this->search . '%');
-                })
-                ->orWhere('id_espacio', 'like', '%' . $this->search . '%');
-            });
+        // Ordenamiento con prefijo de tabla para evitar ambigüedad
+        $sortField = $this->sortField;
+        if (!str_contains($sortField, '.')) {
+            $sortField = 'clases_no_realizadas.' . $sortField;
         }
+        $query->orderBy($sortField, $this->sortDirection);
 
-        if ($this->estado) {
-            $query->where('estado', $this->estado);
-        }
-
-        if ($this->periodo) {
-            $query->where('periodo', $this->periodo);
-        }
-
-        if ($this->fecha_inicio && $this->fecha_fin) {
-            $query->whereBetween('fecha_clase', [$this->fecha_inicio, $this->fecha_fin]);
-        }
-
-        // Solo aplicar filtro de clases finalizadas para registros de HOY
-        // Los registros de días anteriores se mantienen para historial
-        // IMPORTANTE: Las clases con estado "pendiente" se muestran siempre (incluso futuras)
-        $hoy = Carbon::now()->toDateString();
-        $query->where(function($q) use ($hoy) {
-            // OPCIÓN 1: Clases pendientes (reagendadas) - mostrar SIEMPRE
-            $q->where('estado', 'pendiente')
-            // OPCIÓN 2: Mostrar TODOS los registros de días anteriores
-            ->orWhereDate('fecha_clase', '<', $hoy)
-            // OPCIÓN 3: Mostrar TODAS las clases de hoy (sin filtro restrictivo)
-            ->orWhereDate('fecha_clase', $hoy);
-        });
-
-        $query->orderBy($this->sortField, $this->sortDirection);
-
-        $clasesNoRealizadas = $query->paginate($this->perPage);
-        $estadisticas = $this->getEstadisticas();
+        // Eager loading optimizado
+        $clasesNoRealizadas = $query->with([
+            'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura',
+            'profesor:run_profesor,name',
+            'espacio:id_espacio,nombre_espacio'
+        ])->paginate($this->perPage);
+        
+        $estadisticas = $this->getEstadisticasOptimizadas();
 
         // Detectar cambios en los datos para notificaciones
         $currentTotal = $estadisticas['total'];

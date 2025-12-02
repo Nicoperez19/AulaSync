@@ -287,6 +287,17 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Listener para abrir modal automáticamente desde URL
+    Livewire.on('auto-open-reagendar', (data) => {
+        const id = data[0]?.id || data.id;
+        if (id) {
+            // Pequeño delay para asegurar que la página esté lista
+            setTimeout(() => {
+                window.Livewire.find('{{ $this->getId() }}').call('showReagendarModal', id);
+            }, 500);
+        }
+    });
+
     Livewire.on('show-edit-modal', (data) => {
         const clase = data[0];
         

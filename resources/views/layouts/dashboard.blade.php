@@ -701,6 +701,7 @@
                 </div>
             </div>
         </div>
+    </div>
 
                 <!-- Tab Content: Clases No Realizadas -->
                 <div x-show="activeTab === 'clases-no-realizadas'" x-cloak class="mt-6">
@@ -709,8 +710,6 @@
                             <div class="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin"></div>
                             <span class="ml-2">Cargando estadísticas...</span>
                         </div>
-                    </div>
-                </div>
                     </div>
                 </div>
             </div>
@@ -966,7 +965,8 @@
 
     window.tabLoaded = {
         utilizacion: false,
-        accesos: false
+        accesos: false,
+        clasesNoRealizadas: false
     };
 
     function cargarTabUtilizacion() {
@@ -1035,6 +1035,19 @@
             .then(html => {
                 contenedor.innerHTML = html;
                 window.tabLoaded.clasesNoRealizadas = true;
+                
+                // Ejecutar scripts inyectados
+                const scripts = contenedor.querySelectorAll('script');
+                scripts.forEach(script => {
+                    const newScript = document.createElement('script');
+                    if (script.src) {
+                        newScript.src = script.src;
+                    } else {
+                        newScript.textContent = script.textContent;
+                    }
+                    document.body.appendChild(newScript);
+                    document.body.removeChild(newScript);
+                });
             })
             .catch(error => {
                 console.error('Error cargando clases no realizadas:', error);

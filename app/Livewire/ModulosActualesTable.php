@@ -687,6 +687,45 @@ class ModulosActualesTable extends Component
                     ->get()
                     ->keyBy('id_espacio'); // Indexar por espacio para búsqueda rápida
 
+                // DEBUG: Log para diagnosticar problema de reservas no mostradas
+                Log::info('ModulosActuales - Reservas de profesores (con entrada):', [
+                    'total' => $reservasProfesores->count(),
+                    'espacios' => $reservasProfesores->keys()->toArray(),
+                ]);
+                
+                // Obtener reservas PENDIENTES de profesores (reservadas pero sin marcar entrada aún)
+                // Estas se mostrarán como "Reservado" en lugar de "Disponible"
+                $reservasProfesoresPendientes = Reserva::with(['profesor', 'asignatura', 'asignatura.carrera'])
+                    ->where('fecha_reserva', Carbon::now()->toDateString())
+                    ->whereIn('estado', ['pendiente', 'activa']) // Pendiente o activa sin entrada
+                    ->whereNotNull('run_profesor')
+                    ->whereNull('hora') // Aún no ha marcado entrada
+                    ->get()
+                    ->keyBy('id_espacio');
+                
+                Log::info('ModulosActuales - Reservas de profesores (pendientes/sin entrada):', [
+                    'total' => $reservasProfesoresPendientes->count(),
+                    'espacios' => $reservasProfesoresPendientes->keys()->toArray(),
+                ]);
+                
+                // También verificar TODAS las reservas activas del día (sin filtro de hora)
+                $todasReservasActivas = Reserva::where('fecha_reserva', Carbon::now()->toDateString())
+                    ->whereIn('estado', ['activa', 'pendiente'])
+                    ->get();
+                
+                Log::info('ModulosActuales - TODAS las reservas activas/pendientes del día:', [
+                    'total' => $todasReservasActivas->count(),
+                    'detalle' => $todasReservasActivas->map(function($r) {
+                        return [
+                            'id_espacio' => $r->id_espacio,
+                            'run_profesor' => $r->run_profesor,
+                            'run_solicitante' => $r->run_solicitante,
+                            'hora' => $r->hora,
+                            'estado' => $r->estado,
+                        ];
+                    })->toArray(),
+                ]);
+
                 // Crear índice de profesores que registraron entrada (para detectar cambios de sala)
                 $profesoresConEntrada = $reservasProfesores->pluck('run_profesor')->unique();
 
@@ -714,10 +753,14 @@ class ModulosActualesTable extends Component
 
                         // Buscar si el espacio tiene una reserva de profesor (búsqueda O(1))
                         $reservaProfesor = $reservasProfesores->get($espacio->id_espacio);
+                        
+                        // Buscar si hay reserva pendiente de profesor (sin entrada aún)
+                        $reservaProfesorPendiente = $reservasProfesoresPendientes->get($espacio->id_espacio);
 
                         $tieneClase = false;
                         $tieneReservaSolicitante = false;
                         $tieneReservaProfesor = false;
+                        $tieneReservaPendiente = false; // Nueva bandera para reservas sin entrada
                         $datosClase = null;
                         $datosSolicitante = null;
                         $datosProfesor = null;
@@ -1051,6 +1094,32 @@ class ModulosActualesTable extends Component
                                 ];
                             }
                         }
+                        
+                        // Procesar reserva pendiente de profesor (sin entrada aún pero reservado)
+                        // Solo si NO hay ya una reserva activa con entrada
+                        if (!$tieneReservaProfesor && $reservaProfesorPendiente) {
+                            $tieneReservaPendiente = true;
+                            
+                            // Obtener datos básicos de la reserva pendiente
+                            $datosProfesor = [
+                                'nombre' => $reservaProfesorPendiente->profesor->name ?? '-',
+                                'run' => $reservaProfesorPendiente->run_profesor ?? '-',
+                                'hora_inicio' => '-',
+                                'hora_salida' => '-',
+                                'nombre_asignatura' => $reservaProfesorPendiente->asignatura->nombre_asignatura ?? 'Reservado',
+                                'codigo_asignatura' => $reservaProfesorPendiente->asignatura->codigo_asignatura ?? '-',
+                                'carrera' => $reservaProfesorPendiente->asignatura->carrera->nombre ?? '-',
+                                'inscritos' => null,
+                                'modulo_inicio' => '',
+                                'modulo_fin' => '',
+                                'es_pendiente' => true, // Marcar como pendiente
+                            ];
+                            
+                            Log::info('ModulosActuales - Reserva pendiente encontrada:', [
+                                'espacio' => $espacio->id_espacio,
+                                'profesor' => $reservaProfesorPendiente->profesor->name ?? 'N/A',
+                            ]);
+                        }
 
                         // Buscar la próxima clase para este espacio si no tiene clase actual
                         // TEMPORALMENTE DESACTIVADO para evitar timeout
@@ -1166,6 +1235,10 @@ class ModulosActualesTable extends Component
                             }
                         } elseif ($proximaClase) {
                             $estado = 'Clase por iniciar';
+                        } elseif ($tieneReservaPendiente) {
+                            // Si hay una reserva pendiente (profesor reservó pero no ha marcado entrada)
+                            $estado = 'Reservado';
+                            $tieneReservaProfesor = true; // Marcar para mostrar info del profesor
                         } else {
                             // Si no hay clase, ni reserva, ni nada, el espacio está disponible
                             // NO confiar en el estado de la BD que puede estar desactualizado
@@ -1184,6 +1257,7 @@ class ModulosActualesTable extends Component
                             $datosProfesor = null;
                             $tieneReservaSolicitante = false;
                             $datosSolicitante = null;
+                            $tieneReservaPendiente = false;
                         }
 
                         $espaciosPiso[] = [
@@ -1199,6 +1273,7 @@ class ModulosActualesTable extends Component
                             'tiene_clase' => $tieneClase ?? false,
                             'tiene_reserva_solicitante' => $tieneReservaSolicitante ?? false,
                             'tiene_reserva_profesor' => $tieneReservaProfesor ?? false,
+                            'tiene_reserva_pendiente' => $tieneReservaPendiente ?? false,
                             'datos_clase' => $datosClase,
                             'datos_solicitante' => $datosSolicitante,
                             'datos_profesor' => $datosProfesor,
