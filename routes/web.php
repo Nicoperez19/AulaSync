@@ -72,6 +72,13 @@ Route::middleware(['auth', 'role:Administrador'])->group(function () {
     Route::delete('/user/user_delete/{run}', [UserController::class, 'destroy'])->name('users.delete');
     Route::get('/user/user_edit/{run}', [UserController::class, 'edit'])->name('users.edit');
     Route::put('user/user_update/{run}', [UserController::class, 'update'])->name('users.update');
+    
+    // Rutas para QR Personal (requiere permiso adicional 'generar qr personal')
+    Route::post('/user/qr-personal/{run}/generar', [\App\Http\Controllers\QrPersonalController::class, 'generar'])->name('users.qr.generar');
+    Route::get('/user/qr-personal/{run}/descargar', [\App\Http\Controllers\QrPersonalController::class, 'descargar'])->name('users.qr.descargar');
+    Route::get('/user/qr-personal/{run}/preview', [\App\Http\Controllers\QrPersonalController::class, 'preview'])->name('users.qr.preview');
+    Route::delete('/user/qr-personal/{run}/anular', [\App\Http\Controllers\QrPersonalController::class, 'anular'])->name('users.qr.anular');
+    Route::get('/user/qr-personal/{run}/verificar', [\App\Http\Controllers\QrPersonalController::class, 'verificar'])->name('users.qr.verificar');
 });
 
 // Administración de Correos Masivos - Administrador y Supervisor

@@ -33,6 +33,8 @@ class User extends Authenticatable
         'id_facultad',
         'id_carrera',
         'id_area_academica',
+        'qr_personal_token',
+        'qr_personal_created_at',
     ];
 
     protected $hidden = [
@@ -45,6 +47,7 @@ class User extends Authenticatable
         'password' => 'hashed',
         'run' => 'string',
         'fecha_nacimiento' => 'date',
+        'qr_personal_created_at' => 'datetime',
     ];
 
     /**
@@ -96,5 +99,34 @@ class User extends Authenticatable
     public function sendPasswordResetNotification($token)
     {
         Mail::to($this->email)->send(new ResetPasswordMail($token, $this->email));
+    }
+
+    /**
+     * Verifica si el usuario tiene un QR personal activo.
+     *
+     * @return bool
+     */
+    public function tieneQrPersonal(): bool
+    {
+        return !empty($this->qr_personal_token);
+    }
+
+    /**
+     * Obtiene los datos para el QR personal (RUN cifrado).
+     *
+     * @return string|null
+     */
+    public function getQrData(): ?string
+    {
+        if (!$this->qr_personal_token) {
+            return null;
+        }
+        
+        // El QR contiene el RUN del usuario y un identificador
+        return json_encode([
+            'type' => 'qr_personal',
+            'run' => $this->run,
+            'token' => $this->qr_personal_token,
+        ]);
     }
 }

@@ -1082,6 +1082,13 @@
         let espacioParaReserva = null;
         let runParaReserva = null;
         let usuarioInfo = null; // Variable global para almacenar la información del usuario
+        
+        // ========================================
+        // VARIABLES PARA LIBERACIÓN FORZADA CON QR PERSONAL
+        // ========================================
+        let modoLiberacionForzada = false;
+        let adminLiberacionForzada = null; // Datos del admin que escaneó su QR personal
+        
         const mapaId = @json($mapaIdValue);
 
         const config = {
@@ -1617,6 +1624,20 @@
                 return;
             }
 
+            // ========================================
+            // VERIFICAR SI ES UN QR PERSONAL (LIBERACIÓN FORZADA)
+            // ========================================
+            if (bufferQR.includes('qr_personal_aulasync')) {
+                await procesarQrPersonal();
+                return;
+            }
+
+            // Si estamos en modo liberación forzada, procesar sala a liberar
+            if (modoLiberacionForzada && adminLiberacionForzada) {
+                await procesarLiberacionForzadaSala();
+                return;
+            }
+
                     // Procesando QR completo
 
         // Validar orden de escaneo
@@ -1653,6 +1674,259 @@
                     qrInputManager.restaurarInputActivo();
                 }
             }, 100);
+        }
+
+        // ========================================
+        // FUNCIONES PARA LIBERACIÓN FORZADA CON QR PERSONAL
+        // ========================================
+        
+        async function procesarQrPersonal() {
+            try {
+                // Intentar parsear el QR como JSON
+                let qrData;
+                try {
+                    qrData = bufferQR;
+                } catch (e) {
+                    qrData = bufferQR;
+                }
+
+                // Verificar el QR personal con el servidor
+                const response = await fetch('/api/qr-personal/verificar-escaneado', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({ qr_data: qrData })
+                });
+
+                const resultado = await response.json();
+
+                if (resultado.success && resultado.puede_liberar) {
+                    // QR personal válido - activar modo liberación forzada
+                    modoLiberacionForzada = true;
+                    adminLiberacionForzada = resultado.usuario;
+
+                    // Mostrar indicación visual
+                    const qrStatus = document.getElementById('qr-status');
+                    if (qrStatus) {
+                        qrStatus.classList.remove('parpadeo');
+                        qrStatus.innerHTML = `<span class="text-red-400 font-bold">🔓 MODO ADMIN: ${resultado.usuario.nombre}</span><br><span class="text-sm">Escanee la sala a liberar</span>`;
+                    }
+
+                    // Mostrar la info del admin
+                    mostrarInfo('admin', resultado.usuario.nombre, resultado.usuario.run);
+
+                    // Mostrar Sweet Alert indicando el modo
+                    Swal.fire({
+                        title: '🔓 Modo Liberación Forzada',
+                        html: `
+                            <p class="text-gray-600">Bienvenido <strong>${resultado.usuario.nombre}</strong></p>
+                            <p class="mt-2 text-sm text-gray-500">Ahora escanee el QR de la sala que desea liberar.</p>
+                            <p class="mt-3 text-xs text-red-500"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Las reservas activas serán finalizadas.</p>
+                        `,
+                        icon: 'warning',
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#dc2626',
+                        timer: 5000,
+                        timerProgressBar: true
+                    });
+
+                    // Limpiar buffer
+                    bufferQR = '';
+                    lastBufferLength = 0;
+                    const inputEscanner = document.getElementById('qr-input');
+                    if (inputEscanner) {
+                        inputEscanner.value = '';
+                    }
+
+                } else {
+                    // QR personal inválido o sin permiso
+                    Swal.fire({
+                        title: 'QR Personal Inválido',
+                        text: resultado.message || 'Este QR no tiene permisos de liberación.',
+                        icon: 'error',
+                        confirmButtonColor: '#dc2626'
+                    });
+                    limpiarEstadoLectura();
+                    modoLiberacionForzada = false;
+                    adminLiberacionForzada = null;
+                }
+
+            } catch (error) {
+                console.error('Error al procesar QR personal:', error);
+                Swal.fire({
+                    title: 'Error',
+                    text: 'Error al verificar el QR personal.',
+                    icon: 'error'
+                });
+                limpiarEstadoLectura();
+                modoLiberacionForzada = false;
+                adminLiberacionForzada = null;
+            }
+        }
+
+        async function procesarLiberacionForzadaSala() {
+            // Extraer código de espacio del buffer
+            let espacio = null;
+
+            // Patrón 1: TH seguido de cualquier cosa (formato estándar)
+            const espacioMatch = bufferQR.match(/(TH[^A-Z0-9]*[A-Z0-9]+)/i);
+            if (espacioMatch) {
+                espacio = espacioMatch[1];
+            } else {
+                // Patrón 2: 2-3 letras + números (formato compacto)
+                const espacioMatchAlt = bufferQR.match(/([A-Z]{2,3}[0-9]+)/i);
+                if (espacioMatchAlt) {
+                    espacio = espacioMatchAlt[1];
+                } else {
+                    // Patrón 3: Letras + caracteres especiales + letras/números
+                    const espacioMatchSpecial = bufferQR.match(/([A-Z]+['\-]?[A-Z0-9]+)/i);
+                    if (espacioMatchSpecial) {
+                        espacio = espacioMatchSpecial[1];
+                    }
+                }
+            }
+
+            if (!espacio) {
+                Swal.fire({
+                    title: 'QR Inválido',
+                    text: 'No se pudo identificar la sala. Escanee un QR de sala válido.',
+                    icon: 'error',
+                    confirmButtonColor: '#dc2626'
+                });
+                // No salir del modo liberación, permitir reintentar
+                bufferQR = '';
+                lastBufferLength = 0;
+                return;
+            }
+
+            // Normalizar el formato del espacio
+            espacio = espacio.toUpperCase().replace(/'/g, '-');
+
+            try {
+                // Confirmar la liberación
+                const confirmResult = await Swal.fire({
+                    title: '¿Liberar sala forzadamente?',
+                    html: `
+                        <p class="text-lg font-semibold text-gray-800">Sala: <span class="text-red-600">${espacio}</span></p>
+                        <p class="mt-2 text-gray-600">Esta acción finalizará todas las reservas activas de esta sala.</p>
+                        <p class="mt-3 text-sm text-red-500"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Esta acción no se puede deshacer.</p>
+                    `,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: '<i class="fa-solid fa-unlock mr-2"></i> Liberar Sala',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#6b7280'
+                });
+
+                if (!confirmResult.isConfirmed) {
+                    // Cancelado - mantener modo liberación activo
+                    bufferQR = '';
+                    lastBufferLength = 0;
+                    return;
+                }
+
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Liberando sala...',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Llamar a la API para liberar la sala
+                const response = await fetch('/api/qr-personal/liberar-sala', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        run_administrador: adminLiberacionForzada.run,
+                        id_espacio: espacio
+                    })
+                });
+
+                const resultado = await response.json();
+
+                if (resultado.success) {
+                    // Actualizar indicador en el mapa
+                    const block = state.indicators.find(b => b.id === espacio);
+                    if (block) {
+                        block.estado = '#00FF00'; // Verde = Disponible
+                        state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                        drawIndicators();
+                    }
+
+                    // Mostrar éxito
+                    await Swal.fire({
+                        title: '🔓 Sala Liberada Forzosamente',
+                        html: `
+                            <div class="text-center">
+                                <p class="text-lg font-semibold text-green-600">Sala ${espacio} liberada</p>
+                                <p class="mt-2 text-gray-600">Liberada por: <strong>${adminLiberacionForzada.nombre}</strong></p>
+                                ${resultado.reservas_finalizadas && resultado.reservas_finalizadas.length > 0 
+                                    ? `<p class="mt-2 text-sm text-gray-500">Reservas finalizadas: ${resultado.reservas_finalizadas.length}</p>`
+                                    : '<p class="mt-2 text-sm text-gray-500">No había reservas activas</p>'
+                                }
+                            </div>
+                        `,
+                        icon: 'success',
+                        confirmButtonText: 'Aceptar',
+                        confirmButtonColor: '#10b981',
+                        timer: 4000,
+                        timerProgressBar: true
+                    });
+
+                    // Desactivar modo liberación forzada
+                    modoLiberacionForzada = false;
+                    adminLiberacionForzada = null;
+                    limpiarEstadoLectura();
+
+                } else {
+                    Swal.fire({
+                        title: 'Error',
+                        text: resultado.message || 'No se pudo liberar la sala.',
+                        icon: 'error',
+                        confirmButtonColor: '#dc2626'
+                    });
+                    // Mantener modo liberación activo para reintentar
+                }
+
+            } catch (error) {
+                console.error('Error al liberar sala forzadamente:', error);
+                Swal.fire({
+                    title: 'Error de Conexión',
+                    text: 'No se pudo conectar con el servidor.',
+                    icon: 'error',
+                    confirmButtonColor: '#dc2626'
+                });
+            }
+
+            // Limpiar buffer
+            bufferQR = '';
+            lastBufferLength = 0;
+            const inputEscanner = document.getElementById('qr-input');
+            if (inputEscanner) {
+                inputEscanner.value = '';
+            }
+        }
+
+        // Función para cancelar el modo liberación forzada
+        function cancelarModoLiberacionForzada() {
+            modoLiberacionForzada = false;
+            adminLiberacionForzada = null;
+            limpiarEstadoLectura();
+            Swal.fire({
+                title: 'Modo Cancelado',
+                text: 'Se ha cancelado el modo de liberación forzada.',
+                icon: 'info',
+                timer: 2000,
+                showConfirmButton: false
+            });
         }
 
         async function procesarUsuario() {

@@ -188,10 +188,17 @@ class ReportController extends Controller
             $total_reservas_tipo = $reservas_tipo->count();
             
             $horas_reservas_tipo = $reservas_tipo->sum(function($r) {
-                if ($r->hora && $r->hora_salida) {
-                    return Carbon::parse($r->hora)->diffInHours(Carbon::parse($r->hora_salida), true);
+                if ($r->hora) {
+                    if ($r->hora_salida) {
+                        return Carbon::parse($r->hora)->diffInHours(Carbon::parse($r->hora_salida), true);
+                    } else {
+                        // Si no hay hora de salida, calcular desde la hora actual
+                        $horaInicio = Carbon::parse($r->hora);
+                        $horaActual = Carbon::now();
+                        return $horaInicio->diffInHours($horaActual, true);
+                    }
                 }
-                return 0.83; // 50 min default si no hay hora_salida
+                return 0; // 0 min default si no hay hora inicio (originalmente era 0.83 equivalente a 50 min)
             });
             
             // Total de horas utilizadas = planificaciones + reservas
@@ -274,13 +281,21 @@ class ReportController extends Controller
                     });
                 
                 $horas_reservas_turno = $reservas_tipo_turno->sum(function($r) {
-                    if ($r->hora && $r->hora_salida) {
-                        return Carbon::parse($r->hora)->diffInHours(Carbon::parse($r->hora_salida), true);
+                    if ($r->hora) {
+                        if ($r->hora_salida) {
+                            return Carbon::parse($r->hora)->diffInHours(Carbon::parse($r->hora_salida), true);
+                        } else {
+                            // Si no hay hora de salida, calcular desde la hora actual
+                            $horaInicio = Carbon::parse($r->hora);
+                            $horaActual = Carbon::now();
+                            return $horaInicio->diffInHours($horaActual, true);
+                        }
                     }
-                    return 0.83;
+                    return 0;
                 });
                 
-                $horas_utilizadas_turno = $horas_plan_turno + $horas_reservas_turno;
+                // $horas_plan_turno contiene solo las horas de planificaciones para este turno antiguamente era $horas_reservas_turno + $horas_plan_turno
+                $horas_utilizadas_turno = $horas_reservas_turno;
                 $promedio_turno = $horas_disponibles_turno > 0 ? 
                     round(($horas_utilizadas_turno / $horas_disponibles_turno) * 100) : 0;
                 
@@ -389,11 +404,16 @@ class ReportController extends Controller
         
         $horas_utilizadas = $reservas_mes->sum(function($reserva) {
             if ($reserva->hora && $reserva->hora_salida) {
-                $inicio = Carbon::parse($reserva->hora);
-                $fin = Carbon::parse($reserva->hora_salida);
-                return $inicio->diffInHours($fin, true); // true para incluir decimales
+            $inicio = Carbon::parse($reserva->hora);
+            $fin = Carbon::parse($reserva->hora_salida);
+            return $inicio->diffInHours($fin, true); // true para incluir decimales
+            } elseif ($reserva->hora) {
+            // Si no hay hora de salida, calcular desde la hora actual
+            $horaInicio = Carbon::parse($reserva->hora);
+            $horaActual = Carbon::now();
+            return $horaInicio->diffInHours($horaActual, true);
             }
-            return 0.83; // Si no hay hora de salida, asumir 1 módulo de 50 minutos
+            return 0; // 0 horas si no hay hora inicio
         });
         
         // Calcular promedio de utilización basado en horas reales

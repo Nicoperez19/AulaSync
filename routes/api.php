@@ -318,6 +318,17 @@ Route::post('/obtener-info-espacio-desocupar', [PlanoDigitalController::class, '
 // Ruta para devolver espacios
 Route::post('/devolver-espacio', [PlanoDigitalController::class, 'devolverEspacio']);
 
+// ========================================
+// RUTAS PARA QR PERSONAL Y LIBERACIÓN FORZADA
+// ========================================
+use App\Http\Controllers\QrPersonalController;
+
+// Verificar si un QR escaneado es un QR personal válido
+Route::post('/qr-personal/verificar-escaneado', [QrPersonalController::class, 'verificarQrPersonalEscaneado']);
+
+// Liberar sala forzadamente (requiere QR personal con permiso)
+Route::post('/qr-personal/liberar-sala', [QrPersonalController::class, 'liberarSalaForzadamente']);
+
 // Ruta para registrar si hubo asistentes en una clase (devolución anticipada)
 Route::post('/registrar-asistencia-clase', [PlanoDigitalController::class, 'registrarAsistenciaClase']);
 
