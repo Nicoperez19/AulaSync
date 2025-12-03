@@ -2695,6 +2695,62 @@ class DashboardController extends Controller
     }
 
     /**
+     * Constante para días de la semana
+     */
+    private const DIAS_SEMANA = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+
+    /**
+     * Obtener planificaciones del mes actual filtradas por período
+     */
+    private function obtenerPlanificacionesMes($periodo)
+    {
+        return Planificacion_Asignatura::whereHas('horario', function($q) use ($periodo) {
+            $q->where('periodo', $periodo);
+        })->with(['modulo', 'asignatura'])->get();
+    }
+
+    /**
+     * Preparar datos de días del mes
+     */
+    private function prepararDiasDelMes($fechaInicio, $fechaFin, $hoy)
+    {
+        $diasDelMes = [];
+        
+        for ($fecha = $fechaInicio->copy(); $fecha->lte($fechaFin) && $fecha->lte($hoy); $fecha->addDay()) {
+            if ($fecha->isWeekday() || $fecha->isSaturday()) {
+                $dia = $fecha->format('d/m');
+                $diasDelMes[$dia] = [
+                    'realizadas' => 0,
+                    'no_realizadas' => 0,
+                    'recuperadas' => 0,
+                ];
+            }
+        }
+        
+        return $diasDelMes;
+    }
+
+    /**
+     * Contar planificaciones por día
+     */
+    private function contarPlanificacionesPorDia($planificacionesMes, &$diasDelMes, $fechaInicio, $fechaFin, $hoy)
+    {
+        foreach ($planificacionesMes as $plan) {
+            if ($plan->modulo) {
+                $dia = strtolower($plan->modulo->dia);
+                for ($fecha = $fechaInicio->copy(); $fecha->lte($fechaFin) && $fecha->lte($hoy); $fecha->addDay()) {
+                    if (strtolower(self::DIAS_SEMANA[$fecha->dayOfWeek]) === $dia) {
+                        $diaFormato = $fecha->format('d/m');
+                        if (isset($diasDelMes[$diaFormato])) {
+                            $diasDelMes[$diaFormato]['realizadas']++;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Descargar reporte Excel de clases realizadas
      */
     public function downloadClasesRealizadasExcel(Request $request)
@@ -2714,39 +2770,11 @@ class DashboardController extends Controller
             ->with(['asignatura', 'profesor', 'modulo'])
             ->get();
 
-        $planificacionesMes = Planificacion_Asignatura::whereHas('horario', function($q) use ($periodo) {
-            $q->where('periodo', $periodo);
-        })->with(['modulo', 'asignatura'])->get();
-
-        // Calcular datos por día
-        $diasDelMes = [];
-        $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
-
-        for ($fecha = $fechaInicio->copy(); $fecha->lte($fechaFin) && $fecha->lte($hoy); $fecha->addDay()) {
-            if ($fecha->isWeekday() || $fecha->isSaturday()) {
-                $dia = $fecha->format('d/m');
-                $diasDelMes[$dia] = [
-                    'realizadas' => 0,
-                    'no_realizadas' => 0,
-                    'recuperadas' => 0,
-                ];
-            }
-        }
-
+        $planificacionesMes = $this->obtenerPlanificacionesMes($periodo);
+        $diasDelMes = $this->prepararDiasDelMes($fechaInicio, $fechaFin, $hoy);
+        
         // Contar planificaciones
-        foreach ($planificacionesMes as $plan) {
-            if ($plan->modulo) {
-                $dia = strtolower($plan->modulo->dia);
-                for ($fecha = $fechaInicio->copy(); $fecha->lte($fechaFin) && $fecha->lte($hoy); $fecha->addDay()) {
-                    if (strtolower($diasSemana[$fecha->dayOfWeek]) === $dia) {
-                        $diaFormato = $fecha->format('d/m');
-                        if (isset($diasDelMes[$diaFormato])) {
-                            $diasDelMes[$diaFormato]['realizadas']++;
-                        }
-                    }
-                }
-            }
-        }
+        $this->contarPlanificacionesPorDia($planificacionesMes, $diasDelMes, $fechaInicio, $fechaFin, $hoy);
 
         // Restar clases no realizadas
         foreach ($clasesNoRealizadas as $clase) {

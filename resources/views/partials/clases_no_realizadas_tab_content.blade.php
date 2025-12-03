@@ -241,6 +241,9 @@
     </div>
 
     <!-- Sección de Descarga de Reportes -->
+    @php
+        $downloadParams = ['mes' => $mes, 'anio' => $anio];
+    @endphp
     <div class="p-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg shadow border border-purple-200">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
@@ -271,7 +274,7 @@
                          x-transition:leave-end="opacity-0 scale-95"
                          class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-10">
                         <div class="py-2">
-                            <a href="{{ route('dashboard.download-clases-realizadas-excel', ['mes' => $mes, 'anio' => $anio]) }}" 
+                            <a href="{{ route('dashboard.download-clases-realizadas-excel', $downloadParams) }}" 
                                class="flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors">
                                 <i class="fas fa-check-circle text-green-600"></i>
                                 <div>
@@ -279,7 +282,7 @@
                                     <p class="text-xs text-gray-500">Solo las clases realizadas</p>
                                 </div>
                             </a>
-                            <a href="{{ route('dashboard.download-clases-no-realizadas-excel', ['mes' => $mes, 'anio' => $anio]) }}" 
+                            <a href="{{ route('dashboard.download-clases-no-realizadas-excel', $downloadParams) }}" 
                                class="flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors">
                                 <i class="fas fa-times-circle text-red-600"></i>
                                 <div>
@@ -287,7 +290,7 @@
                                     <p class="text-xs text-gray-500">Solo las clases no realizadas</p>
                                 </div>
                             </a>
-                            <a href="{{ route('dashboard.download-clases-comparativa-excel', ['mes' => $mes, 'anio' => $anio]) }}" 
+                            <a href="{{ route('dashboard.download-clases-comparativa-excel', $downloadParams) }}" 
                                class="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 transition-colors border-t border-gray-100">
                                 <i class="fas fa-chart-pie text-purple-600"></i>
                                 <div>
@@ -318,7 +321,7 @@
                          x-transition:leave-end="opacity-0 scale-95"
                          class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-10">
                         <div class="py-2">
-                            <a href="{{ route('dashboard.download-clases-realizadas-pdf', ['mes' => $mes, 'anio' => $anio]) }}" 
+                            <a href="{{ route('dashboard.download-clases-realizadas-pdf', $downloadParams) }}" 
                                class="flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors">
                                 <i class="fas fa-check-circle text-green-600"></i>
                                 <div>
@@ -326,7 +329,7 @@
                                     <p class="text-xs text-gray-500">PDF con gráficos</p>
                                 </div>
                             </a>
-                            <a href="{{ route('dashboard.download-clases-no-realizadas-pdf', ['mes' => $mes, 'anio' => $anio]) }}" 
+                            <a href="{{ route('dashboard.download-clases-no-realizadas-pdf', $downloadParams) }}" 
                                class="flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors">
                                 <i class="fas fa-times-circle text-red-600"></i>
                                 <div>
@@ -334,7 +337,7 @@
                                     <p class="text-xs text-gray-500">PDF con detalle</p>
                                 </div>
                             </a>
-                            <a href="{{ route('dashboard.download-clases-comparativa-pdf', ['mes' => $mes, 'anio' => $anio]) }}" 
+                            <a href="{{ route('dashboard.download-clases-comparativa-pdf', $downloadParams) }}" 
                                class="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 transition-colors border-t border-gray-100">
                                 <i class="fas fa-chart-pie text-purple-600"></i>
                                 <div>
