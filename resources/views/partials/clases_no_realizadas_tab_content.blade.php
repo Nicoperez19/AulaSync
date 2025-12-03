@@ -240,6 +240,115 @@
         </div>
     </div>
 
+    <!-- Sección de Descarga de Reportes -->
+    <div class="p-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg shadow border border-purple-200">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h3 class="text-lg font-semibold text-gray-800 mb-2">
+                    <i class="fas fa-download text-purple-600 mr-2"></i>
+                    Descargar Reportes
+                </h3>
+                <p class="text-sm text-gray-600">Exporta los datos en formato Excel o PDF con gráficos comparativos</p>
+            </div>
+            
+            <div class="flex flex-wrap gap-3">
+                <!-- Dropdown para Excel -->
+                <div class="relative" x-data="{ openExcel: false }">
+                    <button @click="openExcel = !openExcel" 
+                            class="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md">
+                        <i class="fas fa-file-excel"></i>
+                        <span class="font-medium">Excel</span>
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </button>
+                    
+                    <div x-show="openExcel" 
+                         @click.away="openExcel = false"
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="opacity-0 scale-95"
+                         x-transition:enter-end="opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="opacity-100 scale-100"
+                         x-transition:leave-end="opacity-0 scale-95"
+                         class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-10">
+                        <div class="py-2">
+                            <a href="{{ route('dashboard.download-clases-realizadas-excel', ['mes' => $mes, 'anio' => $anio]) }}" 
+                               class="flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors">
+                                <i class="fas fa-check-circle text-green-600"></i>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Clases Realizadas</p>
+                                    <p class="text-xs text-gray-500">Solo las clases realizadas</p>
+                                </div>
+                            </a>
+                            <a href="{{ route('dashboard.download-clases-no-realizadas-excel', ['mes' => $mes, 'anio' => $anio]) }}" 
+                               class="flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors">
+                                <i class="fas fa-times-circle text-red-600"></i>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Clases No Realizadas</p>
+                                    <p class="text-xs text-gray-500">Solo las clases no realizadas</p>
+                                </div>
+                            </a>
+                            <a href="{{ route('dashboard.download-clases-comparativa-excel', ['mes' => $mes, 'anio' => $anio]) }}" 
+                               class="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 transition-colors border-t border-gray-100">
+                                <i class="fas fa-chart-pie text-purple-600"></i>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Reporte Completo</p>
+                                    <p class="text-xs text-gray-500">Ambas con comparativa</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Dropdown para PDF -->
+                <div class="relative" x-data="{ openPDF: false }">
+                    <button @click="openPDF = !openPDF" 
+                            class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-md">
+                        <i class="fas fa-file-pdf"></i>
+                        <span class="font-medium">PDF</span>
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </button>
+                    
+                    <div x-show="openPDF" 
+                         @click.away="openPDF = false"
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="opacity-0 scale-95"
+                         x-transition:enter-end="opacity-100 scale-100"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="opacity-100 scale-100"
+                         x-transition:leave-end="opacity-0 scale-95"
+                         class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-10">
+                        <div class="py-2">
+                            <a href="{{ route('dashboard.download-clases-realizadas-pdf', ['mes' => $mes, 'anio' => $anio]) }}" 
+                               class="flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors">
+                                <i class="fas fa-check-circle text-green-600"></i>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Clases Realizadas</p>
+                                    <p class="text-xs text-gray-500">PDF con gráficos</p>
+                                </div>
+                            </a>
+                            <a href="{{ route('dashboard.download-clases-no-realizadas-pdf', ['mes' => $mes, 'anio' => $anio]) }}" 
+                               class="flex items-center gap-3 px-4 py-3 hover:bg-red-50 transition-colors">
+                                <i class="fas fa-times-circle text-red-600"></i>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Clases No Realizadas</p>
+                                    <p class="text-xs text-gray-500">PDF con detalle</p>
+                                </div>
+                            </a>
+                            <a href="{{ route('dashboard.download-clases-comparativa-pdf', ['mes' => $mes, 'anio' => $anio]) }}" 
+                               class="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 transition-colors border-t border-gray-100">
+                                <i class="fas fa-chart-pie text-purple-600"></i>
+                                <div>
+                                    <p class="text-sm font-medium text-gray-800">Reporte Completo</p>
+                                    <p class="text-xs text-gray-500">PDF con gráficos de torta y barras</p>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Gráfico de comparativa -->
     <div class="p-6 bg-white rounded-lg shadow border border-gray-200">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">

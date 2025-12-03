@@ -2693,4 +2693,451 @@ class DashboardController extends Controller
 
         return response()->json($datos);
     }
+
+    /**
+     * Descargar reporte Excel de clases realizadas
+     */
+    public function downloadClasesRealizadasExcel(Request $request)
+    {
+        $mes = $request->get('mes', now()->month);
+        $anio = $request->get('anio', now()->year);
+        $periodo = SemesterHelper::getCurrentPeriod();
+
+        // Obtener datos de clases
+        $fechaInicio = Carbon::create($anio, $mes, 1)->startOfMonth();
+        $fechaFin = Carbon::create($anio, $mes, 1)->endOfMonth();
+        $hoy = Carbon::now()->startOfDay();
+
+        $clasesNoRealizadas = ClaseNoRealizada::whereMonth('fecha_clase', $mes)
+            ->whereYear('fecha_clase', $anio)
+            ->where('fecha_clase', '<=', $hoy)
+            ->with(['asignatura', 'profesor', 'modulo'])
+            ->get();
+
+        $planificacionesMes = Planificacion_Asignatura::whereHas('horario', function($q) use ($periodo) {
+            $q->where('periodo', $periodo);
+        })->with(['modulo', 'asignatura'])->get();
+
+        // Calcular datos por día
+        $diasDelMes = [];
+        $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+
+        for ($fecha = $fechaInicio->copy(); $fecha->lte($fechaFin) && $fecha->lte($hoy); $fecha->addDay()) {
+            if ($fecha->isWeekday() || $fecha->isSaturday()) {
+                $dia = $fecha->format('d/m');
+                $diasDelMes[$dia] = [
+                    'realizadas' => 0,
+                    'no_realizadas' => 0,
+                    'recuperadas' => 0,
+                ];
+            }
+        }
+
+        // Contar planificaciones
+        foreach ($planificacionesMes as $plan) {
+            if ($plan->modulo) {
+                $dia = strtolower($plan->modulo->dia);
+                for ($fecha = $fechaInicio->copy(); $fecha->lte($fechaFin) && $fecha->lte($hoy); $fecha->addDay()) {
+                    if (strtolower($diasSemana[$fecha->dayOfWeek]) === $dia) {
+                        $diaFormato = $fecha->format('d/m');
+                        if (isset($diasDelMes[$diaFormato])) {
+                            $diasDelMes[$diaFormato]['realizadas']++;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Restar clases no realizadas
+        foreach ($clasesNoRealizadas as $clase) {
+            $diaFormato = $clase->fecha_clase->format('d/m');
+            if (isset($diasDelMes[$diaFormato])) {
+                $diasDelMes[$diaFormato]['no_realizadas']++;
+                $diasDelMes[$diaFormato]['realizadas'] = max(0, $diasDelMes[$diaFormato]['realizadas'] - 1);
+                
+                if ($clase->estado === 'recuperada') {
+                    $diasDelMes[$diaFormato]['recuperadas']++;
+                }
+            }
+        }
+
+        $export = new \App\Exports\ClasesRealizadasExport($diasDelMes, $periodo);
+        $fileName = 'clases_realizadas_' . $anio . '_' . str_pad($mes, 2, '0', STR_PAD_LEFT) . '.xlsx';
+        
+        return \Maatwebsite\Excel\Facades\Excel::download($export, $fileName);
+    }
+
+    /**
+     * Descargar reporte Excel de clases no realizadas
+     */
+    public function downloadClasesNoRealizadasExcel(Request $request)
+    {
+        $mes = $request->get('mes', now()->month);
+        $anio = $request->get('anio', now()->year);
+        $periodo = SemesterHelper::getCurrentPeriod();
+
+        $fechaInicio = Carbon::create($anio, $mes, 1)->startOfMonth();
+        $fechaFin = Carbon::create($anio, $mes, 1)->endOfMonth();
+        $hoy = Carbon::now()->startOfDay();
+
+        $clasesNoRealizadas = ClaseNoRealizada::whereMonth('fecha_clase', $mes)
+            ->whereYear('fecha_clase', $anio)
+            ->where('fecha_clase', '<=', $hoy)
+            ->with(['asignatura', 'profesor', 'modulo'])
+            ->get();
+
+        // Agrupar por día
+        $diasDelMes = [];
+        $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+
+        foreach ($clasesNoRealizadas as $clase) {
+            $diaFormato = $clase->fecha_clase->format('d/m');
+            
+            if (!isset($diasDelMes[$diaFormato])) {
+                $diasDelMes[$diaFormato] = [
+                    'no_realizadas' => 0,
+                    'clases_no_realizadas_detalle' => []
+                ];
+            }
+            
+            $diasDelMes[$diaFormato]['no_realizadas']++;
+            $diasDelMes[$diaFormato]['clases_no_realizadas_detalle'][] = [
+                'asignatura' => $clase->asignatura ? $clase->asignatura->nombre_asignatura : 'Sin asignatura',
+                'profesor' => $clase->profesor ? $clase->profesor->name : 'Sin profesor',
+                'modulo' => $clase->id_modulo ?? 'N/A',
+                'hora' => $clase->modulo ? (substr($clase->modulo->hora_inicio, 0, 5) . ' - ' . substr($clase->modulo->hora_termino, 0, 5)) : '',
+                'estado' => $clase->estado,
+                'motivo' => $clase->motivo ?? 'No especificado'
+            ];
+        }
+
+        $export = new \App\Exports\ClasesNoRealizadasExport($diasDelMes, $periodo);
+        $fileName = 'clases_no_realizadas_' . $anio . '_' . str_pad($mes, 2, '0', STR_PAD_LEFT) . '.xlsx';
+        
+        return \Maatwebsite\Excel\Facades\Excel::download($export, $fileName);
+    }
+
+    /**
+     * Descargar reporte Excel comparativo (ambas)
+     */
+    public function downloadClasesComparativaExcel(Request $request)
+    {
+        $mes = $request->get('mes', now()->month);
+        $anio = $request->get('anio', now()->year);
+        $periodo = SemesterHelper::getCurrentPeriod();
+
+        // Obtener datos completos como en getClasesNoRealizadasData
+        $fechaInicio = Carbon::create($anio, $mes, 1)->startOfMonth();
+        $fechaFin = Carbon::create($anio, $mes, 1)->endOfMonth();
+        $hoy = Carbon::now()->startOfDay();
+
+        $clasesNoRealizadas = ClaseNoRealizada::whereMonth('fecha_clase', $mes)
+            ->whereYear('fecha_clase', $anio)
+            ->where('fecha_clase', '<=', $hoy)
+            ->with(['asignatura', 'profesor', 'modulo'])
+            ->get();
+
+        $planificacionesMes = Planificacion_Asignatura::whereHas('horario', function($q) use ($periodo) {
+            $q->where('periodo', $periodo);
+        })->with(['modulo', 'asignatura'])->get();
+
+        $diasDelMes = [];
+        $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+
+        for ($fecha = $fechaInicio->copy(); $fecha->lte($fechaFin) && $fecha->lte($hoy); $fecha->addDay()) {
+            if ($fecha->isWeekday() || $fecha->isSaturday()) {
+                $dia = $fecha->format('d/m');
+                $diasDelMes[$dia] = [
+                    'realizadas' => 0,
+                    'no_realizadas' => 0,
+                    'recuperadas' => 0,
+                    'clases_no_realizadas_detalle' => []
+                ];
+            }
+        }
+
+        // Contar planificaciones
+        foreach ($planificacionesMes as $plan) {
+            if ($plan->modulo) {
+                $dia = strtolower($plan->modulo->dia);
+                for ($fecha = $fechaInicio->copy(); $fecha->lte($fechaFin) && $fecha->lte($hoy); $fecha->addDay()) {
+                    if (strtolower($diasSemana[$fecha->dayOfWeek]) === $dia) {
+                        $diaFormato = $fecha->format('d/m');
+                        if (isset($diasDelMes[$diaFormato])) {
+                            $diasDelMes[$diaFormato]['realizadas']++;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Contar clases no realizadas
+        foreach ($clasesNoRealizadas as $clase) {
+            $diaFormato = $clase->fecha_clase->format('d/m');
+            if (isset($diasDelMes[$diaFormato])) {
+                $diasDelMes[$diaFormato]['no_realizadas']++;
+                $diasDelMes[$diaFormato]['realizadas'] = max(0, $diasDelMes[$diaFormato]['realizadas'] - 1);
+                
+                if ($clase->estado === 'recuperada') {
+                    $diasDelMes[$diaFormato]['recuperadas']++;
+                }
+                
+                $diasDelMes[$diaFormato]['clases_no_realizadas_detalle'][] = [
+                    'asignatura' => $clase->asignatura ? $clase->asignatura->nombre_asignatura : 'Sin asignatura',
+                    'profesor' => $clase->profesor ? $clase->profesor->name : 'Sin profesor',
+                    'modulo' => $clase->id_modulo ?? 'N/A',
+                    'hora' => $clase->modulo ? (substr($clase->modulo->hora_inicio, 0, 5) . ' - ' . substr($clase->modulo->hora_termino, 0, 5)) : '',
+                    'estado' => $clase->estado,
+                    'motivo' => $clase->motivo ?? 'No especificado'
+                ];
+            }
+        }
+
+        $export = new \App\Exports\ClasesComparativaExport($diasDelMes, $periodo);
+        $fileName = 'clases_comparativa_' . $anio . '_' . str_pad($mes, 2, '0', STR_PAD_LEFT) . '.xlsx';
+        
+        return \Maatwebsite\Excel\Facades\Excel::download($export, $fileName);
+    }
+
+    /**
+     * Descargar reporte PDF de clases realizadas
+     */
+    public function downloadClasesRealizadasPDF(Request $request)
+    {
+        $mes = $request->get('mes', now()->month);
+        $anio = $request->get('anio', now()->year);
+        $periodo = SemesterHelper::getCurrentPeriod();
+
+        // Recopilar datos
+        $fechaInicio = Carbon::create($anio, $mes, 1)->startOfMonth();
+        $fechaFin = Carbon::create($anio, $mes, 1)->endOfMonth();
+        $hoy = Carbon::now()->startOfDay();
+
+        $clasesNoRealizadas = ClaseNoRealizada::whereMonth('fecha_clase', $mes)
+            ->whereYear('fecha_clase', $anio)
+            ->where('fecha_clase', '<=', $hoy)
+            ->with(['asignatura', 'profesor', 'modulo'])
+            ->get();
+
+        $planificacionesMes = Planificacion_Asignatura::whereHas('horario', function($q) use ($periodo) {
+            $q->where('periodo', $periodo);
+        })->with(['modulo', 'asignatura'])->get();
+
+        $diasDelMes = [];
+        $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+
+        for ($fecha = $fechaInicio->copy(); $fecha->lte($fechaFin) && $fecha->lte($hoy); $fecha->addDay()) {
+            if ($fecha->isWeekday() || $fecha->isSaturday()) {
+                $dia = $fecha->format('d/m');
+                $diasDelMes[$dia] = [
+                    'fecha' => $dia,
+                    'realizadas' => 0,
+                    'no_realizadas' => 0,
+                    'total' => 0,
+                    'porcentaje' => 0
+                ];
+            }
+        }
+
+        foreach ($planificacionesMes as $plan) {
+            if ($plan->modulo) {
+                $dia = strtolower($plan->modulo->dia);
+                for ($fecha = $fechaInicio->copy(); $fecha->lte($fechaFin) && $fecha->lte($hoy); $fecha->addDay()) {
+                    if (strtolower($diasSemana[$fecha->dayOfWeek]) === $dia) {
+                        $diaFormato = $fecha->format('d/m');
+                        if (isset($diasDelMes[$diaFormato])) {
+                            $diasDelMes[$diaFormato]['realizadas']++;
+                        }
+                    }
+                }
+            }
+        }
+
+        foreach ($clasesNoRealizadas as $clase) {
+            $diaFormato = $clase->fecha_clase->format('d/m');
+            if (isset($diasDelMes[$diaFormato])) {
+                $diasDelMes[$diaFormato]['no_realizadas']++;
+                $diasDelMes[$diaFormato]['realizadas'] = max(0, $diasDelMes[$diaFormato]['realizadas'] - 1);
+            }
+        }
+
+        // Calcular totales y porcentajes
+        $totalRealizadas = 0;
+        $totalNoRealizadas = 0;
+        foreach ($diasDelMes as $key => $dia) {
+            $diasDelMes[$key]['total'] = $dia['realizadas'] + $dia['no_realizadas'];
+            $diasDelMes[$key]['porcentaje'] = $dia['total'] > 0 ? round(($dia['realizadas'] / $dia['total']) * 100, 1) : 0;
+            $totalRealizadas += $dia['realizadas'];
+            $totalNoRealizadas += $dia['no_realizadas'];
+        }
+
+        $totalClases = $totalRealizadas + $totalNoRealizadas;
+        $porcentajeRealizadas = $totalClases > 0 ? round(($totalRealizadas / $totalClases) * 100, 1) : 0;
+        $diasLaborales = count($diasDelMes);
+        $promedioDiario = $diasLaborales > 0 ? round($totalClases / $diasLaborales, 1) : 0;
+
+        $datos = [
+            'periodo' => $periodo,
+            'totalRealizadas' => $totalRealizadas,
+            'totalClases' => $totalClases,
+            'porcentajeRealizadas' => $porcentajeRealizadas,
+            'promedioDiario' => $promedioDiario,
+            'datosGrafico' => array_values($diasDelMes)
+        ];
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.clases-realizadas', $datos);
+        $fileName = 'clases_realizadas_' . $anio . '_' . str_pad($mes, 2, '0', STR_PAD_LEFT) . '.pdf';
+        
+        return $pdf->download($fileName);
+    }
+
+    /**
+     * Descargar reporte PDF de clases no realizadas
+     */
+    public function downloadClasesNoRealizadasPDF(Request $request)
+    {
+        $mes = $request->get('mes', now()->month);
+        $anio = $request->get('anio', now()->year);
+        $periodo = SemesterHelper::getCurrentPeriod();
+
+        $fechaInicio = Carbon::create($anio, $mes, 1)->startOfMonth();
+        $fechaFin = Carbon::create($anio, $mes, 1)->endOfMonth();
+        $hoy = Carbon::now()->startOfDay();
+
+        $clasesNoRealizadas = ClaseNoRealizada::whereMonth('fecha_clase', $mes)
+            ->whereYear('fecha_clase', $anio)
+            ->where('fecha_clase', '<=', $hoy)
+            ->with(['asignatura', 'profesor', 'modulo'])
+            ->get();
+
+        $clasesDetalle = [];
+        $totalNoRealizadas = $clasesNoRealizadas->count();
+        $clasesRecuperadas = $clasesNoRealizadas->where('estado', 'recuperada')->count();
+        $clasesPendientes = $clasesNoRealizadas->where('estado', 'pendiente')->count();
+        $porcentajeRecuperadas = $totalNoRealizadas > 0 ? round(($clasesRecuperadas / $totalNoRealizadas) * 100, 1) : 0;
+
+        foreach ($clasesNoRealizadas as $clase) {
+            $clasesDetalle[] = [
+                'fecha' => $clase->fecha_clase->format('d/m/Y'),
+                'asignatura' => $clase->asignatura ? $clase->asignatura->nombre_asignatura : 'Sin asignatura',
+                'profesor' => $clase->profesor ? $clase->profesor->name : 'Sin profesor',
+                'modulo' => $clase->id_modulo ?? 'N/A',
+                'hora' => $clase->modulo ? (substr($clase->modulo->hora_inicio, 0, 5) . ' - ' . substr($clase->modulo->hora_termino, 0, 5)) : '',
+                'estado' => $clase->estado,
+                'motivo' => $clase->motivo ?? 'No especificado'
+            ];
+        }
+
+        $datos = [
+            'periodo' => $periodo,
+            'totalNoRealizadas' => $totalNoRealizadas,
+            'clasesRecuperadas' => $clasesRecuperadas,
+            'clasesPendientes' => $clasesPendientes,
+            'porcentajeRecuperadas' => $porcentajeRecuperadas,
+            'clasesDetalle' => $clasesDetalle
+        ];
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.clases-no-realizadas-detalle', $datos);
+        $fileName = 'clases_no_realizadas_' . $anio . '_' . str_pad($mes, 2, '0', STR_PAD_LEFT) . '.pdf';
+        
+        return $pdf->download($fileName);
+    }
+
+    /**
+     * Descargar reporte PDF comparativo (ambas)
+     */
+    public function downloadClasesComparativaPDF(Request $request)
+    {
+        $mes = $request->get('mes', now()->month);
+        $anio = $request->get('anio', now()->year);
+        $periodo = SemesterHelper::getCurrentPeriod();
+
+        $fechaInicio = Carbon::create($anio, $mes, 1)->startOfMonth();
+        $fechaFin = Carbon::create($anio, $mes, 1)->endOfMonth();
+        $hoy = Carbon::now()->startOfDay();
+
+        $clasesNoRealizadas = ClaseNoRealizada::whereMonth('fecha_clase', $mes)
+            ->whereYear('fecha_clase', $anio)
+            ->where('fecha_clase', '<=', $hoy)
+            ->with(['asignatura', 'profesor', 'modulo'])
+            ->get();
+
+        $planificacionesMes = Planificacion_Asignatura::whereHas('horario', function($q) use ($periodo) {
+            $q->where('periodo', $periodo);
+        })->with(['modulo', 'asignatura'])->get();
+
+        $diasDelMes = [];
+        $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+
+        for ($fecha = $fechaInicio->copy(); $fecha->lte($fechaFin) && $fecha->lte($hoy); $fecha->addDay()) {
+            if ($fecha->isWeekday() || $fecha->isSaturday()) {
+                $dia = $fecha->format('d/m');
+                $diasDelMes[$dia] = [
+                    'fecha' => $dia,
+                    'realizadas' => 0,
+                    'no_realizadas' => 0,
+                    'recuperadas' => 0,
+                    'total' => 0,
+                    'porcentaje' => 0
+                ];
+            }
+        }
+
+        foreach ($planificacionesMes as $plan) {
+            if ($plan->modulo) {
+                $dia = strtolower($plan->modulo->dia);
+                for ($fecha = $fechaInicio->copy(); $fecha->lte($fechaFin) && $fecha->lte($hoy); $fecha->addDay()) {
+                    if (strtolower($diasSemana[$fecha->dayOfWeek]) === $dia) {
+                        $diaFormato = $fecha->format('d/m');
+                        if (isset($diasDelMes[$diaFormato])) {
+                            $diasDelMes[$diaFormato]['realizadas']++;
+                        }
+                    }
+                }
+            }
+        }
+
+        foreach ($clasesNoRealizadas as $clase) {
+            $diaFormato = $clase->fecha_clase->format('d/m');
+            if (isset($diasDelMes[$diaFormato])) {
+                $diasDelMes[$diaFormato]['no_realizadas']++;
+                $diasDelMes[$diaFormato]['realizadas'] = max(0, $diasDelMes[$diaFormato]['realizadas'] - 1);
+                
+                if ($clase->estado === 'recuperada') {
+                    $diasDelMes[$diaFormato]['recuperadas']++;
+                }
+            }
+        }
+
+        // Calculate totals and percentages
+        $totalRealizadas = 0;
+        $totalNoRealizadas = 0;
+        $clasesRecuperadas = $clasesNoRealizadas->where('estado', 'recuperada')->count();
+        
+        foreach ($diasDelMes as $key => $dia) {
+            $diasDelMes[$key]['total'] = $dia['realizadas'] + $dia['no_realizadas'];
+            $diasDelMes[$key]['porcentaje'] = $dia['total'] > 0 ? round(($dia['realizadas'] / $dia['total']) * 100, 1) : 0;
+            $totalRealizadas += $dia['realizadas'];
+            $totalNoRealizadas += $dia['no_realizadas'];
+        }
+
+        $totalClases = $totalRealizadas + $totalNoRealizadas;
+        $clasesPendientes = $totalNoRealizadas - $clasesRecuperadas;
+
+        $datos = [
+            'periodo' => $periodo,
+            'totalClases' => $totalClases,
+            'totalRealizadas' => $totalRealizadas,
+            'totalNoRealizadas' => $totalNoRealizadas,
+            'clasesRecuperadas' => $clasesRecuperadas,
+            'clasesPendientes' => $clasesPendientes,
+            'datosGrafico' => array_values($diasDelMes)
+        ];
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.clases-comparativa', $datos);
+        $pdf->setPaper('a4', 'portrait');
+        $fileName = 'clases_comparativa_' . $anio . '_' . str_pad($mes, 2, '0', STR_PAD_LEFT) . '.pdf';
+        
+        return $pdf->download($fileName);
+    }
 }

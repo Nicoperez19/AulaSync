@@ -64,6 +64,16 @@ Route::middleware(['auth', 'permission:dashboard', 'extend.execution:300'])->gro
     Route::get('/dashboard/clases-no-realizadas-data', [DashboardController::class, 'getClasesNoRealizadasData'])->name('dashboard.clases-no-realizadas-data');
     Route::get('/dashboard/estadisticas-filtradas', [DashboardController::class, 'getEstadisticasFiltradas'])->name('dashboard.estadisticas-filtradas');
     Route::get('/dashboard/graficos-ajax', [DashboardController::class, 'obtenerDatosGraficosAjax'])->name('dashboard.graficos-ajax');
+    
+    // Excel downloads
+    Route::get('/dashboard/download-clases-realizadas-excel', [DashboardController::class, 'downloadClasesRealizadasExcel'])->name('dashboard.download-clases-realizadas-excel');
+    Route::get('/dashboard/download-clases-no-realizadas-excel', [DashboardController::class, 'downloadClasesNoRealizadasExcel'])->name('dashboard.download-clases-no-realizadas-excel');
+    Route::get('/dashboard/download-clases-comparativa-excel', [DashboardController::class, 'downloadClasesComparativaExcel'])->name('dashboard.download-clases-comparativa-excel');
+    
+    // PDF downloads
+    Route::get('/dashboard/download-clases-realizadas-pdf', [DashboardController::class, 'downloadClasesRealizadasPDF'])->name('dashboard.download-clases-realizadas-pdf');
+    Route::get('/dashboard/download-clases-no-realizadas-pdf', [DashboardController::class, 'downloadClasesNoRealizadasPDF'])->name('dashboard.download-clases-no-realizadas-pdf');
+    Route::get('/dashboard/download-clases-comparativa-pdf', [DashboardController::class, 'downloadClasesComparativaPDF'])->name('dashboard.download-clases-comparativa-pdf');
 });
 
 Route::middleware(['auth', 'role:Administrador'])->group(function () {
