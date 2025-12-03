@@ -4,17 +4,87 @@
         <h1 class="text-2xl font-bold text-gray-900">Estadísticas de Clases No Realizadas</h1>
         
         <!-- Botones de Exportación -->
-        <div class="flex gap-3">
-            <button wire:click="exportarPDFSemanal" 
-                    class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
-                <i class="fas fa-file-pdf mr-2"></i>
-                Exportar Semanal
-            </button>
-            <button wire:click="exportarPDFMensual" 
-                    class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
-                <i class="fas fa-file-pdf mr-2"></i>
-                Exportar Mensual
-            </button>
+        <div class="flex gap-2">
+            <!-- Dropdown para Excel -->
+            <div class="relative" x-data="{ openExcel: false }">
+                <button @click="openExcel = !openExcel" 
+                        class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
+                    <i class="fas fa-file-excel mr-2"></i>
+                    Descargar Excel
+                    <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                </button>
+                
+                <div x-show="openExcel" 
+                     @click.away="openExcel = false"
+                     x-transition:enter="transition ease-out duration-100"
+                     x-transition:enter-start="opacity-0 scale-95"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-10">
+                    <div class="py-1">
+                        <a href="{{ route('dashboard.download-clases-realizadas-excel', ['mes' => now()->month, 'anio' => now()->year]) }}" 
+                           class="flex items-center px-4 py-2 text-sm hover:bg-green-50 transition-colors">
+                            <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                            Clases Realizadas
+                        </a>
+                        <a href="{{ route('dashboard.download-clases-no-realizadas-excel', ['mes' => now()->month, 'anio' => now()->year]) }}" 
+                           class="flex items-center px-4 py-2 text-sm hover:bg-red-50 transition-colors">
+                            <i class="fas fa-times-circle text-red-600 mr-2"></i>
+                            Clases No Realizadas
+                        </a>
+                        <a href="{{ route('dashboard.download-clases-comparativa-excel', ['mes' => now()->month, 'anio' => now()->year]) }}" 
+                           class="flex items-center px-4 py-2 text-sm hover:bg-purple-50 transition-colors border-t border-gray-100">
+                            <i class="fas fa-chart-pie text-purple-600 mr-2"></i>
+                            Reporte Completo
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dropdown para PDF -->
+            <div class="relative" x-data="{ openPDF: false }">
+                <button @click="openPDF = !openPDF" 
+                        class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
+                    <i class="fas fa-file-pdf mr-2"></i>
+                    Descargar PDF
+                    <i class="fas fa-chevron-down ml-2 text-xs"></i>
+                </button>
+                
+                <div x-show="openPDF" 
+                     @click.away="openPDF = false"
+                     x-transition:enter="transition ease-out duration-100"
+                     x-transition:enter-start="opacity-0 scale-95"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     class="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-10">
+                    <div class="py-1">
+                        <a href="{{ route('dashboard.download-clases-realizadas-pdf', ['mes' => now()->month, 'anio' => now()->year]) }}" 
+                           class="flex items-center px-4 py-2 text-sm hover:bg-green-50 transition-colors">
+                            <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                            Clases Realizadas
+                        </a>
+                        <a href="{{ route('dashboard.download-clases-no-realizadas-pdf', ['mes' => now()->month, 'anio' => now()->year]) }}" 
+                           class="flex items-center px-4 py-2 text-sm hover:bg-red-50 transition-colors">
+                            <i class="fas fa-times-circle text-red-600 mr-2"></i>
+                            Clases No Realizadas
+                        </a>
+                        <a href="{{ route('dashboard.download-clases-comparativa-pdf', ['mes' => now()->month, 'anio' => now()->year]) }}" 
+                           class="flex items-center px-4 py-2 text-sm hover:bg-purple-50 transition-colors border-t border-gray-100">
+                            <i class="fas fa-chart-pie text-purple-600 mr-2"></i>
+                            Reporte Completo
+                        </a>
+                        <div class="border-t border-gray-100"></div>
+                        <button wire:click="exportarPDFSemanal" 
+                                class="w-full text-left flex items-center px-4 py-2 text-sm hover:bg-blue-50 transition-colors">
+                            <i class="fas fa-calendar-week text-blue-600 mr-2"></i>
+                            Semanal (legacy)
+                        </button>
+                        <button wire:click="exportarPDFMensual" 
+                                class="w-full text-left flex items-center px-4 py-2 text-sm hover:bg-indigo-50 transition-colors">
+                            <i class="fas fa-calendar-alt text-indigo-600 mr-2"></i>
+                            Mensual (legacy)
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
