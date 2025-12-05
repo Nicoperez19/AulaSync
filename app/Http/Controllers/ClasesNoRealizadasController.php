@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Exports\ClasesNoRealizadasExport;
+use App\Models\ProfesorAtraso;
+use App\Helpers\SemesterHelper;
 use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 
@@ -11,7 +13,26 @@ class ClasesNoRealizadasController extends Controller
 {
     public function index()
     {
-        return view('admin.clases-no-realizadas');
+        $periodo = SemesterHelper::getCurrentPeriod();
+        
+        // Obtener estadísticas de atrasos
+        $totalAtrasos = ProfesorAtraso::where('periodo', $periodo)->count();
+        $atrasosNoJustificados = ProfesorAtraso::where('periodo', $periodo)
+            ->where('justificado', false)
+            ->count();
+        $atrasosJustificados = ProfesorAtraso::where('periodo', $periodo)
+            ->where('justificado', true)
+            ->count();
+        $promedioMinutosAtraso = ProfesorAtraso::where('periodo', $periodo)
+            ->avg('minutos_atraso');
+        
+        return view('admin.clases-no-realizadas', compact(
+            'totalAtrasos',
+            'atrasosNoJustificados',
+            'atrasosJustificados',
+            'promedioMinutosAtraso',
+            'periodo'
+        ));
     }
 
     /**

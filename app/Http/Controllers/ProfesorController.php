@@ -120,10 +120,12 @@ class ProfesorController extends Controller
             $espacio->estado = 'Ocupado';
             $espacio->save();
 
-            // Limpiar registros incorrectos de clases no realizadas
+            // Limpiar registros incorrectos de clases no realizadas (mover a atrasos)
             \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
                 $espacio->id_espacio,
-                $fechaActual
+                $fechaActual,
+                $horaActual,
+                $profesor->run_profesor
             );
 
             return response()->json([
@@ -341,10 +343,12 @@ class ProfesorController extends Controller
             $espacio->estado = 'Ocupado';
             $espacio->save();
 
-            // Limpiar registros incorrectos de clases no realizadas
+            // Limpiar registros incorrectos de clases no realizadas (mover a atrasos)
             \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
                 $espacio->id_espacio,
-                $fechaActual
+                $fechaActual,
+                $horaActual,
+                $profesor->run_profesor
             );
 
             return response()->json([

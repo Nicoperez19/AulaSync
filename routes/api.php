@@ -40,6 +40,41 @@ Route::post('/attendance', [AttendanceController::class, 'store']);
 // Obtener listado de asistencias por reserva
 Route::get('/attendance/reservation/{reservationId}', [AttendanceController::class, 'show']);
 
+/*
+|--------------------------------------------------------------------------
+| Rutas de Asistencia de Alumnos por QR (Student QR Attendance API)
+|--------------------------------------------------------------------------
+| 
+| Endpoints para el escáner QR de alumnos:
+| - POST /student-attendance/entrada: Marcar entrada de alumno
+| - POST /student-attendance/salida: Marcar salida de alumno
+| - POST /student-attendance/toggle: Entrada/Salida automática según estado
+| - GET /student-attendance/estado/{rut}: Verificar estado de asistencia
+| - GET /student-attendance/historial/{rut}: Historial de asistencias
+| - GET /student-attendance/espacio/{id}/presentes: Alumnos presentes en espacio
+|
+*/
+use App\Http\Controllers\Api\StudentQRAttendanceController;
+
+// Marcar entrada de alumno mediante QR
+Route::post('/student-attendance/entrada', [StudentQRAttendanceController::class, 'marcarEntrada']);
+
+// Marcar salida de alumno mediante QR
+Route::post('/student-attendance/salida', [StudentQRAttendanceController::class, 'marcarSalida']);
+
+// Toggle entrada/salida (detecta automáticamente qué acción realizar)
+Route::post('/student-attendance/toggle', [StudentQRAttendanceController::class, 'toggleAsistencia']);
+
+// Verificar estado de asistencia de un alumno
+Route::get('/student-attendance/estado/{rutAlumno}', [StudentQRAttendanceController::class, 'verificarEstado']);
+Route::get('/student-attendance/estado/{rutAlumno}/{idEspacio}', [StudentQRAttendanceController::class, 'verificarEstado']);
+
+// Historial de asistencias de un alumno
+Route::get('/student-attendance/historial/{rutAlumno}', [StudentQRAttendanceController::class, 'historialAlumno']);
+
+// Alumnos presentes en un espacio
+Route::get('/student-attendance/espacio/{idEspacio}/presentes', [StudentQRAttendanceController::class, 'alumnosPresentesEnEspacio']);
+
 // Route for key return notifications moved to web.php to use session authentication
 
 // API para profesores colaboradores

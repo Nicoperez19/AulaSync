@@ -387,7 +387,7 @@ class ClasesNoRealizadasTable extends Component
 
         $hoy = Carbon::now()->toDateString();
         
-        // Una sola consulta con agregación condicional
+        // Una sola consulta con agregación condicional, excluyendo atrasos
         $stats = DB::table('clases_no_realizadas')
             ->select([
                 DB::raw('COUNT(*) as total'),
@@ -395,6 +395,14 @@ class ClasesNoRealizadasTable extends Component
                 DB::raw("SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) as pendientes"),
                 DB::raw("SUM(CASE WHEN estado = 'justificado' THEN 1 ELSE 0 END) as justificados"),
             ])
+            // Excluir registros que tienen un atraso correspondiente
+            ->whereNotExists(function($subQuery) {
+                $subQuery->select(DB::raw(1))
+                    ->from('profesor_atrasos')
+                    ->whereColumn('profesor_atrasos.id_planificacion', 'clases_no_realizadas.id_planificacion')
+                    ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase')
+                    ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio');
+            })
             ->when($this->periodo, function($q) {
                 $q->where('periodo', $this->periodo);
             })
@@ -427,6 +435,14 @@ class ClasesNoRealizadasTable extends Component
         
         $query = ClaseNoRealizada::query()
             ->select('clases_no_realizadas.*')
+            // Excluir registros que tienen un atraso correspondiente
+            ->whereNotExists(function($subQuery) {
+                $subQuery->select(DB::raw(1))
+                    ->from('profesor_atrasos')
+                    ->whereColumn('profesor_atrasos.id_planificacion', 'clases_no_realizadas.id_planificacion')
+                    ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase')
+                    ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio');
+            })
             ->when($this->periodo, function($q) {
                 $q->where('clases_no_realizadas.periodo', $this->periodo);
             })

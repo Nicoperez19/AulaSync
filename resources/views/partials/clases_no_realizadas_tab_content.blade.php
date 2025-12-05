@@ -244,6 +244,18 @@
         </div>
     </div>
 
+    @can('clases-no-realizadas.index')
+    <!-- Botón de acceso rápido a gestión de clases no realizadas -->
+    <div class="flex justify-end">
+        <a href="{{ route('clases-no-realizadas.index') }}" 
+           class="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
+            <i class="fas fa-tasks"></i>
+            <span>Gestionar Clases No Realizadas</span>
+            <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+    @endcan
+
     <!-- Gráfico de comparativa -->
     <div class="p-6 bg-white rounded-lg shadow border border-gray-200">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">

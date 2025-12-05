@@ -150,24 +150,87 @@ class ClaseNoRealizada extends Model
     /**
      * Limpiar registros incorrectos cuando un profesor registra entrada tarde
      * Se llama cuando se crea una reserva de profesor
+     * Ahora mueve los registros a profesor_atrasos en lugar de marcar como justificado
+     * 
+     * Elimina TODOS los registros de clases_no_realizadas para esa clase/fecha/espacio
+     * porque si el profesor llegó (aunque tarde), la clase SÍ se realizó.
      */
-    public static function limpiarRegistrosIncorrectos($idEspacio, $fechaReserva)
+    public static function limpiarRegistrosIncorrectos($idEspacio, $fechaReserva, $horaEntrada = null, $runProfesor = null)
     {
-        // Buscar registros de hoy para este espacio que no estén justificados
-        $registrosIncorrectos = static::where('id_espacio', $idEspacio)
+        // Buscar TODOS los registros de hoy para este espacio (sin importar estado)
+        // Si el profesor llegó tarde, la clase SÍ se realizó, así que todos los registros
+        // relacionados deben eliminarse de clases_no_realizadas
+        $registros = static::where('id_espacio', $idEspacio)
             ->where('fecha_clase', $fechaReserva)
-            ->where('estado', 'no_realizada')
             ->get();
 
-        foreach ($registrosIncorrectos as $registro) {
-            // Actualizar el estado a justificado con una observación
-            $registro->update([
-                'estado' => 'justificado',
-                'observaciones' => ($registro->observaciones ?? '').' [Auto-corregido: El profesor registró entrada tarde]',
-            ]);
+        $contadorMovidos = 0;
+
+        foreach ($registros as $registro) {
+            // Solo mover a atrasos si era un registro de "no_realizada" o "justificado" con autocorregido
+            $debeRegistrarAtraso = $registro->estado === 'no_realizada' || 
+                ($registro->estado === 'justificado' && str_contains($registro->observaciones ?? '', 'Auto-corregido'));
+
+            if ($debeRegistrarAtraso) {
+                // Intentar obtener la planificación correspondiente
+                $planificacion = \App\Models\Planificacion_Asignatura::where('id_asignatura', $registro->id_asignatura)
+                    ->where('id_espacio', $registro->id_espacio)
+                    ->where('id_modulo', $registro->id_modulo)
+                    ->first();
+
+                // Calcular minutos de atraso si tenemos hora de entrada
+                $minutosAtraso = 0;
+                $horaProgramada = null;
+                
+                if ($horaEntrada && $registro->modulo) {
+                    $horaProgramada = $registro->modulo->hora_inicio;
+                    if ($horaProgramada) {
+                        $minutosAtraso = Carbon::parse($horaProgramada)->diffInMinutes(Carbon::parse($horaEntrada));
+                    }
+                }
+
+                // Verificar que no exista ya un registro de atraso para esta combinación
+                $existeAtraso = \Illuminate\Support\Facades\DB::table('profesor_atrasos')
+                    ->where('id_asignatura', $registro->id_asignatura)
+                    ->where('id_espacio', $registro->id_espacio)
+                    ->where('id_modulo', $registro->id_modulo)
+                    ->where('fecha', $registro->fecha_clase)
+                    ->exists();
+
+                if (!$existeAtraso) {
+                    try {
+                        \Illuminate\Support\Facades\DB::table('profesor_atrasos')->insert([
+                            'id_planificacion' => $planificacion ? $planificacion->id : 0,
+                            'id_asignatura' => $registro->id_asignatura,
+                            'id_espacio' => $registro->id_espacio,
+                            'id_modulo' => $registro->id_modulo,
+                            'run_profesor' => $runProfesor ?? $registro->run_profesor,
+                            'fecha' => $registro->fecha_clase,
+                            'hora_programada' => $horaProgramada,
+                            'hora_llegada' => $horaEntrada,
+                            'minutos_atraso' => $minutosAtraso,
+                            'periodo' => $registro->periodo,
+                            'observaciones' => 'Profesor llegó tarde pero realizó la clase',
+                            'justificado' => false,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                        $contadorMovidos++;
+                    } catch (\Exception $e) {
+                        \Illuminate\Support\Facades\Log::warning("No se pudo crear registro de atraso: " . $e->getMessage());
+                    }
+                }
+            }
+
+            // Eliminar el registro de clases_no_realizadas (siempre, porque la clase SÍ se realizó)
+            try {
+                $registro->delete();
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::warning("No se pudo eliminar registro: " . $e->getMessage());
+            }
         }
 
-        return $registrosIncorrectos->count();
+        return $contadorMovidos;
     }
 
     public static function obtenerEstadisticasPorProfesor($periodo = null, $fechaInicio = null, $fechaFin = null)

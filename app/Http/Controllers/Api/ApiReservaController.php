@@ -147,11 +147,13 @@ class ApiReservaController extends Controller
                 $espacio->estado = 'Ocupado';
                 $espacio->save();
 
-                // Limpiar registros incorrectos de clases no realizadas
+                // Limpiar registros incorrectos de clases no realizadas (mover a atrasos)
                 // Si el profesor registra entrada (aunque sea tarde), la clase SÍ se realizó
                 \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
                     $request->espacio_id,
-                    $horaActual->format('Y-m-d')
+                    $horaActual->format('Y-m-d'),
+                    $horaActual->format('H:i:s'),
+                    $request->rut_usuario
                 );
 
                 DB::commit();

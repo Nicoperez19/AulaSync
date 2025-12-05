@@ -2585,10 +2585,17 @@ class DashboardController extends Controller
         // Usar el período académico correcto (formato YYYY-S, ej: 2025-2)
         $periodo = SemesterHelper::getCurrentPeriod();
 
-        // Obtener clases no realizadas del mes actual (solo hasta hoy)
+        // Obtener clases no realizadas del mes actual (solo hasta hoy), excluyendo atrasos
         $clasesNoRealizadasRaw = ClaseNoRealizada::whereMonth('fecha_clase', $mes)
             ->whereYear('fecha_clase', $anio)
             ->where('fecha_clase', '<=', $hoy)
+            ->whereNotExists(function($query) {
+                $query->select(DB::raw(1))
+                    ->from('profesor_atrasos')
+                    ->whereColumn('profesor_atrasos.id_planificacion', 'clases_no_realizadas.id_planificacion')
+                    ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase')
+                    ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio');
+            })
             ->with(['asignatura', 'profesor', 'modulo'])
             ->get();
 
