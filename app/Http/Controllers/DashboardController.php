@@ -49,6 +49,13 @@ class DashboardController extends Controller
         try {
             $inicio = Carbon::parse($horaInicio);
             $fin = Carbon::parse($horaSalida);
+            
+            // Detectar si hora_salida es menor que hora (error de datos o cruce de medianoche)
+            // En estos casos, usar el valor teórico como fallback
+            if ($fin->lt($inicio)) {
+                return $modulosTeoricos ?? 1;
+            }
+            
             $minutosReales = $inicio->diffInMinutes($fin);
             
             // Si duró menos de 10 minutos, no contar como módulo válido
@@ -57,10 +64,12 @@ class DashboardController extends Controller
                 return 0;
             }
             
-            // Cada módulo académico es de 50 minutos efectivos
-            // Pero considerando breaks y tolerancias, usamos 45-55 minutos como rango
-            // Redondeamos: si usó más del 60% del módulo (30+ min), cuenta como 1 módulo
+            // Limitar a máximo 15 módulos por reserva (un día completo)
+            // Si el cálculo da más, probablemente hay un error en los datos
             $modulosCalculados = $minutosReales / 50;
+            if ($modulosCalculados > 15) {
+                return $modulosTeoricos ?? 1;
+            }
             
             // Redondear de forma inteligente:
             // - Menos de 0.2 módulos (10 min) = 0 (ya filtrado arriba)
