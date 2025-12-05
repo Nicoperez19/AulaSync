@@ -208,10 +208,35 @@ class DashboardController extends Controller
         // Obtener horarios agrupados del día actual
         $horariosAgrupados = $this->obtenerHorariosAgrupados($facultad, $piso);
 
-        // Obtener clases no realizadas de hoy
-        $clasesNoRealizadasHoy = ClaseNoRealizada::whereDate('fecha_clase', today())
+        // Obtener clases no realizadas de hoy (módulos individuales)
+        $clasesNoRealizadasHoyRaw = ClaseNoRealizada::whereDate('fecha_clase', today())
             ->with(['asignatura', 'profesor', 'modulo', 'espacio'])
             ->get();
+
+        // Agrupar módulos consecutivos como una sola clase
+        $clasesAgrupadas = $clasesNoRealizadasHoyRaw->groupBy(function($clase) {
+            return $clase->id_asignatura . '-' . 
+                   $clase->run_profesor . '-' . 
+                   $clase->id_espacio . '-' . 
+                   $clase->fecha_clase->format('Y-m-d');
+        });
+
+        // Crear colección de clases únicas
+        $clasesNoRealizadasHoy = collect();
+        foreach ($clasesAgrupadas as $key => $modulos) {
+            $primerModulo = $modulos->first();
+            $ultimoModulo = $modulos->last();
+            $estadoClase = $modulos->contains('estado', 'recuperada') ? 'recuperada' : 'pendiente';
+            
+            $claseAgrupada = clone $primerModulo;
+            $claseAgrupada->modulos_count = $modulos->count();
+            $claseAgrupada->modulos_detalle = $modulos->pluck('id_modulo')->toArray();
+            $claseAgrupada->hora_inicio_clase = $primerModulo->modulo ? $primerModulo->modulo->hora_inicio : null;
+            $claseAgrupada->hora_fin_clase = $ultimoModulo->modulo ? $ultimoModulo->modulo->hora_termino : null;
+            $claseAgrupada->estado = $estadoClase;
+            
+            $clasesNoRealizadasHoy->push($claseAgrupada);
+        }
 
         // Inicializar noUtilizadasDia vacío (se cargará on-demand si es necesario)
         $noUtilizadasDia = [];
@@ -2561,11 +2586,43 @@ class DashboardController extends Controller
         $periodo = SemesterHelper::getCurrentPeriod();
 
         // Obtener clases no realizadas del mes actual (solo hasta hoy)
-        $clasesNoRealizadas = ClaseNoRealizada::whereMonth('fecha_clase', $mes)
+        $clasesNoRealizadasRaw = ClaseNoRealizada::whereMonth('fecha_clase', $mes)
             ->whereYear('fecha_clase', $anio)
             ->where('fecha_clase', '<=', $hoy)
             ->with(['asignatura', 'profesor', 'modulo'])
             ->get();
+
+        // =====================================================
+        // AGRUPAR MÓDULOS CONSECUTIVOS COMO UNA SOLA CLASE
+        // Una clase = misma asignatura + profesor + espacio + fecha
+        // =====================================================
+        $clasesAgrupadas = $clasesNoRealizadasRaw->groupBy(function($clase) {
+            return $clase->id_asignatura . '-' . 
+                   $clase->run_profesor . '-' . 
+                   $clase->id_espacio . '-' . 
+                   $clase->fecha_clase->format('Y-m-d');
+        });
+
+        // Crear colección de clases únicas (no módulos individuales)
+        $clasesNoRealizadas = collect();
+        foreach ($clasesAgrupadas as $key => $modulos) {
+            // Tomar el primer módulo como representante de la clase
+            $primerModulo = $modulos->first();
+            $ultimoModulo = $modulos->last();
+            
+            // Determinar el estado de la clase (si algún módulo está recuperado, la clase está recuperada)
+            $estadoClase = $modulos->contains('estado', 'recuperada') ? 'recuperada' : 'pendiente';
+            
+            // Crear objeto representativo de la clase
+            $claseAgrupada = clone $primerModulo;
+            $claseAgrupada->modulos_count = $modulos->count();
+            $claseAgrupada->modulos_detalle = $modulos->pluck('id_modulo')->toArray();
+            $claseAgrupada->hora_inicio = $primerModulo->modulo ? $primerModulo->modulo->hora_inicio : null;
+            $claseAgrupada->hora_fin = $ultimoModulo->modulo ? $ultimoModulo->modulo->hora_termino : null;
+            $claseAgrupada->estado = $estadoClase;
+            
+            $clasesNoRealizadas->push($claseAgrupada);
+        }
 
         // Obtener clases que están programadas para recuperación (estado = 'pendiente')
         $clasesParaRecuperar = $clasesNoRealizadas->where('estado', 'pendiente')->count();
@@ -2574,9 +2631,18 @@ class DashboardController extends Controller
         $clasesRecuperadas = $clasesNoRealizadas->where('estado', 'recuperada')->count();
 
         // Obtener todas las planificaciones del período actual
-        $planificacionesMes = Planificacion_Asignatura::whereHas('horario', function($q) use ($periodo) {
+        $planificacionesMesRaw = Planificacion_Asignatura::whereHas('horario', function($q) use ($periodo) {
             $q->where('periodo', $periodo);
         })->with(['modulo', 'asignatura'])->get();
+
+        // =====================================================
+        // AGRUPAR PLANIFICACIONES POR CLASE (no por módulo)
+        // Una clase = misma asignatura + espacio + día de semana
+        // =====================================================
+        $planificacionesAgrupadas = $planificacionesMesRaw->groupBy(function($plan) {
+            $dia = $plan->modulo ? strtolower($plan->modulo->dia) : 'sin_dia';
+            return $plan->id_asignatura . '-' . $plan->id_espacio . '-' . $dia;
+        });
 
         // Agrupar por día para el gráfico de barras - SOLO HASTA HOY
         $diasDelMes = [];
@@ -2599,23 +2665,24 @@ class DashboardController extends Controller
             }
         }
 
-        // Contar clases planificadas solo para días que ya pasaron o es hoy
-        foreach ($planificacionesMes as $plan) {
-            if ($plan->modulo) {
-                $dia = strtolower($plan->modulo->dia);
+        // Contar CLASES planificadas (agrupadas) solo para días que ya pasaron o es hoy
+        foreach ($planificacionesAgrupadas as $key => $modulos) {
+            $primerPlan = $modulos->first();
+            if ($primerPlan && $primerPlan->modulo) {
+                $dia = strtolower($primerPlan->modulo->dia);
                 // Encontrar todas las fechas con este día de semana HASTA HOY
                 for ($fecha = $inicio->copy(); $fecha->lte($fin); $fecha->addDay()) {
                     if (strtolower($dias[$fecha->dayOfWeek]) === $dia) {
                         $diaFormato = $fecha->format('d/m');
                         if (isset($diasDelMes[$diaFormato])) {
-                            $diasDelMes[$diaFormato]['realizadas']++;
+                            $diasDelMes[$diaFormato]['realizadas']++; // +1 por clase, no por módulo
                         }
                     }
                 }
             }
         }
 
-        // Contar clases no realizadas por día y agregar detalle
+        // Contar clases no realizadas por día y agregar detalle (ya agrupadas)
         foreach ($clasesNoRealizadas as $clase) {
             $diaFormato = $clase->fecha_clase->format('d/m');
             if (isset($diasDelMes[$diaFormato])) {
@@ -2628,13 +2695,18 @@ class DashboardController extends Controller
                 }
                 
                 // Agregar detalle del profesor para el modal
+                $horaInicio = $clase->hora_inicio ? substr($clase->hora_inicio, 0, 5) : '';
+                $horaFin = $clase->hora_fin ? substr($clase->hora_fin, 0, 5) : '';
+                $horaRango = ($horaInicio && $horaFin) ? "$horaInicio - $horaFin" : '';
+                
                 $diasDelMes[$diaFormato]['clases_no_realizadas_detalle'][] = [
                     'id' => $clase->id,
                     'asignatura' => $clase->asignatura ? $clase->asignatura->nombre_asignatura : 'Sin asignatura',
                     'profesor' => $clase->profesor ? $clase->profesor->name : 'Sin profesor',
                     'profesor_id' => $clase->run_profesor ?? null,
-                    'modulo' => $clase->id_modulo ?? 'N/A',
-                    'hora' => $clase->modulo ? (substr($clase->modulo->hora_inicio, 0, 5) . ' - ' . substr($clase->modulo->hora_termino, 0, 5)) : '',
+                    'modulos' => $clase->modulos_count ?? 1,
+                    'modulos_detalle' => $clase->modulos_detalle ?? [$clase->id_modulo],
+                    'hora' => $horaRango,
                     'estado' => $clase->estado,
                     'motivo' => $clase->motivo ?? 'No especificado'
                 ];
@@ -2690,13 +2762,45 @@ class DashboardController extends Controller
         // Usar el período académico correcto
         $periodo = SemesterHelper::getCurrentPeriod();
 
-        // Obtener clases no realizadas en el rango
-        $clasesNoRealizadas = ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicio, $fechaFin])->get();
+        // Obtener clases no realizadas en el rango (módulos individuales)
+        $clasesNoRealizadasRaw = ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicio, $fechaFin])
+            ->with(['asignatura', 'profesor', 'modulo'])
+            ->get();
+
+        // =====================================================
+        // AGRUPAR MÓDULOS CONSECUTIVOS COMO UNA SOLA CLASE
+        // Una clase = misma asignatura + profesor + espacio + fecha
+        // =====================================================
+        $clasesAgrupadas = $clasesNoRealizadasRaw->groupBy(function($clase) {
+            return $clase->id_asignatura . '-' . 
+                   $clase->run_profesor . '-' . 
+                   $clase->id_espacio . '-' . 
+                   $clase->fecha_clase->format('Y-m-d');
+        });
+
+        // Crear colección de clases únicas
+        $clasesNoRealizadas = collect();
+        foreach ($clasesAgrupadas as $key => $modulos) {
+            $primerModulo = $modulos->first();
+            $estadoClase = $modulos->contains('estado', 'recuperada') ? 'recuperada' : 'pendiente';
+            
+            $claseAgrupada = clone $primerModulo;
+            $claseAgrupada->modulos_count = $modulos->count();
+            $claseAgrupada->estado = $estadoClase;
+            
+            $clasesNoRealizadas->push($claseAgrupada);
+        }
 
         // Obtener todas las planificaciones del período
-        $planificaciones = Planificacion_Asignatura::whereHas('horario', function($q) use ($periodo) {
+        $planificacionesRaw = Planificacion_Asignatura::whereHas('horario', function($q) use ($periodo) {
             $q->where('periodo', $periodo);
         })->with('modulo')->get();
+
+        // Agrupar planificaciones por clase (no por módulo)
+        $planificacionesAgrupadas = $planificacionesRaw->groupBy(function($plan) {
+            $dia = $plan->modulo ? strtolower($plan->modulo->dia) : 'sin_dia';
+            return $plan->id_asignatura . '-' . $plan->id_espacio . '-' . $dia;
+        });
 
         // Calcular días laborales en el rango (Lun-Vie + Sábados hasta 13:00)
         $diasTotales = 0;
@@ -2713,7 +2817,7 @@ class DashboardController extends Controller
         $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
         $diasSemanaES = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
         
-        // Contar clases planeadas por día de semana en el rango
+        // Contar CLASES planeadas (agrupadas) por día de semana en el rango
         for ($fecha = $fechaInicio->copy(); $fecha->lte($fechaFin); $fecha->addDay()) {
             $diasTotales++;
             
@@ -2724,11 +2828,16 @@ class DashboardController extends Controller
                 $diaSemanaKey = $diasSemanaES[$diaSemanaIndex];
                 
                 if ($diaSemanaKey !== 'Domingo') {
-                    // Contar clases planeadas para este día de la semana
+                    // Contar CLASES (no módulos) planeadas para este día de la semana
                     $diaIngles = strtolower($diasSemana[$diaSemanaIndex]);
-                    $clasesDelDia = $planificaciones->filter(function($plan) use ($diaIngles) {
-                        return $plan->modulo && strtolower($plan->modulo->dia) === $diaIngles;
-                    })->count();
+                    $clasesDelDia = 0;
+                    
+                    foreach ($planificacionesAgrupadas as $key => $modulos) {
+                        $primerPlan = $modulos->first();
+                        if ($primerPlan && $primerPlan->modulo && strtolower($primerPlan->modulo->dia) === $diaIngles) {
+                            $clasesDelDia++; // +1 por clase, no por módulo
+                        }
+                    }
                     
                     $porDiaSemana[$diaSemanaKey]['total'] += $clasesDelDia;
                     $porDiaSemana[$diaSemanaKey]['realizadas'] += $clasesDelDia;
@@ -2736,7 +2845,7 @@ class DashboardController extends Controller
             }
         }
 
-        // Restar clases no realizadas
+        // Restar clases no realizadas (ya agrupadas)
         foreach ($clasesNoRealizadas as $clase) {
             $diaSemanaIndex = $clase->fecha_clase->dayOfWeek;
             $diaSemanaKey = $diasSemanaES[$diaSemanaIndex];
@@ -2747,7 +2856,7 @@ class DashboardController extends Controller
             }
         }
 
-        // Calcular totales
+        // Calcular totales (usando clases agrupadas)
         $totalRealizadas = collect($porDiaSemana)->sum('realizadas');
         $totalNoRealizadas = $clasesNoRealizadas->count();
         $clasesRecuperadas = $clasesNoRealizadas->where('estado', 'recuperada')->count();
