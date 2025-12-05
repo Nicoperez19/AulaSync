@@ -29,10 +29,27 @@ class ProfesorAtraso extends Model
 
     protected $casts = [
         'fecha' => 'date',
-        'hora_programada' => 'datetime:H:i',
-        'hora_llegada' => 'datetime:H:i',
         'justificado' => 'boolean',
+        'minutos_atraso' => 'integer',
     ];
+
+    /**
+     * Obtener hora programada formateada
+     */
+    public function getHoraProgramadaFormateadaAttribute()
+    {
+        if (!$this->hora_programada) return '-';
+        return substr($this->hora_programada, 0, 5);
+    }
+
+    /**
+     * Obtener hora llegada formateada
+     */
+    public function getHoraLlegadaFormateadaAttribute()
+    {
+        if (!$this->hora_llegada) return '-';
+        return substr($this->hora_llegada, 0, 5);
+    }
 
     /**
      * Relación con la planificación

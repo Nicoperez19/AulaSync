@@ -120,10 +120,10 @@
                                 {{ $atraso->id_modulo }}
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                                {{ $atraso->hora_programada ? substr($atraso->hora_programada, 0, 5) : '-' }}
+                                {{ $atraso->hora_programada_formateada }}
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                                {{ $atraso->hora_llegada ? substr($atraso->hora_llegada, 0, 5) : '-' }}
+                                {{ $atraso->hora_llegada_formateada }}
                             </td>
                             <td class="px-4 py-3 whitespace-nowrap">
                                 @php
