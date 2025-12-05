@@ -181,43 +181,55 @@ class ClaseNoRealizada extends Model
                 // Calcular minutos de atraso si tenemos hora de entrada
                 $minutosAtraso = 0;
                 $horaProgramada = null;
+                $esRealmenteAtraso = false;
                 
                 if ($horaEntrada && $registro->modulo) {
                     $horaProgramada = $registro->modulo->hora_inicio;
                     if ($horaProgramada) {
-                        $minutosAtraso = Carbon::parse($horaProgramada)->diffInMinutes(Carbon::parse($horaEntrada));
+                        $horaLlegadaCarbon = Carbon::parse($horaEntrada);
+                        $horaProgramadaCarbon = Carbon::parse($horaProgramada);
+                        
+                        // Solo es atraso si llegó DESPUÉS de la hora programada
+                        if ($horaLlegadaCarbon->gt($horaProgramadaCarbon)) {
+                            $minutosAtraso = $horaProgramadaCarbon->diffInMinutes($horaLlegadaCarbon);
+                            $esRealmenteAtraso = true;
+                        }
+                        // Si llegó antes o a tiempo, NO es atraso
                     }
                 }
 
-                // Verificar que no exista ya un registro de atraso para esta combinación
-                $existeAtraso = \Illuminate\Support\Facades\DB::table('profesor_atrasos')
-                    ->where('id_asignatura', $registro->id_asignatura)
-                    ->where('id_espacio', $registro->id_espacio)
-                    ->where('id_modulo', $registro->id_modulo)
-                    ->where('fecha', $registro->fecha_clase)
-                    ->exists();
+                // Solo registrar en profesor_atrasos si realmente llegó tarde
+                if ($esRealmenteAtraso) {
+                    // Verificar que no exista ya un registro de atraso para esta combinación
+                    $existeAtraso = \Illuminate\Support\Facades\DB::table('profesor_atrasos')
+                        ->where('id_asignatura', $registro->id_asignatura)
+                        ->where('id_espacio', $registro->id_espacio)
+                        ->where('id_modulo', $registro->id_modulo)
+                        ->where('fecha', $registro->fecha_clase)
+                        ->exists();
 
-                if (!$existeAtraso) {
-                    try {
-                        \Illuminate\Support\Facades\DB::table('profesor_atrasos')->insert([
-                            'id_planificacion' => $planificacion ? $planificacion->id : 0,
-                            'id_asignatura' => $registro->id_asignatura,
-                            'id_espacio' => $registro->id_espacio,
-                            'id_modulo' => $registro->id_modulo,
-                            'run_profesor' => $runProfesor ?? $registro->run_profesor,
-                            'fecha' => $registro->fecha_clase,
-                            'hora_programada' => $horaProgramada,
-                            'hora_llegada' => $horaEntrada,
-                            'minutos_atraso' => $minutosAtraso,
-                            'periodo' => $registro->periodo,
-                            'observaciones' => 'Profesor llegó tarde pero realizó la clase',
-                            'justificado' => false,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                        $contadorMovidos++;
-                    } catch (\Exception $e) {
-                        \Illuminate\Support\Facades\Log::warning("No se pudo crear registro de atraso: " . $e->getMessage());
+                    if (!$existeAtraso) {
+                        try {
+                            \Illuminate\Support\Facades\DB::table('profesor_atrasos')->insert([
+                                'id_planificacion' => $planificacion ? $planificacion->id : 0,
+                                'id_asignatura' => $registro->id_asignatura,
+                                'id_espacio' => $registro->id_espacio,
+                                'id_modulo' => $registro->id_modulo,
+                                'run_profesor' => $runProfesor ?? $registro->run_profesor,
+                                'fecha' => $registro->fecha_clase,
+                                'hora_programada' => $horaProgramada,
+                                'hora_llegada' => $horaEntrada,
+                                'minutos_atraso' => $minutosAtraso,
+                                'periodo' => $registro->periodo,
+                                'observaciones' => 'Profesor llegó tarde pero realizó la clase',
+                                'justificado' => false,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+                            $contadorMovidos++;
+                        } catch (\Exception $e) {
+                            \Illuminate\Support\Facades\Log::warning("No se pudo crear registro de atraso: " . $e->getMessage());
+                        }
                     }
                 }
             }
