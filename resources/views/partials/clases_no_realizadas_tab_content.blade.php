@@ -387,11 +387,11 @@
                                 
                                 @if($total > 0)
                                     <div class="pt-2 border-t border-gray-100">
-                                        <div class="flex items-center gap-2">
-                                            <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                                <div class="h-full {{ $porcentaje >= 80 ? 'bg-green-500' : ($porcentaje >= 50 ? 'bg-yellow-500' : 'bg-red-500') }}" style="width: {{ $porcentaje }}%"></div>
+                                        <div class="flex items-center gap-3 h-8">
+                                            <div class="flex-1 h-3 bg-gray-200 rounded-lg overflow-hidden shadow-sm">
+                                                <div class="h-full {{ $porcentaje >= 80 ? 'bg-green-500' : ($porcentaje >= 50 ? 'bg-yellow-500' : 'bg-red-500') }} transition-all duration-300" style="width: {{ $porcentaje }}%"></div>
                                             </div>
-                                            <span class="text-xs font-semibold text-gray-600">{{ $porcentaje }}%</span>
+                                            <span class="text-xs font-bold text-gray-700 w-10 text-right">{{ $porcentaje }}%</span>
                                         </div>
                                     </div>
                                 @endif
@@ -593,9 +593,9 @@
                                     @php
                                         $porcentajeCal = round(($item['datos']['realizadas'] / $totalCal) * 100);
                                     @endphp
-                                    <div class="mt-1">
-                                        <div class="h-1 bg-gray-200 rounded-full overflow-hidden">
-                                            <div class="h-full {{ $porcentajeCal >= 80 ? 'bg-green-500' : ($porcentajeCal >= 50 ? 'bg-yellow-500' : 'bg-red-500') }}" style="width: {{ $porcentajeCal }}%"></div>
+                                    <div class="mt-2 h-6">
+                                        <div class="h-2.5 bg-gray-200 rounded-md overflow-hidden shadow-sm">
+                                            <div class="h-full {{ $porcentajeCal >= 80 ? 'bg-green-500' : ($porcentajeCal >= 50 ? 'bg-yellow-500' : 'bg-red-500') }} transition-all duration-300" style="width: {{ $porcentajeCal }}%"></div>
                                         </div>
                                     </div>
                                 @else
@@ -651,11 +651,11 @@
                                     </td>
                                     <td class="px-4 py-2 text-center font-semibold text-gray-800">{{ $totalTabla }}</td>
                                     <td class="px-4 py-2">
-                                        <div class="flex items-center gap-2">
-                                            <div class="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                                <div class="h-full {{ $colorBarraTabla }}" style="width: {{ $porcentajeTabla }}%"></div>
+                                        <div class="flex items-center gap-3 h-8">
+                                            <div class="flex-1 h-3 bg-gray-200 rounded-lg overflow-hidden shadow-sm">
+                                                <div class="h-full {{ $colorBarraTabla }} transition-all duration-300" style="width: {{ $porcentajeTabla }}%"></div>
                                             </div>
-                                            <span class="text-xs font-semibold text-gray-700 w-10 text-right">{{ $porcentajeTabla }}%</span>
+                                            <span class="text-xs font-bold text-gray-700 w-10 text-right">{{ $porcentajeTabla }}%</span>
                                         </div>
                                     </td>
                                 </tr>
