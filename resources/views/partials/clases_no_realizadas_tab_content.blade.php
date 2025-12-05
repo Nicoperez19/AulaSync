@@ -335,7 +335,7 @@
                         $esClickeable = !$esDiaSinClases && !$esFuturo && $total > 0;
                     @endphp
                     <div @if($esClickeable) @click="abrirModal('{{ $dia }}')" @endif
-                         class="p-4 rounded-lg border-2 transition-all {{ $esClickeable ? 'cursor-pointer hover:shadow-lg' : '' }} {{ $datos['es_hoy'] ? 'border-purple-500 bg-purple-50 shadow-lg' : ($esDiaSinClases ? 'border-gray-200 bg-gray-50' : ($esFuturo ? 'border-dashed border-gray-300 bg-gray-50 opacity-60' : ($esSabado ? 'border-amber-200 bg-amber-50 hover:border-amber-400' : 'border-gray-200 bg-white hover:border-purple-300'))) }}">
+                         class="p-4 rounded-lg border-2 transition-all min-h-[340px] flex flex-col {{ $esClickeable ? 'cursor-pointer hover:shadow-lg' : '' }} {{ $datos['es_hoy'] ? 'border-purple-500 bg-purple-50 shadow-lg' : ($esDiaSinClases ? 'border-gray-200 bg-gray-50' : ($esFuturo ? 'border-dashed border-gray-300 bg-gray-50 opacity-60' : ($esSabado ? 'border-amber-200 bg-amber-50 hover:border-amber-400' : 'border-gray-200 bg-white hover:border-purple-300'))) }}">
                         <div class="text-center mb-3">
                             <p class="text-xs uppercase font-semibold {{ $datos['es_hoy'] ? 'text-purple-600' : ($esSabado ? 'text-amber-600' : ($esFuturo ? 'text-gray-400' : 'text-gray-500')) }}">
                                 {{ ucfirst($datos['dia_nombre']) }}
@@ -544,7 +544,7 @@
                                 $esClickeableCal = !$esFuturoCal && $tieneClases;
                             @endphp
                             <div @if($esClickeableCal) @click="abrirModal('{{ $item['fecha_key'] }}')" @endif
-                                 class="p-2 min-h-[100px] border-b border-r border-gray-100 transition-colors {{ $esClickeableCal ? 'cursor-pointer' : '' }} {{ $item['es_hoy'] ? 'bg-purple-50 ring-2 ring-purple-500 ring-inset' : ($esFuturoCal ? 'bg-gray-50 opacity-60' : ($esSabadoCal ? 'bg-amber-50 hover:bg-amber-100' : 'bg-white hover:bg-gray-50')) }}">
+                                 class="p-2 min-h-[140px] border-b border-r border-gray-100 transition-colors flex flex-col {{ $esClickeableCal ? 'cursor-pointer' : '' }} {{ $item['es_hoy'] ? 'bg-purple-50 ring-2 ring-purple-500 ring-inset' : ($esFuturoCal ? 'bg-gray-50 opacity-60' : ($esSabadoCal ? 'bg-amber-50 hover:bg-amber-100' : 'bg-white hover:bg-gray-50')) }}">
                                 <!-- Número del día -->
                                 <div class="flex justify-between items-start mb-1">
                                     <span class="text-sm font-semibold {{ $item['es_hoy'] ? 'text-purple-700' : ($esFuturoCal ? 'text-gray-400' : 'text-gray-700') }}">
