@@ -55,7 +55,7 @@ class ProfesorAtraso extends Model
      */
     public function espacio()
     {
-        return $this->belongsTo(Espacio::class, 'id_espacio');
+        return $this->belongsTo(Espacio::class, 'id_espacio', 'id_espacio');
     }
 
     /**
@@ -63,7 +63,7 @@ class ProfesorAtraso extends Model
      */
     public function profesor()
     {
-        return $this->belongsTo(Profesor::class, 'run_profesor', 'run');
+        return $this->belongsTo(Profesor::class, 'run_profesor', 'run_profesor');
     }
 
     /**

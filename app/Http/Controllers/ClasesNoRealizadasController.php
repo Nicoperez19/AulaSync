@@ -15,21 +15,13 @@ class ClasesNoRealizadasController extends Controller
     {
         $periodo = SemesterHelper::getCurrentPeriod();
         
-        // Obtener estadísticas de atrasos
+        // Obtener estadísticas de atrasos (simplificado)
         $totalAtrasos = ProfesorAtraso::where('periodo', $periodo)->count();
-        $atrasosNoJustificados = ProfesorAtraso::where('periodo', $periodo)
-            ->where('justificado', false)
-            ->count();
-        $atrasosJustificados = ProfesorAtraso::where('periodo', $periodo)
-            ->where('justificado', true)
-            ->count();
         $promedioMinutosAtraso = ProfesorAtraso::where('periodo', $periodo)
-            ->avg('minutos_atraso');
+            ->avg('minutos_atraso') ?? 0;
         
         return view('admin.clases-no-realizadas', compact(
             'totalAtrasos',
-            'atrasosNoJustificados',
-            'atrasosJustificados',
             'promedioMinutosAtraso',
             'periodo'
         ));
