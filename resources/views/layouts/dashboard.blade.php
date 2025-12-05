@@ -384,7 +384,20 @@
                                 </button>
                             </div>
                             <p class="text-xs text-gray-500 mb-4 rango-fechas-ocupacion">Semana del {{ $ocupacionPorDia['rango_fechas']['inicio'] }} al {{ $ocupacionPorDia['rango_fechas']['fin'] }}</p>
-                            <canvas id="grafico-ocupacion-por-dia" width="500" height="250"></canvas>
+                            <div class="relative w-full flex justify-center">
+                                <canvas id="grafico-ocupacion-por-dia" width="500" height="250"></canvas>
+                                <div class="absolute top-2 right-2 flex gap-1 bg-white/80 rounded-lg shadow-sm p-1">
+                                    <button onclick="zoomIn('graficoOcupacionPerDia')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Aumentar zoom">
+                                        <i class="fas fa-search-plus text-xs"></i>
+                                    </button>
+                                    <button onclick="zoomOut('graficoOcupacionPerDia')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Reducir zoom">
+                                        <i class="fas fa-search-minus text-xs"></i>
+                                    </button>
+                                    <button onclick="resetZoom('graficoOcupacionPerDia')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Resetear zoom">
+                                        <i class="fas fa-compress-arrows-alt text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Gráfico 2: Línea - Salas Individuales por Día -->
@@ -411,7 +424,20 @@
                                 </button>
                             </div>
                             <p class="text-xs text-gray-500 mb-4 rango-fechas-grafico-salas">Semana del {{ $salasUtilizadasPorDia['rango_fechas']['inicio'] }} al {{ $salasUtilizadasPorDia['rango_fechas']['fin'] }}</p>
-                            <canvas id="grafico-salas-individuales" width="500" height="250"></canvas>
+                            <div class="relative w-full flex justify-center">
+                                <canvas id="grafico-salas-individuales" width="500" height="250"></canvas>
+                                <div class="absolute top-2 right-2 flex gap-1 bg-white/80 rounded-lg shadow-sm p-1">
+                                    <button onclick="zoomIn('graficoSalasIndividuales')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Aumentar zoom">
+                                        <i class="fas fa-search-plus text-xs"></i>
+                                    </button>
+                                    <button onclick="zoomOut('graficoSalasIndividuales')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Reducir zoom">
+                                        <i class="fas fa-search-minus text-xs"></i>
+                                    </button>
+                                    <button onclick="resetZoom('graficoSalasIndividuales')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Resetear zoom">
+                                        <i class="fas fa-compress-arrows-alt text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Gráfico 3: Barras - Cantidad de Reservas por Día (INTERCAMBIADO) -->
@@ -429,7 +455,20 @@
                                 </div>
                             </h4>
                             <p class="text-xs text-gray-500 mb-4 rango-fechas-grafico">Semana del {{ $usoPorDia['rango_fechas']['inicio'] }} al {{ $usoPorDia['rango_fechas']['fin'] }}</p>
-                            <canvas id="grafico-reservas-por-dia" width="500" height="250"></canvas>
+                            <div class="relative w-full flex justify-center">
+                                <canvas id="grafico-reservas-por-dia" width="500" height="250"></canvas>
+                                <div class="absolute top-2 right-2 flex gap-1 bg-white/80 rounded-lg shadow-sm p-1">
+                                    <button onclick="zoomIn('graficoReservasPerDia')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Aumentar zoom">
+                                        <i class="fas fa-search-plus text-xs"></i>
+                                    </button>
+                                    <button onclick="zoomOut('graficoReservasPerDia')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Reducir zoom">
+                                        <i class="fas fa-search-minus text-xs"></i>
+                                    </button>
+                                    <button onclick="resetZoom('graficoReservasPerDia')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Resetear zoom">
+                                        <i class="fas fa-compress-arrows-alt text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Gráfico 4: Barras - Disponibilidad de Salas (INTERCAMBIADO) -->
@@ -448,7 +487,20 @@
                             </h4>
                             <p class="text-xs text-gray-500 mb-2">Total de salas: <strong>{{ $disponibilidadSalas['totalSalas'] }}</strong></p>
                             <p class="text-xs text-gray-500 mb-4 rango-fechas-disponibilidad">Semana del {{ $disponibilidadSalas['rango_fechas']['inicio'] }} al {{ $disponibilidadSalas['rango_fechas']['fin'] }}</p>
-                            <canvas id="grafico-disponibilidad-salas" width="500" height="250"></canvas>
+                            <div class="relative w-full flex justify-center">
+                                <canvas id="grafico-disponibilidad-salas" width="500" height="250"></canvas>
+                                <div class="absolute top-2 right-2 flex gap-1 bg-white/80 rounded-lg shadow-sm p-1">
+                                    <button onclick="zoomIn('graficoDisponibilidad')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Aumentar zoom">
+                                        <i class="fas fa-search-plus text-xs"></i>
+                                    </button>
+                                    <button onclick="zoomOut('graficoDisponibilidad')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Reducir zoom">
+                                        <i class="fas fa-search-minus text-xs"></i>
+                                    </button>
+                                    <button onclick="resetZoom('graficoDisponibilidad')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Resetear zoom">
+                                        <i class="fas fa-compress-arrows-alt text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -858,6 +910,8 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
 
     <script>
     // ========================================
@@ -867,6 +921,58 @@
     let autoRefreshEnabled = true;
     let moduloActual = null;
     let moduloCheckInterval = null;
+
+    // ========================================
+    // CONFIGURACIÓN DE ZOOM PARA GRÁFICOS
+    // ========================================
+    const zoomOptions = {
+        zoom: {
+            wheel: {
+                enabled: true,
+                modifierKey: 'ctrl', // Zoom con Ctrl + rueda del mouse
+            },
+            pinch: {
+                enabled: true // Zoom con gestos en móviles
+            },
+            mode: 'xy', // Zoom en ambos ejes
+            onZoomComplete: function({chart}) {
+                // Mostrar botón de reset cuando hay zoom
+                const resetBtn = chart.canvas.parentNode.querySelector('.zoom-reset-btn');
+                if (resetBtn) resetBtn.style.display = 'block';
+            }
+        },
+        pan: {
+            enabled: true,
+            mode: 'xy',
+            modifierKey: 'shift', // Pan con Shift + arrastrar
+        },
+        limits: {
+            y: {min: 0, max: 'original'},
+            x: {min: 'original', max: 'original'}
+        }
+    };
+
+    // Funciones de control de zoom
+    function resetZoom(chartId) {
+        const chart = window[chartId];
+        if (chart && chart.resetZoom) {
+            chart.resetZoom();
+        }
+    }
+
+    function zoomIn(chartId) {
+        const chart = window[chartId];
+        if (chart && chart.zoom) {
+            chart.zoom(1.2); // Zoom in 20%
+        }
+    }
+
+    function zoomOut(chartId) {
+        const chart = window[chartId];
+        if (chart && chart.zoom) {
+            chart.zoom(0.8); // Zoom out 20%
+        }
+    }
 
     // ========================================
     // CONFIGURACIÓN DE HORARIOS DE MÓDULOS
@@ -1551,7 +1657,8 @@
                                         return 'Reservas: ' + context.parsed.y;
                                     }
                                 }
-                            }
+                            },
+                            zoom: zoomOptions
                         },
                         scales: {
                             y: {
@@ -1650,7 +1757,8 @@
                                         return context.dataset.label + ': ' + context.parsed.y + ' reservas';
                                     }
                                 }
-                            }
+                            },
+                            zoom: zoomOptions
                         },
                         scales: {
                             y: {
@@ -1823,7 +1931,8 @@
                                         return label + ': ' + porcentaje.toFixed(2) + '%';
                                     }
                                 }
-                            }
+                            },
+                            zoom: zoomOptions
                         },
                         onHover: (event, activeElements) => {
                             if (window.graficoOcupacionPerDia) {
@@ -1898,7 +2007,8 @@
                                         return 'Disponible: ' + context.parsed.y.toFixed(2) + '%';
                                     }
                                 }
-                            }
+                            },
+                            zoom: zoomOptions
                         },
                         scales: {
                             y: {
