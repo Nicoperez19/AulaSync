@@ -70,11 +70,12 @@ class Kernel extends ConsoleKernel
                 ->withoutOverlapping()
                 ->appendOutputTo(storage_path('logs/reporte-mensual.log'));
 
-        // Detectar clases no realizadas 20 minutos después del inicio de cada módulo
-        // Los módulos inician a las :10 de cada hora, entonces 20 minutos después = :30
-        // Se ejecuta de lunes a viernes (1-5), desde las 8:30 AM hasta las 22:30 PM
+        // Detectar clases no realizadas 15 minutos después del inicio de cada módulo
+        // Se ejecuta cada 5 minutos de lunes a sábado, desde las 8:00 AM hasta las 23:00 PM
         $schedule->command('clases:detectar-no-realizadas')
-                ->cron('30 8-22 * * 1-5')
+                ->everyFiveMinutes()
+                ->between('08:00', '23:00')
+                ->days([1, 2, 3, 4, 5, 6]) // Lunes a Sábado
                 ->withoutOverlapping()
                 ->runInBackground()
                 ->appendOutputTo(storage_path('logs/clases-no-realizadas.log'));

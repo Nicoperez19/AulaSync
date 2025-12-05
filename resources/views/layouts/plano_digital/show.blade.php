@@ -2646,7 +2646,7 @@
                 } else if (estadoLower === 'proximo') {
                     color = '#3B82F6'; // Azul
                 } else if (estadoLower === 'clasesinasistentes') {
-                    color = '#1F2937'; // Negro oscuro - Clase sin asistentes (después de 20 min)
+                    color = '#1F2937'; // Negro oscuro - Clase sin asistentes (después de 15 min)
                 } else {
                     color = '#059669'; // Verde por defecto
                 }
@@ -2826,9 +2826,9 @@
                 'mantenimiento': { texto: 'En Mantención', pill: 'border-2 border-gray-500 bg-gray-100 text-gray-700', icon: 'bg-gray-500' },
                 'Mantenimiento': { texto: 'En Mantención', pill: 'border-2 border-gray-500 bg-gray-100 text-gray-700', icon: 'bg-gray-500' },
                 '#6B7280': { texto: 'En Mantención', pill: 'border-2 border-gray-500 bg-gray-100 text-gray-700', icon: 'bg-gray-500' },
-                'ClaseSinAsistentes': { texto: 'Clase no realizada (20+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' },
-                'clasesinasistentes': { texto: 'Clase no realizada (20+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' },
-                '#1F2937': { texto: 'Clase no realizada (20+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' }
+                'ClaseSinAsistentes': { texto: 'Clase no realizada (15+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' },
+                'clasesinasistentes': { texto: 'Clase no realizada (15+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' },
+                '#1F2937': { texto: 'Clase no realizada (15+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' }
             };
 
             const config = estadoConfig[estadoReal] || {
