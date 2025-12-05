@@ -386,15 +386,15 @@
                             <p class="text-xs text-gray-500 mb-4 rango-fechas-ocupacion">Semana del {{ $ocupacionPorDia['rango_fechas']['inicio'] }} al {{ $ocupacionPorDia['rango_fechas']['fin'] }}</p>
                             <div class="relative w-full flex justify-center">
                                 <canvas id="grafico-ocupacion-por-dia" width="500" height="250"></canvas>
-                                <div class="absolute top-2 right-2 flex gap-1 bg-white/80 rounded-lg shadow-sm p-1">
+                                <div class="absolute top-2 right-2 flex flex-col gap-1 bg-white/80 rounded-lg shadow-sm p-1">
                                     <button onclick="zoomIn('graficoOcupacionPerDia')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Aumentar zoom">
-                                        <i class="fas fa-search-plus text-xs"></i>
+                                        <i class="fas fa-plus text-xs"></i>
                                     </button>
                                     <button onclick="zoomOut('graficoOcupacionPerDia')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Reducir zoom">
-                                        <i class="fas fa-search-minus text-xs"></i>
+                                        <i class="fas fa-minus text-xs"></i>
                                     </button>
-                                    <button onclick="resetZoom('graficoOcupacionPerDia')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Resetear zoom">
-                                        <i class="fas fa-compress-arrows-alt text-xs"></i>
+                                    <button onclick="resetZoom('graficoOcupacionPerDia')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Restablecer vista">
+                                        <i class="fas fa-undo text-xs"></i>
                                     </button>
                                 </div>
                             </div>
@@ -426,15 +426,15 @@
                             <p class="text-xs text-gray-500 mb-4 rango-fechas-grafico-salas">Semana del {{ $salasUtilizadasPorDia['rango_fechas']['inicio'] }} al {{ $salasUtilizadasPorDia['rango_fechas']['fin'] }}</p>
                             <div class="relative w-full flex justify-center">
                                 <canvas id="grafico-salas-individuales" width="500" height="250"></canvas>
-                                <div class="absolute top-2 right-2 flex gap-1 bg-white/80 rounded-lg shadow-sm p-1">
+                                <div class="absolute top-2 right-2 flex flex-col gap-1 bg-white/80 rounded-lg shadow-sm p-1">
                                     <button onclick="zoomIn('graficoSalasIndividuales')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Aumentar zoom">
-                                        <i class="fas fa-search-plus text-xs"></i>
+                                        <i class="fas fa-plus text-xs"></i>
                                     </button>
                                     <button onclick="zoomOut('graficoSalasIndividuales')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Reducir zoom">
-                                        <i class="fas fa-search-minus text-xs"></i>
+                                        <i class="fas fa-minus text-xs"></i>
                                     </button>
-                                    <button onclick="resetZoom('graficoSalasIndividuales')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Resetear zoom">
-                                        <i class="fas fa-compress-arrows-alt text-xs"></i>
+                                    <button onclick="resetZoom('graficoSalasIndividuales')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Restablecer vista">
+                                        <i class="fas fa-undo text-xs"></i>
                                     </button>
                                 </div>
                             </div>
@@ -457,15 +457,15 @@
                             <p class="text-xs text-gray-500 mb-4 rango-fechas-grafico">Semana del {{ $usoPorDia['rango_fechas']['inicio'] }} al {{ $usoPorDia['rango_fechas']['fin'] }}</p>
                             <div class="relative w-full flex justify-center">
                                 <canvas id="grafico-reservas-por-dia" width="500" height="250"></canvas>
-                                <div class="absolute top-2 right-2 flex gap-1 bg-white/80 rounded-lg shadow-sm p-1">
+                                <div class="absolute top-2 right-2 flex flex-col gap-1 bg-white/80 rounded-lg shadow-sm p-1">
                                     <button onclick="zoomIn('graficoReservasPerDia')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Aumentar zoom">
-                                        <i class="fas fa-search-plus text-xs"></i>
+                                        <i class="fas fa-plus text-xs"></i>
                                     </button>
                                     <button onclick="zoomOut('graficoReservasPerDia')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Reducir zoom">
-                                        <i class="fas fa-search-minus text-xs"></i>
+                                        <i class="fas fa-minus text-xs"></i>
                                     </button>
-                                    <button onclick="resetZoom('graficoReservasPerDia')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Resetear zoom">
-                                        <i class="fas fa-compress-arrows-alt text-xs"></i>
+                                    <button onclick="resetZoom('graficoReservasPerDia')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Restablecer vista">
+                                        <i class="fas fa-undo text-xs"></i>
                                     </button>
                                 </div>
                             </div>
@@ -489,15 +489,15 @@
                             <p class="text-xs text-gray-500 mb-4 rango-fechas-disponibilidad">Semana del {{ $disponibilidadSalas['rango_fechas']['inicio'] }} al {{ $disponibilidadSalas['rango_fechas']['fin'] }}</p>
                             <div class="relative w-full flex justify-center">
                                 <canvas id="grafico-disponibilidad-salas" width="500" height="250"></canvas>
-                                <div class="absolute top-2 right-2 flex gap-1 bg-white/80 rounded-lg shadow-sm p-1">
+                                <div class="absolute top-2 right-2 flex flex-col gap-1 bg-white/80 rounded-lg shadow-sm p-1">
                                     <button onclick="zoomIn('graficoDisponibilidad')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Aumentar zoom">
-                                        <i class="fas fa-search-plus text-xs"></i>
+                                        <i class="fas fa-plus text-xs"></i>
                                     </button>
                                     <button onclick="zoomOut('graficoDisponibilidad')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Reducir zoom">
-                                        <i class="fas fa-search-minus text-xs"></i>
+                                        <i class="fas fa-minus text-xs"></i>
                                     </button>
-                                    <button onclick="resetZoom('graficoDisponibilidad')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Resetear zoom">
-                                        <i class="fas fa-compress-arrows-alt text-xs"></i>
+                                    <button onclick="resetZoom('graficoDisponibilidad')" class="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition" title="Restablecer vista">
+                                        <i class="fas fa-undo text-xs"></i>
                                     </button>
                                 </div>
                             </div>
@@ -934,6 +934,9 @@
             pinch: {
                 enabled: true // Zoom con gestos en móviles
             },
+            drag: {
+                enabled: false // Deshabilitado para permitir pan con arrastrar
+            },
             mode: 'xy', // Zoom en ambos ejes
             onZoomComplete: function({chart}) {
                 // Mostrar botón de reset cuando hay zoom
@@ -944,7 +947,7 @@
         pan: {
             enabled: true,
             mode: 'xy',
-            modifierKey: 'shift', // Pan con Shift + arrastrar
+            // Sin modifierKey para poder arrastrar directamente
         },
         limits: {
             y: {min: 0, max: 'original'},
