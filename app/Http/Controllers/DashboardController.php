@@ -2592,9 +2592,10 @@ class DashboardController extends Controller
             ->whereNotExists(function($query) {
                 $query->select(DB::raw(1))
                     ->from('profesor_atrasos')
-                    ->whereColumn('profesor_atrasos.id_planificacion', 'clases_no_realizadas.id_planificacion')
-                    ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase')
-                    ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio');
+                    ->whereColumn('profesor_atrasos.id_asignatura', 'clases_no_realizadas.id_asignatura')
+                    ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio')
+                    ->whereColumn('profesor_atrasos.id_modulo', 'clases_no_realizadas.id_modulo')
+                    ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase');
             })
             ->with(['asignatura', 'profesor', 'modulo'])
             ->get();

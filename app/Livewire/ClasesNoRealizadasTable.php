@@ -399,9 +399,10 @@ class ClasesNoRealizadasTable extends Component
             ->whereNotExists(function($subQuery) {
                 $subQuery->select(DB::raw(1))
                     ->from('profesor_atrasos')
-                    ->whereColumn('profesor_atrasos.id_planificacion', 'clases_no_realizadas.id_planificacion')
-                    ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase')
-                    ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio');
+                    ->whereColumn('profesor_atrasos.id_asignatura', 'clases_no_realizadas.id_asignatura')
+                    ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio')
+                    ->whereColumn('profesor_atrasos.id_modulo', 'clases_no_realizadas.id_modulo')
+                    ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase');
             })
             ->when($this->periodo, function($q) {
                 $q->where('periodo', $this->periodo);
@@ -439,9 +440,10 @@ class ClasesNoRealizadasTable extends Component
             ->whereNotExists(function($subQuery) {
                 $subQuery->select(DB::raw(1))
                     ->from('profesor_atrasos')
-                    ->whereColumn('profesor_atrasos.id_planificacion', 'clases_no_realizadas.id_planificacion')
-                    ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase')
-                    ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio');
+                    ->whereColumn('profesor_atrasos.id_asignatura', 'clases_no_realizadas.id_asignatura')
+                    ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio')
+                    ->whereColumn('profesor_atrasos.id_modulo', 'clases_no_realizadas.id_modulo')
+                    ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase');
             })
             ->when($this->periodo, function($q) {
                 $q->where('clases_no_realizadas.periodo', $this->periodo);
