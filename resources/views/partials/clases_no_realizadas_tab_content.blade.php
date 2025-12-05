@@ -61,7 +61,7 @@
 
                     <!-- Resumen - Fijo -->
                     <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex-shrink-0">
-                        <div class="grid grid-cols-3 gap-4 text-center">
+                        <div class="grid gap-4 text-center" :class="diaSeleccionado.por_realizar > 0 ? 'grid-cols-4' : 'grid-cols-3'">
                             <div class="bg-white rounded-lg p-3 shadow-sm">
                                 <p class="text-2xl font-bold text-green-600" x-text="diaSeleccionado.realizadas"></p>
                                 <p class="text-xs text-gray-500">Realizadas</p>
@@ -69,6 +69,10 @@
                             <div class="bg-white rounded-lg p-3 shadow-sm">
                                 <p class="text-2xl font-bold text-red-600" x-text="diaSeleccionado.no_realizadas"></p>
                                 <p class="text-xs text-gray-500">No Realizadas</p>
+                            </div>
+                            <div class="bg-white rounded-lg p-3 shadow-sm" x-show="diaSeleccionado.por_realizar > 0">
+                                <p class="text-2xl font-bold text-yellow-600" x-text="diaSeleccionado.por_realizar || 0"></p>
+                                <p class="text-xs text-gray-500">Por Realizar</p>
                             </div>
                             <div class="bg-white rounded-lg p-3 shadow-sm">
                                 <p class="text-2xl font-bold text-blue-600" x-text="diaSeleccionado.recuperadas"></p>
@@ -294,7 +298,7 @@
                     // Solo incluir hasta hoy para estadísticas reales
                     $esFuturo = $fecha->gt($hoy);
                     $diaFormato = $fecha->format('d/m');
-                    $datosDelDia = $diasDelMes[$diaFormato] ?? ['realizadas' => 0, 'no_realizadas' => 0, 'recuperadas' => 0];
+                    $datosDelDia = $diasDelMes[$diaFormato] ?? ['realizadas' => 0, 'no_realizadas' => 0, 'recuperadas' => 0, 'por_realizar' => 0];
                     
                     $diasSemana[$diaFormato] = $datosDelDia;
                     $diasSemana[$diaFormato]['fecha'] = $fecha->copy();
@@ -322,7 +326,8 @@
             <div class="grid grid-cols-1 md:grid-cols-7 gap-3">
                 @foreach($diasSemana as $dia => $datos)
                     @php
-                        $total = $datos['realizadas'] + $datos['no_realizadas'];
+                        $porRealizar = $datos['por_realizar'] ?? 0;
+                        $total = $datos['realizadas'] + $datos['no_realizadas'] + $porRealizar;
                         $porcentaje = $total > 0 ? round(($datos['realizadas'] / $total) * 100) : 0;
                         $esDiaSinClases = $datos['es_dia_sin_clases'] ?? false;
                         $esSabado = $datos['es_sabado'] ?? false;
@@ -369,6 +374,12 @@
                                     <span class="text-xs text-gray-500">No realizadas</span>
                                     <span class="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-bold">{{ $datos['no_realizadas'] }}</span>
                                 </div>
+                                @if(isset($datos['por_realizar']) && $datos['por_realizar'] > 0)
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs text-gray-500">Por realizar</span>
+                                    <span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs font-bold">{{ $datos['por_realizar'] }}</span>
+                                </div>
+                                @endif
                                 <div class="flex justify-between items-center">
                                     <span class="text-xs text-gray-500">Recuperadas</span>
                                     <span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs font-bold">{{ $datos['recuperadas'] ?? 0 }}</span>
@@ -458,7 +469,7 @@
                     
                     $diaFormato = $fecha->format('d/m');
                     $esFuturo = $fecha->gt($hoyCalendario);
-                    $datosDelDia = $diasDelMes[$diaFormato] ?? ['realizadas' => 0, 'no_realizadas' => 0, 'recuperadas' => 0, 'clases_no_realizadas_detalle' => []];
+                    $datosDelDia = $diasDelMes[$diaFormato] ?? ['realizadas' => 0, 'no_realizadas' => 0, 'recuperadas' => 0, 'por_realizar' => 0, 'clases_no_realizadas_detalle' => []];
                     
                     $calendario[] = [
                         'dia' => $dia,
@@ -525,7 +536,8 @@
                             <div class="p-2 min-h-[100px] bg-gray-50 border-b border-r border-gray-100"></div>
                         @else
                             @php
-                                $totalCal = $item['datos']['realizadas'] + $item['datos']['no_realizadas'];
+                                $porRealizarCal = $item['datos']['por_realizar'] ?? 0;
+                                $totalCal = $item['datos']['realizadas'] + $item['datos']['no_realizadas'] + $porRealizarCal;
                                 $tieneClases = $totalCal > 0;
                                 $esSabadoCal = $item['es_sabado'] ?? false;
                                 $esFuturoCal = $item['es_futuro'] ?? false;
@@ -561,6 +573,12 @@
                                             <div class="flex items-center gap-1 text-[10px]">
                                                 <span class="w-2 h-2 rounded-full bg-red-500"></span>
                                                 <span class="text-red-700 font-medium">{{ $item['datos']['no_realizadas'] }}</span>
+                                            </div>
+                                        @endif
+                                        @if(($item['datos']['por_realizar'] ?? 0) > 0)
+                                            <div class="flex items-center gap-1 text-[10px]">
+                                                <span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+                                                <span class="text-yellow-700 font-medium">{{ $item['datos']['por_realizar'] }}</span>
                                             </div>
                                         @endif
                                         @if(($item['datos']['recuperadas'] ?? 0) > 0)

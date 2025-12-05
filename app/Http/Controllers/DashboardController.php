@@ -2658,6 +2658,7 @@ class DashboardController extends Controller
                 $diasDelMes[$dia] = [
                     'realizadas' => 0,
                     'no_realizadas' => 0,
+                    'por_realizar' => 0, // Clases pendientes para hoy (aún no han llegado a la hora)
                     'recuperadas' => 0,
                     'fecha' => $fecha->format('Y-m-d'),
                     'clases_no_realizadas_detalle' => []
@@ -2665,17 +2666,36 @@ class DashboardController extends Controller
             }
         }
 
+        // Hora actual para determinar clases "por realizar" de hoy
+        $horaActual = Carbon::now()->format('H:i:s');
+        $fechaHoyFormato = $hoy->format('d/m');
+
         // Contar CLASES planificadas (agrupadas) solo para días que ya pasaron o es hoy
         foreach ($planificacionesAgrupadas as $key => $modulos) {
             $primerPlan = $modulos->first();
             if ($primerPlan && $primerPlan->modulo) {
                 $dia = strtolower($primerPlan->modulo->dia);
+                $horaInicioModulo = $primerPlan->modulo->hora_inicio;
+                
                 // Encontrar todas las fechas con este día de semana HASTA HOY
                 for ($fecha = $inicio->copy(); $fecha->lte($fin); $fecha->addDay()) {
                     if (strtolower($dias[$fecha->dayOfWeek]) === $dia) {
                         $diaFormato = $fecha->format('d/m');
                         if (isset($diasDelMes[$diaFormato])) {
-                            $diasDelMes[$diaFormato]['realizadas']++; // +1 por clase, no por módulo
+                            // Si es HOY y el módulo aún no ha comenzado + 15 min de gracia
+                            if ($diaFormato === $fechaHoyFormato) {
+                                $horaLimite = Carbon::parse($horaInicioModulo)->addMinutes(15)->format('H:i:s');
+                                if ($horaActual < $horaLimite) {
+                                    // La clase aún está por realizar (no ha pasado el tiempo de gracia)
+                                    $diasDelMes[$diaFormato]['por_realizar']++;
+                                } else {
+                                    // Ya pasó el tiempo, cuenta como realizada (si no está en no_realizadas)
+                                    $diasDelMes[$diaFormato]['realizadas']++;
+                                }
+                            } else {
+                                // Días anteriores: cuenta como realizada por defecto
+                                $diasDelMes[$diaFormato]['realizadas']++;
+                            }
                         }
                     }
                 }
@@ -2716,16 +2736,19 @@ class DashboardController extends Controller
         // Calcular totales solo con los días procesados (hasta hoy)
         $totalRealizadas = collect($diasDelMes)->sum('realizadas');
         $totalNoRealizadas = collect($diasDelMes)->sum('no_realizadas');
-        $totalClases = $totalRealizadas + $totalNoRealizadas;
+        $totalPorRealizar = collect($diasDelMes)->sum('por_realizar');
+        $totalClases = $totalRealizadas + $totalNoRealizadas + $totalPorRealizar;
         
         $porcentajeRealizadas = $totalClases > 0 ? round(($totalRealizadas / $totalClases) * 100, 1) : 0;
         $porcentajeNoRealizadas = $totalClases > 0 ? round(($totalNoRealizadas / $totalClases) * 100, 1) : 0;
+        $porcentajePorRealizar = $totalClases > 0 ? round(($totalPorRealizar / $totalClases) * 100, 1) : 0;
         $porcentajeRecuperadas = $totalNoRealizadas > 0 ? round(($clasesRecuperadas / $totalNoRealizadas) * 100, 1) : 0;
 
         // Preparar arrays para el gráfico (solo días hasta hoy)
         $diasLabels = array_keys($diasDelMes);
         $datosRealizadas = array_values(array_map(function($d) { return max(0, $d['realizadas']); }, $diasDelMes));
         $datosNoRealizadas = array_values(array_map(function($d) { return $d['no_realizadas']; }, $diasDelMes));
+        $datosPorRealizar = array_values(array_map(function($d) { return $d['por_realizar'] ?? 0; }, $diasDelMes));
         $datosRecuperadas = array_values(array_map(function($d) { return $d['recuperadas']; }, $diasDelMes));
         
         // Convertir detalle a JSON para pasar a la vista (escapado para JavaScript)
@@ -2736,14 +2759,17 @@ class DashboardController extends Controller
             'diasDelMesJson',
             'totalRealizadas',
             'totalNoRealizadas',
+            'totalPorRealizar',
             'clasesRecuperadas',
             'clasesParaRecuperar',
             'porcentajeRealizadas',
             'porcentajeNoRealizadas',
+            'porcentajePorRealizar',
             'porcentajeRecuperadas',
             'diasLabels',
             'datosRealizadas',
             'datosNoRealizadas',
+            'datosPorRealizar',
             'datosRecuperadas',
             'mes',
             'anio',
