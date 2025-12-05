@@ -499,7 +499,7 @@
                             <div class="bg-white rounded-xl shadow-md border border-gray-200 p-6 sticky top-6">
                                 <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                                     <i class="fas fa-door-open text-blue-600"></i>
-                                    Estado Actual de Espacios
+                                    Estado Actual de <strong>Salas de clase</strong>
                                 </h4>
                                 <div class="flex justify-center items-center mb-4">
                                     <div class="w-[220px] h-[220px]">
@@ -1721,16 +1721,18 @@
                     }
                 ];
 
-                // Datasets para vista Por Tipo
+                // Datasets para vista Por Tipo - Usar los mismos colores que en "Reservas por Sala" por Tipo
                 const coloresTipo = [
-                    'rgba(59, 130, 246, 1)',     // Azul
-                    'rgba(239, 68, 68, 1)',      // Rojo
-                    'rgba(34, 197, 94, 1)',      // Verde
-                    'rgba(168, 85, 247, 1)',     // Púrpura
-                    'rgba(245, 158, 11, 1)',     // Ámbar
-                    'rgba(6, 182, 212, 1)',      // Cian
-                    'rgba(236, 72, 153, 1)',     // Rosa
-                    'rgba(249, 115, 22, 1)'      // Naranja
+                    'rgb(59, 130, 246)',    // Azul vibrante
+                    'rgb(239, 68, 68)',     // Rojo coral
+                    'rgb(34, 197, 94)',     // Verde esmeralda
+                    'rgb(168, 85, 247)',    // Púrpura profundo
+                    'rgb(245, 158, 11)',    // Ámbar dorado
+                    'rgb(59, 130, 246)',    // Cian brillante
+                    'rgb(236, 72, 153)',    // Rosa vibrante
+                    'rgb(249, 115, 22)',    // Naranja quemado
+                    'rgb(6, 182, 212)',     // Turquesa brillante
+                    'rgb(139, 92, 246)',    // Violeta profundo
                 ];
                 
                 const datasetsTipo = [];

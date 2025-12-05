@@ -19,6 +19,69 @@ use App\Models\Mapa;
 
 class DashboardController extends Controller
 {
+    /**
+     * Calcula los módulos reales de uso basado en hora de inicio y salida.
+     * Considera:
+     * - Mínimo 10 minutos para contar como uso válido (evita pruebas/errores)
+     * - Cada módulo es de 50 minutos efectivos + 10 min de break
+     * - Redondea hacia arriba si se usa más del 60% del módulo
+     * 
+     * @param string|null $horaInicio Hora de inicio (formato H:i:s o H:i)
+     * @param string|null $horaSalida Hora de salida real (formato H:i:s o H:i)
+     * @param int|null $modulosTeoricos Campo modulos de la reserva (fallback)
+     * @return float Número de módulos calculados
+     */
+    private function calcularModulosReales($horaInicio, $horaSalida, $modulosTeoricos = null)
+    {
+        return $this->calcularModulosRealesPublic($horaInicio, $horaSalida, $modulosTeoricos);
+    }
+    
+    /**
+     * Versión pública del cálculo de módulos reales (para uso en closures)
+     */
+    public function calcularModulosRealesPublic($horaInicio, $horaSalida, $modulosTeoricos = null)
+    {
+        // Si no hay hora de salida, usar el valor teórico o 1 por defecto
+        if (!$horaSalida || !$horaInicio) {
+            return $modulosTeoricos ?? 1;
+        }
+        
+        try {
+            $inicio = Carbon::parse($horaInicio);
+            $fin = Carbon::parse($horaSalida);
+            $minutosReales = $inicio->diffInMinutes($fin);
+            
+            // Si duró menos de 10 minutos, no contar como módulo válido
+            // (probablemente fue una prueba o error)
+            if ($minutosReales < 10) {
+                return 0;
+            }
+            
+            // Cada módulo académico es de 50 minutos efectivos
+            // Pero considerando breaks y tolerancias, usamos 45-55 minutos como rango
+            // Redondeamos: si usó más del 60% del módulo (30+ min), cuenta como 1 módulo
+            $modulosCalculados = $minutosReales / 50;
+            
+            // Redondear de forma inteligente:
+            // - Menos de 0.2 módulos (10 min) = 0 (ya filtrado arriba)
+            // - 0.2 a 0.7 módulos (10-35 min) = 0.5 módulos
+            // - 0.7+ módulos (35+ min) = redondear al entero más cercano
+            $parteDecimal = $modulosCalculados - floor($modulosCalculados);
+            
+            if ($parteDecimal < 0.3) {
+                return floor($modulosCalculados);
+            } elseif ($parteDecimal < 0.7) {
+                return floor($modulosCalculados) + 0.5;
+            } else {
+                return ceil($modulosCalculados);
+            }
+            
+        } catch (\Exception $e) {
+            // Si hay error parseando las horas, usar fallback
+            return $modulosTeoricos ?? 1;
+        }
+    }
+
     public function index(Request $request)
     {
         // Obtener el piso de la sesión o request
@@ -768,23 +831,34 @@ class DashboardController extends Controller
 
         $dataPorSala = [];
         
-        // Para cada sala, sumar módulos por día
+        // Para cada sala, calcular módulos REALES por día
         foreach ($salas as $sala) {
             $modulosPorDia = [];
             
             for ($i = 0; $i < 6; $i++) {
                 $dia = $inicioSemana->copy()->addDays($i);
                 
-                // Sumar el número de MÓDULOS reales (no solo contar reservas)
-                $cantidadModulos = Reserva::whereDate('fecha_reserva', $dia)
+                // Obtener reservas del día
+                $reservasDia = Reserva::whereDate('fecha_reserva', $dia)
                     ->where('id_espacio', $sala->id_espacio)
                     ->whereIn('estado', ['activa', 'finalizada'])
-                    ->sum('modulos') ?? 0;
+                    ->whereNotNull('hora')
+                    ->get();
                 
-                $modulosPorDia[] = $cantidadModulos;
+                $cantidadModulos = 0;
+                foreach ($reservasDia as $reserva) {
+                    // Usar el método inteligente de cálculo
+                    $cantidadModulos += $this->calcularModulosReales(
+                        $reserva->hora, 
+                        $reserva->hora_salida, 
+                        $reserva->modulos
+                    );
+                }
+                
+                $modulosPorDia[] = round($cantidadModulos, 2);
             }
             
-            // Solo incluir salas que tengan al menos 1 módulo en la semana
+            // Solo incluir salas que tengan al menos algo de uso
             if (array_sum($modulosPorDia) > 0) {
                 $dataPorSala[] = [
                     'sala' => $sala->id_espacio,
@@ -923,10 +997,11 @@ class DashboardController extends Controller
             return true;
         });
 
-        // Agrupar por tipo de espacio y día (sumando módulos, no contando reservas)
+        // Agrupar por tipo de espacio y día (usando tiempo REAL de uso)
+        $controller = $this; // Referencia para usar dentro del closure
         $agrupadoPorTipo = $reservasFiltradas->groupBy(function($reserva) {
             return $reserva->espacio->tipo_espacio;
-        })->map(function($reservasPorTipo) use ($inicioSemana, $diasSemana) {
+        })->map(function($reservasPorTipo) use ($inicioSemana, $diasSemana, $controller) {
             $modulosPorDia = array_fill(0, 6, 0);
             
             foreach ($reservasPorTipo as $reserva) {
@@ -934,12 +1009,17 @@ class DashboardController extends Controller
                 $indexDia = $dia->diffInDays($inicioSemana);
                 
                 if ($indexDia >= 0 && $indexDia < 6) {
-                    // Sumar módulos de la reserva en lugar de contar +1
-                    $modulosPorDia[$indexDia] += $reserva->modulos ?? 1;
+                    // Usar el método inteligente de cálculo de módulos
+                    $modulosPorDia[$indexDia] += $controller->calcularModulosRealesPublic(
+                        $reserva->hora, 
+                        $reserva->hora_salida, 
+                        $reserva->modulos
+                    );
                 }
             }
             
-            return $modulosPorDia;
+            // Redondear los valores
+            return array_map(function($val) { return round($val, 2); }, $modulosPorDia);
         });
 
         // Construir resultado
@@ -1018,49 +1098,54 @@ class DashboardController extends Controller
         foreach ($tipos as $tipo) {
             $datosOcupacion = [];
             
+            // Obtener total de espacios de este tipo
+            $espaciosTipo = Espacio::whereHas('piso', function($query) use ($facultad, $piso) {
+                if ($piso) {
+                    $query->where('id_facultad', $facultad);
+                    $query->where('numero_piso', $piso);
+                } elseif ($facultad) {
+                    $query->where('id_facultad', $facultad);
+                }
+            })
+            ->where('tipo_espacio', $tipo)
+            ->get();
+            
+            $totalEspacios = $espaciosTipo->count();
+            // Total de módulos disponibles por día para este tipo = espacios * 15 módulos
+            $modulosTotalesPorDia = $totalEspacios * 15;
+            
             for ($i = 0; $i < 6; $i++) {
                 $dia = $inicioSemana->copy()->addDays($i);
                 
-                // Obtener total de espacios de este tipo
-                $totalEspacios = Espacio::whereHas('piso', function($query) use ($facultad, $piso) {
-                    if ($piso) {
-                        $query->where('id_facultad', $facultad);
-                        $query->where('numero_piso', $piso);
-                    } elseif ($facultad) {
-                        $query->where('id_facultad', $facultad);
-                    }
-                })
-                ->where('tipo_espacio', $tipo)
-                ->count();
-
-                // Obtener máximo de espacios ocupados en cualquier hora del día
-                $maxOcupados = Reserva::where('fecha_reserva', $dia->format('Y-m-d'))
+                // Obtener todas las reservas del día para este tipo de espacio
+                $reservasDia = Reserva::where('fecha_reserva', $dia->format('Y-m-d'))
                     ->whereIn('estado', ['activa', 'finalizada'])
-                    ->whereHas('espacio', function($query) use ($facultad, $piso, $tipo) {
-                        if ($piso) {
-                            $query->whereHas('piso', function($q) use ($facultad, $piso) {
-                                $q->where('id_facultad', $facultad);
-                                $q->where('numero_piso', $piso);
-                            });
-                        } elseif ($facultad) {
-                            $query->whereHas('piso', function($q) use ($facultad) {
-                                $q->where('id_facultad', $facultad);
-                            });
-                        }
-                        $query->where('tipo_espacio', $tipo);
-                    })
-                    ->distinct('id_espacio')
-                    ->count('id_espacio');
+                    ->whereIn('id_espacio', $espaciosTipo->pluck('id_espacio'))
+                    ->whereNotNull('hora')
+                    ->get();
                 
-                $ocupacion = $totalEspacios > 0 ? ($maxOcupados / $totalEspacios) * 100 : 0;
+                // Calcular módulos reales usados
+                $modulosUsados = 0;
+                foreach ($reservasDia as $reserva) {
+                    $modulosUsados += $this->calcularModulosReales(
+                        $reserva->hora, 
+                        $reserva->hora_salida, 
+                        $reserva->modulos
+                    );
+                }
+                
+                // Calcular ocupación basada en módulos reales / módulos disponibles
+                $ocupacion = $modulosTotalesPorDia > 0 ? ($modulosUsados / $modulosTotalesPorDia) * 100 : 0;
                 $datosOcupacion[] = round($ocupacion, 2);
             }
             
-            // Incluir todos los tipos, incluso los vacíos, para mostrar en la leyenda
-            $ocupacionPorTipo[] = [
-                'tipo' => $tipo,
-                'datos' => $datosOcupacion
-            ];
+            // Solo incluir tipos que tengan al menos algún dato
+            if (array_sum($datosOcupacion) > 0 || $totalEspacios > 0) {
+                $ocupacionPorTipo[] = [
+                    'tipo' => $tipo,
+                    'datos' => $datosOcupacion
+                ];
+            }
         }
 
         return [
@@ -1101,30 +1186,38 @@ class DashboardController extends Controller
             for ($i = 0; $i < 6; $i++) {
                 $dia = $inicioSemana->copy()->addDays($i);
                 
-                // Sumar el número de MÓDULOS reales (no solo contar reservas)
-                // Una reserva puede abarcar múltiples módulos
-                $numModulos = Reserva::where('fecha_reserva', $dia->format('Y-m-d'))
+                // Obtener reservas del día para esta sala
+                $reservasDia = Reserva::where('fecha_reserva', $dia->format('Y-m-d'))
                     ->where('id_espacio', $sala->id_espacio)
                     ->whereIn('estado', ['activa', 'finalizada'])
-                    ->sum('modulos') ?? 0;
+                    ->whereNotNull('hora')
+                    ->get();
                 
-                // Solo contar módulos de lunes a viernes (primeros 5 días de la semana)
-                // Sábado no se incluye en el total de módulos
+                $numModulos = 0;
+                foreach ($reservasDia as $reserva) {
+                    // Usar el método inteligente de cálculo de módulos
+                    $numModulos += $this->calcularModulosReales(
+                        $reserva->hora, 
+                        $reserva->hora_salida, 
+                        $reserva->modulos
+                    );
+                }
+                
+                // Solo contar módulos de lunes a viernes
                 if ($i < 5) {
                     $modulosTotales += $numModulos;
                 }
                 
                 // Calcular ocupación: (módulos usados / 15) * 100
-                // 15 es el total de módulos disponibles por día
                 $ocupacion = 15 > 0 ? ($numModulos / 15) * 100 : 0;
                 $datosOcupacion[] = round($ocupacion, 2);
             }
             
-            // Solo incluir salas que tengan al menos 1 reserva
+            // Solo incluir salas que tengan al menos algo de uso
             if ($modulosTotales > 0) {
                 $ocupacionPorSala[] = [
                     'sala' => $sala->id_espacio,
-                    'modulos' => $modulosTotales,
+                    'modulos' => round($modulosTotales, 2),
                     'datos' => $datosOcupacion
                 ];
             }
