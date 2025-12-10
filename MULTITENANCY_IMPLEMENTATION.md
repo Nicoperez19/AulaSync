@@ -95,6 +95,11 @@ The following tables have been modified to support multi-tenancy:
    php artisan tenant:create {domain} --name="Tenant Name" --sede={sede_id} --prefix={prefix}
    ```
 
+4. For production, enable schema caching for better performance:
+   ```bash
+   php artisan schema:cache
+   ```
+
 ### Managing Tenants
 
 #### List all tenants

@@ -10,10 +10,14 @@ class TenantCreate extends Command
 {
     /**
      * The name and signature of the console command.
-     *
-     * @var string
      */
-    protected $signature = 'tenant:create {domain : The subdomain for the tenant} {--name= : The name of the tenant} {--sede= : The sede ID to associate with the tenant} {--prefix= : The space prefix for the tenant} {--database= : The database name (optional)} {--default : Mark this tenant as the default tenant}';
+    protected $signature = 'tenant:create 
+        {domain : The subdomain for the tenant}
+        {--name= : The name of the tenant}
+        {--sede= : The sede ID to associate with the tenant}
+        {--prefix= : The space prefix for the tenant}
+        {--database= : The database name (optional)}
+        {--default : Mark this tenant as the default tenant}';
 
     /**
      * The console command description.
@@ -71,7 +75,7 @@ class TenantCreate extends Command
                 'prefijo_espacios' => $prefix,
                 'sede_id' => $sedeId,
                 'is_active' => true,
-                'is_default' => $this->option('default') ?? false,
+                'is_default' => (bool) $this->option('default'),
             ]);
 
             $this->info("Tenant '{$name}' created successfully!");

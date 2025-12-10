@@ -35,21 +35,16 @@ class TenantMiddleware
                 abort(404, 'Tenant not found');
             }
         } else {
-            // Si no hay subdominio, usar el tenant por defecto o retornar error
+            // Si no hay subdominio, usar el tenant marcado como default
             $defaultTenant = Tenant::where('is_active', true)
                 ->where('is_default', true)
                 ->first();
             
-            // Si no hay tenant por defecto, usar el primero activo
-            if (!$defaultTenant) {
-                $defaultTenant = Tenant::where('is_active', true)
-                    ->orderBy('id')
-                    ->first();
-            }
-            
             if ($defaultTenant) {
                 $defaultTenant->makeCurrent();
             }
+            // Si no hay tenant por defecto configurado, no establecer ninguno
+            // Esto permite que las rutas sin tenant requirement funcionen normalmente
         }
         
         return $next($request);

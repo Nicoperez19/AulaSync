@@ -11,9 +11,11 @@ trait BelongsToTenant
     /**
      * Boot the trait
      * 
-     * Note: method_exists() checks are performed on each query, but this is acceptable
-     * because Laravel caches the trait boot process per model class, not per instance.
-     * The performance impact is minimal compared to the flexibility gained.
+     * Note: Schema::hasColumn() is called on each query, which can be expensive.
+     * For production, enable Laravel's schema caching with:
+     * php artisan schema:cache
+     * 
+     * This caches column information and significantly improves performance.
      */
     protected static function bootBelongsToTenant()
     {
