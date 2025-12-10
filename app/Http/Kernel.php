@@ -74,5 +74,6 @@ class Kernel extends HttpKernel
         'session.timeout' => \App\Http\Middleware\SessionTimeout::class,
         'ajax.session.timeout' => \App\Http\Middleware\AjaxSessionTimeout::class,
         'extend.execution' => \App\Http\Middleware\ExtendExecutionTime::class,
+        'tenant' => \App\Http\Middleware\TenantMiddleware::class,
     ];
 }

@@ -33,6 +33,13 @@ This implementation provides multi-tenancy support for AulaSync based on subdoma
    - `Piso`: Filtered through facultad → sede relationship
    - `Planificacion_Asignatura`: Filtered through espacio relationship
    - `Profesor`: Filtered by sede_id
+   - `Asignatura`: Filtered through profesor relationship
+   - `Reserva`: Filtered through espacio and profesor relationships
+   - `Horario`: Filtered through profesor relationship
+
+5. **Artisan Commands**
+   - `tenant:create`: Create a new tenant
+   - `tenant:list`: List all tenants
 
 ## Configuration
 
@@ -82,6 +89,32 @@ The following tables have been modified to support multi-tenancy:
    ```bash
    php artisan db:seed --class=TenantSeeder
    ```
+
+3. Or create tenants manually using the command:
+   ```bash
+   php artisan tenant:create {domain} --name="Tenant Name" --sede={sede_id} --prefix={prefix}
+   ```
+
+### Managing Tenants
+
+#### List all tenants
+```bash
+php artisan tenant:list
+```
+
+#### List only active tenants
+```bash
+php artisan tenant:list --active
+```
+
+#### Create a new tenant
+```bash
+# Create a tenant for a sede
+php artisan tenant:create principal --sede=SEDE001 --name="Sede Principal"
+
+# Create a tenant with custom prefix
+php artisan tenant:create campus-norte --sede=SEDE002 --prefix=CN
+```
 
 ### Accessing Tenants
 Users access different tenants via subdomains:

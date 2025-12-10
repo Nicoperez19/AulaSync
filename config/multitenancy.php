@@ -44,6 +44,9 @@ return [
         \App\Models\Piso::class,
         \App\Models\Planificacion_Asignatura::class,
         \App\Models\Profesor::class,
+        \App\Models\Asignatura::class,
+        \App\Models\Reserva::class,
+        \App\Models\Horario::class,
     ],
 
     /**

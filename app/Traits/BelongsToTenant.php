@@ -35,6 +35,24 @@ trait BelongsToTenant
                     $builder->where('sede_id', $tenant->sede_id);
                 }
             }
+            // Filtrar a través de profesor si el modelo tiene relación con profesor
+            elseif (method_exists($model, 'profesor') && in_array('run_profesor', $model->getFillable())) {
+                if ($tenant->sede_id) {
+                    $builder->whereHas('profesor', function ($query) use ($tenant) {
+                        $query->where('sede_id', $tenant->sede_id);
+                    });
+                }
+            }
+            // Filtrar a través de espacio si el modelo tiene relación con espacio
+            elseif (method_exists($model, 'espacio') && !in_array('id_espacio', $model->getFillable())) {
+                if ($tenant->prefijo_espacios || $tenant->sede_id) {
+                    $builder->whereHas('espacio', function ($query) use ($tenant) {
+                        if ($tenant->prefijo_espacios) {
+                            $query->where('id_espacio', 'like', $tenant->prefijo_espacios . '%');
+                        }
+                    });
+                }
+            }
             // Filtrar a través de facultad si el modelo tiene relación con facultad
             elseif (method_exists($model, 'facultad')) {
                 if ($tenant->sede_id) {
