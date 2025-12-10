@@ -9,6 +9,7 @@ use App\Models\Carrera;
 use App\Models\Horario;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Espacio;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -140,11 +141,20 @@ class DataLoadController extends Controller
                 }
 
                 try {
+                    // Get current tenant to validate sede
+                    $currentTenant = Tenant::current();
                     $sede = $row[7];
 
-                    if (strtolower(trim($sede)) !== 'talcahuano') {
-                        $skippedRows++;
-                        continue;
+                    // If a tenant is active, validate that the sede in the row matches
+                    if ($currentTenant && $currentTenant->sede) {
+                        $expectedSede = strtolower(trim($currentTenant->sede->nombre_sede));
+                        $rowSede = strtolower(trim($sede));
+                        
+                        if ($rowSede !== $expectedSede) {
+                            $skippedRows++;
+                            Log::info("Fila " . ($index + 1) . " omitida: Sede '{$sede}' no coincide con tenant '{$currentTenant->sede->nombre_sede}'");
+                            continue;
+                        }
                     }
 
                     $idCarrera = $row[17];
