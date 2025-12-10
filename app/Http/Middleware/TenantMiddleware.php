@@ -10,12 +10,28 @@ use Symfony\Component\HttpFoundation\Response;
 class TenantMiddleware
 {
     /**
+     * Routes that are excluded from tenant check
+     */
+    protected $excludedRoutes = [
+        'sedes.selection',
+        'sedes.redirect',
+        'tenant.initialization.*',
+    ];
+
+    /**
      * Handle an incoming request.
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Check if route is excluded from tenant check
+        foreach ($this->excludedRoutes as $pattern) {
+            if ($request->routeIs($pattern)) {
+                return $next($request);
+            }
+        }
+
         $host = $request->getHost();
         
         // Extraer el subdominio
@@ -30,9 +46,14 @@ class TenantMiddleware
             if ($tenant) {
                 // Establecer el tenant actual
                 $tenant->makeCurrent();
+                
+                // Check if tenant needs initialization
+                if ($tenant->needsInitialization() && !$request->routeIs('tenant.initialization.*')) {
+                    return redirect()->route('tenant.initialization.index');
+                }
             } else {
-                // Si no se encuentra el tenant, retornar error o redirigir
-                abort(404, 'Tenant not found');
+                // Si no se encuentra el tenant, redirigir a selección de sedes
+                return redirect()->route('sedes.selection');
             }
         } else {
             // Si no hay subdominio, usar el tenant marcado como default
@@ -42,6 +63,11 @@ class TenantMiddleware
             
             if ($defaultTenant) {
                 $defaultTenant->makeCurrent();
+                
+                // Check if tenant needs initialization
+                if ($defaultTenant->needsInitialization() && !$request->routeIs('tenant.initialization.*')) {
+                    return redirect()->route('tenant.initialization.index');
+                }
             }
             // Si no hay tenant por defecto configurado, no establecer ninguno
             // Esto permite que las rutas sin tenant requirement funcionen normalmente

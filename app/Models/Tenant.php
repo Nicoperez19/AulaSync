@@ -17,11 +17,16 @@ class Tenant extends Model
         'sede_id',
         'is_active',
         'is_default',
+        'is_initialized',
+        'initialized_at',
+        'initialization_step',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
         'is_default' => 'boolean',
+        'is_initialized' => 'boolean',
+        'initialized_at' => 'datetime',
     ];
 
     /**
@@ -66,5 +71,41 @@ class Tenant extends Model
     public function isActive()
     {
         return $this->is_active;
+    }
+
+    /**
+     * Verificar si el tenant necesita inicialización
+     */
+    public function needsInitialization()
+    {
+        return !$this->is_initialized;
+    }
+
+    /**
+     * Marcar el tenant como inicializado
+     */
+    public function markAsInitialized()
+    {
+        $this->update([
+            'is_initialized' => true,
+            'initialized_at' => now(),
+            'initialization_step' => 7, // All steps completed
+        ]);
+    }
+
+    /**
+     * Obtener el paso actual de inicialización
+     */
+    public function getCurrentStep()
+    {
+        return $this->initialization_step;
+    }
+
+    /**
+     * Establecer el paso de inicialización
+     */
+    public function setInitializationStep($step)
+    {
+        $this->update(['initialization_step' => $step]);
     }
 }
