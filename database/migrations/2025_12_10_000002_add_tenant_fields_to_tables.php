@@ -16,15 +16,6 @@ return new class extends Migration
             $table->string('sede_id', 20)->nullable()->after('id_area_academica');
             $table->foreign('sede_id')->references('id_sede')->on('sedes')->onDelete('set null');
         });
-
-        // Agregar sede_id a la tabla espacios (a través de piso->facultad->sede)
-        // Los espacios ya tienen relación indirecta a través de piso
-        
-        // Agregar sede_id a la tabla mapas (a través de piso->facultad->sede)
-        // Los mapas ya tienen relación indirecta a través de piso
-
-        // Agregar sede_id a la tabla pisos (a través de facultad->sede)
-        // Los pisos ya tienen relación indirecta a través de facultad
     }
 
     /**

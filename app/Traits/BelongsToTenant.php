@@ -4,6 +4,7 @@ namespace App\Traits;
 
 use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Schema;
 
 trait BelongsToTenant
 {
@@ -21,30 +22,31 @@ trait BelongsToTenant
             }
             
             $model = new static;
+            $table = $model->getTable();
             
             // Filtrar por prefijo de espacio si el modelo tiene id_espacio
-            if (in_array('id_espacio', $model->getFillable())) {
+            if (Schema::hasColumn($table, 'id_espacio')) {
                 if ($tenant->prefijo_espacios) {
                     $builder->where('id_espacio', 'like', $tenant->prefijo_espacios . '%');
                 }
             }
             
             // Filtrar por sede directamente si el modelo tiene sede_id
-            if (in_array('sede_id', $model->getFillable()) || property_exists($model, 'sede_id')) {
+            if (Schema::hasColumn($table, 'sede_id')) {
                 if ($tenant->sede_id) {
                     $builder->where('sede_id', $tenant->sede_id);
                 }
             }
-            // Filtrar a través de profesor si el modelo tiene relación con profesor
-            elseif (method_exists($model, 'profesor') && in_array('run_profesor', $model->getFillable())) {
+            // Filtrar a través de profesor si el modelo tiene relación con profesor y run_profesor
+            elseif (method_exists($model, 'profesor') && Schema::hasColumn($table, 'run_profesor')) {
                 if ($tenant->sede_id) {
                     $builder->whereHas('profesor', function ($query) use ($tenant) {
                         $query->where('sede_id', $tenant->sede_id);
                     });
                 }
             }
-            // Filtrar a través de espacio si el modelo tiene relación con espacio
-            elseif (method_exists($model, 'espacio') && !in_array('id_espacio', $model->getFillable())) {
+            // Filtrar a través de espacio si el modelo tiene relación con espacio pero no tiene id_espacio directamente
+            elseif (method_exists($model, 'espacio') && !Schema::hasColumn($table, 'id_espacio')) {
                 if ($tenant->prefijo_espacios || $tenant->sede_id) {
                     $builder->whereHas('espacio', function ($query) use ($tenant) {
                         if ($tenant->prefijo_espacios) {
@@ -79,13 +81,15 @@ trait BelongsToTenant
                 return;
             }
             
+            $table = $model->getTable();
+            
             // Si el modelo tiene sede_id, asignarla
-            if ((in_array('sede_id', $model->getFillable()) || property_exists($model, 'sede_id')) && !$model->sede_id) {
+            if (Schema::hasColumn($table, 'sede_id') && !$model->sede_id) {
                 $model->sede_id = $tenant->sede_id;
             }
             
             // Si el modelo tiene id_espacio y prefijo, asegurarse de que comience con el prefijo
-            if (in_array('id_espacio', $model->getFillable()) && $tenant->prefijo_espacios) {
+            if (Schema::hasColumn($table, 'id_espacio') && $tenant->prefijo_espacios) {
                 if (isset($model->id_espacio) && !str_starts_with($model->id_espacio, $tenant->prefijo_espacios)) {
                     $model->id_espacio = $tenant->prefijo_espacios . $model->id_espacio;
                 }

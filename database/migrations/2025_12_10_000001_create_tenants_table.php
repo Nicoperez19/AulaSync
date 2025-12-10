@@ -17,7 +17,8 @@ return new class extends Migration
             $table->string('domain')->unique(); // Subdominio (ej: "principal")
             $table->string('database')->nullable(); // Nombre de la base de datos específica del tenant
             $table->string('prefijo_espacios')->nullable(); // Prefijo para los espacios de este tenant
-            $table->foreignId('sede_id')->nullable()->constrained('sedes', 'id_sede')->onDelete('cascade');
+            $table->string('sede_id', 20)->nullable();
+            $table->foreign('sede_id')->references('id_sede')->on('sedes')->onDelete('set null');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
