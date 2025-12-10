@@ -142,7 +142,7 @@ class DataLoadController extends Controller
 
                 try {
                     // Get current tenant to validate sede
-                    $currentTenant = Tenant::current();
+                    $currentTenant = app('currentTenant');
                     $sede = $row[7];
 
                     // If a tenant is active, validate that the sede in the row matches

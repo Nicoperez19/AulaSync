@@ -81,9 +81,16 @@ class TenantDemoSeeder extends Seeder
             // Create tenant
             $databaseName = 'tenant_' . strtolower(str_replace(['_', ' '], '', $sedeData['id_sede']));
             
+            // Validate database name to prevent SQL injection
+            if (!preg_match('/^[a-zA-Z0-9_]+$/', $databaseName)) {
+                $this->command->error("Invalid database name format for {$sede->nombre_sede}. Skipping...");
+                continue;
+            }
+            
             try {
-                // Create database
-                DB::statement("CREATE DATABASE IF NOT EXISTS `{$databaseName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                // Create database with escaped name
+                $escapedDbName = DB::connection()->getPdo()->quote($databaseName);
+                DB::statement("CREATE DATABASE IF NOT EXISTS {$escapedDbName} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
                 
                 // Create tenant record
                 $tenant = Tenant::create([

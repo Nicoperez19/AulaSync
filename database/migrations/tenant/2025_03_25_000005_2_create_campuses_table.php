@@ -15,7 +15,7 @@ return new class extends Migration
             $table->string('id_campus', 20)->primary();
             $table->string('nombre_campus', 100);
             $table->string('id_sede', 20); 
-            $table->foreign('id_sede')->references('id_sede')->on('sedes')->onDelete('cascade');
+            // Foreign key removed - sede is in landlord database
             $table->timestamps();
         });
     }

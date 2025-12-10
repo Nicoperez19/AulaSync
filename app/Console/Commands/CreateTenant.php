@@ -66,8 +66,18 @@ class CreateTenant extends Command
         }
         
         try {
+            // Create database name from sede ID (sanitize)
+            $databaseName = 'tenant_' . Str::slug($sedeId, '_');
+            
+            // Validate database name to prevent SQL injection
+            if (!preg_match('/^[a-zA-Z0-9_]+$/', $databaseName)) {
+                $this->error('Invalid database name format!');
+                return 1;
+            }
+            
             // Create the database
-            DB::statement("CREATE DATABASE IF NOT EXISTS `{$databaseName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            $escapedDbName = DB::connection()->getPdo()->quote($databaseName);
+            DB::statement("CREATE DATABASE IF NOT EXISTS {$escapedDbName} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
             $this->info("Database {$databaseName} created successfully.");
             
             // Create the tenant record
