@@ -63,10 +63,25 @@
     document.getElementById('logo').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
+            // Validate that file is an image
+            if (!file.type.startsWith('image/')) {
+                alert('Por favor seleccione un archivo de imagen válido.');
+                return;
+            }
+            
             const reader = new FileReader();
             reader.onload = function(e) {
-                document.getElementById('logo-preview').innerHTML = 
-                    '<img src="' + e.target.result + '" alt="Vista previa" class="max-w-full max-h-full object-contain">';
+                const previewContainer = document.getElementById('logo-preview');
+                // Clear existing content safely
+                while (previewContainer.firstChild) {
+                    previewContainer.removeChild(previewContainer.firstChild);
+                }
+                // Create img element safely
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.alt = 'Vista previa';
+                img.className = 'max-w-full max-h-full object-contain';
+                previewContainer.appendChild(img);
             };
             reader.readAsDataURL(file);
         }
