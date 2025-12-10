@@ -88,9 +88,8 @@ class TenantDemoSeeder extends Seeder
             }
             
             try {
-                // Create database with escaped name
-                $escapedDbName = DB::connection()->getPdo()->quote($databaseName);
-                DB::statement("CREATE DATABASE IF NOT EXISTS {$escapedDbName} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                // Create database with backtick identifier escaping
+                DB::statement("CREATE DATABASE IF NOT EXISTS `{$databaseName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
                 
                 // Create tenant record
                 $tenant = Tenant::create([

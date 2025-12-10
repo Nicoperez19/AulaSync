@@ -75,9 +75,8 @@ class CreateTenant extends Command
                 return 1;
             }
             
-            // Create the database
-            $escapedDbName = DB::connection()->getPdo()->quote($databaseName);
-            DB::statement("CREATE DATABASE IF NOT EXISTS {$escapedDbName} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            // Create the database with backtick identifier escaping
+            DB::statement("CREATE DATABASE IF NOT EXISTS `{$databaseName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
             $this->info("Database {$databaseName} created successfully.");
             
             // Create the tenant record
