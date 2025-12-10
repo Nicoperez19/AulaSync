@@ -36,6 +36,7 @@ class Kernel extends HttpKernel
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
             \App\Http\Middleware\VerifyCsrfToken::class,
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \Spatie\Multitenancy\Http\Middleware\NeedsTenant::class,
             \App\Http\Middleware\SessionTimeout::class,
             \App\Http\Middleware\AjaxSessionTimeout::class,
         ],
@@ -44,6 +45,7 @@ class Kernel extends HttpKernel
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \App\Http\Middleware\ThrottleRequestsCustom::class.':120,1', // 120 requests por minuto
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \Spatie\Multitenancy\Http\Middleware\NeedsTenant::class,
         ],
     ];
 
