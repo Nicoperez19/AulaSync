@@ -21,6 +21,8 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\CampusController;
 use App\Http\Controllers\SedeController;
+use App\Http\Controllers\SedeSelectionController;
+use App\Http\Controllers\TenantInitializationController;
 use App\Http\Controllers\QuickActionsController;
 use App\Http\Controllers\ClasesNoRealizadasController;
 use App\Http\Controllers\LicenciaProfesorController;
@@ -43,6 +45,28 @@ use Spatie\Permission\Middleware\RoleMiddleware;
 | contains the "web" middleware group. Now create something great!
 |
 */
+
+// ===================================================
+// SEDE SELECTION ROUTES (Public - No subdomain)
+// ===================================================
+Route::get('/sedes/selection', [SedeSelectionController::class, 'index'])->name('sedes.selection');
+Route::get('/sedes/redirect/{sede}', [SedeSelectionController::class, 'redirect'])->name('sedes.redirect');
+
+// ===================================================
+// TENANT INITIALIZATION ROUTES
+// ===================================================
+Route::prefix('tenant/initialization')->name('tenant.initialization.')->group(function () {
+    Route::get('/', [TenantInitializationController::class, 'index'])->name('index');
+    Route::post('/store-admin', [TenantInitializationController::class, 'storeAdmin'])->name('store-admin');
+    Route::post('/store-logo', [TenantInitializationController::class, 'storeLogo'])->name('store-logo');
+    Route::post('/confirm-sede', [TenantInitializationController::class, 'confirmSedeInfo'])->name('confirm-sede');
+    Route::post('/skip-bulk', [TenantInitializationController::class, 'skipBulkLoad'])->name('skip-bulk');
+    Route::post('/skip-periods', [TenantInitializationController::class, 'skipAcademicPeriods'])->name('skip-periods');
+    Route::post('/skip-plan', [TenantInitializationController::class, 'skipDigitalPlan'])->name('skip-plan');
+    Route::post('/complete', [TenantInitializationController::class, 'complete'])->name('complete');
+    Route::get('/success', [TenantInitializationController::class, 'success'])->name('success');
+    Route::get('/previous', [TenantInitializationController::class, 'previousStep'])->name('previous');
+});
 
 Route::get('/', function () {
     return view('auth/login');

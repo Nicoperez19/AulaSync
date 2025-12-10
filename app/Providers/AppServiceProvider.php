@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\View;
 use App\Models\Sede;
 use App\Models\Profesor;
 use App\Models\Espacio;
+use App\Models\Tenant;
 use App\Models\LicenciaProfesor;
 use App\Observers\LicenciaProfesorObserver;
 use App\View\Composers\LogoComposer;
@@ -34,9 +35,17 @@ class AppServiceProvider extends ServiceProvider
 
         // Registrar el ViewComposer para el sidebar
         View::composer('components.sidebar.content', function ($view) {
-            $sede = Sede::where('nombre_sede', 'like', '%Talcahuano%')
-                ->with(['facultades.pisos.mapas'])
-                ->first();
+            // Try to get the current tenant first
+            $tenant = Tenant::current();
+            
+            if ($tenant && $tenant->sede) {
+                $sede = $tenant->sede->load(['facultades.pisos.mapas']);
+            } else {
+                // Fallback to Talcahuano if no tenant
+                $sede = Sede::where('nombre_sede', 'like', '%Talcahuano%')
+                    ->with(['facultades.pisos.mapas'])
+                    ->first();
+            }
             
             if ($sede) {
                 $primerMapa = $sede->facultades->flatMap(function($facultad) {
