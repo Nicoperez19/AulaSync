@@ -72,7 +72,7 @@
                         <x-form.label for="imagen_logo" :value="__('Logo')" />
                         <x-form.input id="imagen_logo" name="imagen_logo" type="file"
                             class="block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-gray-50"
-                            accept="image/*" onchange="previewImage(event)">
+                            accept="image/*" onchange="previewImage(event)" />
                         <p class="text-xs text-gray-500 mt-1">Formatos: JPG, JPEG, PNG, GIF. Máximo 2MB</p>
                         @if ($universidad->imagen_logo)
                             <div class="mt-2">
