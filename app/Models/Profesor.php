@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToTenant;
 
 class Profesor extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $table = 'profesors';
     protected $primaryKey = 'run_profesor';
@@ -25,7 +26,8 @@ class Profesor extends Model
         'id_universidad',
         'id_facultad',
         'id_carrera',
-        'id_area_academica'
+        'id_area_academica',
+        'sede_id'
     ];
 
 
@@ -54,6 +56,12 @@ class Profesor extends Model
     public function areaAcademica()
     {
         return $this->belongsTo(AreaAcademica::class, 'id_area_academica');
+    }
+
+    // Relación con Sede
+    public function sede()
+    {
+        return $this->belongsTo(Sede::class, 'sede_id', 'id_sede');
     }
 
     // Relación con Horarios
