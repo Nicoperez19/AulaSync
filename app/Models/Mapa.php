@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Traits\BelongsToTenant;
 
 class Mapa extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $primaryKey = 'id_mapa';
     public $incrementing = false;

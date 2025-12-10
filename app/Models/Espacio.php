@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Services\QRService;
+use App\Traits\BelongsToTenant;
 
 class Espacio extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
     protected $primaryKey = 'id_espacio';
     public $incrementing = false;
     protected $keyType = 'string';

@@ -133,6 +133,17 @@
       0 => 'Spatie\\LaravelIgnition\\IgnitionServiceProvider',
     ),
   ),
+  'spatie/laravel-multitenancy' => 
+  array (
+    'aliases' => 
+    array (
+      'Multitenancy' => 'Spatie\\Multitenancy\\MultitenancyFacade',
+    ),
+    'providers' => 
+    array (
+      0 => 'Spatie\\Multitenancy\\MultitenancyServiceProvider',
+    ),
+  ),
   'spatie/laravel-permission' => 
   array (
     'providers' => 
