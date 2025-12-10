@@ -32,13 +32,20 @@ class TenantMiddleware
                 $tenant->makeCurrent();
             } else {
                 // Si no se encuentra el tenant, retornar error o redirigir
-                abort(404, 'Tenant no encontrado');
+                abort(404, 'Tenant not found');
             }
         } else {
             // Si no hay subdominio, usar el tenant por defecto o retornar error
             $defaultTenant = Tenant::where('is_active', true)
-                ->orderBy('id')
+                ->where('is_default', true)
                 ->first();
+            
+            // Si no hay tenant por defecto, usar el primero activo
+            if (!$defaultTenant) {
+                $defaultTenant = Tenant::where('is_active', true)
+                    ->orderBy('id')
+                    ->first();
+            }
             
             if ($defaultTenant) {
                 $defaultTenant->makeCurrent();

@@ -13,12 +13,7 @@ class TenantCreate extends Command
      *
      * @var string
      */
-    protected $signature = 'tenant:create 
-                            {domain : The subdomain for the tenant}
-                            {--name= : The name of the tenant}
-                            {--sede= : The sede ID to associate with the tenant}
-                            {--prefix= : The space prefix for the tenant}
-                            {--database= : The database name (optional)}';
+    protected $signature = 'tenant:create {domain : The subdomain for the tenant} {--name= : The name of the tenant} {--sede= : The sede ID to associate with the tenant} {--prefix= : The space prefix for the tenant} {--database= : The database name (optional)} {--default : Mark this tenant as the default tenant}';
 
     /**
      * The console command description.
@@ -64,6 +59,11 @@ class TenantCreate extends Command
         }
 
         try {
+            // Si se marca como default, desactivar el default de otros tenants
+            if ($this->option('default')) {
+                Tenant::where('is_default', true)->update(['is_default' => false]);
+            }
+
             $tenant = Tenant::create([
                 'name' => $name,
                 'domain' => $domain,
@@ -71,6 +71,7 @@ class TenantCreate extends Command
                 'prefijo_espacios' => $prefix,
                 'sede_id' => $sedeId,
                 'is_active' => true,
+                'is_default' => $this->option('default') ?? false,
             ]);
 
             $this->info("Tenant '{$name}' created successfully!");
@@ -84,6 +85,7 @@ class TenantCreate extends Command
                     ['Sede ID', $tenant->sede_id ?? 'N/A'],
                     ['Database', $tenant->database ?? 'Shared'],
                     ['Active', $tenant->is_active ? 'Yes' : 'No'],
+                    ['Default', $tenant->is_default ? 'Yes' : 'No'],
                 ]
             );
 

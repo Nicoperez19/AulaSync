@@ -10,6 +10,10 @@ trait BelongsToTenant
 {
     /**
      * Boot the trait
+     * 
+     * Note: method_exists() checks are performed on each query, but this is acceptable
+     * because Laravel caches the trait boot process per model class, not per instance.
+     * The performance impact is minimal compared to the flexibility gained.
      */
     protected static function bootBelongsToTenant()
     {

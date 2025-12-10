@@ -40,7 +40,7 @@ class TenantList extends Command
         }
 
         $this->table(
-            ['ID', 'Name', 'Domain', 'Prefix', 'Sede ID', 'Active'],
+            ['ID', 'Name', 'Domain', 'Prefix', 'Sede ID', 'Active', 'Default'],
             $tenants->map(function ($tenant) {
                 return [
                     $tenant->id,
@@ -49,6 +49,7 @@ class TenantList extends Command
                     $tenant->prefijo_espacios ?? 'N/A',
                     $tenant->sede_id ?? 'N/A',
                     $tenant->is_active ? '✓' : '✗',
+                    $tenant->is_default ? '✓' : '✗',
                 ];
             })
         );

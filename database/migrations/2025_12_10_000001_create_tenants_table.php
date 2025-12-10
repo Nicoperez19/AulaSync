@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('sede_id', 20)->nullable();
             $table->foreign('sede_id')->references('id_sede')->on('sedes')->onDelete('set null');
             $table->boolean('is_active')->default(true);
+            $table->boolean('is_default')->default(false); // Marca si es el tenant por defecto
             $table->timestamps();
         });
     }

@@ -16,10 +16,12 @@ class Tenant extends Model
         'prefijo_espacios',
         'sede_id',
         'is_active',
+        'is_default',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'is_default' => 'boolean',
     ];
 
     /**
