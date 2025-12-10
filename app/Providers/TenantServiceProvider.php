@@ -21,26 +21,7 @@ class TenantServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $this->configureTenantStorage();
-    }
-
-    /**
-     * Configure storage to be tenant-aware
-     */
-    protected function configureTenantStorage(): void
-    {
-        // Listen for when a tenant becomes current
-        \Spatie\Multitenancy\Models\Concerns\UsesTenantModel::current();
-        
-        // Configure public disk to use tenant-specific directory
-        config([
-            'filesystems.disks.public.root' => function () {
-                $tenant = Tenant::current();
-                if ($tenant) {
-                    return storage_path("app/public/tenant-{$tenant->id}");
-                }
-                return storage_path('app/public');
-            },
-        ]);
+        // Tenant-aware file storage will be configured dynamically
+        // when a tenant is active through the middleware
     }
 }
