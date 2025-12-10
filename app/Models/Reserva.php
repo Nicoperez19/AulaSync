@@ -10,6 +10,7 @@ use Illuminate\Support\Str;
 class Reserva extends Model
 {
     use HasFactory;
+    protected $connection = 'tenant';
 
     protected $table = 'reservas';
 

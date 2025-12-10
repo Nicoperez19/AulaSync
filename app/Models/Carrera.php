@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Carrera extends Model
 {
     use HasFactory;
+    protected $connection = 'tenant';
     protected $table = 'carreras';
     protected $primaryKey = 'id_carrera';
 

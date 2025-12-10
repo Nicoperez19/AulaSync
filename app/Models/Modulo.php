@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Modulo extends Model
 {
     use HasFactory;
+    protected $connection = 'tenant';
 
     protected $table = 'modulos';
     protected $primaryKey = 'id_modulo';

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class DataLoad extends Model
 {
     use HasFactory;
+    protected $connection = 'tenant';
 
     protected $fillable = [
         'nombre_archivo',

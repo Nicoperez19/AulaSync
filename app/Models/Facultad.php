@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Facultad extends Model
 {
     use HasFactory;
+    protected $connection = 'tenant';
     protected $table = 'facultades';
     protected $primaryKey = 'id_facultad';
     public $incrementing = false;

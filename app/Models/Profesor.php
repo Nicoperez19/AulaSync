@@ -9,6 +9,7 @@ class Profesor extends Model
 {
     use HasFactory;
 
+    protected $connection = 'tenant';
     protected $table = 'profesors';
     protected $primaryKey = 'run_profesor';
     public $incrementing = false;

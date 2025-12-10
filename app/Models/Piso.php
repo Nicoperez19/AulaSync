@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class Piso extends Model
 {
     use HasFactory;
+    
+    protected $connection = 'tenant';
     protected $table = 'pisos'; 
     protected $primaryKey = 'id';  
     public $incrementing = true;  

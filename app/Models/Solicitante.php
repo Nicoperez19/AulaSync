@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Cache;
 class Solicitante extends Model
 {
     use HasFactory;
+    protected $connection = 'tenant';
 
     protected $table = 'solicitantes';
 

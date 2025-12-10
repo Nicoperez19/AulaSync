@@ -19,6 +19,11 @@ class Sede extends Model
         'comunas_id',
     ];
 
+    public function tenant()
+    {
+        return $this->hasOne(\App\Models\Tenant::class, 'sede_id', 'id_sede');
+    }
+
     public function universidad()
     {
         return $this->belongsTo(Universidad::class, 'id_universidad', 'id_universidad');
