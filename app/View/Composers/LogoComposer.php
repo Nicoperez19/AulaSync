@@ -6,6 +6,7 @@ use Illuminate\View\View;
 use Illuminate\Support\Facades\Cache;
 use App\Models\Configuracion;
 use App\Models\Sede;
+use App\Models\Tenant;
 
 class LogoComposer
 {
@@ -14,12 +15,26 @@ class LogoComposer
      */
     public function compose(View $view): void
     {
-        // Obtener la sede actual (por ahora Talcahuano por defecto, puede extenderse para detectar dinámicamente)
-        $sedeActual = Sede::where('nombre_sede', 'like', '%Talcahuano%')->first();
-        $idSede = $sedeActual ? $sedeActual->id_sede : 'TH';
+        // Try to get the current tenant first
+        $tenant = Tenant::current();
+        
+        if ($tenant && $tenant->sede) {
+            $sedeActual = $tenant->sede;
+            $idSede = $sedeActual->id_sede;
+        } else {
+            // Fallback to Talcahuano if no tenant
+            $sedeActual = Sede::where('nombre_sede', 'like', '%Talcahuano%')->first();
+            $idSede = $sedeActual ? $sedeActual->id_sede : 'TH';
+        }
 
         // Cache the logo path for 60 minutes to avoid repeated database queries
-        $logoPath = Cache::remember("logo_institucional_path_{$idSede}", 3600, function () use ($idSede) {
+        $logoPath = Cache::remember("logo_institucional_path_{$idSede}", 3600, function () use ($idSede, $sedeActual) {
+            // First check if sede has logo in its own field
+            if ($sedeActual && $sedeActual->logo) {
+                return asset('storage/sedes/logos/' . $sedeActual->logo);
+            }
+            
+            // Fallback to configuration table
             $logoInstitucional = Configuracion::where('clave', "logo_institucional_{$idSede}")->first();
             
             if ($logoInstitucional && $logoInstitucional->valor) {

@@ -18,6 +18,11 @@ class Sede extends Model
         'prefijo_sala',
         'id_universidad',
         'comunas_id',
+        'logo',
+        'descripcion',
+        'direccion',
+        'telefono',
+        'email',
     ];
 
     public function universidad()
@@ -38,5 +43,24 @@ class Sede extends Model
     public function campuses()
     {
         return $this->hasMany(Campus::class, 'id_sede', 'id_sede');
+    }
+
+    /**
+     * Obtener el tenant asociado a esta sede
+     */
+    public function tenant()
+    {
+        return $this->hasOne(Tenant::class, 'sede_id', 'id_sede');
+    }
+
+    /**
+     * Obtener la URL del logo de la sede
+     */
+    public function getLogoUrl()
+    {
+        if ($this->logo) {
+            return asset('storage/sedes/logos/' . $this->logo);
+        }
+        return asset('images/logo_default.png');
     }
 }

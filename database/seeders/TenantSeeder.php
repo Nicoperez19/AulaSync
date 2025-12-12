@@ -21,7 +21,7 @@ class TenantSeeder extends Seeder
             // El subdominio se puede derivar del prefijo_sala o del nombre de la sede
             $domain = $sede->prefijo_sala 
                 ? strtolower($sede->prefijo_sala) 
-                : strtolower($sede->prefijo_sala);
+                : strtolower(str_replace(' ', '-', $sede->prefijo_sala));
 
             Tenant::updateOrCreate(
                 ['domain' => $domain],

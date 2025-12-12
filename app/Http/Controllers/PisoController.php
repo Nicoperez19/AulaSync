@@ -47,6 +47,56 @@ class PisoController extends Controller
         }
     }
 
+    public function store(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'numero_piso' => 'required|integer',
+                'nombre_piso' => 'required|string|max:255',
+                'id_facultad' => 'required|exists:facultades,id_facultad'
+            ]);
+
+            // Verificar si ya existe un piso con ese número en la misma facultad
+            $pisoExistente = Piso::where('id_facultad', $validated['id_facultad'])
+                ->where('numero_piso', $validated['numero_piso'])
+                ->first();
+
+            if ($pisoExistente) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ya existe un piso con ese número en esta facultad'
+                ], 422);
+            }
+
+            $piso = Piso::create([
+                'numero_piso' => $validated['numero_piso'],
+                'nombre_piso' => $validated['nombre_piso'],
+                'id_facultad' => $validated['id_facultad']
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Piso creado exitosamente',
+                'piso' => [
+                    'id' => $piso->id_piso,
+                    'numero_piso' => $piso->numero_piso,
+                    'nombre_piso' => $piso->nombre_piso
+                ]
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error de validación',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al crear el piso: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function eliminarPiso(Request $request, $facultadId)
     {
         try {

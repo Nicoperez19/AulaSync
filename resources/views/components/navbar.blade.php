@@ -30,6 +30,11 @@
             <x-heroicon-o-sun x-show="isDarkMode" aria-hidden="true" class="w-6 h-6" />
         </x-button> --}}
 
+        <!-- Academic Period Reminder - For administrators -->
+        @hasanyrole('Supervisor|Administrador')
+            <x-academic-period-reminder />
+        @endhasanyrole
+
         <!-- Botón Acciones Rápidas - Para usuarios con permiso -->
         @can('acciones rapidas')
             <a href="{{ route('quick-actions.index') }}" 
