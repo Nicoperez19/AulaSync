@@ -25,6 +25,22 @@ class TenantMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Primero verificar si es una ruta de inicialización (permitir siempre)
+        if ($request->routeIs('tenant.initialization.*') || $request->is('tenant/initialization*')) {
+            // Para las rutas de inicialización, aún necesitamos establecer el tenant
+            $host = $request->getHost();
+            $subdomain = $this->getSubdomain($host);
+            
+            if ($subdomain && $subdomain !== 'www') {
+                $tenant = Tenant::where('domain', $subdomain)->where('is_active', true)->first();
+                if ($tenant) {
+                    $tenant->makeCurrent();
+                }
+            }
+            
+            return $next($request);
+        }
+
         // Check if route is excluded from tenant check
         foreach ($this->excludedRoutes as $pattern) {
             if ($request->routeIs($pattern)) {
@@ -48,7 +64,7 @@ class TenantMiddleware
                 $tenant->makeCurrent();
                 
                 // Check if tenant needs initialization
-                if ($tenant->needsInitialization() && !$request->routeIs('tenant.initialization.*')) {
+                if ($tenant->needsInitialization()) {
                     return redirect()->route('tenant.initialization.index');
                 }
             } else {
@@ -65,7 +81,7 @@ class TenantMiddleware
                 $defaultTenant->makeCurrent();
                 
                 // Check if tenant needs initialization
-                if ($defaultTenant->needsInitialization() && !$request->routeIs('tenant.initialization.*')) {
+                if ($defaultTenant->needsInitialization()) {
                     return redirect()->route('tenant.initialization.index');
                 }
             }

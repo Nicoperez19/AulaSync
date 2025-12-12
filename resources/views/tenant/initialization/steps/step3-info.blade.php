@@ -30,6 +30,21 @@
             </div>
 
             <div>
+                <label for="prefijo_espacios" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-tag mr-2"></i>Prefijo de Espacios
+                </label>
+                <input type="text" name="prefijo_espacios" id="prefijo_espacios" 
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition uppercase"
+                       value="{{ old('prefijo_espacios', $tenant->prefijo_espacios ?? $sede->prefijo_sala ?? '') }}"
+                       maxlength="10"
+                       placeholder="Ej: TH (para Talcahuano), CT (para Cañete)"
+                       required>
+                <p class="text-sm text-gray-500 mt-1">
+                    Este prefijo se utilizará para identificar las salas y espacios de esta sede.
+                </p>
+            </div>
+
+            <div>
                 <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-2">
                     <i class="fas fa-align-left mr-2"></i>Descripción (Opcional)
                 </label>

@@ -19,9 +19,34 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <style>
+        .step-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .step-row {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        
         .step-indicator {
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
         }
+        
+        @media (max-width: 640px) {
+            .step-indicator {
+                font-size: 1rem;
+            }
+        }
+        
         .step-indicator.active {
             background-color: #2563eb;
             color: white;
@@ -30,30 +55,43 @@
             background-color: #10b981;
             color: white;
         }
+        
         .step-line {
             transition: all 0.3s ease;
+            height: 4px;
+            flex: 1;
+            margin: 0 0.25rem;
         }
+        
+        @media (min-width: 640px) {
+            .step-line {
+                margin: 0 0.5rem;
+            }
+        }
+        
         .step-line.completed {
             background-color: #10b981;
         }
+        
         .fade-in {
             animation: fadeIn 0.5s ease-in;
         }
+        
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
-<body class="font-sans antialiased bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+<body class="font-sans antialiased bg-gradient-to-br  min-h-screen">
     <div class="min-h-screen flex flex-col">
         <!-- Header -->
-        <header class="bg-light-cloud-blue shadow-md">
+        <header class="">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 <div class="flex items-center justify-between">
-                    <img src="{{ asset('images/aulasync-logo.png') }}" alt="AulaSync" class="h-10 sm:h-12">
-                    <div class="text-white">
-                        <span class="font-semibold">{{ $sede->nombre_sede ?? 'Configuración de Sede' }}</span>
+                    <img src="{{ asset('images/logo_dark.png') }}" alt="AulaSync" class="  h-10 sm:h-12 brightness-0">
+                    <div class="text-black">
+                        <span class="font-semibold">Asistente configuración sede {{ $sede->nombre_sede ?? 'Configuración de Sede' }}</span>
                     </div>
                 </div>
             </div>
@@ -61,9 +99,11 @@
 
         <!-- Main Content -->
         <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <!-- Step Indicators -->
+            <!-- Step Indicators (solo mostrar después del paso 0) -->
+            @if($step > 0)
             <div class="max-w-4xl mx-auto mb-8">
-                <div class="flex items-center justify-between">
+                <!-- Fila de círculos y líneas -->
+                <div class="flex items-center justify-between mb-3">
                     @php
                         $steps = [
                             1 => ['icon' => 'fa-user-plus', 'title' => 'Administrador'],
@@ -77,27 +117,40 @@
                     @endphp
 
                     @foreach($steps as $stepNum => $stepInfo)
+                        <!-- Círculo indicador -->
+                        <div class="step-indicator w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 flex-shrink-0
+                            {{ $step > $stepNum ? 'completed' : ($step == $stepNum ? 'active border-blue-600' : 'border-gray-300 bg-white text-gray-500') }}">
+                            @if($step > $stepNum)
+                                <i class="fas fa-check text-base sm:text-lg"></i>
+                            @else
+                                <i class="fas {{ $stepInfo['icon'] }} text-base sm:text-lg"></i>
+                            @endif
+                        </div>
+                        
+                        <!-- Línea conectora (excepto después del último paso) -->
+                        @if($stepNum < 7)
+                            <div class="step-line {{ $step > $stepNum ? 'completed' : 'bg-gray-300' }}"></div>
+                        @endif
+                    @endforeach
+                </div>
+                
+                <!-- Fila de textos -->
+                <div class="flex items-center justify-between">
+                    @foreach($steps as $stepNum => $stepInfo)
                         <div class="flex items-center {{ $stepNum < 7 ? 'flex-1' : '' }}">
-                            <div class="relative flex flex-col items-center">
-                                <div class="step-indicator w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 
-                                    {{ $step > $stepNum ? 'completed' : ($step == $stepNum ? 'active border-blue-600' : 'border-gray-300 bg-white text-gray-500') }}">
-                                    @if($step > $stepNum)
-                                        <i class="fas fa-check"></i>
-                                    @else
-                                        <i class="fas {{ $stepInfo['icon'] }}"></i>
-                                    @endif
-                                </div>
-                                <span class="mt-2 text-xs sm:text-sm font-medium {{ $step >= $stepNum ? 'text-blue-600' : 'text-gray-500' }} hidden sm:block">
+                            <div class="w-10 sm:w-14 flex-shrink-0 text-center">
+                                <span class="text-xs sm:text-sm font-medium {{ $step >= $stepNum ? 'text-blue-600' : 'text-gray-500' }} hidden sm:inline-block">
                                     {{ $stepInfo['title'] }}
                                 </span>
                             </div>
                             @if($stepNum < 7)
-                                <div class="step-line flex-1 h-1 mx-2 {{ $step > $stepNum ? 'completed' : 'bg-gray-300' }}"></div>
+                                <div class="flex-1 mx-1 sm:mx-2"></div>
                             @endif
                         </div>
                     @endforeach
                 </div>
             </div>
+            @endif
 
             <!-- Alerts -->
             @if(session('success'))
@@ -139,6 +192,9 @@
             <div class="max-w-2xl mx-auto fade-in">
                 <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                     @switch($step)
+                        @case(0)
+                            @include('tenant.initialization.steps.step0-password')
+                            @break
                         @case(1)
                             @include('tenant.initialization.steps.step1-admin')
                             @break
@@ -161,7 +217,7 @@
                             @include('tenant.initialization.steps.step7-complete')
                             @break
                         @default
-                            @include('tenant.initialization.steps.step1-admin')
+                            @include('tenant.initialization.steps.step0-password')
                     @endswitch
                 </div>
             </div>

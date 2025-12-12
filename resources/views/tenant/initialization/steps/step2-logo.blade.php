@@ -12,11 +12,25 @@
         @csrf
         
         <div class="space-y-6">
+            <!-- Info sobre dimensiones recomendadas -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex items-start">
+                    <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                    <div>
+                        <h4 class="font-semibold text-blue-800">Dimensiones recomendadas</h4>
+                        <p class="text-sm text-blue-700 mt-1">
+                            Altura mínima: <strong>80px</strong>. Formato preferido: PNG con fondo transparente.
+                            El logo se mostrará con una altura máxima de 48px en la barra de navegación.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
             <!-- Current Logo Preview -->
             <div class="flex justify-center">
-                <div id="logo-preview" class="w-40 h-40 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
+                <div id="logo-preview" class="w-64 h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 p-4">
                     @if($sede && $sede->logo)
-                        <img src="{{ $sede->getLogoUrl() }}" alt="Logo actual" class="max-w-full max-h-full object-contain">
+                        <img src="{{ $sede->getLogoUrl() }}" alt="Logo actual" class="max-w-full h-16 object-contain">
                     @else
                         <div class="text-center text-gray-400">
                             <i class="fas fa-cloud-upload-alt text-4xl mb-2"></i>
@@ -80,7 +94,7 @@
                 const img = document.createElement('img');
                 img.src = e.target.result;
                 img.alt = 'Vista previa';
-                img.className = 'max-w-full max-h-full object-contain';
+                img.className = 'max-w-full h-16 object-contain';
                 previewContainer.appendChild(img);
             };
             reader.readAsDataURL(file);

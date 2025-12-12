@@ -134,6 +134,34 @@ class DataLoadController extends Controller
             $planificacionesEliminadas = Planificacion_Asignatura::whereIn('id_horario', $horariosDelPeriodo)->delete();
             Log::info('Planificaciones eliminadas del período ' . $periodoSeleccionado . ': ' . $planificacionesEliminadas);
 
+            // Obtener la sede actual del tenant
+            $tenant = \App\Models\Tenant::current();
+            $sedeActual = $tenant ? \App\Models\Sede::find($tenant->sede_id) : null;
+            $nombreSedeActual = $sedeActual ? strtolower(trim($sedeActual->nombre_sede)) : null;
+            
+            // Obtener la primera facultad de la sede para crear carreras automáticamente si es necesario
+            $facultadDeLaSede = $sedeActual ? \App\Models\Facultad::where('id_sede', $sedeActual->id_sede)->first() : null;
+            
+            // Si no existe facultad, crear una genérica para la sede
+            if ($sedeActual && !$facultadDeLaSede) {
+                try {
+                    $facultadDeLaSede = \App\Models\Facultad::create([
+                        'id_facultad' => $sedeActual->id_sede . '_FAC',
+                        'nombre_facultad' => 'Facultad de ' . $sedeActual->nombre_sede,
+                        'id_sede' => $sedeActual->id_sede,
+                        'id_universidad' => $sedeActual->id_universidad,
+                    ]);
+                    Log::info('Facultad genérica creada: ' . $facultadDeLaSede->id_facultad);
+                } catch (\Exception $e) {
+                    Log::error('No se pudo crear facultad genérica: ' . $e->getMessage());
+                }
+            }
+            
+            Log::info('Procesando carga masiva para sede: ' . ($nombreSedeActual ?? 'no definida'));
+            Log::info('Sede ID del tenant: ' . ($tenant ? $tenant->sede_id : 'no hay tenant'));
+            Log::info('Nombre de sede en DB: ' . ($sedeActual ? $sedeActual->nombre_sede : 'no encontrada'));
+            Log::info('Facultad de la sede: ' . ($facultadDeLaSede ? $facultadDeLaSede->id_facultad : 'no encontrada'));
+
             foreach ($rows as $index => $row) {
                 if ($index === 0) {
                     continue; // Saltar encabezados
@@ -142,16 +170,59 @@ class DataLoadController extends Controller
                 try {
                     $sede = $row[7];
 
-                    if (strtolower(trim($sede)) !== 'talcahuano') {
+                    // Log de la primera fila para debug
+                    if ($index === 1) {
+                        Log::info('Primera fila - Sede del Excel: "' . $sede . '" (length: ' . strlen($sede) . ')');
+                        Log::info('Comparando con sede actual: "' . ($nombreSedeActual ?? 'null') . '"');
+                        Log::info('Coincide: ' . (strtolower(trim($sede)) === $nombreSedeActual ? 'SI' : 'NO'));
+                    }
+
+                    // Filtrar por sede actual del tenant (dinámico)
+                    if ($nombreSedeActual && strtolower(trim($sede)) !== $nombreSedeActual) {
                         $skippedRows++;
                         continue;
                     }
 
                     $idCarrera = $row[17];
 
-                    if (!Carrera::find($idCarrera)) {
-                        $errors[] = "Fila " . ($index + 1) . ": La carrera con ID " . $idCarrera . " no existe";
-                        continue;
+                    // Durante la inicialización o si la carrera no existe, intentar crearla o usar una genérica
+                    $carrera = Carrera::find($idCarrera);
+                    if (!$carrera) {
+                        // Intentar crear una carrera genérica para esta sede
+                        $nombreCarrera = isset($row[18]) && !empty($row[18]) ? $row[18] : 'Carrera ' . $idCarrera;
+                        
+                        // Necesitamos un área académica genérica para esta facultad
+                        if ($facultadDeLaSede) {
+                            $areaAcademicaGenerica = \App\Models\AreaAcademica::where('id_facultad', $facultadDeLaSede->id_facultad)->first();
+                            
+                            if (!$areaAcademicaGenerica) {
+                                // Crear un área académica genérica para esta facultad
+                                try {
+                                    $areaAcademicaGenerica = \App\Models\AreaAcademica::create([
+                                        'id_area_academica' => $facultadDeLaSede->id_facultad . '_AA',
+                                        'nombre_area_academica' => 'Área Académica de ' . $facultadDeLaSede->nombre_facultad,
+                                        'tipo_area_academica' => 'escuela',
+                                        'id_facultad' => $facultadDeLaSede->id_facultad,
+                                    ]);
+                                    Log::info("Área académica genérica creada: " . $areaAcademicaGenerica->id_area_academica);
+                                } catch (\Exception $e) {
+                                    Log::warning("Error al crear área académica: " . $e->getMessage());
+                                }
+                            }
+                        }
+                        
+                        try {
+                            $carrera = Carrera::create([
+                                'id_carrera' => $idCarrera,
+                                'nombre' => $nombreCarrera,
+                                'id_area_academica' => isset($areaAcademicaGenerica) ? $areaAcademicaGenerica->id_area_academica : null,
+                            ]);
+                            Log::info("Carrera creada automáticamente: " . $idCarrera . " - " . $nombreCarrera);
+                        } catch (\Exception $e) {
+                            $errors[] = "Fila " . ($index + 1) . ": No se pudo crear la carrera " . $idCarrera;
+                            Log::warning("Error al crear carrera " . $idCarrera . ": " . $e->getMessage());
+                            continue;
+                        }
                     }
 
                     $run = $row[11];

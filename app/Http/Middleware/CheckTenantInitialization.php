@@ -25,6 +25,19 @@ class CheckTenantInitialization
      */
     public function handle(Request $request, Closure $next): Response
     {
+        // Verificar primero si la ruta actual está permitida
+        // ESTO DEBE HACERSE ANTES DE VERIFICAR EL TENANT
+        foreach ($this->allowedRoutes as $pattern) {
+            if ($request->routeIs($pattern)) {
+                return $next($request);
+            }
+        }
+
+        // También permitir acceso a rutas sin nombre que empiecen con tenant/initialization
+        if ($request->is('tenant/initialization*')) {
+            return $next($request);
+        }
+
         $tenant = Tenant::current();
         
         // Si no hay tenant, continuar normalmente
@@ -35,13 +48,6 @@ class CheckTenantInitialization
         // Si el tenant ya está inicializado, continuar normalmente
         if ($tenant->is_initialized) {
             return $next($request);
-        }
-
-        // Verificar si la ruta actual está permitida
-        foreach ($this->allowedRoutes as $pattern) {
-            if ($request->routeIs($pattern)) {
-                return $next($request);
-            }
         }
 
         // Redirigir al wizard de inicialización

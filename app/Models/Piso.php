@@ -16,6 +16,7 @@ class Piso extends Model
 
     protected $fillable = [
         'numero_piso',
+        'nombre_piso',
         'id_facultad',
     ];
 
@@ -34,10 +35,10 @@ class Piso extends Model
     }
 
     /**
-     * Accessor para obtener el nombre del piso
+     * Obtener el nombre del piso (si no tiene nombre_piso, generar uno automático)
      */
-    public function getNombrePisoAttribute()
+    public function getDisplayNameAttribute()
     {
-        return 'Piso ' . $this->numero_piso;
+        return $this->nombre_piso ?? 'Piso ' . $this->numero_piso;
     }
 }
