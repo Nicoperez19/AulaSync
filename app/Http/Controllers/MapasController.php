@@ -150,6 +150,12 @@ public function edit($id)
                 ]);
             }
 
+            // Si viene desde el wizard de inicialización, redirigir de vuelta al wizard
+            if ($request->has('redirect_to_init') && $request->redirect_to_init) {
+                return redirect()->route('tenant.initialization.index')
+                    ->with('success', 'Mapa guardado exitosamente.');
+            }
+
             return redirect()->route('mapas.index')
                 ->with('success', 'Mapa guardado exitosamente.');
 

@@ -57,15 +57,23 @@ Route::get('/sedes/redirect/{sede}', [SedeSelectionController::class, 'redirect'
 // ===================================================
 Route::prefix('tenant/initialization')->name('tenant.initialization.')->group(function () {
     Route::get('/', [TenantInitializationController::class, 'index'])->name('index');
+    Route::post('/verify-password', [TenantInitializationController::class, 'verifyPassword'])->name('verify-password');
     Route::post('/store-admin', [TenantInitializationController::class, 'storeAdmin'])->name('store-admin');
+    Route::post('/login-admin', [TenantInitializationController::class, 'loginAdmin'])->name('login-admin');
     Route::post('/store-logo', [TenantInitializationController::class, 'storeLogo'])->name('store-logo');
     Route::post('/confirm-sede', [TenantInitializationController::class, 'confirmSedeInfo'])->name('confirm-sede');
+    Route::post('/upload-bulk', [TenantInitializationController::class, 'uploadBulkData'])->name('upload-bulk');
+    Route::post('/process-bulk', [\App\Http\Controllers\DataLoadController::class, 'upload'])->name('process-bulk');
+    Route::post('/complete-bulk', [TenantInitializationController::class, 'completeBulkLoad'])->name('complete-bulk');
     Route::post('/skip-bulk', [TenantInitializationController::class, 'skipBulkLoad'])->name('skip-bulk');
+    Route::post('/store-periods', [TenantInitializationController::class, 'storeAcademicPeriods'])->name('store-periods');
     Route::post('/skip-periods', [TenantInitializationController::class, 'skipAcademicPeriods'])->name('skip-periods');
     Route::post('/skip-plan', [TenantInitializationController::class, 'skipDigitalPlan'])->name('skip-plan');
     Route::post('/complete', [TenantInitializationController::class, 'complete'])->name('complete');
     Route::get('/success', [TenantInitializationController::class, 'success'])->name('success');
     Route::get('/previous', [TenantInitializationController::class, 'previousStep'])->name('previous');
+    // Pisos - para agregar pisos en el wizard
+    Route::post('/pisos', [PisoController::class, 'store'])->name('pisos.store');
 });
 
 Route::get('/', function () {
@@ -79,7 +87,7 @@ Route::middleware(['extend.execution:180'])->group(function () {
 });
 
 // Dashboard - Solo Administrador y Supervisor
-Route::middleware(['auth', 'permission:dashboard', 'extend.execution:300'])->group(function () {
+Route::middleware(['auth', 'tenant.init', 'permission:dashboard', 'extend.execution:300'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/widget-data', [DashboardController::class, 'getWidgetData'])->name('dashboard.widget-data');
     Route::get('/dashboard/horarios-semana', [DashboardController::class, 'horariosSemana'])->name('dashboard.horarios-semana');
@@ -90,7 +98,7 @@ Route::middleware(['auth', 'permission:dashboard', 'extend.execution:300'])->gro
     Route::get('/dashboard/graficos-ajax', [DashboardController::class, 'obtenerDatosGraficosAjax'])->name('dashboard.graficos-ajax');
 });
 
-Route::middleware(['auth', 'role:Administrador'])->group(function () {
+Route::middleware(['auth', 'tenant.init', 'role:Administrador'])->group(function () {
     Route::get('/user/user_index', [UserController::class, 'index'])->name('users.index');
     Route::post('/user/user_store', [UserController::class, 'store'])->name('users.add');
     Route::delete('/user/user_delete/{run}', [UserController::class, 'destroy'])->name('users.delete');

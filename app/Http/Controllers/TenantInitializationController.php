@@ -29,10 +29,52 @@ class TenantInitializationController extends Controller
             return redirect()->route('login');
         }
 
-        $step = $tenant->initialization_step ?? 1;
+        // El paso 0 es la verificación de contraseña
+        $step = $tenant->initialization_step ?? 0;
         $sede = $tenant->sede;
+        
+        // Verificar si existe un administrador para ESTA sede específica
+        $existingAdmin = null;
+        if ($step === 1 && $sede) {
+            // Buscar administradores cuya facultad pertenezca a esta sede
+            $facultadesDeEstaSede = \App\Models\Facultad::where('id_sede', $sede->id_sede)->pluck('id_facultad');
+            
+            $existingAdmin = User::role('Administrador')
+                ->whereIn('id_facultad', $facultadesDeEstaSede)
+                ->first();
+        }
 
-        return view('tenant.initialization.wizard', compact('tenant', 'sede', 'step'));
+        return view('tenant.initialization.wizard', compact('tenant', 'sede', 'step', 'existingAdmin'));
+    }
+
+    /**
+     * Verificar la contraseña de inicialización (paso 0)
+     */
+    public function verifyPassword(Request $request)
+    {
+        $tenant = Tenant::current();
+        
+        if (!$tenant) {
+            return redirect()->route('sedes.selection');
+        }
+
+        $request->validate([
+            'init_password' => 'required|string',
+        ], [
+            'init_password.required' => 'La contraseña es requerida.',
+        ]);
+
+        $correctPassword = config('multitenancy.init_password', env('TENANT_INIT_PASSWORD', 'aulasync2024'));
+        
+        if ($request->init_password !== $correctPassword) {
+            return redirect()->back()->with('error', 'Contraseña incorrecta. Por favor, intente nuevamente.');
+        }
+
+        // Avanzar al paso 1
+        $tenant->setInitializationStep(1);
+
+        return redirect()->route('tenant.initialization.index')
+            ->with('success', 'Contraseña verificada correctamente.');
     }
 
     /**
@@ -63,12 +105,18 @@ class TenantInitializationController extends Controller
             'password.confirmed' => 'Las contraseñas no coinciden.',
         ]);
 
+        // Obtener la sede actual para asignar la facultad correcta
+        $sede = Sede::find($tenant->sede_id);
+        $facultad = \App\Models\Facultad::where('id_sede', $sede->id_sede)->first();
+
         // Crear el usuario administrador
         $user = User::create([
             'name' => $validated['name'],
             'run' => $validated['run'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
+            'id_facultad' => $facultad ? $facultad->id_facultad : null,
+            'id_universidad' => $facultad ? $facultad->id_universidad : ($sede ? $sede->id_universidad : null),
         ]);
 
         // Asignar rol de administrador
@@ -77,11 +125,70 @@ class TenantInitializationController extends Controller
             $user->assignRole($adminRole);
         }
 
+        // Autenticar al usuario en la sesión para los pasos siguientes
+        \Illuminate\Support\Facades\Auth::login($user);
+
         // Avanzar al siguiente paso
         $tenant->setInitializationStep(2);
 
         return redirect()->route('tenant.initialization.index')
             ->with('success', 'Cuenta de administrador creada exitosamente.');
+    }
+
+    /**
+     * Procesar el paso 1: Login de administrador existente
+     */
+    public function loginAdmin(Request $request)
+    {
+        $tenant = Tenant::current();
+        
+        if (!$tenant) {
+            return redirect()->route('sedes.selection');
+        }
+
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'password' => 'required|string',
+        ], [
+            'email.required' => 'El email es requerido.',
+            'email.email' => 'Ingrese un email válido.',
+            'password.required' => 'La contraseña es requerida.',
+        ]);
+
+        // Verificar credenciales
+        $user = User::where('email', $validated['email'])->first();
+        
+        if (!$user || !Hash::check($validated['password'], $user->password)) {
+            return redirect()->back()
+                ->with('error', 'Credenciales incorrectas. Por favor, intente nuevamente.')
+                ->withInput(['email' => $validated['email']]);
+        }
+
+        // Verificar que sea administrador
+        if (!$user->hasRole('Administrador')) {
+            return redirect()->back()
+                ->with('error', 'Este usuario no tiene permisos de administrador.')
+                ->withInput(['email' => $validated['email']]);
+        }
+
+        // Verificar que el usuario pertenezca a esta sede
+        $sede = Sede::find($tenant->sede_id);
+        $facultadesDeEstaSede = \App\Models\Facultad::where('id_sede', $sede->id_sede)->pluck('id_facultad');
+        
+        if (!$user->id_facultad || !$facultadesDeEstaSede->contains($user->id_facultad)) {
+            return redirect()->back()
+                ->with('error', 'Este administrador no pertenece a esta sede.')
+                ->withInput(['email' => $validated['email']]);
+        }
+
+        // Autenticar al usuario en la sesión para los pasos siguientes
+        \Illuminate\Support\Facades\Auth::login($user);
+
+        // Avanzar al siguiente paso
+        $tenant->setInitializationStep(2);
+
+        return redirect()->route('tenant.initialization.index')
+            ->with('success', 'Sesión de administrador verificada correctamente.');
     }
 
     /**
@@ -144,20 +251,83 @@ class TenantInitializationController extends Controller
 
         $validated = $request->validate([
             'nombre_sede' => 'required|string|max:100',
+            'prefijo_espacios' => 'required|string|max:10',
             'descripcion' => 'nullable|string|max:500',
             'direccion' => 'nullable|string|max:255',
             'telefono' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:100',
+        ], [
+            'prefijo_espacios.required' => 'El prefijo de espacios es requerido.',
+            'prefijo_espacios.max' => 'El prefijo no puede tener más de 10 caracteres.',
         ]);
 
         $sede = $tenant->sede;
-        $sede->update($validated);
+        
+        // Actualizar sede (sin prefijo_espacios que va en tenant)
+        $sedeData = $validated;
+        unset($sedeData['prefijo_espacios']);
+        $sede->update($sedeData);
+        
+        // También actualizar prefijo_sala en sede para compatibilidad
+        $sede->update(['prefijo_sala' => strtoupper($validated['prefijo_espacios'])]);
+        
+        // Actualizar prefijo_espacios en tenant
+        $tenant->update(['prefijo_espacios' => strtoupper($validated['prefijo_espacios'])]);
 
         // Avanzar al siguiente paso
         $tenant->setInitializationStep(4);
 
         return redirect()->route('tenant.initialization.index')
             ->with('success', 'Información de la sede confirmada.');
+    }
+
+    /**
+     * Procesar el paso 4: Carga masiva de datos
+     */
+    public function uploadBulkData(Request $request)
+    {
+        $tenant = Tenant::current();
+        
+        if (!$tenant) {
+            return redirect()->route('sedes.selection');
+        }
+
+        $validated = $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
+            'semestre_selector' => 'required|in:1,2',
+        ], [
+            'file.required' => 'El archivo es requerido.',
+            'file.file' => 'Debe seleccionar un archivo válido.',
+            'file.mimes' => 'El archivo debe ser Excel (.xlsx, .xls) o CSV.',
+            'file.max' => 'El archivo no debe superar los 10MB.',
+            'semestre_selector.required' => 'Debe seleccionar el semestre.',
+            'semestre_selector.in' => 'Seleccione un semestre válido.',
+        ]);
+
+        try {
+            // Redirigir a la ruta de carga masiva existente para procesar
+            // Guardamos el archivo temporalmente y redirigimos
+            $file = $request->file('file');
+            $filename = 'init_' . time() . '_' . $file->getClientOriginalName();
+            $file->storeAs('datos_subidos', $filename, 'public');
+            
+            // Guardar en sesión para el procesamiento posterior
+            session([
+                'init_bulk_file' => $filename,
+                'init_bulk_semestre' => $validated['semestre_selector'],
+            ]);
+            
+            // Avanzar al siguiente paso
+            $tenant->setInitializationStep(5);
+
+            return redirect()->route('tenant.initialization.index')
+                ->with('success', 'Archivo cargado correctamente. Los datos serán procesados en segundo plano.');
+                
+        } catch (\Exception $e) {
+            Log::error('Error en carga masiva durante inicialización: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Error al procesar el archivo: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -176,6 +346,88 @@ class TenantInitializationController extends Controller
 
         return redirect()->route('tenant.initialization.index')
             ->with('info', 'La carga masiva puede realizarse posteriormente desde el Dashboard.');
+    }
+
+    /**
+     * Avanzar después de procesar la carga masiva exitosamente
+     */
+    public function completeBulkLoad(Request $request)
+    {
+        $tenant = Tenant::current();
+        
+        if (!$tenant) {
+            return redirect()->route('sedes.selection');
+        }
+
+        // Avanzar al siguiente paso
+        $tenant->setInitializationStep(5);
+
+        return redirect()->route('tenant.initialization.index')
+            ->with('info', 'La carga masiva puede realizarse posteriormente desde el Dashboard.');
+    }
+
+    /**
+     * Procesar el paso 5: Guardar períodos académicos
+     */
+    public function storeAcademicPeriods(Request $request)
+    {
+        $tenant = Tenant::current();
+        
+        if (!$tenant) {
+            return redirect()->route('sedes.selection');
+        }
+
+        $validated = $request->validate([
+            'periodo1_inicio' => 'required|date',
+            'periodo1_fin' => 'required|date|after:periodo1_inicio',
+            'periodo2_inicio' => 'required|date|after:periodo1_fin',
+            'periodo2_fin' => 'required|date|after:periodo2_inicio',
+        ], [
+            'periodo1_inicio.required' => 'La fecha de inicio del primer semestre es requerida.',
+            'periodo1_fin.required' => 'La fecha de término del primer semestre es requerida.',
+            'periodo1_fin.after' => 'La fecha de término debe ser posterior a la fecha de inicio.',
+            'periodo2_inicio.required' => 'La fecha de inicio del segundo semestre es requerida.',
+            'periodo2_inicio.after' => 'El segundo semestre debe comenzar después del primero.',
+            'periodo2_fin.required' => 'La fecha de término del segundo semestre es requerida.',
+            'periodo2_fin.after' => 'La fecha de término debe ser posterior a la fecha de inicio.',
+        ]);
+
+        $year = date('Y');
+        
+        // Guardar períodos en configuración
+        Configuracion::set(
+            "periodo_1_{$year}_{$tenant->sede_id}",
+            json_encode([
+                'nombre' => "Primer Semestre {$year}",
+                'codigo' => "{$year}-1",
+                'fecha_inicio' => $validated['periodo1_inicio'],
+                'fecha_fin' => $validated['periodo1_fin'],
+            ]),
+            "Configuración del primer semestre {$year}"
+        );
+
+        Configuracion::set(
+            "periodo_2_{$year}_{$tenant->sede_id}",
+            json_encode([
+                'nombre' => "Segundo Semestre {$year}",
+                'codigo' => "{$year}-2",
+                'fecha_inicio' => $validated['periodo2_inicio'],
+                'fecha_fin' => $validated['periodo2_fin'],
+            ]),
+            "Configuración del segundo semestre {$year}"
+        );
+
+        Configuracion::set(
+            "periodos_academicos_definidos_{$tenant->sede_id}",
+            'true',
+            "Indica si los períodos académicos están definidos para la sede"
+        );
+
+        // Avanzar al siguiente paso
+        $tenant->setInitializationStep(6);
+
+        return redirect()->route('tenant.initialization.index')
+            ->with('success', 'Períodos académicos configurados correctamente.');
     }
 
     /**
