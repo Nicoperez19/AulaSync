@@ -90,6 +90,7 @@ Route::middleware(['auth', 'role:Administrador|Supervisor'])->group(function () 
 Route::middleware(['auth', 'permission:reportes'])->group(function () {
     Route::get('/clases-no-realizadas', [\App\Http\Controllers\ClasesNoRealizadasController::class, 'index'])->name('clases-no-realizadas.index');
     Route::get('/clases-no-realizadas/export-excel', [\App\Http\Controllers\ClasesNoRealizadasController::class, 'exportExcel'])->name('clases-no-realizadas.export-excel');
+    Route::get('/clases-no-realizadas/export-all-excel', [\App\Http\Controllers\ClasesNoRealizadasController::class, 'exportAllExcel'])->name('clases-no-realizadas.export-all-excel');
 });
 
 // Clases Temporales - Administrador y Supervisor
