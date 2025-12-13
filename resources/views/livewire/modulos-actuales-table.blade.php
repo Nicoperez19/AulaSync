@@ -331,7 +331,7 @@
                                                     </div>
                                                 </div>
                                             @else
-                                                <span class="text-gray-500 text-sm italic">Uso Libre</span>
+                                                <span class="text-gray-500 text-sm italic">Sin información</span>
                                             @endif
                                         </td>
 
