@@ -160,7 +160,7 @@ Route::group(['middleware' => ['permission:mantenedor de permisos']], function (
 
 // Ausencias de Profesores
 Route::group(['middleware' => ['auth', 'permission:gestionar licencias profesores']], function () {
-    Route::get('/ausencias-profesores', [LicenciaProfesorController::class, 'index'])->name('licencias.index');
+    Route::get('/ausencias-profesores', [LicenciaProfesorController::class, 'index'])->name('ausencias-profesores');
 });
 
 // Recuperación de Clases

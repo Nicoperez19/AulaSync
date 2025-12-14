@@ -1929,7 +1929,6 @@
                         pointHoverRadius: 7,
                         borderWidth: 2.5
                     });
-                    });
                 });
 
                 // Datasets para vista Por Sala - Usar los mismos colores que en "Individual" de Reservas por Sala
