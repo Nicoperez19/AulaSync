@@ -156,7 +156,7 @@
             @endhasanyrole
 
             @can('mantenedor de feriados')
-                <x-sidebar.sublink title="Días Feriados" href="{{ route('dias-feriados.index') }}"
+                <x-sidebar.sublink title="Calendario Académico" href="{{ route('dias-feriados.index') }}"
                     :isActive="request()->routeIs('dias-feriados.*')" />
             @endcan
 

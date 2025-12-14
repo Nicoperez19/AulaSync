@@ -289,7 +289,7 @@
 
         // Mostrar notificación del navegador si está permitido
         if (Notification.permission === 'granted') {
-            new Notification('AulaSync - Notificación', {
+            new Notification('Gestor de Aulas IT - Notificación', {
                 body: mensaje,
                 icon: '/favicon.ico',
                 tag: 'modulo-notification'

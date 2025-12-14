@@ -192,7 +192,7 @@
                 @endif
                 <div class="title">
                     <h1>Horario del Espacio</h1>
-                    <p>Sistema AulaSync - Instituto Tecnológico</p>
+                    <p>Gestor de Aulas IT - Instituto Tecnológico</p>
                 </div>
             </div>
             <div class="meta">
@@ -321,7 +321,7 @@
         </div>
 
         <div class="footer">
-            <div>Este reporte fue generado automáticamente por el Sistema AulaSync</div>
+            <div>Este reporte fue generado automáticamente por el Gestor de Aulas IT</div>
             <div>Página 1 de 1</div>
         </div>
     </div>
