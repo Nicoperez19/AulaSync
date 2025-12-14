@@ -1812,7 +1812,7 @@
                             tooltip: {
                                 callbacks: {
                                     label: function(context) {
-                                        return context.dataset.label + ': ' + context.parsed.y + ' reservas';
+                                        return context.dataset.label + ': ' + Math.round(context.parsed.y) + ' reservas';
                                     }
                                 }
                             },
@@ -1821,7 +1821,16 @@
                         scales: {
                             y: {
                                 beginAtZero: true,
-                                ticks: { stepSize: 1 }
+                                ticks: { 
+                                    stepSize: 1,
+                                    precision: 0,
+                                    callback: function(value) {
+                                        if (Number.isInteger(value)) {
+                                            return value;
+                                        }
+                                        return null;
+                                    }
+                                }
                             }
                         }
                     }
@@ -2495,12 +2504,39 @@
             const labels = data.salasUtilizadasPorDia.labels || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
             window.graficoSalasIndividuales.data.labels = labels;
             
+            // Paleta de colores para reconstruir datasets
+            const colores = [
+                'rgb(59, 130, 246)', 'rgb(239, 68, 68)', 'rgb(34, 197, 94)', 'rgb(168, 85, 247)',
+                'rgb(245, 158, 11)', 'rgb(6, 182, 212)', 'rgb(236, 72, 153)', 'rgb(249, 115, 22)',
+                'rgb(139, 92, 246)', 'rgb(107, 114, 128)', 'rgb(244, 63, 94)', 'rgb(251, 146, 60)'
+            ];
+            
             if (data.salasUtilizadasPorDia.salas) {
+                // Reconstruir todos los datasets para manejar rangos mayores a una semana
+                const newDatasets = [];
                 data.salasUtilizadasPorDia.salas.forEach((sala, index) => {
-                    if (window.graficoSalasIndividuales.data.datasets[index]) {
-                        window.graficoSalasIndividuales.data.datasets[index].data = sala.datos;
-                    }
+                    const color = colores[index % colores.length];
+                    newDatasets.push({
+                        label: 'Sala: ' + sala.sala,
+                        data: sala.datos,
+                        borderColor: color,
+                        backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.08)'),
+                        fill: false,
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: color,
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        borderWidth: 2.5
+                    });
                 });
+                window.graficoSalasIndividuales.data.datasets = newDatasets;
+                
+                // Actualizar también el cache de datasets
+                if (window.salasDatasets) {
+                    window.salasDatasets.individual = newDatasets;
+                }
             }
             window.graficoSalasIndividuales.update();
             

@@ -1266,9 +1266,12 @@ class ModulosActualesTable extends Component
                             'estado' => $estado ?? 'Disponible',
                             'tipo_espacio' => $espacio->tipo_espacio ?? 'N/A',
                             'puestos_disponibles' => $espacio->puestos_disponibles ?? 0,
-                            'capacidad_maxima' => (($tieneClase ?? false) && isset($datosClase['inscritos']) && $datosClase['inscritos'] > 0)
+                            // Total de inscritos del curso (prioridad: clase planificada > reserva profesor)
+                            'inscritos' => (($tieneClase ?? false) && isset($datosClase['inscritos']) && $datosClase['inscritos'] > 0)
                                 ? $datosClase['inscritos']
-                                : (($tieneReservaProfesor ?? false) && !empty($datosProfesor['inscritos']) ? $datosProfesor['inscritos'] : ($espacio->capacidad_maxima ?? 0)),
+                                : (($tieneReservaProfesor ?? false) && !empty($datosProfesor['inscritos']) ? $datosProfesor['inscritos'] : 0),
+                            // Capacidad máxima de la sala (siempre desde el espacio)
+                            'capacidad_maxima' => $espacio->capacidad_maxima ?? 0,
                             // Mostrar información de clase siempre que exista, independientemente del estado
                             'tiene_clase' => $tieneClase ?? false,
                             'tiene_reserva_solicitante' => $tieneReservaSolicitante ?? false,
@@ -1310,6 +1313,7 @@ class ModulosActualesTable extends Component
                             'estado' => 'Disponible',
                             'tipo_espacio' => $espacio->tipo_espacio ?? 'N/A',
                             'puestos_disponibles' => $espacio->puestos_disponibles ?? 0,
+                            'inscritos' => 0,
                             'capacidad_maxima' => $espacio->capacidad_maxima ?? 0,
                             'tiene_clase' => false,
                             'tiene_reserva_solicitante' => false,

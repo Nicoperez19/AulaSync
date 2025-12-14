@@ -17,7 +17,7 @@
                 </div>
             </div>
 
-            <!-- Tabs Feriados/Períodos/Cursos de Verano (solo en vista tabla) -->
+            <!-- Tabs Feriados/Períodos/Período de Verano (solo en vista tabla) -->
             @if($vistaActiva === 'tabla')
             <div class="flex items-center gap-2">
                 <div class="inline-flex rounded-lg border border-gray-300 bg-white p-1">
@@ -31,7 +31,7 @@
                     </button>
                     <button wire:click="cambiarTab('cursos_verano')"
                         class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tabActivo === 'cursos_verano' ? 'bg-orange-500 text-white' : 'text-gray-600 hover:bg-gray-100' }}">
-                        <i class="fa-solid fa-sun mr-1"></i> Cursos de Verano
+                        <i class="fa-solid fa-sun mr-1"></i> Período de Verano
                     </button>
                 </div>
             </div>
@@ -352,19 +352,19 @@
         </div>
         @endif
 
-        <!-- TAB CURSOS DE VERANO -->
+        <!-- TAB PERÍODO DE VERANO -->
         @if($tabActivo === 'cursos_verano')
         <div class="p-4 bg-gray-50">
             <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <h3 class="text-lg font-semibold text-gray-700">Cursos de Verano</h3>
-                    <p class="text-sm text-gray-500">Gestione los períodos de cursos de verano de forma independiente</p>
+                    <h3 class="text-lg font-semibold text-gray-700">Período de Verano</h3>
+                    <p class="text-sm text-gray-500">Gestione los períodos de verano de forma independiente</p>
                 </div>
 
                 <button wire:click="openModalAgregarVerano"
                     class="px-4 py-2 text-white transition-colors rounded-lg bg-orange-500 hover:bg-orange-600">
                     <i class="mr-2 fa-solid fa-plus"></i>
-                    Agregar Cursos Verano
+                    Agregar Período Verano
                 </button>
             </div>
         </div>
@@ -402,7 +402,7 @@
                                     <i class="fa-solid fa-edit"></i>
                                 </button>
                                 <button wire:click="deleteVerano({{ $curso->id_curso_verano }})"
-                                    wire:confirm="¿Está seguro de eliminar este curso de verano?"
+                                    wire:confirm="¿Está seguro de eliminar este período de verano?"
                                     class="text-red-600 hover:text-red-900" title="Eliminar">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
@@ -411,7 +411,7 @@
                     @empty
                         <tr>
                             <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                No hay cursos de verano configurados
+                                No hay períodos de verano configurados
                             </td>
                         </tr>
                     @endforelse
@@ -589,10 +589,16 @@
                             </div>
                         </div>
 
-                        <div class="border-t pt-6 flex items-center">
-                            <input type="checkbox" wire:model="periodo_activo" id="periodo_activo"
-                                class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-2 focus:ring-green-500">
-                            <label for="periodo_activo" class="ml-2 text-sm font-medium text-gray-700">Períodos Activos</label>
+                        <div class="border-t pt-6">
+                            <div class="flex items-center">
+                                <input type="checkbox" wire:model="periodo_activo" id="periodo_activo"
+                                    class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-2 focus:ring-green-500">
+                                <label for="periodo_activo" class="ml-2 text-sm font-medium text-gray-700">Activar estos períodos</label>
+                            </div>
+                            <p class="mt-1 text-xs text-gray-500">
+                                <i class="fa-solid fa-info-circle mr-1"></i>
+                                Los períodos activos estarán habilitados para su uso en el sistema. Se recomienda mantenerlos activos si las fechas corresponden al calendario actual.
+                            </p>
                         </div>
                     </div>
 
@@ -611,15 +617,15 @@
         </div>
     @endif
 
-    <!-- Modal Cursos de Verano -->
-    <!-- Modal Crear/Editar Cursos de Verano (Independiente) -->
+    <!-- Modal Período de Verano -->
+    <!-- Modal Crear/Editar Período de Verano (Independiente) -->
     @if ($showModalVerano)
         <div class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-gray-900 bg-opacity-50">
             <div class="relative w-full max-w-2xl p-4 mx-auto bg-white rounded-lg shadow-xl">
                 <div class="flex items-center justify-between p-4 border-b bg-orange-50">
                     <h3 class="text-lg font-semibold text-orange-800">
                         <i class="fa-solid fa-sun mr-2"></i>
-                        {{ $editModeVerano ? 'Editar Curso de Verano' : 'Nuevo Curso de Verano' }}
+                        {{ $editModeVerano ? 'Editar Período de Verano' : 'Nuevo Período de Verano' }}
                     </h3>
                     <button wire:click="closeModalVerano" class="text-gray-400 hover:text-gray-600">
                         <i class="fa-solid fa-times"></i>
@@ -630,7 +636,7 @@
                     <div class="p-6 space-y-4">
                         <p class="text-sm text-gray-600 bg-blue-50 border border-blue-200 rounded-lg p-3">
                             <i class="fa-solid fa-info-circle mr-2"></i>
-                            Los cursos de verano son completamente independientes de los períodos académicos.
+                            Los períodos de verano son completamente independientes de los períodos académicos regulares.
                         </p>
 
                         <div>
@@ -666,7 +672,7 @@
                             <label class="flex items-center gap-3">
                                 <input type="checkbox" wire:model="verano_activo"
                                     class="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500">
-                                <span class="text-sm font-medium text-gray-700">Activar este curso de verano</span>
+                                <span class="text-sm font-medium text-gray-700">Activar este período de verano</span>
                             </label>
                         </div>
                     </div>
@@ -674,7 +680,7 @@
                     <div class="flex justify-between gap-2 p-4 border-t">
                         @if($editModeVerano)
                         <button type="button" wire:click="deleteVerano({{ $cursoVeranoId }})"
-                            wire:confirm="¿Está seguro de eliminar este curso?"
+                            wire:confirm="¿Está seguro de eliminar este período de verano?"
                             class="px-4 py-2 text-red-600 bg-red-50 rounded-lg hover:bg-red-100">
                             <i class="fa-solid fa-trash mr-1"></i>Eliminar
                         </button>
@@ -688,7 +694,7 @@
                             </button>
                             <button type="submit"
                                 class="px-4 py-2 text-white rounded-lg bg-orange-500 hover:bg-orange-600">
-                                {{ $editModeVerano ? 'Actualizar' : 'Crear' }} Curso de Verano
+                                {{ $editModeVerano ? 'Actualizar' : 'Crear' }} Período de Verano
                             </button>
                         </div>
                     </div>
