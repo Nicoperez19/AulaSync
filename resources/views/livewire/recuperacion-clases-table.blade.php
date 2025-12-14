@@ -82,7 +82,7 @@
                     class="px-4 py-2 text-white transition-colors rounded bg-light-cloud-blue hover:bg-cloud-blue">
                     <i class="mr-2 fa-solid fa-user-clock"></i>Ausencias de Profesores
                 </a>
-                <a href="{{ route('clases-no-registradas') }}"
+                <a href="{{ route('clases-no-realizadas.index') }}"
                     class="px-4 py-2 text-white transition-colors bg-orange-500 rounded hover:bg-orange-600">
                     <i class="mr-2 fa-solid fa-exclamation-triangle"></i>Clases No Registradas
                 </a>
@@ -235,7 +235,7 @@
                                         class="px-4 py-2 text-white transition-colors rounded bg-light-cloud-blue hover:bg-cloud-blue">
                                         <i class="mr-2 fa-solid fa-user-clock"></i>Ir a Ausencia de Profesores
                                     </a>
-                                    <a href="{{ route('clases-no-registradas') }}"
+                                    <a href="{{ route('clases-no-realizadas.index') }}"
                                         class="px-4 py-2 text-white transition-colors bg-orange-500 rounded hover:bg-orange-600">
                                         <i class="mr-2 fa-solid fa-exclamation-triangle"></i>Ir a Clases No Registradas
                                     </a>

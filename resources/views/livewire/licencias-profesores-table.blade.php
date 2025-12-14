@@ -165,7 +165,7 @@
             <div class="relative w-full max-w-2xl p-6 mx-4 bg-white rounded-lg shadow-xl">
                 <div class="flex items-center justify-between mb-4">
                     <h3 class="text-xl font-bold">
-                        {{ $editMode ? 'Editar Licencia' : 'Nueva Licencia' }}
+                        {{ $editMode ? 'Editar Ausencia' : 'Nueva Ausencia' }}
                     </h3>
                     <button wire:click="closeModal" class="text-gray-400 hover:text-gray-600">
                         <i class="fa-solid fa-times"></i>
@@ -178,18 +178,27 @@
                         <div class="md:col-span-2">
                             <label class="block mb-2 text-sm font-medium text-gray-700">Profesor *</label>
                             <div class="relative">
-                                <input type="text" 
-                                    wire:model.live="run_profesor" 
-                                    placeholder="Buscar por RUT del profesor..."
-                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-cloud-blue focus:border-transparent">
-                                <i class="absolute text-gray-400 transform -translate-y-1/2 fa-solid fa-search right-3 top-1/2"></i>
+                                @if ($profesorNombre)
+                                    <div class="flex items-center justify-between w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                                        <span>{{ $profesorNombre }} ({{ $run_profesor }})</span>
+                                        <button type="button" wire:click="$set('profesorNombre', '')" class="text-gray-400 hover:text-gray-600">
+                                            <i class="fa-solid fa-times"></i>
+                                        </button>
+                                    </div>
+                                @else
+                                    <input type="text" 
+                                        wire:model.live="run_profesor" 
+                                        placeholder="Buscar por nombre o RUT del profesor..."
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-cloud-blue focus:border-transparent">
+                                    <i class="absolute text-gray-400 transform -translate-y-1/2 fa-solid fa-search right-3 top-1/2"></i>
+                                @endif
                             </div>
 
                             @if ($this->profesoresFiltrados->count() > 0)
-                                <div class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
+                                <div class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                                     @foreach ($this->profesoresFiltrados as $profesor)
                                         <button type="button"
-                                            wire:click="$set('run_profesor', '{{ $profesor->run_profesor }}')"
+                                            wire:click="selectProfesor('{{ $profesor->run_profesor }}', '{{ $profesor->name }}')"
                                             class="block w-full px-4 py-2 text-left hover:bg-gray-100">
                                             {{ $profesor->name }} ({{ $profesor->run_profesor }})
                                         </button>
