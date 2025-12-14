@@ -29,11 +29,13 @@
                 <i class="fas fa-file-pdf mr-2"></i>
                 Exportar Semanal
             </button>
+            {{-- Botón Exportar Mensual temporalmente oculto
             <button wire:click="exportarPDFMensual" 
                     class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
                 <i class="fas fa-file-pdf mr-2"></i>
                 Exportar Mensual
             </button>
+            --}}
         </div>
     </div>
 
