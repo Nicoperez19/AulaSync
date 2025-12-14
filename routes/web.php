@@ -158,9 +158,9 @@ Route::group(['middleware' => ['permission:mantenedor de permisos']], function (
     Route::post('/permission/permission_store', [PermisionController::class, 'store'])->name('permission.add');
 });
 
-// Licencias de Profesores
+// Ausencias de Profesores
 Route::group(['middleware' => ['auth', 'permission:gestionar licencias profesores']], function () {
-    Route::get('/licencias-profesores', [LicenciaProfesorController::class, 'index'])->name('licencias.index');
+    Route::get('/ausencias-profesores', [LicenciaProfesorController::class, 'index'])->name('licencias.index');
 });
 
 // Recuperación de Clases
