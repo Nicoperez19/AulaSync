@@ -71,10 +71,10 @@
                                 <i class="fas fa-graduation-cap mr-2"></i>Carrera
                             </th>
                             <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300">
-                                <i class="fas fa-users mr-2"></i>Asistencia
+                                <i class="fas fa-users mr-2"></i>Inscritos
                             </th>
                             <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300">
-                                <i class="fas fa-door-open mr-2"></i>Cap Max
+                                <i class="fas fa-door-open mr-2"></i>Cap. Sala
                             </th>
                             <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider">
                                 <i class="fas fa-circle-info mr-2"></i>Status
@@ -304,13 +304,12 @@
                                             @endif
                                         </td>
 
-                                        <!-- Columna 5: Capacidad/Asistencia -->
+                                        <!-- Columna 5: Inscritos del Curso -->
                                         <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
                                             @php
-                                                $capacidadMax = $espacio['capacidad_maxima'] ?? 0;
-                                                $puestosDisponibles = $espacio['puestos_disponibles'] ?? 0;
-                                                $capacidadUtilizada = max(0, $capacidadMax - $puestosDisponibles);
-                                                $porcentaje = $capacidadMax > 0 ? round(($capacidadUtilizada / $capacidadMax) * 100) : 0;
+                                                $inscritos = $espacio['inscritos'] ?? 0;
+                                                $capacidadSala = $espacio['capacidad_maxima'] ?? 0;
+                                                $porcentaje = $capacidadSala > 0 ? round(($inscritos / $capacidadSala) * 100) : 0;
 
                                                 // Determinar color según ocupación
                                                 $colorClase = '';
@@ -325,26 +324,28 @@
                                                 }
                                             @endphp
 
-                                            @if($capacidadMax > 0)
+                                            @if($inscritos > 0)
                                                 <div class="flex flex-col gap-1">
                                                     <div class="{{ $colorClase }} text-sm">
-                                                        {{ $capacidadUtilizada }}/{{ $capacidadMax }}
+                                                        {{ $inscritos }}
                                                     </div>
+                                                    @if($capacidadSala > 0)
                                                     <div class="w-full bg-gray-200 rounded-full h-2">
                                                         <div class="h-2 rounded-full {{ $porcentaje >= 90 ? 'bg-red-600' : ($porcentaje >= 70 ? 'bg-orange-500' : ($porcentaje >= 50 ? 'bg-yellow-500' : 'bg-green-500')) }}"
-                                                             style="width: {{ $porcentaje }}%"></div>
+                                                             style="width: {{ min($porcentaje, 100) }}%"></div>
                                                     </div>
+                                                    @endif
                                                 </div>
                                             @else
-                                                <span class="text-gray-500 text-sm italic">Sin información</span>
+                                                <span class="text-gray-500 text-sm italic">-</span>
                                             @endif
                                         </td>
 
-                                        <!-- Columna 6: Capacidad Máxima -->
+                                        <!-- Columna 6: Capacidad de la Sala -->
                                         <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
-                                            @if($capacidadMax > 0)
+                                            @if($capacidadSala > 0)
                                                 <div class="text-center font-semibold text-gray-800 text-sm">
-                                                    {{ $capacidadMax }}
+                                                    {{ $capacidadSala }}
                                                 </div>
                                             @else
                                                 <span class="text-gray-400 text-sm italic">-</span>

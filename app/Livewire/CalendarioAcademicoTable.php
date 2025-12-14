@@ -426,7 +426,7 @@ class CalendarioAcademicoTable extends Component
                     'fecha_fin' => $this->verano_fin,
                     'activo' => $this->verano_activo,
                 ]);
-                session()->flash('success', 'Curso de verano actualizado correctamente');
+                session()->flash('success', 'Período de verano actualizado correctamente');
             } else {
                 CursoVerano::create([
                     'anio' => $this->verano_anio,
@@ -435,7 +435,7 @@ class CalendarioAcademicoTable extends Component
                     'activo' => $this->verano_activo,
                     'created_by' => auth()->id(),
                 ]);
-                session()->flash('success', 'Curso de verano creado correctamente');
+                session()->flash('success', 'Período de verano creado correctamente');
             }
             $this->resetModalVerano();
             $this->closeModalVerano();
@@ -448,7 +448,7 @@ class CalendarioAcademicoTable extends Component
     {
         try {
             CursoVerano::destroy($id);
-            session()->flash('success', 'Curso de verano eliminado correctamente');
+            session()->flash('success', 'Período de verano eliminado correctamente');
         } catch (\Exception $e) {
             session()->flash('error', 'Error al eliminar: ' . $e->getMessage());
         }
