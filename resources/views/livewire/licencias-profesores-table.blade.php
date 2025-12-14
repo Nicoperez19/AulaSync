@@ -185,9 +185,9 @@
                                 <i class="absolute text-gray-400 transform -translate-y-1/2 fa-solid fa-search right-3 top-1/2"></i>
                             </div>
 
-                            @if ($profesoresFiltrados->count() > 0)
+                            @if ($this->profesoresFiltrados->count() > 0)
                                 <div class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
-                                    @foreach ($profesoresFiltrados as $profesor)
+                                    @foreach ($this->profesoresFiltrados as $profesor)
                                         <button type="button"
                                             wire:click="$set('run_profesor', '{{ $profesor->run_profesor }}')"
                                             class="block w-full px-4 py-2 text-left hover:bg-gray-100">

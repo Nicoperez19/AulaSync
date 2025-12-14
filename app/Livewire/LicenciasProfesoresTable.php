@@ -53,6 +53,18 @@ class LicenciasProfesoresTable extends Component
         $this->resetPage();
     }
 
+    public function getProfesoresFiltradosProperty()
+    {
+        if (empty($this->run_profesor) || strlen($this->run_profesor) < 2) {
+            return collect();
+        }
+
+        return Profesor::where('run_profesor', 'like', '%' . $this->run_profesor . '%')
+            ->orWhere('name', 'like', '%' . $this->run_profesor . '%')
+            ->limit(5)
+            ->get();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {

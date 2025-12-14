@@ -1763,7 +1763,7 @@
                         label: 'Sala: ' + sala.sala,
                         data: sala.datos,
                         borderColor: color,
-                        backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.08)'),
+                        backgroundColor: 'transparent',
                         fill: false,
                         tension: 0.4,
                         pointRadius: 5,
@@ -1786,7 +1786,7 @@
                             label: 'Tipo: ' + tipo.tipo,
                             data: tipo.datos,
                             borderColor: color,
-                            backgroundColor: color.replace('rgb', 'rgba').replace(')', ', 0.08)'),
+                            backgroundColor: 'transparent',
                             fill: false,
                             tension: 0.4,
                             pointRadius: 5,
@@ -1919,7 +1919,7 @@
                         label: tipo.tipo + ' (%)',
                         data: tipo.datos,
                         borderColor: colorBase,
-                        backgroundColor: 'rgba(0, 0, 0, 0)',
+                        backgroundColor: 'transparent',
                         fill: false,
                         tension: 0.4,
                         pointBackgroundColor: colorBase,
@@ -1928,6 +1928,7 @@
                         pointRadius: 5,
                         pointHoverRadius: 7,
                         borderWidth: 2.5
+                    });
                     });
                 });
 
@@ -1960,7 +1961,7 @@
                         label: sala.sala,
                         data: sala.datos,
                         borderColor: colorBase,
-                        backgroundColor: 'rgba(0, 0, 0, 0)',
+                        backgroundColor: 'transparent',
                         fill: false,
                         tension: 0.4,
                         pointBackgroundColor: colorBase,
@@ -2188,16 +2189,7 @@
     
     // Toggle de Salas: Individual vs Por Tipo
     document.addEventListener('salasViewModeChange', function(e) {
-        if (window.graficoSalasIndividuales && window.salasDatasets) {
-            const modo = e.detail.modo;
-            window.graficoSalasIndividuales.data.datasets = window.salasDatasets[modo];
-            window.graficoSalasIndividuales.update();
-        }
-    });
-
-    // Toggle de Ocupación: Total vs Por Jornada vs Por Tipo
-    document.addEventListener('ocupacionViewModeChange', function(e) {
-        if (window.graficoOcupacionPerDia) {
+        if (window.graficoSalasIndividuales) {
             const modo = e.detail.modo;
             
             // Obtener las fechas del rango actual seleccionado
@@ -2205,16 +2197,19 @@
             const fechaFin = rangoFechaFin || document.getElementById('fecha-fin-graficos')?.value || '';
             
             // Crear una clave única para el cache basada en el modo y las fechas
-            const cacheKey = `${modo}_${fechaInicio}_${fechaFin}`;
+            const cacheKey = `salas_${modo}_${fechaInicio}_${fechaFin}`;
             
             // Si ya tenemos los datos en cache para este rango y modo, usarlos
-            if (window.ocupacionDatasets && window.ocupacionDatasets[cacheKey]) {
-                window.graficoOcupacionPerDia.data.datasets = window.ocupacionDatasets[cacheKey];
-                window.graficoOcupacionPerDia.options.plugins.legend.display = (modo === 'turno' || modo === 'tipo');
-                window.graficoOcupacionPerDia.update();
-            } else if (modo === 'turno' || modo === 'tipo') {
+            if (window.salasDatasets && window.salasDatasets[cacheKey]) {
+                window.graficoSalasIndividuales.data.datasets = window.salasDatasets[cacheKey];
+                window.graficoSalasIndividuales.update();
+            } else if (window.salasDatasets && window.salasDatasets[modo] && !rangoFechaInicio) {
+                // Usar datos iniciales si no hay rango personalizado
+                window.graficoSalasIndividuales.data.datasets = window.salasDatasets[modo];
+                window.graficoSalasIndividuales.update();
+            } else {
                 // Cargar datos via AJAX incluyendo las fechas del rango
-                const tipoData = modo === 'turno' ? 'ocupacion_turno' : 'ocupacion_tipo';
+                const tipoData = modo === 'individual' ? 'salas_individual' : 'salas_tipo';
                 const facultad = new URLSearchParams(window.location.search).get('facultad') || '';
                 const piso = new URLSearchParams(window.location.search).get('piso') || '';
                 
@@ -2228,83 +2223,263 @@
                     .then(data => {
                         // Actualizar las labels del gráfico si vienen en la respuesta
                         if (data.labels) {
-                            window.graficoOcupacionPerDia.data.labels = data.labels;
+                            window.graficoSalasIndividuales.data.labels = data.labels;
                         }
+                        
+                        const colores = [
+                            'rgb(59, 130, 246)',    // Azul vibrante
+                            'rgb(239, 68, 68)',     // Rojo coral
+                            'rgb(34, 197, 94)',     // Verde esmeralda
+                            'rgb(168, 85, 247)',    // Púrpura profundo
+                            'rgb(245, 158, 11)',    // Ámbar dorado
+                            'rgb(6, 182, 212)',     // Turquesa brillante
+                            'rgb(236, 72, 153)',    // Rosa vibrante
+                            'rgb(249, 115, 22)',    // Naranja quemado
+                            'rgb(139, 92, 246)',    // Violeta profundo
+                            'rgb(34, 197, 94)',     // Verde Lima
+                            'rgb(244, 63, 94)',     // Fresa
+                            'rgb(251, 146, 60)',    // Naranja suave
+                            'rgb(107, 114, 128)',   // Gris pizarra
+                        ];
                         
                         let newDatasets = [];
                         
-                        if (modo === 'turno') {
-                            newDatasets = [
-                                {
-                                    label: 'Diurno (%)',
-                                    data: data.datos.diurno,
-                                    borderColor: 'rgba(251, 191, 36, 1)',
-                                    backgroundColor: 'rgba(251, 191, 36, 0.2)',
-                                    fill: true,
-                                    tension: 0.4,
-                                    pointBackgroundColor: 'rgba(251, 191, 36, 1)',
-                                    pointBorderColor: '#fff',
-                                    pointBorderWidth: 2,
-                                    pointRadius: 5,
-                                    pointHoverRadius: 7
-                                },
-                                {
-                                    label: 'Vespertino (%)',
-                                    data: data.datos.vespertino,
-                                    borderColor: 'rgba(168, 85, 247, 1)',
-                                    backgroundColor: 'rgba(168, 85, 247, 0.2)',
-                                    fill: true,
-                                    tension: 0.4,
-                                    pointBackgroundColor: 'rgba(168, 85, 247, 1)',
-                                    pointBorderColor: '#fff',
-                                    pointBorderWidth: 2,
-                                    pointRadius: 5,
-                                    pointHoverRadius: 7
-                                }
-                            ];
-                            window.graficoOcupacionPerDia.data.datasets = newDatasets;
-                        } else if (modo === 'tipo') {
-                            const coloresTipo = [
-                                'rgba(59, 130, 246, 1)',
-                                'rgba(239, 68, 68, 1)',
-                                'rgba(34, 197, 94, 1)',
-                                'rgba(168, 85, 247, 1)',
-                                'rgba(245, 158, 11, 1)',
-                                'rgba(6, 182, 212, 1)',
-                                'rgba(236, 72, 153, 1)',
-                                'rgba(249, 115, 22, 1)'
-                            ];
-                            data.tipos.forEach((tipo, index) => {
-                                const colorBase = coloresTipo[index % coloresTipo.length];
+                        if (modo === 'individual' && data.salas) {
+                            data.salas.forEach((sala, index) => {
+                                const color = colores[index % colores.length];
                                 newDatasets.push({
-                                    label: tipo.tipo + ' (%)',
-                                    data: tipo.datos,
-                                    borderColor: colorBase,
-                                    backgroundColor: colorBase.replace(')', ', 0.15)'),
-                                    fill: true,
+                                    label: 'Sala: ' + sala.sala,
+                                    data: sala.datos,
+                                    borderColor: color,
+                                    backgroundColor: 'transparent',
+                                    fill: false,
                                     tension: 0.4,
-                                    pointBackgroundColor: colorBase,
-                                    pointBorderColor: '#fff',
-                                    pointBorderWidth: 2,
                                     pointRadius: 5,
                                     pointHoverRadius: 7,
+                                    pointBackgroundColor: color,
+                                    pointBorderColor: '#fff',
+                                    pointBorderWidth: 2,
                                     borderWidth: 2.5
                                 });
                             });
-                            window.graficoOcupacionPerDia.data.datasets = newDatasets;
+                        } else if (modo === 'tipo' && data.tipos) {
+                            data.tipos.forEach((tipo, index) => {
+                                const color = colores[index % colores.length];
+                                newDatasets.push({
+                                    label: 'Tipo: ' + tipo.tipo,
+                                    data: tipo.datos,
+                                    borderColor: color,
+                                    backgroundColor: 'transparent',
+                                    fill: false,
+                                    tension: 0.4,
+                                    pointRadius: 5,
+                                    pointHoverRadius: 7,
+                                    pointBackgroundColor: color,
+                                    pointBorderColor: '#fff',
+                                    pointBorderWidth: 2,
+                                    borderWidth: 2.5
+                                });
+                            });
                         }
                         
                         // Guardar en cache con la clave única
-                        if (!window.ocupacionDatasets) {
-                            window.ocupacionDatasets = {};
+                        if (!window.salasDatasets) {
+                            window.salasDatasets = {};
                         }
-                        window.ocupacionDatasets[cacheKey] = newDatasets;
+                        window.salasDatasets[cacheKey] = newDatasets;
                         
-                        window.graficoOcupacionPerDia.options.plugins.legend.display = true;
-                        window.graficoOcupacionPerDia.update();
+                        window.graficoSalasIndividuales.data.datasets = newDatasets;
+                        window.graficoSalasIndividuales.update();
                     })
-                    .catch(error => console.error('Error cargando datos:', error));
+                    .catch(error => console.error('Error cargando datos de salas:', error));
             }
+        }
+    });
+
+    // Toggle de Ocupación: Total vs Por Jornada vs Por Tipo vs Por Sala
+    document.addEventListener('ocupacionViewModeChange', function(e) {
+        if (window.graficoOcupacionPerDia) {
+            const modo = e.detail.modo;
+            
+            // Obtener las fechas del rango actual seleccionado
+            const fechaInicio = rangoFechaInicio || document.getElementById('fecha-inicio-graficos')?.value || '';
+            const fechaFin = rangoFechaFin || document.getElementById('fecha-fin-graficos')?.value || '';
+            
+            // Crear una clave única para el cache basada en el modo y las fechas
+            const cacheKey = `ocupacion_${modo}_${fechaInicio}_${fechaFin}`;
+            
+            // Si ya tenemos los datos en cache para este rango y modo, usarlos
+            if (window.ocupacionDatasets && window.ocupacionDatasets[cacheKey]) {
+                window.graficoOcupacionPerDia.data.datasets = window.ocupacionDatasets[cacheKey];
+                window.graficoOcupacionPerDia.options.plugins.legend.display = (modo !== 'total');
+                window.graficoOcupacionPerDia.update();
+                return;
+            }
+            
+            // Si es 'total' y no hay rango personalizado, usar datos iniciales
+            if (modo === 'total' && window.ocupacionDatasets && window.ocupacionDatasets.total && !rangoFechaInicio) {
+                window.graficoOcupacionPerDia.data.labels = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+                window.graficoOcupacionPerDia.data.datasets = window.ocupacionDatasets.total;
+                window.graficoOcupacionPerDia.options.plugins.legend.display = false;
+                window.graficoOcupacionPerDia.update();
+                return;
+            }
+            
+            // Si no hay rango personalizado y tenemos datos pre-cargados, usarlos
+            if (!rangoFechaInicio && window.ocupacionDatasets && window.ocupacionDatasets[modo]) {
+                window.graficoOcupacionPerDia.data.datasets = window.ocupacionDatasets[modo];
+                window.graficoOcupacionPerDia.options.plugins.legend.display = (modo !== 'total');
+                window.graficoOcupacionPerDia.update();
+                return;
+            }
+            
+            // Cargar datos via AJAX incluyendo las fechas del rango
+            let tipoData = 'ocupacion_turno';
+            if (modo === 'turno') tipoData = 'ocupacion_turno';
+            else if (modo === 'tipo') tipoData = 'ocupacion_tipo';
+            else if (modo === 'sala') tipoData = 'ocupacion_sala';
+            else if (modo === 'total') tipoData = 'ocupacion_turno'; // Total se calcula del turno
+            
+            const facultad = new URLSearchParams(window.location.search).get('facultad') || '';
+            const piso = new URLSearchParams(window.location.search).get('piso') || '';
+            
+            let url = `/dashboard/graficos-ajax?tipo=${tipoData}&facultad=${facultad}&piso=${piso}`;
+            if (fechaInicio && fechaFin) {
+                url += `&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+            }
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    // Actualizar las labels del gráfico si vienen en la respuesta
+                    if (data.labels) {
+                        window.graficoOcupacionPerDia.data.labels = data.labels;
+                    }
+                    
+                    let newDatasets = [];
+                    
+                    if (modo === 'total' && data.datos) {
+                        // Calcular total como promedio de diurno y vespertino
+                        const totalData = data.datos.total || data.datos.diurno.map((d, i) => 
+                            Math.round(((d + (data.datos.vespertino[i] || 0)) / 2) * 100) / 100
+                        );
+                        newDatasets = [{
+                            label: 'Ocupación (%)',
+                            data: totalData,
+                            borderColor: 'rgba(168, 85, 247, 1)',
+                            backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: 'rgba(168, 85, 247, 1)',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2,
+                            pointRadius: 5,
+                            pointHoverRadius: 7
+                        }];
+                    } else if (modo === 'turno' && data.datos) {
+                        newDatasets = [
+                            {
+                                label: 'Diurno (%)',
+                                data: data.datos.diurno,
+                                borderColor: 'rgba(251, 191, 36, 1)',
+                                backgroundColor: 'rgba(251, 191, 36, 0.2)',
+                                fill: true,
+                                tension: 0.4,
+                                pointBackgroundColor: 'rgba(251, 191, 36, 1)',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 5,
+                                pointHoverRadius: 7
+                            },
+                            {
+                                label: 'Vespertino (%)',
+                                data: data.datos.vespertino,
+                                borderColor: 'rgba(168, 85, 247, 1)',
+                                backgroundColor: 'rgba(168, 85, 247, 0.2)',
+                                fill: true,
+                                tension: 0.4,
+                                pointBackgroundColor: 'rgba(168, 85, 247, 1)',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 5,
+                                pointHoverRadius: 7
+                            }
+                        ];
+                    } else if (modo === 'tipo' && data.tipos) {
+                        const coloresTipo = [
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(239, 68, 68, 1)',
+                            'rgba(34, 197, 94, 1)',
+                            'rgba(168, 85, 247, 1)',
+                            'rgba(245, 158, 11, 1)',
+                            'rgba(6, 182, 212, 1)',
+                            'rgba(236, 72, 153, 1)',
+                            'rgba(249, 115, 22, 1)'
+                        ];
+                        data.tipos.forEach((tipo, index) => {
+                            const colorBase = coloresTipo[index % coloresTipo.length];
+                            // Generar color de fondo correctamente (sin fill para evitar el negro)
+                            newDatasets.push({
+                                label: tipo.tipo + ' (%)',
+                                data: tipo.datos,
+                                borderColor: colorBase,
+                                backgroundColor: 'transparent',
+                                fill: false,
+                                tension: 0.4,
+                                pointBackgroundColor: colorBase,
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 5,
+                                pointHoverRadius: 7,
+                                borderWidth: 2.5
+                            });
+                        });
+                    } else if (modo === 'sala' && data.salas) {
+                        const coloresSala = [
+                            'rgba(59, 130, 246, 1)',
+                            'rgba(239, 68, 68, 1)',
+                            'rgba(34, 197, 94, 1)',
+                            'rgba(168, 85, 247, 1)',
+                            'rgba(245, 158, 11, 1)',
+                            'rgba(6, 182, 212, 1)',
+                            'rgba(236, 72, 153, 1)',
+                            'rgba(249, 115, 22, 1)',
+                            'rgba(139, 92, 246, 1)',
+                            'rgba(244, 63, 94, 1)',
+                            'rgba(251, 146, 60, 1)',
+                            'rgba(107, 114, 128, 1)'
+                        ];
+                        data.salas.forEach((sala, index) => {
+                            const colorBase = coloresSala[index % coloresSala.length];
+                            newDatasets.push({
+                                label: sala.sala,
+                                data: sala.datos,
+                                borderColor: colorBase,
+                                backgroundColor: 'transparent',
+                                fill: false,
+                                tension: 0.4,
+                                pointBackgroundColor: colorBase,
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 5,
+                                pointHoverRadius: 8,
+                                borderWidth: 2.5,
+                                pointHoverBorderWidth: 3
+                            });
+                        });
+                    }
+                    
+                    // Guardar en cache con la clave única
+                    if (!window.ocupacionDatasets) {
+                        window.ocupacionDatasets = {};
+                    }
+                    window.ocupacionDatasets[cacheKey] = newDatasets;
+                    
+                    window.graficoOcupacionPerDia.data.datasets = newDatasets;
+                    window.graficoOcupacionPerDia.options.plugins.legend.display = (modo !== 'total');
+                    window.graficoOcupacionPerDia.update();
+                })
+                .catch(error => console.error('Error cargando datos:', error));
         }
     });
 
