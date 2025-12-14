@@ -686,8 +686,11 @@ class ReportController extends Controller
         $estadoFiltro = $request->get('estado', '');
         $busqueda = $request->get('busqueda', '');
 
-        // Query base optimizada
-        $espaciosQuery = Espacio::with(['piso.facultad']);
+        // Query base optimizada con eager loading de reservas del mes
+        $espaciosQuery = Espacio::with(['piso.facultad', 'reservas' => function($query) use ($mes, $anio) {
+            $query->whereMonth('fecha_reserva', $mes)
+                  ->whereYear('fecha_reserva', $anio);
+        }]);
 
         // Aplicar filtros
         if (!empty($tipoEspacioFiltro)) {
@@ -706,7 +709,6 @@ class ReportController extends Controller
         }
 
         $espacios = $espaciosQuery->get();
-        $espaciosIds = $espacios->pluck('id_espacio');
 
         // Días laborales simplificado
         $dias_laborales = collect(range(1, now()->daysInMonth))
@@ -717,30 +719,26 @@ class ReportController extends Controller
                 return $date->isWeekday();
             })->count();
 
-        // Obtener estadísticas de reservas en una sola consulta
-        $reservasStats = Reserva::whereIn('id_espacio', $espaciosIds)
-            ->whereMonth('fecha_reserva', $mes)
-            ->whereYear('fecha_reserva', $anio)
-            ->selectRaw('
-                id_espacio,
-                COUNT(*) as total_reservas,
-                COUNT(DISTINCT fecha_reserva) as dias_con_reservas,
-                SUM(CASE WHEN hora IS NOT NULL AND hora_salida IS NOT NULL 
-                    THEN TIMESTAMPDIFF(MINUTE, hora, hora_salida) ELSE 0 END) / 60 as horas_utilizadas
-            ')
-            ->groupBy('id_espacio')
-            ->get()
-            ->keyBy('id_espacio');
-
-        // Calcular datos para exportación
+        // Calcular datos para exportación usando la misma lógica que la vista
         $datos = [];
         foreach ($espacios as $espacio) {
-            $stats = $reservasStats->get($espacio->id_espacio);
-            $total_reservas_espacio = $stats ? $stats->total_reservas : 0;
-            $horas_utilizadas = $stats ? round($stats->horas_utilizadas) : 0;
-            $dias_con_reservas = $stats ? $stats->dias_con_reservas : 0;
+            $total_reservas_espacio = $espacio->reservas->count();
             
-            $promedio = $dias_laborales > 0 ? round(($dias_con_reservas / $dias_laborales) * 100) : 0;
+            // Calcular horas utilizadas usando Carbon (igual que en la vista)
+            $horas_utilizadas = $espacio->reservas->sum(function($reserva) {
+                if ($reserva->hora && $reserva->hora_salida) {
+                    $inicio = Carbon::parse($reserva->hora);
+                    $fin = Carbon::parse($reserva->hora_salida);
+                    return $inicio->diffInHours($fin, true); // true para valor absoluto
+                }
+                return 0.83; // Si no hay hora de salida, asumir 1 módulo de 50 minutos
+            });
+            
+            // Calcular días con reservas
+            $dias_con_reservas = $espacio->reservas->unique('fecha_reserva')->count();
+            
+            // Calcular porcentaje de utilización basado en días con reservas
+            $promedio = $dias_laborales > 0 ? round(($dias_con_reservas / $dias_laborales) * 100, 1) : 0;
             $estado = $promedio >= 80 ? 'Óptimo' : ($promedio >= 40 ? 'Medio uso' : 'Bajo uso');
             
             $datos[] = [
@@ -752,7 +750,7 @@ class ReportController extends Controller
                 'estado' => $espacio->estado,
                 'puestos_disponibles' => $espacio->puestos_disponibles ?? 'N/A',
                 'total_reservas' => $total_reservas_espacio,
-                'horas_utilizadas' => $horas_utilizadas,
+                'horas_utilizadas' => round($horas_utilizadas, 1),
                 'promedio_utilizacion' => $promedio,
                 'estado_utilizacion' => $estado
             ];
