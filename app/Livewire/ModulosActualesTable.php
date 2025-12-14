@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Helpers\SemesterHelper;
+use App\Models\Asistencia;
 use App\Models\ClaseNoRealizada;
 use App\Models\DiaFeriado;
 use App\Models\Espacio;
@@ -1260,14 +1261,22 @@ class ModulosActualesTable extends Component
                             $tieneReservaPendiente = false;
                         }
 
+                        // Obtener conteo de asistencia actual para este espacio
+                        $asistenciaActual = Asistencia::where('id_espacio', $espacio->id_espacio)
+                            ->where('estado', Asistencia::ESTADO_PRESENTE)
+                            ->whereDate('created_at', Carbon::today())
+                            ->count();
+
                         $espaciosPiso[] = [
                             'id_espacio' => $espacio->id_espacio ?? 'N/A',
                             'nombre_espacio' => $espacio->nombre_espacio ?? 'N/A',
                             'estado' => $estado ?? 'Disponible',
                             'tipo_espacio' => $espacio->tipo_espacio ?? 'N/A',
                             'puestos_disponibles' => $espacio->puestos_disponibles ?? 0,
+                            // Asistencia actual (alumnos presentes en este momento)
+                            'asistencia_actual' => $asistenciaActual,
                             // Total de inscritos del curso (prioridad: clase planificada > reserva profesor)
-                            'inscritos' => (($tieneClase ?? false) && isset($datosClase['inscritos']) && $datosClase['inscritos'] > 0)
+                            'total_inscritos' => (($tieneClase ?? false) && isset($datosClase['inscritos']) && $datosClase['inscritos'] > 0)
                                 ? $datosClase['inscritos']
                                 : (($tieneReservaProfesor ?? false) && !empty($datosProfesor['inscritos']) ? $datosProfesor['inscritos'] : 0),
                             // Capacidad máxima de la sala (siempre desde el espacio)
@@ -1307,13 +1316,20 @@ class ModulosActualesTable extends Component
                     // Ordenar espacios alfabéticamente por id_espacio
                     $espaciosOrdenados = $piso->espacios->sortBy('id_espacio')->values();
                     foreach ($espaciosOrdenados as $espacio) {
+                        // Obtener conteo de asistencia actual para este espacio
+                        $asistenciaActual = Asistencia::where('id_espacio', $espacio->id_espacio)
+                            ->where('estado', Asistencia::ESTADO_PRESENTE)
+                            ->whereDate('created_at', Carbon::today())
+                            ->count();
+
                         $espaciosPiso[] = [
                             'id_espacio' => $espacio->id_espacio ?? 'N/A',
                             'nombre_espacio' => $espacio->nombre_espacio ?? 'N/A',
                             'estado' => 'Disponible',
                             'tipo_espacio' => $espacio->tipo_espacio ?? 'N/A',
                             'puestos_disponibles' => $espacio->puestos_disponibles ?? 0,
-                            'inscritos' => 0,
+                            'asistencia_actual' => $asistenciaActual,
+                            'total_inscritos' => 0,
                             'capacidad_maxima' => $espacio->capacidad_maxima ?? 0,
                             'tiene_clase' => false,
                             'tiene_reserva_solicitante' => false,

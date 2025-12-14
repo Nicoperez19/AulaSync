@@ -75,6 +75,18 @@
                     <option value="realizada">Realizadas</option>
                 </select>
             </div>
+
+            <!-- Botones de navegación -->
+            <div class="flex flex-col gap-2 md:flex-row md:items-center md:gap-3">
+                <a href="{{ route('ausencias-profesores') }}"
+                    class="px-4 py-2 text-white transition-colors rounded bg-light-cloud-blue hover:bg-cloud-blue">
+                    <i class="mr-2 fa-solid fa-user-clock"></i>Ausencias de Profesores
+                </a>
+                <a href="{{ route('clases-no-registradas') }}"
+                    class="px-4 py-2 text-white transition-colors bg-orange-500 rounded hover:bg-orange-600">
+                    <i class="mr-2 fa-solid fa-exclamation-triangle"></i>Clases No Registradas
+                </a>
+            </div>
         </div>
     </div>
 
@@ -215,8 +227,20 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="px-6 py-8 text-center text-gray-500">
-                            No se encontraron clases para recuperar
+                        <td colspan="8" class="px-6 py-8">
+                            <div class="flex flex-col items-center gap-4">
+                                <p class="text-center text-gray-500">No se encontraron clases para recuperar</p>
+                                <div class="flex gap-3">
+                                    <a href="{{ route('ausencias-profesores') }}"
+                                        class="px-4 py-2 text-white transition-colors rounded bg-light-cloud-blue hover:bg-cloud-blue">
+                                        <i class="mr-2 fa-solid fa-user-clock"></i>Ir a Ausencia de Profesores
+                                    </a>
+                                    <a href="{{ route('clases-no-registradas') }}"
+                                        class="px-4 py-2 text-white transition-colors bg-orange-500 rounded hover:bg-orange-600">
+                                        <i class="mr-2 fa-solid fa-exclamation-triangle"></i>Ir a Clases No Registradas
+                                    </a>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 @endforelse

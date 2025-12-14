@@ -1076,44 +1076,82 @@ class DashboardController extends Controller
         ];
     }
 
-    private function obtenerOcupacionPorTurno($facultad, $piso)
+    private function obtenerOcupacionPorTurno($facultad, $piso, $fechaInicio = null, $fechaFin = null)
     {
-        $inicioSemana = Carbon::now()->startOfWeek();
-        $finSemana = Carbon::now()->endOfWeek();
-        $diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        // Si no se proporcionan fechas, usar la semana actual
+        $inicioRango = $fechaInicio ? $fechaInicio->copy() : Carbon::now()->startOfWeek();
+        $finRango = $fechaFin ? $fechaFin->copy() : Carbon::now()->endOfWeek();
+        
+        // Calcular los días en el rango (excluyendo domingos)
+        $diasEnRango = [];
+        $current = $inicioRango->copy();
+        while ($current->lte($finRango)) {
+            $diaSemana = $current->format('l');
+            $nombreDia = $this->traducirDia($diaSemana);
+            if ($nombreDia !== 'Domingo') {
+                $diasEnRango[] = [
+                    'fecha' => $current->copy(),
+                    'nombre' => $nombreDia,
+                    'etiqueta' => $nombreDia . ' ' . $current->format('d/m')
+                ];
+            }
+            $current->addDay();
+        }
         
         $ocupacionDiurno = [];
         $ocupacionVespertino = [];
+        $labels = [];
 
-        for ($i = 0; $i < 6; $i++) {
-            $dia = $inicioSemana->copy()->addDays($i);
+        foreach ($diasEnRango as $diaInfo) {
+            $dia = $diaInfo['fecha'];
+            $etiqueta = $diaInfo['etiqueta'];
             
             $diurno = $this->calcularOcupacionPromedioHora($dia->copy(), $dia->copy(), $facultad, $piso, 'diurno');
             $vespertino = $this->calcularOcupacionPromedioHora($dia->copy(), $dia->copy(), $facultad, $piso, 'vespertino');
             
             $ocupacionDiurno[] = $diurno;
             $ocupacionVespertino[] = $vespertino;
+            $labels[] = $etiqueta;
         }
 
         return [
             'datos' => [
                 'diurno' => $ocupacionDiurno,
                 'vespertino' => $ocupacionVespertino,
-                'total' => array_map(function($d, $v) { return ($d + $v) / 2; }, $ocupacionDiurno, $ocupacionVespertino)
+                'total' => array_map(function($d, $v) { return round(($d + $v) / 2, 2); }, $ocupacionDiurno, $ocupacionVespertino)
             ],
-            'dias' => $diasSemana,
+            'dias' => $labels,
+            'labels' => $labels,
             'rango_fechas' => [
-                'inicio' => $inicioSemana->format('d/m/Y'),
-                'fin' => $finSemana->format('d/m/Y')
+                'inicio' => $inicioRango->format('d/m/Y'),
+                'fin' => $finRango->format('d/m/Y')
             ]
         ];
     }
 
-    private function obtenerOcupacionPorTipo($facultad, $piso)
+    private function obtenerOcupacionPorTipo($facultad, $piso, $fechaInicio = null, $fechaFin = null)
     {
-        $inicioSemana = Carbon::now()->startOfWeek();
-        $finSemana = Carbon::now()->endOfWeek();
-        $diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        // Si no se proporcionan fechas, usar la semana actual
+        $inicioRango = $fechaInicio ? $fechaInicio->copy() : Carbon::now()->startOfWeek();
+        $finRango = $fechaFin ? $fechaFin->copy() : Carbon::now()->endOfWeek();
+        
+        // Calcular los días en el rango (excluyendo domingos)
+        $diasEnRango = [];
+        $current = $inicioRango->copy();
+        while ($current->lte($finRango)) {
+            $diaSemana = $current->format('l');
+            $nombreDia = $this->traducirDia($diaSemana);
+            if ($nombreDia !== 'Domingo') {
+                $diasEnRango[] = [
+                    'fecha' => $current->copy(),
+                    'nombre' => $nombreDia,
+                    'etiqueta' => $nombreDia . ' ' . $current->format('d/m')
+                ];
+            }
+            $current->addDay();
+        }
+        
+        $labels = array_map(function($d) { return $d['etiqueta']; }, $diasEnRango);
         
         // Obtener todos los tipos de espacio (no solo Salas de Clases)
         $tipos = Espacio::whereHas('piso', function($query) use ($facultad, $piso) {
@@ -1148,8 +1186,8 @@ class DashboardController extends Controller
             // Total de módulos disponibles por día para este tipo = espacios * 15 módulos
             $modulosTotalesPorDia = $totalEspacios * 15;
             
-            for ($i = 0; $i < 6; $i++) {
-                $dia = $inicioSemana->copy()->addDays($i);
+            foreach ($diasEnRango as $diaInfo) {
+                $dia = $diaInfo['fecha'];
                 
                 // Obtener todas las reservas del día para este tipo de espacio
                 $reservasDia = Reserva::where('fecha_reserva', $dia->format('Y-m-d'))
@@ -1184,10 +1222,11 @@ class DashboardController extends Controller
 
         return [
             'tipos' => $ocupacionPorTipo,
-            'dias' => $diasSemana,
+            'dias' => $labels,
+            'labels' => $labels,
             'rango_fechas' => [
-                'inicio' => $inicioSemana->format('d/m/Y'),
-                'fin' => $finSemana->format('d/m/Y')
+                'inicio' => $inicioRango->format('d/m/Y'),
+                'fin' => $finRango->format('d/m/Y')
             ]
         ];
     }
@@ -2925,13 +2964,21 @@ class DashboardController extends Controller
         $facultad = $request->query('facultad');
         $piso = $request->query('piso');
         $tipo = $request->query('tipo');
+        
+        // Obtener fechas de rango (si se proporcionan)
+        $fechaInicio = $request->query('fecha_inicio') 
+            ? Carbon::parse($request->query('fecha_inicio')) 
+            : null;
+        $fechaFin = $request->query('fecha_fin') 
+            ? Carbon::parse($request->query('fecha_fin')) 
+            : null;
 
         $datos = [];
 
         if ($tipo === 'ocupacion_turno') {
-            $datos = $this->obtenerOcupacionPorTurno($facultad, $piso);
+            $datos = $this->obtenerOcupacionPorTurno($facultad, $piso, $fechaInicio, $fechaFin);
         } elseif ($tipo === 'ocupacion_tipo') {
-            $datos = $this->obtenerOcupacionPorTipo($facultad, $piso);
+            $datos = $this->obtenerOcupacionPorTipo($facultad, $piso, $fechaInicio, $fechaFin);
         } elseif ($tipo === 'salas_tipo') {
             $datos = $this->obtenerSalasPorTipoPorDia($facultad, $piso);
         }

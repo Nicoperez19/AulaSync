@@ -24,7 +24,7 @@
             <button wire:click="openCreateModal"
                 class="px-4 py-2 text-white transition-colors rounded-lg bg-light-cloud-blue hover:bg-cloud-blue">
                 <i class="mr-2 fa-solid fa-plus"></i>
-                Nueva Licencia
+                Nueva Ausencia
             </button>
         </div>
     </div>
@@ -177,14 +177,25 @@
                         <!-- Profesor -->
                         <div class="md:col-span-2">
                             <label class="block mb-2 text-sm font-medium text-gray-700">Profesor *</label>
-                            <select wire:model="run_profesor" class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
-                                <option value="">Seleccione un profesor</option>
-                                @foreach ($profesores as $profesor)
-                                    <option value="{{ $profesor->run_profesor }}">
-                                        {{ $profesor->name }} ({{ $profesor->run_profesor }})
-                                    </option>
-                                @endforeach
-                            </select>
+                            <div class="relative">
+                                <input type="text" 
+                                    wire:model.live="run_profesor" 
+                                    placeholder="Buscar por RUT del profesor..."
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-cloud-blue focus:border-transparent">
+                                <i class="absolute text-gray-400 transform -translate-y-1/2 fa-solid fa-search right-3 top-1/2"></i>
+                            </div>
+
+                            @if ($profesoresFiltrados->count() > 0)
+                                <div class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg">
+                                    @foreach ($profesoresFiltrados as $profesor)
+                                        <button type="button"
+                                            wire:click="$set('run_profesor', '{{ $profesor->run_profesor }}')"
+                                            class="block w-full px-4 py-2 text-left hover:bg-gray-100">
+                                            {{ $profesor->name }} ({{ $profesor->run_profesor }})
+                                        </button>
+                                    @endforeach
+                                </div>
+                            @endif
                             @error('run_profesor') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
                         </div>
 
@@ -205,7 +216,7 @@
                         <!-- Motivo -->
                         <div class="md:col-span-2">
                             <label class="block mb-2 text-sm font-medium text-gray-700">Motivo</label>
-                            <input type="text" wire:model="motivo" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="Ej: Licencia médica">
+                            <input type="text" wire:model="motivo" class="w-full px-4 py-2 border border-gray-300 rounded-lg" placeholder="Ej: Licencia médica, Ausencia anticipada, etc.">
                             @error('motivo') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
                         </div>
 

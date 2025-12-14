@@ -159,6 +159,15 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                         $motivo = null;
                         $observaciones = null;
                         
+                        // Fecha y hora actual para comparar si la clase ya pasó
+                        $ahora = Carbon::now();
+                        $fechaClase = Carbon::parse($fechaStr);
+                        $horaFinModulo = Carbon::parse($planificacion->modulo->hora_termino);
+                        $horaInicioModulo = Carbon::parse($planificacion->modulo->hora_inicio);
+                        
+                        // Crear datetime completo de cuando termina la clase
+                        $fechaHoraFinClase = $fechaClase->copy()->setTimeFromTimeString($horaFinModulo->format('H:i:s'));
+                        
                         // Verificar si está en clases no realizadas (usando caché)
                         if (isset($this->clasesNoRealizadasCache[$claveClase])) {
                             $claseNoRealizada = $this->clasesNoRealizadasCache[$claveClase];
@@ -176,8 +185,6 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                             $reserva = $this->reservasCache[$claveReserva];
                             
                             // Verificar si el acceso corresponde al horario del módulo
-                            $horaInicioModulo = Carbon::parse($planificacion->modulo->hora_inicio);
-                            $horaFinModulo = Carbon::parse($planificacion->modulo->hora_termino);
                             $horaAcceso = Carbon::parse($reserva->hora);
                             
                             // Considerar un margen de 30 minutos antes del inicio y durante toda la clase
@@ -194,7 +201,21 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                                     $observaciones = "Atraso de {$diferencia} minutos";
                                 }
                             }
+                            // Si hay reserva pero el acceso no coincide con el horario del módulo
+                            elseif ($fechaHoraFinClase < $ahora) {
+                                // La clase ya pasó y no hubo acceso válido en el horario
+                                $estado = 'No Realizada';
+                                $motivo = 'Sin registro de acceso';
+                                $observaciones = 'No se detectó ingreso durante el horario de clase';
+                            }
                         }
+                        // Si la clase ya pasó y no hay registro de acceso ni está marcada como no realizada
+                        elseif ($fechaHoraFinClase < $ahora) {
+                            $estado = 'No Realizada';
+                            $motivo = 'Sin registro de acceso';
+                            $observaciones = 'No se detectó ingreso durante el horario de clase';
+                        }
+                        // Si la clase aún no ha pasado, mantener como Planificada
                         
                         // Agregar la clase al resultado
                         $clasesData->push([
