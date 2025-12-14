@@ -71,7 +71,7 @@
                                 <i class="fas fa-graduation-cap mr-2"></i>Carrera
                             </th>
                             <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300">
-                                <i class="fas fa-users mr-2"></i>Inscritos
+                                <i class="fas fa-users mr-2"></i>Asistencia
                             </th>
                             <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300">
                                 <i class="fas fa-door-open mr-2"></i>Cap. Sala
@@ -304,34 +304,40 @@
                                             @endif
                                         </td>
 
-                                        <!-- Columna 5: Inscritos del Curso -->
+                                        <!-- Columna 5: Asistencia (Actual / Total Inscritos) -->
                                         <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
                                             @php
-                                                $inscritos = $espacio['inscritos'] ?? 0;
+                                                $asistenciaActual = $espacio['asistencia_actual'] ?? 0;
+                                                $totalInscritos = $espacio['total_inscritos'] ?? 0;
                                                 $capacidadSala = $espacio['capacidad_maxima'] ?? 0;
-                                                $porcentaje = $capacidadSala > 0 ? round(($inscritos / $capacidadSala) * 100) : 0;
+                                                
+                                                // Calcular porcentaje basado en total inscritos si existe, sino usar capacidad sala
+                                                $base = $totalInscritos > 0 ? $totalInscritos : $capacidadSala;
+                                                $porcentaje = $base > 0 ? round(($asistenciaActual / $base) * 100) : 0;
 
-                                                // Determinar color según ocupación
+                                                // Determinar color según porcentaje de asistencia
                                                 $colorClase = '';
                                                 if ($porcentaje >= 90) {
-                                                    $colorClase = 'text-red-600 font-bold';
+                                                    $colorClase = 'text-green-600 font-bold';
                                                 } elseif ($porcentaje >= 70) {
-                                                    $colorClase = 'text-orange-600 font-semibold';
+                                                    $colorClase = 'text-blue-600 font-semibold';
                                                 } elseif ($porcentaje >= 50) {
                                                     $colorClase = 'text-yellow-600 font-medium';
+                                                } elseif ($porcentaje > 0) {
+                                                    $colorClase = 'text-orange-600';
                                                 } else {
-                                                    $colorClase = 'text-green-600';
+                                                    $colorClase = 'text-gray-500';
                                                 }
                                             @endphp
 
-                                            @if($inscritos > 0)
+                                            @if($totalInscritos > 0 || $asistenciaActual > 0)
                                                 <div class="flex flex-col gap-1">
                                                     <div class="{{ $colorClase }} text-sm">
-                                                        {{ $inscritos }}
+                                                        {{ $asistenciaActual }} / {{ $totalInscritos }}
                                                     </div>
-                                                    @if($capacidadSala > 0)
+                                                    @if($totalInscritos > 0)
                                                     <div class="w-full bg-gray-200 rounded-full h-2">
-                                                        <div class="h-2 rounded-full {{ $porcentaje >= 90 ? 'bg-red-600' : ($porcentaje >= 70 ? 'bg-orange-500' : ($porcentaje >= 50 ? 'bg-yellow-500' : 'bg-green-500')) }}"
+                                                        <div class="h-2 rounded-full {{ $porcentaje >= 90 ? 'bg-green-600' : ($porcentaje >= 70 ? 'bg-blue-500' : ($porcentaje >= 50 ? 'bg-yellow-500' : ($porcentaje > 0 ? 'bg-orange-500' : 'bg-gray-400'))) }}"
                                                              style="width: {{ min($porcentaje, 100) }}%"></div>
                                                     </div>
                                                     @endif

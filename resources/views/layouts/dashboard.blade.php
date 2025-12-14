@@ -2200,22 +2200,41 @@
         if (window.graficoOcupacionPerDia) {
             const modo = e.detail.modo;
             
-            // Si ya tenemos los datos, usarlos
-            if (window.ocupacionDatasets && window.ocupacionDatasets[modo]) {
-                window.graficoOcupacionPerDia.data.datasets = window.ocupacionDatasets[modo];
+            // Obtener las fechas del rango actual seleccionado
+            const fechaInicio = rangoFechaInicio || document.getElementById('fecha-inicio-graficos')?.value || '';
+            const fechaFin = rangoFechaFin || document.getElementById('fecha-fin-graficos')?.value || '';
+            
+            // Crear una clave única para el cache basada en el modo y las fechas
+            const cacheKey = `${modo}_${fechaInicio}_${fechaFin}`;
+            
+            // Si ya tenemos los datos en cache para este rango y modo, usarlos
+            if (window.ocupacionDatasets && window.ocupacionDatasets[cacheKey]) {
+                window.graficoOcupacionPerDia.data.datasets = window.ocupacionDatasets[cacheKey];
                 window.graficoOcupacionPerDia.options.plugins.legend.display = (modo === 'turno' || modo === 'tipo');
                 window.graficoOcupacionPerDia.update();
             } else if (modo === 'turno' || modo === 'tipo') {
-                // Cargar datos via AJAX
+                // Cargar datos via AJAX incluyendo las fechas del rango
                 const tipoData = modo === 'turno' ? 'ocupacion_turno' : 'ocupacion_tipo';
                 const facultad = new URLSearchParams(window.location.search).get('facultad') || '';
                 const piso = new URLSearchParams(window.location.search).get('piso') || '';
                 
-                fetch(`/dashboard/graficos-ajax?tipo=${tipoData}&facultad=${facultad}&piso=${piso}`)
+                let url = `/dashboard/graficos-ajax?tipo=${tipoData}&facultad=${facultad}&piso=${piso}`;
+                if (fechaInicio && fechaFin) {
+                    url += `&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+                }
+                
+                fetch(url)
                     .then(response => response.json())
                     .then(data => {
+                        // Actualizar las labels del gráfico si vienen en la respuesta
+                        if (data.labels) {
+                            window.graficoOcupacionPerDia.data.labels = data.labels;
+                        }
+                        
+                        let newDatasets = [];
+                        
                         if (modo === 'turno') {
-                            const datasetsTurno = [
+                            newDatasets = [
                                 {
                                     label: 'Diurno (%)',
                                     data: data.datos.diurno,
@@ -2243,7 +2262,7 @@
                                     pointHoverRadius: 7
                                 }
                             ];
-                            window.graficoOcupacionPerDia.data.datasets = datasetsTurno;
+                            window.graficoOcupacionPerDia.data.datasets = newDatasets;
                         } else if (modo === 'tipo') {
                             const coloresTipo = [
                                 'rgba(59, 130, 246, 1)',
@@ -2255,10 +2274,9 @@
                                 'rgba(236, 72, 153, 1)',
                                 'rgba(249, 115, 22, 1)'
                             ];
-                            const datasetsTipo = [];
                             data.tipos.forEach((tipo, index) => {
                                 const colorBase = coloresTipo[index % coloresTipo.length];
-                                datasetsTipo.push({
+                                newDatasets.push({
                                     label: tipo.tipo + ' (%)',
                                     data: tipo.datos,
                                     borderColor: colorBase,
@@ -2273,8 +2291,15 @@
                                     borderWidth: 2.5
                                 });
                             });
-                            window.graficoOcupacionPerDia.data.datasets = datasetsTipo;
+                            window.graficoOcupacionPerDia.data.datasets = newDatasets;
                         }
+                        
+                        // Guardar en cache con la clave única
+                        if (!window.ocupacionDatasets) {
+                            window.ocupacionDatasets = {};
+                        }
+                        window.ocupacionDatasets[cacheKey] = newDatasets;
+                        
                         window.graficoOcupacionPerDia.options.plugins.legend.display = true;
                         window.graficoOcupacionPerDia.update();
                     })
@@ -2421,6 +2446,10 @@
         rangoFechaInicio = fechaInicio;
         rangoFechaFin = fechaFin;
         
+        // Limpiar el cache de datasets para forzar recarga con las nuevas fechas
+        window.ocupacionDatasets = {};
+        window.salasDatasets = null;
+        
         // Mostrar indicador de carga
         const graficosContainer = document.getElementById('graficos-container');
         if (graficosContainer) {
@@ -2464,6 +2493,10 @@
         
         rangoFechaInicio = null;
         rangoFechaFin = null;
+        
+        // Limpiar el cache de datasets
+        window.ocupacionDatasets = {};
+        window.salasDatasets = null;
         
         // Recargar datos con la semana actual
         actualizarDashboard();
