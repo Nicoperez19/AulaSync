@@ -230,7 +230,7 @@
         @endif
 
         <div class="footer">
-            Documento generado automáticamente por AulaSync - {{ \Carbon\Carbon::now()->format('d/m/Y H:i:s') }}
+            Documento generado automáticamente por Gestor de Aulas IT - {{ \Carbon\Carbon::now()->format('d/m/Y H:i:s') }}
         </div>
     @else
         <div class="no-data">

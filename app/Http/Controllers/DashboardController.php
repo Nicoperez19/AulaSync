@@ -2938,4 +2938,309 @@ class DashboardController extends Controller
 
         return response()->json($datos);
     }
+
+    /**
+     * Obtiene datos de gráficos filtrados por rango de fechas personalizado
+     */
+    public function getGraficosRango(Request $request)
+    {
+        $facultad = 'IT_TH';
+        $piso = $request->session()->get('piso');
+        
+        $fechaInicio = $request->query('fecha_inicio') 
+            ? Carbon::parse($request->query('fecha_inicio')) 
+            : Carbon::now()->startOfWeek();
+        $fechaFin = $request->query('fecha_fin') 
+            ? Carbon::parse($request->query('fecha_fin')) 
+            : Carbon::now()->endOfWeek();
+        
+        // Validar que fecha_inicio sea anterior a fecha_fin
+        if ($fechaInicio->gt($fechaFin)) {
+            return response()->json(['error' => 'La fecha de inicio debe ser anterior a la fecha de fin'], 400);
+        }
+        
+        // Calcular los días en el rango
+        $diasEnRango = [];
+        $current = $fechaInicio->copy();
+        while ($current->lte($fechaFin)) {
+            $diaSemana = $current->format('l'); // Nombre del día en inglés
+            $nombreDia = $this->traducirDia($diaSemana);
+            if ($nombreDia !== 'Domingo') { // Excluir domingos
+                $diasEnRango[] = [
+                    'fecha' => $current->copy(),
+                    'nombre' => $nombreDia,
+                    'etiqueta' => $nombreDia . ' ' . $current->format('d/m')
+                ];
+            }
+            $current->addDay();
+        }
+        
+        // Obtener datos para cada gráfico
+        $usoPorDia = $this->obtenerUsoPorDiaRango($facultad, $piso, $diasEnRango, $fechaInicio, $fechaFin);
+        $ocupacionPorDia = $this->obtenerOcupacionPorDiaRango($facultad, $piso, $diasEnRango, $fechaInicio, $fechaFin);
+        $salasUtilizadasPorDia = $this->obtenerSalasUtilizadasPorDiaRango($facultad, $piso, $diasEnRango, $fechaInicio, $fechaFin);
+        $disponibilidadSalas = $this->obtenerDisponibilidadSalasRango($facultad, $piso, $diasEnRango, $fechaInicio, $fechaFin);
+        
+        return response()->json([
+            'usoPorDia' => $usoPorDia,
+            'ocupacionPorDia' => $ocupacionPorDia,
+            'salasUtilizadasPorDia' => $salasUtilizadasPorDia,
+            'disponibilidadSalas' => $disponibilidadSalas,
+        ]);
+    }
+    
+    /**
+     * Traduce el nombre del día de inglés a español
+     */
+    private function traducirDia($diaIngles)
+    {
+        $traducciones = [
+            'Monday' => 'Lunes',
+            'Tuesday' => 'Martes',
+            'Wednesday' => 'Miércoles',
+            'Thursday' => 'Jueves',
+            'Friday' => 'Viernes',
+            'Saturday' => 'Sábado',
+            'Sunday' => 'Domingo'
+        ];
+        return $traducciones[$diaIngles] ?? $diaIngles;
+    }
+    
+    /**
+     * Obtiene uso por día para un rango de fechas personalizado
+     */
+    private function obtenerUsoPorDiaRango($facultad, $piso, $diasEnRango, $fechaInicio, $fechaFin)
+    {
+        $usoPorDia = [];
+        $labels = [];
+        
+        foreach ($diasEnRango as $diaInfo) {
+            $dia = $diaInfo['fecha'];
+            $etiqueta = $diaInfo['etiqueta'];
+            
+            $cantidadReservas = Reserva::whereDate('fecha_reserva', $dia)
+                ->whereIn('estado', ['activa', 'finalizada'])
+                ->whereHas('espacio', function($query) use ($piso, $facultad) {
+                    if ($piso) {
+                        $query->whereHas('piso', function($q) use ($piso, $facultad) {
+                            $q->where('id_facultad', $facultad);
+                            $q->where('numero_piso', $piso);
+                        });
+                    } elseif ($facultad) {
+                        $query->whereHas('piso', function($q) use ($facultad) {
+                            $q->where('id_facultad', $facultad);
+                        });
+                    }
+                    $query->where('tipo_espacio', 'Sala de Clases');
+                })
+                ->count();
+            
+            $usoPorDia[$etiqueta] = $cantidadReservas;
+            $labels[] = $etiqueta;
+        }
+        
+        return [
+            'datos' => $usoPorDia,
+            'labels' => $labels,
+            'rango_fechas' => [
+                'inicio' => $fechaInicio->format('d/m/Y'),
+                'fin' => $fechaFin->format('d/m/Y')
+            ]
+        ];
+    }
+    
+    /**
+     * Obtiene ocupación por día para un rango de fechas personalizado
+     */
+    private function obtenerOcupacionPorDiaRango($facultad, $piso, $diasEnRango, $fechaInicio, $fechaFin)
+    {
+        $ocupacionPorDia = [];
+        $labels = [];
+        
+        // Obtener total de salas
+        $totalSalas = Espacio::whereHas('piso', function($query) use ($facultad, $piso) {
+            if ($piso) {
+                $query->where('id_facultad', $facultad);
+                $query->where('numero_piso', $piso);
+            } elseif ($facultad) {
+                $query->where('id_facultad', $facultad);
+            }
+        })
+        ->where('tipo_espacio', 'Sala de Clases')
+        ->count();
+        
+        $modulosPorDia = 15; // Módulos disponibles por día
+        $capacidadTotal = $totalSalas * $modulosPorDia;
+        
+        foreach ($diasEnRango as $diaInfo) {
+            $dia = $diaInfo['fecha'];
+            $etiqueta = $diaInfo['etiqueta'];
+            
+            // Calcular módulos utilizados
+            $reservas = Reserva::whereDate('fecha_reserva', $dia)
+                ->whereIn('estado', ['activa', 'finalizada'])
+                ->whereHas('espacio', function($query) use ($piso, $facultad) {
+                    if ($piso) {
+                        $query->whereHas('piso', function($q) use ($piso, $facultad) {
+                            $q->where('id_facultad', $facultad);
+                            $q->where('numero_piso', $piso);
+                        });
+                    } elseif ($facultad) {
+                        $query->whereHas('piso', function($q) use ($facultad) {
+                            $q->where('id_facultad', $facultad);
+                        });
+                    }
+                    $query->where('tipo_espacio', 'Sala de Clases');
+                })
+                ->get();
+            
+            $modulosUtilizados = 0;
+            foreach ($reservas as $reserva) {
+                $modulosUtilizados += $this->calcularModulosReales(
+                    $reserva->hora,
+                    $reserva->hora_salida,
+                    $reserva->modulos
+                );
+            }
+            
+            $porcentaje = $capacidadTotal > 0 
+                ? round(($modulosUtilizados / $capacidadTotal) * 100, 2) 
+                : 0;
+            
+            $ocupacionPorDia[$etiqueta] = $porcentaje;
+            $labels[] = $etiqueta;
+        }
+        
+        return [
+            'datos' => $ocupacionPorDia,
+            'labels' => $labels,
+            'rango_fechas' => [
+                'inicio' => $fechaInicio->format('d/m/Y'),
+                'fin' => $fechaFin->format('d/m/Y')
+            ]
+        ];
+    }
+    
+    /**
+     * Obtiene salas utilizadas por día para un rango de fechas personalizado
+     */
+    private function obtenerSalasUtilizadasPorDiaRango($facultad, $piso, $diasEnRango, $fechaInicio, $fechaFin)
+    {
+        $labels = array_map(function($d) { return $d['etiqueta']; }, $diasEnRango);
+        
+        // Obtener todas las salas
+        $salas = Espacio::whereHas('piso', function($query) use ($facultad, $piso) {
+            if ($piso) {
+                $query->where('id_facultad', $facultad);
+                $query->where('numero_piso', $piso);
+            } elseif ($facultad) {
+                $query->where('id_facultad', $facultad);
+            }
+        })
+        ->where('tipo_espacio', 'Sala de Clases')
+        ->orderBy('id_espacio')
+        ->get();
+        
+        $dataPorSala = [];
+        
+        foreach ($salas as $sala) {
+            $reservasPorDia = [];
+            
+            foreach ($diasEnRango as $diaInfo) {
+                $dia = $diaInfo['fecha'];
+                
+                $cantidadReservas = Reserva::where('id_espacio', $sala->id_espacio)
+                    ->whereDate('fecha_reserva', $dia)
+                    ->whereIn('estado', ['activa', 'finalizada'])
+                    ->count();
+                
+                $reservasPorDia[] = $cantidadReservas;
+            }
+            
+            $dataPorSala[] = [
+                'sala' => $sala->id_espacio,
+                'datos' => $reservasPorDia
+            ];
+        }
+        
+        return [
+            'salas' => $dataPorSala,
+            'labels' => $labels,
+            'rango_fechas' => [
+                'inicio' => $fechaInicio->format('d/m/Y'),
+                'fin' => $fechaFin->format('d/m/Y')
+            ]
+        ];
+    }
+    
+    /**
+     * Obtiene disponibilidad de salas para un rango de fechas personalizado
+     */
+    private function obtenerDisponibilidadSalasRango($facultad, $piso, $diasEnRango, $fechaInicio, $fechaFin)
+    {
+        $labels = array_map(function($d) { return $d['etiqueta']; }, $diasEnRango);
+        
+        // Obtener total de salas
+        $totalSalas = Espacio::whereHas('piso', function($query) use ($facultad, $piso) {
+            if ($piso) {
+                $query->where('id_facultad', $facultad);
+                $query->where('numero_piso', $piso);
+            } elseif ($facultad) {
+                $query->where('id_facultad', $facultad);
+            }
+        })
+        ->where('tipo_espacio', 'Sala de Clases')
+        ->count();
+        
+        $disponibilidadPorDia = [];
+        $modulosPorDia = 15;
+        $capacidadTotal = $totalSalas * $modulosPorDia;
+        
+        foreach ($diasEnRango as $diaInfo) {
+            $dia = $diaInfo['fecha'];
+            
+            // Calcular módulos ocupados
+            $reservas = Reserva::whereDate('fecha_reserva', $dia)
+                ->whereIn('estado', ['activa', 'finalizada'])
+                ->whereHas('espacio', function($query) use ($piso, $facultad) {
+                    if ($piso) {
+                        $query->whereHas('piso', function($q) use ($piso, $facultad) {
+                            $q->where('id_facultad', $facultad);
+                            $q->where('numero_piso', $piso);
+                        });
+                    } elseif ($facultad) {
+                        $query->whereHas('piso', function($q) use ($facultad) {
+                            $q->where('id_facultad', $facultad);
+                        });
+                    }
+                    $query->where('tipo_espacio', 'Sala de Clases');
+                })
+                ->get();
+            
+            $modulosOcupados = 0;
+            foreach ($reservas as $reserva) {
+                $modulosOcupados += $this->calcularModulosReales(
+                    $reserva->hora,
+                    $reserva->hora_salida,
+                    $reserva->modulos
+                );
+            }
+            
+            $porcentajeDisponible = $capacidadTotal > 0 
+                ? round((($capacidadTotal - $modulosOcupados) / $capacidadTotal) * 100, 2) 
+                : 100;
+            
+            $disponibilidadPorDia[] = max(0, $porcentajeDisponible);
+        }
+        
+        return [
+            'datos' => $disponibilidadPorDia,
+            'labels' => $labels,
+            'totalSalas' => $totalSalas,
+            'rango_fechas' => [
+                'inicio' => $fechaInicio->format('d/m/Y'),
+                'fin' => $fechaFin->format('d/m/Y')
+            ]
+        ];
+    }
 }

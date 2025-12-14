@@ -64,6 +64,7 @@ Route::middleware(['auth', 'permission:dashboard', 'extend.execution:300'])->gro
     Route::get('/dashboard/clases-no-realizadas-data', [DashboardController::class, 'getClasesNoRealizadasData'])->name('dashboard.clases-no-realizadas-data');
     Route::get('/dashboard/estadisticas-filtradas', [DashboardController::class, 'getEstadisticasFiltradas'])->name('dashboard.estadisticas-filtradas');
     Route::get('/dashboard/graficos-ajax', [DashboardController::class, 'obtenerDatosGraficosAjax'])->name('dashboard.graficos-ajax');
+    Route::get('/dashboard/graficos-rango', [DashboardController::class, 'getGraficosRango'])->name('dashboard.graficos-rango');
 });
 
 Route::middleware(['auth', 'role:Administrador'])->group(function () {

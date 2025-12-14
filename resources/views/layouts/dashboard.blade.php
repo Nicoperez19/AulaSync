@@ -314,11 +314,13 @@
 
     <!-- Sistema de pestañas para estadísticas -->
     <div class="px-8 mt-8 mb-8">
-        <div class="bg-white rounded-xl shadow-lg p-6">
-            <h3 class="text-xl font-bold text-gray-800 mb-6 flex items-center">
-                <i class="fas fa-chart-line mr-2 text-blue-600"></i>
-                Estadísticas Detalladas
-            </h3>
+        <div class="bg-white rounded-xl shadow-lg p-6" id="estadisticas-container">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <h3 class="text-xl font-bold text-gray-800 flex items-center">
+                    <i class="fas fa-chart-line mr-2 text-blue-600"></i>
+                    Estadísticas Detalladas
+                </h3>
+            </div>
 
             <!-- Tabs -->
             <div class="border-b border-gray-200 mb-6" x-data="{ activeTab: 'graficos', salasViewMode: 'individual', ocupacionViewMode: 'total' }">
@@ -350,7 +352,47 @@
                 </nav>
 
                 <!-- Tab Content: Gráficos -->
-                <div x-show="activeTab === 'graficos'" class="mt-6">
+                <div x-show="activeTab === 'graficos'" class="mt-6" id="graficos-container">
+                    <!-- Controles del tab: Rango de fechas y Exportar -->
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                        <!-- Selector de rango de fechas -->
+                        <div class="flex flex-wrap items-center gap-2">
+                            <i class="fas fa-calendar-alt text-blue-600"></i>
+                            <span class="text-sm font-semibold text-gray-700">Período:</span>
+                            <input type="date" id="fecha-inicio-graficos" 
+                                   class="border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   value="{{ now()->startOfWeek()->format('Y-m-d') }}">
+                            <span class="text-gray-500">—</span>
+                            <input type="date" id="fecha-fin-graficos" 
+                                   class="border border-gray-300 rounded px-2 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                   value="{{ now()->endOfWeek()->format('Y-m-d') }}">
+                            <button onclick="aplicarRangoFechas()" 
+                                    class="bg-blue-600 text-white px-3 py-1.5 rounded text-sm font-medium hover:bg-blue-700 transition flex items-center gap-1">
+                                <i class="fas fa-filter"></i>
+                                Aplicar
+                            </button>
+                            <button onclick="resetearRangoFechas()" 
+                                    class="bg-gray-200 text-gray-700 px-2 py-1.5 rounded text-sm font-medium hover:bg-gray-300 transition" title="Restablecer a semana actual">
+                                <i class="fas fa-undo"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Botones de exportar -->
+                        <div class="flex items-center gap-2">
+                            <button onclick="exportarGraficosAPDF()" 
+                                    class="bg-red-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-red-700 transition flex items-center gap-2 shadow">
+                                <i class="fas fa-file-pdf"></i>
+                                PDF
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Instrucciones de uso -->
+                    <div class="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200 text-sm text-blue-800">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        <strong>Tip:</strong> Usa la rueda del ratón para hacer zoom. Arrastra para moverte por el gráfico. Ctrl+Arrastrar para seleccionar área de zoom.
+                    </div>
+                    
                     <div class="grid w-full grid-cols-1 gap-8 md:grid-cols-2">
                         <!-- Gráfico 1: Línea - % Ocupación por Día (INTERCAMBIADO) -->
                         <div class="p-8 bg-gray-50 rounded-xl shadow flex flex-col items-center min-h-[300px] relative widget-transition w-full">
@@ -362,7 +404,7 @@
                                     <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded-lg p-2 w-60 z-50">
                                         <p class="font-semibold mb-1">Cálculo:</p>
                                         <p><strong>Total:</strong> Promedio de los porcentajes de ocupación de cada hora del día</p>
-                                        <p class="mt-1"><strong>Por Turno:</strong> Ocupación del turno diurno (8-19h) y vespertino (19-23h) por separado</p>
+                                        <p class="mt-1"><strong>Por Jornada:</strong> Ocupación del turno diurno (8-19h) y vespertino (19-23h) por separado</p>
                                         <p class="mt-1"><strong>Por Tipo:</strong> Ocupación por cada tipo de espacio (máximo de espacios ocupados / total)</p>
                                         <p class="mt-1"><strong>Por Sala:</strong> (Módulos utilizados / 15) × 100 por cada sala</p>
                                         <div class="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-800"></div>
@@ -374,7 +416,7 @@
                                     Total
                                 </button>
                                 <button @click="ocupacionViewMode = 'turno'; document.dispatchEvent(new CustomEvent('ocupacionViewModeChange', {detail: {modo: 'turno'}}))" :class="{'bg-blue-500 text-white': ocupacionViewMode === 'turno', 'bg-gray-200 text-gray-700': ocupacionViewMode !== 'turno'}" class="px-3 py-1 rounded text-sm font-medium transition">
-                                    Por Turno
+                                    Por Jornada
                                 </button>
                                 <button @click="ocupacionViewMode = 'tipo'; document.dispatchEvent(new CustomEvent('ocupacionViewModeChange', {detail: {modo: 'tipo'}}))" :class="{'bg-blue-500 text-white': ocupacionViewMode === 'tipo', 'bg-gray-200 text-gray-700': ocupacionViewMode !== 'tipo'}" class="px-3 py-1 rounded text-sm font-medium transition">
                                     Por Tipo
@@ -912,6 +954,9 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1"></script>
+    <!-- jsPDF y html2canvas para exportar a PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <script>
     // ========================================
@@ -921,6 +966,10 @@
     let autoRefreshEnabled = true;
     let moduloActual = null;
     let moduloCheckInterval = null;
+    
+    // Variables para rango de fechas global
+    let rangoFechaInicio = null;
+    let rangoFechaFin = null;
 
     // ========================================
     // CONFIGURACIÓN DE ZOOM PARA GRÁFICOS
@@ -929,13 +978,17 @@
         zoom: {
             wheel: {
                 enabled: true,
-                modifierKey: 'ctrl', // Zoom con Ctrl + rueda del mouse
+                modifierKey: null, // Sin modificador - zoom directo con rueda
             },
             pinch: {
                 enabled: true // Zoom con gestos en móviles
             },
             drag: {
-                enabled: false // Deshabilitado para permitir pan con arrastrar
+                enabled: true, // Habilitar selección de área para zoom
+                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                borderColor: 'rgba(59, 130, 246, 0.8)',
+                borderWidth: 1,
+                modifierKey: 'ctrl', // Solo zoom con arrastre cuando se presiona Ctrl
             },
             mode: 'xy', // Zoom en ambos ejes
             onZoomComplete: function({chart}) {
@@ -947,11 +1000,13 @@
         pan: {
             enabled: true,
             mode: 'xy',
-            // Sin modifierKey para poder arrastrar directamente
+            modifierKey: null, // Sin modificador - arrastre libre
+            threshold: 5, // Mínimo de pixels para iniciar pan
         },
         limits: {
-            y: {min: 0, max: 'original'},
-            x: {min: 'original', max: 'original'}
+            // Establecer límites mínimos y máximos para los ejes
+            y: { min: 0, max: 'original' }, // Y mínimo es 0, máximo es el original
+            x: { min: 'original', max: 'original' } // X sin cambios
         }
     };
 
@@ -1802,7 +1857,7 @@
                     pointHoverRadius: 7
                 }];
 
-                // Datasets para vista Por Turno
+                // Datasets para vista Por Jornada
                 const datasetsTurno = [
                     {
                         label: 'Diurno (%)',
@@ -2131,7 +2186,7 @@
         }
     });
 
-    // Toggle de Ocupación: Total vs Por Turno vs Por Tipo
+    // Toggle de Ocupación: Total vs Por Jornada vs Por Tipo
     document.addEventListener('ocupacionViewModeChange', function(e) {
         if (window.graficoOcupacionPerDia) {
             const modo = e.detail.modo;
@@ -2335,6 +2390,570 @@
     }
     actualizarModalReloj();
     setInterval(actualizarModalReloj, 1000);
+
+    // ========================================
+    // FUNCIONES DE RANGO DE FECHAS
+    // ========================================
+    
+    function aplicarRangoFechas() {
+        const fechaInicio = document.getElementById('fecha-inicio-graficos').value;
+        const fechaFin = document.getElementById('fecha-fin-graficos').value;
+        
+        if (!fechaInicio || !fechaFin) {
+            mostrarNotificacion('Por favor selecciona ambas fechas', 'warning');
+            return;
+        }
+        
+        if (new Date(fechaInicio) > new Date(fechaFin)) {
+            mostrarNotificacion('La fecha de inicio debe ser anterior a la fecha de fin', 'error');
+            return;
+        }
+        
+        rangoFechaInicio = fechaInicio;
+        rangoFechaFin = fechaFin;
+        
+        // Mostrar indicador de carga
+        const graficosContainer = document.getElementById('graficos-container');
+        if (graficosContainer) {
+            graficosContainer.classList.add('opacity-50');
+        }
+        
+        mostrarNotificacion('Cargando datos del rango seleccionado...', 'info', 2000);
+        
+        // Llamar al endpoint con el rango de fechas
+        fetch(`/dashboard/graficos-rango?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al obtener datos');
+                }
+                return response.json();
+            })
+            .then(data => {
+                actualizarGraficosConRango(data);
+                mostrarNotificacion('Gráficos actualizados con el rango seleccionado', 'success');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarNotificacion('Error al cargar los datos: ' + error.message, 'error');
+            })
+            .finally(() => {
+                if (graficosContainer) {
+                    graficosContainer.classList.remove('opacity-50');
+                }
+            });
+    }
+    
+    function resetearRangoFechas() {
+        const hoy = new Date();
+        const inicioSemana = new Date(hoy);
+        inicioSemana.setDate(hoy.getDate() - hoy.getDay() + 1); // Lunes
+        const finSemana = new Date(inicioSemana);
+        finSemana.setDate(inicioSemana.getDate() + 6); // Domingo
+        
+        document.getElementById('fecha-inicio-graficos').value = inicioSemana.toISOString().split('T')[0];
+        document.getElementById('fecha-fin-graficos').value = finSemana.toISOString().split('T')[0];
+        
+        rangoFechaInicio = null;
+        rangoFechaFin = null;
+        
+        // Recargar datos con la semana actual
+        actualizarDashboard();
+        mostrarNotificacion('Rango restablecido a la semana actual', 'info');
+    }
+    
+    function actualizarGraficosConRango(data) {
+        // Actualizar gráfico de reservas por día
+        if (window.graficoReservasPerDia && data.usoPorDia) {
+            const labels = data.usoPorDia.labels || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            window.graficoReservasPerDia.data.labels = labels;
+            window.graficoReservasPerDia.data.datasets[0].data = Object.values(data.usoPorDia.datos);
+            window.graficoReservasPerDia.update();
+            
+            // Actualizar texto del rango
+            const rangoElement = document.querySelector('.rango-fechas-grafico');
+            if (rangoElement && data.usoPorDia.rango_fechas) {
+                rangoElement.textContent = `Del ${data.usoPorDia.rango_fechas.inicio} al ${data.usoPorDia.rango_fechas.fin}`;
+            }
+        }
+        
+        // Actualizar gráfico de ocupación por día
+        if (window.graficoOcupacionPerDia && data.ocupacionPorDia) {
+            const labels = data.ocupacionPorDia.labels || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            window.graficoOcupacionPerDia.data.labels = labels;
+            window.graficoOcupacionPerDia.data.datasets[0].data = Object.values(data.ocupacionPorDia.datos);
+            window.graficoOcupacionPerDia.update();
+            
+            // Actualizar texto del rango
+            const rangoElement = document.querySelector('.rango-fechas-ocupacion');
+            if (rangoElement && data.ocupacionPorDia.rango_fechas) {
+                rangoElement.textContent = `Del ${data.ocupacionPorDia.rango_fechas.inicio} al ${data.ocupacionPorDia.rango_fechas.fin}`;
+            }
+        }
+        
+        // Actualizar gráfico de salas individuales
+        if (window.graficoSalasIndividuales && data.salasUtilizadasPorDia) {
+            const labels = data.salasUtilizadasPorDia.labels || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            window.graficoSalasIndividuales.data.labels = labels;
+            
+            if (data.salasUtilizadasPorDia.salas) {
+                data.salasUtilizadasPorDia.salas.forEach((sala, index) => {
+                    if (window.graficoSalasIndividuales.data.datasets[index]) {
+                        window.graficoSalasIndividuales.data.datasets[index].data = sala.datos;
+                    }
+                });
+            }
+            window.graficoSalasIndividuales.update();
+            
+            // Actualizar texto del rango
+            const rangoElement = document.querySelector('.rango-fechas-grafico-salas');
+            if (rangoElement && data.salasUtilizadasPorDia.rango_fechas) {
+                rangoElement.textContent = `Del ${data.salasUtilizadasPorDia.rango_fechas.inicio} al ${data.salasUtilizadasPorDia.rango_fechas.fin}`;
+            }
+        }
+        
+        // Actualizar gráfico de disponibilidad
+        if (window.graficoDisponibilidad && data.disponibilidadSalas) {
+            const labels = data.disponibilidadSalas.labels || ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            window.graficoDisponibilidad.data.labels = labels;
+            window.graficoDisponibilidad.data.datasets[0].data = data.disponibilidadSalas.datos;
+            window.graficoDisponibilidad.update();
+            
+            // Actualizar texto del rango
+            const rangoElement = document.querySelector('.rango-fechas-disponibilidad');
+            if (rangoElement && data.disponibilidadSalas.rango_fechas) {
+                rangoElement.textContent = `Del ${data.disponibilidadSalas.rango_fechas.inicio} al ${data.disponibilidadSalas.rango_fechas.fin}`;
+            }
+        }
+    }
+    
+    // ========================================
+    // FUNCIONES DE EXPORTACIÓN A PDF
+    // ========================================
+    
+    async function exportarGraficosAPDF() {
+        const { jsPDF } = window.jspdf;
+        
+        if (!jsPDF) {
+            mostrarNotificacion('Error: Librería jsPDF no disponible', 'error');
+            return;
+        }
+        
+        mostrarNotificacion('Generando PDF... Por favor espera', 'info', 5000);
+        
+        try {
+            // Crear documento PDF A4 horizontal para mejor visualización de gráficos
+            const pdf = new jsPDF('landscape', 'mm', 'a4');
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const margin = 15;
+            let yPosition = margin;
+            
+            // Obtener rango de fechas actual
+            const fechaInicio = document.getElementById('fecha-inicio-graficos').value;
+            const fechaFin = document.getElementById('fecha-fin-graficos').value;
+            const fechaGeneracion = new Date().toLocaleString('es-CL');
+            
+            // ========== PORTADA ==========
+            pdf.setFillColor(59, 130, 246);
+            pdf.rect(0, 0, pageWidth, 50, 'F');
+            
+            pdf.setTextColor(255, 255, 255);
+            pdf.setFontSize(28);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('Gestor de Aulas IT', pageWidth / 2, 25, { align: 'center' });
+            
+            pdf.setFontSize(16);
+            pdf.setFont('helvetica', 'normal');
+            pdf.text('Reporte de Estadísticas de Ocupación', pageWidth / 2, 38, { align: 'center' });
+            
+            pdf.setTextColor(0, 0, 0);
+            yPosition = 70;
+            
+            pdf.setFontSize(12);
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('Información del Reporte', margin, yPosition);
+            yPosition += 10;
+            
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(10);
+            pdf.text(`Período: Del ${formatearFecha(fechaInicio)} al ${formatearFecha(fechaFin)}`, margin, yPosition);
+            yPosition += 7;
+            pdf.text(`Fecha de generación: ${fechaGeneracion}`, margin, yPosition);
+            yPosition += 15;
+            
+            // Obtener estadísticas actuales de los KPIs
+            const ocupacionSemanalDiurno = document.getElementById('ocupacion-semanal-diurno')?.textContent || 'N/A';
+            const ocupacionSemanalVespertino = document.getElementById('ocupacion-semanal-vespertino')?.textContent || 'N/A';
+            const ocupacionSemanalTotal = document.getElementById('ocupacion-semanal')?.textContent || 'N/A';
+            const ocupacionMensualDiurno = document.getElementById('ocupacion-mensual-diurno')?.textContent || 'N/A';
+            const ocupacionMensualVespertino = document.getElementById('ocupacion-mensual-vespertino')?.textContent || 'N/A';
+            const ocupacionMensualTotal = document.getElementById('ocupacion-mensual')?.textContent || 'N/A';
+            
+            // Resumen de estadísticas
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(12);
+            pdf.text('Resumen de Estadísticas', margin, yPosition);
+            yPosition += 10;
+            
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(10);
+            
+            // Tabla de resumen
+            const col1 = margin;
+            const col2 = margin + 80;
+            const col3 = margin + 160;
+            
+            pdf.setFont('helvetica', 'bold');
+            pdf.text('Métrica', col1, yPosition);
+            pdf.text('Semanal', col2, yPosition);
+            pdf.text('Mensual', col3, yPosition);
+            yPosition += 7;
+            
+            pdf.setFont('helvetica', 'normal');
+            pdf.text('Ocupación Diurno (8-19h)', col1, yPosition);
+            pdf.text(ocupacionSemanalDiurno, col2, yPosition);
+            pdf.text(ocupacionMensualDiurno, col3, yPosition);
+            yPosition += 6;
+            
+            pdf.text('Ocupación Vespertino (19-23h)', col1, yPosition);
+            pdf.text(ocupacionSemanalVespertino, col2, yPosition);
+            pdf.text(ocupacionMensualVespertino, col3, yPosition);
+            yPosition += 6;
+            
+            pdf.text('Ocupación Total', col1, yPosition);
+            pdf.text(ocupacionSemanalTotal, col2, yPosition);
+            pdf.text(ocupacionMensualTotal, col3, yPosition);
+            yPosition += 15;
+            
+            // ========== GRÁFICOS ==========
+            const graficos = [
+                { id: 'grafico-ocupacion-por-dia', titulo: 'Porcentaje de Ocupación por Día', descripcion: 'Muestra el porcentaje de ocupación diario de todos los espacios.' },
+                { id: 'grafico-salas-individuales', titulo: 'Reservas por Sala', descripcion: 'Número de reservas realizadas por cada sala de forma individual.' },
+                { id: 'grafico-reservas-por-dia', titulo: 'Cantidad de Reservas por Día', descripcion: 'Total de reservas registradas para cada día de la semana.' },
+                { id: 'grafico-disponibilidad-salas', titulo: 'Disponibilidad de Salas', descripcion: 'Porcentaje promedio de salas disponibles por día de la semana.' }
+            ];
+            
+            for (let i = 0; i < graficos.length; i++) {
+                const grafico = graficos[i];
+                const canvas = document.getElementById(grafico.id);
+                
+                if (canvas) {
+                    // Nueva página para cada par de gráficos
+                    if (i % 2 === 0) {
+                        pdf.addPage();
+                        yPosition = margin;
+                    }
+                    
+                    // Título del gráfico
+                    pdf.setFont('helvetica', 'bold');
+                    pdf.setFontSize(14);
+                    pdf.setTextColor(59, 130, 246);
+                    pdf.text(grafico.titulo, margin, yPosition);
+                    yPosition += 7;
+                    
+                    // Descripción
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(9);
+                    pdf.setTextColor(100, 100, 100);
+                    pdf.text(grafico.descripcion, margin, yPosition);
+                    yPosition += 5;
+                    
+                    pdf.setTextColor(0, 0, 0);
+                    
+                    try {
+                        // Capturar gráfico como imagen
+                        const imgData = canvas.toDataURL('image/png', 1.0);
+                        const imgWidth = (pageWidth - margin * 2) * 0.8;
+                        const imgHeight = 70;
+                        
+                        pdf.addImage(imgData, 'PNG', margin, yPosition, imgWidth, imgHeight);
+                        yPosition += imgHeight + 15;
+                    } catch (e) {
+                        console.error('Error capturando gráfico:', grafico.id, e);
+                        pdf.setFontSize(10);
+                        pdf.text('No se pudo capturar este gráfico', margin, yPosition);
+                        yPosition += 20;
+                    }
+                }
+            }
+            
+            // ========== PIE DE PÁGINA EN TODAS LAS PÁGINAS ==========
+            const totalPages = pdf.internal.getNumberOfPages();
+            for (let page = 1; page <= totalPages; page++) {
+                pdf.setPage(page);
+                pdf.setFontSize(8);
+                pdf.setTextColor(150, 150, 150);
+                pdf.text(
+                    `Gestor de Aulas IT - Reporte generado el ${fechaGeneracion} - Página ${page} de ${totalPages}`,
+                    pageWidth / 2,
+                    pageHeight - 10,
+                    { align: 'center' }
+                );
+            }
+            
+            // Guardar PDF
+            const nombreArchivo = `Estadisticas_GestorAulasIT_${fechaInicio}_${fechaFin}.pdf`;
+            pdf.save(nombreArchivo);
+            
+            mostrarNotificacion('PDF generado correctamente: ' + nombreArchivo, 'success');
+            
+        } catch (error) {
+            console.error('Error generando PDF:', error);
+            mostrarNotificacion('Error al generar el PDF: ' + error.message, 'error');
+        }
+    }
+    
+    // ========================================
+    // FUNCIONES DE EXPORTACIÓN A EXCEL
+    // ========================================
+    
+    function exportarGraficosAExcel() {
+        mostrarNotificacion('Generando archivo CSV...', 'info', 2000);
+        
+        try {
+            // Obtener rango de fechas actual
+            const fechaInicio = document.getElementById('fecha-inicio-graficos').value;
+            const fechaFin = document.getElementById('fecha-fin-graficos').value;
+            const fechaGeneracion = new Date().toLocaleString('es-CL');
+            
+            // Recopilar todos los datos de los gráficos
+            const datosCSV = [];
+            
+            // ========== Información General ==========
+            datosCSV.push(['REPORTE DE ESTADÍSTICAS - GESTOR DE AULAS IT']);
+            datosCSV.push(['']);
+            datosCSV.push(['Información del Reporte']);
+            datosCSV.push(['Período', `Del ${formatearFecha(fechaInicio)} al ${formatearFecha(fechaFin)}`]);
+            datosCSV.push(['Fecha de generación', fechaGeneracion]);
+            datosCSV.push(['']);
+            
+            // ========== RESUMEN DE KPIs ==========
+            datosCSV.push(['RESUMEN DE INDICADORES CLAVE (KPIs)']);
+            datosCSV.push(['']);
+            
+            const ocupacionSemanalDiurno = document.getElementById('ocupacion-semanal-diurno')?.textContent || 'N/A';
+            const ocupacionSemanalVespertino = document.getElementById('ocupacion-semanal-vespertino')?.textContent || 'N/A';
+            const ocupacionSemanalTotal = document.getElementById('ocupacion-semanal')?.textContent || 'N/A';
+            const ocupacionMensualDiurno = document.getElementById('ocupacion-mensual-diurno')?.textContent || 'N/A';
+            const ocupacionMensualVespertino = document.getElementById('ocupacion-mensual-vespertino')?.textContent || 'N/A';
+            const ocupacionMensualTotal = document.getElementById('ocupacion-mensual')?.textContent || 'N/A';
+            
+            datosCSV.push(['Métrica', 'Semanal', 'Mensual']);
+            datosCSV.push(['Ocupación Diurno (8-19h)', ocupacionSemanalDiurno, ocupacionMensualDiurno]);
+            datosCSV.push(['Ocupación Vespertino (19-23h)', ocupacionSemanalVespertino, ocupacionMensualVespertino]);
+            datosCSV.push(['Ocupación Total', ocupacionSemanalTotal, ocupacionMensualTotal]);
+            datosCSV.push(['']);
+            datosCSV.push(['']);
+            
+            // ========== DATOS DE GRÁFICO 1: % Ocupación por Día ==========
+            datosCSV.push(['GRÁFICO 1: PORCENTAJE DE OCUPACIÓN POR DÍA']);
+            datosCSV.push(['']);
+            
+            if (window.graficoOcupacionPerDia) {
+                const labels = window.graficoOcupacionPerDia.data.labels;
+                const datasets = window.graficoOcupacionPerDia.data.datasets;
+                
+                // Header con nombres de datasets
+                const header1 = ['Día'];
+                datasets.forEach(ds => header1.push(ds.label || 'Datos'));
+                datosCSV.push(header1);
+                
+                // Datos por día
+                labels.forEach((label, index) => {
+                    const row = [label];
+                    datasets.forEach(ds => {
+                        const valor = ds.data[index];
+                        row.push(typeof valor === 'number' ? parseFloat(valor.toFixed(2)) : valor);
+                    });
+                    datosCSV.push(row);
+                });
+            }
+            datosCSV.push(['']);
+            datosCSV.push(['']);
+            
+            // ========== DATOS DE GRÁFICO 2: Reservas por Sala ==========
+            datosCSV.push(['GRÁFICO 2: RESERVAS POR SALA']);
+            datosCSV.push(['']);
+            
+            if (window.graficoSalasIndividuales) {
+                const labels = window.graficoSalasIndividuales.data.labels;
+                const datasets = window.graficoSalasIndividuales.data.datasets;
+                
+                // Header con nombres de salas
+                const header2 = ['Día'];
+                datasets.forEach(ds => header2.push(ds.label || 'Sala'));
+                datosCSV.push(header2);
+                
+                // Datos por día
+                labels.forEach((label, index) => {
+                    const row = [label];
+                    datasets.forEach(ds => {
+                        const valor = ds.data[index];
+                        row.push(typeof valor === 'number' ? valor : 0);
+                    });
+                    datosCSV.push(row);
+                });
+                
+                // Totales por sala
+                datosCSV.push(['']);
+                const totalRow = ['TOTAL'];
+                datasets.forEach(ds => {
+                    const total = ds.data.reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
+                    totalRow.push(total);
+                });
+                datosCSV.push(totalRow);
+            }
+            datosCSV.push(['']);
+            datosCSV.push(['']);
+            
+            // ========== DATOS DE GRÁFICO 3: Cantidad de Reservas por Día ==========
+            datosCSV.push(['GRÁFICO 3: CANTIDAD DE RESERVAS POR DÍA']);
+            datosCSV.push(['']);
+            
+            if (window.graficoReservasPerDia) {
+                const labels = window.graficoReservasPerDia.data.labels;
+                const data = window.graficoReservasPerDia.data.datasets[0].data;
+                
+                datosCSV.push(['Día', 'Cantidad de Reservas']);
+                labels.forEach((label, index) => {
+                    datosCSV.push([label, data[index] || 0]);
+                });
+                
+                // Total
+                const totalReservas = data.reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0);
+                datosCSV.push(['']);
+                datosCSV.push(['TOTAL', totalReservas]);
+                datosCSV.push(['PROMEDIO DIARIO', parseFloat((totalReservas / data.length).toFixed(2))]);
+            }
+            datosCSV.push(['']);
+            datosCSV.push(['']);
+            
+            // ========== DATOS DE GRÁFICO 4: Disponibilidad de Salas ==========
+            datosCSV.push(['GRÁFICO 4: DISPONIBILIDAD DE SALAS']);
+            datosCSV.push(['']);
+            
+            if (window.graficoDisponibilidad) {
+                const labels = window.graficoDisponibilidad.data.labels;
+                const data = window.graficoDisponibilidad.data.datasets[0].data;
+                
+                datosCSV.push(['Día', 'Disponibilidad (%)', 'Ocupación (%)']);
+                labels.forEach((label, index) => {
+                    const disponibilidad = data[index] || 0;
+                    const ocupacion = 100 - disponibilidad;
+                    datosCSV.push([label, parseFloat(disponibilidad.toFixed(2)), parseFloat(ocupacion.toFixed(2))]);
+                });
+                
+                // Promedio
+                const promDisponibilidad = data.reduce((sum, val) => sum + (typeof val === 'number' ? val : 0), 0) / data.length;
+                datosCSV.push(['']);
+                datosCSV.push(['PROMEDIO DISPONIBILIDAD', parseFloat(promDisponibilidad.toFixed(2))]);
+                datosCSV.push(['PROMEDIO OCUPACIÓN', parseFloat((100 - promDisponibilidad).toFixed(2))]);
+            }
+            datosCSV.push(['']);
+            datosCSV.push(['']);
+            
+            // ========== DATOS DE GRÁFICO CIRCULAR: Espacios Ocupados ==========
+            datosCSV.push(['GRÁFICO CIRCULAR: ESTADO ACTUAL DE ESPACIOS']);
+            datosCSV.push(['']);
+            
+            if (window.graficoCircularSalas) {
+                const labels = window.graficoCircularSalas.data.labels;
+                const data = window.graficoCircularSalas.data.datasets[0].data;
+                const total = data.reduce((sum, val) => sum + val, 0);
+                
+                datosCSV.push(['Estado', 'Cantidad', 'Porcentaje']);
+                labels.forEach((label, index) => {
+                    const cantidad = data[index] || 0;
+                    const porcentaje = total > 0 ? parseFloat(((cantidad / total) * 100).toFixed(2)) : 0;
+                    datosCSV.push([label, cantidad, porcentaje]);
+                });
+                datosCSV.push(['TOTAL ESPACIOS', total, 100]);
+            }
+            
+            // ========== GENERAR CSV ==========
+            let csvContent = ''; // Sin BOM inicial
+            datosCSV.forEach(row => {
+                const csvRow = row.map(cell => {
+                    if (cell === null || cell === undefined) return '';
+                    const cellStr = String(cell);
+                    // Si contiene coma, comilla o salto de línea, envolver en comillas
+                    if (cellStr.includes(',') || cellStr.includes('"') || cellStr.includes('\n')) {
+                        return '"' + cellStr.replace(/"/g, '""') + '"';
+                    }
+                    return cellStr;
+                });
+                csvContent += csvRow.join(',') + '\n';
+            });
+            
+            // Convertir a UTF-8 BOM
+            const BOM = '\uFEFF';
+            const fullContent = BOM + csvContent;
+            
+            // Descargar archivo
+            const blob = new Blob([fullContent], { type: 'text/csv;charset=utf-8' });
+            const link = document.createElement('a');
+            const nombreArchivo = `Estadisticas_GestorAulasIT_${fechaInicio}_${fechaFin}.csv`;
+            
+            link.href = URL.createObjectURL(blob);
+            link.download = nombreArchivo;
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            
+            // Simular click
+            link.click();
+            
+            // Limpiar
+            setTimeout(() => {
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+            }, 100);
+            
+            mostrarNotificacion('Archivo CSV descargado: ' + nombreArchivo, 'success');
+            
+        } catch (error) {
+            console.error('Error generando CSV:', error);
+            mostrarNotificacion('Error al generar el archivo CSV: ' + error.message, 'error');
+        }
+    }
+    
+    function formatearFecha(fecha) {
+        if (!fecha) return 'N/A';
+        const opciones = { year: 'numeric', month: 'long', day: 'numeric' };
+        return new Date(fecha + 'T00:00:00').toLocaleDateString('es-CL', opciones);
+    }
+    
+    function mostrarNotificacion(mensaje, tipo = 'info', duracion = 3000) {
+        // Crear elemento de notificación
+        const colores = {
+            'success': 'bg-green-500',
+            'error': 'bg-red-500',
+            'warning': 'bg-yellow-500',
+            'info': 'bg-blue-500'
+        };
+        
+        const iconos = {
+            'success': 'fa-check-circle',
+            'error': 'fa-times-circle',
+            'warning': 'fa-exclamation-triangle',
+            'info': 'fa-info-circle'
+        };
+        
+        const notificacion = document.createElement('div');
+        notificacion.className = `fixed top-4 right-4 ${colores[tipo]} text-white px-4 py-3 rounded-lg shadow-lg z-50 flex items-center gap-2 animate-slide-in`;
+        notificacion.innerHTML = `
+            <i class="fas ${iconos[tipo]}"></i>
+            <span>${mensaje}</span>
+        `;
+        
+        document.body.appendChild(notificacion);
+        
+        setTimeout(() => {
+            notificacion.classList.add('animate-fade-out');
+            setTimeout(() => {
+                notificacion.remove();
+            }, 300);
+        }, duracion);
+    }
 </script>
 
 </x-app-layout>
@@ -2425,5 +3044,43 @@
         to {
             transform: rotate(360deg);
         }
+    }
+    
+    /* Animaciones para notificaciones */
+    @keyframes slideIn {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes fadeOut {
+        from {
+            opacity: 1;
+        }
+        to {
+            opacity: 0;
+        }
+    }
+    
+    .animate-slide-in {
+        animation: slideIn 0.3s ease-out;
+    }
+    
+    .animate-fade-out {
+        animation: fadeOut 0.3s ease-out;
+    }
+    
+    /* Estilo del cursor para indicar que se puede arrastrar */
+    canvas {
+        cursor: grab;
+    }
+    
+    canvas:active {
+        cursor: grabbing;
     }
 </style>

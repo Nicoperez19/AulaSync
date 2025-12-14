@@ -48,11 +48,12 @@
                 @php $totalPaginas = ceil(count($this->getTodosLosEspacios()) / 13); @endphp
                 <table class="w-full table-fixed">
                     <colgroup>
-                        <col style="width: 16.66%">
-                        <col style="width: 8.33%">
-                        <col style="width: 35%">
-                        <col style="width: 18%">
-                        <col style="width: 12%">
+                        <col style="width: 14%">
+                        <col style="width: 8%">
+                        <col style="width: 32%">
+                        <col style="width: 16%">
+                        <col style="width: 11%">
+                        <col style="width: 9%">
                         <col style="width: 10%">
                     </colgroup>
                     <thead>
@@ -71,6 +72,9 @@
                             </th>
                             <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300">
                                 <i class="fas fa-users mr-2"></i>Asistencia
+                            </th>
+                            <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider border-r border-gray-300">
+                                <i class="fas fa-door-open mr-2"></i>Cap Max
                             </th>
                             <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider">
                                 <i class="fas fa-circle-info mr-2"></i>Status
@@ -112,11 +116,12 @@
                              class="w-full">
                             <table class="w-full table-fixed">
                                 <colgroup>
-                                    <col style="width: 16.66%">
-                                    <col style="width: 8.33%">
-                                    <col style="width: 35%">
-                                    <col style="width: 18%">
-                                    <col style="width: 12%">
+                                    <col style="width: 14%">
+                                    <col style="width: 8%">
+                                    <col style="width: 32%">
+                                    <col style="width: 16%">
+                                    <col style="width: 11%">
+                                    <col style="width: 9%">
                                     <col style="width: 10%">
                                 </colgroup>
                                 <tbody class="divide-y divide-gray-200">
@@ -335,7 +340,18 @@
                                             @endif
                                         </td>
 
-                                        <!-- Columna 6: Status -->
+                                        <!-- Columna 6: Capacidad Máxima -->
+                                        <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
+                                            @if($capacidadMax > 0)
+                                                <div class="text-center font-semibold text-gray-800 text-sm">
+                                                    {{ $capacidadMax }}
+                                                </div>
+                                            @else
+                                                <span class="text-gray-400 text-sm italic">-</span>
+                                            @endif
+                                        </td>
+
+                                        <!-- Columna 7: Status -->
                                       <td class="px-3 py-1 text-sm align-middle">
                                             <span class="w-4 h-4 rounded-full {{ $this->getEstadoColor($espacio['estado'], $espacio['tiene_clase'] ?? false, $espacio['tiene_reserva_solicitante'] ?? false, $espacio['tiene_reserva_profesor'] ?? false) }} flex-shrink-0 inline-block mr-2"></span>
                                             <span class="font-medium text-gray-900 text-sm">{{ $espacio['estado'] }}</span>
@@ -360,6 +376,11 @@
         setInterval(function() {
             @this.actualizarAutomaticamente();
         }, 60000); // Aumentado a 60 segundos
+
+        // Refresh completo de página cada hora para limpiar caché
+        setTimeout(function() {
+            location.reload();
+        }, 3600000); // 1 hora = 3600000 milisegundos
 
         // Escuchar eventos de Livewire para actualizar el feriado cuando se recarguen los datos
         document.addEventListener('livewire:load', function() {

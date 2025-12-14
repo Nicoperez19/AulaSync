@@ -1,6 +1,6 @@
 @extends('layouts.quick_actions.app')
 
-@section('title', 'Acciones Rápidas - AulaSync')
+@section('title', 'Acciones Rápidas - Gestor de Aulas IT')
 
 @section('content')
 <div class="space-y-6">
