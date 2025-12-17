@@ -99,6 +99,7 @@ Route::middleware(['auth', 'tenant.init', 'permission:dashboard', 'extend.execut
     Route::get('/dashboard/clases-no-realizadas-data', [DashboardController::class, 'getClasesNoRealizadasData'])->name('dashboard.clases-no-realizadas-data');
     Route::get('/dashboard/estadisticas-filtradas', [DashboardController::class, 'getEstadisticasFiltradas'])->name('dashboard.estadisticas-filtradas');
     Route::get('/dashboard/graficos-ajax', [DashboardController::class, 'obtenerDatosGraficosAjax'])->name('dashboard.graficos-ajax');
+    Route::get('/dashboard/graficos-rango', [DashboardController::class, 'getGraficosRango'])->name('dashboard.graficos-rango');
 });
 
 Route::middleware(['auth', 'tenant.init', 'role:Administrador'])->group(function () {
@@ -125,6 +126,7 @@ Route::middleware(['auth', 'role:Administrador|Supervisor'])->group(function () 
 Route::middleware(['auth', 'permission:reportes'])->group(function () {
     Route::get('/clases-no-realizadas', [\App\Http\Controllers\ClasesNoRealizadasController::class, 'index'])->name('clases-no-realizadas.index');
     Route::get('/clases-no-realizadas/export-excel', [\App\Http\Controllers\ClasesNoRealizadasController::class, 'exportExcel'])->name('clases-no-realizadas.export-excel');
+    Route::get('/clases-no-realizadas/export-all-excel', [\App\Http\Controllers\ClasesNoRealizadasController::class, 'exportAllExcel'])->name('clases-no-realizadas.export-all-excel');
 });
 
 // Clases Temporales - Administrador y Supervisor
@@ -191,9 +193,9 @@ Route::group(['middleware' => ['permission:mantenedor de permisos']], function (
     Route::post('/permission/permission_store', [PermisionController::class, 'store'])->name('permission.add');
 });
 
-// Licencias de Profesores
+// Ausencias de Profesores
 Route::group(['middleware' => ['auth', 'permission:gestionar licencias profesores']], function () {
-    Route::get('/licencias-profesores', [LicenciaProfesorController::class, 'index'])->name('licencias.index');
+    Route::get('/ausencias-profesores', [LicenciaProfesorController::class, 'index'])->name('ausencias-profesores');
 });
 
 // Recuperación de Clases

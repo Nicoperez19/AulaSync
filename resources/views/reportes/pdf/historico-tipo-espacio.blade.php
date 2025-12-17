@@ -171,7 +171,7 @@
     <div class="header">
         <img src="{{ public_path('images/logo_instituto_tecnologico-01.png') }}" alt="Logo Instituto Tecnológico" style="height: 60px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
         <h1>Histórico por Tipo de Espacio</h1>
-        <p>Sistema AulaSync - Instituto Tecnológico</p>
+        <p>Gestor de Aulas IT - Instituto Tecnológico</p>
         <p>Período: {{ $fecha_inicio }} - {{ $fecha_fin }}</p>
         <p>Generado el: {{ $fecha_generacion }}</p>
     </div>
@@ -252,7 +252,7 @@
     </table>
 
     <div class="footer">
-        <p>Este reporte fue generado automáticamente por el Sistema AulaSync</p>
+        <p>Este reporte fue generado automáticamente por el Gestor de Aulas IT</p>
         <p>Página 1 de 1</p>
     </div>
 </body>
