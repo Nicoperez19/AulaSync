@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 use App\Models\Piso;
 use App\Models\Facultad;
 use App\Models\Universidad;
+use App\Models\Espacio;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class PisoController extends Controller
 {
@@ -119,6 +121,65 @@ class PisoController extends Controller
             return redirect()->route('floors_index', [
                 'universidad' => $request->input('universidad')
             ])->with('error', 'Error al eliminar el piso: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Obtiene todos los pisos de una facultad (para el wizard)
+     *
+     * @param int $facultadId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getPisos($facultadId)
+    {
+        try {
+            Log::info('getPisos llamado con facultadId: ' . $facultadId);
+
+            $pisos = Piso::where('id_facultad', $facultadId)
+                ->orderBy('numero_piso')
+                ->get(['id', 'numero_piso', 'nombre_piso']);
+
+            Log::info('Pisos encontrados: ' . count($pisos));
+
+            return response()->json($pisos);
+        } catch (\Exception $e) {
+            Log::error('Error en getPisos: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Error al obtener pisos: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtiene todos los espacios de un piso (para el wizard)
+     *
+     * @param int $pisoId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getEspaciosPorPiso($pisoId)
+    {
+        try {
+            Log::info('getEspaciosPorPiso llamado con pisoId: ' . $pisoId);
+
+            $espacios = Espacio::where('piso_id', $pisoId)
+                ->orderBy('nombre_espacio')
+                ->get(['id_espacio as id', 'nombre_espacio as nombre', 'tipo_espacio as tipo', 'puestos_disponibles as capacidad']);
+
+            Log::info('Espacios encontrados: ' . count($espacios));
+
+            // Si no hay espacios para este piso, devolver todos los espacios disponibles
+            if ($espacios->isEmpty()) {
+                Log::info('No hay espacios para el piso ' . $pisoId . ', devolviendo todos los espacios');
+                $espacios = Espacio::orderBy('nombre_espacio')
+                    ->get(['id_espacio as id', 'nombre_espacio as nombre', 'tipo_espacio as tipo', 'puestos_disponibles as capacidad']);
+            }
+
+            return response()->json($espacios);
+        } catch (\Exception $e) {
+            Log::error('Error en getEspaciosPorPiso: ' . $e->getMessage());
+            return response()->json([
+                'error' => 'Error al obtener espacios: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

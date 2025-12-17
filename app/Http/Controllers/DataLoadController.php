@@ -9,6 +9,8 @@ use App\Models\Carrera;
 use App\Models\Horario;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Espacio;
+use App\Models\Piso;
+use App\Models\Facultad;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -134,14 +136,22 @@ class DataLoadController extends Controller
             $planificacionesEliminadas = Planificacion_Asignatura::whereIn('id_horario', $horariosDelPeriodo)->delete();
             Log::info('Planificaciones eliminadas del período ' . $periodoSeleccionado . ': ' . $planificacionesEliminadas);
 
-            // Obtener la sede actual del tenant
+            // LIMPIEZA DE ESPACIOS: Eliminar todos los espacios del tenant actual para recargarlos desde cero
             $tenant = \App\Models\Tenant::current();
+            if ($tenant) {
+                $espaciosEliminados = Espacio::count();
+                // Usar delete() en lugar de truncate() para respetar las foreign keys
+                Espacio::query()->delete();
+                Log::info('Espacios eliminados del tenant ' . $tenant->domain . ': ' . $espaciosEliminados);
+            }
+
+            // Obtener la sede actual del tenant
             $sedeActual = $tenant ? \App\Models\Sede::find($tenant->sede_id) : null;
             $nombreSedeActual = $sedeActual ? strtolower(trim($sedeActual->nombre_sede)) : null;
-            
+
             // Obtener la primera facultad de la sede para crear carreras automáticamente si es necesario
             $facultadDeLaSede = $sedeActual ? \App\Models\Facultad::where('id_sede', $sedeActual->id_sede)->first() : null;
-            
+
             // Si no existe facultad, crear una genérica para la sede
             if ($sedeActual && !$facultadDeLaSede) {
                 try {
@@ -156,11 +166,20 @@ class DataLoadController extends Controller
                     Log::error('No se pudo crear facultad genérica: ' . $e->getMessage());
                 }
             }
-            
+
             Log::info('Procesando carga masiva para sede: ' . ($nombreSedeActual ?? 'no definida'));
             Log::info('Sede ID del tenant: ' . ($tenant ? $tenant->sede_id : 'no hay tenant'));
             Log::info('Nombre de sede en DB: ' . ($sedeActual ? $sedeActual->nombre_sede : 'no encontrada'));
             Log::info('Facultad de la sede: ' . ($facultadDeLaSede ? $facultadDeLaSede->id_facultad : 'no encontrada'));
+
+            // IMPORTANTE: Extraer y crear espacios ANTES del procesamiento de planificaciones
+            // para que las planificaciones puedan referenciar los espacios existentes
+            try {
+                $this->extraerEspaciosDelArchivo($rows, $nombreSedeActual, $facultadDeLaSede);
+                Log::info('Espacios extraídos exitosamente antes del procesamiento de planificaciones');
+            } catch (\Exception $e) {
+                Log::warning('Advertencia: No se pudieron extraer espacios: ' . $e->getMessage());
+            }
 
             foreach ($rows as $index => $row) {
                 if ($index === 0) {
@@ -190,11 +209,11 @@ class DataLoadController extends Controller
                     if (!$carrera) {
                         // Intentar crear una carrera genérica para esta sede
                         $nombreCarrera = isset($row[18]) && !empty($row[18]) ? $row[18] : 'Carrera ' . $idCarrera;
-                        
+
                         // Necesitamos un área académica genérica para esta facultad
                         if ($facultadDeLaSede) {
                             $areaAcademicaGenerica = \App\Models\AreaAcademica::where('id_facultad', $facultadDeLaSede->id_facultad)->first();
-                            
+
                             if (!$areaAcademicaGenerica) {
                                 // Crear un área académica genérica para esta facultad
                                 try {
@@ -210,7 +229,7 @@ class DataLoadController extends Controller
                                 }
                             }
                         }
-                        
+
                         try {
                             $carrera = Carrera::create([
                                 'id_carrera' => $idCarrera,
@@ -397,6 +416,8 @@ class DataLoadController extends Controller
                 'registros_cargados' => $processedUsersCount + $processedAsignaturasCount + $processedHorariosCount
             ]);
 
+            // Los espacios ya fueron extraídos al inicio del procesamiento
+
             $message = 'Archivo procesado exitosamente. Se procesaron ' . $processedUsersCount . ' profesores, ' .
                 $processedAsignaturasCount . ' asignaturas y ' . $processedHorariosCount . ' horarios.';
             if (!empty($errors)) {
@@ -416,9 +437,121 @@ class DataLoadController extends Controller
             ]);
 
         } catch (\Exception $e) {
+            Log::error('Error en carga masiva: ' . $e->getMessage());
             return response()->json([
                 'message' => 'Error al procesar el archivo: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Extraer espacios únicos de los datos cargados
+     * Evita duplicados usando un conjunto de espacios ya procesados
+     */
+    private function extraerEspaciosDelArchivo($rows, $nombreSedeActual, $facultadDeLaSede)
+    {
+        try {
+            if (!$facultadDeLaSede) {
+                Log::info('No hay facultad disponible para crear espacios');
+                return;
+            }
+
+            $espaciosEncontrados = [];
+
+            // Iterar por las filas del archivo
+            foreach ($rows as $index => $row) {
+                if ($index === 0) continue; // Saltar encabezados
+
+                $sede = isset($row[7]) ? $row[7] : '';
+
+                // Filtrar por sede actual
+                if ($nombreSedeActual && strtolower(trim($sede)) !== $nombreSedeActual) {
+                    continue;
+                }
+
+                // Columna 20 es el horario del profesor
+                $horarioProfesor = isset($row[20]) ? $row[20] : '';
+
+                if (empty($horarioProfesor)) continue;
+
+                // Normalizar el formato del horario
+                $horarioProfesorNormalizado = preg_replace('/(?<!-)\s*([a-z]{2}:\s*)/i', ' - $1', $horarioProfesor);
+                $horarios = explode(' - ', $horarioProfesorNormalizado);
+
+                // Extraer espacios de cada segmento del horario
+                foreach ($horarios as $horarioStr) {
+                    if (preg_match('/^[a-záéíóúñ]{2,}:$/u', trim($horarioStr))) {
+                        continue;
+                    }
+
+                    // Patrón: dia.modulo/G:grupo (espacio)
+                    preg_match('/([A-Za-z]+)\.(\d+)\/G:(\d+)\s*\(([^)]+)\)/', $horarioStr, $matches);
+
+                    if (count($matches) === 5) {
+                        $espacioNombre = preg_replace('/^[a-z]{2}:\s*/i', '', $matches[4]);
+
+                        // Agregar a conjunto si no existe
+                        if (!in_array($espacioNombre, $espaciosEncontrados)) {
+                            $espaciosEncontrados[] = $espacioNombre;
+                        }
+                    }
+                }
+            }
+
+            // Crear espacios en la base de datos si no existen
+            if (empty($espaciosEncontrados)) {
+                Log::info('No se encontraron espacios para crear');
+                return;
+            }
+
+            // Obtener el primer piso de la facultad, o crear uno genérico
+            $primerPiso = Piso::where('id_facultad', $facultadDeLaSede->id_facultad)
+                ->orderBy('numero_piso')
+                ->first();
+
+            if (!$primerPiso) {
+                // Crear un piso genérico si no existe
+                try {
+                    $primerPiso = Piso::create([
+                        'numero_piso' => 1,
+                        'nombre_piso' => 'Piso 1',
+                        'id_facultad' => $facultadDeLaSede->id_facultad
+                    ]);
+                    Log::info('Piso genérico creado: ' . $primerPiso->id);
+                } catch (\Exception $e) {
+                    Log::warning('No se pudo crear piso genérico: ' . $e->getMessage());
+                    return; // Si no se puede crear el piso, no continuamos
+                }
+            }
+
+            // Crear espacios únicos
+            $espaciosCreados = 0;
+            foreach ($espaciosEncontrados as $espacioNombre) {
+                try {
+                    $espacioExiste = Espacio::where('id_espacio', $espacioNombre)->exists();
+
+                    if (!$espacioExiste) {
+                        Espacio::create([
+                            'id_espacio' => $espacioNombre,
+                            'nombre_espacio' => $espacioNombre,
+                            'tipo_espacio' => 'Sala de Clases',
+                            'puestos_disponibles' => 30,
+                            'piso_id' => $primerPiso->id
+                        ]);
+                        $espaciosCreados++;
+                        Log::info('Espacio creado automáticamente: ' . $espacioNombre);
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('Error al crear espacio ' . $espacioNombre . ': ' . $e->getMessage());
+                }
+            }
+
+            if ($espaciosCreados > 0) {
+                Log::info('Se crearon ' . $espaciosCreados . ' espacios nuevos de un total de ' . count($espaciosEncontrados));
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Error al extraer espacios del archivo: ' . $e->getMessage());
         }
     }
 

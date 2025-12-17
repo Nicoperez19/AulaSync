@@ -1,159 +1,133 @@
 {{-- Step 6: Digital Floor Plan - Full Maintainer --}}
-<div class="p-6">
-    <div class="text-center mb-6">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-teal-100 mb-4">
-            <i class="fas fa-map text-2xl text-teal-600"></i>
-        </div>
-        <h2 class="text-2xl font-bold text-gray-800">Plano Digital y Espacios</h2>
-        <p class="text-gray-600 mt-2">Configure el plano digital y los espacios de su sede</p>
-    </div>
-
-    <!-- Info Box -->
-    <div class="bg-teal-50 border border-teal-200 rounded-lg p-4 mb-6">
-        <div class="flex items-start">
-            <i class="fas fa-info-circle text-teal-500 mt-1 mr-3"></i>
-            <div>
-                <h4 class="font-semibold text-teal-800">¿Cómo funciona?</h4>
-                <p class="text-sm text-teal-700 mt-1">
-                    1. Seleccione un piso de la lista<br>
-                    2. Suba una imagen del plano<br>
-                    3. Seleccione un espacio de la lista izquierda<br>
-                    4. Haga clic en el plano para ubicarlo<br>
-                    5. Guarde el mapa cuando termine
-                </p>
-            </div>
+<div class="flex flex-col h-full">
+    <!-- Header Section -->
+    <div class="p-4 border-b border-gray-200">
+        <div class="text-center">
+            <h2 class="text-2xl font-bold text-gray-800">Plano Digital y Espacios</h2>
+            <p class="text-gray-600 mt-1">Configure el plano digital y los espacios de su sede</p>
         </div>
     </div>
 
-    <!-- Main Container -->
-    <div class="bg-white border border-gray-200 rounded-lg shadow-sm">
-        <!-- Selectores de sede, facultad y piso -->
-        <div class="grid grid-cols-1 gap-4 p-4 border-b border-gray-200 md:grid-cols-3">
-            <div>
-                <label for="init_sede" class="block text-sm font-medium text-gray-700 mb-1">Sede</label>
-                <input type="text" id="init_sede" name="init_sede" 
-                       value="{{ $sede->nombre_sede ?? 'Sin sede' }}" 
-                       class="block w-full px-3 py-2 border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
-                <input type="hidden" id="init_id_sede" value="{{ $sede->id_sede ?? '' }}">
+    <!-- Main Content Area (Flexible) - ocupar todo el espacio restante excepto footer -->
+    <div class="flex-grow overflow-hidden flex flex-col">
+        <!-- Info Box -->
+        <div class="bg-teal-50 border border-teal-200 rounded-lg p-3 mx-4 mt-4 mb-0 flex-shrink-0">
+            <div class="flex items-start">
+                <i class="fas fa-info-circle text-teal-500 mt-1 mr-3 flex-shrink-0"></i>
+                <div>
+                    <h4 class="font-semibold text-teal-800 text-sm">¿Cómo funciona?</h4>
+                    <p class="text-xs text-teal-700 mt-1">
+                        1. Seleccione un piso de la lista | 2. Suba una imagen del plano | 3. Seleccione un espacio de la lista | 4. Haga clic para ubicarlo | 5. Guarde el mapa
+                    </p>
+                </div>
             </div>
+        </div>
 
-            <div>
-                <label for="init_facultad" class="block text-sm font-medium text-gray-700 mb-1">Facultad</label>
-                <select id="init_facultad" name="init_facultad" 
-                        class="block w-full px-3 py-2 border-gray-300 rounded-md shadow-sm focus:border-teal-500 focus:ring-teal-500">
-                    <option value="">Seleccione una facultad</option>
-                    @php
-                        $facultades = \App\Models\Facultad::where('id_sede', $sede->id_sede ?? '')->get();
-                    @endphp
-                    @foreach($facultades as $facultad)
-                        <option value="{{ $facultad->id_facultad }}">{{ $facultad->nombre_facultad }}</option>
-                    @endforeach
-                </select>
-            </div>
+        <!-- Main Container -->
+        <div class="flex-grow overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm m-4 flex flex-col">
+            <!-- Selectores de sede, facultad y piso -->
+            <div class="grid grid-cols-1 gap-3 p-3 border-b border-gray-200 md:grid-cols-4 flex-shrink-0">
+                <div>
+                    <label for="init_sede" class="block text-xs font-medium text-gray-700 mb-1">Sede</label>
+                    <input type="text" id="init_sede" name="init_sede"
+                           value="{{ $sede->nombre_sede ?? 'Sin sede' }}"
+                           class="block w-full px-2 py-1 text-xs border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
+                    <input type="hidden" id="init_id_sede" value="{{ $sede->id_sede ?? '' }}">
+                </div>
 
-            <div>
-                <label for="init_piso" class="block text-sm font-medium text-gray-700 mb-1">Piso</label>
-                <div class="flex gap-2">
-                    <select id="init_piso" name="init_piso" 
-                            class="block w-full px-3 py-2 border-gray-300 rounded-md shadow-sm focus:border-teal-500 focus:ring-teal-500">
-                        <option value="">Seleccione un piso</option>
+                <div>
+                    <label for="init_facultad" class="block text-xs font-medium text-gray-700 mb-1">Facultad</label>
+                    <select id="init_facultad" name="init_facultad"
+                            class="block w-full px-2 py-1 text-xs border-gray-300 rounded-md shadow-sm focus:border-teal-500 focus:ring-teal-500">
+                        <option value="">Seleccione</option>
+                        @php
+                            $facultades = \App\Models\Facultad::where('id_sede', $sede->id_sede ?? '')->get();
+                        @endphp
+                        @foreach($facultades as $facultad)
+                            <option value="{{ $facultad->id_facultad }}">{{ $facultad->nombre_facultad }}</option>
+                        @endforeach
                     </select>
-                    <button type="button" id="btnAgregarPiso" 
-                            class="px-3 py-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors whitespace-nowrap">
+                </div>
+
+                <div>
+                    <label for="init_piso" class="block text-xs font-medium text-gray-700 mb-1">Piso</label>
+                    <select id="init_piso" name="init_piso"
+                            class="block w-full px-2 py-1 text-xs border-gray-300 rounded-md shadow-sm focus:border-teal-500 focus:ring-teal-500">
+                        <option value="">Seleccione</option>
+                    </select>
+                </div>
+
+                <div class="flex items-end">
+                    <button type="button" id="btnAgregarPiso"
+                            class="w-full px-2 py-1 bg-teal-600 text-white text-xs rounded-md hover:bg-teal-700 transition-colors whitespace-nowrap flex-shrink-0">
                         <i class="fas fa-plus"></i> Nuevo
                     </button>
                 </div>
             </div>
-        </div>
 
-        <!-- Contenedor principal con diseño de dos columnas -->
-        <div class="flex flex-col gap-4 p-4 md:flex-row">
-            <!-- Columna izquierda - Lista de espacios -->
-            <div class="w-full md:w-1/4">
-                <div class="h-full p-3 bg-gray-50 rounded-lg border border-gray-200">
-                    <h3 class="mb-3 text-base font-semibold text-gray-900">Espacios Disponibles</h3>
-                    <div id="initEspaciosList" class="space-y-2 max-h-[350px] overflow-y-auto">
-                        <div class="py-8 text-center text-gray-500 text-sm" id="initEmptySpacesMessage">
-                            Seleccione un piso para cargar los espacios
-                        </div>
+            <!-- Contenedor principal con diseño de dos columnas - FULLSCREEN -->
+            <div class="flex-grow flex flex-col gap-0 p-0 md:flex-row overflow-hidden">
+                <!-- Columna izquierda - Lista de espacios -->
+                <div class="w-full md:w-48 border-r border-gray-200 overflow-hidden flex flex-col flex-shrink-0">
+                    <div class="p-2 border-b border-gray-200 flex-shrink-0">
+                        <h3 class="text-xs font-semibold text-gray-900">Espacios</h3>
                     </div>
-                </div>
-            </div>
-
-            <!-- Columna derecha - Canvas y controles -->
-            <div class="w-full md:w-3/4">
-                <!-- Nombre del mapa -->
-                <div id="initNombreMapaContainer" class="hidden mb-3">
-                    <label for="init_nombre_mapa" class="block text-sm font-medium text-gray-700 mb-1">Nombre del Mapa</label>
-                    <input type="text" name="init_nombre_mapa" id="init_nombre_mapa" 
-                           class="block w-full px-3 py-2 border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
-                </div>
-
-                <!-- Carga de imagen -->
-                <div class="mb-3">
-                    <label for="initMapImage" class="block text-sm font-medium text-gray-700 mb-1">
-                        <i class="fas fa-image mr-1"></i> Subir Imagen del Plano
-                    </label>
-                    <input type="file" id="initMapImage" accept="image/*" 
-                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
-                </div>
-
-                <!-- Contenedor del mapa -->
-                <div class="relative p-4 border-2 border-gray-300 border-dashed rounded-lg bg-gray-50" style="padding-top: 60%;">
-                    <canvas id="initMapCanvas" class="absolute top-0 left-0 w-full h-full bg-white"></canvas>
-                    <canvas id="initIndicatorsCanvas" class="absolute top-0 left-0 w-full h-full pointer-events-auto"></canvas>
-                    
-                    <!-- Mensaje cuando no hay imagen -->
-                    <div id="initNoImageMessage" class="absolute inset-0 flex items-center justify-center text-gray-400">
-                        <div class="text-center">
-                            <i class="fas fa-image text-4xl mb-2"></i>
-                            <p class="text-sm">Suba una imagen del plano</p>
+                    <div class="flex-grow overflow-y-auto">
+                        <div id="initEspaciosList" class="space-y-1 p-2">
+                            <div class="py-4 text-center text-gray-500 text-xs" id="initEmptySpacesMessage">
+                                Seleccione un piso
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Botones de acción del mapa -->
-                <div class="flex justify-end gap-3 mt-3">
-                    <button id="initClearIndicatorsBtn" type="button" 
-                            class="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 text-sm">
-                        <i class="fas fa-trash mr-1"></i> Limpiar Todo
-                    </button>
-                    <button id="initSaveMapBtn" type="button" 
-                            class="hidden px-4 py-2 text-white bg-green-600 rounded-lg hover:bg-green-700 text-sm">
-                        <i class="fas fa-save mr-1"></i> Guardar Mapa
-                    </button>
-                </div>
-            </div>
-        </div>
+                <!-- Columna derecha - Canvas y controles -->
+                <div class="flex-1 flex flex-col overflow-hidden">
+                    <!-- Panel de controles -->
+                    <div class="p-2 border-b border-gray-200 space-y-2 flex-shrink-0">
+                        <!-- Nombre del mapa -->
+                        <div id="initNombreMapaContainer" class="hidden">
+                            <label for="init_nombre_mapa" class="block text-xs font-medium text-gray-700 mb-1">Nombre del Mapa</label>
+                            <input type="text" name="init_nombre_mapa" id="init_nombre_mapa"
+                                   class="block w-full px-2 py-1 text-xs border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
+                        </div>
 
-        <!-- Lista de mapas creados -->
-        <div class="p-4 border-t border-gray-200">
-            <h4 class="font-semibold text-gray-800 mb-3">
-                <i class="fas fa-list mr-2"></i>Mapas Creados
-            </h4>
-            <div id="initMapasList" class="space-y-2">
-                @php
-                    $mapas = \App\Models\Mapa::with('piso')->get();
-                @endphp
-                @forelse($mapas as $mapa)
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div class="flex items-center">
-                            @if($mapa->ruta_mapa)
-                                <img src="{{ asset('storage/' . $mapa->ruta_mapa) }}" alt="{{ $mapa->nombre_mapa }}" class="h-10 w-16 object-cover rounded mr-3">
-                            @else
-                                <div class="h-10 w-16 bg-gray-200 rounded mr-3 flex items-center justify-center">
-                                    <i class="fas fa-map text-gray-400"></i>
+                        <!-- Carga de imagen y controles en una fila -->
+                        <div class="flex items-end gap-1">
+                            <div class="flex-grow">
+                                <label for="initMapImage" class="block text-xs font-medium text-gray-700 mb-1">
+                                    <i class="fas fa-image mr-1"></i>Plano
+                                </label>
+                                <input type="file" id="initMapImage" accept="image/*"
+                                       class="block w-full text-xs text-gray-500 file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
+                            </div>
+                            <button id="initClearIndicatorsBtn" type="button"
+                                    class="px-2 py-1 text-xs text-white bg-red-600 rounded hover:bg-red-700 flex-shrink-0">
+                                <i class="fas fa-trash mr-1"></i>Limpiar
+                            </button>
+                            <button id="initSaveMapBtn" type="button"
+                                    class="hidden px-2 py-1 text-xs text-white bg-green-600 rounded hover:bg-green-700 flex-shrink-0">
+                                <i class="fas fa-save mr-1"></i>Guardar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Contenedor del canvas - CON SCROLL VERTICAL -->
+                    <div class="flex-grow relative overflow-y-auto overflow-x-hidden bg-gray-50">
+                        <div class="relative" id="initCanvasContainer">
+                            <canvas id="initMapCanvas" class="block w-full bg-white"></canvas>
+                            <canvas id="initIndicatorsCanvas" class="absolute top-0 left-0 w-full pointer-events-auto"></canvas>
+
+                            <!-- Mensaje cuando no hay imagen -->
+                            <div id="initNoImageMessage" class="absolute inset-0 flex items-center justify-center text-gray-400">
+                                <div class="text-center">
+                                    <i class="fas fa-image text-4xl mb-2"></i>
+                                    <p class="text-sm">Suba una imagen del plano</p>
                                 </div>
-                            @endif
-                            <span class="font-medium text-gray-800">{{ $mapa->nombre_mapa }}</span>
+                            </div>
                         </div>
-                        <span class="text-sm text-gray-500">{{ $mapa->piso->numero_piso ?? 'Sin piso' }}</span>
                     </div>
-                @empty
-                    <div class="text-center py-4 text-gray-500 text-sm" id="initNoMapsMessage">
-                        No hay mapas creados aún
-                    </div>
-                @endforelse
+                </div>
             </div>
         </div>
     </div>
@@ -220,17 +194,17 @@
         </div>
     </div>
 
-    <!-- Navigation Buttons -->
-    <div class="mt-6 flex justify-between">
-        <a href="{{ route('tenant.initialization.previous') }}" 
-           class="inline-flex items-center px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition">
+    <!-- Navigation Buttons - Fixed at bottom -->
+    <div class="border-t border-gray-200 bg-white p-3 flex justify-between">
+        <a href="{{ route('tenant.initialization.previous') }}"
+           class="inline-flex items-center px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded hover:bg-gray-300 transition text-sm">
             <i class="fas fa-arrow-left mr-2"></i>
             Anterior
         </a>
         <form action="{{ route('tenant.initialization.skip-plan') }}" method="POST" class="inline">
             @csrf
-            <button type="submit" 
-                    class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+            <button type="submit"
+                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition text-sm">
                 Continuar
                 <i class="fas fa-arrow-right ml-2"></i>
             </button>
@@ -248,8 +222,12 @@ document.addEventListener("DOMContentLoaded", function() {
         currentMapId: null,
         indicators: [],
         isDragging: false,
-        dragIndex: -1
+        dragIndex: -1,
+        currentPisoId: null
     };
+
+    // Almacenar el estado de cada piso (imagen + indicadores)
+    const pisoStates = {};
 
     // Elementos del DOM
     const initElements = {
@@ -306,7 +284,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Manejar submit del formulario de agregar piso
     initElements.formAgregarPiso.addEventListener('submit', function(e) {
         e.preventDefault();
-        
+
         const numeroPiso = document.getElementById('numero_piso').value;
         const nombrePiso = document.getElementById('nombre_piso').value;
         const idFacultad = initElements.facultadSelect.value;
@@ -344,7 +322,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 initElements.pisoSelect.dispatchEvent(new Event('change'));
 
                 cerrarModalPiso();
-                
+
                 // Mostrar mensaje de éxito
                 alert('Piso creado exitosamente');
             } else {
@@ -366,17 +344,98 @@ document.addEventListener("DOMContentLoaded", function() {
         indicatorTextColor: '#FFFFFF'
     };
 
+    // Guardar el estado actual del piso
+    function savePisoState() {
+        if (!initState.currentPisoId) return;
+
+        pisoStates[initState.currentPisoId] = {
+            mapImage: initState.mapImage,
+            originalImageSize: initState.originalImageSize,
+            indicators: [...initState.indicators],
+            imageFile: initElements.mapImageInput.files[0]
+        };
+    }
+
+    // Cargar el estado de un piso
+    function loadPisoState(pisoId) {
+        // Guardar estado actual antes de cambiar
+        savePisoState();
+
+        initState.currentPisoId = pisoId;
+
+        // Limpiar estado actual
+        initState.mapImage = null;
+        initState.originalImageSize = null;
+        initState.indicators = [];
+        initState.selectedSpace = null;
+        initElements.mapImageInput.value = '';
+
+        // Si hay estado guardado para este piso, cargarlo
+        if (pisoStates[pisoId]) {
+            const savedState = pisoStates[pisoId];
+            initState.mapImage = savedState.mapImage;
+            initState.originalImageSize = savedState.originalImageSize;
+            initState.indicators = [...savedState.indicators];
+
+            if (initState.mapImage) {
+                initElements.noImageMessage.classList.add('hidden');
+                initCanvases();
+            } else {
+                initElements.noImageMessage.classList.remove('hidden');
+                // Limpiar canvas
+                const container = document.getElementById('initCanvasContainer');
+                initElements.mapCanvas.width = container.clientWidth;
+                initElements.mapCanvas.height = 600;
+                initElements.indicatorsCanvas.width = container.clientWidth;
+                initElements.indicatorsCanvas.height = 600;
+                initElements.mapCanvas.style.height = '600px';
+                initElements.indicatorsCanvas.style.height = '600px';
+                drawCanvas();
+                drawIndicators();
+            }
+        } else {
+            // No hay estado guardado, mostrar canvas vacío
+            initElements.noImageMessage.classList.remove('hidden');
+            const container = document.getElementById('initCanvasContainer');
+            initElements.mapCanvas.width = container.clientWidth;
+            initElements.mapCanvas.height = 600;
+            initElements.indicatorsCanvas.width = container.clientWidth;
+            initElements.indicatorsCanvas.height = 600;
+            initElements.mapCanvas.style.height = '600px';
+            initElements.indicatorsCanvas.style.height = '600px';
+            drawCanvas();
+            drawIndicators();
+        }
+
+        // Actualizar visibilidad del botón guardar
+        if (initState.indicators.length > 0) {
+            initElements.saveMapBtn.classList.remove('hidden');
+        } else {
+            initElements.saveMapBtn.classList.add('hidden');
+        }
+    }
+
     // Inicializar los canvases
     function initCanvases() {
-        const container = initElements.mapCanvas.parentElement;
+        const container = document.getElementById('initCanvasContainer');
         const width = container.clientWidth;
-        const height = container.clientHeight;
-        
+
+        // Calcular altura basada en la proporción de la imagen
+        let height = 600; // Altura mínima por defecto
+        if (initState.mapImage) {
+            const imageRatio = initState.mapImage.width / initState.mapImage.height;
+            height = Math.round(width / imageRatio);
+        }
+
         initElements.mapCanvas.width = width;
         initElements.mapCanvas.height = height;
         initElements.indicatorsCanvas.width = width;
         initElements.indicatorsCanvas.height = height;
-        
+
+        // Establecer la altura explícitamente en el estilo
+        initElements.mapCanvas.style.height = height + 'px';
+        initElements.indicatorsCanvas.style.height = height + 'px';
+
         drawCanvas();
         drawIndicators();
     }
@@ -384,32 +443,17 @@ document.addEventListener("DOMContentLoaded", function() {
     // Dibujar la imagen base
     function drawCanvas() {
         initElements.mapCtx.clearRect(0, 0, initElements.mapCanvas.width, initElements.mapCanvas.height);
-        
+
         if (!initState.mapImage) return;
 
-        const canvasRatio = initElements.mapCanvas.width / initElements.mapCanvas.height;
-        const imageRatio = initState.mapImage.width / initState.mapImage.height;
-        let drawWidth, drawHeight, offsetX, offsetY;
-
-        if (imageRatio > canvasRatio) {
-            drawWidth = initElements.mapCanvas.width;
-            drawHeight = initElements.mapCanvas.width / imageRatio;
-            offsetX = 0;
-            offsetY = (initElements.mapCanvas.height - drawHeight) / 2;
-        } else {
-            drawHeight = initElements.mapCanvas.height;
-            drawWidth = initElements.mapCanvas.height * imageRatio;
-            offsetX = (initElements.mapCanvas.width - drawWidth) / 2;
-            offsetY = 0;
-        }
-
-        initElements.mapCtx.drawImage(initState.mapImage, offsetX, offsetY, drawWidth, drawHeight);
+        // Dibujar la imagen ocupando todo el canvas (ancho y alto completo)
+        initElements.mapCtx.drawImage(initState.mapImage, 0, 0, initElements.mapCanvas.width, initElements.mapCanvas.height);
     }
 
     // Dibujar todos los indicadores
     function drawIndicators() {
         initElements.indicatorsCtx.clearRect(0, 0, initElements.indicatorsCanvas.width, initElements.indicatorsCanvas.height);
-        
+
         initState.indicators.forEach((indicator, index) => {
             drawIndicator(indicator, index === initState.dragIndex);
         });
@@ -420,13 +464,13 @@ document.addEventListener("DOMContentLoaded", function() {
         const { x, y, id } = indicator;
         const size = config.indicatorSize;
         const color = isDragging ? config.indicatorActiveColor : config.indicatorColor;
-        
+
         initElements.indicatorsCtx.fillStyle = color;
         initElements.indicatorsCtx.fillRect(x - size/2, y - size/2, size, size);
         initElements.indicatorsCtx.lineWidth = 2;
         initElements.indicatorsCtx.strokeStyle = config.indicatorBorder;
         initElements.indicatorsCtx.strokeRect(x - size/2, y - size/2, size, size);
-        
+
         initElements.indicatorsCtx.font = `bold ${size/3}px Arial`;
         initElements.indicatorsCtx.fillStyle = config.indicatorTextColor;
         initElements.indicatorsCtx.textAlign = 'center';
@@ -447,28 +491,9 @@ document.addEventListener("DOMContentLoaded", function() {
     function canvasToImageCoordinates(canvasX, canvasY) {
         if (!initState.mapImage) return { x: 0, y: 0 };
 
-        const canvasRatio = initElements.mapCanvas.width / initElements.mapCanvas.height;
-        const imageRatio = initState.mapImage.width / initState.mapImage.height;
-        let drawWidth, drawHeight, offsetX, offsetY;
-
-        if (imageRatio > canvasRatio) {
-            drawWidth = initElements.mapCanvas.width;
-            drawHeight = initElements.mapCanvas.width / imageRatio;
-            offsetX = 0;
-            offsetY = (initElements.mapCanvas.height - drawHeight) / 2;
-        } else {
-            drawHeight = initElements.mapCanvas.height;
-            drawWidth = initElements.mapCanvas.height * imageRatio;
-            offsetX = (initElements.mapCanvas.width - drawWidth) / 2;
-            offsetY = 0;
-        }
-
-        if (canvasX < offsetX || canvasX > offsetX + drawWidth || canvasY < offsetY || canvasY > offsetY + drawHeight) {
-            return null;
-        }
-
-        const relativeX = (canvasX - offsetX) / drawWidth;
-        const relativeY = (canvasY - offsetY) / drawHeight;
+        // La imagen ocupa todo el canvas, conversión directa
+        const relativeX = canvasX / initElements.mapCanvas.width;
+        const relativeY = canvasY / initElements.mapCanvas.height;
 
         return {
             x: Math.round(relativeX * initState.originalImageSize.width),
@@ -502,6 +527,9 @@ document.addEventListener("DOMContentLoaded", function() {
             };
             initElements.noImageMessage.classList.add('hidden');
             initCanvases();
+
+            // Guardar estado del piso actual
+            savePisoState();
         };
         img.src = URL.createObjectURL(file);
     });
@@ -509,6 +537,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Limpiar todos los indicadores
     initElements.clearIndicatorsBtn.addEventListener('click', function() {
         initState.indicators = [];
+        savePisoState(); // Guardar limpieza
         drawIndicators();
         initElements.saveMapBtn.classList.add('hidden');
     });
@@ -518,19 +547,38 @@ document.addEventListener("DOMContentLoaded", function() {
         const facultadId = this.value;
         initElements.pisoSelect.innerHTML = '<option value="">Seleccione un piso</option>';
         initElements.nombreMapaContainer.classList.add('hidden');
-        
+
         if (facultadId) {
-            fetch(`/pisos/${facultadId}`)
-                .then(response => response.json())
-                .then(data => {
-                    data.forEach(piso => {
-                        const option = document.createElement('option');
-                        option.value = piso.id;
-                        option.textContent = piso.nombre_piso || `Piso ${piso.numero_piso}`;
-                        initElements.pisoSelect.appendChild(option);
-                    });
+            // Construir URL con prefijo de tenant/initialization
+            const url = `/tenant/initialization/pisos/${facultadId}`;
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
                 })
-                .catch(error => console.error('Error al cargar pisos:', error));
+                .then(data => {
+                    console.log('Pisos cargados:', data);
+                    if (Array.isArray(data) && data.length > 0) {
+                        data.forEach(piso => {
+                            const option = document.createElement('option');
+                            option.value = piso.id;
+                            option.textContent = piso.nombre_piso || `Piso ${piso.numero_piso}`;
+                            initElements.pisoSelect.appendChild(option);
+                        });
+                    } else {
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'No hay pisos disponibles';
+                        option.disabled = true;
+                        initElements.pisoSelect.appendChild(option);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar pisos:', error);
+                    alert('Error al cargar los pisos: ' + error.message);
+                });
         }
     });
 
@@ -540,39 +588,56 @@ document.addEventListener("DOMContentLoaded", function() {
         initElements.nombreMapaContainer.classList.add('hidden');
 
         if (pisoId) {
-            fetch(`/espacios-por-piso/${pisoId}`)
-                .then(response => response.json())
+            // Cargar el estado guardado de este piso (o limpiar si no existe)
+            loadPisoState(pisoId);
+
+            // Construir URL con prefijo de tenant/initialization
+            const url = `/tenant/initialization/espacios-por-piso/${pisoId}`;
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Espacios cargados:', data);
                     initElements.espaciosList.innerHTML = '';
                     initElements.emptySpacesMessage.classList.add('hidden');
 
                     if (data.length === 0) {
-                        initElements.emptySpacesMessage.textContent = 'No hay espacios disponibles para este piso';
+                        initElements.emptySpacesMessage.textContent = 'No hay espacios disponibles';
                         initElements.emptySpacesMessage.classList.remove('hidden');
                         initElements.espaciosList.appendChild(initElements.emptySpacesMessage);
                         return;
                     }
 
+                    // Mostrar mensaje si se están cargando todos los espacios disponibles (fallback)
+                    const allSpacesNote = document.createElement('div');
+                    allSpacesNote.className = 'px-3 py-2 text-xs bg-blue-50 border border-blue-200 rounded text-blue-700 mb-2';
+                    allSpacesNote.textContent = '📌 Mostrando todos los espacios disponibles en el sistema';
+                    initElements.espaciosList.appendChild(allSpacesNote);
+
                     data.forEach(espacio => {
                         const espacioItem = document.createElement('div');
                         espacioItem.className = 'p-2 bg-white rounded cursor-pointer hover:bg-teal-50 transition-colors flex items-center gap-2 border border-gray-200';
-                        espacioItem.setAttribute('data-espacio-id', espacio.id_espacio);
+                        espacioItem.setAttribute('data-espacio-id', espacio.id);
                         espacioItem.innerHTML = `
-                            <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 font-bold text-white bg-teal-600 rounded text-xs">${espacio.id_espacio}</div>
-                            <div class="text-sm font-medium truncate">${espacio.nombre_espacio}</div>
+                            <div class="flex items-center justify-center flex-shrink-0 w-10 h-10 font-bold text-white bg-teal-600 rounded text-xs">${espacio.id}</div>
+                            <div class="text-sm font-medium truncate">${espacio.nombre}</div>
                         `;
 
                         espacioItem.addEventListener('click', function() {
-                            document.querySelectorAll('#initEspaciosList > div').forEach(item => {
+                            document.querySelectorAll('#initEspaciosList > div[data-espacio-id]').forEach(item => {
                                 item.classList.remove('bg-teal-100', 'border-teal-500');
                             });
-                            
+
                             this.classList.add('bg-teal-100', 'border-teal-500');
                             initState.selectedSpace = {
-                                id: espacio.id_espacio,
-                                nombre: espacio.nombre_espacio
+                                id: espacio.id,
+                                nombre: espacio.nombre
                             };
-                            
+
                             initElements.indicatorsCanvas.style.cursor = 'crosshair';
                         });
 
@@ -581,7 +646,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
                     updateNombreMapa();
                 })
-                .catch(error => console.error('Error al cargar espacios:', error));
+                .catch(error => {
+                    console.error('Error al cargar espacios:', error);
+                    initElements.emptySpacesMessage.textContent = 'Error al cargar espacios: ' + error.message;
+                    initElements.emptySpacesMessage.classList.remove('hidden');
+                    initElements.espaciosList.appendChild(initElements.emptySpacesMessage);
+                });
         }
     });
 
@@ -589,17 +659,18 @@ document.addEventListener("DOMContentLoaded", function() {
     initElements.indicatorsCanvas.addEventListener('mousedown', function(e) {
         const { x, y } = getCanvasCoordinates(e);
         const index = isClickOnIndicator(x, y);
-        
+
         if (index !== -1 && e.button === 0) {
             initState.isDragging = true;
             initState.dragIndex = index;
             drawIndicators();
             e.preventDefault();
         }
-        
+
         if (e.button === 2 && index !== -1) {
             initState.indicators.splice(index, 1);
             drawIndicators();
+            savePisoState(); // Guardar cambio
             if (initState.indicators.length === 0) {
                 initElements.saveMapBtn.classList.add('hidden');
             }
@@ -609,18 +680,18 @@ document.addEventListener("DOMContentLoaded", function() {
 
     initElements.indicatorsCanvas.addEventListener('mousemove', function(e) {
         if (!initState.isDragging) return;
-        
+
         const { x, y } = getCanvasCoordinates(e);
         if (initState.dragIndex !== -1) {
             initState.indicators[initState.dragIndex].x = x;
             initState.indicators[initState.dragIndex].y = y;
-            
+
             const imgCoords = canvasToImageCoordinates(x, y);
             if (imgCoords) {
                 initState.indicators[initState.dragIndex].originalX = imgCoords.x;
                 initState.indicators[initState.dragIndex].originalY = imgCoords.y;
             }
-            
+
             drawIndicators();
         }
     });
@@ -629,6 +700,7 @@ document.addEventListener("DOMContentLoaded", function() {
         if (initState.isDragging) {
             initState.isDragging = false;
             initState.dragIndex = -1;
+            savePisoState(); // Guardar posición final
             drawIndicators();
         }
     });
@@ -648,7 +720,7 @@ document.addEventListener("DOMContentLoaded", function() {
     // Colocar nuevo indicador
     initElements.indicatorsCanvas.addEventListener('click', function(e) {
         if (initState.isDragging) return;
-        
+
         if (!initState.selectedSpace) {
             alert('Por favor, selecciona un espacio de la lista primero');
             return;
@@ -661,7 +733,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         const { x, y } = getCanvasCoordinates(e);
         const imgCoords = canvasToImageCoordinates(x, y);
-        
+
         if (!imgCoords) {
             alert('Debes hacer clic dentro del área de la imagen');
             return;
@@ -690,6 +762,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         initState.selectedSpace = null;
         initElements.indicatorsCanvas.style.cursor = 'default';
+        savePisoState(); // Guardar nuevo indicador
         drawIndicators();
         initElements.saveMapBtn.classList.remove('hidden');
     });
@@ -760,25 +833,25 @@ document.addEventListener("DOMContentLoaded", function() {
         z-index: 10;
         cursor: default;
     }
-    
+
     #initMapCanvas {
         z-index: 1;
     }
-    
+
     #initEspaciosList {
         scrollbar-width: thin;
         scrollbar-color: #c1c1c1 #f1f1f1;
     }
-    
+
     #initEspaciosList::-webkit-scrollbar {
         width: 6px;
     }
-    
+
     #initEspaciosList::-webkit-scrollbar-track {
         background: #f1f1f1;
         border-radius: 3px;
     }
-    
+
     #initEspaciosList::-webkit-scrollbar-thumb {
         background: #c1c1c1;
         border-radius: 3px;

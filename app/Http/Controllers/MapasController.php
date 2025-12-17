@@ -20,7 +20,13 @@ public function edit($id)
     {
         $mapa = Mapa::with('bloques.espacio')->findOrFail($id);
         $pisos = Piso::all();
-        return view('layouts.maps.map_edit', compact('mapa', 'pisos'));
+
+        // Obtener sede y facultad del tenant actual
+        $tenant = \App\Models\Tenant::current();
+        $sede = $tenant ? Sede::find($tenant->sede_id) : null;
+        $facultad = $sede ? Facultad::where('id_sede', $sede->id_sede)->first() : null;
+
+        return view('layouts.maps.map_edit', compact('mapa', 'pisos', 'sede', 'facultad'));
     }
     public function update(Request $request, $id)
     {
@@ -90,7 +96,13 @@ public function edit($id)
     public function add()
     {
         $universidades = Universidad::all();
-        return view('layouts.maps.map_add', compact('universidades'));
+
+        // Obtener sede y facultad del tenant actual
+        $tenant = \App\Models\Tenant::current();
+        $sede = $tenant ? Sede::find($tenant->sede_id) : null;
+        $facultad = $sede ? Facultad::where('id_sede', $sede->id_sede)->first() : null;
+
+        return view('layouts.maps.map_add', compact('universidades', 'sede', 'facultad'));
     }
 
     public function store(Request $request)
@@ -135,7 +147,7 @@ public function edit($id)
                 'id_mapa' => $request->nombre_mapa,
                 'nombre_mapa' => $request->nombre_mapa,
                 'ruta_mapa' => $path,
-                'ruta_canvas' => $path, 
+                'ruta_canvas' => $path,
                 'piso_id' => $request->piso_id
             ]);
 
@@ -246,6 +258,39 @@ public function edit($id)
         } catch (\Exception $e) {
             Log::error('Error al obtener espacios:', [
                 'id_piso' => $pisoId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['error' => 'Error al obtener los espacios: ' . $e->getMessage()], 500);
+        }
+    }
+
+    public function getEspaciosPorFacultad($facultadId)
+    {
+        try {
+            Log::info('Obteniendo todos los espacios para facultad:', ['id_facultad' => $facultadId]);
+
+            // Obtener todos los pisos de la facultad
+            $pisos = Piso::where('id_facultad', $facultadId)->pluck('id');
+
+            if ($pisos->isEmpty()) {
+                return response()->json([
+                    'message' => 'No hay pisos disponibles para esta facultad',
+                    'espacios' => []
+                ], 200);
+            }
+
+            // Obtener todos los espacios de esos pisos
+            $espacios = Espacio::select('id_espacio', 'nombre_espacio')
+                ->whereIn('piso_id', $pisos)
+                ->get();
+
+            Log::info('Espacios encontrados:', ['count' => $espacios->count()]);
+
+            return response()->json($espacios);
+        } catch (\Exception $e) {
+            Log::error('Error al obtener espacios por facultad:', [
+                'id_facultad' => $facultadId,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);

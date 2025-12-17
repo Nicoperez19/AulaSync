@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'AulaSync') }} - Configuración Inicial</title>
+    <title>{{ config('app.name', 'Gestor de Aulas') }} - Configuración Inicial</title>
 
     <!-- Fuentes -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,13 +25,13 @@
             flex-direction: column;
             align-items: center;
         }
-        
+
         .step-row {
             display: flex;
             align-items: center;
             width: 100%;
         }
-        
+
         .step-indicator {
             transition: all 0.3s ease;
             display: flex;
@@ -40,13 +40,13 @@
             font-size: 1.25rem;
             flex-shrink: 0;
         }
-        
+
         @media (max-width: 640px) {
             .step-indicator {
                 font-size: 1rem;
             }
         }
-        
+
         .step-indicator.active {
             background-color: #2563eb;
             color: white;
@@ -55,28 +55,28 @@
             background-color: #10b981;
             color: white;
         }
-        
+
         .step-line {
             transition: all 0.3s ease;
             height: 4px;
             flex: 1;
             margin: 0 0.25rem;
         }
-        
+
         @media (min-width: 640px) {
             .step-line {
                 margin: 0 0.5rem;
             }
         }
-        
+
         .step-line.completed {
             background-color: #10b981;
         }
-        
+
         .fade-in {
             animation: fadeIn 0.5s ease-in;
         }
-        
+
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -89,7 +89,8 @@
         <header class="">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 <div class="flex items-center justify-between">
-                    <img src="{{ asset('images/logo_dark.png') }}" alt="AulaSync" class="  h-10 sm:h-12 brightness-0">
+                   <!---- <img src="" alt="AulaSync" class="  h-10 sm:h-12 brightness-0">--->
+                   <div>Gestor de Aulas</div>
                     <div class="text-black">
                         <span class="font-semibold">Asistente configuración sede {{ $sede->nombre_sede ?? 'Configuración de Sede' }}</span>
                     </div>
@@ -98,9 +99,9 @@
         </header>
 
         <!-- Main Content -->
-        <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 {{ $step === 6 ? '!p-0 !container-none !max-w-full' : '' }}">
             <!-- Step Indicators (solo mostrar después del paso 0) -->
-            @if($step > 0)
+            @if($step > 0 && $step !== 6)
             <div class="max-w-4xl mx-auto mb-8">
                 <!-- Fila de círculos y líneas -->
                 <div class="flex items-center justify-between mb-3">
@@ -126,14 +127,14 @@
                                 <i class="fas {{ $stepInfo['icon'] }} text-base sm:text-lg"></i>
                             @endif
                         </div>
-                        
+
                         <!-- Línea conectora (excepto después del último paso) -->
                         @if($stepNum < 7)
                             <div class="step-line {{ $step > $stepNum ? 'completed' : 'bg-gray-300' }}"></div>
                         @endif
                     @endforeach
                 </div>
-                
+
                 <!-- Fila de textos -->
                 <div class="flex items-center justify-between">
                     @foreach($steps as $stepNum => $stepInfo)
@@ -189,8 +190,8 @@
             @endif
 
             <!-- Step Content -->
-            <div class="max-w-2xl mx-auto fade-in">
-                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div class="fade-in {{ $step === 6 ? 'h-screen' : 'max-w-2xl mx-auto' }}">
+                <div class="bg-white {{ $step === 6 ? 'h-full flex flex-col' : 'rounded-xl shadow-lg overflow-hidden' }}">
                     @switch($step)
                         @case(0)
                             @include('tenant.initialization.steps.step0-password')

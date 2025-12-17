@@ -18,14 +18,14 @@
         <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
             <div>
                 <label for="sede" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sede</label>
-                <input type="text" id="sede" name="sede" value="Talcahuano" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white" readonly>
-                <input type="hidden" id="id_sede" value="TH">
+                <input type="text" id="sede" name="sede" value="{{ $sede->nombre_sede ?? 'Sin sede' }}" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white" readonly>
+                <input type="hidden" id="id_sede" value="{{ $sede->id_sede ?? '' }}">
             </div>
 
             <div>
                 <label for="facultad" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Facultad</label>
-                <input type="text" id="facultad" name="facultad" value="Instituto Tecnológico" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white" readonly>
-                <input type="hidden" id="id_facultad" value="IT_TH">
+                <input type="text" id="facultad" name="facultad" value="{{ $facultad->nombre_facultad ?? 'Sin facultad' }}" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white" readonly>
+                <input type="hidden" id="id_facultad" value="{{ $facultad->id_facultad ?? '' }}">
             </div>
 
             <div>
@@ -69,7 +69,7 @@
                 <div class="relative p-4 border-2 border-gray-300 border-dashed rounded-lg bg-gray-50 dark:bg-gray-900" style="padding-top: 75%;">
                     <!-- Canvas para la imagen base -->
                     <canvas id="mapCanvas" class="absolute top-0 left-0 w-full h-full bg-white dark:bg-gray-800"></canvas>
-                    
+
                     <!-- Canvas para los indicadores (transparente) -->
                     <canvas id="indicatorsCanvas" class="absolute top-0 left-0 w-full h-full pointer-events-auto"></canvas>
                 </div>
@@ -138,12 +138,12 @@
                 const container = elements.mapCanvas.parentElement;
                 const width = container.clientWidth;
                 const height = container.clientHeight;
-                
+
                 elements.mapCanvas.width = width;
                 elements.mapCanvas.height = height;
                 elements.indicatorsCanvas.width = width;
                 elements.indicatorsCanvas.height = height;
-                
+
                 drawCanvas();
                 drawIndicators();
             }
@@ -151,7 +151,7 @@
             // Dibujar la imagen base
             function drawCanvas() {
                 elements.mapCtx.clearRect(0, 0, elements.mapCanvas.width, elements.mapCanvas.height);
-                
+
                 if (!state.mapImage) return;
 
                 const canvasRatio = elements.mapCanvas.width / elements.mapCanvas.height;
@@ -176,7 +176,7 @@
             // Dibujar todos los indicadores
             function drawIndicators() {
                 elements.indicatorsCtx.clearRect(0, 0, elements.indicatorsCanvas.width, elements.indicatorsCanvas.height);
-                
+
                 state.indicators.forEach((indicator, index) => {
                     drawIndicator(indicator, index === state.dragIndex);
                 });
@@ -187,14 +187,14 @@
                 const { x, y, id } = indicator;
                 const size = config.indicatorSize;
                 const color = isDragging ? config.indicatorActiveColor : config.indicatorColor;
-                
+
                 // Dibujar cuadrado
                 elements.indicatorsCtx.fillStyle = color;
                 elements.indicatorsCtx.fillRect(x - size/2, y - size/2, size, size);
                 elements.indicatorsCtx.lineWidth = 2;
                 elements.indicatorsCtx.strokeStyle = config.indicatorBorder;
                 elements.indicatorsCtx.strokeRect(x - size/2, y - size/2, size, size);
-                
+
                 // Dibujar texto
                 elements.indicatorsCtx.font = `bold ${size/3}px Arial`;
                 elements.indicatorsCtx.fillStyle = config.indicatorTextColor;
@@ -271,7 +271,7 @@
                         height: img.naturalHeight
                     };
                     initCanvases();
-                    
+
                     if (state.currentMapId) {
                         loadExistingBlocks(state.currentMapId);
                     }
@@ -318,14 +318,14 @@
                                 document.querySelectorAll('#espaciosList > div').forEach(item => {
                                     item.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'bg-green-200', 'dark:bg-green-900');
                                 });
-                                
+
                                 // Seleccionar este
                                 this.classList.add('bg-green-200', 'dark:bg-green-900');
                                 state.selectedSpace = {
                                     id: espacio.id_espacio,
                                     nombre: espacio.nombre_espacio
                                 };
-                                
+
                                 // Cambiar cursor
                                 elements.indicatorsCanvas.style.cursor = 'crosshair';
                             });
@@ -343,14 +343,14 @@
             elements.indicatorsCanvas.addEventListener('mousedown', function(e) {
                 const { x, y } = getCanvasCoordinates(e);
                 const index = isClickOnIndicator(x, y);
-                
+
                 if (index !== -1 && e.button === 0) { // Clic izquierdo sobre un indicador
                     state.isDragging = true;
                     state.dragIndex = index;
                     drawIndicators(); // Redibujar con el indicador activo
                     e.preventDefault();
                 }
-                
+
                 if (e.button === 2 && index !== -1) { // Clic derecho sobre un indicador
                     state.indicators.splice(index, 1);
                     drawIndicators();
@@ -363,19 +363,19 @@
 
             elements.indicatorsCanvas.addEventListener('mousemove', function(e) {
                 if (!state.isDragging) return;
-                
+
                 const { x, y } = getCanvasCoordinates(e);
                 if (state.dragIndex !== -1) {
                     state.indicators[state.dragIndex].x = x;
                     state.indicators[state.dragIndex].y = y;
-                    
+
                     // Actualizar coordenadas originales
                     const imgCoords = canvasToImageCoordinates(x, y);
                     if (imgCoords) {
                         state.indicators[state.dragIndex].originalX = imgCoords.x;
                         state.indicators[state.dragIndex].originalY = imgCoords.y;
                     }
-                    
+
                     drawIndicators();
                 }
             });
@@ -403,7 +403,7 @@
             // Colocar nuevo indicador
             elements.indicatorsCanvas.addEventListener('click', function(e) {
                 if (state.isDragging) return; // Evitar colocar nuevo indicador mientras se arrastra
-                
+
                 if (!state.selectedSpace) {
                     alert('Por favor, selecciona un espacio de la lista primero');
                     return;
@@ -416,7 +416,7 @@
 
                 const { x, y } = getCanvasCoordinates(e);
                 const imgCoords = canvasToImageCoordinates(x, y);
-                
+
                 if (!imgCoords) {
                     alert('Debes hacer clic dentro del área de la imagen');
                     return;
@@ -492,9 +492,6 @@
                 dataTransfer.items.add(elements.mapImageInput.files[0]);
                 document.getElementById('archivo').files = dataTransfer.files;
 
-                // Log para depuración
-                // Nombre del mapa a enviar
-
                 // Enviar formulario
                 elements.saveMapForm.submit();
             });
@@ -505,7 +502,7 @@
                     .then(response => response.json())
                     .then(data => {
                         state.indicators = [];
-                        
+
                         data.forEach(bloque => {
                             // Convertir coordenadas originales a coordenadas del canvas
                             const canvasRatio = elements.mapCanvas.width / elements.mapCanvas.height;
@@ -546,6 +543,29 @@
 
             // Función para actualizar el nombre del mapa
             function updateNombreMapa() {
+                const sedeId = document.getElementById('id_sede').value;
+                const esTalcahuano = sedeId === 'TH';
+                const sedeText = document.getElementById('sede').value;
+                const facultadText = document.getElementById('facultad').value;
+                const pisoText = elements.pisoSelect.options[elements.pisoSelect.selectedIndex]?.text || '';
+
+                // Para sedes que NO son Talcahuano, no requerir piso
+                if (!esTalcahuano && sedeText && facultadText) {
+                    const nombreCompleto = `${facultadText} de ${sedeText}`;
+                    elements.nombreMapaInput.value = nombreCompleto;
+                    document.getElementById('nombre_mapa_form').value = nombreCompleto;
+                    elements.nombreMapaContainer.classList.remove('hidden');
+                } else if (sedeText && facultadText && pisoText) {
+                    // Para Talcahuano, mantener comportamiento con piso
+                    const nombreCompleto = `${pisoText}, ${facultadText} de ${sedeText}`;
+                    elements.nombreMapaInput.value = nombreCompleto;
+                    document.getElementById('nombre_mapa_form').value = nombreCompleto;
+                    elements.nombreMapaContainer.classList.remove('hidden');
+                }
+            }
+
+            // Función para actualizar el nombre del mapa
+            function updateNombreMapa() {
                 const sedeText = document.getElementById('sede').value;
                 const facultadText = document.getElementById('facultad').value;
                 const pisoText = elements.pisoSelect.options[elements.pisoSelect.selectedIndex]?.text || '';
@@ -562,9 +582,13 @@
             initCanvases();
             window.addEventListener('resize', initCanvases);
 
-            // Cargar pisos al iniciar
+            // Detectar si es Talcahuano (TH) o no
+            const sedeId = document.getElementById('id_sede').value;
+            const esTalcahuano = sedeId === 'TH';
             const facultadId = elements.facultadId.value;
+
             if (facultadId) {
+                // Cargar pisos siempre
                 fetch(`/pisos/${facultadId}`)
                     .then(response => response.json())
                     .then(data => {
@@ -577,8 +601,57 @@
                         });
                     })
                     .catch(error => {
-                        // Error al cargar los pisos
+                        console.error('Error al cargar pisos:', error);
                     });
+
+                // Para sedes que NO son Talcahuano, cargar TODOS los espacios de la facultad
+                if (!esTalcahuano) {
+                    fetch(`/espacios-por-facultad/${facultadId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            elements.espaciosList.innerHTML = '';
+                            elements.emptySpacesMessage.classList.add('hidden');
+
+                            if (data.length === 0) {
+                                elements.emptySpacesMessage.textContent = 'No hay espacios disponibles';
+                                elements.emptySpacesMessage.classList.remove('hidden');
+                                return;
+                            }
+
+                            data.forEach(espacio => {
+                                const espacioItem = document.createElement('div');
+                                espacioItem.className = 'p-2 bg-gray-50 dark:bg-gray-700 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center gap-3';
+                                espacioItem.setAttribute('data-espacio-id', espacio.id_espacio);
+                                espacioItem.innerHTML = `
+                                    <div class="flex items-center justify-center flex-shrink-0 w-12 h-12 p-4 font-bold text-white bg-blue-600">${espacio.id_espacio}</div>
+                                    <div class="text-sm font-medium truncate">${espacio.nombre_espacio}</div>
+                                `;
+
+                                espacioItem.addEventListener('click', function() {
+                                    // Deseleccionar todos
+                                    document.querySelectorAll('#espaciosList > div').forEach(item => {
+                                        item.classList.remove('bg-blue-100', 'dark:bg-blue-900', 'bg-green-200', 'dark:bg-green-900');
+                                    });
+
+                                    // Seleccionar este
+                                    this.classList.add('bg-blue-100', 'dark:bg-blue-900');
+                                    state.selectedSpace = {
+                                        id: espacio.id_espacio,
+                                        nombre: espacio.nombre_espacio
+                                    };
+                                });
+
+                                elements.espaciosList.appendChild(espacioItem);
+                            });
+
+                            elements.emptySpacesMessage.classList.add('hidden');
+                        })
+                        .catch(error => {
+                            console.error('Error al cargar espacios:', error);
+                            elements.emptySpacesMessage.textContent = 'Error al cargar los espacios';
+                            elements.emptySpacesMessage.classList.remove('hidden');
+                        });
+                }
             }
         });
     </script>
@@ -588,46 +661,46 @@
             z-index: 10;
             cursor: default;
         }
-        
+
         #mapCanvas {
             z-index: 1;
         }
-        
+
         #espaciosList {
             scrollbar-width: thin;
             scrollbar-color: #c1c1c1 #f1f1f1;
         }
-        
+
         #espaciosList::-webkit-scrollbar {
             width: 6px;
         }
-        
+
         #espaciosList::-webkit-scrollbar-track {
             background: #f1f1f1;
             border-radius: 3px;
         }
-        
+
         #espaciosList::-webkit-scrollbar-thumb {
             background: #c1c1c1;
             border-radius: 3px;
         }
-        
+
         #espaciosList::-webkit-scrollbar-thumb:hover {
             background: #a1a1a1;
         }
-        
+
         .dark #espaciosList {
             scrollbar-color: #6b7280 #374151;
         }
-        
+
         .dark #espaciosList::-webkit-scrollbar-track {
             background: #374151;
         }
-        
+
         .dark #espaciosList::-webkit-scrollbar-thumb {
             background: #6b7280;
         }
-        
+
         .dark #espaciosList::-webkit-scrollbar-thumb:hover {
             background: #9ca3af;
         }
