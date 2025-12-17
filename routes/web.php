@@ -74,6 +74,9 @@ Route::prefix('tenant/initialization')->name('tenant.initialization.')->group(fu
     Route::get('/previous', [TenantInitializationController::class, 'previousStep'])->name('previous');
     // Pisos - para agregar pisos en el wizard
     Route::post('/pisos', [PisoController::class, 'store'])->name('pisos.store');
+    // Rutas API para obtener pisos y espacios en el wizard
+    Route::get('/pisos/{facultadId}', [PisoController::class, 'getPisos'])->name('pisos.get');
+    Route::get('/espacios-por-piso/{pisoId}', [PisoController::class, 'getEspaciosPorPiso'])->name('espacios.get-por-piso');
 });
 
 Route::get('/', function () {
@@ -104,7 +107,7 @@ Route::middleware(['auth', 'tenant.init', 'role:Administrador'])->group(function
     Route::delete('/user/user_delete/{run}', [UserController::class, 'destroy'])->name('users.delete');
     Route::get('/user/user_edit/{run}', [UserController::class, 'edit'])->name('users.edit');
     Route::put('user/user_update/{run}', [UserController::class, 'update'])->name('users.update');
-    
+
     // Rutas para QR Personal (requiere permiso adicional 'generar qr personal')
     Route::post('/user/qr-personal/{run}/generar', [\App\Http\Controllers\QrPersonalController::class, 'generar'])->name('users.qr.generar');
     Route::get('/user/qr-personal/{run}/descargar', [\App\Http\Controllers\QrPersonalController::class, 'descargar'])->name('users.qr.descargar');
@@ -315,6 +318,7 @@ Route::group(['middleware' => ['auth', 'permission:mantenedor de mapas']], funct
     Route::get('/facultades-por-sede/{sedeId}', [MapasController::class, 'getFacultadesPorSede']);
     Route::get('/pisos/{facultadId}', [MapasController::class, 'getPisos']);
     Route::get('/espacios-por-piso/{pisoId}', [MapasController::class, 'getEspaciosPorPiso']);
+    Route::get('/espacios-por-facultad/{facultadId}', [MapasController::class, 'getEspaciosPorFacultad']);
     Route::get('/mapa/{mapa}/bloques', [MapasController::class, 'getBloques'])->name('mapa.bloques');
 });
 

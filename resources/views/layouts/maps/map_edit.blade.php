@@ -53,14 +53,14 @@
         <div class="grid grid-cols-1 gap-4 mb-6 md:grid-cols-3">
             <div>
                 <label for="sede" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Sede</label>
-                <input type="text" id="sede" name="sede" value="Talcahuano" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white" readonly>
-                <input type="hidden" id="id_sede" value="TH">
+                <input type="text" id="sede" name="sede" value="{{ $sede->nombre_sede ?? 'Sin sede' }}" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white" readonly>
+                <input type="hidden" id="id_sede" value="{{ $sede->id_sede ?? '' }}">
             </div>
 
             <div>
                 <label for="facultad" class="block text-sm font-medium text-gray-700 dark:text-gray-300">Facultad</label>
-                <input type="text" id="facultad" name="facultad" value="Instituto Tecnológico" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white" readonly>
-                <input type="hidden" id="id_facultad" value="IT_TH">
+                <input type="text" id="facultad" name="facultad" value="{{ $facultad->nombre_facultad ?? 'Sin facultad' }}" class="block w-full mt-1 border-gray-300 rounded-md shadow-sm bg-gray-100 dark:bg-gray-700 dark:border-gray-600 dark:text-white" readonly>
+                <input type="hidden" id="id_facultad" value="{{ $facultad->id_facultad ?? '' }}">
             </div>
 
             <div>
@@ -72,8 +72,8 @@
                     <button id="selectPisoBtn" type="button" class="px-3 py-1 mt-1 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700" style="display:none;">Seleccionar</button>
                 </div>
             </div>
-       
-       
+
+
         </div>
 
         <!-- Contenedor principal con diseño de dos columnas -->
@@ -110,14 +110,14 @@
                         </div>
                     @endif
                 </div>
-   
-       
+
+
 
                 <!-- Contenedor del mapa -->
                 <div class="relative p-4 border-2 border-gray-300 border-dashed rounded-lg bg-gray-50 dark:bg-gray-900" style="padding-top: 75%;">
                     <!-- Canvas para la imagen base -->
                     <canvas id="mapCanvas" class="absolute top-0 left-0 w-full h-full bg-white dark:bg-gray-800"></canvas>
-                    
+
                     <!-- Canvas para los indicadores (transparente) -->
                     <canvas id="indicatorsCanvas" class="absolute top-0 left-0 w-full h-full pointer-events-auto"></canvas>
                 </div>
@@ -204,12 +204,12 @@
                 const container = elements.mapCanvas.parentElement;
                 const width = container.clientWidth;
                 const height = container.clientHeight;
-                
+
                 elements.mapCanvas.width = width;
                 elements.mapCanvas.height = height;
                 elements.indicatorsCanvas.width = width;
                 elements.indicatorsCanvas.height = height;
-                
+
                 drawCanvas();
                 drawIndicators();
             }
@@ -217,7 +217,7 @@
             // Dibujar la imagen base
             function drawCanvas() {
                 elements.mapCtx.clearRect(0, 0, elements.mapCanvas.width, elements.mapCanvas.height);
-                
+
                 if (!state.mapImage) return;
 
                 const canvasRatio = elements.mapCanvas.width / elements.mapCanvas.height;
@@ -242,7 +242,7 @@
             // Dibujar todos los indicadores
             function drawIndicators() {
                 elements.indicatorsCtx.clearRect(0, 0, elements.indicatorsCanvas.width, elements.indicatorsCanvas.height);
-                
+
                 state.indicators.forEach((indicator, index) => {
                     drawIndicator(indicator, index === state.dragIndex);
                 });
@@ -253,14 +253,14 @@
                 const { x, y, id } = indicator;
                 const size = config.indicatorSize;
                 const color = isDragging ? config.indicatorActiveColor : config.indicatorColor;
-                
+
                 // Dibujar cuadrado
                 elements.indicatorsCtx.fillStyle = color;
                 elements.indicatorsCtx.fillRect(x - size/2, y - size/2, size, size);
                 elements.indicatorsCtx.lineWidth = 2;
                 elements.indicatorsCtx.strokeStyle = config.indicatorBorder;
                 elements.indicatorsCtx.strokeRect(x - size/2, y - size/2, size, size);
-                
+
                 // Dibujar texto
                 elements.indicatorsCtx.font = `bold ${size/3}px Arial`;
                 elements.indicatorsCtx.fillStyle = config.indicatorTextColor;
@@ -337,7 +337,7 @@
                         height: img.naturalHeight
                     };
                     initCanvases();
-                    
+
                     if (state.currentMapId) {
                         loadExistingBlocks(state.currentMapId);
                     }
@@ -405,14 +405,14 @@
             elements.indicatorsCanvas.addEventListener('mousedown', function(e) {
                 const { x, y } = getCanvasCoordinates(e);
                 const index = isClickOnIndicator(x, y);
-                
+
                 if (index !== -1 && e.button === 0) { // Clic izquierdo sobre un indicador
                     state.isDragging = true;
                     state.dragIndex = index;
                     drawIndicators(); // Redibujar con el indicador activo
                     e.preventDefault();
                 }
-                
+
                 if (e.button === 2 && index !== -1) { // Clic derecho sobre un indicador
                     state.indicators.splice(index, 1);
                     drawIndicators();
@@ -425,19 +425,19 @@
 
             elements.indicatorsCanvas.addEventListener('mousemove', function(e) {
                 if (!state.isDragging) return;
-                
+
                 const { x, y } = getCanvasCoordinates(e);
                 if (state.dragIndex !== -1) {
                     state.indicators[state.dragIndex].x = x;
                     state.indicators[state.dragIndex].y = y;
-                    
+
                     // Actualizar coordenadas originales
                     const imgCoords = canvasToImageCoordinates(x, y);
                     if (imgCoords) {
                         state.indicators[state.dragIndex].originalX = imgCoords.x;
                         state.indicators[state.dragIndex].originalY = imgCoords.y;
                     }
-                    
+
                     drawIndicators();
                 }
             });
@@ -465,7 +465,7 @@
             // Colocar nuevo indicador
             elements.indicatorsCanvas.addEventListener('click', function(e) {
                 if (state.isDragging) return; // Evitar colocar nuevo indicador mientras se arrastra
-                
+
                 if (!state.selectedSpace) {
                     alert('Por favor, selecciona un espacio de la lista primero');
                     return;
@@ -478,7 +478,7 @@
 
                 const { x, y } = getCanvasCoordinates(e);
                 const imgCoords = canvasToImageCoordinates(x, y);
-                
+
                 if (!imgCoords) {
                     alert('Debes hacer clic dentro del área de la imagen');
                     return;
@@ -567,7 +567,7 @@
                     .then(response => response.json())
                     .then(data => {
                         state.indicators = [];
-                        
+
                         data.forEach(bloque => {
                             // Convertir coordenadas originales a coordenadas del canvas
                             const canvasRatio = elements.mapCanvas.width / elements.mapCanvas.height;
@@ -680,46 +680,46 @@
             z-index: 10;
             cursor: default;
         }
-        
+
         #mapCanvas {
             z-index: 1;
         }
-        
+
         #espaciosList {
             scrollbar-width: thin;
             scrollbar-color: #c1c1c1 #f1f1f1;
         }
-        
+
         #espaciosList::-webkit-scrollbar {
             width: 6px;
         }
-        
+
         #espaciosList::-webkit-scrollbar-track {
             background: #f1f1f1;
             border-radius: 3px;
         }
-        
+
         #espaciosList::-webkit-scrollbar-thumb {
             background: #c1c1c1;
             border-radius: 3px;
         }
-        
+
         #espaciosList::-webkit-scrollbar-thumb:hover {
             background: #a1a1a1;
         }
-        
+
         .dark #espaciosList {
             scrollbar-color: #6b7280 #374151;
         }
-        
+
         .dark #espaciosList::-webkit-scrollbar-track {
             background: #374151;
         }
-        
+
         .dark #espaciosList::-webkit-scrollbar-thumb {
             background: #6b7280;
         }
-        
+
         .dark #espaciosList::-webkit-scrollbar-thumb:hover {
             background: #9ca3af;
         }
