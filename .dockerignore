@@ -2,7 +2,6 @@ node_modules
 npm-debug.log
 dist
 debug.log
-.env
 vendor
 .idea
 .DS_Store
@@ -19,6 +18,7 @@ storage/framework/views/*
 storage/logs/*
 public/storage
 
-# Ensure entrypoint is included
+# Ensure entrypoint and .env are included
 !docker/entrypoint.sh
 !docker/
+!.env
