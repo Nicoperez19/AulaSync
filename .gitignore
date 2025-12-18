@@ -20,10 +20,14 @@ yarn-error.log
 /.vscode
 node_modules
 .pnpm-store/
+.pnpm_installed
+.initialized
 
 # Docker / runtime
 /docker/
 /docker-compose.override.yml
+!/docker/entrypoint.sh
+
 
 # Local runtime files created by entrypoint
 /var/www/.initialized
