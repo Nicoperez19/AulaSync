@@ -27,7 +27,7 @@ node_modules
 /docker/
 /docker-compose.override.yml
 !/docker/entrypoint.sh
-
+!./docker/entrypoint.sh
 
 # Local runtime files created by entrypoint
 /var/www/.initialized
