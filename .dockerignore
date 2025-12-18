@@ -18,3 +18,7 @@ storage/framework/sessions/*
 storage/framework/views/*
 storage/logs/*
 public/storage
+
+# Ensure entrypoint is included
+!docker/entrypoint.sh
+!docker/
