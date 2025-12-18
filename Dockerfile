@@ -63,5 +63,5 @@ COPY --from=node_builder /app/public/build /var/www/public/build
 RUN chown -R www-data:www-data /var/www
 
 EXPOSE 9000
-ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+ENTRYPOINT "/usr/local/bin/docker-entrypoint.sh"
 CMD ["php-fpm"]

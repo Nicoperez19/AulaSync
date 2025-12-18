@@ -59,4 +59,3 @@ fi
 
 echo "Entrypoint: executing CMD"
 exec "$@"
-exec "$@"
