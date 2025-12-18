@@ -1,0 +1,46 @@
+services:
+  app:
+    build: .
+    container_name: laravel_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+    ports:
+      - "8000:8000"
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    environment:
+      - DB_HOST=db
+      - DB_DATABASE=aulasync
+      - DB_USERNAME=aulasync
+      - DB_PASSWORD=aulasync
+    networks:
+      - aulasync_net
+    depends_on:
+      - db
+    expose:
+      - 8000
+
+  db:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: aulasync
+      MYSQL_USER: aulasync
+      MYSQL_PASSWORD: aulasync
+      MYSQL_ROOT_PASSWORD: root
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - aulasync_net
+    expose:
+      - 3306
+
+networks:
+  aulasync_net:
+    driver: bridge
+    # network is bridge (not internal) so host port mappings work
+
+volumes:
+  db_data:
