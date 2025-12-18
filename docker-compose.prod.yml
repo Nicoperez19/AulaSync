@@ -1,12 +1,9 @@
 services:
   app:
     build: .
-    container_name: laravel_app
+    container_name: laravel_app_prod
     restart: unless-stopped
     working_dir: /var/www
-    volumes:
-      - ./storage:/var/www/storage
-      - ./bootstrap/cache:/var/www/bootstrap/cache
     ports:
       - "8000:8000"
     entrypoint: /usr/local/bin/docker-entrypoint.sh
@@ -20,12 +17,10 @@ services:
       - aulasync_net
     depends_on:
       - db
-    expose:
-      - 8000
 
   db:
     image: mysql:8.0
-    container_name: mysql_db
+    container_name: mysql_db_prod
     restart: unless-stopped
     environment:
       MYSQL_DATABASE: aulasync
@@ -36,13 +31,10 @@ services:
       - db_data:/var/lib/mysql
     networks:
       - aulasync_net
-    expose:
-      - 3306
 
 networks:
   aulasync_net:
     driver: bridge
-    # network is bridge (not internal) so host port mappings work
 
 volumes:
   db_data:
