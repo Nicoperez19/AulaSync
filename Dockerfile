@@ -51,7 +51,8 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 # Install Node.js (needed at runtime to run pnpm install/build)
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get update && apt-get install -y nodejs \
-    && corepack enable
+    && corepack enable \
+    && corepack prepare pnpm@7 --activate
 
 # Dependencias PHP
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader

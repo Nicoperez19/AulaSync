@@ -15,8 +15,25 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Vite -->
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <!-- Build Assets -->
+    @php
+        if (config('app.env') === 'production' && file_exists(public_path('build/manifest.json'))) {
+            $manifest = json_decode(file_get_contents(public_path('build/manifest.json')), true);
+            $cssFile = $manifest['resources/css/app.css']['file'] ?? null;
+            $jsFile = $manifest['resources/js/app.js']['file'] ?? null;
+            $jsCss = $manifest['resources/js/app.js']['css'][0] ?? null;
+            
+            echo '<link rel="stylesheet" href="' . asset("build/$jsCss") . '" />' . PHP_EOL;
+            if ($cssFile) {
+                echo '<link rel="stylesheet" href="' . asset("build/$cssFile") . '" />' . PHP_EOL;
+            }
+            if ($jsFile) {
+                echo '<script type="module" src="' . asset("build/$jsFile") . '"></script>' . PHP_EOL;
+            }
+        } else {
+            echo '@vite([\'resources/css/app.css\', \'resources/js/app.js\'])';
+        }
+    @endphp
 
     <style>
         .sede-item {

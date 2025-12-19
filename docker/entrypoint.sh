@@ -3,6 +3,11 @@ set -e
 
 echo "Entry point: waiting for database..."
 
+# Fix permissions for storage and bootstrap/cache before anything else
+echo "Setting correct permissions on storage and bootstrap/cache"
+chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+chmod -R 775 /var/www/storage /var/www/bootstrap/cache
+
 DB_HOST=${DB_HOST:-db}
 DB_PORT=${DB_PORT:-3306}
 
@@ -33,9 +38,9 @@ fi
 
 if command -v corepack >/dev/null 2>&1; then
   corepack enable || true
-  corepack prepare pnpm@latest --activate || true
+  corepack prepare pnpm@7 --activate || true
 elif command -v npm >/dev/null 2>&1; then
-  npm i -g pnpm@latest --no-audit --no-fund || true
+  npm i -g pnpm@7 --no-audit --no-fund || true
 fi
 
 if command -v pnpm >/dev/null 2>&1; then
@@ -55,7 +60,14 @@ fi
 
 # Always ensure storage symlink exists (user requested this run always)
 echo "Creating storage symlink (always)"
-php artisan storage:link || echo "Storage link already exists or failed"
+# Temporarily disable errexit so an expected non-zero exit (link exists) doesn't stop the whole script
+set +e
+php artisan storage:link
+PHP_STORAGE_LINK_RC=$?
+if [ "$PHP_STORAGE_LINK_RC" -ne 0 ]; then
+  echo "php artisan storage:link returned $PHP_STORAGE_LINK_RC — continuing"
+fi
+set -e
 
 # Generate APP_KEY only if not set or empty in .env (always)
 echo "Checking application key"
@@ -73,8 +85,11 @@ fi
 
 # Check DB tables and run migrations/seeders if no tables exist (always)
 echo "Checking if database has any tables"
+# Temporarily disable errexit so we can inspect php's exit code and handle it
+set +e
 php -r 'try { $h=getenv("DB_HOST")?:"db"; $p=getenv("DB_PORT")?:3306; $d=getenv("DB_DATABASE"); $u=getenv("DB_USERNAME"); $pw=getenv("DB_PASSWORD"); $pdo=new PDO("mysql:host=$h;port=$p;dbname=$d", $u, $pw); $res=$pdo->query("SHOW TABLES"); $row=$res->fetch(PDO::FETCH_NUM); if ($row) exit(0); else exit(1); } catch (Exception $e) { exit(2); }'
 RC=$?
+set -e
 if [ "$RC" -eq 1 ]; then
   echo "No tables found — running migrations and seeders"
   php artisan migrate --force || echo "Migrations failed"
@@ -95,8 +110,9 @@ if [ ! -f /var/www/storage/.initialized ]; then
 
   touch /var/www/storage/.initialized
 else
-  echo "Already initialized — clearing compiled caches to pick up changes"
+  echo "Already initialized — clearing and recaching config to pick up environment changes"
   php artisan config:clear || true
+  php artisan config:cache || true
   php artisan route:clear || true
   php artisan view:clear || true
 fi
