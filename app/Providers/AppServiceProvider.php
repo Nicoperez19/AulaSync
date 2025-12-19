@@ -5,6 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\URL;
 use App\Models\Sede;
 use App\Models\Profesor;
 use App\Models\Espacio;
@@ -20,7 +21,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Force HTTP in non-local environments when behind a proxy (Docker/Nginx)
+        if (env('APP_ENV') !== 'local') {
+            URL::forceScheme('http');
+        }
     }
 
     /**
@@ -29,6 +33,53 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Blade::component('layouts.show-layout', 'show-layout');
+
+        // Listen to the response event to replace Vite URLs in production
+        if (config('app.env') !== 'local') {
+            app('events')->listen(\Illuminate\Foundation\Http\Events\RequestHandled::class, function ($event) {
+                if ($event->response instanceof \Illuminate\Http\Response ||
+                    $event->response instanceof \Symfony\Component\HttpFoundation\Response) {
+                    
+                    $content = $event->response->getContent();
+                    $manifest = public_path('build/manifest.json');
+                    
+                    if (file_exists($manifest)) {
+                        $manifestData = json_decode(file_get_contents($manifest), true);
+                        
+                        // Replace @vite/client
+                        $content = str_replace('http://[::1]:5173/@vite/client', '', $content);
+                        
+                        // Replace CSS references
+                        $content = preg_replace_callback(
+                            '/href="http:\/\/\[::1\]:5173\/(resources\/[^"]*\.css)"/',
+                            function ($matches) use ($manifestData) {
+                                $asset = str_replace('resources/', '', $matches[1]);
+                                if (isset($manifestData[$asset])) {
+                                    return 'href="' . asset("build/" . $manifestData[$asset]['file']) . '"';
+                                }
+                                return $matches[0];
+                            },
+                            $content
+                        );
+                        
+                        // Replace JS references
+                        $content = preg_replace_callback(
+                            '/src="http:\/\/\[::1\]:5173\/(resources\/[^"]*\.js)"/',
+                            function ($matches) use ($manifestData) {
+                                $asset = str_replace('resources/', '', $matches[1]);
+                                if (isset($manifestData[$asset])) {
+                                    return 'src="' . asset("build/" . $manifestData[$asset]['file']) . '"';
+                                }
+                                return $matches[0];
+                            },
+                            $content
+                        );
+                        
+                        $event->response->setContent($content);
+                    }
+                }
+            });
+        }
 
         // Registrar el Observer para LicenciaProfesor
         LicenciaProfesor::observe(LicenciaProfesorObserver::class);
