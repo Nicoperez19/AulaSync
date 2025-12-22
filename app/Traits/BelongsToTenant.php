@@ -5,6 +5,7 @@ namespace App\Traits;
 use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Config;
 
 trait BelongsToTenant
 {
@@ -17,8 +18,13 @@ trait BelongsToTenant
      * 
      * This caches column information and significantly improves performance.
      */
-    protected static function bootBelongsToTenant()
+    public static function bootBelongsToTenant()
     {
+        // Cambiar conexión a tenant si hay base de datos separada
+        static::creating(function ($model) {
+            $model->setTenantConnection();
+        });
+        
         // Aplicar scope global para filtrar por tenant
         static::addGlobalScope('tenant', function (Builder $builder) {
             $tenant = Tenant::current();
@@ -101,6 +107,34 @@ trait BelongsToTenant
                 }
             }
         });
+    }
+
+    /**
+     * Establecer la conexión del tenant si está activa
+     */
+    public function setTenantConnection()
+    {
+        $tenant = Tenant::current();
+        if ($tenant && Config::get('multitenancy.separate_databases', false)) {
+            $this->setConnection('tenant');
+        }
+        return $this;
+    }
+
+    /**
+     * Override del método newQuery para usar conexión tenant automáticamente
+     */
+    public function newQuery()
+    {
+        $query = parent::newQuery();
+        
+        $tenant = Tenant::current();
+        if ($tenant && Config::get('multitenancy.separate_databases', false)) {
+            // Usar la conexión tenant para las consultas
+            $query->getModel()->setConnection('tenant');
+        }
+        
+        return $query;
     }
 
     /**

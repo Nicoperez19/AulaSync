@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Espacio;
+use App\Models\Tenant;
 
 class EspacioSeeder extends Seeder
 {
@@ -12,10 +13,15 @@ class EspacioSeeder extends Seeder
      */
     public function run(): void
     {
+        $tenant = Tenant::current();
 
-        $espacios = [
+        // Crear mapeo de piso_id antiguo a nuevo basado en número y nombre de piso
+        $pisoMap = $this->buildPisoMap($tenant);
+
+        $todosLosEspacios = [
             [
                 'id_espacio' => 'TH-30',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Laboratorio Termodinámica',
                 'piso_id' => 1,
                 'tipo_espacio' => 'Laboratorio',
@@ -24,6 +30,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-LA8',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Taller de Construcción',
                 'piso_id' => 1,
                 'tipo_espacio' => 'Taller',
@@ -32,6 +39,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-LA9',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Taller de Soldadura',
                 'piso_id' => 1,
                 'tipo_espacio' => 'Taller',
@@ -40,6 +48,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-40',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Clases',
                 'piso_id' => 1,
                 'tipo_espacio' => 'Sala de Clases',
@@ -48,6 +57,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-50',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Clases',
                 'piso_id' => 1,
                 'tipo_espacio' => 'Sala de Clases',
@@ -56,6 +66,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-60',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Clases',
                 'piso_id' => 1,
                 'tipo_espacio' => 'Sala de Clases',
@@ -64,6 +75,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-C5',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Estudio',
                 'piso_id' => 1,
                 'tipo_espacio' => 'Sala de Estudio',
@@ -72,6 +84,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-C4',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Estudio',
                 'piso_id' => 1,
                 'tipo_espacio' => 'Sala de Estudio',
@@ -80,6 +93,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-C3',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Estudio',
                 'piso_id' => 1,
                 'tipo_espacio' => 'Sala de Estudio',
@@ -88,6 +102,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-C2',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Estudio',
                 'piso_id' => 1,
                 'tipo_espacio' => 'Sala de Estudio',
@@ -96,6 +111,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-C1',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Estudio',
                 'piso_id' => 1,
                 'tipo_espacio' => 'Sala de Estudio',
@@ -104,6 +120,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-AUD',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Auditorio',
                 'piso_id' => 1,
                 'tipo_espacio' => 'Auditorio',
@@ -112,6 +129,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-LAB',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Laboratorio de Computación',
                 'piso_id' => 1,
                 'tipo_espacio' => 'Laboratorio',
@@ -120,6 +138,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-L01',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Laboratorio de Hidráulica y Neumática',
                 'piso_id' => 1,
                 'tipo_espacio' => 'Laboratorio',
@@ -128,6 +147,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-L02',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Laboratorio de Electricidad y Electrica',
                 'piso_id' => 1,
                 'tipo_espacio' => 'Laboratorio',
@@ -136,6 +156,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-L03',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Laboratorio de Refrigeración',
                 'piso_id' => 1,
                 'tipo_espacio' => 'Laboratorio',
@@ -144,6 +165,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-L04',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Taller de Enfermeria',
                 'piso_id' => 1,
                 'tipo_espacio' => 'Taller',
@@ -152,6 +174,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-L05',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Taller de Párvulos',
                 'piso_id' => 1,
                 'tipo_espacio' => 'Taller',
@@ -161,6 +184,7 @@ class EspacioSeeder extends Seeder
 
             [
                 'id_espacio' => 'TH-SR1',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Reuniones',
                 'piso_id' => 2,
                 'tipo_espacio' => 'Sala de Reuniones',
@@ -170,6 +194,7 @@ class EspacioSeeder extends Seeder
 
             [
                 'id_espacio' => 'TH-01',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Clases',
                 'piso_id' => 2,
                 'tipo_espacio' => 'Sala de Clases',
@@ -178,6 +203,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-02',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Clases',
                 'piso_id' => 2,
                 'tipo_espacio' => 'Sala de Clases',
@@ -186,6 +212,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-03',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Clases',
                 'piso_id' => 2,
                 'tipo_espacio' => 'Sala de Clases',
@@ -194,6 +221,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-04',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Clases',
                 'piso_id' => 2,
                 'tipo_espacio' => 'Sala de Clases',
@@ -202,6 +230,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-05',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Clases',
                 'piso_id' => 2,
                 'tipo_espacio' => 'Sala de Clases',
@@ -210,6 +239,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-06',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Clases',
                 'piso_id' => 2,
                 'tipo_espacio' => 'Sala de Clases',
@@ -218,6 +248,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-07',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Clases',
                 'piso_id' => 2,
                 'tipo_espacio' => 'Sala de Clases',
@@ -226,6 +257,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-08',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Clases',
                 'piso_id' => 2,
                 'tipo_espacio' => 'Sala de Clases',
@@ -234,6 +266,7 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-09',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Clases',
                 'piso_id' => 2,
                 'tipo_espacio' => 'Sala de Clases',
@@ -242,17 +275,944 @@ class EspacioSeeder extends Seeder
             ],
             [
                 'id_espacio' => 'TH-10',
+                'id_sede' => 'TH',
                 'nombre_espacio' => 'Sala de Clases',
                 'piso_id' => 2,
                 'tipo_espacio' => 'Sala de Clases',
                 'estado' => 'Disponible',
                 'puestos_disponibles' => 23,
             ],
+            [
+                'id_espacio' => 'CT-LAB',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Laboratorio de Computación',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Laboratorio',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 24,
+                'capacidad_maxima' => 24,
+            ],
+            [
+                'id_espacio' => 'CT-02',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 42,
+                'capacidad_maxima' => 42,
+            ],
+            [
+                'id_espacio' => 'CT-01',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 42,
+                'capacidad_maxima' => 42,
+            ],
+            [
+                'id_espacio' => 'CT-03',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 42,
+                'capacidad_maxima' => 42,
+            ],
+            [
+                'id_espacio' => 'CT-05',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 42,
+                'capacidad_maxima' => 42,
+            ],
+            [
+                'id_espacio' => 'CT-06',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 40,
+                'capacidad_maxima' => 40,
+            ],
+            [
+                'id_espacio' => 'CT-07',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 42,
+                'capacidad_maxima' => 42,
+            ],
+
+            [
+                'id_espacio' => 'CT-08',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 35,
+                'capacidad_maxima' => 35,
+            ],
+
+            [
+                'id_espacio' => 'CT-09',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 35,
+                'capacidad_maxima' => 35,
+            ],
+
+            [
+                'id_espacio' => 'CT-10',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 42,
+                'capacidad_maxima' => 42,
+            ],
+            [
+                'id_espacio' => 'CT-11',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 38,
+                'capacidad_maxima' => 38,
+            ],
+            [
+                'id_espacio' => 'CT-12',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 26,
+                'capacidad_maxima' => 26,
+            ],
+            [
+                'id_espacio' => 'CT-18',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Taller de Enfermeria 3',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 8,
+                'capacidad_maxima' => 8,
+            ],
+            [
+                'id_espacio' => 'CT-13',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Taller de Enfermeria 2',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 10,
+                'capacidad_maxima' => 10,
+            ],
+            [
+                'id_espacio' => 'CT-14',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Taller de Construcción',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 20,
+                'capacidad_maxima' => 20,
+            ],
+            [
+                'id_espacio' => 'CT-C1',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Sala de Estudio',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Sala de Estudio',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => null,
+                'capacidad_maxima' => null,
+            ],
+            [
+                'id_espacio' => 'CT-C2',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Sala de Estudio',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Sala de Estudio',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => null,
+                'capacidad_maxima' => null,
+            ],
+            [
+                'id_espacio' => 'CT-C3',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Sala de Estudio',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Sala de Estudio',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => null,
+                'capacidad_maxima' => null,
+            ],
+            [
+                'id_espacio' => 'CT-15',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Sala Multiusos',
+                'piso_id' => 3,
+                'tipo_espacio' => 'Sala Multiusos',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 60,
+                'capacidad_maxima' => 60,
+            ],
+            [
+                'id_espacio' => 'CT-16',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Taller Gastronómico - Cocina',
+                'piso_id' => 14,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 30,
+                'capacidad_maxima' => 30,
+            ],
+            [
+                'id_espacio' => 'CT-17',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Taller Gastronómico - Panadería',
+                'piso_id' => 14,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 30,
+                'capacidad_maxima' => 30,
+            ],
+            [
+                'id_espacio' => 'CT-LSC',
+                    'id_sede' => 'CT',
+                    'nombre_espacio' => 'Taller de Enfermeria 1',
+                    'piso_id' => 4,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 12,
+                'capacidad_maxima' => 12,
+            ],
+            [
+                'id_espacio' => 'CT-TP',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Taller Ed. Parvularia',
+                'piso_id' => 4,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 22,
+                'capacidad_maxima' => 22,
+            ],
+            [
+                'id_espacio' => 'CT-201',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 4,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 42,
+                'capacidad_maxima' => 42,
+            ],
+            [
+                'id_espacio' => 'CT-202',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 4,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 42,
+                'capacidad_maxima' => 42,
+            ],
+            [
+                'id_espacio' => 'CT-INV',
+                'id_sede' => 'CT',
+                'nombre_espacio' => 'Taller Agropecuario - Invernadero',
+                'piso_id' => 4,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 10,
+                'capacidad_maxima' => 10,
+            ],
+            [
+                'id_espacio' => 'CH-101',
+                    'id_sede' => 'CH',
+                    'nombre_espacio' => 'Taller EDPA',
+                    'piso_id' => 5,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 20,
+                'capacidad_maxima' => 20,
+            ],
+            [
+                'id_espacio' => 'CH-103',
+                    'id_sede' => 'CH',
+                    'nombre_espacio' => 'Taller De Herramienta Digitales',
+                    'piso_id' => 5,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 15,
+                'capacidad_maxima' => 15,
+            ],
+            [
+                'id_espacio' => 'CH-104',
+                    'id_sede' => 'CH',
+                    'nombre_espacio' => 'Taller EDPA',
+                    'piso_id' => 5,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 15,
+                'capacidad_maxima' => 15,
+            ],
+            [
+                'id_espacio' => 'CH-105',
+                    'id_sede' => 'CH',
+                    'nombre_espacio' => 'Taller de Procesos Industriales',
+                    'piso_id' => 5,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 20,
+                'capacidad_maxima' => 20,
+            ],
+            [
+                'id_espacio' => 'CH-106',
+                    'id_sede' => 'CH',
+                    'nombre_espacio' => 'Sala de Clases',
+                    'piso_id' => 5,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 43,
+                'capacidad_maxima' => 43,
+            ],
+            [
+                'id_espacio' => 'CH-107',
+                    'id_sede' => 'CH',
+                    'nombre_espacio' => 'Sala de Clases',
+                    'piso_id' => 5,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 45,
+                'capacidad_maxima' => 45,
+            ],
+            [
+                'id_espacio' => 'CH-109',
+                    'id_sede' => 'CH',
+                    'nombre_espacio' => 'Taller de Construcción',
+                    'piso_id' => 5,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 20,
+                'capacidad_maxima' => 20,
+            ],
+            [
+                'id_espacio' => 'CH-LA1',
+                    'id_sede' => 'CH',
+                    'nombre_espacio' => 'Laboratorio de Computación 1',
+                    'piso_id' => 5,
+                'tipo_espacio' => 'Laboratorio de Computación',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 36,
+                'capacidad_maxima' => 36,
+            ],
+            [
+                'id_espacio' => 'CH-LA2',
+                    'id_sede' => 'CH',
+                    'nombre_espacio' => 'Laboratorio de Computación 2',
+                    'piso_id' => 5,
+                'tipo_espacio' => 'Laboratorio de Computación',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 25,
+                'capacidad_maxima' => 25,
+            ],
+            [
+                'id_espacio' => 'CH-212',
+                    'id_sede' => 'CH',
+                    'nombre_espacio' => 'Taller de Enfermeria ',
+                    'piso_id' => 6,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 14,
+                'capacidad_maxima' => 14,
+            ],
+            [
+                'id_espacio' => 'CH-201',
+                    'id_sede' => 'CH',
+                    'nombre_espacio' => 'Sala de Clases',
+                    'piso_id' => 6,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 40,
+                'capacidad_maxima' => 40,
+            ],
+            [
+                'id_espacio' => 'CH-202',
+                    'id_sede' => 'CH',
+                    'nombre_espacio' => 'Sala de Clases',
+                    'piso_id' => 6,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 20,
+                'capacidad_maxima' => 20,
+            ],
+            [
+                'id_espacio' => 'CH-203',
+                    'id_sede' => 'CH',
+                    'nombre_espacio' => 'Sala de Clases',
+                    'piso_id' => 6,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 50,
+                'capacidad_maxima' => 50,
+            ],
+            [
+                'id_espacio' => 'CH-205',
+                    'id_sede' => 'CH',
+                    'nombre_espacio' => 'Sala de Clases',
+                    'piso_id' => 6,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 29,
+                'capacidad_maxima' => 29,
+            ],
+            [
+                'id_espacio' => 'CH-206',
+                'id_sede' => 'CH',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 6,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 28,
+                'capacidad_maxima' => 28,
+            ],
+            [
+                'id_espacio' => 'CH-207',
+                'id_sede' => 'CH',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 6,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 24,
+                'capacidad_maxima' => 24,
+            ],
+            [
+                'id_espacio' => 'CH-208',
+                'id_sede' => 'CH',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 6,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 20,
+                'capacidad_maxima' => 20,
+            ],
+            [
+                'id_espacio' => 'CH-209',
+                'id_sede' => 'CH',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 6,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 30,
+                'capacidad_maxima' => 30,
+            ],
+            [
+                'id_espacio' => 'CH-210',
+                'id_sede' => 'CH',
+                'nombre_espacio' => 'Taller de Enfermeria 1',
+                'piso_id' => 6,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 14,
+                'capacidad_maxima' => 14,
+            ],
+            [
+                'id_espacio' => 'CH-211',
+                'id_sede' => 'CH',
+                'nombre_espacio' => 'Taller de Enfermeria 2',
+                'piso_id' => 6,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 14,
+                'capacidad_maxima' => 14,
+            ],
+            [
+                'id_espacio' => 'CH-AUD',
+                'id_sede' => 'CH',
+                'nombre_espacio' => 'Auditorio',
+                'piso_id' => 6,
+                'tipo_espacio' => 'Auditorio',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 40,
+                'capacidad_maxima' => 40,
+            ],
+            [
+                'id_espacio' => 'CH-108',
+                'id_sede' => 'CH',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 6,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 45,
+                'capacidad_maxima' => 45,
+            ],
+            [
+                'id_espacio' => 'CH-GIM',
+                'id_sede' => 'CH',
+                'nombre_espacio' => 'Gimnasio',
+                'piso_id' => 7,
+                'tipo_espacio' => 'Gimnasio',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 50,
+                'capacidad_maxima' => 50,
+            ],
+            [
+                'id_espacio' => 'LA-01',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 8,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 26,
+                'capacidad_maxima' => 26,
+            ],
+            [
+                'id_espacio' => 'LA-02',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Laboratorio Hidráulica y PLC',
+                'piso_id' => 9,
+                'tipo_espacio' => 'Laboratorio',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 14,
+                'capacidad_maxima' => 14,
+            ],
+            [
+                'id_espacio' => 'LA-03',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Auditorium',
+                'piso_id' => 9,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 50,
+                'capacidad_maxima' => 50,
+            ],
+            [
+                'id_espacio' => 'LA-04',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala INNOVACIÓN (COWORK)',
+                'piso_id' => 9,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 6,
+                'capacidad_maxima' => 6,
+            ],
+            [
+                'id_espacio' => 'LA-05',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 9,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 16,
+                'capacidad_maxima' => 16,
+            ],
+            [
+                'id_espacio' => 'LA-06',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 9,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 19,
+                'capacidad_maxima' => 19,
+            ],
+            [
+                'id_espacio' => 'LA-07',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 9,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 35,
+                'capacidad_maxima' => 35,
+            ],
+            [
+                'id_espacio' => 'LA-08',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 9,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 35,
+                'capacidad_maxima' => 35,
+            ],
+            [
+                'id_espacio' => 'LA-09',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 9,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 35,
+                'capacidad_maxima' => 35,
+            ],
+
+            [
+                'id_espacio' => 'LA-10',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 9,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 25,
+                'capacidad_maxima' => 25,
+            ],
+
+            [
+                'id_espacio' => 'LA-11',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 9,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 25,
+                'capacidad_maxima' => 25,
+            ],
+            [
+                'id_espacio' => 'LA-12',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Laboratorio de Neumática',
+                'piso_id' => 9,
+                'tipo_espacio' => 'Laboratorio',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 14,
+                'capacidad_maxima' => 14,
+            ],
+            [
+                'id_espacio' => 'LA-211',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 10,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 40,
+                'capacidad_maxima' => 40,
+            ],
+            [
+                'id_espacio' => 'LA-212',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Trotadoras',
+                'piso_id' => 10,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 6,
+                'capacidad_maxima' => 6,
+            ],
+            [
+                'id_espacio' => 'LA-213',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Laboratorio Enfermeria 2',
+                'piso_id' => 10,
+                'tipo_espacio' => 'Laboratorio',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 10,
+                'capacidad_maxima' => 10,
+            ],
+            [
+                'id_espacio' => 'LA-214',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Laboratorio Enfermeria 1',
+                'piso_id' => 10,
+                'tipo_espacio' => 'Laboratorio',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 8,
+                'capacidad_maxima' => 8,
+            ],
+            [
+                'id_espacio' => 'LA-215',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala Acondicionamiento Físico',
+                'piso_id' => 10,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 16,
+                'capacidad_maxima' => 16,
+            ],
+            [
+                'id_espacio' => 'LA-216',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Taller de Construcción',
+                'piso_id' => 10,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 20,
+                'capacidad_maxima' => 20,
+            ],
+            [
+                'id_espacio' => 'LA-217',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Laboratorio Enfermeria 3',
+                'piso_id' => 10,
+                'tipo_espacio' => 'Laboratorio',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 10,
+                'capacidad_maxima' => 10,
+            ],
+            [
+                'id_espacio' => 'LA-221',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Estudio, Biblioteca',
+                'piso_id' => 11,
+                'tipo_espacio' => 'Sala de Estudio',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 10,
+                'capacidad_maxima' => 10,
+            ],
+            [
+                'id_espacio' => 'LA-411',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 12,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 31,
+                'capacidad_maxima' => 31,
+            ],
+            [
+                'id_espacio' => 'LA-412',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 12,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 25,
+                'capacidad_maxima' => 25,
+            ],
+            [
+                'id_espacio' => 'LA-413',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 12,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 25,
+                'capacidad_maxima' => 25,
+            ],
+            [
+                'id_espacio' => 'LA-414',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 12,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 25,
+                'capacidad_maxima' => 25,
+            ],
+
+            [
+                'id_espacio' => 'LA-415',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 12,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 30,
+                'capacidad_maxima' => 30,
+            ],
+            [
+                'id_espacio' => 'LA-416',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Laboratorio de Computación',
+                'piso_id' => 12,
+                'tipo_espacio' => 'Laboratorio',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 23,
+                'capacidad_maxima' => 23,
+            ],
+            [
+                'id_espacio' => 'LA-417',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Taller de Párvulo',
+                'piso_id' => 12,
+                'tipo_espacio' => 'Taller',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 23,
+                'capacidad_maxima' => 23,
+            ],
+            [
+                'id_espacio' => 'LA-421',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 13,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 23,
+                'capacidad_maxima' => 23,
+            ],
+            [
+                'id_espacio' => 'LA-422',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 13,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 50,
+                'capacidad_maxima' => 50,
+            ],
+            [
+                'id_espacio' => 'LA-423',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Clases',
+                'piso_id' => 13,
+                'tipo_espacio' => 'Sala de Clases',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 25,
+                'capacidad_maxima' => 25,
+            ],
+            [
+                'id_espacio' => 'LA-LAB',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Laboratorio de Computación',
+                'piso_id' => 8,
+                'tipo_espacio' => 'Laboratorio',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 27,
+                'capacidad_maxima' => 27,
+            ],
+            [
+                'id_espacio' => 'LA-C1',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Estudio',
+                'piso_id' => 11,
+                'tipo_espacio' => 'Sala de Estudio',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 4,
+                'capacidad_maxima' => 4,
+            ],
+            [
+                'id_espacio' => 'LA-C2',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Estudio',
+                'piso_id' => 11,
+                'tipo_espacio' => 'Sala de Estudio',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 4,
+                'capacidad_maxima' => 4,
+            ],
+            [
+                'id_espacio' => 'LA-C3',
+                'id_sede' => 'LA',
+                'nombre_espacio' => 'Sala de Estudio',
+                'piso_id' => 11,
+                'tipo_espacio' => 'Sala de Estudio',
+                'estado' => 'Disponible',
+                'puestos_disponibles' => 4,
+                'capacidad_maxima' => 4,
+            ],
 
         ];
-        foreach ($espacios as $data) {
-            $espacio = Espacio::create($data);
-            $espacio->generateQR(); 
+        
+        // Filtrar solo los espacios de la sede actual del tenant
+        $espacios = collect($todosLosEspacios)
+            ->filter(function ($espacio) use ($tenant) {
+                return !$tenant || $espacio['id_sede'] === $tenant->sede_id;
+            })
+            ->map(function ($espacio) use ($pisoMap) {
+                // Mapear piso_id antiguo a nuevo ID real
+                if (isset($espacio['piso_id']) && isset($pisoMap[$espacio['piso_id']])) {
+                    $espacio['piso_id'] = $pisoMap[$espacio['piso_id']];
+                }
+                // Quitar id_sede ya que no existe en la tabla (está implícito por el tenant)
+                unset($espacio['id_sede']);
+                // Si capacidad_maxima es null, usar puestos_disponibles o 0
+                if (!isset($espacio['capacidad_maxima']) || $espacio['capacidad_maxima'] === null) {
+                    $espacio['capacidad_maxima'] = $espacio['puestos_disponibles'] ?? 0;
+                }
+                return $espacio;
+            })
+            ->all();
+        
+        if ($tenant) {
+            $this->command->info("Creando espacios para sede: {$tenant->sede_id}");
         }
+        
+        foreach ($espacios as $data) {
+            // Insertar directamente en la conexión tenant
+            $espacioId = \DB::connection('tenant')->table('espacios')->insertGetId($data);
+            
+            // Generar QR para el espacio recién creado
+            $espacio = \App\Models\Espacio::on('tenant')->withoutGlobalScopes()->find($espacioId);
+            if ($espacio) {
+                $espacio->generateQR();
+            }
+        }
+        
+        $this->command->info("Creados " . count($espacios) . " espacios");
+    }
+
+    /**
+     * Construir mapeo de IDs antiguos a IDs reales de pisos
+     */
+    private function buildPisoMap($tenant)
+    {
+        if (!$tenant) {
+            return [];
+        }
+
+        // Usar DB directo para evitar global scopes
+        $pisos = collect(\DB::connection('tenant')->table('pisos')->get());
+        $this->command->info("Pisos encontrados para tenant {$tenant->sede_id}: " . $pisos->count());
+        
+        $map = [];
+
+        // Mapeo para Talcahuano (TH)
+        if ($tenant->sede_id === 'TH') {
+            $piso1 = $pisos->where('numero_piso', 1)->first();
+            $piso2 = $pisos->where('numero_piso', 2)->first();
+            $map[1] = $piso1 ? $piso1->id : null;
+            $map[2] = $piso2 ? $piso2->id : null;
+            $this->command->info("TH Mapeo: 1->{$map[1]}, 2->{$map[2]}");
+        }
+        // Mapeo para Cañete (CT)
+        elseif ($tenant->sede_id === 'CT') {
+            $piso1 = $pisos->where('numero_piso', 1)->first();
+            $piso2 = $pisos->where('numero_piso', 2)->first();
+            $piso3 = $pisos->where('numero_piso', 3)->where('nombre_piso', 'Taller Gastronómico')->first();
+            $map[3] = $piso1 ? $piso1->id : null;
+            $map[4] = $piso2 ? $piso2->id : null;
+            $map[14] = $piso3 ? $piso3->id : null;
+            $this->command->info("CT Mapeo: 3->{$map[3]}, 4->{$map[4]}, 14->{$map[14]}");
+        }
+        // Mapeo para Chillán (CH)
+        elseif ($tenant->sede_id === 'CH') {
+            $piso1 = $pisos->where('numero_piso', 1)->first();
+            $piso2 = $pisos->where('numero_piso', 2)->first();
+            $piso3 = $pisos->where('numero_piso', 3)->first();
+            $map[5] = $piso1 ? $piso1->id : null;
+            $map[6] = $piso2 ? $piso2->id : null;
+            $map[7] = $piso3 ? $piso3->id : null; // Gimnasio
+            $this->command->info("CH Mapeo: 5->{$map[5]}, 6->{$map[6]}, 7->{$map[7]}");
+        }
+        // Mapeo para Los Ángeles (LA) - usar nombre_piso para diferenciar edificios
+        elseif ($tenant->sede_id === 'LA') {
+            $map[8] = $pisos->where('nombre_piso', 'CAUPOLICÁN 276 - 1er piso')->first()->id ?? null;
+            $map[9] = $pisos->where('nombre_piso', 'CAUPOLICÁN 276 - 2do piso')->first()->id ?? null;
+            $map[10] = $pisos->where('nombre_piso', 'VILLAGRÁN 220 - 1er piso')->first()->id ?? null;
+            $map[11] = $pisos->where('nombre_piso', 'VILLAGRÁN 220 - 2do piso')->first()->id ?? null;
+            $map[12] = $pisos->where('nombre_piso', 'VILLAGRÁN 251 - 1er piso')->first()->id ?? null;
+            $map[13] = $pisos->where('nombre_piso', 'VILLAGRÁN 251 - 2do piso')->first()->id ?? null;
+            $this->command->info("LA Mapeo: 8->{$map[8]}, 9->{$map[9]}, 10->{$map[10]}, 11->{$map[11]}, 12->{$map[12]}, 13->{$map[13]}");
+        }
+
+        return $map;
     }
 }

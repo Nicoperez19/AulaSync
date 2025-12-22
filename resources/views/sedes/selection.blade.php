@@ -16,24 +16,23 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Build Assets -->
-    @php
-        if (config('app.env') === 'production' && file_exists(public_path('build/manifest.json'))) {
+    @if (config('app.env') === 'production' && file_exists(public_path('build/manifest.json')))
+        @php
             $manifest = json_decode(file_get_contents(public_path('build/manifest.json')), true);
             $cssFile = $manifest['resources/css/app.css']['file'] ?? null;
             $jsFile = $manifest['resources/js/app.js']['file'] ?? null;
             $jsCss = $manifest['resources/js/app.js']['css'][0] ?? null;
-            
-            echo '<link rel="stylesheet" href="' . asset("build/$jsCss") . '" />' . PHP_EOL;
-            if ($cssFile) {
-                echo '<link rel="stylesheet" href="' . asset("build/$cssFile") . '" />' . PHP_EOL;
-            }
-            if ($jsFile) {
-                echo '<script type="module" src="' . asset("build/$jsFile") . '"></script>' . PHP_EOL;
-            }
-        } else {
-            echo '@vite([\'resources/css/app.css\', \'resources/js/app.js\'])';
-        }
-    @endphp
+        @endphp
+        <link rel="stylesheet" href="{{ asset("build/$jsCss") }}" />
+        @if ($cssFile)
+            <link rel="stylesheet" href="{{ asset("build/$cssFile") }}" />
+        @endif
+        @if ($jsFile)
+            <script type="module" src="{{ asset("build/$jsFile") }}"></script>
+        @endif
+    @else
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @endif
 
     <style>
         .sede-item {

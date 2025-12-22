@@ -136,13 +136,16 @@ class DataLoadController extends Controller
             $planificacionesEliminadas = Planificacion_Asignatura::whereIn('id_horario', $horariosDelPeriodo)->delete();
             Log::info('Planificaciones eliminadas del período ' . $periodoSeleccionado . ': ' . $planificacionesEliminadas);
 
-            // LIMPIEZA DE ESPACIOS: Eliminar todos los espacios del tenant actual para recargarlos desde cero
+            // PRESERVAR ESPACIOS DEL SEEDER: Solo eliminar espacios SIN piso_id válido (creados por cargas anteriores)
+            // Los espacios con piso_id configurado vienen del seeder y deben mantenerse
             $tenant = \App\Models\Tenant::current();
             if ($tenant) {
-                $espaciosEliminados = Espacio::count();
-                // Usar delete() en lugar de truncate() para respetar las foreign keys
-                Espacio::query()->delete();
-                Log::info('Espacios eliminados del tenant ' . $tenant->domain . ': ' . $espaciosEliminados);
+                // Contar espacios del seeder (con piso_id configurado)
+                $espaciosSeeder = Espacio::whereNotNull('piso_id')->count();
+                // Eliminar solo espacios sin piso_id (generados por cargas masivas previas)
+                $espaciosEliminados = Espacio::whereNull('piso_id')->delete();
+                Log::info('Espacios del seeder preservados: ' . $espaciosSeeder);
+                Log::info('Espacios sin piso eliminados del tenant ' . $tenant->domain . ': ' . $espaciosEliminados);
             }
 
             // Obtener la sede actual del tenant
@@ -524,30 +527,37 @@ class DataLoadController extends Controller
                 }
             }
 
-            // Crear espacios únicos
+            // Crear espacios únicos - SIN piso_id para diferenciarse de espacios del seeder
+            // Los espacios del archivo que ya existen en el seeder NO se sobrescriben
             $espaciosCreados = 0;
+            $espaciosYaExistentes = 0;
             foreach ($espaciosEncontrados as $espacioNombre) {
                 try {
                     $espacioExiste = Espacio::where('id_espacio', $espacioNombre)->exists();
 
                     if (!$espacioExiste) {
+                        // Crear espacio SIN piso_id - será asignado manualmente después
+                        // Esto permite que el sistema diferencie entre espacios del seeder y de carga masiva
                         Espacio::create([
                             'id_espacio' => $espacioNombre,
                             'nombre_espacio' => $espacioNombre,
                             'tipo_espacio' => 'Sala de Clases',
                             'puestos_disponibles' => 30,
-                            'piso_id' => $primerPiso->id
+                            'piso_id' => null  // Sin piso asignado - el admin lo asignará manualmente
                         ]);
                         $espaciosCreados++;
-                        Log::info('Espacio creado automáticamente: ' . $espacioNombre);
+                        Log::info('Espacio creado automáticamente (sin piso): ' . $espacioNombre);
+                    } else {
+                        $espaciosYaExistentes++;
+                        Log::info('Espacio ya existe (del seeder): ' . $espacioNombre);
                     }
                 } catch (\Exception $e) {
                     Log::warning('Error al crear espacio ' . $espacioNombre . ': ' . $e->getMessage());
                 }
             }
 
-            if ($espaciosCreados > 0) {
-                Log::info('Se crearon ' . $espaciosCreados . ' espacios nuevos de un total de ' . count($espaciosEncontrados));
+            if ($espaciosCreados > 0 || $espaciosYaExistentes > 0) {
+                Log::info('Resumen de espacios: ' . $espaciosCreados . ' creados, ' . $espaciosYaExistentes . ' ya existían (del seeder)');
             }
 
         } catch (\Exception $e) {

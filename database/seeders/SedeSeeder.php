@@ -19,7 +19,7 @@ class SedeSeeder extends Seeder
                 'nombre_sede' => 'Cañete',
                 'id_universidad' => 'UCSC',
                 'comuna_id' => '233',
-                'prefijo_sala' => 'th',
+                'prefijo_sala' => 'ct',
             ],
             [
                 'id_sede' => 'LA',

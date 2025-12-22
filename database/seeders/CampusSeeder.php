@@ -24,8 +24,8 @@ class CampusSeeder extends Seeder
                 'nombre_campus' => 'Campus Santo Domingo',
                 'id_sede' => 'CCP',
             ],
-
         ];
+        
         foreach ($campus as $campu) {
             Campus::create($campu);
         }

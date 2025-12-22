@@ -23,6 +23,9 @@ class TenantSeeder extends Seeder
                 ? strtolower($sede->prefijo_sala) 
                 : strtolower(str_replace(' ', '-', $sede->prefijo_sala));
 
+            // Generar nombre de base de datos único para cada sede
+            $databaseName = 'aulasync_' . strtolower($sede->prefijo_sala);
+
             Tenant::updateOrCreate(
                 ['domain' => $domain],
                 [
@@ -30,7 +33,7 @@ class TenantSeeder extends Seeder
                     'prefijo_espacios' => $sede->prefijo_sala,
                     'sede_id' => $sede->id_sede,
                     'is_active' => true,
-                    'database' => null, // Mismo database para todos los tenants, se filtra por scope
+                    'database' => $databaseName,
                 ]
             );
         }

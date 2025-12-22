@@ -12,31 +12,18 @@ class DatabaseSeeder extends Seeder
 {
     /**
      * Seed the application's database.
+     * 
+     * IMPORTANTE: Este seeder ahora solo ejecuta datos centralizados.
+     * Para seeders de tenants, usar TenantDatabaseSeeder o el comando:
+     * php artisan tenants:setup --seed
      */
     public function run(): void
     {
-        $this->call(RoleSeeder::class);
-        $this->call(UserSeeder::class);
-        $this->call(AdministracionChileSeeder::class);
-        $this->call(class: UniversidadSeeder::class);
-        $this->call(class: SedeSeeder::class);
-        $this->call(class: CampusSeeder::class);
-        $this->call(class: FacultadSeeder::class);
-        $this->call(class: AreaAcademicaSeeder::class);
-        $this->call(class: PisoSeeder::class);
-        $this->call(class: CarreraSeeder::class);
-        $this->call(class: EspacioSeeder::class);
-
-
-
-        $this->call(class: ModulosSeeder::class);
-
-        // Tipos de correos masivos
-        $this->call(class: TiposCorreosMasivosSeeder::class);
-
-        // Días feriados de Chile
-        $this->call(class: DiasFeriadosSeeder::class);
-
-        // $this->call(class: ReservasSeeder::class);
+        $this->command->warn('⚠️  IMPORTANTE: Este seeder solo carga datos centralizados.');
+        $this->command->info('Para cargar datos de tenants, ejecuta: php artisan tenants:setup --seed');
+        $this->command->newLine();
+        
+        // Llamar al seeder centralizado
+        $this->call(CentralDatabaseSeeder::class);
     }
 }
