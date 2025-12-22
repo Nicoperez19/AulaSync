@@ -606,17 +606,11 @@ document.addEventListener("DOMContentLoaded", function() {
                     initElements.emptySpacesMessage.classList.add('hidden');
 
                     if (data.length === 0) {
-                        initElements.emptySpacesMessage.textContent = 'No hay espacios disponibles';
+                        initElements.emptySpacesMessage.textContent = 'No hay espacios asignados a este piso';
                         initElements.emptySpacesMessage.classList.remove('hidden');
                         initElements.espaciosList.appendChild(initElements.emptySpacesMessage);
                         return;
                     }
-
-                    // Mostrar mensaje si se están cargando todos los espacios disponibles (fallback)
-                    const allSpacesNote = document.createElement('div');
-                    allSpacesNote.className = 'px-3 py-2 text-xs bg-blue-50 border border-blue-200 rounded text-blue-700 mb-2';
-                    allSpacesNote.textContent = '📌 Mostrando todos los espacios disponibles en el sistema';
-                    initElements.espaciosList.appendChild(allSpacesNote);
 
                     data.forEach(espacio => {
                         const espacioItem = document.createElement('div');

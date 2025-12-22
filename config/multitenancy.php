@@ -26,7 +26,7 @@ return [
      * If false, all tenants will share the same database
      * but data will be filtered by tenant scope
      */
-    'separate_databases' => env('MULTITENANCY_SEPARATE_DATABASES', false),
+    'separate_databases' => env('MULTITENANCY_SEPARATE_DATABASES', true),
 
     /**
      * Database name pattern for tenant databases

@@ -19,6 +19,25 @@ class FacultadSeeder extends Seeder
                 'id_universidad' => 'UCSC',
                 'id_sede' => 'TH',
                 'id_campus' => null,
+            ],[
+                'id_facultad' => 'IT_CT',
+                'nombre_facultad' => 'Instituto Tecnológico',
+                'id_universidad' => 'UCSC',
+                'id_sede' => 'CT',
+                'id_campus' => null,
+            ],[
+                'id_facultad' => 'IT_LA',
+                'nombre_facultad' => 'Instituto Tecnológico',
+                'id_universidad' => 'UCSC',
+                'id_sede' => 'LA',
+                'id_campus' => null,
+            ],
+            [
+                'id_facultad' => 'IT_CH',
+                'nombre_facultad' => 'Instituto Tecnológico',
+                'id_universidad' => 'UCSC',
+                'id_sede' => 'CH',
+                'id_campus' => null,
             ],
             // [
             //     'id_facultad' => 'FACEA',
@@ -28,6 +47,7 @@ class FacultadSeeder extends Seeder
             //     'id_campus' => 'CSA',
             // ],
         ];
+        
         foreach ($facultades as $facultad) {
             Facultad::create($facultad);
         }

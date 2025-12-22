@@ -13,8 +13,8 @@ return new class extends Migration {
         Schema::create('pisos', function (Blueprint $table) {
             $table->id();
             $table->integer('numero_piso')->default(1);
-            $table->string('id_facultad', 20);
-            $table->foreign('id_facultad')->references('id_facultad')->on('facultades')->onDelete('cascade');
+            $table->string('id_facultad', 20)->comment('Referencia a facultades (tabla centralizada)');
+            // No se crea foreign key porque facultades está en database central
             $table->timestamps();
         });
     }

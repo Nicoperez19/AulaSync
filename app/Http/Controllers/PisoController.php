@@ -135,7 +135,10 @@ class PisoController extends Controller
         try {
             Log::info('getPisos llamado con facultadId: ' . $facultadId);
 
-            $pisos = Piso::where('id_facultad', $facultadId)
+            // Usar DB directo para evitar problemas con global scopes en contexto tenant
+            $pisos = \DB::connection('tenant')
+                ->table('pisos')
+                ->where('id_facultad', $facultadId)
                 ->orderBy('numero_piso')
                 ->get(['id', 'numero_piso', 'nombre_piso']);
 
@@ -161,19 +164,17 @@ class PisoController extends Controller
         try {
             Log::info('getEspaciosPorPiso llamado con pisoId: ' . $pisoId);
 
-            $espacios = Espacio::where('piso_id', $pisoId)
+            // Usar DB directo para evitar problemas con global scopes en contexto tenant
+            $espacios = \DB::connection('tenant')
+                ->table('espacios')
+                ->where('piso_id', $pisoId)
                 ->orderBy('nombre_espacio')
                 ->get(['id_espacio as id', 'nombre_espacio as nombre', 'tipo_espacio as tipo', 'puestos_disponibles as capacidad']);
 
-            Log::info('Espacios encontrados: ' . count($espacios));
+            Log::info('Espacios encontrados para piso ' . $pisoId . ': ' . count($espacios));
 
-            // Si no hay espacios para este piso, devolver todos los espacios disponibles
-            if ($espacios->isEmpty()) {
-                Log::info('No hay espacios para el piso ' . $pisoId . ', devolviendo todos los espacios');
-                $espacios = Espacio::orderBy('nombre_espacio')
-                    ->get(['id_espacio as id', 'nombre_espacio as nombre', 'tipo_espacio as tipo', 'puestos_disponibles as capacidad']);
-            }
-
+            // Retornar solo los espacios del piso seleccionado (sin fallback)
+            // Si no hay espacios, retorna array vacío - el usuario verá mensaje apropiado
             return response()->json($espacios);
         } catch (\Exception $e) {
             Log::error('Error en getEspaciosPorPiso: ' . $e->getMessage());
