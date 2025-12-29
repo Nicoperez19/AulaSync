@@ -74,19 +74,28 @@ class SetupTenantDatabases extends Command
         $this->line("  Database: {$dbName}");
 
         try {
+            // Usar conexión administrativa (root) para operaciones DDL
+            $adminDB = DB::connection('tenant-admin');
+            
             // Verificar si la database existe (compatible con MariaDB)
-            $databases = DB::select("SHOW DATABASES WHERE `Database` = '{$dbName}'");
+            $databases = $adminDB->select("SHOW DATABASES WHERE `Database` = '{$dbName}'");
             $exists = !empty($databases);
 
             if ($this->option('fresh') && $exists) {
                 $this->warn("  Eliminando database existente: {$dbName}");
-                DB::statement("DROP DATABASE `{$dbName}`");
+                $adminDB->statement("DROP DATABASE `{$dbName}`");
                 $exists = false;
             }
 
             if (!$exists) {
                 $this->line("  Creando database: {$dbName}");
-                DB::statement("CREATE DATABASE `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                $adminDB->statement("CREATE DATABASE `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                
+                // Otorgar permisos al usuario aulasync sobre la nueva base de datos
+                $adminDB->statement("GRANT ALL PRIVILEGES ON `{$dbName}`.* TO 'aulasync'@'%'");
+                // Otorgar permisos al usuario gestoraulasit sobre la nueva base de datos
+                $adminDB->statement("GRANT ALL PRIVILEGES ON `{$dbName}`.* TO 'gestoraulasit'@'%'");
+                $adminDB->statement("FLUSH PRIVILEGES");
             } else {
                 $this->line("  La database ya existe: {$dbName}");
             }

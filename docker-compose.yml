@@ -10,21 +10,21 @@ services:
     entrypoint: /usr/local/bin/docker-entrypoint.sh
     command: sh -c "php-fpm"
     environment:
-      - APP_NAME=AulaSync
+      - APP_NAME=GestorAulasIT
       - APP_ENV=production
       - APP_DEBUG=false
-      - APP_URL=http://localhost:8000
+      - APP_URL=http://0.0.0.0:8000
       - DB_CONNECTION=mysql
       - DB_HOST=db
       - DB_PORT=3306
-      - DB_DATABASE=aulasync
-      - DB_USERNAME=aulasync
+      - DB_DATABASE=gestoraulasit
+      - DB_USERNAME=gestoraulasit
       - DB_PASSWORD=aulasync
       - LOG_CHANNEL=stack
       - SESSION_DRIVER=file
       - CACHE_DRIVER=file
     networks:
-      - aulasync_net
+      - GestorAulasIT_net
     depends_on:
       - db
     expose:
@@ -40,7 +40,7 @@ services:
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
       - ./public:/var/www/public:ro
     networks:
-      - aulasync_net
+      - GestorAulasIT_net
     depends_on:
       - app
 
@@ -49,19 +49,20 @@ services:
     container_name: mysql_db
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: aulasync
-      MYSQL_USER: aulasync
+      MYSQL_DATABASE: gestoraulasit
+      MYSQL_USER: gestoraulasit
       MYSQL_PASSWORD: aulasync
       MYSQL_ROOT_PASSWORD: root
     volumes:
       - db_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - aulasync_net
+      - GestorAulasIT_net
     expose:
       - 3306
 
 networks:
-  aulasync_net:
+  GestorAulasIT_net:
     driver: bridge
     # network is bridge (not internal) so host port mappings work
 
