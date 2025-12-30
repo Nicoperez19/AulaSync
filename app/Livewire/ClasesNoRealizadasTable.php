@@ -460,16 +460,14 @@ class ClasesNoRealizadasTable extends Component
                     ->orWhereDate('clases_no_realizadas.fecha_clase', $hoy);
             });
 
-        // Optimizar búsqueda usando JOINs en lugar de whereHas
+        // Optimizar búsqueda usando JOIN solo con asignaturas
         if ($this->search) {
             $searchTerm = '%' . $this->search . '%';
-            $query->leftJoin('profesores', 'clases_no_realizadas.run_profesor', '=', 'profesores.run_profesor')
-                  ->leftJoin('asignaturas', 'clases_no_realizadas.id_asignatura', '=', 'asignaturas.id_asignatura')
+            $query->leftJoin('asignaturas', 'clases_no_realizadas.id_asignatura', '=', 'asignaturas.id_asignatura')
                   ->where(function($q) use ($searchTerm) {
-                      $q->where('profesores.name', 'like', $searchTerm)
-                        ->orWhere('asignaturas.nombre_asignatura', 'like', $searchTerm)
+                      $q->where('asignaturas.nombre_asignatura', 'like', $searchTerm)
                         ->orWhere('asignaturas.codigo_asignatura', 'like', $searchTerm)
-                        ->orWhere('clases_no_realizadas.id_espacio', 'like', $searchTerm);
+                        ->orWhere('clases_no_realizadas.run_profesor', 'like', $searchTerm);
                   });
         }
 

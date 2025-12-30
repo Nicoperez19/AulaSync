@@ -191,13 +191,13 @@ Equipo Académico',
             
             <p>
                 Saludos cordiales,<br>
-                <strong>Equipo AulaSync</strong>
+                <strong>Equipo Gestor de Aulas IT</strong>
             </p>
         </div>
         
         <div class="footer">
             <p>Este es un correo electrónico automático, por favor no responda a este mensaje.</p>
-            <p>&copy; 2025 AulaSync. Todos los derechos reservados.</p>
+            <p>&copy; 2025 Gestor de Aulas IT. Todos los derechos reservados.</p>
         </div>
     </div>
 </body>
@@ -219,11 +219,11 @@ Período: {{periodo}}
 Para más información, contacte con su supervisor o la administración académica.
 
 Saludos cordiales,
-Equipo AulaSync
+Equipo Gestor de Aulas IT
 
 ---
 Este es un correo electrónico automático, por favor no responda a este mensaje.
-© 2025 AulaSync. Todos los derechos reservados.',
+© 2025 Gestor de Aulas IT. Todos los derechos reservados.',
             'variables_disponibles' => json_encode([
                 'nombre', 'email', 'fecha', 'periodo', 'total_clases', 'clases_no_realizadas', 'porcentaje'
             ]),
@@ -255,7 +255,7 @@ Este es un correo electrónico automático, por favor no responda a este mensaje
         <li>Clases no realizadas: {{clases_no_realizadas}}</li>
     </ul>
     
-    <p>Saludos,<br>Equipo AulaSync</p>
+    <p>Saludos,<br>Equipo Gestor de Aulas IT</p>
 </body>
 </html>',
             'contenido_texto' => 'Hola {{nombre}},
@@ -269,7 +269,7 @@ Información del período:
 - Clases no realizadas: {{clases_no_realizadas}}
 
 Saludos,
-Equipo AulaSync',
+Equipo Gestor de Aulas IT',
             'variables_disponibles' => json_encode([
                 'nombre', 'fecha', 'periodo', 'total_clases', 'clases_no_realizadas'
             ]),
