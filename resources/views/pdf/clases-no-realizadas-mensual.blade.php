@@ -300,7 +300,7 @@
     <!-- Header -->
     <div class="header">
         <h1>REPORTE MENSUAL DE CLASES NO REALIZADAS</h1>
-        <div class="subtitle">Sistema de Gestión Académica - AulaSync</div>
+        <div class="subtitle">Gestor de Aulas IT - Sistema de Gestión Académica</div>
     </div>
 
     <!-- Información del Período -->
@@ -465,7 +465,7 @@
 
     <!-- Footer -->
     <div class="footer">
-        <p>Este reporte fue generado automáticamente por el Sistema AulaSync</p>
+        <p>Este reporte fue generado automáticamente por el Gestor de Aulas IT</p>
         <p>Documento confidencial - Uso interno exclusivo | {{ now()->format('d/m/Y H:i:s') }}</p>
     </div>
 </body>

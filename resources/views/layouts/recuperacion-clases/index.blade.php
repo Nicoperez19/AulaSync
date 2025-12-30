@@ -7,7 +7,7 @@
                 </div>
                 <div>
                     <h2 class="text-2xl font-bold leading-tight">Recuperación de Clases</h2>
-                    <p class="text-sm text-gray-500">Gestiona el reagendamiento de clases no realizadas</p>
+                    <p class="text-sm text-gray-500">Gestiona el reagendamiento de clases no registradas</p>
                 </div>
             </div>
         </div>

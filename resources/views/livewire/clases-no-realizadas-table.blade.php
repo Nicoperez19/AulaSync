@@ -13,18 +13,29 @@
                 ]) }}" 
                class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
                 <i class="fas fa-file-excel mr-2"></i>
-                Exportar Excel
+                Exportar No Realizadas
+            </a>
+            <a href="{{ route('clases-no-realizadas.export-all-excel', [
+                    'fecha_inicio' => $fecha_inicio,
+                    'fecha_fin' => $fecha_fin,
+                    'periodo' => $periodo
+                ]) }}" 
+               class="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
+                <i class="fas fa-file-excel mr-2"></i>
+                Exportar Todas las Clases
             </a>
             <button wire:click="exportarPDFSemanal" 
                     class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
                 <i class="fas fa-file-pdf mr-2"></i>
                 Exportar Semanal
             </button>
+            {{-- Botón Exportar Mensual temporalmente oculto
             <button wire:click="exportarPDFMensual" 
                     class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
                 <i class="fas fa-file-pdf mr-2"></i>
                 Exportar Mensual
             </button>
+            --}}
         </div>
     </div>
 

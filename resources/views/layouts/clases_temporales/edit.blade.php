@@ -644,7 +644,7 @@
             salas.forEach(sala => {
                 const option = document.createElement('option');
                 option.value = sala.id_espacio;
-                option.textContent = `${sala.nombre_espacio} (${sala.piso_nombre}) - Ocupación: ${sala.porcentaje_planificacion}%`;
+                option.textContent = `[${sala.id_espacio}] ${sala.nombre_espacio} (${sala.piso_nombre}) - Ocupación: ${sala.porcentaje_planificacion}%`;
                 option.dataset.sala = JSON.stringify(sala);
                 select.appendChild(option);
             });

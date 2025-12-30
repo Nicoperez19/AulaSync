@@ -91,7 +91,7 @@
     <!-- MOVIDO A MANTENEDOR DE PROFESORES -->
     <!--
     @can('gestionar licencias profesores')
-        <x-sidebar.link title="Licencias Profesores" href="{{ route('licencias.index') }}"
+        <x-sidebar.link title="Ausencias Profesores" href="{{ route('ausencias-profesores') }}"
             :isActive="request()->routeIs('licencias.*')">
             <x-slot name="icon">
                 <i class="flex-shrink-0 w-6 h-6 fa-solid fa-file-medical" aria-hidden="true"></i>
@@ -156,7 +156,7 @@
             @endhasanyrole
 
             @can('mantenedor de feriados')
-                <x-sidebar.sublink title="Días Feriados" href="{{ route('dias-feriados.index') }}"
+                <x-sidebar.sublink title="Calendario Académico" href="{{ route('dias-feriados.index') }}"
                     :isActive="request()->routeIs('dias-feriados.*')" />
             @endcan
 

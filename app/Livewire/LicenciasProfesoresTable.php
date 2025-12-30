@@ -23,6 +23,7 @@ class LicenciasProfesoresTable extends Component
     public $editMode = false;
     public $licenciaId;
     public $run_profesor = '';
+    public $profesorNombre = '';
     public $fecha_inicio = '';
     public $fecha_fin = '';
     public $motivo = '';
@@ -53,6 +54,35 @@ class LicenciasProfesoresTable extends Component
         $this->resetPage();
     }
 
+    public function getProfesoresFiltradosProperty()
+    {
+        if (empty($this->run_profesor) || strlen($this->run_profesor) < 2 || !empty($this->profesorNombre)) {
+            return collect();
+        }
+
+        return Profesor::where('run_profesor', 'like', '%' . $this->run_profesor . '%')
+            ->orWhere('name', 'like', '%' . $this->run_profesor . '%')
+            ->limit(5)
+            ->get();
+    }
+
+    public function selectProfesor($run, $nombre)
+    {
+        $this->run_profesor = $run;
+        $this->profesorNombre = $nombre;
+    }
+
+    public function updatedRunProfesor()
+    {
+        // Si el usuario empieza a escribir de nuevo, limpiar el nombre seleccionado
+        if (!empty($this->profesorNombre)) {
+            $profesor = Profesor::where('run_profesor', $this->run_profesor)->first();
+            if (!$profesor || $profesor->name !== $this->profesorNombre) {
+                $this->profesorNombre = '';
+            }
+        }
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -65,7 +95,7 @@ class LicenciasProfesoresTable extends Component
 
     public function openCreateModal()
     {
-        $this->reset(['run_profesor', 'fecha_inicio', 'fecha_fin', 'motivo', 'observaciones', 'genera_recuperacion', 'editMode', 'licenciaId']);
+        $this->reset(['run_profesor', 'profesorNombre', 'fecha_inicio', 'fecha_fin', 'motivo', 'observaciones', 'genera_recuperacion', 'editMode', 'licenciaId']);
         $this->genera_recuperacion = true;
         $this->showModal = true;
     }
@@ -75,6 +105,7 @@ class LicenciasProfesoresTable extends Component
         $licencia = LicenciaProfesor::findOrFail($id);
         $this->licenciaId = $id;
         $this->run_profesor = $licencia->run_profesor;
+        $this->profesorNombre = $licencia->profesor->name ?? '';
         $this->fecha_inicio = $licencia->fecha_inicio->format('Y-m-d');
         $this->fecha_fin = $licencia->fecha_fin->format('Y-m-d');
         $this->motivo = $licencia->motivo;
@@ -87,7 +118,7 @@ class LicenciasProfesoresTable extends Component
     public function closeModal()
     {
         $this->showModal = false;
-        $this->reset(['run_profesor', 'fecha_inicio', 'fecha_fin', 'motivo', 'observaciones', 'genera_recuperacion', 'editMode', 'licenciaId']);
+        $this->reset(['run_profesor', 'profesorNombre', 'fecha_inicio', 'fecha_fin', 'motivo', 'observaciones', 'genera_recuperacion', 'editMode', 'licenciaId']);
     }
 
     public function save()
