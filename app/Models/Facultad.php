@@ -4,10 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToTenant;
 
 class Facultad extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
+    
+    protected $connection = 'tenant';
+
     protected $table = 'facultades';
     protected $primaryKey = 'id_facultad';
     public $incrementing = false;

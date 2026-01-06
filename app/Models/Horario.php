@@ -10,6 +10,7 @@ class Horario extends Model
 {
     use HasFactory, BelongsToTenant;
 
+    protected $connection = 'tenant';
     protected $table = 'horarios';
     protected $primaryKey = 'id_horario';
     public $incrementing = false;

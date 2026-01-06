@@ -27,9 +27,9 @@ return new class extends Migration
             $table->index(['run_usuario', 'leida']);
             $table->index('tipo');
             $table->index('created_at');
-            
+
             // Foreign key
-            $table->foreign('run_usuario')->references('run')->on('users')->onDelete('cascade');
+            // $table->foreign('run_usuario')->references('run')->on('users')->onDelete('cascade'); // FK a tabla central
         });
     }
 

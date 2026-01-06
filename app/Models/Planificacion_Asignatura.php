@@ -10,6 +10,7 @@ class Planificacion_Asignatura extends Model
 {
     use HasFactory, BelongsToTenant;
 
+    protected $connection = 'tenant';
     protected $table = 'planificacion_asignaturas';
 
     protected $primaryKey = 'id';

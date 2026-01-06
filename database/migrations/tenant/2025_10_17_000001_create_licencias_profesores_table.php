@@ -25,8 +25,8 @@ return new class extends Migration
 
             // Foreign keys
             $table->foreign('run_profesor')->references('run_profesor')->on('profesors')->onDelete('cascade');
-            $table->foreign('created_by')->references('run')->on('users')->onDelete('set null');
-            
+            // $table->foreign('created_by')->references('run')->on('users')->onDelete('set null'); // FK a tabla central
+
             // Índices para mejorar consultas
             $table->index(['run_profesor', 'estado']);
             $table->index(['fecha_inicio', 'fecha_fin']);

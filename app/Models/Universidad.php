@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Universidad extends Model
 {
     use HasFactory;
+
+    protected $connection = 'mysql';
+
     protected $table = 'universidades'; 
     public $incrementing = false; 
     protected $keyType = 'string'; 

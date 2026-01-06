@@ -25,11 +25,13 @@ return new class extends Migration
             $table->string('id_carrera', 20)->nullable();
             $table->string('id_area_academica', 20)->nullable();
             $table->timestamps();
-            
-            $table->foreign('id_universidad')->nullable()->references('id_universidad')->on('universidades')->onDelete('set null');
-            $table->foreign('id_facultad')->nullable()->references('id_facultad')->on('facultades')->onDelete('set null');
-            $table->foreign('id_carrera')->nullable()->references('id_carrera')->on('carreras')->onDelete('set null');
-            $table->foreign('id_area_academica')->nullable()->references('id_area_academica')->on('area_academicas')->onDelete('set null');
+
+            // Foreign keys comentadas porque estas tablas están en la BD central
+            // Las validaciones deben hacerse a nivel de aplicación
+            // $table->foreign('id_universidad')->nullable()->references('id_universidad')->on('universidades')->onDelete('set null'); // FK a tabla central
+            // $table->foreign('id_facultad')->nullable()->references('id_facultad')->on('facultades')->onDelete('set null'); // FK a tabla central
+            // $table->foreign('id_carrera')->nullable()->references('id_carrera')->on('carreras')->onDelete('set null'); // FK a tabla central
+            // $table->foreign('id_area_academica')->nullable()->references('id_area_academica')->on('area_academicas')->onDelete('set null'); // FK a tabla central
         });
     }
 

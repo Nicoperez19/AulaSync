@@ -9,6 +9,8 @@ use App\Traits\BelongsToTenant;
 class Asignatura extends Model
 {
     use HasFactory, BelongsToTenant;
+    
+    protected $connection = 'tenant';
     protected $primaryKey = 'id_asignatura';
     public $incrementing = false;
     protected $keyType = 'string';

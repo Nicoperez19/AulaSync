@@ -49,8 +49,10 @@ use Spatie\Permission\Middleware\RoleMiddleware;
 // ===================================================
 // SEDE SELECTION ROUTES (Public - No subdomain)
 // ===================================================
-Route::get('/sedes/selection', [SedeSelectionController::class, 'index'])->name('sedes.selection');
-Route::get('/sedes/redirect/{sede}', [SedeSelectionController::class, 'redirect'])->name('sedes.redirect');
+Route::middleware(['auth'])->group(function () {
+    Route::get('/sedes/selection', [SedeSelectionController::class, 'index'])->name('sedes.selection');
+    Route::get('/sedes/redirect/{sede}', [SedeSelectionController::class, 'redirect'])->name('sedes.redirect');
+});
 
 // ===================================================
 // TENANT INITIALIZATION ROUTES

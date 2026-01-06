@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class Sede extends Model
 {
     use HasFactory;
+    
+    protected $connection = 'mysql';
     protected $primaryKey = 'id_sede';
     public $incrementing = false;
     protected $keyType = 'string';

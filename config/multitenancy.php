@@ -17,9 +17,9 @@ return [
 
     /**
      * Tenant identification method
-     * Options: 'subdomain', 'domain', 'header'
+     * Options: 'subdomain', 'domain', 'header', 'session'
      */
-    'identification' => 'subdomain',
+    'identification' => 'session',
 
     /**
      * Use separate databases for each tenant

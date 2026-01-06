@@ -12,6 +12,7 @@ class Reserva extends Model
 {
     use HasFactory, BelongsToTenant;
 
+    protected $connection = 'tenant';
     protected $table = 'reservas';
 
     protected $primaryKey = 'id_reserva';

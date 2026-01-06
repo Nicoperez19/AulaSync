@@ -10,6 +10,8 @@ use App\Traits\BelongsToTenant;
 class Espacio extends Model
 {
     use HasFactory, BelongsToTenant;
+
+    protected $connection = 'tenant';
     protected $primaryKey = 'id_espacio';
     public $incrementing = false;
     protected $keyType = 'string';

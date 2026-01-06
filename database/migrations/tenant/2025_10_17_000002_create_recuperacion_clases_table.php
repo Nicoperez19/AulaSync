@@ -37,8 +37,8 @@ return new class extends Migration
             $table->foreign('id_modulo_original')->references('id_modulo')->on('modulos')->onDelete('set null');
             $table->foreign('id_modulo_reagendado')->references('id_modulo')->on('modulos')->onDelete('set null');
             $table->foreign('id_espacio_reagendado')->references('id_espacio')->on('espacios')->onDelete('set null');
-            $table->foreign('gestionado_por')->references('run')->on('users')->onDelete('set null');
-            
+            // $table->foreign('gestionado_por')->references('run')->on('users')->onDelete('set null'); // FK a tabla central
+
             // Índices
             $table->index(['run_profesor', 'estado']);
             $table->index('fecha_clase_original');

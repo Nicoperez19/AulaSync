@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('codigo_asignatura', 100);
             $table->string('nombre_asignatura', 100);
             $table->string('seccion', 50);
-         
+
             $table->integer('horas_directas')->nullable();
             $table->integer('horas_indirectas')->nullable();
             $table->string('area_conocimiento', 100)->nullable();
@@ -25,7 +25,7 @@ return new class extends Migration
             $table->unsignedBigInteger('run_profesor');
             $table->string('id_carrera', 20);
             $table->foreign('run_profesor')->references('run_profesor')->on('profesors')->onDelete('cascade');
-            $table->foreign('id_carrera')->references('id_carrera')->on('carreras')->onDelete('cascade');
+            // $table->foreign('id_carrera')->references('id_carrera')->on('carreras')->onDelete('cascade'); // FK a tabla central
             $table->timestamps();
         });
     }

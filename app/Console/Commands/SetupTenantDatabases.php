@@ -76,7 +76,7 @@ class SetupTenantDatabases extends Command
         try {
             // Usar conexión administrativa (root) para operaciones DDL
             $adminDB = DB::connection('tenant-admin');
-            
+
             // Verificar si la database existe (compatible con MariaDB)
             $databases = $adminDB->select("SHOW DATABASES WHERE `Database` = '{$dbName}'");
             $exists = !empty($databases);
@@ -90,7 +90,7 @@ class SetupTenantDatabases extends Command
             if (!$exists) {
                 $this->line("  Creando database: {$dbName}");
                 $adminDB->statement("CREATE DATABASE `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-                
+
                 // Otorgar permisos al usuario aulasync sobre la nueva base de datos
                 $adminDB->statement("GRANT ALL PRIVILEGES ON `{$dbName}`.* TO 'aulasync'@'%'");
                 // Otorgar permisos al usuario gestoraulasit sobre la nueva base de datos
@@ -103,15 +103,16 @@ class SetupTenantDatabases extends Command
             // Ejecutar migraciones
             $this->line("  Ejecutando migraciones...");
             config(['database.connections.tenant.database' => $dbName]);
-            
+
             // Purge connection to force reconnect with new database
             app('db')->purge('tenant');
-            
+
             $exitCode = Artisan::call('migrate', [
                 '--database' => 'tenant',
+                '--path' => 'database/migrations/tenant',
                 '--force' => true,
             ]);
-            
+
             if ($exitCode !== 0) {
                 $this->error("  Error ejecutando migraciones (exit code: {$exitCode})");
                 $output = Artisan::output();
@@ -124,11 +125,11 @@ class SetupTenantDatabases extends Command
             // Ejecutar seeders si se solicita
             if ($this->option('seed')) {
                 $this->line("  Ejecutando seeders para {$tenant->sede_id}...");
-                
+
                 // Hacer el tenant actual y bindearlo en el container
                 $tenant->makeCurrent();
                 app()->instance('tenant', $tenant);
-                
+
                 Artisan::call('db:seed', [
                     '--class' => 'TenantDatabaseSeeder',
                     '--database' => 'tenant',

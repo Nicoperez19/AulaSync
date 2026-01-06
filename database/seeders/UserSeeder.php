@@ -25,6 +25,7 @@ class UserSeeder extends Seeder
                 'celular' => '987654321',
                 'direccion' => 'Calle Falsa 123',
                 'fecha_nacimiento' => '1985-05-20',
+                'id_sede' => 'th',
             ]
         )->assignRole('Administrador');
         User::updateOrCreate(
@@ -36,6 +37,7 @@ class UserSeeder extends Seeder
                 'celular' => '987654321',
                 'direccion' => 'Calle Falsa 123',
                 'fecha_nacimiento' => '1985-05-20',
+                'id_sede' => 'th',
             ]
         )->assignRole('Administrador');
 
@@ -48,6 +50,7 @@ class UserSeeder extends Seeder
                 'celular' => '987654321',
                 'direccion' => 'Calle Falsa 123',
                 'fecha_nacimiento' => '1985-05-20',
+                'id_sede' => 'th',
             ]
         )->assignRole('Administrador');
 
@@ -60,6 +63,7 @@ class UserSeeder extends Seeder
                 'celular' => '987654321',
                 'direccion' => 'Calle Falsa 123',
                 'fecha_nacimiento' => '1985-05-20',
+                'id_sede' => 'th',
             ]
         )->assignRole('Supervisor');
 
@@ -72,6 +76,7 @@ class UserSeeder extends Seeder
                 'celular' => '912345678',
                 'direccion' => 'Avenida Siempreviva 742',
                 'fecha_nacimiento' => '1992-08-15',
+                'id_sede' => 'th',
             ]
         )->assignRole('Supervisor');
 
@@ -84,6 +89,7 @@ class UserSeeder extends Seeder
                 'celular' => '912345678',
                 'direccion' => 'Avenida Siempreviva 742',
                 'fecha_nacimiento' => '1992-08-15',
+                'id_sede' => 'th',
             ]
         )->assignRole('Usuario');
 

@@ -23,11 +23,11 @@ return new class extends Migration
             $table->unsignedBigInteger('creado_por')->nullable(); // RUN del usuario que creó
             $table->unsignedBigInteger('actualizado_por')->nullable(); // RUN del usuario que actualizó
             $table->timestamps();
-            
+
             // Foreign keys
-            $table->foreign('creado_por')->references('run')->on('users')->onDelete('set null');
-            $table->foreign('actualizado_por')->references('run')->on('users')->onDelete('set null');
-            
+            // $table->foreign('creado_por')->references('run')->on('users')->onDelete('set null'); // FK a tabla central
+            // $table->foreign('actualizado_por')->references('run')->on('users')->onDelete('set null'); // FK a tabla central
+
             // Índices
             $table->index(['tipo_correo_masivo_id', 'activo']);
         });

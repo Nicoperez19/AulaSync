@@ -9,6 +9,7 @@ class Configuracion extends Model
 {
     use HasFactory;
 
+    protected $connection = 'tenant';
     protected $table = 'configuracion';
 
     protected $fillable = [

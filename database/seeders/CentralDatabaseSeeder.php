@@ -20,7 +20,7 @@ class CentralDatabaseSeeder extends Seeder
     {
         // Datos compartidos/centralizados
         $this->call(RoleSeeder::class);
-        $this->call(UserSeeder::class);
+        // $this->call(UserSeeder::class); // Los usuarios se crean en tenant database
         $this->call(AdministracionChileSeeder::class);
         $this->call(UniversidadSeeder::class);
         $this->call(SedeSeeder::class);
@@ -29,14 +29,14 @@ class CentralDatabaseSeeder extends Seeder
         $this->call(AreaAcademicaSeeder::class);
         $this->call(CarreraSeeder::class);
         $this->call(TenantSeeder::class);
-        
-        // Módulos (compartidos)
-        $this->call(ModulosSeeder::class);
-        
-        // Tipos de correos masivos
-        $this->call(TiposCorreosMasivosSeeder::class);
-        
-        // Días feriados de Chile
-        $this->call(DiasFeriadosSeeder::class);
+
+        // Módulos (compartidos) - Ahora en tenant
+        // $this->call(ModulosSeeder::class);
+
+        // Tipos de correos masivos - Ahora en tenant
+        // $this->call(TiposCorreosMasivosSeeder::class);
+
+        // Días feriados de Chile - Ahora en tenant
+        // $this->call(DiasFeriadosSeeder::class);
     }
 }

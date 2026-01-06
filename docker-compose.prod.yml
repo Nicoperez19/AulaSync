@@ -10,11 +10,11 @@ services:
     command: php artisan serve --host=0.0.0.0 --port=8000
     environment:
       - DB_HOST=db
-      - DB_DATABASE=aulasync
-      - DB_USERNAME=aulasync
-      - DB_PASSWORD=aulasync
+      - DB_DATABASE=GestorAulasIT
+      - DB_USERNAME=GestorAulasIT
+      - DB_PASSWORD=GestorAulasIT
     networks:
-      - aulasync_net
+      - GestorAulasIT_net
     depends_on:
       - db
 
@@ -23,17 +23,17 @@ services:
     container_name: mysql_db_prod
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: aulasync
-      MYSQL_USER: aulasync
-      MYSQL_PASSWORD: aulasync
+      MYSQL_DATABASE: GestorAulasIT
+      MYSQL_USER: GestorAulasIT
+      MYSQL_PASSWORD: GestorAulasIT
       MYSQL_ROOT_PASSWORD: root
     volumes:
       - db_data:/var/lib/mysql
     networks:
-      - aulasync_net
+      - GestorAulasIT_net
 
 networks:
-  aulasync_net:
+  GestorAulasIT_net:
     driver: bridge
 
 volumes:

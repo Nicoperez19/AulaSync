@@ -39,16 +39,16 @@ class AppServiceProvider extends ServiceProvider
             app('events')->listen(\Illuminate\Foundation\Http\Events\RequestHandled::class, function ($event) {
                 if ($event->response instanceof \Illuminate\Http\Response ||
                     $event->response instanceof \Symfony\Component\HttpFoundation\Response) {
-                    
+
                     $content = $event->response->getContent();
                     $manifest = public_path('build/manifest.json');
-                    
+
                     if (file_exists($manifest)) {
                         $manifestData = json_decode(file_get_contents($manifest), true);
-                        
+
                         // Replace @vite/client
                         $content = str_replace('http://[::1]:5173/@vite/client', '', $content);
-                        
+
                         // Replace CSS references
                         $content = preg_replace_callback(
                             '/href="http:\/\/\[::1\]:5173\/(resources\/[^"]*\.css)"/',
@@ -61,7 +61,7 @@ class AppServiceProvider extends ServiceProvider
                             },
                             $content
                         );
-                        
+
                         // Replace JS references
                         $content = preg_replace_callback(
                             '/src="http:\/\/\[::1\]:5173\/(resources\/[^"]*\.js)"/',
@@ -74,7 +74,7 @@ class AppServiceProvider extends ServiceProvider
                             },
                             $content
                         );
-                        
+
                         $event->response->setContent($content);
                     }
                 }
@@ -88,7 +88,7 @@ class AppServiceProvider extends ServiceProvider
         View::composer('components.sidebar.content', function ($view) {
             // Try to get the current tenant first
             $tenant = Tenant::current();
-            
+
             if ($tenant && $tenant->sede) {
                 $sede = $tenant->sede->load(['facultades.pisos.mapas']);
             } else {
@@ -97,25 +97,25 @@ class AppServiceProvider extends ServiceProvider
                     ->with(['facultades.pisos.mapas'])
                     ->first();
             }
-            
+
             if ($sede) {
                 $primerMapa = $sede->facultades->flatMap(function($facultad) {
                     return $facultad->pisos->flatMap(function($piso) {
                         return $piso->mapas;
                     });
                 })->first();
-                
+
                 $view->with('primerMapa', $primerMapa);
             } else {
                 $view->with('primerMapa', null);
             }
-            
+
             // Verificar si hay profesores
             $tieneProfesores = Profesor::count() > 0;
-            
+
             // Verificar si hay espacios
             $tieneEspacios = Espacio::count() > 0;
-            
+
             $view->with('sede', $sede);
             $view->with('tieneProfesores', $tieneProfesores);
             $view->with('tieneEspacios', $tieneEspacios);

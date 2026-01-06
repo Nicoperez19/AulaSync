@@ -7,6 +7,8 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
+use Illuminate\Support\Facades\Auth; // ADD THIS IMPORT
+
 class TenantMiddleware
 {
     /**
@@ -16,6 +18,11 @@ class TenantMiddleware
         'sedes.selection',
         'sedes.redirect',
         'tenant.initialization.*',
+        'login',
+        'register',
+        'password.request',
+        'password.reset',
+        'verification.notice',
     ];
 
     /**
@@ -26,6 +33,11 @@ class TenantMiddleware
         'sedes/selection',
         'sedes/redirect',
         'tenant/initialization',
+        'login',
+        'register',
+        'forgot-password',
+        'reset-password',
+        'verify-email',
     ];
 
     /**
@@ -35,27 +47,25 @@ class TenantMiddleware
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Verificar primero si la ruta está excluida por path (funciona antes de que las rutas se resuelvan)
-        foreach ($this->excludedPaths as $path) {
-            if ($request->is($path) || $request->is($path . '/*')) {
-                // Para rutas de inicialización, establecer el tenant si hay subdominio
-                if (str_contains($path, 'tenant/initialization')) {
-                    $host = $request->getHost();
-                    $subdomain = $this->getSubdomain($host);
+        // ---------------------------------------------------------
+        // PASO 1: Intentar establecer el contexto del tenant (Set Up)
+        // ---------------------------------------------------------
+        
+        $tenantSet = false;
 
-                    if ($subdomain && $subdomain !== 'www') {
-                        $tenant = Tenant::where('domain', $subdomain)->where('is_active', true)->first();
-                        if ($tenant) {
-                            $tenant->makeCurrent();
-                        }
-                    }
-                }
-                return $next($request);
+        // Opción A: Obtener de sesión (Prioridad alta)
+        if (session()->has('tenant_id')) {
+            $tenant = Tenant::find(session('tenant_id'));
+            if ($tenant && $tenant->is_active) {
+                $tenant->makeCurrent();
+                $tenantSet = true;
+            } else {
+                session()->forget(['tenant_id', 'tenant']);
             }
         }
 
-        // Verificar si es una ruta de inicialización (backup por nombre de ruta)
-        if ($request->routeIs('tenant.initialization.*')) {
+        // Opción B: Obtener por subdominio (Si no hay sesión)
+        if (!$tenantSet) {
             $host = $request->getHost();
             $subdomain = $this->getSubdomain($host);
 
@@ -63,52 +73,66 @@ class TenantMiddleware
                 $tenant = Tenant::where('domain', $subdomain)->where('is_active', true)->first();
                 if ($tenant) {
                     $tenant->makeCurrent();
+                    session(['tenant_id' => $tenant->id]);
+                    $tenantSet = true;
                 }
             }
+        }
 
+        // ---------------------------------------------------------
+        // PASO 2: Verificar Exclusiones (Skip checks)
+        // ---------------------------------------------------------
+
+        // Verificar por Path
+        foreach ($this->excludedPaths as $path) {
+            if ($request->is($path) || $request->is($path . '/*')) {
+                return $next($request);
+            }
+        }
+
+        // Verificar por Nombre de Ruta
+        if ($request->routeIs('tenant.initialization.*')) {
             return $next($request);
         }
 
-        // Check if route is excluded from tenant check by name
         foreach ($this->excludedRoutes as $pattern) {
             if ($request->routeIs($pattern)) {
                 return $next($request);
             }
         }
 
-        $host = $request->getHost();
+        // ---------------------------------------------------------
+        // PASO 3: Validaciones de Acceso (Enforce rules)
+        // ---------------------------------------------------------
 
-        // Extraer el subdominio
-        $subdomain = $this->getSubdomain($host);
+        // Si tenemos un tenant válido
+        if ($tenantSet) {
+            $tenant = Tenant::current();
 
-        if ($subdomain && $subdomain !== 'www') {
-            // Buscar el tenant por el subdominio
-            $tenant = Tenant::where('domain', $subdomain)
-                ->where('is_active', true)
-                ->first();
-
-            if ($tenant) {
-                // Establecer el tenant actual
-                $tenant->makeCurrent();
-
-                // Check if tenant needs initialization
-                if ($tenant->needsInitialization()) {
-                    return redirect()->route('tenant.initialization.index');
-                }
-            } else {
-                // Si no se encuentra el tenant, redirigir a selección de sedes
-                return redirect()->route('sedes.selection');
-            }
-        } else {
-            // Si no hay subdominio (dominio base como localhost:8000),
-            // verificar si estamos en la página raíz o login
-            if ($request->is('/') || $request->is('login') || $request->is('')) {
-                // Redirigir a la selección de sedes
-                return redirect()->route('sedes.selection');
+            // Verificar si necesita inicialización
+            // ¡IMPORTANTE! Si ya estamos en las rutas de inicialización, las exclusiones de arriba (PASO 2)
+            // ya habrán retornado $next, así que aquí solo llegan las rutas NO excluidas (ej. dashboard).
+            if ($tenant->needsInitialization()) {
+                return redirect()->route('tenant.initialization.index');
             }
 
-            // Para otras rutas públicas que no requieren tenant, continuar normalmente
-            // Esto permite que rutas como modulos-actuales funcionen sin tenant
+            // Tenant válido y listo, continuar
+            return $next($request);
+        }
+
+        // ---------------------------------------------------------
+        // PASO 4: Manejo de No Tenant (Fallback)
+        // ---------------------------------------------------------
+
+        // Si el usuario NO está autenticado, dejar pasar (Laravel manejará auth)
+        if (!Auth::check()) {
+            return $next($request);
+        }
+
+        // Si el usuario SÍ está autenticado pero no tiene tenant, redirigir a selección
+        // excepto si ya estamos intentando ir a selección
+        if (!$request->routeIs('sedes.selection') && !$request->is('sedes/selection')) {
+            return redirect()->route('sedes.selection');
         }
 
         return $next($request);

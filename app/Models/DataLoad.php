@@ -9,6 +9,8 @@ class DataLoad extends Model
 {
     use HasFactory;
 
+    protected $connection = 'tenant';
+
     protected $fillable = [
         'nombre_archivo',
         'ruta_archivo',

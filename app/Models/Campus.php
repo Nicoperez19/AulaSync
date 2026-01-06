@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Campus extends Model
 {
     use HasFactory;
+
+    protected $connection = 'mysql';
+
     protected $primaryKey = 'id_campus';
     public $incrementing = false;
     protected $keyType = 'string';

@@ -11,13 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('asistentes_academicos', function (Blueprint $table) {
-            $table->id();
+        Schema::create('carreras', function (Blueprint $table) {
+            $table->string('id_carrera',20)->primary();
             $table->string('nombre', 100);
-            $table->string('email')->unique();
-            $table->string('telefono', 20)->nullable();
-            $table->string('id_area_academica', 20);
+            $table->string('id_area_academica',20);
+            
+            // FK valid within Tenant DB
             $table->foreign('id_area_academica')->references('id_area_academica')->on('area_academicas')->onDelete('cascade');
+
             $table->timestamps();
         });
     }
@@ -27,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('asistentes_academicos');
+        Schema::dropIfExists('carreras');
     }
 };

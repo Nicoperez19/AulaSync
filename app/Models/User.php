@@ -33,6 +33,7 @@ class User extends Authenticatable
         'id_facultad',
         'id_carrera',
         'id_area_academica',
+        'id_sede',
     ];
 
     protected $hidden = [
@@ -75,6 +76,11 @@ class User extends Authenticatable
     public function areaAcademica()
     {
         return $this->belongsTo(AreaAcademica::class, 'id_area_academica');
+    }
+
+    public function sede()
+    {
+        return $this->belongsTo(Sede::class, 'id_sede');
     }
 
     public function profesor()

@@ -21,7 +21,7 @@ class Kernel extends HttpKernel
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
-        \App\Http\Middleware\TenantMiddleware::class,
+        // \App\Http\Middleware\TenantMiddleware::class, // MOVED TO WEB GROUP
         \App\Http\Middleware\ReplaceViteDevServerUrls::class,
     ];
 
@@ -40,6 +40,7 @@ class Kernel extends HttpKernel
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\SessionTimeout::class,
             \App\Http\Middleware\AjaxSessionTimeout::class,
+            \App\Http\Middleware\TenantMiddleware::class, // ADDED HERE after Session
         ],
 
         'api' => [

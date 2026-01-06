@@ -48,7 +48,8 @@ class AuthenticatedSessionController extends Controller
             return redirect($formIntendedUrl);
         }
 
-        return $this->redirectByRole();
+        // Redirigir a selección de sede/tenant primero
+        return redirect()->route('sedes.selection');
     }
 
     /**

@@ -9,6 +9,7 @@ use App\Traits\BelongsToTenant;
 class Piso extends Model
 {
     use HasFactory, BelongsToTenant;
+    protected $connection = 'tenant';
     protected $table = 'pisos'; 
     protected $primaryKey = 'id';  
     public $incrementing = true;  

@@ -20,7 +20,7 @@ return new class extends Migration
             $table->timestamps();
 
             // Foreign key referenciando 'run' en lugar de 'id'
-            $table->foreign('user_id')->references('run')->on('users')->onDelete('cascade');
+            // $table->foreign('user_id')->references('run')->on('users')->onDelete('cascade'); // FK a tabla central
 
             // Índice para mejorar búsquedas
             $table->index(['user_id', 'activo']);

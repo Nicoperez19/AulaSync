@@ -20,8 +20,8 @@ class CreateDataLoadsTable extends Migration
             $table->enum('estado', ['pendiente', 'procesando', 'completado', 'error'])->default('pendiente');
             $table->text('error_mensaje')->nullable();
             $table->unsignedBigInteger('user_run');
-            $table->foreign('user_run')->references('run')->on('users')->onDelete('cascade');
-    
+            // $table->foreign('user_run')->references('run')->on('users')->onDelete('cascade'); // FK a tabla central
+
             $table->timestamps();
         });
     }

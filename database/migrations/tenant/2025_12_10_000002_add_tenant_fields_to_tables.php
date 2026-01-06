@@ -14,7 +14,7 @@ return new class extends Migration
         // Agregar sede_id a la tabla profesors
         Schema::table('profesors', function (Blueprint $table) {
             $table->string('sede_id', 20)->nullable()->after('id_area_academica');
-            $table->foreign('sede_id')->references('id_sede')->on('sedes')->onDelete('set null');
+            // $table->foreign('sede_id')->references('id_sede')->on('sedes')->onDelete('set null'); // FK a tabla central
         });
     }
 
