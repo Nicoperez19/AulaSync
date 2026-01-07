@@ -5,11 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
+use App\Traits\BelongsToTenant;
 
 class Asistencia extends Model
 {
-    use HasFactory;
-
+    use HasFactory, BelongsToTenant;
+    
+    protected $connection = 'tenant';
     protected $table = 'asistencias';
 
     protected $fillable = [

@@ -388,7 +388,8 @@ class ClasesNoRealizadasTable extends Component
         $hoy = Carbon::now()->toDateString();
         
         // Una sola consulta con agregación condicional, excluyendo atrasos
-        $stats = DB::table('clases_no_realizadas')
+        // Usar conexión 'tenant' explícitamente para bases de datos multi-tenant
+        $stats = DB::connection('tenant')->table('clases_no_realizadas')
             ->select([
                 DB::raw('COUNT(*) as total'),
                 DB::raw("SUM(CASE WHEN estado = 'no_realizada' THEN 1 ELSE 0 END) as no_realizadas"),

@@ -554,7 +554,7 @@ class StudentQRAttendanceController extends Controller
         $horaActualStr = $now->format('H:i:s');
 
         // Buscar si hay una clase planificada en este momento
-        $planificacion = DB::table('planificacion_asignaturas as pa')
+        $planificacion = DB::connection('tenant')->table('planificacion_asignaturas as pa')
             ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
             ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
             ->where('pa.id_espacio', $idEspacio)

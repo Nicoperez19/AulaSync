@@ -11,9 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (!Schema::hasTable('users')) {
+            return;
+        }
+
+        if (Schema::hasColumn('users', 'id_sede')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
             $table->string('id_sede', 20)->nullable()->after('id_area_academica');
-            $table->foreign('id_sede')->nullable()->references('id_sede')->on('sedes')->onDelete('set null');
+
+            if (Schema::hasTable('sedes')) {
+                $table->foreign('id_sede')->references('id_sede')->on('sedes')->onDelete('set null');
+            }
         });
     }
 
@@ -22,8 +33,15 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (!Schema::hasTable('users') || !Schema::hasColumn('users', 'id_sede')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
-            $table->dropForeign(['id_sede']);
+            if (Schema::hasTable('sedes')) {
+                $table->dropForeign(['id_sede']);
+            }
+
             $table->dropColumn('id_sede');
         });
     }

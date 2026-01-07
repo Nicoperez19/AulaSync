@@ -10,13 +10,28 @@ use Illuminate\Support\Facades\Config;
 trait BelongsToTenant
 {
     /**
+     * Cache estático de columnas por modelo para evitar llamadas repetitivas a Schema::hasColumn
+     */
+    protected static array $columnCache = [];
+    
+    /**
+     * Verificar si una columna existe con caché
+     */
+    protected static function hasColumnCached($model, string $table, string $column): bool
+    {
+        $cacheKey = get_class($model) . '.' . $column;
+        
+        if (!isset(static::$columnCache[$cacheKey])) {
+            static::$columnCache[$cacheKey] = $model->getConnection()->getSchemaBuilder()->hasColumn($table, $column);
+        }
+        
+        return static::$columnCache[$cacheKey];
+    }
+    
+    /**
      * Boot the trait
      * 
-     * Note: Schema::hasColumn() is called on each query, which can be expensive.
-     * For production, enable Laravel's schema caching with:
-     * php artisan schema:cache
-     * 
-     * This caches column information and significantly improves performance.
+     * Optimized: Uses static cache for column checks to avoid expensive Schema::hasColumn() calls
      */
     public static function bootBelongsToTenant()
     {
@@ -35,23 +50,23 @@ trait BelongsToTenant
             
             $model = new static;
             $table = $model->getTable();
-            $connection = $model->getConnectionName(); // Obtener nombre conexión
-            // Helper para verificar columnas usando la conexión del modelo (importante para tenants)
+            
+            // Usar función con caché para verificar columnas
             $hasColumn = function($column) use ($model, $table) {
-               return $model->getConnection()->getSchemaBuilder()->hasColumn($table, $column);
+                return static::hasColumnCached($model, $table, $column);
             };
             
             // Filtrar por prefijo de espacio si el modelo tiene id_espacio
             if ($hasColumn('id_espacio')) {
                 if ($tenant->prefijo_espacios) {
-                    $builder->where('id_espacio', 'like', $tenant->prefijo_espacios . '%');
+                    $builder->where($table . '.id_espacio', 'like', $tenant->prefijo_espacios . '%');
                 }
             }
             
             // Filtrar por sede directamente si el modelo tiene sede_id
             if ($hasColumn('sede_id')) {
                 if ($tenant->sede_id) {
-                    $builder->where('sede_id', $tenant->sede_id);
+                    $builder->where($table . '.sede_id', $tenant->sede_id);
                 }
             }
             // Filtrar a través de profesor si el modelo tiene relación con profesor y run_profesor
@@ -99,15 +114,19 @@ trait BelongsToTenant
             }
             
             $table = $model->getTable();
-            $schema = $model->getConnection()->getSchemaBuilder();
+            
+            // Usar función con caché para verificar columnas
+            $hasColumn = function($column) use ($model, $table) {
+                return static::hasColumnCached($model, $table, $column);
+            };
             
             // Si el modelo tiene sede_id, asignarla
-            if ($schema->hasColumn($table, 'sede_id') && !$model->sede_id) {
+            if ($hasColumn('sede_id') && !$model->sede_id) {
                 $model->sede_id = $tenant->sede_id;
             }
             
             // Si el modelo tiene id_espacio y prefijo, asegurarse de que comience con el prefijo
-            if ($schema->hasColumn($table, 'id_espacio') && $tenant->prefijo_espacios) {
+            if ($hasColumn('id_espacio') && $tenant->prefijo_espacios) {
                 if (isset($model->id_espacio) && !str_starts_with($model->id_espacio, $tenant->prefijo_espacios)) {
                     $model->id_espacio = $tenant->prefijo_espacios . $model->id_espacio;
                 }

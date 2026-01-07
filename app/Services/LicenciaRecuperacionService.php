@@ -114,7 +114,7 @@ class LicenciaRecuperacionService
         $planificaciones = collect();
 
         // Obtener todos los horarios del profesor
-        $horarios = DB::table('horarios')
+        $horarios = DB::connection('tenant')->table('horarios')
             ->where('run_profesor', $licencia->run_profesor)
             ->get();
 
@@ -122,7 +122,7 @@ class LicenciaRecuperacionService
 
         foreach ($horarios as $horario) {
             // Para cada horario, obtener sus planificaciones
-            $planificacionesHorario = DB::table('planificacion_asignaturas as pa')
+            $planificacionesHorario = DB::connection('tenant')->table('planificacion_asignaturas as pa')
                 ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                 ->where('pa.id_horario', $horario->id_horario)
                 ->select(

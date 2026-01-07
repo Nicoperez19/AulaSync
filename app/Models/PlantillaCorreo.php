@@ -10,6 +10,7 @@ class PlantillaCorreo extends Model
 {
     use HasFactory;
 
+    protected $connection = 'tenant';
     protected $table = 'plantillas_correos';
 
     protected $fillable = [

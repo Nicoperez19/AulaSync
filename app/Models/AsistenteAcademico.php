@@ -9,6 +9,7 @@ class AsistenteAcademico extends Model
 {
     use HasFactory;
 
+    protected $connection = 'tenant';
     protected $table = 'asistentes_academicos';
 
     protected $fillable = [

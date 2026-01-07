@@ -377,7 +377,7 @@ class ProfesorColaboradorController extends Controller
                 
                 foreach ($modulos as $idModulo) {
                     // Check planificaciones normales
-                    $planificacionNormal = DB::table('planificacion_asignaturas as pa')
+                    $planificacionNormal = DB::connection('tenant')->table('planificacion_asignaturas as pa')
                         ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
                         ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                         ->where('pa.id_modulo', $idModulo)
@@ -386,7 +386,7 @@ class ProfesorColaboradorController extends Controller
                         ->first();
 
                     // Check planificaciones colaboradores
-                    $planificacionColaborador = DB::table('planificaciones_profesores_colaboradores as ppc')
+                    $planificacionColaborador = DB::connection('tenant')->table('planificaciones_profesores_colaboradores as ppc')
                         ->join('profesores_colaboradores as pc', 'ppc.id_profesor_colaborador', '=', 'pc.id')
                         ->join('modulos as m', 'ppc.id_modulo', '=', 'm.id_modulo')
                         ->where('ppc.id_modulo', $idModulo)
@@ -421,11 +421,11 @@ class ProfesorColaboradorController extends Controller
                 }
 
                 // Calculate occupation percentages
-                $totalPlanificaciones = DB::table('planificacion_asignaturas')
+                $totalPlanificaciones = DB::connection('tenant')->table('planificacion_asignaturas')
                     ->where('id_espacio', $espacio->id_espacio)
                     ->count();
 
-                $totalColaboradores = DB::table('planificaciones_profesores_colaboradores as ppc')
+                $totalColaboradores = DB::connection('tenant')->table('planificaciones_profesores_colaboradores as ppc')
                     ->join('profesores_colaboradores as pc', 'ppc.id_profesor_colaborador', '=', 'pc.id')
                     ->where('ppc.id_espacio', $espacio->id_espacio)
                     ->where('pc.estado', 'activo')

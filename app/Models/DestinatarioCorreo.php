@@ -11,6 +11,7 @@ class DestinatarioCorreo extends Model
 {
     use HasFactory;
 
+    protected $connection = 'tenant';
     protected $table = 'destinatarios_correos';
 
     protected $fillable = [

@@ -1549,7 +1549,7 @@ class PlanoDigitalController extends Controller
                     \Log::info('Intentando búsqueda alternativa directa');
                     
                     // Buscar directamente en la tabla de módulos sin whereHas complejos
-                    $modulosDelProfesor = \DB::table('planificacion_asignaturas as pa')
+                    $modulosDelProfesor = \DB::connection('tenant')->table('planificacion_asignaturas as pa')
                         ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
                         ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                         ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')

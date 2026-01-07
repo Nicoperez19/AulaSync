@@ -82,9 +82,14 @@ class TenantsMigrate extends Command
 
                 if ($seed) {
                     $this->info("Seeding tenant...");
+                    
+                    // Asegurar que el tenant esté bindeado para los seeders
+                    $tenant->makeCurrent();
+                    app()->instance('tenant', $tenant);
+                    
                     Artisan::call('db:seed', [
                         '--database' => 'tenant',
-                        '--class' => 'TenantDatabaseSeeder', // Ensure you have this seeder or remove this part
+                        '--class' => 'TenantDatabaseSeeder',
                         '--force' => true,
                     ], $this->output);
                     $this->info(Artisan::output());

@@ -157,7 +157,7 @@ class AttendanceController extends Controller
             $asignaturaId = null;
             if ($reserva->tipo_reserva === 'clase') {
                 // Buscar la planificación asociada a esta reserva
-                $planificacion = DB::table('planificacion_asignaturas as pa')
+                $planificacion = DB::connection('tenant')->table('planificacion_asignaturas as pa')
                     ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                     ->where('pa.id_espacio', $roomId)
                     ->where('m.dia', $now->dayOfWeek)

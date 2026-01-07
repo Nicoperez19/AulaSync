@@ -41,11 +41,13 @@ class CarreraSeeder extends Seeder
         ];
 
         foreach ($carreras as $id_carrera => [$nombre, $areaAcademicaClave]) {
-            Carrera::create([
-                'id_carrera' => $id_carrera,
-                'nombre' => $nombre,
-                'id_area_academica' => $areasAcademicas[$areaAcademicaClave],
-            ]);
+            Carrera::updateOrCreate(
+                ['id_carrera' => $id_carrera],
+                [
+                    'nombre' => $nombre,
+                    'id_area_academica' => $areasAcademicas[$areaAcademicaClave],
+                ]
+            );
         }
     }
 }

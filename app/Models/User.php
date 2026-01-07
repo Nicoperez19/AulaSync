@@ -14,6 +14,13 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, HasRoles, Notifiable;
 
+    /**
+     * Force connection to central database (mysql)
+     * This ensures User model always queries the central database,
+     * even when accessed from tenant-connected models
+     */
+    protected $connection = 'mysql';
+
     protected $primaryKey = 'run';
 
     public $incrementing = false;

@@ -222,7 +222,7 @@ class AdminPanelController extends Controller
     public function getReservas(Request $request)
     {
         try {
-            $query = DB::table('reservas as r')
+            $query = DB::connection('tenant')->table('reservas as r')
                 ->leftJoin('profesores as p', 'r.run_profesor', '=', 'p.run')
                 ->leftJoin('solicitantes as s', 'r.run_solicitante', '=', 's.run')
                 ->select(

@@ -10,6 +10,7 @@ class TipoCorreoMasivo extends Model
 {
     use HasFactory;
 
+    protected $connection = 'tenant';
     protected $table = 'tipos_correos_masivos';
 
     protected $fillable = [

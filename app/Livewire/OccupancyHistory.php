@@ -34,7 +34,7 @@ class OccupancyHistory extends Component
 
     public function cargarVistaRapida()
     {
-        $planificaciones = DB::table('planificacion_asignaturas as p')
+        $planificaciones = DB::connection('tenant')->table('planificacion_asignaturas as p')
             ->join('espacios as e', 'p.id_espacio', '=', 'e.id_espacio')
             ->join('asignaturas as a', 'p.id_asignatura', '=', 'a.id_asignatura')
             ->join('carreras as c', 'a.id_carrera', '=', 'c.id_carrera')
@@ -61,7 +61,7 @@ class OccupancyHistory extends Component
 
     public function cargarMeses()
     {
-        $this->meses = DB::table('planificacion_asignaturas as p')
+        $this->meses = DB::connection('tenant')->table('planificacion_asignaturas as p')
             ->leftJoin('reservas as r', function($q) {
                 $q->on('r.id_espacio', '=', 'p.id_espacio');
             })
@@ -78,7 +78,7 @@ class OccupancyHistory extends Component
 
     public function exportarExcelMes($mes)
     {
-        $datos = DB::table('planificacion_asignaturas as p')
+        $datos = DB::connection('tenant')->table('planificacion_asignaturas as p')
             ->join('espacios as e', 'p.id_espacio', '=', 'e.id_espacio')
             ->join('asignaturas as a', 'p.id_asignatura', '=', 'a.id_asignatura')
             ->join('carreras as c', 'a.id_carrera', '=', 'c.id_carrera')
@@ -104,7 +104,7 @@ class OccupancyHistory extends Component
 
     public function exportarPDFMes($mes)
     {
-        $datos = DB::table('planificacion_asignaturas as p')
+        $datos = DB::connection('tenant')->table('planificacion_asignaturas as p')
             ->join('espacios as e', 'p.id_espacio', '=', 'e.id_espacio')
             ->join('asignaturas as a', 'p.id_asignatura', '=', 'a.id_asignatura')
             ->join('carreras as c', 'a.id_carrera', '=', 'c.id_carrera')
@@ -139,7 +139,7 @@ class OccupancyHistory extends Component
 
     public function exportarExcelTotal()
     {
-        $datos = DB::table('planificacion_asignaturas as p')
+        $datos = DB::connection('tenant')->table('planificacion_asignaturas as p')
             ->join('espacios as e', 'p.id_espacio', '=', 'e.id_espacio')
             ->join('asignaturas as a', 'p.id_asignatura', '=', 'a.id_asignatura')
             ->join('carreras as c', 'a.id_carrera', '=', 'c.id_carrera')
@@ -165,7 +165,7 @@ class OccupancyHistory extends Component
 
     public function exportarPDFTotal()
     {
-        $datos = DB::table('planificacion_asignaturas as p')
+        $datos = DB::connection('tenant')->table('planificacion_asignaturas as p')
             ->join('espacios as e', 'p.id_espacio', '=', 'e.id_espacio')
             ->join('asignaturas as a', 'p.id_asignatura', '=', 'a.id_asignatura')
             ->join('carreras as c', 'a.id_carrera', '=', 'c.id_carrera')

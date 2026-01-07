@@ -5,6 +5,9 @@ namespace App\Livewire;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\Facultad;
+use App\Models\Universidad;
+use App\Models\Sede;
+use App\Models\Campus;
 
 class FacultiesTable extends Component
 {
@@ -23,19 +26,49 @@ class FacultiesTable extends Component
 
     public function render()
     {
+        $searchTerm = trim($this->search ?? '');
+
+        $universidadIds = collect();
+        $sedeIds = collect();
+        $campusIds = collect();
+
+        if ($searchTerm !== '') {
+            $likeTerm = '%' . $searchTerm . '%';
+
+            $universidadIds = Universidad::where('nombre_universidad', 'like', $likeTerm)
+                ->pluck('id_universidad');
+
+            $sedeIds = Sede::where('nombre_sede', 'like', $likeTerm)
+                ->pluck('id_sede');
+
+            $campusIds = Campus::where('nombre_campus', 'like', $likeTerm)
+                ->pluck('id_campus');
+        }
+
         $facultades = Facultad::with(['universidad', 'sede', 'campus'])
-            ->where(function ($query) {
-                $query->where('nombre_facultad', 'like', '%' . $this->search . '%')
-                    ->orWhere('id_facultad', 'like', '%' . $this->search . '%')
-                    ->orWhereHas('universidad', function ($subQuery) {
-                        $subQuery->where('nombre_universidad', 'like', '%' . $this->search . '%');
-                    })
-                    ->orWhereHas('sede', function ($subQuery) {
-                        $subQuery->where('nombre_sede', 'like', '%' . $this->search . '%');
-                    });
+            ->when($searchTerm !== '', function ($query) use ($searchTerm, $universidadIds, $sedeIds, $campusIds) {
+                $likeTerm = '%' . $searchTerm . '%';
+
+                // Apply tenant-side filters while honoring central search matches.
+                $query->where(function ($innerQuery) use ($likeTerm, $universidadIds, $sedeIds, $campusIds) {
+                    $innerQuery->where('nombre_facultad', 'like', $likeTerm)
+                        ->orWhere('id_facultad', 'like', $likeTerm);
+
+                    if ($universidadIds->isNotEmpty()) {
+                        $innerQuery->orWhereIn('id_universidad', $universidadIds);
+                    }
+
+                    if ($sedeIds->isNotEmpty()) {
+                        $innerQuery->orWhereIn('id_sede', $sedeIds);
+                    }
+
+                    if ($campusIds->isNotEmpty()) {
+                        $innerQuery->orWhereIn('id_campus', $campusIds);
+                    }
+                });
             })
             ->orderBy('nombre_facultad', 'asc')
-            ->paginate($this->perPage);
+            ->paginate((int) $this->perPage);
 
         return view('livewire.faculties-table', compact('facultades'));
     }

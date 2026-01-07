@@ -73,15 +73,28 @@ class PisoSeeder extends Seeder
         
         $pisosACrear = $pisosPorFacultad[$idFacultad] ?? [];
         
+        $creados = 0;
         foreach ($pisosACrear as $pisoData) {
-            \DB::connection('tenant')->table('pisos')->insert(array_merge($pisoData, [
-                'id_facultad' => $idFacultad,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]));
+            // Verificar si ya existe un piso con los mismos datos
+            $exists = \DB::connection('tenant')->table('pisos')
+                ->where('numero_piso', $pisoData['numero_piso'])
+                ->where('id_facultad', $idFacultad)
+                ->when(isset($pisoData['nombre_piso']), function($query) use ($pisoData) {
+                    return $query->where('nombre_piso', $pisoData['nombre_piso']);
+                })
+                ->exists();
+            
+            if (!$exists) {
+                \DB::connection('tenant')->table('pisos')->insert(array_merge($pisoData, [
+                    'id_facultad' => $idFacultad,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]));
+                $creados++;
+            }
         }
         
-        $this->command->info("Creados " . count($pisosACrear) . " pisos para {$idFacultad}");
+        $this->command->info("Creados {$creados} pisos para {$idFacultad} (de " . count($pisosACrear) . " intentados)");
     }
 }
 

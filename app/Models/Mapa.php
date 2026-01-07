@@ -12,6 +12,8 @@ class Mapa extends Model
 {
     use HasFactory, BelongsToTenant;
 
+    protected $connection = 'tenant';
+
     protected $primaryKey = 'id_mapa';
     public $incrementing = false;
     protected $keyType = 'string';

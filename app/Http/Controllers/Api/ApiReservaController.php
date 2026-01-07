@@ -45,7 +45,7 @@ class ApiReservaController extends Controller
             }
 
             // Verificar si el profesor tiene clase programada en este espacio
-            $tieneClaseProgramada = DB::table('horarios')
+            $tieneClaseProgramada = DB::connection('tenant')->table('horarios')
                 ->where('user_id', $userId)
                 ->where('espacio_id', $espacioId)
                 ->where('dia', $diaActual)
@@ -89,7 +89,7 @@ class ApiReservaController extends Controller
             }
 
             // Verificar si tiene clase programada
-            $tieneClase = DB::table('planificacion_asignaturas as pa')
+            $tieneClase = DB::connection('tenant')->table('planificacion_asignaturas as pa')
                 ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
                 ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                 ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')

@@ -5,10 +5,13 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\BelongsToTenant;
 
 class ClaseNoRealizada extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
+    
+    protected $connection = 'tenant';
 
     protected $table = 'clases_no_realizadas';
 
@@ -201,7 +204,7 @@ class ClaseNoRealizada extends Model
                 // Solo registrar en profesor_atrasos si realmente llegó tarde
                 if ($esRealmenteAtraso) {
                     // Verificar que no exista ya un registro de atraso para esta combinación
-                    $existeAtraso = \Illuminate\Support\Facades\DB::table('profesor_atrasos')
+                    $existeAtraso = \Illuminate\Support\Facades\DB::connection('tenant')->table('profesor_atrasos')
                         ->where('id_asignatura', $registro->id_asignatura)
                         ->where('id_espacio', $registro->id_espacio)
                         ->where('id_modulo', $registro->id_modulo)
@@ -210,7 +213,7 @@ class ClaseNoRealizada extends Model
 
                     if (!$existeAtraso) {
                         try {
-                            \Illuminate\Support\Facades\DB::table('profesor_atrasos')->insert([
+                            \Illuminate\Support\Facades\DB::connection('tenant')->table('profesor_atrasos')->insert([
                                 'id_planificacion' => $planificacion ? $planificacion->id : 0,
                                 'id_asignatura' => $registro->id_asignatura,
                                 'id_espacio' => $registro->id_espacio,

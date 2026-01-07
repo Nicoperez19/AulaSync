@@ -16,6 +16,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Models\Mapa;
+use App\Models\Tenant;
 
 class DashboardController extends Controller
 {
@@ -95,14 +96,16 @@ class DashboardController extends Controller
     {
         // Obtener el piso de la sesión o request
         $piso = $request->session()->get('piso');
-        $facultad = 'IT_TH'; // Siempre usar IT_TH como facultad
+        
+        // Obtener contexto de tenant
+        $tenant = Tenant::current();
+        $sedeId = $tenant ? $tenant->sede_id : 'TH';
+        $facultad = 'IT_' . $sedeId;
 
         // Obtener los pisos disponibles para la facultad
-        $pisos = Piso::whereHas('facultad', function($query) {
-            $query->where('id_facultad', 'IT_TH')
-                  ->whereHas('sede', function($q) {
-                      $q->where('id_sede', 'TH');
-                  });
+        $pisos = Piso::whereHas('facultad', function($query) use ($sedeId, $facultad) {
+            $query->where('id_facultad', $facultad)
+                  ->where('id_sede', $sedeId);
         })
         ->orderBy('numero_piso')
         ->get();
@@ -393,6 +396,7 @@ class DashboardController extends Controller
 
     /**
      * Calcula el promedio de ocupación por hora para un rango de fechas
+     * VERSIÓN OPTIMIZADA: Usa una sola query SQL con agrupación
      * Considera lunes a sábado, con sábado funcionando 8-13hrs
      * Separa diurno (8-19) y vespertino (19-23)
      * 
@@ -433,116 +437,48 @@ class DashboardController extends Controller
             return 0;
         }
 
-        // Array para almacenar la ocupación de cada hora
-        $ocupacionPorHora = [];
-        $totalHoras = 0;
+        // OPTIMIZADO: Usar una sola query con agrupación en lugar de iterar por cada hora
+        // Determinar rango de horas según turno
+        $horaInicioTurno = ($turno === 'vespertino') ? 19 : 8;
+        $horaFinTurno = ($turno === 'diurno') ? 19 : 23;
 
-        // Iterar por cada día en el rango
-        for ($fecha = $inicio->copy(); $fecha->lte($fin); $fecha->addDay()) {
-            // Solo contar lunes a sábado
-            if (!$fecha->isWeekday() && !$fecha->isSaturday()) {
-                continue;
-            }
-
-            $diaSemana = strtolower($fecha->locale('es')->isoFormat('dddd'));
-
-            // Determinar horas de funcionamiento según el día
-            $horaInicio = 8;
-            if ($fecha->isSaturday()) {
-                $horaFin = 13; // Sábado: 8 a 13
-            } else {
-                $horaFin = 23; // Lunes a viernes: 8 a 23
-            }
-
-            // Iterar por cada hora del día
-            for ($hora = $horaInicio; $hora < $horaFin; $hora++) {
-                // Filtrar por turno si está especificado
-                if ($turno === 'diurno' && $hora >= 19) {
-                    continue; // Saltar vespertino si es diurno
+        // Query optimizada: obtener conteo de reservas agrupadas por fecha y hora
+        $query = Reserva::select(
+                DB::raw('DATE(fecha_reserva) as fecha'),
+                DB::raw('HOUR(hora) as hora_dia'),
+                DB::raw('COUNT(*) as total_reservas')
+            )
+            ->whereBetween('fecha_reserva', [$inicio->format('Y-m-d'), $fin->format('Y-m-d')])
+            ->whereIn('estado', ['activa', 'finalizada'])
+            ->whereRaw('DAYOFWEEK(fecha_reserva) BETWEEN 2 AND 7') // Lunes (2) a Sábado (7)
+            ->whereRaw('HOUR(hora) >= ?', [$horaInicioTurno])
+            ->whereRaw('HOUR(hora) < ?', [$horaFinTurno])
+            ->whereHas('espacio', function($query) use ($facultad, $piso) {
+                if ($piso) {
+                    $query->whereHas('piso', function($q) use ($facultad, $piso) {
+                        $q->where('id_facultad', $facultad);
+                        $q->where('numero_piso', $piso);
+                    });
+                } elseif ($facultad) {
+                    $query->whereHas('piso', function($q) use ($facultad) {
+                        $q->where('id_facultad', $facultad);
+                    });
                 }
-                if ($turno === 'vespertino' && $hora < 19) {
-                    continue; // Saltar diurno si es vespertino
-                }
+                $query->where('tipo_espacio', 'Sala de Clases');
+            })
+            ->groupBy('fecha', 'hora_dia');
 
-                $totalHoras++;
+        // Para sábados, filtrar horas solo hasta las 13
+        // Esto se maneja después al procesar resultados
 
-                // Obtener todas las planificaciones que incluyan esta hora
-                // NOTA: Se excluyen las planificaciones por solicitud del usuario, solo se consideran reservas para este KPI
-                $planificacionesEnHora = 0;
+        $reservasPorHora = $query->get();
 
-                /* Código original de planificaciones (comentado para referencia futura)
-                $periodo = SemesterHelper::getCurrentPeriod();
-                $horaFormato = sprintf('%02d:00:00', $hora);
-                $horaFinFormato = sprintf('%02d:00:00', $hora + 1);
-
-                $planificacionesEnHora = Planificacion_Asignatura::with(['modulo', 'espacio'])
-                    ->whereHas('horario', function($q) use ($periodo) {
-                        $q->where('periodo', $periodo);
-                    })
-                    ->whereHas('modulo', function($q) use ($diaSemana, $horaFormato, $horaFinFormato) {
-                        $q->where('dia', ucfirst($diaSemana))
-                          ->where('hora_inicio', '<', $horaFinFormato)
-                          ->where('hora_termino', '>', $horaFormato);
-                    })
-                    ->whereHas('espacio', function($query) use ($facultad, $piso) {
-                        if ($piso) {
-                            $query->whereHas('piso', function($q) use ($facultad, $piso) {
-                                $q->where('id_facultad', $facultad);
-                                $q->where('numero_piso', $piso);
-                            });
-                        } elseif ($facultad) {
-                            $query->whereHas('piso', function($q) use ($facultad) {
-                                $q->where('id_facultad', $facultad);
-                            });
-                        }
-                        $query->where('tipo_espacio', 'Sala de Clases');
-                    })
-                    ->count();
-                */
-
-                // Obtener todas las reservas que incluyan esta hora
-                $horaInicioFormato = sprintf('%02d:00:00', $hora);
-                $horaFinFormato = sprintf('%02d:59:59', $hora);
-                
-                $reservasEnHora = Reserva::where('fecha_reserva', $fecha->format('Y-m-d'))
-                    ->whereBetween('hora', [$horaInicioFormato, $horaFinFormato])
-                    ->whereIn('estado', ['activa', 'finalizada'])
-                    ->whereHas('espacio', function($query) use ($facultad, $piso) {
-                        if ($piso) {
-                            $query->whereHas('piso', function($q) use ($facultad, $piso) {
-                                $q->where('id_facultad', $facultad);
-                                $q->where('numero_piso', $piso);
-                            });
-                        } elseif ($facultad) {
-                            $query->whereHas('piso', function($q) use ($facultad) {
-                                $q->where('id_facultad', $facultad);
-                            });
-                        }
-                        $query->where('tipo_espacio', 'Sala de Clases');
-                    })
-                    ->count();
-
-                // Calcular ocupación de esta hora (Solo reservas, planificaciones = 0)
-                // SOLO registrar si hay al menos 1 reserva
-                if ($reservasEnHora > 0) {
-                    $ocupacionEnHora = $reservasEnHora / $totalEspacios;
-                    // Convertir a porcentaje (0-100)
-                    $ocupacionEnHora = min($ocupacionEnHora * 100, 100);
-
-                    if (!isset($ocupacionPorHora[$hora])) {
-                        $ocupacionPorHora[$hora] = [];
-                    }
-                    $ocupacionPorHora[$hora][] = $ocupacionEnHora;
-                }
-            }
-        }
-
-        // Si no hay datos de ocupación, retornar 0 inmediatamente
-        if (count($ocupacionPorHora) === 0) {
+        // Si no hay reservas, retornar 0
+        if ($reservasPorHora->isEmpty()) {
             Log::warning('Sin datos de ocupación para calcular promedio', [
                 'turno' => $turno ?? 'todos',
                 'totalEspacios' => $totalEspacios,
-                'totalHoras' => $totalHoras,
+                'totalHoras' => 0,
                 'periodo' => $inicio->format('Y-m-d') . ' a ' . $fin->format('Y-m-d'),
                 'facultad' => $facultad,
                 'piso' => $piso
@@ -550,47 +486,39 @@ class DashboardController extends Controller
             return 0;
         }
 
-        // Calcular el promedio de ocupación de cada hora
-        // Primero: obtener el MÁXIMO de cada hora (de todos los días)
+        // Procesar resultados: agrupar por hora y calcular máximos
         $maximosPorHora = [];
         
-        foreach ($ocupacionPorHora as $hora => $ocupaciones) {
-            if (count($ocupaciones) > 0) {
-                // Obtener el máximo porcentaje para esta hora
-                $maximoHora = max($ocupaciones);
-                $maximosPorHora[$hora] = $maximoHora;
+        foreach ($reservasPorHora as $registro) {
+            $fecha = Carbon::parse($registro->fecha);
+            $hora = $registro->hora_dia;
+            
+            // Filtrar sábados después de las 13 horas
+            if ($fecha->isSaturday() && $hora >= 13) {
+                continue;
+            }
+            
+            // Calcular porcentaje de ocupación para esta hora
+            $porcentajeOcupacion = min(($registro->total_reservas / $totalEspacios) * 100, 100);
+            
+            // Guardar el máximo por cada hora del día
+            if (!isset($maximosPorHora[$hora]) || $porcentajeOcupacion > $maximosPorHora[$hora]) {
+                $maximosPorHora[$hora] = $porcentajeOcupacion;
             }
         }
 
-        // Segundo: promediar los máximos de todas las horas
-        $promedioTotal = 0;
-        $contadorHoras = count($maximosPorHora);
-
-        if ($contadorHoras === 0) {
-            Log::warning('Sin datos de ocupación máxima para calcular promedio', [
-                'turno' => $turno ?? 'todos',
-                'totalEspacios' => $totalEspacios,
-                'periodo' => $inicio->format('Y-m-d') . ' a ' . $fin->format('Y-m-d'),
-                'facultad' => $facultad,
-                'piso' => $piso
-            ]);
+        // Calcular promedio de los máximos por hora
+        if (count($maximosPorHora) === 0) {
             return 0;
         }
 
-        foreach ($maximosPorHora as $hora => $maximo) {
-            $promedioTotal += $maximo;
-        }
+        $promedioTotal = array_sum($maximosPorHora) / count($maximosPorHora);
+        $resultado = round($promedioTotal, 2);
 
-        // Retornar el promedio de los máximos
-        $resultado = $contadorHoras > 0 ? round($promedioTotal / $contadorHoras, 2) : 0;
-
-        Log::info('Ocupación promedio por hora calculada', [
+        Log::info('Ocupación promedio por hora calculada (optimizado)', [
             'turno' => $turno ?? 'todos',
             'totalEspacios' => $totalEspacios,
-            'totalHoras' => $totalHoras,
-            'contadorHoras' => $contadorHoras,
-            'ocupacionPorHoraCount' => count($ocupacionPorHora),
-            'promedioTotal' => round($promedioTotal, 2),
+            'horasConDatos' => count($maximosPorHora),
             'porcentaje' => $resultado,
             'periodo' => $inicio->format('Y-m-d') . ' a ' . $fin->format('Y-m-d'),
             'facultad' => $facultad,
@@ -1847,7 +1775,8 @@ class DashboardController extends Controller
     public function getUtilizacionData(Request $request)
     {
         $piso = $request->session()->get('piso');
-        $facultad = 'IT_TH';
+        $tenant = Tenant::current();
+        $facultad = 'IT_' . ($tenant ? $tenant->sede_id : 'TH');
 
         $comparativaTipos = $this->obtenerComparativaTipos($facultad, $piso);
         $salasOcupadas = [
@@ -1866,7 +1795,8 @@ class DashboardController extends Controller
     public function getAccesosData(Request $request)
     {
         $piso = $request->session()->get('piso');
-        $facultad = 'IT_TH';
+        $tenant = Tenant::current();
+        $facultad = 'IT_' . ($tenant ? $tenant->sede_id : 'TH');
 
         $reservasSinDevolucion = $this->obtenerReservasActivasSinDevolucion($facultad, $piso);
         $accesosActuales = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
@@ -1897,7 +1827,8 @@ class DashboardController extends Controller
     public function getWidgetData(Request $request)
     {
         $piso = $request->session()->get('piso');
-        $facultad = 'IT_TH';
+        $tenant = Tenant::current();
+        $facultad = 'IT_' . ($tenant ? $tenant->sede_id : 'TH');
 
         // Obtener datos para los KPIs - DIURNO Y VESPERTINO
         $ocupacionSemanal = [
@@ -2674,7 +2605,8 @@ class DashboardController extends Controller
     public function getClasesNoRealizadasData(Request $request)
     {
         $piso = $request->session()->get('piso');
-        $facultad = 'IT_TH';
+        $tenant = Tenant::current();
+        $facultad = 'IT_' . ($tenant ? $tenant->sede_id : 'TH');
         $mes = now()->month;
         $anio = now()->year;
         $hoy = Carbon::now()->startOfDay();
@@ -3019,7 +2951,9 @@ class DashboardController extends Controller
 
     public function obtenerDatosGraficosAjax(Request $request)
     {
-        $facultad = $request->query('facultad') ?: 'IT_TH';
+        $tenant = Tenant::current();
+        $facultadContext = 'IT_' . ($tenant ? $tenant->sede_id : 'TH');
+        $facultad = $request->query('facultad') ?: $facultadContext;
         $piso = $request->query('piso');
         $tipo = $request->query('tipo');
         
@@ -3053,7 +2987,8 @@ class DashboardController extends Controller
      */
     public function getGraficosRango(Request $request)
     {
-        $facultad = 'IT_TH';
+        $tenant = Tenant::current();
+        $facultad = 'IT_' . ($tenant ? $tenant->sede_id : 'TH');
         $piso = $request->session()->get('piso');
         
         $fechaInicio = $request->query('fecha_inicio') 

@@ -35,7 +35,7 @@ class AreaAcademicaSeeder extends Seeder
             ],
         ];
         foreach ($areas as $area) {
-            AreaAcademica::create($area);
+            AreaAcademica::updateOrCreate(['id_area_academica' => $area['id_area_academica']], $area);
         }
 
     }
