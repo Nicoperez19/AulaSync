@@ -82,7 +82,7 @@
                 html: `
                     <div class="text-center">
                         <p class="mb-4">No se han encontrado mapas digitales en el sistema.</p>
-                        <p class="text-sm text-gray-600">Hay que contactarse con el administrador para generar los mapas.</p>
+                        <p class="text-sm text-gray-600">Por favor pongase en contacto con el administrador del sistema.</p>
                     </div>
                 `,
                 icon: 'warning',

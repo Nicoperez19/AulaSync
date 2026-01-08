@@ -22,7 +22,7 @@
                 No hay mapas disponibles
             </h3>
             <p class="text-gray-500 dark:text-gray-400 mb-6">
-                Hay que contactarse con el administrador para generar los mapas.
+                Por favor pongase en contacto con el administrador del sistema.
             </p>
             <button onclick="mostrarSweetAlertNoMapas()"
                 class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200">
@@ -118,7 +118,7 @@
                 html: `
                     <div class="text-center">
                         <p class="mb-4">No se han encontrado mapas digitales en el sistema.</p>
-                        <p class="text-sm text-gray-600">Hay que contactarse con el administrador para generar los mapas.</p>
+                        <p class="text-sm text-gray-600">Por favor pongase en contacto con el administrador del sistema.</p>
                     </div>
                 `,
                 icon: 'warning',

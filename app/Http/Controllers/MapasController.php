@@ -18,7 +18,7 @@ class MapasController extends Controller
 
 public function edit($id)
     {
-        $mapa = Mapa::with('bloques.espacio')->findOrFail($id);
+        $mapa = Mapa::withoutGlobalScopes()->with('bloques.espacio')->findOrFail($id);
         $pisos = Piso::all();
 
         // Obtener sede y facultad del tenant actual
@@ -31,13 +31,20 @@ public function edit($id)
     public function update(Request $request, $id)
     {
         try {
-            $mapa = Mapa::findOrFail($id);
+            Log::info('Actualizando mapa:', ['id' => $id, 'datos' => $request->except('archivo')]);
+            
+            $mapa = Mapa::withoutGlobalScopes()->findOrFail($id);
             $request->validate([
                 'nombre_mapa' => 'required|string|max:255',
-                'piso_id' => 'required|exists:pisos,id',
+                'piso_id' => 'required|integer',
                 'bloques' => 'required|string',
                 'archivo' => 'nullable|file|mimes:jpeg,png,jpg,gif,pdf|max:10240'
             ]);
+            
+            // Validar manualmente que el piso exista en la base de datos tenant
+            if (!Piso::where('id', $request->piso_id)->exists()) {
+                return back()->withErrors(['piso_id' => 'El piso seleccionado no existe.'])->withInput();
+            }
 
             $mapa->nombre_mapa = $request->nombre_mapa;
             $mapa->piso_id = $request->piso_id;
@@ -54,6 +61,8 @@ public function edit($id)
             }
 
             $mapa->save();
+            
+            Log::info('Mapa actualizado, procesando bloques...');
 
             $bloques = json_decode($request->bloques, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
@@ -62,16 +71,28 @@ public function edit($id)
 
             // Elimina bloques antiguos y crea nuevos
             $mapa->bloques()->delete();
-            foreach ($bloques as $bloque) {
-                \App\Models\Bloque::create([
-                    'id_bloque' => \Illuminate\Support\Str::uuid(),
-                    'id_mapa' => $mapa->id_mapa,
-                    'id_espacio' => $bloque['id_espacio'],
-                    'posicion_x' => $bloque['posicion_x'],
-                    'posicion_y' => $bloque['posicion_y'],
-                    'estado' => $bloque['estado']
-                ]);
+            Log::info('Bloques antiguos eliminados, creando nuevos...', ['cantidad' => count($bloques)]);
+            
+            foreach ($bloques as $index => $bloque) {
+                try {
+                    \App\Models\Bloque::create([
+                        'id_bloque' => \Illuminate\Support\Str::uuid(),
+                        'id_mapa' => $mapa->id_mapa,
+                        'id_espacio' => $bloque['id_espacio'],
+                        'posicion_x' => $bloque['posicion_x'],
+                        'posicion_y' => $bloque['posicion_y'],
+                        'estado' => $bloque['estado']
+                    ]);
+                } catch (\Exception $bloqueError) {
+                    Log::error("Error al actualizar bloque #{$index}:", [
+                        'error' => $bloqueError->getMessage(),
+                        'bloque' => $bloque
+                    ]);
+                    throw $bloqueError;
+                }
             }
+            
+            Log::info('Todos los bloques actualizados exitosamente');
 
             return redirect()->route('mapas.index')
                 ->with('success', 'Mapa actualizado exitosamente.');
@@ -88,7 +109,7 @@ public function edit($id)
 
     public function index()
     {
-        $mapas = Mapa::with(['piso.espacios'])->latest()->get();
+        $mapas = Mapa::withoutGlobalScopes()->with(['piso.espacios'])->latest()->get();
 
         return view('layouts.maps.map_index', compact('mapas'));
     }
@@ -113,9 +134,14 @@ public function edit($id)
             $request->validate([
                 'nombre_mapa' => 'required|string|max:255',
                 'archivo' => 'required|file|mimes:jpeg,png,jpg,gif,pdf|max:10240',
-                'piso_id' => 'required|exists:pisos,id',
+                'piso_id' => 'required|integer',
                 'bloques' => 'required|string'
             ]);
+            
+            // Validar manualmente que el piso exista en la base de datos tenant
+            if (!Piso::where('id', $request->piso_id)->exists()) {
+                return back()->withErrors(['piso_id' => 'El piso seleccionado no existe.'])->withInput();
+            }
 
             // Decodificar los bloques
             $bloques = json_decode($request->bloques, true);
@@ -143,23 +169,49 @@ public function edit($id)
             $fileName = "{$nombreMapaSlug}.{$extension}";
             $path = $file->storeAs('mapas_subidos', $fileName, 'public');
 
-            $mapa = Mapa::create([
-                'id_mapa' => $request->nombre_mapa,
+            // Generar ID único basado en slug + timestamp para evitar duplicados
+            $slugBase = Str::slug($request->nombre_mapa);
+            $idMapa = $slugBase . '-' . time();
+            
+            // Crear mapa sin global scopes para evitar conflictos
+            $mapa = Mapa::withoutGlobalScopes()->create([
+                'id_mapa' => $idMapa,
                 'nombre_mapa' => $request->nombre_mapa,
                 'ruta_mapa' => $path,
                 'ruta_canvas' => $path,
                 'piso_id' => $request->piso_id
             ]);
+            
+            Log::info('Mapa creado exitosamente:', ['id_mapa' => $mapa->id_mapa]);
 
-            foreach ($bloques as $bloque) {
-                Bloque::create([
-                    'id_bloque' => Str::uuid(),
-                    'id_mapa' => $mapa->id_mapa,
-                    'id_espacio' => $bloque['id_espacio'],
-                    'posicion_x' => $bloque['posicion_x'],
-                    'posicion_y' => $bloque['posicion_y'],
-                    'estado' => $bloque['estado']
-                ]);
+            Log::info('Mapa creado exitosamente:', ['id_mapa' => $mapa->id_mapa]);
+
+            foreach ($bloques as $index => $bloque) {
+                try {
+                    Log::info("Creando bloque #{$index}:", [
+                        'id_espacio' => $bloque['id_espacio'],
+                        'posicion_x' => $bloque['posicion_x'],
+                        'posicion_y' => $bloque['posicion_y'],
+                        'estado' => $bloque['estado']
+                    ]);
+                    
+                    Bloque::create([
+                        'id_bloque' => Str::uuid(),
+                        'id_mapa' => $mapa->id_mapa,
+                        'id_espacio' => $bloque['id_espacio'],
+                        'posicion_x' => $bloque['posicion_x'],
+                        'posicion_y' => $bloque['posicion_y'],
+                        'estado' => $bloque['estado']
+                    ]);
+                    
+                    Log::info("Bloque #{$index} creado exitosamente");
+                } catch (\Exception $bloqueError) {
+                    Log::error("Error al crear bloque #{$index}:", [
+                        'error' => $bloqueError->getMessage(),
+                        'bloque' => $bloque
+                    ]);
+                    throw $bloqueError;
+                }
             }
 
             // Si viene desde el wizard de inicialización, redirigir de vuelta al wizard

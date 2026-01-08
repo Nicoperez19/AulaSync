@@ -25,8 +25,8 @@ class PlanoDigitalController extends Controller
     {
         $sedes = Sede::with(['universidad', 'facultades.pisos.mapas'])->get();
 
-        // Verificar si hay mapas disponibles
-        $mapasDisponibles = Mapa::count();
+        // Verificar si hay mapas disponibles (sin filtros de tenant)
+        $mapasDisponibles = Mapa::withoutGlobalScopes()->count();
         $tieneMapas = $mapasDisponibles > 0;
 
         return view('layouts.plano_digital.index', compact('sedes', 'tieneMapas', 'mapasDisponibles'));
@@ -88,7 +88,8 @@ class PlanoDigitalController extends Controller
 
     private function obtenerMapa($id)
     {
-        return Mapa::with(['bloques.espacio', 'piso.facultad.sede.universidad'])
+        return Mapa::withoutGlobalScopes()
+            ->with(['bloques.espacio', 'piso.facultad.sede.universidad'])
             ->where('id_mapa', $id)
             ->firstOrFail();
     }
