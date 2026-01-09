@@ -167,6 +167,15 @@ public function edit($id)
             $extension = $file->getClientOriginalExtension();
 
             $fileName = "{$nombreMapaSlug}.{$extension}";
+            
+            Log::info('Intentando guardar archivo:', [
+                'fileName' => $fileName,
+                'isValid' => $file->isValid(),
+                'size' => $file->getSize(),
+                'mimeType' => $file->getMimeType(),
+                'storage_path' => storage_path('app/public/mapas_subidos')
+            ]);
+            
             $path = $file->storeAs('mapas_subidos', $fileName, 'public');
 
             Log::info('Archivo guardado en:', ['path' => $path, 'fileName' => $fileName]);
