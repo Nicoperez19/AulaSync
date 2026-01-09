@@ -6,8 +6,11 @@ use Illuminate\Console\Command;
 use App\Models\Reserva;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Modulo;
+use App\Models\Tenant;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 
 class FinalizarReservasNoDevueltas extends Command
 {
@@ -32,17 +35,61 @@ class FinalizarReservasNoDevueltas extends Command
     {
         $this->info('Iniciando búsqueda de reservas no devueltas después de 1 hora del módulo...');
 
-        // Obtener todas las reservas activas de profesores
-        $reservasActivas = Reserva::where('estado', 'activa')
-            ->whereNotNull('run_profesor')
-            ->whereNull('hora_salida')
-            ->get();
+        // Obtener todos los tenants
+        $tenants = Tenant::all();
 
+        if ($tenants->isEmpty()) {
+            $this->warn('No se encontraron tenants configurados.');
+            return 0;
+        }
+
+        foreach ($tenants as $tenant) {
+            $this->processTenant($tenant);
+        }
+
+        return 0;
+    }
+
+    protected function processTenant(Tenant $tenant)
+    {
+        $this->info("\nProcesando tenant: {$tenant->name} ({$tenant->domain})");
+
+        try {
+            // Configurar conexión de tenant
+            Config::set('database.connections.tenant.database', $tenant->database);
+            DB::purge('tenant');
+
+            // Obtener todas las reservas activas de profesores
+            $reservasActivas = Reserva::on('tenant')
+                ->where('estado', 'activa')
+                ->whereNotNull('run_profesor')
+                ->whereNull('hora_salida')
+                ->get();
+
+            if ($reservasActivas->isEmpty()) {
+                $this->line("  No hay reservas activas para procesar.");
+                return;
+            }
+
+            $this->processReservas($reservasActivas, $tenant);
+        } catch (\Exception $e) {
+            $this->error("  Error procesando tenant {$tenant->name}: " . $e->getMessage());
+            Log::error("Error en FinalizarReservasNoDevueltas para tenant {$tenant->name}", [
+                'tenant' => $tenant->domain,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
+    }
+
+    protected function processReservas($reservasActivas, Tenant $tenant)
+    {
         $reservasFinalizadas = 0;
 
         foreach ($reservasActivas as $reserva) {
             // Obtener la planificación asociada si existe
-            $planificacion = Planificacion_Asignatura::with('modulo')
+            $planificacion = Planificacion_Asignatura::on('tenant')
+                ->with('modulo')
                 ->where('id_espacio', $reserva->id_espacio)
                 ->whereHas('modulo', function ($query) use ($reserva) {
                     $query->where('dia', $this->obtenerDiaSemana($reserva->fecha_reserva));
@@ -88,9 +135,7 @@ class FinalizarReservasNoDevueltas extends Command
             }
         }
 
-        $this->info("Se finalizaron {$reservasFinalizadas} reservas por no devolución de llaves.");
-
-        return 0;
+        $this->info("  ✅ Se finalizaron {$reservasFinalizadas} reservas para tenant {$tenant->name}.");
     }
 
     /**

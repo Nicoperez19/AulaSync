@@ -7,10 +7,12 @@ use App\Models\Reserva;
 use App\Models\Espacio;
 use App\Models\Modulo;
 use App\Models\Planificacion_Asignatura;
+use App\Models\Tenant;
 use App\Helpers\SemesterHelper;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Config;
 
 class FinalizarReservasExpiradas extends Command
 {

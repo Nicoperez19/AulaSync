@@ -5,7 +5,11 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Espacio;
 use App\Models\Reserva;
+use App\Models\Tenant;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class LiberarEspaciosCommand extends Command
 {
@@ -30,28 +34,59 @@ class LiberarEspaciosCommand extends Command
     {
         $this->info('Iniciando proceso de liberación de espacios y reservas...');
 
-        // 1. Finalizar todas las reservas activas
-        $reservasFinalizadas = Reserva::where('estado', 'activa')
-            ->update([
-                'estado' => 'finalizada',
-                'hora_salida' => Carbon::now()->format('H:i:s'),
-                'updated_at' => Carbon::now()
-            ]);
+        // Obtener todos los tenants
+        $tenants = Tenant::all();
 
-        $this->info("Se finalizaron {$reservasFinalizadas} reservas activas.");
+        if ($tenants->isEmpty()) {
+            $this->warn('No se encontraron tenants configurados.');
+            return 0;
+        }
 
-        // 2. Cambiar todos los espacios ocupados a disponibles
-        $espaciosLiberados = Espacio::where('estado', 'Ocupado')
-            ->update([
-                'estado' => 'disponible',
-                'updated_at' => Carbon::now()
-            ]);
-
-        $this->info("Se liberaron {$espaciosLiberados} espacios ocupados.");
-
-        $this->info('Proceso de liberación completado exitosamente.');
-        $this->info("Total de operaciones: {$reservasFinalizadas} reservas finalizadas + {$espaciosLiberados} espacios liberados");
+        foreach ($tenants as $tenant) {
+            $this->processTenant($tenant);
+        }
 
         return 0;
+    }
+
+    protected function processTenant(Tenant $tenant)
+    {
+        $this->info("\nProcesando tenant: {$tenant->name} ({$tenant->domain})");
+
+        try {
+            // Configurar conexión de tenant
+            Config::set('database.connections.tenant.database', $tenant->database);
+            DB::purge('tenant');
+
+            // 1. Finalizar todas las reservas activas
+            $reservasFinalizadas = Reserva::on('tenant')
+                ->where('estado', 'activa')
+                ->update([
+                    'estado' => 'finalizada',
+                    'hora_salida' => Carbon::now()->format('H:i:s'),
+                    'updated_at' => Carbon::now()
+                ]);
+
+            $this->line("  Se finalizaron {$reservasFinalizadas} reservas activas.");
+
+            // 2. Cambiar todos los espacios ocupados a disponibles
+            $espaciosLiberados = Espacio::on('tenant')
+                ->where('estado', 'Ocupado')
+                ->update([
+                    'estado' => 'disponible',
+                    'updated_at' => Carbon::now()
+                ]);
+
+            $this->line("  Se liberaron {$espaciosLiberados} espacios ocupados.");
+
+            $this->info("  ✅ Proceso completado: {$reservasFinalizadas} reservas finalizadas + {$espaciosLiberados} espacios liberados");
+        } catch (\Exception $e) {
+            $this->error("  Error procesando tenant {$tenant->name}: " . $e->getMessage());
+            Log::error("Error en LiberarEspaciosCommand para tenant {$tenant->name}", [
+                'tenant' => $tenant->domain,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+        }
     }
 }

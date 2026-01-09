@@ -23,10 +23,19 @@ class PlanoDigitalController extends Controller
 {
     public function index()
     {
-        $sedes = Sede::with(['universidad', 'facultades.pisos.mapas'])->get();
+        $sedes = Sede::with(['universidad', 'facultades.pisos.mapas' => function($query) {
+            // Solo cargar mapas con ruta válida
+            $query->where('ruta_mapa', '!=', '0')
+                  ->whereNotNull('ruta_mapa')
+                  ->where('ruta_mapa', '!=', '');
+        }])->get();
 
-        // Verificar si hay mapas disponibles (sin filtros de tenant)
-        $mapasDisponibles = Mapa::withoutGlobalScopes()->count();
+        // Verificar si hay mapas disponibles con rutas válidas
+        $mapasDisponibles = Mapa::withoutGlobalScopes()
+            ->where('ruta_mapa', '!=', '0')
+            ->whereNotNull('ruta_mapa')
+            ->where('ruta_mapa', '!=', '')
+            ->count();
         $tieneMapas = $mapasDisponibles > 0;
 
         return view('layouts.plano_digital.index', compact('sedes', 'tieneMapas', 'mapasDisponibles'));
@@ -36,11 +45,28 @@ class PlanoDigitalController extends Controller
     {
         try {
             $mapa = $this->obtenerMapa($id);
+            
+            // Validar que el mapa tenga una imagen válida
+            if (!$mapa->ruta_mapa || $mapa->ruta_mapa === '0' || $mapa->ruta_mapa === '') {
+                if (request()->wantsJson()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'El mapa no tiene una imagen configurada. Por favor, configure el mapa desde el menú de Mapas.'
+                    ], 404);
+                }
+
+                return redirect()->route('plano.index')->with('error', 'El mapa no tiene una imagen configurada. Por favor, configure el mapa desde el menú de Mapas.');
+            }
+            
             $estadoActual = $this->obtenerEstadoActual(Carbon::now());
             $bloques = $this->prepararBloques($mapa, $estadoActual);
 
             // Obtener todos los pisos de la misma facultad con sus mapas
-            $pisos = Piso::with(['mapas'])
+            $pisos = Piso::with(['mapas' => function($query) {
+                    $query->where('ruta_mapa', '!=', '0')
+                          ->whereNotNull('ruta_mapa')
+                          ->where('ruta_mapa', '!=', '');
+                }])
                 ->where('id_facultad', $mapa->piso->id_facultad)
                 ->orderBy('numero_piso')
                 ->get();

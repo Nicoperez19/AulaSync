@@ -1,0 +1,599 @@
+═══════════════════════════════════════════════════════════════════════════
+         AULA SYNC - VISTA MÓDULOS ACTUALES (TABLERO ACADÉMICO)
+                    Explicación Técnica Completa
+═══════════════════════════════════════════════════════════════════════════
+
+📌 DESCRIPCIÓN GENERAL
+═══════════════════════════════════════════════════════════════════════════
+
+La vista "Módulos Actuales" (también llamada "Tablero Académico") es una 
+pantalla pública en tiempo real que muestra el estado actual de todas las
+salas/espacios académicos de la institución.
+
+🎯 PROPÓSITO:
+   - Mostrar qué está ocurriendo AHORA en cada espacio
+   - Indicar qué clases están en curso
+   - Mostrar espacios disponibles
+   - Visualizar asistencia en tiempo real
+   - Detectar clases no realizadas automáticamente
+
+🌐 ACCESO:
+   - Ruta: /modulos-actuales
+   - Público (sin autenticación requerida)
+   - Pantallas grandes en pasillos/recepciones
+   - Actualización automática cada 60 segundos
+
+═══════════════════════════════════════════════════════════════════════════
+
+🏗️  ARQUITECTURA Y TECNOLOGÍAS
+═══════════════════════════════════════════════════════════════════════════
+
+┌─ 🎨 FRONTEND
+│
+├─ Blade Templates (Laravel)
+│  └─ layouts/table/index.blade.php (contenedor principal)
+│  └─ livewire/modulos-actuales-table.blade.php (tabla dinámica)
+│
+├─ Alpine.js (JavaScript reactivo)
+│  - Paginación automática cada 12 segundos
+│  - Animaciones de transición entre páginas
+│  - Reloj en tiempo real
+│  - Indicador de módulo actual
+│  - Detección de feriados
+│
+├─ TailwindCSS (estilos)
+│  - Diseño responsive
+│  - Sistema de colores por estado
+│  - Animaciones CSS
+│  - Utilidades flex/grid
+│
+└─ JavaScript Vanilla
+   - Clase RelojModulo (manejo del tiempo)
+   - Cálculo de módulo actual basado en horarios
+   - Actualización de relojes (desktop + móvil)
+
+┌─ ⚙️  BACKEND
+│
+├─ Laravel Livewire 3
+│  └─ Componente: ModulosActualesTable
+│  - Renderizado reactivo
+│  - Actualización automática cada 60s
+│  - Estado sincronizado entre servidor y cliente
+│  - Sin recargas completas de página
+│
+├─ Controlador: TableController
+│  └─ Método index() → Retorna vista principal
+│  └─ Método actualizarDatos() → API para verificar servidor
+│
+└─ Modelos Eloquent involucrados:
+   - Espacio (salas)
+   - Piso (ubicación)
+   - Planificacion_Asignatura (clases programadas)
+   - Reserva (uso actual de salas)
+   - Asistencia (estudiantes presentes)
+   - DiaFeriado (suspensión de clases)
+   - ClaseNoRealizada (detección automática)
+   - ProfesorColaborador (clases temporales)
+
+═══════════════════════════════════════════════════════════════════════════
+
+🔄 FLUJO DE FUNCIONAMIENTO
+═══════════════════════════════════════════════════════════════════════════
+
+1️⃣  CARGA INICIAL (mount del componente Livewire)
+    │
+    ├─ Establece tiempo de ejecución extendido (120s)
+    ├─ Obtiene fecha y hora actual
+    ├─ Verifica si hoy es día feriado
+    ├─ Calcula módulo actual basado en horarios predefinidos
+    ├─ Carga todos los pisos con sus espacios
+    ├─ Determina período académico actual (año-semestre)
+    └─ Ejecuta actualizarDatos() para procesar estado de espacios
+
+2️⃣  CÁLCULO DE MÓDULO ACTUAL
+    │
+    ├─ Obtiene día de la semana (lunes-viernes)
+    ├─ Obtiene hora actual (HH:mm:ss)
+    ├─ Consulta tabla de horarios predefinida en código:
+    │  
+    │  ESTRUCTURA DE HORARIOS:
+    │  [día][número_módulo] = ['inicio' => 'HH:MM:SS', 'fin' => 'HH:MM:SS']
+    │  
+    │  Ejemplo:
+    │  'lunes' => [
+    │      1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+    │      2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+    │      ...
+    │      15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+    │  ]
+    │
+    ├─ Compara hora actual con rangos de cada módulo
+    ├─ Si está dentro de un módulo → tipo: 'modulo'
+    ├─ Si está entre módulos (break) → tipo: 'break', muestra próximo módulo
+    └─ Retorna objeto: { numero, inicio, fin, tipo, mensaje? }
+
+3️⃣  PROCESAMIENTO DE CADA ESPACIO (getTodosLosEspacios)
+    │
+    Para CADA espacio en el sistema:
+    │
+    ├─ A) OBTENER PLANIFICACIÓN ACTUAL
+    │  │
+    │  ├─ Busca en tabla planificacion_asignaturas
+    │  ├─ Filtra por:
+    │  │  - id_espacio
+    │  │  - período académico actual
+    │  │  - día actual (prefijo: LU, MA, MI, JU, VI)
+    │  │  - módulo actual
+    │  │
+    │  ├─ Agrupa módulos consecutivos de la misma asignatura
+    │  │  (ej: módulos 2,3,4 → una sola clase de 2.5 horas)
+    │  │
+    │  └─ Carga relaciones: asignatura, profesor, carrera
+    │
+    ├─ B) VERIFICAR RESERVAS ACTIVAS
+    │  │
+    │  ├─ Busca reserva del profesor HOY en este espacio
+    │  │  - Estado: 'activa' o 'pendiente'
+    │  │  - Con hora de entrada (run_profesor + hora not null)
+    │  │
+    │  ├─ Busca reserva espontánea de solicitante
+    │  │  - run_solicitante not null
+    │  │  - Estado activa
+    │  │
+    │  └─ Carga datos: asignatura, profesor, solicitante
+    │
+    ├─ C) OBTENER ASISTENCIA EN TIEMPO REAL
+    │  │
+    │  ├─ Cuenta asistencias.estado = 'presente' HOY en este espacio
+    │  ├─ Compara con total de inscritos (planificacion.inscritos)
+    │  ├─ Calcula porcentaje de asistencia
+    │  └─ Determina color según %: verde(>90), azul(>70), amarillo(>50)
+    │
+    ├─ D) DETECTAR CLASES NO REALIZADAS
+    │  │
+    │  SI hay clase programada Y NO hay reserva del profesor:
+    │  │
+    │  ├─ Obtiene primer y último módulo de la clase
+    │  ├─ Verifica si han pasado 20 min desde inicio del primer módulo
+    │  ├─ Verifica que no registró entrada en OTRA sala (cambio de espacio)
+    │  │
+    │  ├─ SI la clase ya terminó (módulo actual > último módulo):
+    │  │  └─ Registra en tabla clases_no_realizadas
+    │  │     - Motivo: "No se registró ingreso durante toda la clase"
+    │  │     - id_modulo: todos los módulos de la clase (ej: "MI.2,MI.3,MI.4")
+    │  │
+    │  └─ SI pasaron 20 min Y aún no terminó:
+    │     └─ Registra clase_no_realizada
+    │        - Motivo: "No se registró ingreso después de 20 min"
+    │
+    ├─ E) CALCULAR DISPONIBILIDAD FUTURA
+    │  │
+    │  SI el espacio está libre AHORA:
+    │  │
+    │  ├─ Busca próxima clase programada HOY (módulo > actual)
+    │  ├─ Busca próxima reserva pendiente/activa
+    │  ├─ Calcula rango: módulo_actual → próximo_ocupado - 1
+    │  │
+    │  └─ Retorna: { desde, hasta, hora_desde, hora_hasta }
+    │     Ejemplo: "Disponible módulos 5-7 (12:10 - 15:00)"
+    │
+    ├─ F) VERIFICAR CLASES DE PROFESORES COLABORADORES
+    │  │
+    │  ├─ Busca en profesores_colaboradores activos y vigentes
+    │  ├─ Verifica si tienen clase HOY en este espacio
+    │  ├─ Tipos: temporal, reforzamiento, recuperación
+    │  └─ Marca con etiqueta de color según tipo
+    │
+    └─ G) DETERMINAR ESTADO FINAL
+       │
+       ├─ "Ocupado" → Hay clase programada en curso
+       ├─ "En Uso (Profesor)" → Reserva espontánea del profesor
+       ├─ "En Uso (Solicitante)" → Reserva de visitante/solicitante
+       ├─ "Disponible" → Libre, sin clase ni reserva
+       ├─ "Clase No Realizada" → Programada pero profesor no llegó
+       └─ "Terminó Antes" → Clase terminó antes del horario programado
+
+4️⃣  RENDERIZADO Y ACTUALIZACIÓN
+    │
+    ├─ Livewire renderiza tabla con todos los espacios procesados
+    ├─ Alpine.js divide datos en páginas (13 espacios por página)
+    ├─ Animación de entrada por filas (cada fila aparece con delay)
+    ├─ Cambio automático de página cada 12 segundos
+    ├─ Transiciones suaves entre páginas (slide out → slide in)
+    │
+    └─ Actualización automática cada 60 segundos:
+       - Livewire dispara actualizarAutomaticamente()
+       - Recalcula módulo actual
+       - Revalida estado de todos los espacios
+       - Re-renderiza solo lo que cambió (reactive)
+
+5️⃣  RELOJ Y TEMPORIZADORES (JavaScript)
+    │
+    ├─ Clase RelojModulo se ejecuta cada 1 segundo:
+    │  ├─ Actualiza hora actual (HH:MM:SS)
+    │  ├─ Calcula módulo actual (consulta tabla HORARIOS_MODULOS)
+    │  ├─ Actualiza display desktop y móvil
+    │  └─ Indica si estamos en módulo o en break
+    │
+    ├─ Timer de paginación (12s):
+    │  └─ Cambia a siguiente página con animación
+    │
+    ├─ Timer de actualización Livewire (60s):
+    │  └─ Refresca datos del servidor
+    │
+    └─ Timer de recarga completa (1 hora):
+       └─ location.reload() para limpiar caché
+
+═══════════════════════════════════════════════════════════════════════════
+
+📊 ESTRUCTURA DE DATOS RETORNADOS
+═══════════════════════════════════════════════════════════════════════════
+
+Para CADA espacio, se retorna un array con esta estructura:
+
+[
+    'id_espacio' => 'A101',
+    'piso' => 'Piso 1',
+    'capacidad_maxima' => 40,
+    'estado' => 'Ocupado',  // o 'Disponible', 'En Uso (Profesor)', etc.
+    
+    'tiene_clase' => true,
+    'datos_clase' => [
+        'nombre_asignatura' => 'Programación Web',
+        'codigo_asignatura' => 'INF-220',
+        'profesor' => ['name' => 'Juan Pérez'],
+        'carrera' => 'Ingeniería Civil Informática',
+        'modulo_inicio' => 'MI.2',    // Módulo 2 del miércoles
+        'modulo_fin' => 'MI.4',        // Módulo 4 del miércoles
+        'hora_inicio' => '09:10:00',
+        'hora_fin' => '12:00:00',
+        'es_colaborador' => false,     // true si es clase temporal
+        'tipo_clase' => null,          // 'temporal', 'reforzamiento', 'recuperacion'
+    ],
+    
+    'tiene_reserva_profesor' => false,
+    'datos_profesor' => [
+        'nombre' => 'María González',
+        'nombre_asignatura' => 'Taller de Tesis',
+        'codigo_asignatura' => 'TES-500',
+        'carrera' => 'Magíster en Informática',
+        'hora_inicio' => '14:10:00',
+        'hora_salida' => '16:00:00',
+    ],
+    
+    'tiene_reserva_solicitante' => false,
+    'datos_solicitante' => [
+        'nombre' => 'Carlos Soto (Visitante)',
+    ],
+    
+    'asistencia_actual' => 28,         // Estudiantes presentes
+    'total_inscritos' => 35,           // Total de inscritos en la asignatura
+    
+    'rango_disponibilidad' => [
+        'desde' => 5,                  // Desde módulo 5
+        'hasta' => 10,                 // Hasta módulo 10
+        'hora_desde' => '12:10:00',
+        'hora_hasta' => '18:00:00',
+    ],
+    
+    'proxima_clase' => [
+        'nombre_asignatura' => 'Base de Datos',
+        'codigo_asignatura' => 'INF-245',
+        'profesor' => 'Ana Martínez',
+        'modulo_inicio' => 'MI.11',
+        'modulo_fin' => 'MI.12',
+        'hora_inicio' => '18:10:00',
+        'hora_fin' => '20:00:00',
+    ],
+    
+    'es_recuperacion' => false,        // true si es clase de recuperación
+    'clase_no_realizada' => false,     // true si se detectó que no se realizó
+]
+
+═══════════════════════════════════════════════════════════════════════════
+
+🎨 ELEMENTOS VISUALES Y COLORES
+═══════════════════════════════════════════════════════════════════════════
+
+┌─ INDICADOR DE ESTADO (círculo de color)
+│
+├─ 🟢 Verde → Disponible (sin clase ni reserva)
+├─ 🔵 Azul → Ocupado (clase en curso)
+├─ 🟣 Morado → En Uso (Profesor) - reserva espontánea
+├─ 🟠 Naranja → En Uso (Solicitante) - visitante
+├─ 🔴 Rojo → Clase No Realizada (profesor no llegó)
+└─ 🟡 Amarillo → Terminó Antes (salida anticipada)
+
+┌─ ETIQUETAS ESPECIALES
+│
+├─ TEMPORAL (morado) → Clase de profesor colaborador temporal
+├─ REFORZAMIENTO (naranja) → Clase de reforzamiento
+├─ RECUPERACIÓN (verde) → Clase de recuperación por licencia
+└─ Sin etiqueta → Clase regular programada
+
+┌─ BARRA DE ASISTENCIA
+│
+├─ Verde (≥90%) → Excelente asistencia
+├─ Azul (≥70%) → Buena asistencia
+├─ Amarillo (≥50%) → Asistencia regular
+├─ Naranja (<50%) → Baja asistencia
+└─ Gris (0%) → Sin asistencia aún
+
+┌─ INDICADOR DE FERIADO
+│
+└─ Banner rojo superior → Muestra nombre del día feriado
+   (Se obtiene de tabla dias_feriados)
+
+═══════════════════════════════════════════════════════════════════════════
+
+⚡ OPTIMIZACIONES DE RENDIMIENTO
+═══════════════════════════════════════════════════════════════════════════
+
+1️⃣  LÍMITE DE TIEMPO DE EJECUCIÓN
+    - set_time_limit(120) → Evita timeout en cargas pesadas
+    - Middleware 'extend.execution:180' en ruta
+
+2️⃣  PAGINACIÓN CLIENT-SIDE
+    - 13 espacios por página
+    - Reduce DOM rendering
+    - Animaciones suaves sin lag
+
+3️⃣  EAGER LOADING
+    - ->with(['espacio', 'asignatura.profesor', 'carrera'])
+    - Evita N+1 queries
+    - Carga relaciones en una sola consulta
+
+4️⃣  CACHÉ DE CONSULTAS
+    - Planificaciones se consultan una vez por día
+    - Módulo actual se calcula en memoria (no BD)
+    - Horarios hardcoded (no consulta tabla modulos cada vez)
+
+5️⃣  ACTUALIZACIÓN INTELIGENTE
+    - Livewire actualiza solo lo que cambió (diffing)
+    - No recarga completa de página
+    - JavaScript maneja reloj sin tocar servidor
+
+6️⃣  DESACTIVACIÓN DE FUNCIONES PESADAS
+    - obtenerProximaClase() desactivada temporalmente
+    - Comentada para evitar timeouts por múltiples consultas
+
+7️⃣  RECARGA PERIÓDICA COMPLETA
+    - location.reload() cada 1 hora
+    - Limpia memoria y caché del navegador
+    - Previene leaks de memoria en pantallas 24/7
+
+═══════════════════════════════════════════════════════════════════════════
+
+🔧 CONFIGURACIÓN Y PERSONALIZACIÓN
+═══════════════════════════════════════════════════════════════════════════
+
+📍 HORARIOS DE MÓDULOS (hardcoded en código)
+   Ubicación: 
+   - app/Livewire/ModulosActualesTable.php → propiedad $horariosModulos
+   - resources/views/layouts/table/index.blade.php → const HORARIOS_MODULOS
+
+   Estructura:
+   [día][número] = ['inicio' => 'HH:MM:SS', 'fin' => 'HH:MM:SS']
+
+   Días soportados: lunes, martes, miercoles, jueves, viernes
+   Módulos por día: 1 al 15 (08:10 - 23:00)
+
+📍 TIEMPOS DE ACTUALIZACIÓN
+   - Paginación: 12 segundos (Alpine.js setInterval)
+   - Actualización Livewire: 60 segundos
+   - Recarga completa: 3600 segundos (1 hora)
+
+📍 ESPACIOS POR PÁGINA
+   - Configurable en: Math.ceil(espacios / 13)
+   - Actualmente: 13 espacios por página
+
+📍 GRACIA PARA CLASE NO REALIZADA
+   - Tiempo de espera: 20 minutos desde inicio del primer módulo
+   - Configurable en verificarClaseNoRealizada()
+
+═══════════════════════════════════════════════════════════════════════════
+
+🌟 CARACTERÍSTICAS DESTACADAS
+═══════════════════════════════════════════════════════════════════════════
+
+✅ TIEMPO REAL sin WebSockets
+   - Livewire polling cada 60s
+   - JavaScript para reloj (actualización cada 1s)
+   - No requiere servidor WebSocket adicional
+
+✅ DETECCIÓN AUTOMÁTICA de Clases No Realizadas
+   - Lógica de 20 minutos de gracia
+   - Verificación de cambios de sala
+   - Registro automático en base de datos
+
+✅ SOPORTE MULTI-TIPO de Clases
+   - Clases regulares programadas
+   - Clases de profesores colaboradores (temporales)
+   - Clases de recuperación por licencias
+   - Reservas espontáneas de profesores
+   - Reservas de solicitantes/visitantes
+
+✅ CÁLCULO INTELIGENTE de Disponibilidad
+   - Detecta próxima clase automáticamente
+   - Muestra rango de módulos libres
+   - Considera feriados y días sin actividades
+
+✅ ASISTENCIA EN TIEMPO REAL
+   - Integración con sistema de QR de alumnos
+   - Porcentaje visual con barra de progreso
+   - Comparación con inscritos de la asignatura
+
+✅ RESPONSIVE Y ADAPTABLE
+   - Versión desktop con tabla completa
+   - Reloj flotante para móviles
+   - Botón "Volver" solo para usuarios autenticados
+
+✅ ANIMACIONES PROFESIONALES
+   - Transiciones entre páginas (slide)
+   - Aparición progresiva de filas (stagger)
+   - Fade in/out suave
+
+═══════════════════════════════════════════════════════════════════════════
+
+🔗 INTEGRACIÓN CON OTROS MÓDULOS
+═══════════════════════════════════════════════════════════════════════════
+
+📌 Sistema de Asistencia QR
+   - Lee asistencias de tabla 'asistencias'
+   - Muestra contador en tiempo real
+   - Filtro: estado='presente' AND fecha=hoy
+
+📌 Sistema de Reservas
+   - Verifica reservas activas de profesores
+   - Identifica reservas espontáneas
+   - Estado 'activa' o 'pendiente'
+
+📌 Planificación Académica
+   - Consulta horarios del período actual
+   - Agrupa módulos consecutivos de la misma asignatura
+   - Asocia con carrera y profesor
+
+📌 Clases No Realizadas
+   - Registra automáticamente cuando detecta ausencia
+   - Genera reporte para supervisores
+   - Notifica a administradores
+
+📌 Días Feriados
+   - Verifica si hoy es feriado
+   - Muestra banner rojo con nombre del feriado
+   - Suspende detección de clases no realizadas
+
+📌 Profesores Colaboradores
+   - Muestra clases temporales con etiqueta
+   - Distingue por tipo: temporal, reforzamiento, recuperación
+   - Valida vigencia por rango de fechas
+
+═══════════════════════════════════════════════════════════════════════════
+
+📝 CASOS DE USO TÍPICOS
+═══════════════════════════════════════════════════════════════════════════
+
+1️⃣  Estudiante busca sala disponible
+    → Ve columna "Status" = Disponible
+    → Revisa rango de disponibilidad ("Módulos 5-10")
+    → Decide usar sala A101 hasta módulo 10
+
+2️⃣  Profesor verifica si su clase está registrada
+    → Busca su sala en la tabla
+    → Ve "Ocupado" + nombre de su asignatura
+    → Confirma que sistema lo reconoció
+
+3️⃣  Supervisor monitorea clases no realizadas
+    → Ve estado "Clase No Realizada" en rojo
+    → Identifica profesor ausente
+    → Recibe notificación automática
+
+4️⃣  Pantalla en recepción muestra estado general
+    → Paginación automática cada 12s
+    → Muestra todas las salas del edificio
+    → Actualiza asistencia en tiempo real
+
+5️⃣  Administrador detecta cambio de sala
+    → Profesor registró entrada en sala B201
+    → Clase programada era en A101
+    → Sistema NO marca como clase no realizada
+
+═══════════════════════════════════════════════════════════════════════════
+
+🐛 MANEJO DE ERRORES Y EDGE CASES
+═══════════════════════════════════════════════════════════════════════════
+
+❌ Sin módulo actual (fin de semana / hora no válida)
+   → Muestra "En break"
+   → No procesa clases
+   → Todos los espacios aparecen como "Disponible"
+
+❌ Base de datos sin planificaciones
+   → No falla
+   → Muestra todas las salas como "Disponible"
+   → Permite reservas espontáneas
+
+❌ Clase programada pero profesor en licencia
+   → Sistema de recuperaciones maneja el caso
+   → No marca como clase no realizada si hay licencia activa
+
+❌ Múltiples módulos de la misma asignatura
+   → Agrupa automáticamente (ej: módulos 2,3,4 → una clase)
+   → Muestra rango: "2 - 4 (09:10 - 12:00)"
+   → Detecta clase no realizada solo después del último módulo
+
+❌ Cambio de sala de último momento
+   → Profesor entra en sala diferente a la programada
+   → Sistema verifica entrada en CUALQUIER sala
+   → NO marca como clase no realizada
+
+❌ Timeout por carga pesada
+   → set_time_limit(120) previene timeout PHP
+   → Middleware extiende límite a 180s
+   → Queries optimizadas con eager loading
+
+═══════════════════════════════════════════════════════════════════════════
+
+📚 TECNOLOGÍAS - RESUMEN
+═══════════════════════════════════════════════════════════════════════════
+
+🔹 BACKEND:
+   - Laravel 10.48 (Framework PHP)
+   - Livewire 3.6 (Componentes reactivos)
+   - Eloquent ORM (Consultas BD)
+   - Carbon (Manejo de fechas)
+   - MySQL/MariaDB (Base de datos)
+
+🔹 FRONTEND:
+   - Blade Templates (Motor de vistas Laravel)
+   - Alpine.js (JavaScript reactivo)
+   - TailwindCSS 3 (Framework CSS)
+   - Font Awesome (Iconos)
+   - JavaScript ES6+ (Lógica del reloj)
+
+🔹 PATRONES Y TÉCNICAS:
+   - MVC (Model-View-Controller)
+   - Componentes Livewire (Single Page Components)
+   - Eager Loading (Optimización N+1)
+   - Polling (Actualización periódica)
+   - Client-Side Pagination (Paginación en frontend)
+   - Stagger Animations (Animaciones escalonadas)
+
+═══════════════════════════════════════════════════════════════════════════
+
+📖 REFERENCIAS DE CÓDIGO
+═══════════════════════════════════════════════════════════════════════════
+
+Archivos principales:
+
+📁 Controlador
+   └─ app/Http/Controllers/TableController.php
+
+📁 Componente Livewire
+   └─ app/Livewire/ModulosActualesTable.php (1570 líneas)
+      - mount() → Inicialización
+      - actualizarDatos() → Lógica principal
+      - obtenerModuloActual() → Cálculo de módulo
+      - getTodosLosEspacios() → Procesamiento de espacios
+      - verificarClaseNoRealizada() → Detección automática
+      - calcularRangoDisponibilidad() → Espacios libres
+
+📁 Vistas Blade
+   └─ resources/views/layouts/table/index.blade.php
+      - Estructura HTML
+      - Reloj JavaScript
+      - Configuración de horarios
+   
+   └─ resources/views/livewire/modulos-actuales-table.blade.php
+      - Tabla de datos
+      - Paginación Alpine.js
+      - Columnas: Módulo, Espacio, Clase, Carrera, Asistencia, Capacidad, Status
+
+📁 Rutas
+   └─ routes/web.php
+      - GET /modulos-actuales → index
+      - GET /modulos-actuales/actualizar-datos → actualizarDatos
+
+═══════════════════════════════════════════════════════════════════════════
+FIN DEL DOCUMENTO
+═══════════════════════════════════════════════════════════════════════════

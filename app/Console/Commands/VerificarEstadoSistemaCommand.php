@@ -5,9 +5,12 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Espacio;
 use App\Models\Reserva;
+use App\Models\Tenant;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use App\Mail\InconsistenciaSistema;
 
 class VerificarEstadoSistemaCommand extends Command
@@ -36,91 +39,91 @@ class VerificarEstadoSistemaCommand extends Command
         
         if ($this->option('demo')) {
             $this->warn('🔧 MODO DEMO ACTIVADO - Simulando inconsistencias');
+            $this->processDemoMode();
+            return 0;
         }
-        
+
+        // Obtener todos los tenants
+        $tenants = Tenant::all();
+
+        if ($tenants->isEmpty()) {
+            $this->warn('No se encontraron tenants configurados.');
+            return 0;
+        }
+
+        foreach ($tenants as $tenant) {
+            $this->processTenant($tenant);
+        }
+
+        return 0;
+    }
+
+    protected function processDemoMode()
+    {
+        $this->newLine();
+
+    protected function processDemoMode()
+    {
         $this->newLine();
 
         // 1. Estado de espacios
         $this->info('📍 ESTADO DE ESPACIOS:');
-        if ($this->option('demo')) {
-            $this->line("   • Disponibles: 25 (DEMO)");
-            $this->line("   • Ocupados: 4 (DEMO)");
-            $this->line("   • En mantenimiento: 0 (DEMO)");
-            $this->line("   • Total: 29 (DEMO)");
-        } else {
-            $espaciosDisponibles = Espacio::where('estado', 'disponible')->count();
-            $espaciosOcupados = Espacio::where('estado', 'Ocupado')->count();
-            $espaciosMantenimiento = Espacio::where('estado', 'mantenimiento')->count();
-            $totalEspacios = Espacio::count();
+        $this->line("   • Disponibles: 25 (DEMO)");
+        $this->line("   • Ocupados: 4 (DEMO)");
+        $this->line("   • En mantenimiento: 0 (DEMO)");
+        $this->line("   • Total: 29 (DEMO)");
+        $this->newLine();
+
+        // 2. Estado de reservas
+        $this->info('📅 ESTADO DE RESERVAS:');
+        $this->line("   • Activas: 5 (DEMO)");
+        $this->line("   • Finalizadas: 15 (DEMO)");
+        $this->line("   • Hoy: 3 (DEMO)");
+        $this->line("   • Total: 20 (DEMO)");
+    }
+
+    protected function processTenant(Tenant $tenant)
+    {
+        $this->newLine();
+        $this->info("=== Verificando tenant: {$tenant->name} ({$tenant->domain}) ===");
+
+        try {
+            // Configurar conexión de tenant
+            Config::set('database.connections.tenant.database', $tenant->database);
+            DB::purge('tenant');
+
+            // 1. Estado de espacios
+            $this->info('📍 ESTADO DE ESPACIOS:');
+            $espaciosDisponibles = Espacio::on('tenant')->where('estado', 'disponible')->count();
+            $espaciosOcupados = Espacio::on('tenant')->where('estado', 'Ocupado')->count();
+            $espaciosMantenimiento = Espacio::on('tenant')->where('estado', 'mantenimiento')->count();
+            $totalEspacios = Espacio::on('tenant')->count();
 
             $this->line("   • Disponibles: {$espaciosDisponibles}");
             $this->line("   • Ocupados: {$espaciosOcupados}");
             $this->line("   • En mantenimiento: {$espaciosMantenimiento}");
             $this->line("   • Total: {$totalEspacios}");
-        }
-        $this->newLine();
+            $this->newLine();
 
-        // 2. Estado de reservas
-        $this->info('📅 ESTADO DE RESERVAS:');
-        if ($this->option('demo')) {
-            $this->line("   • Activas: 5 (DEMO)");
-            $this->line("   • Finalizadas: 15 (DEMO)");
-            $this->line("   • Hoy: 3 (DEMO)");
-            $this->line("   • Total: 20 (DEMO)");
-        } else {
-            $reservasActivas = Reserva::where('estado', 'activa')->count();
-            $reservasFinalizadas = Reserva::where('estado', 'finalizada')->count();
-            $reservasHoy = Reserva::whereDate('fecha_reserva', Carbon::today())->count();
-            $totalReservas = Reserva::count();
+            // 2. Estado de reservas
+            $this->info('📅 ESTADO DE RESERVAS:');
+            $reservasActivas = Reserva::on('tenant')->where('estado', 'activa')->count();
+            $reservasFinalizadas = Reserva::on('tenant')->where('estado', 'finalizada')->count();
+            $reservasHoy = Reserva::on('tenant')->whereDate('fecha_reserva', Carbon::today())->count();
+            $totalReservas = Reserva::on('tenant')->count();
 
             $this->line("   • Activas: {$reservasActivas}");
             $this->line("   • Finalizadas: {$reservasFinalizadas}");
             $this->line("   • Hoy: {$reservasHoy}");
             $this->line("   • Total: {$totalReservas}");
-        }
-        $this->newLine();
+            $this->newLine();
 
-        // 3. Detectar inconsistencias
-        $this->info('🔍 DETECCIÓN DE INCONSISTENCIAS:');
-        
-        if ($this->option('demo')) {
-            // Simular inconsistencias para modo demo
-            $espaciosOcupadosSinReserva = collect([
-                ['id_espacio' => 'TH-DEMO1', 'nombre_espacio' => 'Taller Demo 1', 'estado' => 'Ocupado'],
-                ['id_espacio' => 'TH-DEMO2', 'nombre_espacio' => 'Taller Demo 2', 'estado' => 'Ocupado']
-            ]);
+            // 3. Detectar inconsistencias
+            $this->info('🔍 DETECCIÓN DE INCONSISTENCIAS:');
             
-            $reservasActivasEnEspaciosDisponibles = collect([
-                [
-                    'id_reserva' => 'RDEMO001',
-                    'id_espacio' => 'TH-DEMO3',
-                    'run_profesor' => '12345678',
-                    'run_solicitante' => null,
-                    'fecha_reserva' => Carbon::now()->format('Y-m-d'),
-                    'hora' => '10:00:00',
-                    'espacio' => ['id_espacio' => 'TH-DEMO3', 'nombre_espacio' => 'Taller Demo 3']
-                ]
-            ]);
-            
-            $reservasAntiguas = collect([
-                [
-                    'id_reserva' => 'RDEMO002',
-                    'id_espacio' => 'TH-DEMO4',
-                    'run_profesor' => null,
-                    'run_solicitante' => 'SOL001',
-                    'fecha_reserva' => Carbon::yesterday()->format('Y-m-d'),
-                    'hora' => '14:00:00',
-                    'espacio' => ['id_espacio' => 'TH-DEMO4', 'nombre_espacio' => 'Taller Demo 4']
-                ]
-            ]);
-            
-            $this->warn("   ⚠️  [DEMO] Espacios ocupados sin reserva activa: {$espaciosOcupadosSinReserva->count()}");
-            $this->warn("   ⚠️  [DEMO] Reservas activas en espacios disponibles: {$reservasActivasEnEspaciosDisponibles->count()}");
-            $this->warn("   ⚠️  [DEMO] Reservas activas de días anteriores: {$reservasAntiguas->count()}");
-            
-        } else {
-            // Modo normal
-            $espaciosOcupadosSinReserva = Espacio::where('estado', 'Ocupado')
+            // Espacios ocupados sin reserva activa
+            $espaciosOcupadosSinReserva = Espacio::on('tenant')
+                ->where('estado', 'Ocupado')
                 ->whereNotIn('id_espacio', function($query) {
                     $query->select('id_espacio')
                           ->from('reservas')
@@ -138,7 +141,8 @@ class VerificarEstadoSistemaCommand extends Command
             }
 
             // Reservas activas en espacios disponibles
-            $reservasActivasEnEspaciosDisponibles = Reserva::where('estado', 'activa')
+            $reservasActivasEnEspaciosDisponibles = Reserva::on('tenant')
+                ->where('estado', 'activa')
                 ->whereHas('espacio', function($query) {
                     $query->where('estado', 'disponible');
                 })
@@ -156,7 +160,8 @@ class VerificarEstadoSistemaCommand extends Command
             }
 
             // Reservas activas antiguas (más de 24 horas)
-            $reservasAntiguas = Reserva::where('estado', 'activa')
+            $reservasAntiguas = Reserva::on('tenant')
+                ->where('estado', 'activa')
                 ->where('fecha_reserva', '<', Carbon::today())
                 ->get();
 
@@ -170,25 +175,28 @@ class VerificarEstadoSistemaCommand extends Command
             } else {
                 $this->info("   ✅ No hay reservas activas de días anteriores");
             }
+
+            // Enviar correo si hay inconsistencias
+            $this->enviarCorreoSiHayInconsistencias(
+                $tenant,
+                $espaciosOcupadosSinReserva,
+                $reservasActivasEnEspaciosDisponibles,
+                $reservasAntiguas
+            );
+        } catch (\Exception $e) {
+            $this->error("  Error procesando tenant {$tenant->name}: " . $e->getMessage());
+            Log::error("Error en VerificarEstadoSistemaCommand para tenant {$tenant->name}", [
+                'tenant' => $tenant->domain,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
         }
-
-        $this->newLine();
-        $this->info('=== FIN DE VERIFICACIÓN ===');
-
-        // Enviar correo si hay inconsistencias
-        $this->enviarCorreoSiHayInconsistencias(
-            $espaciosOcupadosSinReserva,
-            $reservasActivasEnEspaciosDisponibles,
-            $reservasAntiguas
-        );
-
-        return 0;
     }
 
     /**
      * Enviar correo de alerta si hay inconsistencias
      */
-    private function enviarCorreoSiHayInconsistencias($espaciosOcupadosSinReserva, $reservasActivasEnEspaciosDisponibles, $reservasAntiguas)
+    private function enviarCorreoSiHayInconsistencias(Tenant $tenant, $espaciosOcupadosSinReserva, $reservasActivasEnEspaciosDisponibles, $reservasAntiguas)
     {
         $hayInconsistencias = $espaciosOcupadosSinReserva->count() > 0 || 
                              $reservasActivasEnEspaciosDisponibles->count() > 0 || 

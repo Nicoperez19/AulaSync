@@ -1,0 +1,454 @@
+═══════════════════════════════════════════════════════════════════════════
+                    AULA SYNC - DIAGRAMA DE RUTAS
+═══════════════════════════════════════════════════════════════════════════
+
+📌 INFORMACIÓN DE ENCRIPTACIÓN:
+   - Algoritmo: bcrypt
+   - Rounds: 10 (configurable vía BCRYPT_ROUNDS)
+   - Driver: Laravel Hash (config/hashing.php)
+
+═══════════════════════════════════════════════════════════════════════════
+
+📂 RUTAS WEB (web.php)
+═══════════════════════════════════════════════════════════════════════════
+
+┌─ 🌐 PÚBLICAS (sin autenticación)
+│
+├─ GET  /                                          → Vista de login
+├─ GET  /sedes/selection                           → Selector de sede (multi-tenant)
+├─ GET  /sedes/redirect/{sede}                     → Redirige a subdominio de sede
+├─ GET  /modulos-actuales                          → Pantalla pública de módulos actuales
+└─ GET  /modulos-actuales/actualizar-datos         → API de datos de módulos en vivo
+
+┌─ 🔐 AUTENTICACIÓN (auth.php - Laravel Breeze)
+│
+├─ GET  /login                                     → Formulario de login
+├─ POST /login                                     → Procesar login
+├─ POST /logout                                    → Cerrar sesión
+├─ GET  /register                                  → Registro de usuario
+├─ GET  /forgot-password                           → Recuperar contraseña
+└─ POST /reset-password                            → Resetear contraseña
+
+┌─ 🏢 INICIALIZACIÓN DE TENANT (sin autenticación)
+│
+├─ GET  /tenant/initialization                     → Wizard de inicialización
+├─ POST /tenant/initialization/verify-password     → Validar contraseña maestra
+├─ POST /tenant/initialization/store-admin         → Crear admin inicial
+├─ POST /tenant/initialization/store-logo          → Subir logo de sede
+├─ POST /tenant/initialization/upload-bulk         → Subir datos masivos
+├─ POST /tenant/initialization/process-bulk        → Procesar carga Excel
+├─ POST /tenant/initialization/store-periods       → Configurar periodos académicos
+├─ POST /tenant/initialization/complete            → Finalizar wizard
+└─ GET  /tenant/initialization/success             → Pantalla de éxito
+
+┌─ 📊 DASHBOARD (auth + permission:dashboard)
+│
+├─ GET  /dashboard                                 → Panel principal con estadísticas
+├─ GET  /dashboard/widget-data                     → Datos de widgets (AJAX)
+├─ GET  /dashboard/horarios-semana                 → Horarios de la semana
+├─ GET  /dashboard/utilizacion-data                → Gráfico de utilización
+├─ GET  /dashboard/accesos-data                    → Estadísticas de accesos
+├─ GET  /dashboard/clases-no-realizadas-data       → Clases no realizadas
+└─ GET  /dashboard/graficos-rango                  → Gráficos por rango de fechas
+
+┌─ 👥 USUARIOS (auth + role:Administrador)
+│
+├─ GET    /user/user_index                         → Listado de usuarios
+├─ POST   /user/user_store                         → Crear usuario
+├─ GET    /user/user_edit/{run}                    → Editar usuario
+├─ PUT    /user/user_update/{run}                  → Actualizar usuario
+├─ DELETE /user/user_delete/{run}                  → Eliminar usuario
+├─ POST   /user/qr-personal/{run}/generar          → Generar QR personal
+├─ GET    /user/qr-personal/{run}/descargar        → Descargar QR personal
+└─ DELETE /user/qr-personal/{run}/anular           → Anular QR personal
+
+┌─ 🎭 ROLES Y PERMISOS (auth + permissions)
+│
+├─ GET    /rol/rol_index                           → Listado de roles
+├─ POST   /rol/rol_store                           → Crear rol
+├─ PUT    /rol/rol_update/{id}                     → Actualizar rol
+├─ DELETE /rol/rol_delete/{id}                     → Eliminar rol
+├─ GET    /permission/permission_index             → Listado de permisos
+├─ POST   /permission/permission_store             → Crear permiso
+└─ DELETE /permission/permission_delete/{id}       → Eliminar permiso
+
+┌─ 📚 MANTENEDORES ACADÉMICOS (auth + permissions específicos)
+│
+├─ GET    /universities                            → Universidades
+├─ GET    /sedes                                   → Sedes universitarias
+├─ GET    /campus                                  → Campus
+├─ GET    /faculties                               → Facultades
+├─ GET    /academic_areas                          → Áreas académicas
+├─ GET    /careers                                 → Carreras
+├─ GET    /professors                              → Profesores
+├─ GET    /asignaturas                             → Asignaturas
+├─ GET    /jefes-carrera                           → Jefes de carrera
+├─ GET    /asistentes-academicos                   → Asistentes académicos
+├─ GET    /configuracion                           → Configuración general
+└─ GET    /visitantes                              → Gestión de visitantes
+
+┌─ 🏗️  INFRAESTRUCTURA (auth + permissions)
+│
+├─ GET    /floors                                  → Pisos por facultad
+├─ GET    /spaces                                  → Espacios/Salas
+├─ GET    /spaces/{id}/download-qr                 → Descargar QR de sala
+├─ GET    /spaces/download-all-qr                  → Descargar todos los QR
+├─ GET    /mapas                                   → Planos digitales
+├─ GET    /mapas/add                               → Crear plano
+├─ GET    /mapas/{id}/edit                         → Editar plano
+└─ GET    /plano-digital                           → Visor de plano digital
+
+┌─ 📅 HORARIOS Y PLANIFICACIÓN (auth + permissions)
+│
+├─ GET  /horarios/horarios_index                   → Listado de horarios por profesor
+├─ GET  /horarios/{run}                            → Horario específico de profesor
+├─ GET  /horarios/{run}/export-pdf                 → Exportar horario a PDF
+├─ GET  /spacetime/spacetime_index                 → Horarios por espacio
+└─ GET  /espacios/{id}/export-pdf                  → Exportar horario de espacio a PDF
+
+┌─ 📋 RESERVAS (auth + permission:mantenedor de reservas)
+│
+├─ GET    /reservas                                → Listado de reservas
+├─ GET    /reservas/create                         → Crear reserva
+├─ POST   /reservas                                → Guardar reserva
+├─ GET    /reservas/{id}/edit                      → Editar reserva
+├─ PUT    /reservas/{id}                           → Actualizar reserva
+└─ DELETE /reservas/{id}                           → Eliminar reserva
+
+┌─ 📊 CLASES NO REALIZADAS (auth + permission:reportes)
+│
+├─ GET  /clases-no-realizadas                      → Listado de clases no realizadas
+├─ GET  /clases-no-realizadas/export-excel         → Exportar a Excel (filtrado)
+└─ GET  /clases-no-realizadas/export-all-excel     → Exportar todo a Excel
+
+┌─ 🩺 LICENCIAS Y RECUPERACIONES (auth + permissions)
+│
+├─ GET  /ausencias-profesores                      → Licencias de profesores
+└─ GET  /recuperacion-clases                       → Clases de recuperación
+
+┌─ 📆 DÍAS FERIADOS (auth + permission:mantenedor de feriados)
+│
+└─ GET  /dias-feriados                             → Gestión de días feriados
+
+┌─ 🎓 CLASES TEMPORALES (auth + role:Administrador|Supervisor)
+│
+├─ GET    /clases-temporales                       → Profesores colaboradores
+├─ GET    /clases-temporales/create                → Crear clase temporal
+├─ POST   /clases-temporales                       → Guardar clase temporal
+├─ GET    /clases-temporales/{id}/edit             → Editar clase temporal
+├─ PUT    /clases-temporales/{id}                  → Actualizar clase temporal
+└─ DELETE /clases-temporales/{id}                  → Eliminar clase temporal
+
+┌─ 📧 CORREOS MASIVOS (auth + role:Administrador|Supervisor)
+│
+└─ GET  /correos-masivos                           → Gestor de correos masivos (Livewire)
+
+┌─ 📤 CARGA DE DATOS (auth + permission:mantenedor de carga de datos)
+│
+├─ GET    /data                                    → Historial de cargas masivas
+├─ POST   /data_loads/upload                       → Subir archivo Excel
+├─ GET    /data/detalle/{id}                       → Ver detalle de carga
+├─ GET    /data/download/{id}                      → Descargar archivo original
+└─ DELETE /data/{id}                               → Eliminar carga
+
+┌─ 📈 REPORTES (auth + permission:reportes)
+│
+├─ GET  /reportes/tipo-espacio                     → Reporte por tipo de espacio
+├─ GET  /reportes/tipo-espacio/export/{format}     → Exportar (excel/pdf)
+├─ GET  /reportes/espacios                         → Reporte de espacios
+├─ GET  /reportes/accesos                          → Reporte de accesos
+├─ GET  /reportes/accesos/export/{format}          → Exportar accesos
+└─ GET  /reportes/salas-estudio                    → Reporte de salas de estudio
+
+┌─ ⚡ ACCIONES RÁPIDAS (auth)
+│
+├─ GET  /quick-actions                             → Panel de acciones rápidas
+├─ GET  /quick-actions/crear-reserva               → Vista crear reserva rápida
+├─ GET  /quick-actions/gestionar-reservas          → Vista gestionar reservas
+├─ GET  /quick-actions/gestionar-espacios          → Vista gestionar espacios
+├─ POST /quick-actions/api/crear-reserva           → API crear reserva
+├─ PUT  /quick-actions/api/espacio/{id}/estado     → Cambiar estado de espacio
+└─ PUT  /quick-actions/api/reserva/{id}/estado     → Cambiar estado de reserva
+
+┌─ 👤 PERFIL DE USUARIO (auth)
+│
+├─ GET   /profile                                  → Ver perfil
+└─ PATCH /profile                                  → Actualizar perfil
+
+┌─ 🧪 TESTING (desarrollo)
+│
+├─ GET  /test/plantillas-pdf                       → Probar plantillas PDF
+├─ GET  /test/plantillas-pdf/preview/{id}          → Vista previa PDF
+└─ GET  /test/plantillas-pdf/generar/{id}          → Generar PDF
+
+═══════════════════════════════════════════════════════════════════════════
+
+📂 RUTAS API (api.php)
+═══════════════════════════════════════════════════════════════════════════
+
+┌─ ✅ ASISTENCIA - Sistema Estándar
+│
+├─ POST /api/attendance                            → Registrar asistencia de estudiante
+└─ GET  /api/attendance/reservation/{id}           → Listar asistencias de una reserva
+
+┌─ 📱 ASISTENCIA QR - Alumnos
+│
+├─ POST /api/student-attendance/entrada            → Marcar entrada de alumno (QR)
+├─ POST /api/student-attendance/salida             → Marcar salida de alumno (QR)
+├─ POST /api/student-attendance/toggle             → Entrada/Salida automática
+├─ GET  /api/student-attendance/estado/{rut}       → Verificar estado de asistencia
+├─ GET  /api/student-attendance/estado/{rut}/{sala} → Estado en sala específica
+├─ GET  /api/student-attendance/historial/{rut}    → Historial de asistencias
+└─ GET  /api/student-attendance/espacio/{id}/presentes → Alumnos presentes
+
+┌─ 🏫 RESERVAS - Profesores
+│
+├─ GET  /api/verificar-espacio/{userId}/{espacioId} → Verificar espacio asignado
+├─ POST /api/registrar-uso-espacio                 → Profesor inicia clase
+├─ POST /api/registrar-entrada-clase               → Alias de registrar-uso-espacio
+├─ POST /api/registrar-salida-clase                → Profesor finaliza clase
+├─ POST /api/registrar-reserva-espontanea          → Crear reserva espontánea
+└─ GET  /api/reserva-activa/{id}                   → Obtener datos de reserva activa
+
+┌─ 📅 PLANIFICACIÓN SEMANAL
+│
+├─ GET  /api/programacion-semanal                  → Planificación de la semana
+├─ GET  /api/programacion-semanal/detalle/{id}     → Detalle de planificación
+└─ GET  /api/programacion-semanal/por-espacio/{id} → Planificación por sala
+
+┌─ 🎓 CLASES TEMPORALES (Profesores Colaboradores)
+│
+├─ GET  /api/clases-temporales/horarios-ocupados   → Horarios ya ocupados
+└─ POST /api/clases-temporales/salas-disponibles   → Salas disponibles por horario
+
+┌─ 🧑‍🏫 USUARIOS Y PROFESORES
+│
+├─ GET  /api/user/{run}                            → Obtener datos de usuario por RUT
+└─ GET  /api/profesor/{run}                        → Obtener datos de profesor
+
+┌─ 🏗️  ESPACIOS Y ESTRUCTURA
+│
+├─ GET  /api/espacio/{id}/modulos-disponibles      → Módulos disponibles de espacio
+├─ GET  /api/espacios-disponibles                  → Espacios disponibles
+├─ GET  /api/pisos/{facultadId}                    → Pisos de una facultad
+├─ GET  /api/espacios-por-piso/{pisoId}            → Espacios de un piso
+├─ GET  /api/facultades/{universidadId}            → Facultades de universidad
+└─ GET  /api/sedes/{universidadId}                 → Sedes de universidad
+9
+┌─ 🗺️  PLANO DIGITAL
+│
+├─ GET  /api/plano/{id}/data                       → Datos del plano digital
+├─ GET  /api/plano/{id}/bloques                    → Bloques del plano
+└─ GET  /api/plano/{id}/modulo-actual              → Módulo actual en tiempo real
+
+┌─ 🚫 SALA DE ESTUDIO - Vetos
+│
+├─ GET  /api/sala-estudio/vetos                    → Listar vetos
+├─ POST /api/sala-estudio/vetos                    → Crear veto
+├─ GET  /api/sala-estudio/vetos/{id}               → Ver detalle de veto
+└─ GET  /api/sala-estudio/vetos/export             → Exportar vetos a Excel
+
+┌─ 🔍 BÚSQUEDA Y AUTOCOMPLETADO
+│
+├─ GET  /api/usuarios/autocomplete                 → Buscar usuarios por email
+├─ GET  /api/quick-actions/buscar-personas         → Buscar personas (profesores/solicitantes)
+└─ GET  /api/quick-actions/buscar-asignaturas      → Buscar asignaturas
+
+┌─ 🔐 UTILIDADES
+│
+└─ GET  /api/csrf-token                            → Obtener token CSRF
+
+═══════════════════════════════════════════════════════════════════════════
+
+📂 RUTAS DE BROADCASTING (channels.php)
+═══════════════════════════════════════════════════════════════════════════
+
+┌─ 🔴 CANALES PRIVADOS (requieren autenticación)
+│
+├─ CHANNEL room.{roomId}                           → Canal de asistencia por sala
+│  └─ EVENT attendance.registered                  → Evento: Asistencia registrada
+│
+└─ CHANNEL App.Models.User.{id}                    → Canal privado de usuario
+   └─ Notificaciones personales
+
+═══════════════════════════════════════════════════════════════════════════
+
+📊 USO DE LARAVEL REVERB
+═══════════════════════════════════════════════════════════════════════════
+
+🎯 PROPÓSITO:
+   - Broadcasting en tiempo real de eventos (WebSockets)
+   - Actualización instantánea de contadores de asistencia
+   - Notificaciones push a usuarios específicos
+
+📍 VISTAS INVOLUCRADAS:
+   ✓ attendance-monitor.blade.php (componente principal)
+     └─ Escucha canal: room.{roomId}
+     └─ Evento: attendance.registered
+     └─ Actualiza en tiempo real: contador de ocupación, lista de asistentes
+
+   ✓ plano.show.blade.php (plano digital)
+     └─ Muestra estado de salas en tiempo real
+     └─ Actualiza ocupación de espacios
+
+   ✓ dashboard.blade.php
+     └─ Recibe notificaciones de clases no realizadas
+     └─ Actualiza estadísticas en vivo
+
+🔧 CONFIGURACIÓN:
+   - Driver: reverb (config/broadcasting.php)
+   - Puerto: 8080 (REVERB_PORT)
+   - Cliente: Laravel Echo + Pusher JS
+   - Servidor: php artisan reverb:start
+
+📡 EVENTOS QUE SE TRANSMITEN:
+   1. AttendanceRegistered → Al registrar asistencia QR
+   2. Notificaciones de sistema (clases no realizadas, licencias)
+   3. Cambios de estado de espacios
+
+═══════════════════════════════════════════════════════════════════════════
+
+📊 USO DE MAATWEBSITE/EXCEL
+═══════════════════════════════════════════════════════════════════════════
+
+📥 IMPORTACIÓN:
+   ✓ Carga masiva de datos (DataLoadController::upload)
+     - Profesores, Asignaturas, Horarios, Planificaciones
+     - Validación de sede por tenant
+     - Limpieza previa de datos del período
+     - Creación automática de espacios sin piso
+     - Logs detallados del proceso
+
+📤 EXPORTACIÓN (clases en app/Exports/):
+   ✓ ClasesNoRealizadasExport → Clases no realizadas a Excel
+   ✓ AccesosExport → Reporte de accesos/reservas
+   ✓ VetosExport → Vetos de sala de estudio
+   ✓ HistoricoOcupacionExport → Histórico de ocupación
+   ✓ TodasClasesExport → Todas las clases del período
+
+🎨 CARACTERÍSTICAS:
+   - Estilos personalizados (colores, bordes, alineación)
+   - Encabezados formateados
+   - Anchos de columna automáticos
+   - Múltiples hojas (sheets)
+   - Formatos: XLSX, CSV
+
+═══════════════════════════════════════════════════════════════════════════
+
+🔄 CARGA MASIVA - FUNCIONAMIENTO DETALLADO
+═══════════════════════════════════════════════════════════════════════════
+
+📋 PROCESO PASO A PASO:
+
+1️⃣  SUBIDA DE ARCHIVO (POST /data_loads/upload)
+    - Validación: XLSX/XLS/CSV, máx 10MB
+    - Almacenamiento: storage/datos_subidos/
+    - Nombre: YYYY-MM-DD_HHmmss_{RUN_usuario}_{random}.xlsx
+
+2️⃣  LIMPIEZA PREVIA (antes de procesar)
+    - Elimina planificaciones del período seleccionado
+    - Preserva espacios del seeder (con piso_id)
+    - Elimina solo espacios sin piso (cargas anteriores)
+    - Identifica facultad de la sede para asociaciones
+
+3️⃣  EXTRACCIÓN DE ESPACIOS (método extraerEspaciosDelArchivo)
+    - Lee columna "Espacio" del Excel
+    - Crea espacios únicos sin piso_id
+    - Genera QR para cada espacio
+    - Asigna capacidad por defecto (40 puestos)
+    - Estado inicial: "disponible"
+
+4️⃣  PROCESAMIENTO DE DATOS (fila por fila)
+    Para cada fila del Excel:
+    
+    a) FILTRO POR SEDE
+       - Compara columna "Sede" con sede del tenant
+       - Salta filas que no coinciden
+       
+    b) CREACIÓN/ACTUALIZACIÓN DE PROFESOR
+       - RUN, nombre, email
+       - Asocia a sede actual (sede_id)
+       - Crea si no existe, actualiza si existe
+       
+    c) CREACIÓN/ACTUALIZACIÓN DE CARRERA
+       - Si no existe, crea con área académica genérica
+       - Asocia a facultad de la sede
+       
+    d) CREACIÓN/ACTUALIZACIÓN DE ASIGNATURA
+       - Código, nombre, sección
+       - Asocia a profesor y carrera
+       - Almacena período académico
+       
+    e) CREACIÓN DE HORARIO
+       - Un horario por profesor-período
+       - ID único: run_profesor + período
+       
+    f) PROCESAMIENTO DE MÓDULOS
+       - Parsea horarios del formato: "L 08:00 - 08:50, M 10:00 - 10:50"
+       - Crea módulos si no existen
+       - Días: L=1, M=2, W=3, J=4, V=5, S=6
+       
+    g) CREACIÓN DE PLANIFICACIONES
+       - Relaciona: asignatura + módulo + espacio + horario
+       - Valida que el espacio exista
+       - Registra cantidad de inscritos
+
+5️⃣  MANEJO DE ERRORES
+    - Captura errores por fila sin detener proceso
+    - Log detallado de cada error
+    - Continúa con siguiente fila
+    - Almacena array de errores para reporte
+
+6️⃣  FINALIZACIÓN
+    - Actualiza DataLoad con total de registros
+    - Estado: "completado" o "error"
+    - Genera reporte de éxito/errores
+    - Retorna JSON con estadísticas
+
+📊 FORMATO DEL EXCEL REQUERIDO (columnas):
+    - Sede (nombre de sede)
+    - RUN Profesor
+    - Nombre Profesor
+    - Email Profesor
+    - Código Asignatura
+    - Nombre Asignatura
+    - Sección
+    - Carrera
+    - Espacio (código de sala)
+    - Horario (formato: "L 08:00 - 08:50, M 10:00 - 10:50")
+    - Inscritos (cantidad de alumnos)
+
+💾 MODELOS AFECTADOS:
+    - Profesor
+    - Carrera (creación automática si no existe)
+    - Asignatura
+    - Horario
+    - Modulo (creación si no existe)
+    - Espacio (creación masiva previa)
+    - Planificacion_Asignatura
+
+═══════════════════════════════════════════════════════════════════════════
+
+🔐 ENCRIPTACIÓN DE CONTRASEÑAS
+═══════════════════════════════════════════════════════════════════════════
+
+📍 ALGORITMO: bcrypt
+📍 CONFIGURACIÓN: config/hashing.php
+📍 DRIVER: bcrypt (default de Laravel)
+📍 ROUNDS: 10 (cost factor)
+   - Ajustable vía variable de entorno: BCRYPT_ROUNDS
+   - Mayor rounds = más seguro pero más lento
+   - Recomendado: 10-12 para producción
+
+📍 IMPLEMENTACIÓN:
+   - Cast automático en User.php: 'password' => 'hashed'
+   - Usa Hash::make() o bcrypt() helper
+   - Verificación con Hash::check($plain, $hashed)
+
+📍 CARACTERÍSTICAS:
+   - Salt aleatorio incorporado
+   - Resistente a ataques rainbow table
+   - No reversible (one-way hash)
+   - Compatibilidad: password_hash() de PHP
+
+═══════════════════════════════════════════════════════════════════════════
