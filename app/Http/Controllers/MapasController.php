@@ -169,9 +169,19 @@ public function edit($id)
             $fileName = "{$nombreMapaSlug}.{$extension}";
             $path = $file->storeAs('mapas_subidos', $fileName, 'public');
 
+            Log::info('Archivo guardado en:', ['path' => $path, 'fileName' => $fileName]);
+
             // Generar ID único basado en slug + timestamp para evitar duplicados
             $slugBase = Str::slug($request->nombre_mapa);
             $idMapa = $slugBase . '-' . time();
+            
+            Log::info('Datos para crear mapa:', [
+                'id_mapa' => $idMapa,
+                'nombre_mapa' => $request->nombre_mapa,
+                'ruta_mapa' => $path,
+                'ruta_canvas' => $path,
+                'piso_id' => $request->piso_id
+            ]);
             
             // Crear mapa sin global scopes para evitar conflictos
             $mapa = Mapa::withoutGlobalScopes()->create([
@@ -182,7 +192,11 @@ public function edit($id)
                 'piso_id' => $request->piso_id
             ]);
             
-            Log::info('Mapa creado exitosamente:', ['id_mapa' => $mapa->id_mapa]);
+            Log::info('Mapa creado exitosamente:', [
+                'id_mapa' => $mapa->id_mapa,
+                'ruta_mapa_guardada' => $mapa->ruta_mapa,
+                'ruta_canvas_guardada' => $mapa->ruta_canvas
+            ]);
 
             Log::info('Mapa creado exitosamente:', ['id_mapa' => $mapa->id_mapa]);
 
