@@ -62,10 +62,6 @@ class VerificarEstadoSistemaCommand extends Command
     {
         $this->newLine();
 
-    protected function processDemoMode()
-    {
-        $this->newLine();
-
         // 1. Estado de espacios
         $this->info('📍 ESTADO DE ESPACIOS:');
         $this->line("   • Disponibles: 25 (DEMO)");
