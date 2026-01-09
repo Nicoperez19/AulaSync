@@ -177,12 +177,24 @@ public function edit($id)
                 'disk_root' => Storage::disk('public')->path('')
             ]);
             
-            // Usar Storage::disk() explícitamente
+            // Usar Storage::disk() con put en lugar de putFileAs
             try {
-                $path = Storage::disk('public')->putFileAs('mapas_subidos', $file, $fileName);
-                Log::info('putFileAs exitoso:', ['path' => $path]);
+                // Obtener contenido del archivo
+                $content = file_get_contents($file->getRealPath());
+                $filePath = 'mapas_subidos/' . $fileName;
+                
+                Log::info('Guardando con put:', [
+                    'filePath' => $filePath,
+                    'content_size' => strlen($content),
+                    'real_path' => $file->getRealPath()
+                ]);
+                
+                $result = Storage::disk('public')->put($filePath, $content);
+                
+                Log::info('put() exitoso:', ['result' => $result, 'filePath' => $filePath]);
+                $path = $result ? $filePath : false;
             } catch (\Exception $e) {
-                Log::error('Error en putFileAs:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+                Log::error('Error en guardar archivo:', ['error' => $e->getMessage()]);
                 $path = false;
             }
 
