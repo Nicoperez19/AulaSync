@@ -173,11 +173,18 @@ public function edit($id)
                 'isValid' => $file->isValid(),
                 'size' => $file->getSize(),
                 'mimeType' => $file->getMimeType(),
-                'storage_path' => storage_path('app/public/mapas_subidos')
+                'storage_path' => storage_path('app/public/mapas_subidos'),
+                'disk_root' => Storage::disk('public')->path('')
             ]);
             
             // Usar Storage::disk() explícitamente
-            $path = Storage::disk('public')->putFileAs('mapas_subidos', $file, $fileName);
+            try {
+                $path = Storage::disk('public')->putFileAs('mapas_subidos', $file, $fileName);
+                Log::info('putFileAs exitoso:', ['path' => $path]);
+            } catch (\Exception $e) {
+                Log::error('Error en putFileAs:', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+                $path = false;
+            }
 
             Log::info('Archivo guardado en:', ['path' => $path, 'fileName' => $fileName]);
 
