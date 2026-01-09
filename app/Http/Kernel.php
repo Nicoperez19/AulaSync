@@ -45,6 +45,11 @@ class Kernel extends HttpKernel
 
         'api' => [
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            // Necesario para que endpoints /api respeten tenant por sesión/subdominio (Plano Digital, etc.)
+            \App\Http\Middleware\EncryptCookies::class,
+            \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,
+            \Illuminate\Session\Middleware\StartSession::class,
+            \App\Http\Middleware\TenantMiddleware::class,
             \App\Http\Middleware\ThrottleRequestsCustom::class.':120,1', // 120 requests por minuto
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
             \App\Http\Middleware\HandleCacheErrors::class,
