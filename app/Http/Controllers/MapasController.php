@@ -176,7 +176,8 @@ public function edit($id)
                 'storage_path' => storage_path('app/public/mapas_subidos')
             ]);
             
-            $path = $file->storeAs('mapas_subidos', $fileName, 'public');
+            // Usar Storage::disk() explícitamente
+            $path = Storage::disk('public')->putFileAs('mapas_subidos', $file, $fileName);
 
             Log::info('Archivo guardado en:', ['path' => $path, 'fileName' => $fileName]);
 
