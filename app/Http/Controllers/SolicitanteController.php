@@ -181,7 +181,7 @@ class SolicitanteController extends Controller
             }
 
             // Verificar que el espacio existe y está disponible (búsqueda en BD tenant)
-            $espacio = Espacio::find($request->id_espacio);
+            $espacio = Espacio::on('tenant')->find($request->id_espacio);
             if (!$espacio) {
                 DB::rollBack();
                 return response()->json([
