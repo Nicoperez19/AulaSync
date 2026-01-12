@@ -225,15 +225,16 @@ class SolicitanteController extends Controller
 
             $codigoDia = $codigosDias[$diaActual] ?? 'LU';
 
-            // Determinar módulo actual
+            // Determinar módulo actual - pero permitir reservar incluso sin módulo actual definido
             $moduloActual = $this->determinarModuloActual($horaActual, $diaActual);
 
+            // Si no hay módulo actual, permitir usar el módulo 1 como default
             if (!$moduloActual) {
-                DB::rollBack();
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'No hay módulo actual disponible. El horario académico es de 08:10 a 23:00.'
-                ], 400);
+                Log::warning('No se encontró módulo actual, usando módulo 1 como default', [
+                    'horaActual' => $horaActual,
+                    'diaActual' => $diaActual
+                ]);
+                $moduloActual = 1;
             }
 
             // Verificar módulos consecutivos disponibles (incluyendo reservas activas)
