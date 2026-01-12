@@ -154,11 +154,11 @@ class SolicitanteController extends Controller
             if (!$tenantId) {
                 // Si no hay tenant, intentar obtenerlo del dominio
                 $host = $request->getHost();
-                $tenant = \App\Models\Tenant::where('domain', $host)->orWhere('domain', 'LIKE', '%' . $host . '%')->first();
+                $tenant = Tenant::where('domain', $host)->orWhere('domain', 'LIKE', '%' . $host . '%')->first();
                 
                 if ($tenant) {
-                    \Illuminate\Support\Facades\Config::set('database.connections.tenant.database', $tenant->database);
-                    \Illuminate\Support\Facades\DB::purge('tenant');
+                    Config::set('database.connections.tenant.database', $tenant->database);
+                    DB::purge('tenant');
                     Log::info('Tenant configurado desde dominio:', ['tenant' => $tenant->name, 'database' => $tenant->database]);
                 } else {
                     Log::error('No se pudo determinar el tenant desde el request');
@@ -169,18 +169,18 @@ class SolicitanteController extends Controller
                 }
             }
 
-            // Validar datos requeridos
+            // Validar datos básicos (sin usar exists: para evitar búsqueda en BD central)
             $request->validate([
-                'run_solicitante' => 'required|string|exists:solicitantes,run_solicitante',
+                'run_solicitante' => 'required|string',
                 'id_espacio' => 'required|string',
-                'modulos' => 'required|integer|min:1|max:2' // Máximo 2 módulos para solicitantes
+                'modulos' => 'required|integer|min:1|max:2'
             ]);
 
             $ahora = Carbon::now();
             $horaActual = $ahora->format('H:i:s');
             $fechaActual = $ahora->toDateString();
 
-            // Verificar que el solicitante existe y está activo
+            // Verificar que el solicitante existe y está activo (búsqueda en BD central)
             $solicitante = Solicitante::where('run_solicitante', $request->run_solicitante)
                 ->where('activo', true)
                 ->first();
@@ -193,7 +193,7 @@ class SolicitanteController extends Controller
                 ], 404);
             }
 
-            // Verificar que el espacio existe y está disponible (usando conexión tenant)
+            // Verificar que el espacio existe y está disponible (búsqueda en BD tenant)
             $espacio = Espacio::find($request->id_espacio);
             if (!$espacio) {
                 DB::rollBack();
