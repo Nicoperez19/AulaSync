@@ -567,6 +567,11 @@ class SolicitanteController extends Controller
     {
         $tenantId = tenant_id() ?? null;
         
+        Log::info('establecerContextoTenant - Verificando tenant', [
+            'tenantId' => $tenantId,
+            'host' => request()->getHost()
+        ]);
+        
         if (!$tenantId) {
             $host = request()->getHost();
             $tenant = Tenant::where('domain', $host)
@@ -581,7 +586,13 @@ class SolicitanteController extends Controller
                     'database' => $tenant->database,
                     'host' => $host
                 ]);
+            } else {
+                Log::warning('No se pudo encontrar tenant para dominio', [
+                    'host' => $host
+                ]);
             }
+        } else {
+            Log::info('Tenant ya estaba establecido', ['tenantId' => $tenantId]);
         }
     }
 }
