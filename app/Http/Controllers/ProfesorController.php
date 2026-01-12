@@ -9,9 +9,12 @@ use App\Models\Carrera;
 use App\Models\Reserva;
 use App\Models\Asignatura;
 use App\Models\AreaAcademica;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 use App\Models\Espacio;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 
 class ProfesorController extends Controller
 {
@@ -37,6 +40,9 @@ class ProfesorController extends Controller
     public function crearReservaProfesor(Request $request)
     {
         try {
+            // Establecer contexto del tenant desde el request
+            $this->establecerContextoTenant();
+
             $request->validate([
                 'run_profesor' => 'required|string',
                 'id_espacio' => 'required|string'
@@ -386,7 +392,8 @@ class ProfesorController extends Controller
      */
     public function getAsignaturasProfesor($run)
     {
-        try {
+        try {            // Establecer contexto del tenant desde el request
+            $this->establecerContextoTenant();
             Log::info('📚 Buscando asignaturas para profesor: ' . $run);
 
             // Buscar profesor con eager loading de asignaturas
@@ -427,6 +434,31 @@ class ProfesorController extends Controller
                 'mensaje' => 'Error al obtener asignaturas: ' . $e->getMessage(),
                 'asignaturas' => []
             ], 500);
+        }
+    }
+
+    /**
+     * Establece el contexto del tenant desde el request
+     */
+    private function establecerContextoTenant()
+    {
+        $tenantId = tenant_id() ?? null;
+        
+        if (!$tenantId) {
+            $host = request()->getHost();
+            $tenant = Tenant::where('domain', $host)
+                ->orWhere('domain', 'LIKE', '%' . $host . '%')
+                ->first();
+            
+            if ($tenant) {
+                Config::set('database.connections.tenant.database', $tenant->database);
+                DB::purge('tenant');
+                Log::info('Tenant establecido en ProfesorController', [
+                    'tenant' => $tenant->name,
+                    'database' => $tenant->database,
+                    'host' => $host
+                ]);
+            }
         }
     }
 }

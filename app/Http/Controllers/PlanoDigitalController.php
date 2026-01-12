@@ -950,6 +950,9 @@ class PlanoDigitalController extends Controller
     public function registrarAsistenciaClase(Request $request)
     {
         try {
+            // Establecer contexto del tenant desde el request
+            $this->establecerContextoTenant();
+
             $request->validate([
                 'id_reserva' => 'required|integer',
                 'hubo_asistentes' => 'required|boolean'
@@ -1007,6 +1010,9 @@ class PlanoDigitalController extends Controller
     public function verificarEstadoEspacioYReserva(Request $request)
     {
         try {
+            // Establecer contexto del tenant desde el request
+            $this->establecerContextoTenant();
+
             // Registro de diagnóstico: confirmar que la función fue invocada y mostrar payload (temporal)
             \Log::info('verificarEstadoEspacioYReserva called', ['payload' => $request->all()]);
             $request->validate([
@@ -2312,6 +2318,9 @@ class PlanoDigitalController extends Controller
     public function obtenerInfoEspacioParaDesocupar(Request $request)
     {
         try {
+            // Establecer contexto del tenant desde el request
+            $this->establecerContextoTenant();
+
             $request->validate([
                 'id_espacio' => 'required|string'
             ]);
