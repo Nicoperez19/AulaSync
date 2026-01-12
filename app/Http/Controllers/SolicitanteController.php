@@ -146,13 +146,15 @@ class SolicitanteController extends Controller
      */
     public function crearReservaSolicitante(Request $request)
     {
-        DB::beginTransaction();
         try {
             Log::info('=== INICIO CREAR RESERVA SOLICITANTE ===');
             Log::info('Datos recibidos:', $request->all());
 
-            // Establecer contexto del tenant desde el request
+            // Establecer contexto del tenant desde el request PRIMERO
             $this->establecerContextoTenant();
+
+            // Iniciar transacción DESPUÉS de establecer contexto
+            DB::beginTransaction();
 
             // Validar datos básicos (sin usar exists: para evitar búsqueda en BD central)
             $request->validate([
