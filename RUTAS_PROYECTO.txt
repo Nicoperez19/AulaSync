@@ -234,7 +234,7 @@
 ├─ GET  /api/espacios-por-piso/{pisoId}            → Espacios de un piso
 ├─ GET  /api/facultades/{universidadId}            → Facultades de universidad
 └─ GET  /api/sedes/{universidadId}                 → Sedes de universidad
-9
+
 ┌─ 🗺️  PLANO DIGITAL
 │
 ├─ GET  /api/plano/{id}/data                       → Datos del plano digital

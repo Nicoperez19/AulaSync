@@ -7,10 +7,12 @@ use App\Models\ClaseNoRealizada;
 use App\Models\Notificacion;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Reserva;
+use App\Models\Tenant;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Config;
 
 class DetectarClasesNoRealizadas extends Command
 {
@@ -173,151 +175,169 @@ class DetectarClasesNoRealizadas extends Command
             return 1;
         }
 
-        // Obtener módulos que ya pasaron el tiempo de gracia
-        $modulosParaVerificar = $this->obtenerModulosParaVerificar($diaKey, $horaActual);
+        // Obtener todos los tenants
+        $tenants = Tenant::all();
         
-        if (empty($modulosParaVerificar)) {
-            $this->info('No hay módulos que hayan pasado el tiempo de gracia todavía.');
-            return 0;
+        foreach ($tenants as $tenant) {
+            $this->procesarTenant($tenant, $diaKey, $prefijoDia, $periodo, $fechaActual);
         }
 
-        $this->info('Módulos a verificar: ' . implode(', ', $modulosParaVerificar));
+        return 0;
+    }
 
-        // Obtener planificaciones de los módulos a verificar
-        $planificaciones = $this->obtenerPlanificacionesModulos($prefijoDia, $modulosParaVerificar, $periodo);
+    /**
+     * Procesar detección para un tenant específico
+     */
+    private function procesarTenant($tenant, $diaKey, $prefijoDia, $periodo, $fechaActual)
+    {
+        try {
+            // Configurar la base de datos del tenant
+            Config::set('database.connections.tenant.database', $tenant->database);
+            DB::purge('tenant');
 
-        $clasesNoRealizadasDetectadas = 0;
-        $atrasosDetectados = 0;
-        $clasesRealizadas = 0;
+            $this->info("Procesando tenant: {$tenant->name} ({$tenant->database})");
 
-        // Agrupar planificaciones por asignatura + espacio (para manejar clases de múltiples módulos)
-        $clasesAgrupadas = $planificaciones->groupBy(function($plan) {
-            return $plan->id_asignatura . '-' . $plan->id_espacio;
-        });
+            $hoy = Carbon::now();
+            $horaActual = $hoy->format('H:i:s');
 
-        foreach ($clasesAgrupadas as $key => $modulosClase) {
-            $primerModulo = $modulosClase->sortBy(function($p) {
-                $parts = explode('.', $p->id_modulo);
-                return isset($parts[1]) ? (int)$parts[1] : 0;
-            })->first();
-
-            if (!$primerModulo || !$primerModulo->asignatura) {
-                continue;
+            // Obtener módulos que ya pasaron el tiempo de gracia
+            $modulosParaVerificar = $this->obtenerModulosParaVerificar($diaKey, $horaActual);
+            
+            if (empty($modulosParaVerificar)) {
+                $this->info("  [{$tenant->database}] No hay módulos que hayan pasado el tiempo de gracia todavía.");
+                return;
             }
 
-            $runProfesor = $primerModulo->asignatura->run_profesor ?? null;
-            if (!$runProfesor) {
-                continue;
-            }
+            $this->info("  [{$tenant->database}] Módulos a verificar: " . implode(', ', $modulosParaVerificar));
 
-            // Verificar si ya existe registro de clase no realizada para esta clase hoy
-            $yaRegistrada = ClaseNoRealizada::where('id_asignatura', $primerModulo->id_asignatura)
-                ->where('id_espacio', $primerModulo->id_espacio)
-                ->where('fecha_clase', $fechaActual)
-                ->exists();
+            // Obtener planificaciones de los módulos a verificar
+            $planificaciones = $this->obtenerPlanificacionesModulos($prefijoDia, $modulosParaVerificar, $periodo);
 
-            if ($yaRegistrada) {
-                continue; // Ya fue procesada
-            }
+            $clasesNoRealizadasDetectadas = 0;
+            $atrasosDetectados = 0;
+            $clasesRealizadas = 0;
 
-            // Obtener hora de inicio del primer módulo de esta clase
-            $primerModuloNum = $this->obtenerNumeroModulo($primerModulo->id_modulo);
-            $horaInicioClase = $this->horariosModulos[$diaKey][$primerModuloNum]['inicio'] ?? null;
+            // Agrupar planificaciones por asignatura + espacio (para manejar clases de múltiples módulos)
+            $clasesAgrupadas = $planificaciones->groupBy(function($plan) {
+                return $plan->id_asignatura . '-' . $plan->id_espacio;
+            });
 
-            if (!$horaInicioClase) {
-                continue;
-            }
+            foreach ($clasesAgrupadas as $key => $modulosClase) {
+                $primerModulo = $modulosClase->sortBy(function($p) {
+                    $parts = explode('.', $p->id_modulo);
+                    return isset($parts[1]) ? (int)$parts[1] : 0;
+                })->first();
 
-            // Calcular hora límite (inicio + 15 minutos)
-            $horaLimite = Carbon::parse($fechaActual . ' ' . $horaInicioClase)
-                ->addMinutes(self::TIEMPO_GRACIA_MINUTOS)
-                ->format('H:i:s');
+                if (!$primerModulo || !$primerModulo->asignatura) {
+                    continue;
+                }
 
-            // Verificar si el profesor tiene reserva activa en el espacio esperado
-            $reserva = Reserva::where('fecha_reserva', $fechaActual)
-                ->where('id_espacio', $primerModulo->id_espacio)
-                ->where(function($q) use ($runProfesor) {
-                    $q->where('run_profesor', $runProfesor)
-                      ->orWhere('rut_usuario', $runProfesor);
-                })
-                ->whereIn('estado', ['activa', 'finalizada'])
-                ->whereNotNull('hora')
-                ->first();
+                $runProfesor = $primerModulo->asignatura->run_profesor ?? null;
+                if (!$runProfesor) {
+                    continue;
+                }
 
-            if ($reserva) {
-                // El profesor SÍ hizo la reserva/registro
-                $horaEntrada = $reserva->hora;
+                // Verificar si ya existe registro de clase no realizada para esta clase hoy
+                $yaRegistrada = ClaseNoRealizada::where('id_asignatura', $primerModulo->id_asignatura)
+                    ->where('id_espacio', $primerModulo->id_espacio)
+                    ->where('fecha_clase', $fechaActual)
+                    ->exists();
 
-                // Verificar si llegó con atraso (después de los 15 minutos)
-                if ($horaEntrada > $horaLimite) {
-                    $minutosAtraso = Carbon::parse($horaInicioClase)->diffInMinutes(Carbon::parse($horaEntrada));
+                if ($yaRegistrada) {
+                    continue; // Ya fue procesada
+                }
+
+                // Obtener hora de inicio del primer módulo de esta clase
+                $primerModuloNum = $this->obtenerNumeroModulo($primerModulo->id_modulo);
+                $horaInicioClase = $this->horariosModulos[$diaKey][$primerModuloNum]['inicio'] ?? null;
+
+                if (!$horaInicioClase) {
+                    continue;
+                }
+
+                // Calcular hora límite (inicio + 15 minutos)
+                $horaLimite = Carbon::parse($fechaActual . ' ' . $horaInicioClase)
+                    ->addMinutes(self::TIEMPO_GRACIA_MINUTOS)
+                    ->format('H:i:s');
+
+                // Verificar si el profesor tiene reserva activa en el espacio esperado
+                $reserva = Reserva::where('fecha_reserva', $fechaActual)
+                    ->where('id_espacio', $primerModulo->id_espacio)
+                    ->where(function($q) use ($runProfesor) {
+                        $q->where('run_profesor', $runProfesor)
+                          ->orWhere('rut_usuario', $runProfesor);
+                    })
+                    ->whereIn('estado', ['activa', 'finalizada'])
+                    ->whereNotNull('hora')
+                    ->first();
+
+                if ($reserva) {
+                    // El profesor SÍ hizo la reserva/registro
+                    $horaEntrada = $reserva->hora;
+
+                    // Verificar si llegó con atraso (después de los 15 minutos)
+                    if ($horaEntrada > $horaLimite) {
+                        $minutosAtraso = Carbon::parse($horaInicioClase)->diffInMinutes(Carbon::parse($horaEntrada));
                     
                     // Registrar atraso si existe la tabla
-                    $this->registrarAtraso($primerModulo, $runProfesor, $fechaActual, $horaEntrada, $minutosAtraso, $periodo);
-                    $atrasosDetectados++;
-                    
-                    $this->info(sprintf(
-                        '⏰ ATRASO detectado: %s - Profesor: %s - Atraso: %d min',
-                        $primerModulo->asignatura->nombre_asignatura ?? 'Desconocida',
-                        $primerModulo->asignatura->profesor->name ?? 'Desconocido',
-                        $minutosAtraso
-                    ));
+                        $this->registrarAtraso($primerModulo, $runProfesor, $fechaActual, $horaEntrada, $minutosAtraso, $periodo);
+                        $atrasosDetectados++;
+                        
+                        $this->info(sprintf(
+                            '  ⏰ ATRASO detectado: %s - Profesor: %s - Atraso: %d min',
+                            $primerModulo->asignatura->nombre_asignatura ?? 'Desconocida',
+                            $primerModulo->asignatura->profesor->name ?? 'Desconocido',
+                            $minutosAtraso
+                        ));
+                    } else {
+                        $clasesRealizadas++;
+                    }
                 } else {
-                    $clasesRealizadas++;
-                }
-            } else {
-                // El profesor NO hizo reserva y ya pasó el tiempo de gracia
-                if (!$this->option('dry-run')) {
-                    // Registrar cada módulo de la clase como no realizado
-                    foreach ($modulosClase as $modulo) {
-                        $claseNoRealizada = ClaseNoRealizada::registrarClaseNoRealizada([
-                            'id_asignatura' => $modulo->id_asignatura,
-                            'id_espacio' => $modulo->id_espacio,
-                            'id_modulo' => $modulo->id_modulo,
-                            'run_profesor' => $runProfesor,
-                            'fecha_clase' => $fechaActual,
-                            'periodo' => $periodo,
-                            'motivo' => 'No se registró ingreso del profesor después de ' . self::TIEMPO_GRACIA_MINUTOS . ' minutos (detección automática)',
-                            'hora_deteccion' => $hoy,
-                        ]);
+                    // El profesor NO hizo reserva y ya pasó el tiempo de gracia
+                    if (!$this->option('dry-run')) {
+                        // Registrar cada módulo de la clase como no realizado
+                        foreach ($modulosClase as $modulo) {
+                            $claseNoRealizada = ClaseNoRealizada::registrarClaseNoRealizada([
+                                'id_asignatura' => $modulo->id_asignatura,
+                                'id_espacio' => $modulo->id_espacio,
+                                'id_modulo' => $modulo->id_modulo,
+                                'run_profesor' => $runProfesor,
+                                'fecha_clase' => $fechaActual,
+                                'periodo' => $periodo,
+                                'motivo' => 'No se registró ingreso del profesor después de ' . self::TIEMPO_GRACIA_MINUTOS . ' minutos (detección automática)',
+                                'hora_deteccion' => now(),
+                            ]);
 
-                        if ($claseNoRealizada && $claseNoRealizada->wasRecentlyCreated) {
-                            // Solo notificar una vez por clase (primer módulo)
-                            if ($modulo->id === $primerModulo->id) {
-                                Notificacion::crearNotificacionClaseNoRealizada($claseNoRealizada);
+                            if ($claseNoRealizada && $claseNoRealizada->wasRecentlyCreated) {
+                                // Solo notificar una vez por clase (primer módulo)
+                                if ($modulo->id === $primerModulo->id) {
+                                    Notificacion::crearNotificacionClaseNoRealizada($claseNoRealizada);
+                                }
                             }
                         }
                     }
+
+                    $clasesNoRealizadasDetectadas++;
+                    $this->error(sprintf(
+                        '  ❌ CLASE NO REALIZADA: %s - Profesor: %s - Espacio: %s',
+                        $primerModulo->asignatura->nombre_asignatura ?? 'Desconocida',
+                        $primerModulo->asignatura->profesor->name ?? 'Desconocido',
+                        $primerModulo->espacio->nombre_espacio ?? 'Desconocido'
+                    ));
                 }
-
-                $clasesNoRealizadasDetectadas++;
-                $this->error(sprintf(
-                    '❌ CLASE NO REALIZADA: %s - Profesor: %s - Espacio: %s',
-                    $primerModulo->asignatura->nombre_asignatura ?? 'Desconocida',
-                    $primerModulo->asignatura->profesor->name ?? 'Desconocido',
-                    $primerModulo->espacio->nombre_espacio ?? 'Desconocido'
-                ));
             }
+
+            $this->info("  [{$tenant->database}] Resumen:");
+            $this->info("    - Clases no realizadas detectadas: $clasesNoRealizadasDetectadas");
+            $this->info("    - Atrasos detectados: $atrasosDetectados");
+            $this->info("    - Clases realizadas: $clasesRealizadas");
+
+        } catch (\Exception $e) {
+            $this->error("Error procesando tenant {$tenant->database}: " . $e->getMessage());
+            Log::error("Error en DetectarClasesNoRealizadas para tenant {$tenant->database}: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
         }
-
-        $this->newLine();
-        $this->info('=== RESUMEN ===');
-        $this->info("✅ Clases realizadas a tiempo: $clasesRealizadas");
-        $this->warn("⏰ Clases con atraso (>15 min): $atrasosDetectados");
-        $this->error("❌ Clases no realizadas: $clasesNoRealizadasDetectadas");
-
-        if ($this->option('dry-run')) {
-            $this->warn('*** MODO DRY-RUN: No se registró nada en la base de datos ***');
-        }
-
-        Log::info(sprintf(
-            'DetectarClasesNoRealizadas: Realizadas=%d, Atrasos=%d, NoRealizadas=%d',
-            $clasesRealizadas,
-            $atrasosDetectados,
-            $clasesNoRealizadasDetectadas
-        ));
-
-        return 0;
     }
 
     /**
