@@ -436,8 +436,7 @@ class SolicitanteController extends Controller
             'horaActual' => $horaActual,
             'diaActual' => $diaActual,
             'prefijo' => $prefijo,
-            'conexionActual' => DB::getDefaultConnection(),
-            'baseDatos' => DB::getDatabase('tenant')
+            'conexionActual' => DB::getDefaultConnection()
         ]);
         
         // Buscar un módulo que contenga la hora actual
