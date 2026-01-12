@@ -7,9 +7,11 @@ use App\Models\Visitante;
 use App\Models\Reserva;
 use App\Models\Espacio;
 use App\Models\Planificacion_Asignatura;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 
@@ -146,10 +148,31 @@ class SolicitanteController extends Controller
             Log::info('=== INICIO CREAR RESERVA SOLICITANTE ===');
             Log::info('Datos recibidos:', $request->all());
 
+            // Obtener el tenant actual desde el request o helper
+            $tenantId = tenant_id() ?? null;
+            
+            if (!$tenantId) {
+                // Si no hay tenant, intentar obtenerlo del dominio
+                $host = $request->getHost();
+                $tenant = \App\Models\Tenant::where('domain', $host)->orWhere('domain', 'LIKE', '%' . $host . '%')->first();
+                
+                if ($tenant) {
+                    \Illuminate\Support\Facades\Config::set('database.connections.tenant.database', $tenant->database);
+                    \Illuminate\Support\Facades\DB::purge('tenant');
+                    Log::info('Tenant configurado desde dominio:', ['tenant' => $tenant->name, 'database' => $tenant->database]);
+                } else {
+                    Log::error('No se pudo determinar el tenant desde el request');
+                    return response()->json([
+                        'success' => false,
+                        'mensaje' => 'No se pudo determinar la sede/tenant'
+                    ], 400);
+                }
+            }
+
             // Validar datos requeridos
             $request->validate([
                 'run_solicitante' => 'required|string|exists:solicitantes,run_solicitante',
-                'id_espacio' => 'required|string|exists:espacios,id_espacio',
+                'id_espacio' => 'required|string',
                 'modulos' => 'required|integer|min:1|max:2' // Máximo 2 módulos para solicitantes
             ]);
 
@@ -170,7 +193,7 @@ class SolicitanteController extends Controller
                 ], 404);
             }
 
-            // Verificar que el espacio existe y está disponible
+            // Verificar que el espacio existe y está disponible (usando conexión tenant)
             $espacio = Espacio::find($request->id_espacio);
             if (!$espacio) {
                 DB::rollBack();
