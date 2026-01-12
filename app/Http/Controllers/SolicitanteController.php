@@ -434,38 +434,55 @@ class SolicitanteController extends Controller
         Log::info('Buscando módulo actual', [
             'horaActual' => $horaActual,
             'diaActual' => $diaActual,
-            'prefijo' => $prefijo
+            'prefijo' => $prefijo,
+            'conexionActual' => DB::getDefaultConnection(),
+            'baseDatos' => DB::getDatabase('tenant')
         ]);
         
         // Buscar un módulo que contenga la hora actual
         // Probar módulos del 1 al 15
         for ($i = 1; $i <= 15; $i++) {
-            $idModulo = $prefijo . '.' . $i;
-            $modulo = \App\Models\Modulo::where('id_modulo', $idModulo)->first();
-            
-            if ($modulo) {
-                Log::info('Módulo encontrado', [
-                    'id_modulo' => $idModulo,
-                    'hora_inicio' => $modulo->hora_inicio,
-                    'hora_termino' => $modulo->hora_termino,
-                    'horaActual' => $horaActual
-                ]);
+            try {
+                $idModulo = $prefijo . '.' . $i;
+                Log::info('Buscando módulo ' . $i, ['idModulo' => $idModulo]);
                 
-                if ($horaActual >= $modulo->hora_inicio && $horaActual < $modulo->hora_termino) {
-                    Log::info('Módulo activo encontrado', ['modulo' => $i]);
-                    return $i;
+                $modulo = \App\Models\Modulo::where('id_modulo', $idModulo)->first();
+                
+                if ($modulo) {
+                    Log::info('Módulo encontrado', [
+                        'id_modulo' => $idModulo,
+                        'hora_inicio' => $modulo->hora_inicio,
+                        'hora_termino' => $modulo->hora_termino,
+                        'horaActual' => $horaActual
+                    ]);
+                    
+                    if ($horaActual >= $modulo->hora_inicio && $horaActual < $modulo->hora_termino) {
+                        Log::info('Módulo activo encontrado', ['modulo' => $i]);
+                        return $i;
+                    }
+                } else {
+                    Log::info('Módulo no encontrado en BD', ['idModulo' => $idModulo]);
                 }
+            } catch (\Exception $e) {
+                Log::error('Error buscando módulo ' . $i, [
+                    'error' => $e->getMessage(),
+                    'idModulo' => $idModulo ?? 'unknown'
+                ]);
             }
         }
         
         // Si no hay módulo activo, buscar el siguiente disponible
         for ($i = 1; $i <= 15; $i++) {
-            $idModulo = $prefijo . '.' . $i;
-            $modulo = \App\Models\Modulo::where('id_modulo', $idModulo)->first();
-            
-            if ($modulo && $horaActual < $modulo->hora_inicio) {
-                Log::info('Siguiente módulo encontrado', ['modulo' => $i]);
-                return $i;
+            try {
+                $idModulo = $prefijo . '.' . $i;
+                $modulo = \App\Models\Modulo::where('id_modulo', $idModulo)->first();
+                
+                if ($modulo && $horaActual < $modulo->hora_inicio) {
+                    Log::info('Siguiente módulo encontrado', ['modulo' => $i]);
+                    return $i;
+                }
+            } catch (\Exception $e) {
+                Log::error('Error en búsqueda de siguiente módulo', ['error' => $e->getMessage()]);
             }
         }
 
