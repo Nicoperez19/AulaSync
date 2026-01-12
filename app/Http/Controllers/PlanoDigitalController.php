@@ -13,11 +13,13 @@ use App\Models\Piso;
 use App\Models\Espacio;
 use App\Models\Profesor;
 use App\Models\Solicitante;
+use App\Models\Tenant;
 use App\Helpers\SemesterHelper;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Config;
 
 class PlanoDigitalController extends Controller
 {
@@ -44,6 +46,9 @@ class PlanoDigitalController extends Controller
     public function show($id)
     {
         try {
+            // Establecer contexto del tenant desde el request
+            $this->establecerContextoTenant();
+
             $mapa = $this->obtenerMapa($id);
             
             // Validar que el mapa tenga una imagen válida
@@ -527,6 +532,9 @@ class PlanoDigitalController extends Controller
 
     public function estadosEspacios()
     {
+        // Establecer contexto del tenant desde el request
+        $this->establecerContextoTenant();
+
         $horaActual = Carbon::now();
         $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
         $horaActualStr = $horaActual->format('H:i:s');
@@ -700,6 +708,9 @@ class PlanoDigitalController extends Controller
     public function devolverEspacio(Request $request)
     {
         try {
+            // Establecer contexto del tenant desde el request
+            $this->establecerContextoTenant();
+
             $request->validate([
                 'id_espacio' => 'required|string',
                 'run_usuario' => 'required|string',
@@ -1144,6 +1155,9 @@ class PlanoDigitalController extends Controller
     public function verificarUsuario($run)
     {
         try {
+            // Establecer contexto del tenant desde el request
+            $this->establecerContextoTenant();
+
             // CASO 1: Verificar si es profesor registrado
             $profesor = Profesor::select('run_profesor', 'name', 'email', 'celular', 'tipo_profesor')
                 ->where('run_profesor', $run)
@@ -1164,7 +1178,7 @@ class PlanoDigitalController extends Controller
                 ]);
             }
 
-            // CASO 2: Verificar si es solicitante registrado
+            // CASO 2: Verificar si es solicitante registrado (BD central)
             $solicitante = Solicitante::where('run_solicitante', $run)
                 ->where('activo', true)
                 ->first();
@@ -1207,6 +1221,9 @@ class PlanoDigitalController extends Controller
     public function verificarEspacio($idEspacio)
     {
         try {
+            // Establecer contexto del tenant desde el request
+            $this->establecerContextoTenant();
+
             $espacio = Espacio::with(['piso.facultad.sede'])
                 ->where('id_espacio', $idEspacio)
                 ->first();
@@ -2347,6 +2364,32 @@ class PlanoDigitalController extends Controller
         }
     }
 
+    /**
+     * Establece el contexto del tenant desde el request
+     */
+    private function establecerContextoTenant()
+    {
+        $tenantId = tenant_id() ?? null;
+        
+        if (!$tenantId) {
+            $host = request()->getHost();
+            $tenant = Tenant::where('domain', $host)
+                ->orWhere('domain', 'LIKE', '%' . $host . '%')
+                ->first();
+            
+            if ($tenant) {
+                Config::set('database.connections.tenant.database', $tenant->database);
+                DB::purge('tenant');
+                Log::info('Tenant establecido en PlanoDigitalController', [
+                    'tenant' => $tenant->name,
+                    'database' => $tenant->database,
+                    'host' => $host
+                ]);
+            }
+        }
+    }
+
 }
+
 
 

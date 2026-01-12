@@ -71,6 +71,9 @@ class SolicitanteController extends Controller
     public function registrarSolicitante(Request $request)
     {
         try {
+            // Establecer contexto del tenant desde el request
+            $this->establecerContextoTenant();
+
             $request->validate([
                 'run_solicitante' => 'required|string|unique:solicitantes,run_solicitante',
                 'nombre' => 'required|string|max:255',
@@ -148,26 +151,8 @@ class SolicitanteController extends Controller
             Log::info('=== INICIO CREAR RESERVA SOLICITANTE ===');
             Log::info('Datos recibidos:', $request->all());
 
-            // Obtener el tenant actual desde el request o helper
-            $tenantId = tenant_id() ?? null;
-            
-            if (!$tenantId) {
-                // Si no hay tenant, intentar obtenerlo del dominio
-                $host = $request->getHost();
-                $tenant = Tenant::where('domain', $host)->orWhere('domain', 'LIKE', '%' . $host . '%')->first();
-                
-                if ($tenant) {
-                    Config::set('database.connections.tenant.database', $tenant->database);
-                    DB::purge('tenant');
-                    Log::info('Tenant configurado desde dominio:', ['tenant' => $tenant->name, 'database' => $tenant->database]);
-                } else {
-                    Log::error('No se pudo determinar el tenant desde el request');
-                    return response()->json([
-                        'success' => false,
-                        'mensaje' => 'No se pudo determinar la sede/tenant'
-                    ], 400);
-                }
-            }
+            // Establecer contexto del tenant desde el request
+            $this->establecerContextoTenant();
 
             // Validar datos básicos (sin usar exists: para evitar búsqueda en BD central)
             $request->validate([
@@ -537,4 +522,30 @@ class SolicitanteController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Establece el contexto del tenant desde el request
+     */
+    private function establecerContextoTenant()
+    {
+        $tenantId = tenant_id() ?? null;
+        
+        if (!$tenantId) {
+            $host = request()->getHost();
+            $tenant = Tenant::where('domain', $host)
+                ->orWhere('domain', 'LIKE', '%' . $host . '%')
+                ->first();
+            
+            if ($tenant) {
+                Config::set('database.connections.tenant.database', $tenant->database);
+                DB::purge('tenant');
+                Log::info('Tenant establecido en SolicitanteController', [
+                    'tenant' => $tenant->name,
+                    'database' => $tenant->database,
+                    'host' => $host
+                ]);
+            }
+        }
+    }
 }
+
