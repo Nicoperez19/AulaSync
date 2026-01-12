@@ -199,7 +199,7 @@ class SolicitanteController extends Controller
             }
 
             // Verificar que el solicitante no tenga reservas activas sin hora_salida
-            $reservaActiva = Reserva::where('run_solicitante', $request->run_solicitante)
+            $reservaActiva = Reserva::on('tenant')->where('run_solicitante', $request->run_solicitante)
                 ->where('estado', 'activa')
                 ->whereNull('hora_salida')
                 ->first();
@@ -238,13 +238,13 @@ class SolicitanteController extends Controller
             }
 
             // Verificar módulos consecutivos disponibles (incluyendo reservas activas)
-            $planificaciones = Planificacion_Asignatura::where('id_espacio', $request->id_espacio)
+            $planificaciones = Planificacion_Asignatura::on('tenant')->where('id_espacio', $request->id_espacio)
                 ->where('id_modulo', 'like', $codigoDia . '.%')
                 ->pluck('id_modulo')
                 ->toArray();
 
             // Obtener reservas activas para este espacio en este día
-            $reservasActivas = Reserva::where('id_espacio', $request->id_espacio)
+            $reservasActivas = Reserva::on('tenant')->where('id_espacio', $request->id_espacio)
                 ->where('fecha_reserva', $fechaActual)
                 ->where('estado', 'activa')
                 ->get();
@@ -326,14 +326,14 @@ class SolicitanteController extends Controller
             $idModuloInicio = $prefijo . '.' . $moduloActual;
             $idModuloFin = $prefijo . '.' . ($moduloActual + $modulosSolicitados - 1);
             
-            $moduloInicio = \App\Models\Modulo::where('id_modulo', $idModuloInicio)->first();
-            $moduloFin = \App\Models\Modulo::where('id_modulo', $idModuloFin)->first();
+            $moduloInicio = \App\Models\Modulo::on('tenant')->where('id_modulo', $idModuloInicio)->first();
+            $moduloFin = \App\Models\Modulo::on('tenant')->where('id_modulo', $idModuloFin)->first();
 
             $horaInicio = $moduloInicio ? $moduloInicio->hora_inicio : $horaActual;
             $horaFin = $moduloFin ? $moduloFin->hora_termino : null;
 
             // Verificar que no haya reservas simultáneas en el tiempo
-            $reservasSimultaneas = Reserva::where('run_solicitante', $request->run_solicitante)
+            $reservasSimultaneas = Reserva::on('tenant')->where('run_solicitante', $request->run_solicitante)
                 ->where('estado', 'activa')
                 ->where(function($query) use ($horaInicio, $horaFin) {
                     // Verificar si hay solapamiento de horarios
@@ -446,7 +446,8 @@ class SolicitanteController extends Controller
                 $idModulo = $prefijo . '.' . $i;
                 Log::info('Buscando módulo ' . $i, ['idModulo' => $idModulo]);
                 
-                $modulo = \App\Models\Modulo::where('id_modulo', $idModulo)->first();
+                // Usar explícitamente la conexión 'tenant'
+                $modulo = \App\Models\Modulo::on('tenant')->where('id_modulo', $idModulo)->first();
                 
                 if ($modulo) {
                     Log::info('Módulo encontrado', [
@@ -475,7 +476,8 @@ class SolicitanteController extends Controller
         for ($i = 1; $i <= 15; $i++) {
             try {
                 $idModulo = $prefijo . '.' . $i;
-                $modulo = \App\Models\Modulo::where('id_modulo', $idModulo)->first();
+                // Usar explícitamente la conexión 'tenant'
+                $modulo = \App\Models\Modulo::on('tenant')->where('id_modulo', $idModulo)->first();
                 
                 if ($modulo && $horaActual < $modulo->hora_inicio) {
                     Log::info('Siguiente módulo encontrado', ['modulo' => $i]);
@@ -502,7 +504,8 @@ class SolicitanteController extends Controller
         $prefijo = $indexDia !== false ? $prefijosDias[$indexDia] : 'LU';
         
         $idModulo = $prefijo . '.' . $modulo;
-        $moduloData = \App\Models\Modulo::where('id_modulo', $idModulo)->first();
+        // Usar explícitamente la conexión 'tenant'
+        $moduloData = \App\Models\Modulo::on('tenant')->where('id_modulo', $idModulo)->first();
 
         if (!$moduloData) {
             return null;
@@ -519,7 +522,8 @@ class SolicitanteController extends Controller
      */
     private function obtenerInfoProximaClase($moduloCodigo, $espacioId)
     {
-        $planificacion = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo'])
+        // Usar explícitamente la conexión 'tenant'
+        $planificacion = Planificacion_Asignatura::on('tenant')->with(['asignatura.profesor', 'modulo'])
             ->where('id_espacio', $espacioId)
             ->where('id_modulo', $moduloCodigo)
             ->first();
