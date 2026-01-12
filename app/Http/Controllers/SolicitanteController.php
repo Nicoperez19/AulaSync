@@ -431,14 +431,30 @@ class SolicitanteController extends Controller
         $indexDia = array_search($diaActual, $diasArray);
         $prefijo = $indexDia !== false ? $prefijosDias[$indexDia] : 'LU';
         
+        Log::info('Buscando módulo actual', [
+            'horaActual' => $horaActual,
+            'diaActual' => $diaActual,
+            'prefijo' => $prefijo
+        ]);
+        
         // Buscar un módulo que contenga la hora actual
         // Probar módulos del 1 al 15
         for ($i = 1; $i <= 15; $i++) {
             $idModulo = $prefijo . '.' . $i;
             $modulo = \App\Models\Modulo::where('id_modulo', $idModulo)->first();
             
-            if ($modulo && $horaActual >= $modulo->hora_inicio && $horaActual < $modulo->hora_termino) {
-                return $i;
+            if ($modulo) {
+                Log::info('Módulo encontrado', [
+                    'id_modulo' => $idModulo,
+                    'hora_inicio' => $modulo->hora_inicio,
+                    'hora_termino' => $modulo->hora_termino,
+                    'horaActual' => $horaActual
+                ]);
+                
+                if ($horaActual >= $modulo->hora_inicio && $horaActual < $modulo->hora_termino) {
+                    Log::info('Módulo activo encontrado', ['modulo' => $i]);
+                    return $i;
+                }
             }
         }
         
@@ -448,10 +464,12 @@ class SolicitanteController extends Controller
             $modulo = \App\Models\Modulo::where('id_modulo', $idModulo)->first();
             
             if ($modulo && $horaActual < $modulo->hora_inicio) {
+                Log::info('Siguiente módulo encontrado', ['modulo' => $i]);
                 return $i;
             }
         }
 
+        Log::warning('No se encontró módulo actual ni siguiente');
         return null;
     }
 
