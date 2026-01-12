@@ -565,34 +565,53 @@ class SolicitanteController extends Controller
      */
     private function establecerContextoTenant()
     {
-        $tenantId = tenant_id() ?? null;
-        
-        Log::info('establecerContextoTenant - Verificando tenant', [
-            'tenantId' => $tenantId,
-            'host' => request()->getHost()
-        ]);
-        
-        if (!$tenantId) {
-            $host = request()->getHost();
-            $tenant = Tenant::where('domain', $host)
-                ->orWhere('domain', 'LIKE', '%' . $host . '%')
-                ->first();
+        try {
+            $tenantId = tenant_id() ?? null;
             
-            if ($tenant) {
-                Config::set('database.connections.tenant.database', $tenant->database);
-                DB::purge('tenant');
-                Log::info('Tenant establecido en SolicitanteController', [
-                    'tenant' => $tenant->name,
-                    'database' => $tenant->database,
-                    'host' => $host
-                ]);
+            Log::info('establecerContextoTenant - Verificando tenant', [
+                'tenantId' => $tenantId,
+                'host' => request()->getHost()
+            ]);
+            
+            if (!$tenantId) {
+                // Si no hay tenant establecido, buscarlo por dominio
+                $host = request()->getHost();
+                $tenant = Tenant::where('domain', $host)
+                    ->orWhere('domain', 'LIKE', '%' . $host . '%')
+                    ->first();
+                
+                if ($tenant) {
+                    $tenantId = $tenant->id;
+                    Config::set('database.connections.tenant.database', $tenant->database);
+                    DB::purge('tenant');
+                    Log::info('Tenant establecido en SolicitanteController', [
+                        'tenant' => $tenant->name,
+                        'database' => $tenant->database,
+                        'host' => $host,
+                        'tenantId' => $tenantId
+                    ]);
+                } else {
+                    Log::warning('No se pudo encontrar tenant para dominio', [
+                        'host' => $host
+                    ]);
+                    return;
+                }
             } else {
-                Log::warning('No se pudo encontrar tenant para dominio', [
-                    'host' => $host
-                ]);
+                // Si el tenant ya estaba establecido, asegurar que la conexión está bien configurada
+                $tenant = Tenant::find($tenantId);
+                if ($tenant) {
+                    Config::set('database.connections.tenant.database', $tenant->database);
+                    DB::purge('tenant');
+                    Log::info('Reconectando tenant ya establecido', [
+                        'tenantId' => $tenantId,
+                        'database' => $tenant->database
+                    ]);
+                }
             }
-        } else {
-            Log::info('Tenant ya estaba establecido', ['tenantId' => $tenantId]);
+        } catch (\Exception $e) {
+            Log::error('Error en establecerContextoTenant', [
+                'error' => $e->getMessage()
+            ]);
         }
     }
 }
