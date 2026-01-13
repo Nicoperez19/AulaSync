@@ -1124,7 +1124,7 @@ class PlanoDigitalController extends Controller
                         }
                     } elseif ($reservaOcupante->run_solicitante) {
                         // Es un solicitante
-                        $solicitante = Solicitante::where('run_solicitante', $reservaOcupante->run_solicitante)->first();
+                        $solicitante = Solicitante::on('tenant')->where('run_solicitante', $reservaOcupante->run_solicitante)->first();
                         if ($solicitante) {
                             $mensaje = "El espacio está ocupado por el solicitante {$solicitante->nombre}";
                             $informacionOcupante = [
@@ -1184,8 +1184,8 @@ class PlanoDigitalController extends Controller
                 ]);
             }
 
-            // CASO 2: Verificar si es solicitante registrado (BD central)
-            $solicitante = Solicitante::where('run_solicitante', $run)
+            // CASO 2: Verificar si es solicitante registrado (BD tenant)
+            $solicitante = Solicitante::on('tenant')->where('run_solicitante', $run)
                 ->where('activo', true)
                 ->first();
 
@@ -1875,7 +1875,7 @@ class PlanoDigitalController extends Controller
         $runUsuario = $request->input('run_usuario');
 
         // Verificar si el solicitante existe
-        $solicitante = Solicitante::where('run_solicitante', $runUsuario)
+        $solicitante = Solicitante::on('tenant')->where('run_solicitante', $runUsuario)
             ->where('activo', true)
             ->first();
 

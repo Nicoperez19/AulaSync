@@ -397,7 +397,7 @@ class ApiReservaController extends Controller
                 $usuario = Profesor::where('run_profesor', $reservaActiva->run_profesor)->first();
                 $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
             } elseif ($reservaActiva->run_solicitante) {
-                $solicitante = Solicitante::where('run_solicitante', $reservaActiva->run_solicitante)->first();
+                $solicitante = Solicitante::on('tenant')->where('run_solicitante', $reservaActiva->run_solicitante)->first();
                 $nombreUsuario = $solicitante ? $solicitante->nombre : 'Solicitante no encontrado';
             }
 
@@ -462,7 +462,7 @@ class ApiReservaController extends Controller
                         $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
                         $emailUsuario = $usuario ? $usuario->email : 'Sin información';
                     } elseif ($ultimaReserva->run_solicitante) {
-                        $solicitante = Solicitante::where('run_solicitante', $ultimaReserva->run_solicitante)->first();
+                        $solicitante = Solicitante::on('tenant')->where('run_solicitante', $ultimaReserva->run_solicitante)->first();
                         $nombreUsuario = $solicitante ? $solicitante->nombre : 'Solicitante no encontrado';
                         $emailUsuario = $solicitante ? $solicitante->correo : 'Sin información';
                     }
@@ -523,7 +523,7 @@ class ApiReservaController extends Controller
                 $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
                 $emailUsuario = $usuario ? $usuario->email : 'Sin información';
             } elseif ($reserva->run_solicitante) {
-                $solicitante = Solicitante::where('run_solicitante', $reserva->run_solicitante)->first();
+                $solicitante = Solicitante::on('tenant')->where('run_solicitante', $reserva->run_solicitante)->first();
                 $nombreUsuario = $solicitante ? $solicitante->nombre : 'Solicitante no encontrado';
                 $emailUsuario = $solicitante ? $solicitante->correo : 'Sin información';
             }

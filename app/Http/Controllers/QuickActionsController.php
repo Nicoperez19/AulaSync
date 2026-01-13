@@ -175,7 +175,7 @@ class QuickActionsController extends Controller
                     $runResponsable = $reserva->run_profesor;
                     $tipoResponsable = 'profesor';
                 } elseif ($reserva->run_solicitante) {
-                    $solicitante = \App\Models\Solicitante::where('run_solicitante', $reserva->run_solicitante)->first();
+                    $solicitante = \App\Models\Solicitante::on('tenant')->where('run_solicitante', $reserva->run_solicitante)->first();
                     $nombreResponsable = $solicitante ? $solicitante->nombre : $reserva->run_solicitante;
                     $runResponsable = $reserva->run_solicitante;
                     $tipoResponsable = 'solicitante';
@@ -273,7 +273,7 @@ class QuickActionsController extends Controller
             }
 
             // Buscar en solicitantes (tabla: solicitantes)
-            $solicitantes = Solicitante::where('run_solicitante', 'LIKE', '%' . $termino . '%')
+            $solicitantes = Solicitante::on('tenant')->where('run_solicitante', 'LIKE', '%' . $termino . '%')
                 ->orWhere('nombre', 'LIKE', '%' . $termino . '%')
                 ->where('activo', true)
                 ->limit(10)
@@ -540,7 +540,7 @@ class QuickActionsController extends Controller
                 $datosReserva['run_profesor'] = $request->run;
             } else {
                 // Buscar o crear solicitante
-                $solicitante = Solicitante::where('run_solicitante', $request->run)->first();
+                $solicitante = Solicitante::on('tenant')->where('run_solicitante', $request->run)->first();
                 if (!$solicitante) {
                     // Crear nuevo solicitante
                     $solicitante = Solicitante::create([

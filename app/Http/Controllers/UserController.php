@@ -259,7 +259,7 @@ class UserController extends Controller
         try {
             if (class_exists('\App\\Models\\Solicitante')) {
                 // El modelo Solicitante usa `nombre` y `correo` (mapeamos correo->email)
-                $solQuery = \App\Models\Solicitante::where('correo', 'like', "%{$q}%")
+                $solQuery = \App\Models\Solicitante::on('tenant')->where('correo', 'like', "%{$q}%")
                     ->orWhere('nombre', 'like', "%{$q}%")
                     ->limit(10);
                 $solicitantes = $solQuery->get(['run_solicitante as run', 'nombre', 'correo'])

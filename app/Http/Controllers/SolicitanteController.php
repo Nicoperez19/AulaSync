@@ -29,7 +29,9 @@ class SolicitanteController extends Controller
     public function verificarSolicitante($run)
     {
         try {
-            $solicitante = Solicitante::where('run_solicitante', $run)
+            $this->establecerContextoTenant();
+            
+            $solicitante = Solicitante::on('tenant')->where('run_solicitante', $run)
                 ->where('activo', true)
                 ->first();
 
@@ -74,23 +76,41 @@ class SolicitanteController extends Controller
             // Establecer contexto del tenant desde el request
             $this->establecerContextoTenant();
 
+            // Validar que el RUN sea único en el tenant
+            $runExistente = Solicitante::on('tenant')->where('run_solicitante', $request->run_solicitante)->exists();
+            if ($runExistente) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'El RUN ya está registrado como solicitante'
+                ], 422);
+            }
+
+            // Validar que el correo sea único en el tenant
+            $correoExistente = Solicitante::on('tenant')->where('correo', $request->correo)->exists();
+            if ($correoExistente) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'El correo electrónico ya está registrado'
+                ], 422);
+            }
+
             $request->validate([
-                'run_solicitante' => 'required|string|unique:solicitantes,run_solicitante',
+                'run_solicitante' => 'required|string',
                 'nombre' => 'required|string|max:255',
-                'correo' => 'required|email|unique:solicitantes,correo',
+                'correo' => 'required|email',
                 'telefono' => 'required|string|max:20',
                 'tipo_solicitante' => 'required|in:estudiante,personal,visitante,otro'
             ]);
 
-            $solicitante = new Solicitante();
-            $solicitante->run_solicitante = $request->run_solicitante;
-            $solicitante->nombre = $request->nombre;
-            $solicitante->correo = $request->correo;
-            $solicitante->telefono = $request->telefono;
-            $solicitante->tipo_solicitante = $request->tipo_solicitante;
-            $solicitante->activo = true;
-            $solicitante->fecha_registro = now();
-            $solicitante->save();
+            $solicitante = Solicitante::on('tenant')->create([
+                'run_solicitante' => $request->run_solicitante,
+                'nombre' => $request->nombre,
+                'correo' => $request->correo,
+                'telefono' => $request->telefono,
+                'tipo_solicitante' => $request->tipo_solicitante,
+                'activo' => true,
+                'fecha_registro' => now()
+            ]);
             
             // Registrar también como visitante para que aparezca en el mantenedor
             try {
@@ -167,8 +187,8 @@ class SolicitanteController extends Controller
             $horaActual = $ahora->format('H:i:s');
             $fechaActual = $ahora->toDateString();
 
-            // Verificar que el solicitante existe y está activo (búsqueda en BD central)
-            $solicitante = Solicitante::where('run_solicitante', $request->run_solicitante)
+            // Verificar que el solicitante existe y está activo (búsqueda en BD tenant)
+            $solicitante = Solicitante::on('tenant')->where('run_solicitante', $request->run_solicitante)
                 ->where('activo', true)
                 ->first();
 
@@ -557,9 +577,11 @@ class SolicitanteController extends Controller
     public function verificarExistencia($run)
     {
         try {
+            $this->establecerContextoTenant();
+            
             $runLimpio = preg_replace('/[^0-9]/', '', $run);
             
-            $existe = Solicitante::where('run_solicitante', $run)
+            $existe = Solicitante::on('tenant')->where('run_solicitante', $run)
                 ->orWhere('run_solicitante', $runLimpio)
                 ->exists();
 

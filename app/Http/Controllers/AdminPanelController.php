@@ -34,7 +34,7 @@ class AdminPanelController extends Controller
                 ];
             } else {
                 // Buscar en solicitantes
-                $solicitante = Solicitante::where('run', $run)->first();
+                $solicitante = Solicitante::on('tenant')->where('run_solicitante', $run)->first();
                 if ($solicitante) {
                     $usuario = [
                         'nombre' => $solicitante->nombre,
@@ -154,11 +154,11 @@ class AdminPanelController extends Controller
                 }
                 $usuarioId = $profesor->id;
             } else {
-                $solicitante = Solicitante::where('run', $data['run'])->first();
+                $solicitante = Solicitante::on('tenant')->where('run_solicitante', $data['run'])->first();
                 if (!$solicitante) {
-                    $solicitante = Solicitante::create([
+                    $solicitante = Solicitante::on('tenant')->create([
                         'nombre' => $data['nombre'],
-                        'run' => $data['run'],
+                        'run_solicitante' => $data['run'],
                         'correo' => $data['correo'],
                         'telefono' => $data['telefono'] ?? null,
                         'tipo_solicitante' => 'externo',

@@ -52,7 +52,7 @@ class ReservasController extends Controller
 
         $user = \App\Models\User::where('run', $run)->first();
         $profesor = class_exists('\App\\Models\\Profesor') ? \App\Models\Profesor::where('run_profesor', $run)->first() : null;
-        $solicitante = class_exists('\App\\Models\\Solicitante') ? \App\Models\Solicitante::where('run_solicitante', $run)->first() : null;
+        $solicitante = class_exists('\App\\Models\\Solicitante') ? \App\Models\Solicitante::on('tenant')->where('run_solicitante', $run)->first() : null;
 
         if (!$user && !$profesor && !$solicitante) {
             return redirect()->route('reservas.index')->withErrors(['usuario' => 'Usuario no encontrado.']);

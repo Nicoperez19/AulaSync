@@ -62,7 +62,7 @@ class SalaEstudioController extends Controller
             // Si no existe como usuario, intentar crearlo desde solicitantes
             if (!$usuario) {
                 // Intentar crear desde solicitantes
-                $solicitante = Solicitante::where('run_solicitante', $run)
+                $solicitante = Solicitante::on('tenant')->where('run_solicitante', $run)
                     ->orWhere('run_solicitante', $runLimpio)
                     ->first();
 
