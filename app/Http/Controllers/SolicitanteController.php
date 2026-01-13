@@ -330,7 +330,17 @@ class SolicitanteController extends Controller
             $moduloFin = \App\Models\Modulo::on('tenant')->where('id_modulo', $idModuloFin)->first();
 
             $horaInicio = $moduloInicio ? $moduloInicio->hora_inicio : $horaActual;
-            $horaFin = $moduloFin ? $moduloFin->hora_termino : null;
+            
+            // Si no hay módulo final, calcular una hora por defecto (1.5 horas por módulo)
+            if ($moduloFin) {
+                $horaFin = $moduloFin->hora_termino;
+            } else {
+                // Calcular hora fin aproximada: 1.5 horas por módulo solicitado
+                $duracionMinutos = $modulosSolicitados * 90; // 1.5 horas = 90 minutos por módulo
+                $horaFin = Carbon::createFromFormat('H:i:s', $horaInicio)
+                    ->addMinutes($duracionMinutos)
+                    ->format('H:i:s');
+            }
 
             // Verificar que no haya reservas simultáneas en el tiempo
             $reservasSimultaneas = Reserva::on('tenant')->where('run_solicitante', $request->run_solicitante)
