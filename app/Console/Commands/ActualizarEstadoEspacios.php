@@ -84,6 +84,27 @@ class ActualizarEstadoEspacios extends Command
 
             $this->line("  Reservas activas encontradas: " . $reservasActivas->count());
 
+            // Debug: Mostrar detalles de las reservas encontradas
+            if ($reservasActivas->count() > 0) {
+                foreach ($reservasActivas as $res) {
+                    Log::info('Reserva activa encontrada en comando', [
+                        'id_reserva' => $res->id_reserva,
+                        'id_espacio' => $res->id_espacio,
+                        'estado' => $res->estado,
+                        'fecha' => $res->fecha_reserva,
+                        'hora_inicio' => $res->hora,
+                        'hora_fin' => $res->hora_salida
+                    ]);
+                }
+            } else {
+                // Buscar cualquier reserva en la BD para debug
+                $todasReservas = Reserva::on('tenant')->get();
+                Log::warning('No se encontraron reservas activas para hoy', [
+                    'fecha_buscada' => $ahora->toDateString(),
+                    'total_reservas_en_bd' => $todasReservas->count()
+                ]);
+            }
+
             $espaciosActualizados = 0;
             $espaciosOcupados = 0;
             $espaciosDisponibles = 0;

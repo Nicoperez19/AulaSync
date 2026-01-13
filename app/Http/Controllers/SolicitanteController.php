@@ -405,6 +405,23 @@ class SolicitanteController extends Controller
             $reserva->hora_salida = $horaFin;
             $reserva->save();
 
+            // Verificar que la reserva se guardó
+            $reservaVerificacion = Reserva::on('tenant')->where('id_reserva', $reserva->id_reserva)->first();
+            if (!$reservaVerificacion) {
+                Log::warning('⚠️ ADVERTENCIA: Reserva creada pero NO se encontró en BD', [
+                    'id_reserva' => $reserva->id_reserva,
+                    'run_solicitante' => $request->run_solicitante
+                ]);
+            } else {
+                Log::info('✅ Reserva verificada en BD', [
+                    'id_reserva' => $reservaVerificacion->id_reserva,
+                    'estado' => $reservaVerificacion->estado,
+                    'fecha' => $reservaVerificacion->fecha_reserva,
+                    'hora_inicio' => $reservaVerificacion->hora,
+                    'hora_fin' => $reservaVerificacion->hora_salida
+                ]);
+            }
+
             // Actualizar estado del espacio
             $espacio->estado = 'Ocupado';
             $espacio->save();
