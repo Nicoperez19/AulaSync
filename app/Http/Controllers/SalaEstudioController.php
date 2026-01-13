@@ -344,8 +344,8 @@ class SalaEstudioController extends Controller
             $reservasGrupo = Reserva::where('id_espacio', $reservaOrigen->id_espacio)
                 ->where('fecha_reserva', $reservaOrigen->fecha_reserva)
                 ->whereBetween('hora', [
-                    Carbon::parse($reservaOrigen->hora)->subMinutes(30),
-                    Carbon::parse($reservaOrigen->hora)->addMinutes(30)
+                    Carbon::parse($reservaOrigen->hora)->subMinutes(30)->format('H:i:s'),
+                    Carbon::parse($reservaOrigen->hora)->addMinutes(30)->format('H:i:s')
                 ])
                 ->where('tipo_reserva', 'espontanea')
                 ->where('observaciones', 'Sala de Estudio')

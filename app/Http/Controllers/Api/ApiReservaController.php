@@ -291,7 +291,7 @@ class ApiReservaController extends Controller
             $existeReserva = Reserva::where('id_espacio', $request->espacio_id)
                 ->where('fecha_reserva', $fechaReserva)
                 ->where(function ($query) use ($horaInicio, $horaTermino) {
-                    $query->whereBetween('hora', [$horaInicio, $horaTermino]);
+                    $query->whereRaw("TIME(hora) BETWEEN ? AND ?", [$horaInicio, $horaTermino]);
                 })
                 ->exists();
 

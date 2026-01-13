@@ -60,7 +60,7 @@ class ActualizarEstadoEspacios extends Command
             $this->line("  Período: {$periodo}");
 
             // Obtener todos los espacios
-            $espacios = Espacio::on('tenant')->all();
+            $espacios = Espacio::on('tenant')->get();
             $this->line("  Total de espacios a verificar: " . $espacios->count());
 
             // Obtener planificaciones activas para el período actual
