@@ -166,14 +166,14 @@ class SolicitanteController extends Controller
      */
     public function crearReservaSolicitante(Request $request)
     {
+        Log::info('=== INICIO CREAR RESERVA SOLICITANTE ===');
+        Log::info('Datos recibidos:', $request->all());
+
+        // Establecer contexto del tenant desde el request PRIMERO
+        $this->establecerContextoTenant();
+
         try {
-            Log::info('=== INICIO CREAR RESERVA SOLICITANTE ===');
-            Log::info('Datos recibidos:', $request->all());
-
-            // Establecer contexto del tenant desde el request PRIMERO
-            $this->establecerContextoTenant();
-
-            // Usar transacción de forma correcta con DB::transaction
+            // Usar transacción a través de la clase DB con la conexión tenant
             return DB::connection('tenant')->transaction(function () use ($request) {
                 // Validar datos básicos (sin usar exists: para evitar búsqueda en BD central)
                 $request->validate([
@@ -356,18 +356,18 @@ class SolicitanteController extends Controller
                 throw new \Exception('Ya tienes una reserva activa en ese horario. Debes finalizarla antes de solicitar una nueva.');
             }
 
-            // Crear la reserva
-            $reserva = new Reserva();
-            $reserva->id_reserva = Reserva::generarIdUnico();
-            $reserva->hora = $horaInicio;
-            $reserva->fecha_reserva = $fechaActual;
-            $reserva->id_espacio = $request->id_espacio;
-            $reserva->run_solicitante = $request->run_solicitante;
-            $reserva->run_profesor = null; // No es profesor
-            $reserva->tipo_reserva = 'espontanea';
-            $reserva->estado = 'activa';
-            $reserva->hora_salida = $horaFin;
-            $reserva->save();
+            // Crear la reserva usando create() que respeta la conexión del modelo
+            $reserva = Reserva::on('tenant')->create([
+                'id_reserva' => Reserva::generarIdUnico(),
+                'hora' => $horaInicio,
+                'fecha_reserva' => $fechaActual,
+                'id_espacio' => $request->id_espacio,
+                'run_solicitante' => $request->run_solicitante,
+                'run_profesor' => null,
+                'tipo_reserva' => 'espontanea',
+                'estado' => 'activa',
+                'hora_salida' => $horaFin
+            ]);
 
             // Verificar que la reserva se guardó
             $reservaVerificacion = Reserva::on('tenant')->where('id_reserva', $reserva->id_reserva)->first();
