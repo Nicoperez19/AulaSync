@@ -173,15 +173,14 @@ class SolicitanteController extends Controller
             // Establecer contexto del tenant desde el request PRIMERO
             $this->establecerContextoTenant();
 
-            // Iniciar transacción DESPUÉS de establecer contexto (en conexión tenant)
-            DB::connection('tenant')->beginTransaction();
-
-            // Validar datos básicos (sin usar exists: para evitar búsqueda en BD central)
-            $request->validate([
-                'run_solicitante' => 'required|string',
-                'id_espacio' => 'required|string',
-                'modulos' => 'required|integer|min:1|max:2'
-            ]);
+            // Usar transacción de forma correcta con DB::transaction
+            return DB::connection('tenant')->transaction(function () use ($request) {
+                // Validar datos básicos (sin usar exists: para evitar búsqueda en BD central)
+                $request->validate([
+                    'run_solicitante' => 'required|string',
+                    'id_espacio' => 'required|string',
+                    'modulos' => 'required|integer|min:1|max:2'
+                ]);
 
             $ahora = Carbon::now();
             $horaActual = $ahora->format('H:i:s');
@@ -193,29 +192,17 @@ class SolicitanteController extends Controller
                 ->first();
 
             if (!$solicitante) {
-                DB::connection('tenant')->rollBack();
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'Solicitante no encontrado o inactivo'
-                ], 404);
+                throw new \Exception('Solicitante no encontrado o inactivo');
             }
 
             // Verificar que el espacio existe y está disponible (búsqueda en BD tenant)
             $espacio = Espacio::on('tenant')->where('id_espacio', $request->id_espacio)->first();
             if (!$espacio) {
-                DB::connection('tenant')->rollBack();
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'Espacio no encontrado'
-                ], 404);
+                throw new \Exception('Espacio no encontrado');
             }
 
             if ($espacio->estado === 'Ocupado') {
-                DB::connection('tenant')->rollBack();
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'El espacio está ocupado actualmente'
-                ], 400);
+                throw new \Exception('El espacio está ocupado actualmente');
             }
 
             // Verificar que el solicitante no tenga reservas activas sin hora_salida
@@ -225,12 +212,7 @@ class SolicitanteController extends Controller
                 ->first();
 
             if ($reservaActiva) {
-                DB::connection('tenant')->rollBack();
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'Ya tienes una reserva activa. Debes finalizarla antes de solicitar una nueva.',
-                    'tipo' => 'reserva_activa'
-                ], 400);
+                throw new \Exception('Ya tienes una reserva activa. Debes finalizarla antes de solicitar una nueva.');
             }
 
             // Validar módulos consecutivos disponibles
@@ -316,24 +298,11 @@ class SolicitanteController extends Controller
             }
 
             if ($modulosDisponibles < $modulosSolicitados) {
-                DB::connection('tenant')->rollBack();
                 $mensaje = 'No hay suficientes módulos consecutivos disponibles.';
-
                 if ($proximaClase) {
                     $mensaje .= " Próxima clase: {$proximaClase['asignatura']} (Módulo {$proximaClase['modulo']})";
                 }
-
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => $mensaje,
-                    'detalles' => [
-                        'modulos_disponibles' => $modulosDisponibles,
-                        'modulos_solicitados' => $modulosSolicitados,
-                        'proxima_clase' => $proximaClase,
-                        'planificaciones_encontradas' => count($planificaciones),
-                        'reservas_activas' => count($reservasActivas)
-                    ]
-                ], 400);
+                throw new \Exception($mensaje);
             }
 
             // Obtener horarios desde la tabla Modulo usando id_modulo
@@ -384,12 +353,7 @@ class SolicitanteController extends Controller
                 ->first();
 
             if ($reservasSimultaneas) {
-                DB::connection('tenant')->rollBack();
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'Ya tienes una reserva activa en ese horario. Debes finalizarla antes de solicitar una nueva.',
-                    'tipo' => 'reserva_simultanea'
-                ], 400);
+                throw new \Exception('Ya tienes una reserva activa en ese horario. Debes finalizarla antes de solicitar una nueva.');
             }
 
             // Crear la reserva
@@ -426,8 +390,6 @@ class SolicitanteController extends Controller
             $espacio->estado = 'Ocupado';
             $espacio->save();
 
-            DB::connection('tenant')->commit();
-
             Log::info('Reserva de solicitante creada exitosamente', [
                 'id_reserva' => $reserva->id_reserva,
                 'run_solicitante' => $reserva->run_solicitante,
@@ -449,9 +411,10 @@ class SolicitanteController extends Controller
                     'modulos_reservados' => $modulosSolicitados
                 ]
             ]);
+            }); // Cierre del closure de transacción
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            DB::connection('tenant')->rollBack();
+            // La ValidationException ocurre antes de la transacción, no necesita rollBack
             Log::error('Error de validación al crear reserva de solicitante: ' . json_encode($e->errors()));
             return response()->json([
                 'success' => false,
@@ -459,7 +422,7 @@ class SolicitanteController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            DB::connection('tenant')->rollBack();
+            // Los errores en la transacción se manejan automáticamente (auto-rollback)
             Log::error('Error al crear reserva de solicitante: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
