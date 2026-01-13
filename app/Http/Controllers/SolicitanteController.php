@@ -173,8 +173,8 @@ class SolicitanteController extends Controller
             // Establecer contexto del tenant desde el request PRIMERO
             $this->establecerContextoTenant();
 
-            // Iniciar transacción DESPUÉS de establecer contexto
-            DB::beginTransaction();
+            // Iniciar transacción DESPUÉS de establecer contexto (en conexión tenant)
+            DB::connection('tenant')->beginTransaction();
 
             // Validar datos básicos (sin usar exists: para evitar búsqueda en BD central)
             $request->validate([
@@ -193,7 +193,7 @@ class SolicitanteController extends Controller
                 ->first();
 
             if (!$solicitante) {
-                DB::rollBack();
+                DB::connection('tenant')->rollBack();
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'Solicitante no encontrado o inactivo'
@@ -203,7 +203,7 @@ class SolicitanteController extends Controller
             // Verificar que el espacio existe y está disponible (búsqueda en BD tenant)
             $espacio = Espacio::on('tenant')->where('id_espacio', $request->id_espacio)->first();
             if (!$espacio) {
-                DB::rollBack();
+                DB::connection('tenant')->rollBack();
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'Espacio no encontrado'
@@ -211,7 +211,7 @@ class SolicitanteController extends Controller
             }
 
             if ($espacio->estado === 'Ocupado') {
-                DB::rollBack();
+                DB::connection('tenant')->rollBack();
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'El espacio está ocupado actualmente'
@@ -225,7 +225,7 @@ class SolicitanteController extends Controller
                 ->first();
 
             if ($reservaActiva) {
-                DB::rollBack();
+                DB::connection('tenant')->rollBack();
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'Ya tienes una reserva activa. Debes finalizarla antes de solicitar una nueva.',
@@ -316,7 +316,7 @@ class SolicitanteController extends Controller
             }
 
             if ($modulosDisponibles < $modulosSolicitados) {
-                DB::rollBack();
+                DB::connection('tenant')->rollBack();
                 $mensaje = 'No hay suficientes módulos consecutivos disponibles.';
 
                 if ($proximaClase) {
@@ -384,7 +384,7 @@ class SolicitanteController extends Controller
                 ->first();
 
             if ($reservasSimultaneas) {
-                DB::rollBack();
+                DB::connection('tenant')->rollBack();
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'Ya tienes una reserva activa en ese horario. Debes finalizarla antes de solicitar una nueva.',
@@ -409,7 +409,7 @@ class SolicitanteController extends Controller
             $espacio->estado = 'Ocupado';
             $espacio->save();
 
-            DB::commit();
+            DB::connection('tenant')->commit();
 
             Log::info('Reserva de solicitante creada exitosamente', [
                 'id_reserva' => $reserva->id_reserva,
@@ -434,7 +434,7 @@ class SolicitanteController extends Controller
             ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {
-            DB::rollBack();
+            DB::connection('tenant')->rollBack();
             Log::error('Error de validación al crear reserva de solicitante: ' . json_encode($e->errors()));
             return response()->json([
                 'success' => false,
@@ -442,7 +442,7 @@ class SolicitanteController extends Controller
                 'errors' => $e->errors()
             ], 422);
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::connection('tenant')->rollBack();
             Log::error('Error al crear reserva de solicitante: ' . $e->getMessage());
             return response()->json([
                 'success' => false,

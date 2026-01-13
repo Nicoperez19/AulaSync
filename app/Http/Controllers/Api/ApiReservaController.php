@@ -126,7 +126,7 @@ class ApiReservaController extends Controller
                 ];
             }
 
-            DB::beginTransaction();
+            DB::connection('tenant')->beginTransaction();
             try {
                 // Crear la reserva
                 $reserva = new Reserva();
@@ -156,7 +156,7 @@ class ApiReservaController extends Controller
                     $request->rut_usuario
                 );
 
-                DB::commit();
+                DB::connection('tenant')->commit();
 
                 return response()->json([
                     'success' => true,
@@ -167,7 +167,7 @@ class ApiReservaController extends Controller
                 ]);
 
             } catch (\Exception $e) {
-                DB::rollback();
+                DB::connection('tenant')->rollback();
                 throw $e;
             }
 
@@ -191,7 +191,7 @@ class ApiReservaController extends Controller
                 'espacio_id' => 'required'
             ]);
 
-            DB::beginTransaction();
+            DB::connection('tenant')->beginTransaction();
 
             // Buscar la reserva activa para el espacio sin restricción de fecha
             $reserva = Reserva::where('id_espacio', $request->espacio_id)
@@ -201,6 +201,7 @@ class ApiReservaController extends Controller
             \Log::info('Reserva encontrada:', ['reserva' => $reserva]);
 
             if (!$reserva) {
+                DB::connection('tenant')->rollBack();
                 return response()->json([
                     'success' => false,
                     'message' => 'No se encontró una reserva activa para este espacio'
@@ -243,7 +244,7 @@ class ApiReservaController extends Controller
                 \Log::info("Reserva auto-finalizada {$reservaAutoFinalizada->id_reserva} actualizada: profesor devolvió llave tarde");
             }
 
-            DB::commit();
+            DB::connection('tenant')->commit();
 
             return response()->json([
                 'success' => true,
@@ -251,7 +252,7 @@ class ApiReservaController extends Controller
             ]);
 
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::connection('tenant')->rollBack();
             \Log::error('Error al registrar salida: ' . $e->getMessage());
             \Log::error('Stack trace: ' . $e->getTraceAsString());
             return response()->json([
