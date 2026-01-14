@@ -1826,20 +1826,19 @@ class DashboardController extends Controller
      */
     public function getAccesosData(Request $request)
     {
+        \Log::emergency('🚨 GETACCESOSDATA LLAMADO');
+        
         $tenant = $this->ensureTenantContext();
-        Log::info('✅ getAccesosData() INICIO - tenant: ' . ($tenant ? $tenant->name : 'NULL'));
+        \Log::emergency('✅ getAccesosData() INICIO - tenant: ' . ($tenant ? $tenant->name : 'NULL'));
         
         if (!$tenant) {
-            Log::error('❌ getAccesosData() - NO TENANT FOUND');
+            \Log::error('❌ getAccesosData() - NO TENANT FOUND');
             return view('partials.accesos_tab_content', ['reservasSinDevolucion' => collect(), 'accesosActuales' => collect()])->render();
         }
 
         $piso = $request->session()->get('piso');
         
-        // DEBUG: Log SQL queries
-        \DB::connection('tenant')->enableQueryLog();
-        
-        // Obtener todas las reservas activas sin devolver (sin filtro de facultad)
+        // Obtener todas las reservas activas sin devolver
         $reservasSinDevolucion = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
             ->where('estado', 'activa')
             ->whereNull('hora_salida')
@@ -1854,10 +1853,9 @@ class DashboardController extends Controller
             ->latest('hora')
             ->get();
         
-        Log::info('📊 getAccesosData() - reservasSinDevolucion: ' . $reservasSinDevolucion->count());
-        Log::info('🔍 SQL for reservasSinDevolucion:', \DB::connection('tenant')->getQueryLog());
+        \Log::emergency('📊 reservasSinDevolucion: ' . $reservasSinDevolucion->count());
         
-        // Obtener todos los accesos activos (sin filtro de facultad)
+        // Obtener todos los accesos activos
         $accesosActuales = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
             ->where('estado', 'activa')
             ->whereNull('hora_salida')
@@ -1871,8 +1869,7 @@ class DashboardController extends Controller
             ->orderBy('fecha_reserva', 'desc')
             ->get();
         
-        Log::info('📈 getAccesosData() - accesosActuales: ' . $accesosActuales->count());
-        Log::info('🔍 SQL for accesosActuales:', \DB::connection('tenant')->getQueryLog());
+        \Log::emergency('📈 accesosActuales: ' . $accesosActuales->count());
             
         return view('partials.accesos_tab_content', compact('reservasSinDevolucion', 'accesosActuales'))->render();
     }
