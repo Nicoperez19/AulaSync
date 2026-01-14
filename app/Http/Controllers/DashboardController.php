@@ -1840,6 +1840,17 @@ class DashboardController extends Controller
 
         $piso = $request->session()->get('piso');
         
+        // DEBUG: Test raw DB query first
+        $rawCount = \DB::connection('tenant')->table('reservas')
+            ->where('estado', 'activa')
+            ->whereNull('hora_salida')
+            ->count();
+        \Log::emergency('🔍 RAW DB COUNT of active reservas: ' . $rawCount);
+        
+        // DEBUG: Get all reservas without any filtering
+        $allReservas = Reserva::all()->count();
+        \Log::emergency('🔍 TOTAL RESERVAS IN TABLE: ' . $allReservas);
+        
         // Obtener todas las reservas activas sin devolver
         $reservasSinDevolucion = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
             ->where('estado', 'activa')
