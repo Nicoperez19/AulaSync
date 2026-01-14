@@ -859,7 +859,7 @@ class EspacioController extends Controller
             }
             
             // Cerrar la última fila y grid
-            $html .= '</div></div>';
+            $html .= '</div></div>
             </body>
             </html>';
 
