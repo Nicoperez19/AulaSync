@@ -1836,6 +1836,9 @@ class DashboardController extends Controller
 
         $piso = $request->session()->get('piso');
         
+        // DEBUG: Log SQL queries
+        \DB::connection('tenant')->enableQueryLog();
+        
         // Obtener todas las reservas activas sin devolver (sin filtro de facultad)
         $reservasSinDevolucion = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
             ->where('estado', 'activa')
@@ -1852,6 +1855,7 @@ class DashboardController extends Controller
             ->get();
         
         Log::info('📊 getAccesosData() - reservasSinDevolucion: ' . $reservasSinDevolucion->count());
+        Log::info('🔍 SQL for reservasSinDevolucion:', \DB::connection('tenant')->getQueryLog());
         
         // Obtener todos los accesos activos (sin filtro de facultad)
         $accesosActuales = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
@@ -1868,6 +1872,7 @@ class DashboardController extends Controller
             ->get();
         
         Log::info('📈 getAccesosData() - accesosActuales: ' . $accesosActuales->count());
+        Log::info('🔍 SQL for accesosActuales:', \DB::connection('tenant')->getQueryLog());
             
         return view('partials.accesos_tab_content', compact('reservasSinDevolucion', 'accesosActuales'))->render();
     }
