@@ -28,9 +28,28 @@ class SolicitanteController extends Controller
      */
     public function verificarSolicitante($run)
     {
+        // Obtener y configurar el tenant
+        $tenantId = tenant_id();
+        if (!$tenantId) {
+            return response()->json([
+                'verificado' => false,
+                'mensaje' => 'No se encontró contexto de tenant'
+            ], 400);
+        }
+        
+        $tenant = Tenant::find($tenantId);
+        if (!$tenant) {
+            return response()->json([
+                'verificado' => false,
+                'mensaje' => 'Tenant no encontrado'
+            ], 400);
+        }
+
+        // CONFIGURAR EXPLÍCITAMENTE LA CONEXIÓN TENANT
+        Config::set('database.connections.tenant.database', $tenant->database);
+        DB::purge('tenant');
+
         try {
-            $this->establecerContextoTenant();
-            
             $solicitante = Solicitante::on('tenant')->where('run_solicitante', $run)
                 ->where('activo', true)
                 ->first();
@@ -72,10 +91,28 @@ class SolicitanteController extends Controller
      */
     public function registrarSolicitante(Request $request)
     {
-        try {
-            // Establecer contexto del tenant desde el request
-            $this->establecerContextoTenant();
+        // Obtener y configurar el tenant
+        $tenantId = tenant_id();
+        if (!$tenantId) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'No se encontró contexto de tenant'
+            ], 400);
+        }
+        
+        $tenant = Tenant::find($tenantId);
+        if (!$tenant) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Tenant no encontrado'
+            ], 400);
+        }
 
+        // CONFIGURAR EXPLÍCITAMENTE LA CONEXIÓN TENANT
+        Config::set('database.connections.tenant.database', $tenant->database);
+        DB::purge('tenant');
+
+        try {
             // Validar que el RUN sea único en el tenant
             $runExistente = Solicitante::on('tenant')->where('run_solicitante', $request->run_solicitante)->exists();
             if ($runExistente) {
@@ -169,10 +206,42 @@ class SolicitanteController extends Controller
         Log::info('=== INICIO CREAR RESERVA SOLICITANTE ===');
         Log::info('Datos recibidos:', $request->all());
 
-        // Establecer contexto del tenant desde el request PRIMERO
-        $this->establecerContextoTenant();
+        // Obtener el tenant del contexto actual
+        $tenantId = tenant_id();
+        if (!$tenantId) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'No se encontró contexto de tenant'
+            ], 400);
+        }
+        
+        $tenant = Tenant::find($tenantId);
+        if (!$tenant) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Tenant no encontrado'
+            ], 400);
+        }
+
+        // CONFIGURAR EXPLÍCITAMENTE LA CONEXIÓN TENANT
+        Config::set('database.connections.tenant.database', $tenant->database);
+        Config::set('database.connections.tenant.host', $tenant->host ?? config('database.connections.mysql.host'));
+        DB::purge('tenant');
+        
+        Log::info('Configuración de conexión tenant establecida', [
+            'tenantId' => $tenantId,
+            'database' => $tenant->database,
+            'host' => $tenant->host ?? config('database.connections.mysql.host')
+        ]);
 
         try {
+            // VERIFICAR QUE LA CONEXIÓN TENANT ESTÁ CONFIGURADA
+            $tenantConfig = config('database.connections.tenant');
+            Log::info('Configuración de conexión tenant antes de queries', [
+                'database' => $tenantConfig['database'] ?? 'NO CONFIGURADA',
+                'host' => $tenantConfig['host'] ?? 'NO CONFIGURADA'
+            ]);
+            
             // Validar datos básicos
             $request->validate([
                 'run_solicitante' => 'required|string',
@@ -635,6 +704,7 @@ class SolicitanteController extends Controller
                 
                 if ($tenant) {
                     $tenantId = $tenant->id;
+                    // CONFIGURAR EXPLÍCITAMENTE LA CONEXIÓN TENANT
                     Config::set('database.connections.tenant.database', $tenant->database);
                     DB::purge('tenant');
                     Log::info('Tenant establecido en SolicitanteController', [
@@ -653,18 +723,29 @@ class SolicitanteController extends Controller
                 // Si el tenant ya estaba establecido, asegurar que la conexión está bien configurada
                 $tenant = Tenant::find($tenantId);
                 if ($tenant) {
+                    // CONFIGURAR EXPLÍCITAMENTE LA CONEXIÓN TENANT
                     Config::set('database.connections.tenant.database', $tenant->database);
                     DB::purge('tenant');
                     Log::info('Reconectando tenant ya establecido', [
                         'tenantId' => $tenantId,
                         'database' => $tenant->database
                     ]);
+                    
+                    // VERIFICACIÓN DE CONEXIÓN
+                    try {
+                        DB::connection('tenant')->getPdo();
+                        Log::info('Conexión tenant verificada correctamente');
+                    } catch (\Exception $e) {
+                        Log::error('Error al verificar conexión tenant: ' . $e->getMessage());
+                        throw $e;
+                    }
                 }
             }
         } catch (\Exception $e) {
             Log::error('Error en establecerContextoTenant', [
                 'error' => $e->getMessage()
             ]);
+            throw $e;
         }
     }
 }
