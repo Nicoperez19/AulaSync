@@ -92,6 +92,31 @@ class DashboardController extends Controller
         }
     }
 
+    /**
+     * Obtener y configurar el tenant actual para operaciones AJAX
+     * Garantiza que Reserva::on('tenant') apunte a la BD correcta
+     */
+    private function ensureTenantContext()
+    {
+        $tenant = null;
+        
+        // Opción 1: Obtener de sesión
+        if (session()->has('tenant_id')) {
+            $tenant = Tenant::find(session('tenant_id'));
+        }
+        
+        // Opción 2: Si no hay sesión, obtener el primer tenant activo
+        if (!$tenant) {
+            $tenant = Tenant::where('is_active', true)->first();
+            if ($tenant) {
+                $tenant->makeCurrent();
+                session(['tenant_id' => $tenant->id]);
+            }
+        }
+        
+        return $tenant;
+    }
+
     public function index(Request $request)
     {
         // Obtener el piso de la sesión o request
@@ -1774,9 +1799,16 @@ class DashboardController extends Controller
      */
     public function getUtilizacionData(Request $request)
     {
+        $tenant = $this->ensureTenantContext();
+        if (!$tenant) {
+            return response()->json([
+                'comparativaTipos' => [],
+                'salasOcupadas' => ['total' => 0]
+            ]);
+        }
+
         $piso = $request->session()->get('piso');
-        $tenant = Tenant::current();
-        $facultad = 'IT_' . ($tenant ? $tenant->sede_id : 'TH');
+        $facultad = 'IT_' . $tenant->sede_id;
 
         $comparativaTipos = $this->obtenerComparativaTipos($facultad, $piso);
         $salasOcupadas = [
@@ -1794,9 +1826,13 @@ class DashboardController extends Controller
      */
     public function getAccesosData(Request $request)
     {
+        $tenant = $this->ensureTenantContext();
+        if (!$tenant) {
+            return view('partials.accesos_tab_content', ['reservasSinDevolucion' => collect(), 'accesosActuales' => collect()])->render();
+        }
+
         $piso = $request->session()->get('piso');
-        $tenant = Tenant::current();
-        $facultad = 'IT_' . ($tenant ? $tenant->sede_id : 'TH');
+        $facultad = 'IT_' . $tenant->sede_id;
 
         $reservasSinDevolucion = $this->obtenerReservasActivasSinDevolucion($facultad, $piso);
         $accesosActuales = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
@@ -1818,7 +1854,8 @@ class DashboardController extends Controller
             'reservasSinDevolucion' => $reservasSinDevolucion->count(),
             'accesosActuales' => $accesosActuales->count(),
             'piso' => $piso,
-            'facultad' => $facultad
+            'facultad' => $facultad,
+            'tenant_id' => $tenant->id
         ]);
 
         return view('partials.accesos_tab_content', compact('reservasSinDevolucion', 'accesosActuales'))->render();
@@ -1826,9 +1863,20 @@ class DashboardController extends Controller
 
     public function getWidgetData(Request $request)
     {
+        $tenant = $this->ensureTenantContext();
+        if (!$tenant) {
+            return response()->json([
+                'ocupacionSemanal' => [],
+                'ocupacionDiaria' => [],
+                'ocupacionMensual' => [],
+                'usuariosSinEscaneo' => 0,
+                'horasUtilizadas' => [],
+                'salasOcupadas' => []
+            ]);
+        }
+
         $piso = $request->session()->get('piso');
-        $tenant = Tenant::current();
-        $facultad = 'IT_' . ($tenant ? $tenant->sede_id : 'TH');
+        $facultad = 'IT_' . $tenant->sede_id;
 
         // Obtener datos para los KPIs - DIURNO Y VESPERTINO
         $ocupacionSemanal = [
@@ -2604,9 +2652,19 @@ class DashboardController extends Controller
 
     public function getClasesNoRealizadasData(Request $request)
     {
+        $tenant = $this->ensureTenantContext();
+        if (!$tenant) {
+            return response()->json([
+                'clasesNoRealizadas' => [],
+                'recuperaciones' => [],
+                'horasPromedio' => 0,
+                'totalHoras' => 0,
+                'tasaRecuperacion' => 0
+            ]);
+        }
+
         $piso = $request->session()->get('piso');
-        $tenant = Tenant::current();
-        $facultad = 'IT_' . ($tenant ? $tenant->sede_id : 'TH');
+        $facultad = 'IT_' . $tenant->sede_id;
         $mes = now()->month;
         $anio = now()->year;
         $hoy = Carbon::now()->startOfDay();
