@@ -209,11 +209,13 @@ class QuickActionsController extends Controller
                 ->orderBy('fecha_reserva', 'desc')
                 ->orderBy('hora');
 
-            // Aplicar filtros si existen
-            if ($request->has('estado') && $request->estado) {
-                $query->where('estado', $request->estado);
-            }
-
+            // DEBUGGING: Verificar el estado de la query ANTES de obtener resultados
+            Log::info('🔍 DEBUG: Query info', [
+                'query_sql' => $query->toSql(),
+                'tenant_connection' => $query->getConnection()->getName(),
+                'tenant_database' => $query->getConnection()->getDatabaseName()
+            ]);
+            
             if ($request->has('fecha') && $request->fecha) {
                 $query->whereDate('fecha_reserva', $request->fecha);
             }
