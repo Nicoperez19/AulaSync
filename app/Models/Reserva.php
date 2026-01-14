@@ -136,4 +136,36 @@ class Reserva extends Model
     {
         return $this->hasMany(Asistencia::class, 'id_reserva', 'id_reserva');
     }
+
+    /**
+     * Scope para obtener reservas vigentes en un momento dado
+     * Incluye reservas activas que cubren la hora especificada
+     */
+    public function scopeVigentes($query, $fecha = null, $hora = null)
+    {
+        $fecha = $fecha ?? now()->toDateString();
+        $hora = $hora ?? now()->format('H:i:s');
+
+        return $query->where('estado', 'activa')
+                     ->where('fecha_reserva', $fecha)
+                     ->where(function($q) use ($hora) {
+                         $q->where('hora', '<=', $hora)
+                           ->where('hora_salida', '>', $hora);
+                     });
+    }
+
+    /**
+     * Scope para obtener reservas futuras desde un momento dado
+     * Incluye reservas activas que comienzan después de la hora especificada
+     */
+    public function scopeFuturas($query, $fecha = null, $hora = null)
+    {
+        $fecha = $fecha ?? now()->toDateString();
+        $hora = $hora ?? now()->format('H:i:s');
+
+        return $query->where('estado', 'activa')
+                     ->where('fecha_reserva', $fecha)
+                     ->where('hora', '>', $hora)
+                     ->orderBy('hora', 'asc');
+    }
 }

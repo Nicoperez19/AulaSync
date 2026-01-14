@@ -31,17 +31,31 @@ class LogoComposer
         $logoPath = Cache::remember("logo_institucional_path_{$idSede}", 3600, function () use ($idSede, $sedeActual) {
             // First check if sede has logo in its own field
             if ($sedeActual && $sedeActual->logo) {
-                return asset('storage/sedes/logos/' . $sedeActual->logo);
+                $path = 'sedes/logos/' . $sedeActual->logo;
+                // Verificar si existe en el disco publico
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+                     return asset('storage/' . $path);
+                }
             }
             
             // Fallback to configuration table
             $logoInstitucional = Configuracion::where('clave', "logo_institucional_{$idSede}")->first();
             
             if ($logoInstitucional && $logoInstitucional->valor) {
-                return asset('storage/images/logo/' . $logoInstitucional->valor);
+                $path = 'images/logo/' . $logoInstitucional->valor;
+                // Verificar si existe en el disco publico
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+                    return asset('storage/' . $path);
+                }
             }
             
-            return asset('images/logo_IT_talcahuano.png');
+            // Verificar si el fallback por defecto existe
+            if (file_exists(public_path('images/logo_IT_talcahuano.png'))) {
+                return asset('images/logo_IT_talcahuano.png');
+            }
+
+            // Fallback final genérico si todo falla
+            return asset('images/logo_instituto_tecnologico-01.png');
         });
 
         $view->with('logoInstitucional', $logoPath);

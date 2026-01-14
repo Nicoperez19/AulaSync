@@ -310,13 +310,15 @@ class SolicitanteController extends Controller
             // Determinar módulo actual - pero permitir reservar incluso sin módulo actual definido
             $moduloActual = $this->determinarModuloActual($horaActual, $diaActual);
 
-            // Si no hay módulo actual, permitir usar el módulo 1 como default
+            // Si no hay módulo actual (fuera de horario o recreo), usar hora actual
+            $usarHoraActual = false;
             if (!$moduloActual) {
-                Log::warning('No se encontró módulo actual, usando módulo 1 como default', [
+                Log::info('No se encontró módulo actual (fuera de horario o recreo), se usará hora actual', [
                     'horaActual' => $horaActual,
                     'diaActual' => $diaActual
                 ]);
-                $moduloActual = 1;
+                $moduloActual = 1; // Valor dummy para compatibilidad con loops
+                $usarHoraActual = true;
             }
 
             // Verificar módulos consecutivos disponibles (incluyendo reservas activas)
@@ -401,7 +403,7 @@ class SolicitanteController extends Controller
             $moduloInicio = \App\Models\Modulo::on('tenant')->where('id_modulo', $idModuloInicio)->first();
             $moduloFin = \App\Models\Modulo::on('tenant')->where('id_modulo', $idModuloFin)->first();
 
-            $horaInicio = $moduloInicio ? $moduloInicio->hora_inicio : $horaActual;
+            $horaInicio = ($moduloInicio && !$usarHoraActual) ? $moduloInicio->hora_inicio : $horaActual;
             
             // Si no hay módulo final, calcular una hora por defecto (1.5 horas por módulo)
             if ($moduloFin) {
