@@ -1826,9 +1826,11 @@ class DashboardController extends Controller
      */
     public function getAccesosData(Request $request)
     {
-        \Log::emergency('🚨 GETACCESOSDATA LLAMADO');
+        error_log('🚨 GETACCESOSDATA LLAMADO - ' . date('Y-m-d H:i:s'));
+        \Log::emergency('🚨 GETACCESOSDATA LLAMADO VIA LOGGER');
         
         $tenant = $this->ensureTenantContext();
+        error_log('Tenant: ' . ($tenant ? $tenant->name : 'NULL'));
         \Log::emergency('✅ getAccesosData() INICIO - tenant: ' . ($tenant ? $tenant->name : 'NULL'));
         
         if (!$tenant) {
@@ -1853,6 +1855,7 @@ class DashboardController extends Controller
             ->latest('hora')
             ->get();
         
+        error_log('reservasSinDevolucion count: ' . $reservasSinDevolucion->count());
         \Log::emergency('📊 reservasSinDevolucion: ' . $reservasSinDevolucion->count());
         
         // Obtener todos los accesos activos
@@ -1869,6 +1872,7 @@ class DashboardController extends Controller
             ->orderBy('fecha_reserva', 'desc')
             ->get();
         
+        error_log('accesosActuales count: ' . $accesosActuales->count());
         \Log::emergency('📈 accesosActuales: ' . $accesosActuales->count());
             
         return view('partials.accesos_tab_content', compact('reservasSinDevolucion', 'accesosActuales'))->render();
