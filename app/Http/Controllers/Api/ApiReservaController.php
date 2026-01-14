@@ -310,15 +310,13 @@ class ApiReservaController extends Controller
                 'id_espacio' => $request->espacio_id,
                 'run_profesor' => $request->user_id,
                 'tipo_reserva' => 'espontanea',
-                'estado' => 'activa',
-                'hora_salida' => $horaTermino
+                'estado' => 'activa'
             ]);
 
             return response()->json([
                 'success' => true,
                 'mensaje' => 'Reserva espontánea registrada correctamente',
-                'espacio_nombre' => $reserva->espacio->nombre_espacio ?? '',
-                'hora_termino' => $reserva->hora_salida
+                'espacio_nombre' => $reserva->espacio->nombre_espacio ?? ''
             ]);
 
         } catch (\Exception $e) {

@@ -477,26 +477,12 @@ class QuickActionsController extends Controller
             $horaFin = $moduloFinal->hora_termino;
             $duracionModulos = $request->modulo_final - $request->modulo_inicial + 1;
 
-            // VALIDAR QUE NO EXISTA UNA RESERVA ACTIVA EN ESE ESPACIO, FECHA Y HORARIO
+            // VALIDAR QUE NO EXISTA UNA RESERVA ACTIVA EN ESE ESPACIO Y FECHA
+            // Para solapamiento, consideramos que si hay cualquier reserva activa en el mismo espacio/fecha,
+            // podría haber conflicto. El usuario debe finalizar la anterior primero.
             $reservaExistente = Reserva::where('id_espacio', $request->espacio)
                 ->where('fecha_reserva', $request->fecha)
                 ->where('estado', 'activa')
-                ->where(function($query) use ($horaInicio, $horaFin) {
-                    // Verificar solapamiento de horarios
-                    $query->where(function($q) use ($horaInicio, $horaFin) {
-                        // La reserva existente empieza antes y termina durante la nueva
-                        $q->where('hora', '<=', $horaInicio)
-                          ->where('hora_salida', '>', $horaInicio);
-                    })->orWhere(function($q) use ($horaInicio, $horaFin) {
-                        // La reserva existente empieza durante la nueva
-                        $q->where('hora', '>=', $horaInicio)
-                          ->where('hora', '<', $horaFin);
-                    })->orWhere(function($q) use ($horaInicio, $horaFin) {
-                        // La nueva reserva contiene completamente la existente
-                        $q->where('hora', '>=', $horaInicio)
-                          ->where('hora_salida', '<=', $horaFin);
-                    });
-                })
                 ->first();
 
             if ($reservaExistente) {
@@ -535,7 +521,6 @@ class QuickActionsController extends Controller
                 'id_asignatura' => $request->id_asignatura,
                 'modulos' => $duracionModulos,
                 'hora' => $horaInicio,
-                'hora_salida' => $horaFin,
                 'tipo_reserva' => $request->tipo === 'profesor' || $request->tipo === 'colaborador' ? 'clase' : 'espontanea',
                 'estado' => 'activa',
                 'observaciones' => $observacionesCompletas,

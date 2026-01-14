@@ -1849,10 +1849,10 @@ class DashboardController extends Controller
             ->latest('hora')
             ->get();
         
-        // Obtener todos los accesos activos
+        // Historial de Accesos: últimos 10 registros (incluye accesos en curso y finalizados)
+        // No filtramos por hora_salida para incluir el histórico completo
         $accesosActuales = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
             ->where('estado', 'activa')
-            ->whereNull('hora_salida')
             ->when($piso, function($query) use ($piso) {
                 return $query->whereHas('espacio', function($q) use ($piso) {
                     $q->whereHas('piso', function($inner) use ($piso) {
@@ -1861,6 +1861,8 @@ class DashboardController extends Controller
                 });
             })
             ->orderBy('fecha_reserva', 'desc')
+            ->orderBy('hora', 'desc')
+            ->limit(10)
             ->get();
             
         return view('partials.accesos_tab_content', compact('reservasSinDevolucion', 'accesosActuales'))->render();

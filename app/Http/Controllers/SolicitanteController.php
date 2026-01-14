@@ -458,7 +458,6 @@ class SolicitanteController extends Controller
                 'run_profesor' => null,
                 'tipo_reserva' => 'espontanea',
                 'estado' => 'activa',
-                'hora_salida' => $horaFin,
                 'created_at' => $ahora,
                 'updated_at' => $ahora
             ]);
@@ -532,7 +531,6 @@ class SolicitanteController extends Controller
                 'reserva' => [
                     'id' => $idReserva,
                     'hora' => $horaInicio,
-                    'hora_salida' => $horaFin,
                     'fecha' => $fechaActual,
                     'espacio' => $espacio->nombre_espacio,
                     'solicitante' => $solicitante->nombre,
