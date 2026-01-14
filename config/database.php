@@ -97,7 +97,7 @@ return [
             'url' => env('DATABASE_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
-            'database' => env('DB_TENANT_DATABASE', env('DB_DATABASE', 'forge')),
+            'database' => 'aulasync_th', // Valor por defecto temporal - debe ser configurado por makeCurrent()
             'username' => env('DB_TENANT_USERNAME', 'root'),
             'password' => env('DB_TENANT_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
