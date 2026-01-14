@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 use App\Models\Reserva;
 use App\Models\Espacio;
 use App\Models\Profesor;
@@ -176,10 +177,26 @@ class QuickActionsController extends Controller
                 ]);
             }
 
+            // DEBUGGING: Verificar conexión del tenant
+            Log::info('🔍 DEBUG: Tenant info', [
+                'id' => $tenant->id,
+                'name' => $tenant->name,
+                'database' => $tenant->database,
+                'configured_db' => config('database.connections.tenant.database')
+            ]);
+
             // Usar explícitamente la conexión 'tenant' para acceder a las reservas del tenant actual
             $query = Reserva::on('tenant')
                 ->orderBy('fecha_reserva', 'desc')
                 ->orderBy('hora');
+            
+            // DEBUGGING: Verificar que la conexión esté correcta
+            try {
+                $testConnection = DB::connection('tenant')->select('SELECT DATABASE() as db');
+                Log::info('✅ Conexión a BD testada', ['current_db' => $testConnection[0]->db ?? 'unknown']);
+            } catch (\Exception $e) {
+                Log::error('❌ Error al conectar a BD', ['error' => $e->getMessage()]);
+            }
 
             // Aplicar filtros si existen
             if ($request->has('estado') && $request->estado) {
