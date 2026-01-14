@@ -405,7 +405,7 @@ Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(fu
 require __DIR__ . '/auth.php';
 
 // Rutas para Acciones Rápidas (Mantenedores)
-Route::middleware(['auth'])->prefix('quick-actions')->name('quick-actions.')->group(function () {
+Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-actions.')->group(function () {
     Route::get('/', [QuickActionsController::class, 'index'])->name('index');
     Route::get('/crear-reserva', [QuickActionsController::class, 'crearReserva'])->name('crear-reserva');
     Route::get('/gestionar-reservas', [QuickActionsController::class, 'gestionarReservas'])->name('gestionar-reservas');
