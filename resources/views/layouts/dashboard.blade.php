@@ -337,7 +337,7 @@
                         <i class="fas fa-building mr-2"></i>
                         Utilización
                     </button>
-                    <button @click="activeTab = 'accesos'; cargarTabAccesos();"
+                    <button @click="(activeTab = 'accesos', cargarTabAccesos())"
                             :class="activeTab === 'accesos' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
                             class="whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm transition-colors">
                         <i class="fas fa-users mr-2"></i>
