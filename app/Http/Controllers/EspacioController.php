@@ -758,61 +758,58 @@ class EspacioController extends Controller
                     }
                     body {
                         font-family: Arial, sans-serif;
-                        padding: 20px;
+                        padding: 15px;
                     }
                     .header {
                         text-align: center;
-                        margin-bottom: 30px;
+                        margin-bottom: 20px;
                     }
                     .header h1 {
-                        font-size: 28px;
+                        font-size: 24px;
                         margin-bottom: 5px;
                         color: #1f2937;
                     }
                     .header p {
-                        font-size: 12px;
+                        font-size: 11px;
                         color: #6b7280;
                     }
-                    .qr-grid {
+                    table {
                         width: 100%;
-                        display: table;
                         border-collapse: collapse;
-                        margin-top: 20px;
+                        margin-top: 15px;
                     }
-                    .qr-row {
-                        display: table-row;
-                    }
-                    .qr-item {
-                        display: table-cell;
-                        width: 20%;
+                    td {
+                        border: 1px solid #e5e7eb;
                         text-align: center;
-                        padding: 10px;
+                        padding: 8px;
                         vertical-align: top;
-                        page-break-inside: avoid;
-                        border: 1px solid #f0f0f0;
+                        width: 20%;
+                    }
+                    .qr-container {
+                        height: auto;
                     }
                     .qr-image {
-                        width: 100px;
-                        height: 100px;
-                        margin: 0 auto 8px;
+                        width: 90px;
+                        height: 90px;
+                        margin: 0 auto 6px;
                         border: 1px solid #e5e7eb;
-                        padding: 5px;
+                        padding: 3px;
                         background: white;
                     }
                     .qr-id {
                         font-weight: bold;
-                        font-size: 11px;
+                        font-size: 10px;
                         color: #1f2937;
                         word-break: break-word;
                         margin-bottom: 2px;
                     }
                     .qr-name {
-                        font-size: 9px;
+                        font-size: 8px;
                         color: #6b7280;
                         margin-top: 2px;
-                    }
-                    .page-break {
-                        page-break-after: always;
+                        max-width: 100%;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
                     }
                 </style>
             </head>
@@ -822,7 +819,7 @@ class EspacioController extends Controller
                     <p>Códigos QR para todos los espacios del sistema</p>
                     <p>Generado: ' . now()->format('d/m/Y H:i:s') . '</p>
                 </div>
-                <div class="qr-grid">';
+                <table>';
 
             $count = 0;
             $itemsPerRow = 5;
@@ -831,9 +828,9 @@ class EspacioController extends Controller
                 // Iniciar nueva fila
                 if ($count % $itemsPerRow == 0) {
                     if ($count > 0) {
-                        $html .= '</div>';
+                        $html .= '</tr>';
                     }
-                    $html .= '<div class="qr-row">';
+                    $html .= '<tr>';
                 }
                 
                 // Generar QR para cada espacio
@@ -844,22 +841,19 @@ class EspacioController extends Controller
                     $qrContent = Storage::disk('public')->get($qrPath);
                     $base64QR = base64_encode($qrContent);
 
-                    $html .= '<div class="qr-item">
+                    $html .= '<td class="qr-container">
                         <img src="data:image/png;base64,' . $base64QR . '" class="qr-image" alt="QR ' . $espacio->id_espacio . '">
                         <div class="qr-id">' . htmlspecialchars($espacio->id_espacio) . '</div>
                         <div class="qr-name">' . htmlspecialchars($espacio->nombre_espacio ?? '') . '</div>
-                    </div>';
+                    </td>';
 
                     $count++;
-                    // Agregar salto de página cada 25 items (5x5)
-                    if ($count % 25 == 0) {
-                        $html .= '</div></div><div class="qr-grid" style="page-break-before: always; margin-top: 20px;">';
-                    }
                 }
             }
             
-            // Cerrar la última fila y grid
-            $html .= '</div></div>
+            // Cerrar la última fila y tabla
+            $html .= '</tr>
+                </table>
             </body>
             </html>';
 
