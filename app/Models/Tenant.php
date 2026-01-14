@@ -58,8 +58,9 @@ class Tenant extends Model
                 'database.connections.tenant.database' => $this->database,
             ]);
             
-            // Cambiar la conexión predeterminada a la del tenant
+            // CRÍTICO: Forzar que se olvide de la conexión anterior para que se reconecte
             app('db')->purge('tenant');
+            app('db')->disconnect('tenant');
         }
         
         return $this;
