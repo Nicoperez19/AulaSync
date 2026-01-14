@@ -774,33 +774,42 @@ class EspacioController extends Controller
                         color: #6b7280;
                     }
                     .qr-grid {
-                        display: grid;
-                        grid-template-columns: repeat(3, 1fr);
-                        gap: 30px;
+                        width: 100%;
+                        display: table;
+                        border-collapse: collapse;
                         margin-top: 20px;
                     }
+                    .qr-row {
+                        display: table-row;
+                    }
                     .qr-item {
+                        display: table-cell;
+                        width: 20%;
                         text-align: center;
+                        padding: 10px;
+                        vertical-align: top;
                         page-break-inside: avoid;
+                        border: 1px solid #f0f0f0;
                     }
                     .qr-image {
-                        width: 150px;
-                        height: 150px;
-                        margin: 0 auto 15px;
+                        width: 100px;
+                        height: 100px;
+                        margin: 0 auto 8px;
                         border: 1px solid #e5e7eb;
-                        padding: 10px;
+                        padding: 5px;
                         background: white;
                     }
                     .qr-id {
                         font-weight: bold;
-                        font-size: 14px;
+                        font-size: 11px;
                         color: #1f2937;
                         word-break: break-word;
+                        margin-bottom: 2px;
                     }
                     .qr-name {
-                        font-size: 12px;
+                        font-size: 9px;
                         color: #6b7280;
-                        margin-top: 5px;
+                        margin-top: 2px;
                     }
                     .page-break {
                         page-break-after: always;
@@ -816,7 +825,17 @@ class EspacioController extends Controller
                 <div class="qr-grid">';
 
             $count = 0;
+            $itemsPerRow = 5;
+            
             foreach ($espacios as $espacio) {
+                // Iniciar nueva fila
+                if ($count % $itemsPerRow == 0) {
+                    if ($count > 0) {
+                        $html .= '</div>';
+                    }
+                    $html .= '<div class="qr-row">';
+                }
+                
                 // Generar QR para cada espacio
                 $qrPath = $qrService->generateQRForEspacio($espacio->id_espacio);
 
@@ -832,15 +851,15 @@ class EspacioController extends Controller
                     </div>';
 
                     $count++;
-                    // Agregar salto de página cada 9 items (3x3)
-                    if ($count % 9 == 0) {
-                        $html .= '</div><div class="qr-grid" style="page-break-before: always; margin-top: 20px;">';
+                    // Agregar salto de página cada 25 items (5x5)
+                    if ($count % 25 == 0) {
+                        $html .= '</div></div><div class="qr-grid" style="page-break-before: always; margin-top: 20px;">';
                     }
                 }
             }
-
-            $html .= '
-                </div>
+            
+            // Cerrar la última fila y grid
+            $html .= '</div></div>';
             </body>
             </html>';
 
