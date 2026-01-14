@@ -146,8 +146,9 @@ class QuickActionsController extends Controller
         try {
             Log::info('📋 Solicitando reservas desde Quick Actions');
 
-            // Temporalmente sin relaciones para debug
-            $query = Reserva::orderBy('fecha_reserva', 'desc')
+            // Usar explícitamente la conexión 'tenant' para acceder a las reservas del tenant actual
+            $query = Reserva::on('tenant')
+                ->orderBy('fecha_reserva', 'desc')
                 ->orderBy('hora');
 
             // Aplicar filtros si existen
@@ -170,7 +171,7 @@ class QuickActionsController extends Controller
                 $tipoResponsable = 'desconocido';
 
                 if ($reserva->run_profesor) {
-                    $profesor = \App\Models\Profesor::where('run_profesor', $reserva->run_profesor)->first();
+                    $profesor = \App\Models\Profesor::on('tenant')->where('run_profesor', $reserva->run_profesor)->first();
                     $nombreResponsable = $profesor ? $profesor->name : $reserva->run_profesor;
                     $runResponsable = $reserva->run_profesor;
                     $tipoResponsable = 'profesor';
@@ -182,13 +183,13 @@ class QuickActionsController extends Controller
                 }
 
                 // Obtener información del espacio
-                $espacio = \App\Models\Espacio::where('id_espacio', $reserva->id_espacio)->first();
+                $espacio = \App\Models\Espacio::on('tenant')->where('id_espacio', $reserva->id_espacio)->first();
                 $nombreEspacio = $espacio ? $espacio->nombre_espacio : 'Espacio desconocido';
 
                 // Obtener información de la asignatura
                 $asignaturaInfo = 'Sin asignatura';
                 if ($reserva->id_asignatura) {
-                    $asignatura = \App\Models\Asignatura::where('id_asignatura', $reserva->id_asignatura)->first();
+                    $asignatura = \App\Models\Asignatura::on('tenant')->where('id_asignatura', $reserva->id_asignatura)->first();
                     if ($asignatura) {
                         $asignaturaInfo = $asignatura->codigo_asignatura . ' - ' . $asignatura->nombre_asignatura;
                     }

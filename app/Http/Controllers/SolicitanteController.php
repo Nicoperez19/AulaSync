@@ -463,20 +463,20 @@ class SolicitanteController extends Controller
                 'updated_at' => $ahora
             ]);
             
-            // Actualizar estado del espacio a 'ocupado' inmediatamente
+            // Actualizar estado del espacio a 'Ocupado' inmediatamente
             // para evitar que ActualizarEstadoEspacios tenga que esperar 15 minutos
             if ($insertado) {
                 DB::connection('tenant')->table('espacios')
                     ->where('id_espacio', $request->id_espacio)
                     ->update([
-                        'estado' => 'ocupado',
+                        'estado' => 'Ocupado',
                         'updated_at' => $ahora
                     ]);
                 
                 Log::info('Estado de espacio actualizado inmediatamente después de reserva', [
                     'id_espacio' => $request->id_espacio,
                     'id_reserva' => $idReserva,
-                    'nuevo_estado' => 'ocupado'
+                    'nuevo_estado' => 'Ocupado'
                 ]);
             }
 

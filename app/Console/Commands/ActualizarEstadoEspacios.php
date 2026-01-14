@@ -127,8 +127,8 @@ class ActualizarEstadoEspacios extends Command
             $espaciosDisponibles = 0;
 
             foreach ($espacios as $espacio) {
-                // Normalizar estado anterior a minúsculas para comparaciones consistentes
-                $estadoAnterior = strtolower($espacio->estado);
+                // Estado anterior como está en BD (puede tener variación de case)
+                $estadoAnterior = $espacio->estado;
                 
                 // Verificar si hay reserva activa para este espacio
                 $tieneReservaActiva = $reservasActivas->where('id_espacio', $espacio->id_espacio)->isNotEmpty();
@@ -142,11 +142,11 @@ class ActualizarEstadoEspacios extends Command
                 
                 $tieneClaseActual = $planificacionActual !== null;
                 
-                // Determinar el estado correcto (siempre en minúsculas)
-                $nuevoEstado = 'disponible';
+                // Determinar el estado correcto
+                $nuevoEstado = 'Disponible';
                 
                 if ($tieneReservaActiva) {
-                    $nuevoEstado = 'ocupado';
+                    $nuevoEstado = 'Ocupado';
                     $espaciosOcupados++;
                     
                     Log::info('Espacio marcado como ocupado por reserva activa', [
@@ -157,16 +157,16 @@ class ActualizarEstadoEspacios extends Command
                 } elseif ($tieneClaseActual) {
                     // Si hay clase programada pero no hay reserva activa, 
                     // el espacio debería estar ocupado pero no se ha registrado el ingreso
-                    $nuevoEstado = 'disponible';
+                    $nuevoEstado = 'Disponible';
                     $espaciosDisponibles++;
                     
-                    if ($estadoAnterior === 'ocupado') {
+                    if (strtolower($estadoAnterior) === 'ocupado') {
                         $this->warn("  Espacio {$espacio->nombre_espacio} marcado como ocupado pero no tiene reserva activa. Cambiando a disponible.");
                     }
                 } else {
                     $espaciosDisponibles++;
                     
-                    if ($estadoAnterior === 'ocupado') {
+                    if (strtolower($estadoAnterior) === 'ocupado') {
                         Log::warning('Espacio ocupado sin reserva detectado', [
                             'espacio' => $espacio->nombre_espacio,
                             'id_espacio' => $espacio->id_espacio,
@@ -179,7 +179,7 @@ class ActualizarEstadoEspacios extends Command
                 }
                 
                 // Actualizar el estado si es diferente (comparación case-insensitive)
-                if ($estadoAnterior !== $nuevoEstado) {
+                if (strtolower($estadoAnterior) !== strtolower($nuevoEstado)) {
                     $espacio->estado = $nuevoEstado;
                     $espacio->save();
                     $espaciosActualizados++;
