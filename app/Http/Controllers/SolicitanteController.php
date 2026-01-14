@@ -281,16 +281,17 @@ class SolicitanteController extends Controller
                 ], 400);
             }
 
-            // Verificar que el solicitante no tenga reservas activas sin hora_salida
+            // Verificar que el solicitante no tenga reservas VIGENTES (que aún no han terminado)
             $reservaActiva = Reserva::on('tenant')->where('run_solicitante', $request->run_solicitante)
                 ->where('estado', 'activa')
-                ->whereNull('hora_salida')
+                ->where('fecha_reserva', $fechaActual)  // Hoy
+                ->where('hora_salida', '>', $horaActual)  // Aún no ha terminado
                 ->first();
 
             if ($reservaActiva) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Ya tienes una reserva activa. Debes finalizarla antes de solicitar una nueva.'
+                    'mensaje' => 'Ya tienes una reserva activa en este horario. Debes finalizarla antes de solicitar una nueva.'
                 ], 400);
             }
 
@@ -416,6 +417,7 @@ class SolicitanteController extends Controller
             // Verificar que no haya reservas simultáneas en el tiempo
             $reservasSimultaneas = Reserva::on('tenant')->where('run_solicitante', $request->run_solicitante)
                 ->where('estado', 'activa')
+                ->where('fecha_reserva', $fechaActual)  // Filtrar por fecha
                 ->where(function($query) use ($horaInicio, $horaFin) {
                     // Verificar si hay solapamiento de horarios
                     $query->where(function($q) use ($horaInicio, $horaFin) {

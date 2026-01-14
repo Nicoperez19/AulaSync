@@ -76,13 +76,16 @@ class ActualizarEstadoEspacios extends Command
 
             $this->line("  Planificaciones activas encontradas: " . $planificacionesActivas->count());
 
-            // Obtener reservas activas para hoy
+            // Obtener reservas activas para hoy QUE TODAVÍA NO HAN FINALIZADO
             $reservasActivas = Reserva::on('tenant')
                 ->where('fecha_reserva', $ahora->toDateString())
                 ->where('estado', 'activa')
+                ->where('hora', '<=', $horaActual)  // La reserva comenzó hace poco o ahora
+                ->where('hora_salida', '>', $horaActual)  // La reserva aún no ha terminado
                 ->get();
 
             $this->line("  Reservas activas encontradas: " . $reservasActivas->count());
+            $this->line("  Hora actual para filtro: {$horaActual}");
 
             // Debug: Mostrar detalles de las reservas encontradas
             if ($reservasActivas->count() > 0) {
@@ -93,16 +96,32 @@ class ActualizarEstadoEspacios extends Command
                         'estado' => $res->estado,
                         'fecha' => $res->fecha_reserva,
                         'hora_inicio' => $res->hora,
-                        'hora_fin' => $res->hora_salida
+                        'hora_fin' => $res->hora_salida,
+                        'run_solicitante' => $res->run_solicitante ?? 'N/A',
+                        'hora_actual' => $horaActual
                     ]);
                 }
             } else {
-                // Buscar cualquier reserva en la BD para debug
+                // Buscar TODAS las reservas para debug
                 $todasReservas = Reserva::on('tenant')->get();
-                Log::warning('No se encontraron reservas activas para hoy', [
+                Log::warning('No se encontraron reservas activas para hoy en horario actual', [
                     'fecha_buscada' => $ahora->toDateString(),
-                    'total_reservas_en_bd' => $todasReservas->count()
+                    'hora_actual' => $horaActual,
+                    'total_reservas_en_bd' => $todasReservas->count(),
+                    'reservas_por_estado' => $todasReservas->groupBy('estado')->map->count()
                 ]);
+                
+                // Mostrar detalles de las primeras 10 reservas para debugging
+                foreach ($todasReservas->take(10) as $res) {
+                    Log::warning('Reserva encontrada (debug)', [
+                        'id_reserva' => $res->id_reserva,
+                        'estado' => $res->estado,
+                        'fecha' => $res->fecha_reserva,
+                        'hora_inicio' => $res->hora,
+                        'hora_fin' => $res->hora_salida,
+                        'dentro_de_rango' => ($res->hora <= $horaActual && $res->hora_salida > $horaActual) ? 'SI' : 'NO'
+                    ]);
+                }
             }
 
             $espaciosActualizados = 0;
@@ -143,6 +162,13 @@ class ActualizarEstadoEspacios extends Command
                     $espaciosDisponibles++;
                     
                     if ($estadoAnterior === 'Ocupado') {
+                        Log::warning('Espacio ocupado sin reserva detectado', [
+                            'espacio' => $espacio->nombre_espacio,
+                            'id_espacio' => $espacio->id_espacio,
+                            'estado_anterior' => $estadoAnterior,
+                            'reservas_activas_total' => $reservasActivas->count(),
+                            'reservas_para_este_espacio' => $reservasActivas->where('id_espacio', $espacio->id_espacio)->count()
+                        ]);
                         $this->warn("  Espacio {$espacio->nombre_espacio} marcado como ocupado pero no tiene actividad. Cambiando a disponible.");
                     }
                 }
