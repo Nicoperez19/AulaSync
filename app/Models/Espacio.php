@@ -27,6 +27,24 @@ class Espacio extends Model
         'capacidad_maxima'
     ];
 
+    protected $casts = [];
+
+    /**
+     * Mutador: Asegurar que el estado siempre se guarda en minúsculas
+     */
+    public function setEstadoAttribute($value)
+    {
+        $this->attributes['estado'] = strtolower($value);
+    }
+
+    /**
+     * Accesor: Obtener el estado siempre en minúsculas
+     */
+    public function getEstadoAttribute($value)
+    {
+        return strtolower($value);
+    }
+
     /**
      * Obtener la capacidad utilizada del espacio
      * Calculada como: capacidad_maxima - puestos_disponibles

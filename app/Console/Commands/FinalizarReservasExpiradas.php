@@ -230,14 +230,6 @@ class FinalizarReservasExpiradas extends Command
                         
                         $reserva->save();
 
-                        // Liberar el espacio
-                        $espacio = Espacio::where('id_espacio', $reserva->id_espacio)->first();
-                        if ($espacio && $espacio->estado === 'Ocupado') {
-                            $espacio->estado = 'Disponible';
-                            $espacio->save();
-                            $this->info("✅ Espacio {$espacio->id_espacio} liberado automáticamente");
-                        }
-
                         DB::commit();
                         
                         $this->info("✅ Reserva {$reserva->id_reserva} finalizada automáticamente al término de clase");
