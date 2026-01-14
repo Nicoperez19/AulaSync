@@ -335,6 +335,7 @@ Route::group(['middleware' => ['permission:mantenedor de espacios']], function (
     Route::get('/pisos/{facultadId}', [EspacioController::class, 'getPisos']);
     Route::get('/spaces/{id_espacio}/download-qr', [EspacioController::class, 'downloadQR'])->name('spaces.download-qr');
     Route::get('/spaces/download-all-qr', [EspacioController::class, 'downloadAllQR'])->name('spaces.download-all-qr');
+    Route::get('/spaces/download-all-qr-pdf', [EspacioController::class, 'downloadAllQRPdf'])->name('spaces.download-all-qr-pdf');
     Route::get('/sedes/{universidadId}', [EspacioController::class, 'getSedes']);
     Route::get('/facultades-por-sede/{sedeId}', [EspacioController::class, 'getFacultadesPorSede']);
     // Endpoint para obtener facultades por universidad (usado por reservas)

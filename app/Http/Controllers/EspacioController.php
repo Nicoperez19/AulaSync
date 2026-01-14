@@ -19,6 +19,7 @@ use App\Models\User;
 use App\Models\Profesor;
 use App\Models\Reserva;
 use App\Traits\SafeCacheTrait;
+use Dompdf\Dompdf;
 
 class EspacioController extends Controller
 {
@@ -732,6 +733,132 @@ class EspacioController extends Controller
             ]);
 
             return redirect()->back()->with('error', 'Error al generar el archivo ZIP: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Descarga todos los códigos QR en un PDF con formato de grilla
+     */
+    public function downloadAllQRPdf()
+    {
+        try {
+            $espacios = Espacio::all();
+            $qrService = new QRService();
+
+            // HTML para el PDF
+            $html = '<!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    * {
+                        margin: 0;
+                        padding: 0;
+                        box-sizing: border-box;
+                    }
+                    body {
+                        font-family: Arial, sans-serif;
+                        padding: 20px;
+                    }
+                    .header {
+                        text-align: center;
+                        margin-bottom: 30px;
+                    }
+                    .header h1 {
+                        font-size: 28px;
+                        margin-bottom: 5px;
+                        color: #1f2937;
+                    }
+                    .header p {
+                        font-size: 12px;
+                        color: #6b7280;
+                    }
+                    .qr-grid {
+                        display: grid;
+                        grid-template-columns: repeat(3, 1fr);
+                        gap: 30px;
+                        margin-top: 20px;
+                    }
+                    .qr-item {
+                        text-align: center;
+                        page-break-inside: avoid;
+                    }
+                    .qr-image {
+                        width: 150px;
+                        height: 150px;
+                        margin: 0 auto 15px;
+                        border: 1px solid #e5e7eb;
+                        padding: 10px;
+                        background: white;
+                    }
+                    .qr-id {
+                        font-weight: bold;
+                        font-size: 14px;
+                        color: #1f2937;
+                        word-break: break-word;
+                    }
+                    .qr-name {
+                        font-size: 12px;
+                        color: #6b7280;
+                        margin-top: 5px;
+                    }
+                    .page-break {
+                        page-break-after: always;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>Códigos QR de Espacios</h1>
+                    <p>Códigos QR para todos los espacios del sistema</p>
+                    <p>Generado: ' . now()->format('d/m/Y H:i:s') . '</p>
+                </div>
+                <div class="qr-grid">';
+
+            $count = 0;
+            foreach ($espacios as $espacio) {
+                // Generar QR para cada espacio
+                $qrPath = $qrService->generateQRForEspacio($espacio->id_espacio);
+
+                // Verificar si el archivo existe
+                if (Storage::disk('public')->exists($qrPath)) {
+                    $qrContent = Storage::disk('public')->get($qrPath);
+                    $base64QR = base64_encode($qrContent);
+
+                    $html .= '<div class="qr-item">
+                        <img src="data:image/png;base64,' . $base64QR . '" class="qr-image" alt="QR ' . $espacio->id_espacio . '">
+                        <div class="qr-id">' . htmlspecialchars($espacio->id_espacio) . '</div>
+                        <div class="qr-name">' . htmlspecialchars($espacio->nombre_espacio ?? '') . '</div>
+                    </div>';
+
+                    $count++;
+                    // Agregar salto de página cada 9 items (3x3)
+                    if ($count % 9 == 0) {
+                        $html .= '</div><div class="qr-grid" style="page-break-before: always; margin-top: 20px;">';
+                    }
+                }
+            }
+
+            $html .= '
+                </div>
+            </body>
+            </html>';
+
+            // Crear PDF
+            $dompdf = new Dompdf();
+            $dompdf->loadHtml($html);
+            $dompdf->setPaper('A4', 'portrait');
+            $dompdf->render();
+
+            // Descargar el PDF
+            return $dompdf->stream('QRs_Espacios_' . date('Y-m-d_H-i-s') . '.pdf');
+
+        } catch (\Exception $e) {
+            Log::error('Error al descargar QRs en PDF:', [
+                'error' => $e->getMessage()
+            ]);
+
+            return redirect()->back()->with('error', 'Error al generar el PDF: ' . $e->getMessage());
         }
     }
 
