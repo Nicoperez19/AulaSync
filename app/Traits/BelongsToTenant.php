@@ -62,14 +62,13 @@ trait BelongsToTenant
                     $builder->where($table . '.id_espacio', 'like', $tenant->prefijo_espacios . '%');
                 }
             }
-            
-            // Filtrar por sede directamente si el modelo tiene sede_id
-            if ($hasColumn('sede_id')) {
+            // Filtrar por sede directamente si el modelo tiene sede_id (pero no id_espacio)
+            elseif ($hasColumn('sede_id')) {
                 if ($tenant->sede_id) {
                     $builder->where($table . '.sede_id', $tenant->sede_id);
                 }
             }
-            // Filtrar a través de profesor si el modelo tiene relación con profesor y run_profesor
+            // Filtrar a través de profesor si el modelo tiene relación con profesor y run_profesor (pero no id_espacio o sede_id)
             elseif (method_exists($model, 'profesor') && $hasColumn('run_profesor')) {
                 if ($tenant->sede_id) {
                     $builder->whereHas('profesor', function ($query) use ($tenant) {
