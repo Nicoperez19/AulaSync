@@ -177,6 +177,17 @@ class QuickActionsController extends Controller
                 ]);
             }
 
+            // 🔧 CRÍTICO: PRIMERO configurar el tenant en la conexión 'tenant'
+            // Esto debe hacerse ANTES de cualquier query a Reserva
+            if ($tenant->database) {
+                config([
+                    'database.connections.tenant.database' => $tenant->database,
+                ]);
+                app('db')->purge('tenant');
+                app('db')->disconnect('tenant');
+                Log::info('🔌 Conexión tenant reconfigured', ['db' => $tenant->database]);
+            }
+
             // DEBUGGING: Verificar conexión del tenant
             Log::info('🔍 DEBUG: Tenant info', [
                 'id' => $tenant->id,
@@ -185,18 +196,18 @@ class QuickActionsController extends Controller
                 'configured_db' => config('database.connections.tenant.database')
             ]);
 
-            // Usar explícitamente la conexión 'tenant' para acceder a las reservas del tenant actual
-            $query = Reserva::on('tenant')
-                ->orderBy('fecha_reserva', 'desc')
-                ->orderBy('hora');
-            
-            // DEBUGGING: Verificar que la conexión esté correcta
+            // Verificar que la conexión esté correcta
             try {
                 $testConnection = DB::connection('tenant')->select('SELECT DATABASE() as db');
                 Log::info('✅ Conexión a BD testada', ['current_db' => $testConnection[0]->db ?? 'unknown']);
             } catch (\Exception $e) {
                 Log::error('❌ Error al conectar a BD', ['error' => $e->getMessage()]);
             }
+
+            // AHORA sí construir la query después de haber configurado la conexión
+            $query = Reserva::on('tenant')
+                ->orderBy('fecha_reserva', 'desc')
+                ->orderBy('hora');
 
             // Aplicar filtros si existen
             if ($request->has('estado') && $request->estado) {
