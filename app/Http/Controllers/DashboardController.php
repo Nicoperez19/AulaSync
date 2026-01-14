@@ -1827,14 +1827,20 @@ class DashboardController extends Controller
     public function getAccesosData(Request $request)
     {
         $tenant = $this->ensureTenantContext();
+        Log::info('✅ getAccesosData() INICIO - tenant: ' . ($tenant ? $tenant->name : 'NULL'));
+        
         if (!$tenant) {
+            Log::error('❌ getAccesosData() - NO TENANT FOUND');
             return view('partials.accesos_tab_content', ['reservasSinDevolucion' => collect(), 'accesosActuales' => collect()])->render();
         }
 
         $piso = $request->session()->get('piso');
         $facultad = 'IT_' . $tenant->sede_id;
+        Log::info('📍 getAccesosData() - facultad: ' . $facultad . ', piso: ' . ($piso ?? 'NULL'));
 
         $reservasSinDevolucion = $this->obtenerReservasActivasSinDevolucion($facultad, $piso);
+        Log::info('📊 getAccesosData() - reservasSinDevolucion: ' . $reservasSinDevolucion->count());
+        
         $accesosActuales = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
             ->where('estado', 'activa')
             ->whereNull('hora_salida')
@@ -1849,15 +1855,9 @@ class DashboardController extends Controller
             })
             ->orderBy('fecha_reserva', 'desc')
             ->get();
+        
+        Log::info('📈 getAccesosData() - accesosActuales: ' . $accesosActuales->count());
             
-        Log::info('getAccesosData - Datos cargados', [
-            'reservasSinDevolucion' => $reservasSinDevolucion->count(),
-            'accesosActuales' => $accesosActuales->count(),
-            'piso' => $piso,
-            'facultad' => $facultad,
-            'tenant_id' => $tenant->id
-        ]);
-
         return view('partials.accesos_tab_content', compact('reservasSinDevolucion', 'accesosActuales'))->render();
     }
 
