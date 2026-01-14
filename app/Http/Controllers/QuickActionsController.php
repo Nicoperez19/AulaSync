@@ -146,6 +146,36 @@ class QuickActionsController extends Controller
         try {
             Log::info('📋 Solicitando reservas desde Quick Actions');
 
+            // IMPORTANTE: Asegurar que el tenant esté configurado correctamente
+            // Si el middleware no lo configuró por sesión/subdominio, intentar obtenerlo del usuario o sesión
+            $tenant = null;
+            
+            // Opción 1: Obtener de sesión
+            if (session()->has('tenant_id')) {
+                $tenant = \App\Models\Tenant::find(session('tenant_id'));
+                Log::info('Tenant obtenido de sesión', ['tenant_id' => session('tenant_id')]);
+            }
+            
+            // Opción 2: Si no hay sesión, obtener el primer tenant activo (para desarrollo/testing)
+            if (!$tenant) {
+                $tenant = \App\Models\Tenant::where('is_active', true)->first();
+                if ($tenant) {
+                    Log::warning('Tenant NO estaba en sesión, usando primer tenant activo', ['tenant_id' => $tenant->id, 'domain' => $tenant->domain]);
+                    $tenant->makeCurrent(); // Configurar como current
+                }
+            }
+            
+            if (!$tenant) {
+                Log::error('No se encontró tenant configurado para getReservas');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No se encontró tenant configurado',
+                    'reservas' => [],
+                    'data' => [],
+                    'total' => 0
+                ]);
+            }
+
             // Usar explícitamente la conexión 'tenant' para acceder a las reservas del tenant actual
             $query = Reserva::on('tenant')
                 ->orderBy('fecha_reserva', 'desc')
