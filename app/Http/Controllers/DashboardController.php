@@ -1835,23 +1835,34 @@ class DashboardController extends Controller
         }
 
         $piso = $request->session()->get('piso');
-        $facultad = 'IT_' . $tenant->sede_id;
-        Log::info('📍 getAccesosData() - facultad: ' . $facultad . ', piso: ' . ($piso ?? 'NULL'));
-
-        $reservasSinDevolucion = $this->obtenerReservasActivasSinDevolucion($facultad, $piso);
+        
+        // Obtener todas las reservas activas sin devolver (sin filtro de facultad)
+        $reservasSinDevolucion = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
+            ->where('estado', 'activa')
+            ->whereNull('hora_salida')
+            ->when($piso, function($query) use ($piso) {
+                return $query->whereHas('espacio', function($q) use ($piso) {
+                    $q->whereHas('piso', function($inner) use ($piso) {
+                        $inner->where('numero_piso', $piso);
+                    });
+                });
+            })
+            ->latest('fecha_reserva')
+            ->latest('hora')
+            ->get();
+        
         Log::info('📊 getAccesosData() - reservasSinDevolucion: ' . $reservasSinDevolucion->count());
         
+        // Obtener todos los accesos activos (sin filtro de facultad)
         $accesosActuales = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
             ->where('estado', 'activa')
             ->whereNull('hora_salida')
-            ->whereHas('espacio', function($query) use ($facultad, $piso) {
-                $query->whereHas('piso', function($q) use ($facultad, $piso) {
-                    $q->where('id_facultad', $facultad);
-                    if ($piso) {
-                        $q->where('numero_piso', $piso);
-                    }
+            ->when($piso, function($query) use ($piso) {
+                return $query->whereHas('espacio', function($q) use ($piso) {
+                    $q->whereHas('piso', function($inner) use ($piso) {
+                        $inner->where('numero_piso', $piso);
+                    });
                 });
-                // Pestaña de Accesos muestra TODOS los tipos de espacios
             })
             ->orderBy('fecha_reserva', 'desc')
             ->get();
