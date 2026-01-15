@@ -1369,38 +1369,61 @@ class ModulosActualesTable extends Component
                     ]);
                     
                     $espaciosPiso = [];
-                    // Ordenar espacios alfabéticamente por id_espacio
-                    $espaciosOrdenados = $piso->espacios->sortBy('id_espacio')->values();
                     
-                    Log::info('ModulosActuales - Espacios ordenados del piso ' . $piso->id . ': ' . count($espaciosOrdenados));
-                    
-                    foreach ($espaciosOrdenados as $espacio) {
-                        // Obtener conteo de asistencia actual para este espacio
-                        $asistenciaActual = Asistencia::where('id_espacio', $espacio->id_espacio)
-                            ->where('estado', Asistencia::ESTADO_PRESENTE)
-                            ->whereDate('created_at', Carbon::today())
-                            ->count();
+                    try {
+                        // Ordenar espacios alfabéticamente por id_espacio
+                        $espaciosOrdenados = $piso->espacios ? $piso->espacios->sortBy('id_espacio')->values() : collect();
+                        
+                        Log::info('ModulosActuales - Espacios ordenados del piso ' . $piso->id . ': ' . count($espaciosOrdenados));
+                        
+                        foreach ($espaciosOrdenados as $espacio) {
+                            Log::info('ModulosActuales - Procesando espacio: ' . ($espacio->id_espacio ?? 'SIN_ID'));
+                            
+                            try {
+                                // Obtener conteo de asistencia actual para este espacio
+                                $asistenciaActual = Asistencia::where('id_espacio', $espacio->id_espacio)
+                                    ->where('estado', Asistencia::ESTADO_PRESENTE)
+                                    ->whereDate('created_at', Carbon::today())
+                                    ->count();
 
-                        $espaciosPiso[] = [
-                            'id_espacio' => $espacio->id_espacio ?? 'N/A',
-                            'nombre_espacio' => $espacio->nombre_espacio ?? 'N/A',
-                            'estado' => 'Disponible',
-                            'tipo_espacio' => $espacio->tipo_espacio ?? 'N/A',
-                            'puestos_disponibles' => $espacio->puestos_disponibles ?? 0,
-                            'asistencia_actual' => $asistenciaActual,
-                            'total_inscritos' => 0,
-                            'capacidad_maxima' => $espacio->capacidad_maxima ?? 0,
-                            'tiene_clase' => false,
-                            'tiene_reserva_solicitante' => false,
-                            'tiene_reserva_profesor' => false,
-                            'datos_clase' => null,
-                            'datos_solicitante' => null,
-                            'datos_profesor' => null,
-                            'modulo' => null,
-                            'piso' => $piso->getNombrePisoAttribute(),
-                            'proxima_clase' => null,
-                        ];
+                                $espaciosPiso[] = [
+                                    'id_espacio' => $espacio->id_espacio ?? 'N/A',
+                                    'nombre_espacio' => $espacio->nombre_espacio ?? 'N/A',
+                                    'estado' => 'Disponible',
+                                    'tipo_espacio' => $espacio->tipo_espacio ?? 'N/A',
+                                    'puestos_disponibles' => $espacio->puestos_disponibles ?? 0,
+                                    'asistencia_actual' => $asistenciaActual,
+                                    'total_inscritos' => 0,
+                                    'capacidad_maxima' => $espacio->capacidad_maxima ?? 0,
+                                    'tiene_clase' => false,
+                                    'tiene_reserva_solicitante' => false,
+                                    'tiene_reserva_profesor' => false,
+                                    'datos_clase' => null,
+                                    'datos_solicitante' => null,
+                                    'datos_profesor' => null,
+                                    'modulo' => null,
+                                    'piso' => $piso->getNombrePisoAttribute(),
+                                    'proxima_clase' => null,
+                                ];
+                            } catch (\Exception $espaceException) {
+                                Log::error('Error procesando espacio en modo sin módulo activo: ' . $espaceException->getMessage(), [
+                                    'espacio_id' => $espacio->id_espacio ?? 'UNKNOWN',
+                                    'piso_id' => $piso->id,
+                                    'exception' => get_class($espaceException),
+                                    'file' => $espaceException->getFile(),
+                                    'line' => $espaceException->getLine(),
+                                ]);
+                            }
+                        }
+                    } catch (\Exception $pisoException) {
+                        Log::error('Error procesando piso en modo sin módulo activo: ' . $pisoException->getMessage(), [
+                            'piso_id' => $piso->id,
+                            'exception' => get_class($pisoException),
+                            'file' => $pisoException->getFile(),
+                            'line' => $pisoException->getLine(),
+                        ]);
                     }
+                    
                     $this->espacios[$piso->id] = $espaciosPiso;
                     Log::info('ModulosActuales - Espacios procesados del piso ' . $piso->id . ': ' . count($espaciosPiso));
                 }
@@ -1410,11 +1433,20 @@ class ModulosActualesTable extends Component
                 'exception' => get_class($e),
                 'file' => $e->getFile(),
                 'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
+                'moduloActual' => $this->moduloActual,
+                'pisos_count' => count($this->pisos ?? [])
             ]);
 
             // Valores por defecto seguros en caso de error
             $this->espacios = [];
+            
+            // Si tenemos pisos cargados, al menos crear estructura vacía
+            if ($this->pisos && count($this->pisos) > 0) {
+                foreach ($this->pisos as $piso) {
+                    $this->espacios[$piso->id] = [];
+                }
+            }
         }
     }
 
@@ -1425,8 +1457,19 @@ class ModulosActualesTable extends Component
     {
         $todosLosEspacios = [];
 
+        if (!is_array($this->espacios)) {
+            Log::warning('getTodosLosEspacios - this->espacios no es un array, es: ' . gettype($this->espacios));
+            return [];
+        }
+
         foreach ($this->pisos as $piso) {
             $espaciosPiso = $this->espacios[$piso->id] ?? [];
+            
+            if (!is_array($espaciosPiso)) {
+                Log::warning('getTodosLosEspacios - espaciosPiso no es un array para piso ' . $piso->id . ', es: ' . gettype($espaciosPiso));
+                continue;
+            }
+            
             foreach ($espaciosPiso as $espacio) {
                 // Excluir salas de estudio
                 if (isset($espacio['tipo_espacio']) &&
