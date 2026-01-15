@@ -1342,7 +1342,7 @@ class ModulosActualesTable extends Component
                                 'inicio' => $this->moduloActual['inicio'] ?? '--:--',
                                 'fin' => $this->moduloActual['fin'] ?? '--:--',
                             ],
-                            'piso' => $piso->getNombrePisoAttribute(),
+                            'piso' => $piso->getDisplayNameAttribute(),
                             'proxima_clase' => $proximaClase,
                             'rango_disponibilidad' => $rangoDisponibilidad,
                             'es_recuperacion' => $esRecuperacion,
@@ -1402,7 +1402,7 @@ class ModulosActualesTable extends Component
                                     'datos_solicitante' => null,
                                     'datos_profesor' => null,
                                     'modulo' => null,
-                                    'piso' => $piso->getNombrePisoAttribute(),
+                                    'piso' => $piso->getDisplayNameAttribute(),
                                     'proxima_clase' => null,
                                 ];
                             } catch (\Exception $espaceException) {
