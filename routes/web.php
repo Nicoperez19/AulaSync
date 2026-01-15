@@ -86,7 +86,7 @@ Route::get('/', function () {
 })->middleware('guest');
 
 // Rutas públicas de módulos actuales (sin autenticación)
-Route::middleware(['extend.execution:180'])->group(function () {
+Route::middleware(['tenant', 'extend.execution:180'])->group(function () {
     Route::get('/modulos-actuales', [\App\Http\Controllers\TableController::class, 'index'])->name('modulos.actuales');
     Route::get('/modulos-actuales/actualizar-datos', [\App\Http\Controllers\TableController::class, 'actualizarDatos'])->name('modulos.actuales.datos');
 });

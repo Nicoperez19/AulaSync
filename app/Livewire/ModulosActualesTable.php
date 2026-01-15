@@ -13,6 +13,7 @@ use App\Models\Planificacion_Asignatura;
 use App\Models\PlanificacionProfesorColaborador;
 use App\Models\ProfesorColaborador;
 use App\Models\Reserva;
+use App\Models\Tenant;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
@@ -551,6 +552,15 @@ class ModulosActualesTable extends Component
             // Establecer límite de tiempo de ejecución
             set_time_limit(120);
             ini_set('max_execution_time', 120);
+
+            // Si no hay tenant activo, intentar usar el primero disponible (para acceso público)
+            if (!Tenant::current()) {
+                $primerTenant = Tenant::where('is_active', true)->first();
+                if ($primerTenant) {
+                    $primerTenant->makeCurrent();
+                    session(['tenant_id' => $primerTenant->id]);
+                }
+            }
 
             $this->horaActual = Carbon::now()->format('H:i:s');
             $this->fechaActual = Carbon::now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY');
