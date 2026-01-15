@@ -38,6 +38,13 @@ class ModulosActualesTable extends Component
 
     public $nombreFeriado = '';
 
+    // Propiedades para manejo de tenants
+    public $tenantActual = null;
+
+    public $tenantsDisponibles = [];
+
+    public $mostrarSelectorSedes = false;
+
     // Horarios de módulos basados en la referencia JavaScript
     private $horariosModulos = [
         'lunes' => [
@@ -132,11 +139,46 @@ class ModulosActualesTable extends Component
         set_time_limit(120);
         ini_set('max_execution_time', 120);
 
-        $this->actualizarDatos();
+        // Obtener tenants disponibles
+        $this->tenantsDisponibles = Tenant::where('is_active', true)
+            ->with(['sede'])
+            ->get()
+            ->toArray();
 
-        // Establecer el primer piso como seleccionado por defecto
-        if (count($this->pisos) > 0) {
-            $this->selectedPiso = $this->pisos[0]->id;
+        // Verificar si hay un tenant actual en sesión
+        $this->tenantActual = Tenant::current();
+
+        if (!$this->tenantActual && count($this->tenantsDisponibles) > 0) {
+            // Si no hay tenant activo, mostrar selector
+            $this->mostrarSelectorSedes = true;
+        } else {
+            // Si hay tenant, cargar datos
+            $this->actualizarDatos();
+
+            // Establecer el primer piso como seleccionado por defecto
+            if (count($this->pisos) > 0) {
+                $this->selectedPiso = $this->pisos[0]->id;
+            }
+        }
+    }
+
+    /**
+     * Seleccionar una sede/tenant
+     */
+    public function seleccionarSede($tenantId)
+    {
+        $tenant = Tenant::find($tenantId);
+        if ($tenant && $tenant->is_active) {
+            $tenant->makeCurrent();
+            session(['tenant_id' => $tenant->id]);
+            $this->tenantActual = $tenant;
+            $this->mostrarSelectorSedes = false;
+            $this->actualizarDatos();
+
+            // Establecer el primer piso como seleccionado por defecto
+            if (count($this->pisos) > 0) {
+                $this->selectedPiso = $this->pisos[0]->id;
+            }
         }
     }
 
@@ -552,15 +594,6 @@ class ModulosActualesTable extends Component
             // Establecer límite de tiempo de ejecución
             set_time_limit(120);
             ini_set('max_execution_time', 120);
-
-            // Si no hay tenant activo, intentar usar el primero disponible (para acceso público)
-            if (!Tenant::current()) {
-                $primerTenant = Tenant::where('is_active', true)->first();
-                if ($primerTenant) {
-                    $primerTenant->makeCurrent();
-                    session(['tenant_id' => $primerTenant->id]);
-                }
-            }
 
             $this->horaActual = Carbon::now()->format('H:i:s');
             $this->fechaActual = Carbon::now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY');

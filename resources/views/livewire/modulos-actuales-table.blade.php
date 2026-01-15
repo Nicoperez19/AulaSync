@@ -41,7 +41,46 @@
         }, 12000)
     ">
 
-    @if (count($pisos) > 0)
+    {{-- Selector de Sedes --}}
+    @if ($mostrarSelectorSedes)
+        <div class="flex items-center justify-center min-h-96 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg border-2 border-dashed border-red-300 p-8">
+            <div class="text-center max-w-md">
+                <div class="mb-6 flex justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-20 h-20 text-red-500">
+                        <path fill-rule="evenodd" d="M3 6a3 3 0 0 1 3-3h12a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V6Zm4.5 7.5a.75.75 0 0 0-1.5 0v2.25a.75.75 0 0 0 1.5 0v-2.25Zm3.75-1.5a.75.75 0 0 1 .75-.75h2.25a.75.75 0 0 1 .75.75v4.5a.75.75 0 0 1-.75.75h-2.25a.75.75 0 0 1-.75-.75v-4.5Zm4.5 1.5a.75.75 0 0 0-1.5 0v1.5a.75.75 0 0 0 1.5 0v-1.5Z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Selecciona una Sede</h2>
+                <p class="text-gray-600 mb-6">Elige la sede para visualizar el estado de los espacios en tiempo real</p>
+                
+                @if (count($tenantsDisponibles) > 0)
+                    <div class="grid grid-cols-1 gap-3">
+                        @foreach ($tenantsDisponibles as $tenant)
+                            <button 
+                                wire:click="seleccionarSede({{ $tenant['id'] }})"
+                                class="w-full px-6 py-4 bg-white border-2 border-gray-200 rounded-lg hover:border-red-500 hover:bg-red-50 transition-all duration-200 text-left group">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <h3 class="font-semibold text-gray-800 group-hover:text-red-600 text-lg">
+                                            {{ $tenant['sede']['nombre_sede'] ?? 'Sede ' . $tenant['name'] }}
+                                        </h3>
+                                        <p class="text-sm text-gray-500">{{ $tenant['name'] }}</p>
+                                    </div>
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6 text-gray-400 group-hover:text-red-500 transition-colors">
+                                        <path d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </div>
+                            </button>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                        <p class="text-yellow-800 text-sm">No hay sedes disponibles configuradas en el sistema.</p>
+                    </div>
+                @endif
+            </div>
+        </div>
+    @elseif (count($pisos) > 0)
 
         <div class="relative w-full bg-gray-100 rounded-lg shadow-sm border border-gray-300 overflow-hidden">
             @if (count($this->getTodosLosEspacios()) > 0)
@@ -373,7 +412,7 @@
             @endif
         </div>
     @else
-        <!-- Mensaje cuando no hay sede seleccionada o datos -->
+        <!-- Mensaje cuando no hay datos -->
         <div class="flex items-center justify-center min-h-96 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-8">
             <div class="text-center">
                 <div class="mb-4 flex justify-center">
@@ -382,13 +421,7 @@
                     </svg>
                 </div>
                 <h3 class="text-lg font-semibold text-gray-700 mb-2">No hay datos disponibles</h3>
-                <p class="text-gray-600 mb-4">Seleccione una sede para visualizar el estado de los espacios</p>
-                <a href="{{ route('sedes.selection') }}" class="inline-flex items-center gap-2 px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5">
-                        <path fill-rule="evenodd" d="M3 5.25a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 5.25v13.5A2.25 2.25 0 0 1 18.75 21H5.25A2.25 2.25 0 0 1 3 18.75V5.25Zm3.75 7.5a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0Zm2.25-3a.75.75 0 1 1 1.5 0 .75.75 0 0 1-1.5 0Zm.75 5.25a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0Zm5.25-1.5a.75.75 0 1 1 1.5 0 .75.75 0 0 1-1.5 0Zm.75-3.75a.75.75 0 1 0-1.5 0 .75.75 0 0 0 1.5 0Zm1.5 6a.75.75 0 1 1 1.5 0 .75.75 0 0 1-1.5 0Z" clip-rule="evenodd" />
-                    </svg>
-                    Seleccionar Sede
-                </a>
+                <p class="text-gray-600 mb-4">Intenta recargar la página o selecciona una sede diferente</p>
             </div>
         </div>
     @endif
