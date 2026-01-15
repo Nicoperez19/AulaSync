@@ -173,6 +173,11 @@ class ModulosActualesTable extends Component
             session(['tenant_id' => $tenant->id]);
             $this->tenantActual = $tenant;
             $this->mostrarSelectorSedes = false;
+            
+            // Emitir evento para actualizar el header
+            $nombreSede = $tenant->sede?->nombre_sede ?? $tenant->name ?? 'Sede';
+            $this->dispatch('sedes:seleccionada', ['nombre' => $nombreSede]);
+            
             $this->actualizarDatos();
 
             // Establecer el primer piso como seleccionado por defecto

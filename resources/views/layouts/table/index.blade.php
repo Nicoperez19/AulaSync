@@ -6,7 +6,9 @@
             ?? 'Sede';
     @endphp
     <x-slot name="header">
-        <div class="flex flex-col gap-4 pr-6 md:flex-row md:items-center md:justify-between">
+        <div class="flex flex-col gap-4 pr-6 md:flex-row md:items-center md:justify-between" 
+             x-data="{ nombreSede: '{{ $nombreSedeActual }}' }"
+             @sedes:seleccionada.window="nombreSede = $event.detail.nombre">
             <div class="flex items-center gap-4">
                 <!-- Botón Volver (solo visible cuando hay sesión activa) -->
                 @auth
@@ -23,7 +25,7 @@
                 <!-- Logo y título -->
                 <div class="flex items-center gap-4 justify-center flex-1">
                    <img src='images/Logo-UCSC-Color-Horizontal.png' alt="Logo" class="h-16 w-auto" >
-                         <div class="text-2xl font-bold leading-tight text-gray-900">{{ $nombreSedeActual }}</div>
+                         <div class="text-2xl font-bold leading-tight text-gray-900" x-text="nombreSede"></div>
                 </div>
             </div>            
             
