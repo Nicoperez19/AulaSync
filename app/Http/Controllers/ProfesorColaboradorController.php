@@ -119,7 +119,9 @@ class ProfesorColaboradorController extends Controller
             'fecha_termino' => 'required|date|after_or_equal:fecha_inicio',
             'id_asignatura' => [
                 'nullable',
-                Rule::exists('asignaturas', 'id_asignatura')->connection('tenant')
+                Rule::exists('asignaturas', 'id_asignatura')->using(function ($query) {
+                    return $query->connection('tenant');
+                })
             ],
             'planificaciones' => 'required|json',
         ];
@@ -127,19 +129,25 @@ class ProfesorColaboradorController extends Controller
         if ($request->profesor_option === 'nuevo') {
             $validationRules['nuevo_run'] = [
                 'required',
-                Rule::unique('profesors', 'run_profesor')->connection('tenant')
+                Rule::unique('profesors', 'run_profesor')->using(function ($query) {
+                    return $query->connection('tenant');
+                })
             ];
             $validationRules['nuevo_nombre'] = 'required|string|max:255';
             $validationRules['nuevo_email'] = [
                 'required',
                 'email',
-                Rule::unique('profesors', 'email')->connection('tenant')
+                Rule::unique('profesors', 'email')->using(function ($query) {
+                    return $query->connection('tenant');
+                })
             ];
             $validationRules['nuevo_celular'] = 'nullable|string|max:20';
         } else {
             $validationRules['run_profesor_colaborador'] = [
                 'required',
-                Rule::exists('profesors', 'run_profesor')->connection('tenant')
+                Rule::exists('profesors', 'run_profesor')->using(function ($query) {
+                    return $query->connection('tenant');
+                })
             ];
         }
 
@@ -256,7 +264,9 @@ class ProfesorColaboradorController extends Controller
         $request->validate([
             'run_profesor_colaborador' => [
                 'required',
-                Rule::exists('profesors', 'run_profesor')->connection('tenant')
+                Rule::exists('profesors', 'run_profesor')->using(function ($query) {
+                    return $query->connection('tenant');
+                })
             ],
             'nombre_asignatura_temporal' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
@@ -265,17 +275,23 @@ class ProfesorColaboradorController extends Controller
             'fecha_termino' => 'required|date|after_or_equal:fecha_inicio',
             'id_asignatura' => [
                 'nullable',
-                Rule::exists('asignaturas', 'id_asignatura')->connection('tenant')
+                Rule::exists('asignaturas', 'id_asignatura')->using(function ($query) {
+                    return $query->connection('tenant');
+                })
             ],
             'estado' => 'required|in:activo,inactivo',
             'planificaciones' => 'required|array|min:1',
             'planificaciones.*.id_modulo' => [
                 'required',
-                Rule::exists('modulos', 'id_modulo')->connection('tenant')
+                Rule::exists('modulos', 'id_modulo')->using(function ($query) {
+                    return $query->connection('tenant');
+                })
             ],
             'planificaciones.*.id_espacio' => [
                 'required',
-                Rule::exists('espacios', 'id_espacio')->connection('tenant')
+                Rule::exists('espacios', 'id_espacio')->using(function ($query) {
+                    return $query->connection('tenant');
+                })
             ],
         ]);
 
