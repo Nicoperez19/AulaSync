@@ -452,29 +452,52 @@ class QuickActionsController extends Controller
             $idModuloInicial = $prefijoReserva . '.' . $request->modulo_inicial;
             $idModuloFinal = $prefijoReserva . '.' . $request->modulo_final;
 
-            // Obtener módulo inicial desde la tabla Modulo
+            // Horarios predefinidos para módulos (sin depender de la tabla Modulo)
+            // Esto permite crear reservas manuales sin que exista el módulo en la BD
+            $horariosModulos = [
+                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
+            ];
+
+            // Obtener horas de los módulos inicial y final
+            // Primero intentar obtener de la tabla Modulo (si existen registros)
             $moduloInicial = \App\Models\Modulo::where('id_modulo', $idModuloInicial)->first();
-
-            if (!$moduloInicial) {
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'No se encontró el módulo inicial especificado (id_modulo: ' . $idModuloInicial . ')'
-                ], 400);
-            }
-
-            // Obtener módulo final desde la tabla Modulo
             $moduloFinal = \App\Models\Modulo::where('id_modulo', $idModuloFinal)->first();
 
-            if (!$moduloFinal) {
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'No se encontró el módulo final especificado (id_modulo: ' . $idModuloFinal . ')'
-                ], 400);
+            // Si no existen módulos en la BD, usar horarios predefinidos
+            if ($moduloInicial) {
+                $horaInicio = $moduloInicial->hora_inicio;
+            } else {
+                $horaInicio = $horariosModulos[$request->modulo_inicial]['inicio'] ?? '08:10:00';
+                Log::info('ℹ️ Usando horario predefinido para módulo inicial (no existe en BD)', [
+                    'id_modulo' => $idModuloInicial,
+                    'hora_inicio' => $horaInicio
+                ]);
             }
 
-            // Calcular hora de inicio y fin correctas desde la tabla Modulo
-            $horaInicio = $moduloInicial->hora_inicio;
-            $horaFin = $moduloFinal->hora_termino;
+            if ($moduloFinal) {
+                $horaFin = $moduloFinal->hora_termino;
+            } else {
+                $horaFin = $horariosModulos[$request->modulo_final]['fin'] ?? '09:00:00';
+                Log::info('ℹ️ Usando horario predefinido para módulo final (no existe en BD)', [
+                    'id_modulo' => $idModuloFinal,
+                    'hora_fin' => $horaFin
+                ]);
+            }
+
             $duracionModulos = $request->modulo_final - $request->modulo_inicial + 1;
 
             // VALIDAR QUE NO EXISTA UNA RESERVA ACTIVA EN ESE ESPACIO Y FECHA
