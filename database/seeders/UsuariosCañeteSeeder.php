@@ -13,6 +13,19 @@ class UsuariosCañeteSeeder extends Seeder
      */
     public function run(): void
     {
+        // Subdirectora sede Cañete
+        User::updateOrCreate(
+            ['run' => '12526386'],
+            [
+                'name' => 'Ivonne Torres Sanhueza',
+                'email' => 'itorres@ucss.cl',
+                'password' => bcrypt('12526386'),
+                'celular' => '',
+                'direccion' => 'Avenida Presidente Frei',
+                'fecha_nacimiento' => null,
+            ]
+        )->assignRole('Supervisor');
+
         // Directora de Sede Cañete
         User::updateOrCreate(
             ['run' => '11774643'],
