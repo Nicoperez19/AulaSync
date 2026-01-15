@@ -1394,7 +1394,12 @@ class ModulosActualesTable extends Component
                 }
             }
         } catch (\Exception $e) {
-            Log::error('Error en actualizarDatos: '.$e->getMessage());
+            Log::error('Error en actualizarDatos: '.$e->getMessage(), [
+                'exception' => get_class($e),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
 
             // Valores por defecto seguros en caso de error
             $this->espacios = [];
