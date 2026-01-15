@@ -116,17 +116,17 @@ class ProfesorColaboradorController extends Controller
             'tipo_clase' => 'required|in:temporal,reforzamiento,recuperacion',
             'fecha_inicio' => 'required|date',
             'fecha_termino' => 'required|date|after_or_equal:fecha_inicio',
-            'id_asignatura' => 'nullable|exists:asignaturas,id_asignatura',
+            'id_asignatura' => 'nullable|exists:asignaturas,id_asignatura,id_asignatura,,tenant',
             'planificaciones' => 'required|json',
         ];
 
         if ($request->profesor_option === 'nuevo') {
-            $validationRules['nuevo_run'] = 'required|unique:profesors,run_profesor';
+            $validationRules['nuevo_run'] = 'required|unique:profesors,run_profesor,,run_profesor,,tenant';
             $validationRules['nuevo_nombre'] = 'required|string|max:255';
-            $validationRules['nuevo_email'] = 'required|email|unique:profesors,email';
+            $validationRules['nuevo_email'] = 'required|email|unique:profesors,email,,id,,tenant';
             $validationRules['nuevo_celular'] = 'nullable|string|max:20';
         } else {
-            $validationRules['run_profesor_colaborador'] = 'required|exists:profesors,run_profesor';
+            $validationRules['run_profesor_colaborador'] = 'required|exists:profesors,run_profesor,,run_profesor,,tenant';
         }
 
         $request->validate($validationRules);
@@ -240,17 +240,17 @@ class ProfesorColaboradorController extends Controller
         $request->merge(['planificaciones' => $planificaciones]);
 
         $request->validate([
-            'run_profesor_colaborador' => 'required|exists:profesors,run_profesor',
+            'run_profesor_colaborador' => 'required|exists:profesors,run_profesor,,run_profesor,,tenant',
             'nombre_asignatura_temporal' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'tipo_clase' => 'required|in:temporal,reforzamiento,recuperacion',
             'fecha_inicio' => 'required|date',
             'fecha_termino' => 'required|date|after_or_equal:fecha_inicio',
-            'id_asignatura' => 'nullable|exists:asignaturas,id_asignatura',
+            'id_asignatura' => 'nullable|exists:asignaturas,id_asignatura,id_asignatura,,tenant',
             'estado' => 'required|in:activo,inactivo',
             'planificaciones' => 'required|array|min:1',
-            'planificaciones.*.id_modulo' => 'required|exists:modulos,id_modulo',
-            'planificaciones.*.id_espacio' => 'required|exists:espacios,id_espacio',
+            'planificaciones.*.id_modulo' => 'required|exists:modulos,id_modulo,id_modulo,,tenant',
+            'planificaciones.*.id_espacio' => 'required|exists:espacios,id_espacio,id_espacio,,tenant',
         ]);
 
         try {
