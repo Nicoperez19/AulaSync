@@ -1007,21 +1007,28 @@ class QuickActionsController extends Controller
                         $espacio->estado = 'Ocupado';
                         $espacio->save();
 
-                    Log::info('🔒 Espacio ocupado automáticamente por reserva actual', [
-                        'id_espacio' => $reserva->id_espacio,
-                        'id_reserva' => $reserva->id_reserva,
-                        'modulo_actual' => $moduloActual,
-                        'modulos_reserva' => "{$moduloInicio}-{$moduloFin}",
-                        'fecha_reserva' => $reserva->fecha_reserva,
-                        'hora_actual' => $horaActual,
-                        'hora_reserva' => $reserva->hora
-                    ]);
+                        Log::info('🔒 Espacio ocupado automáticamente por reserva actual', [
+                            'id_espacio' => $reserva->id_espacio,
+                            'id_reserva' => $reserva->id_reserva,
+                            'modulo_actual' => $moduloActual,
+                            'modulos_reserva' => "{$moduloInicio}-{$moduloFin}",
+                            'fecha_reserva' => $reserva->fecha_reserva,
+                            'hora_actual' => $horaActual,
+                            'hora_reserva' => $reserva->hora
+                        ]);
 
-                    return true;
-                } elseif ($espacio) {
-                    Log::info('⚠️  Espacio ya está ocupado o en otro estado', [
-                        'id_espacio' => $reserva->id_espacio,
-                        'estado_actual' => $espacio->estado
+                        return true;
+                    } elseif ($espacio) {
+                        Log::info('⚠️  Espacio ya está ocupado o en otro estado', [
+                            'id_espacio' => $reserva->id_espacio,
+                            'estado_actual' => $espacio->estado
+                        ]);
+                    }
+                } else {
+                    Log::info('⏰ Hora de inicio de reserva aún no llega - no se ocupa el espacio', [
+                        'hora_actual' => $horaActual,
+                        'hora_reserva' => $horaReserva,
+                        'id_reserva' => $reserva->id_reserva
                     ]);
                 }
             } else {
