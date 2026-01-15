@@ -77,6 +77,13 @@
     <!-- Componente Livewire principal -->
     <livewire:modulos-actuales-table />
 
+    <!-- Script para refrescar la página después de seleccionar una sede -->
+    <script>
+        document.addEventListener('sedes:seleccionada', function() {
+            setTimeout(() => location.reload(), 3000);
+        });
+    </script>
+
     <!-- Reloj flotante para pantallas pequeñas -->
     <div id="reloj-flotante" 
          class="fixed top-4 right-4 z-50 md:hidden bg-light-cloud-blue shadow-lg rounded-xl border border-gray-200 px-4 py-3 flex flex-col items-center gap-1 min-w-[140px] text-white">
