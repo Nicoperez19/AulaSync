@@ -1358,11 +1358,22 @@ class ModulosActualesTable extends Component
                 }
             } else {
                 // Procesar espacios cuando no hay módulo activo
+                Log::info('ModulosActuales - Procesando espacios sin módulo activo');
+                Log::info('ModulosActuales - Total pisos: ' . count($this->pisos));
+                
                 $this->espacios = [];
                 foreach ($this->pisos as $piso) {
+                    Log::info('ModulosActuales - Procesando piso: ' . $piso->id, [
+                        'nombre' => $piso->nombre_piso,
+                        'espacios_count' => count($piso->espacios ?? [])
+                    ]);
+                    
                     $espaciosPiso = [];
                     // Ordenar espacios alfabéticamente por id_espacio
                     $espaciosOrdenados = $piso->espacios->sortBy('id_espacio')->values();
+                    
+                    Log::info('ModulosActuales - Espacios ordenados del piso ' . $piso->id . ': ' . count($espaciosOrdenados));
+                    
                     foreach ($espaciosOrdenados as $espacio) {
                         // Obtener conteo de asistencia actual para este espacio
                         $asistenciaActual = Asistencia::where('id_espacio', $espacio->id_espacio)
@@ -1391,6 +1402,7 @@ class ModulosActualesTable extends Component
                         ];
                     }
                     $this->espacios[$piso->id] = $espaciosPiso;
+                    Log::info('ModulosActuales - Espacios procesados del piso ' . $piso->id . ': ' . count($espaciosPiso));
                 }
             }
         } catch (\Exception $e) {
