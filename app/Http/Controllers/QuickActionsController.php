@@ -996,12 +996,16 @@ class QuickActionsController extends Controller
             }
 
             // Verificar si el módulo actual está dentro del rango de la reserva
+            // IMPORTANTE: También verificar que la hora de inicio ya haya pasado
             if ($moduloInicio && $moduloFin && $moduloActual >= $moduloInicio && $moduloActual <= $moduloFin) {
-                // Es una reserva actual - ocupar el espacio
-                $espacio = Espacio::where('id_espacio', $reserva->id_espacio)->first();
-                if ($espacio && $espacio->estado === 'Disponible') {
-                    $espacio->estado = 'Ocupado';
-                    $espacio->save();
+                // Verificar que la hora de inicio de la reserva ya haya llegado o pasado
+                $horaReserva = $reserva->hora;
+                if ($horaActual >= $horaReserva) {
+                    // Es una reserva actual - ocupar el espacio
+                    $espacio = Espacio::where('id_espacio', $reserva->id_espacio)->first();
+                    if ($espacio && $espacio->estado === 'Disponible') {
+                        $espacio->estado = 'Ocupado';
+                        $espacio->save();
 
                     Log::info('🔒 Espacio ocupado automáticamente por reserva actual', [
                         'id_espacio' => $reserva->id_espacio,
