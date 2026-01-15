@@ -403,7 +403,7 @@ class QuickActionsController extends Controller
                 'telefono' => 'nullable|string|max:20', // OPCIONAL - puede ser null
                 'tipo' => 'required|in:profesor,solicitante,colaborador',
                 'id_asignatura' => 'nullable|string|exists:asignaturas,id_asignatura',
-                'espacio' => 'required|string|exists:espacios,id_espacio',
+                'espacio' => 'required|string',
                 'fecha' => 'required|date',
                 'modulo_inicial' => 'required|integer|min:1|max:12',
                 'modulo_final' => 'required|integer|min:1|max:12',
@@ -1267,7 +1267,7 @@ class QuickActionsController extends Controller
 
             // Validación
             $request->validate([
-                'codigo_espacio' => 'required|exists:espacios,codigo_espacio',
+                'codigo_espacio' => 'required|string',
                 'fecha' => 'required|date',
                 'hora' => 'required',
                 'modulos' => 'required|integer|min:1',
