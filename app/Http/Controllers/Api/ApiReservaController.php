@@ -70,8 +70,8 @@ class ApiReservaController extends Controller
         try {
             // Validar datos de entrada
             $request->validate([
-                'run' => 'required|exists:profesors,run_profesor',
-                'espacio_id' => 'required|exists:espacios,id_espacio'
+                'run' => 'required|exists:tenant.profesors,run_profesor',
+                'espacio_id' => 'required|exists:tenant.espacios,id_espacio'
             ]);
 
             // Obtener la hora actual
@@ -267,7 +267,7 @@ class ApiReservaController extends Controller
         try {
             $request->validate([
                 'user_id' => 'required|exists:users,run',
-                'espacio_id' => 'required|exists:espacios,id_espacio',
+                'espacio_id' => 'required|exists:tenant.espacios,id_espacio',
                 'modulos' => 'required|array|min:1',
                 'modulos.*' => 'required|string'
             ]);
@@ -351,7 +351,7 @@ class ApiReservaController extends Controller
         try {
             $request->validate([
                 'run' => 'required',
-                'id_espacio' => 'required|exists:espacios,id_espacio'
+                'id_espacio' => 'required|exists:tenant.espacios,id_espacio'
             ]);
 
             $espacio = Espacio::where('id_espacio', $request->id_espacio)->first();

@@ -2209,7 +2209,7 @@ class PlanoDigitalController extends Controller
     {
         try {
             $validated = $request->validate([
-                'espacio_id' => 'required|string|exists:espacios,id_espacio',
+                'espacio_id' => 'required|string|exists:tenant.espacios,id_espacio',
                 'asistentes' => 'required|array|min:1',
                 'asistentes.*.run' => 'required|string',
                 'asistentes.*.nombre' => 'required|string'

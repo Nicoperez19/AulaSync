@@ -355,9 +355,9 @@ Route::group(['middleware' => ['permission:mantenedor de reservas']], function (
 Route::group(['middleware' => ['permission:mantenedor de asignaturas']], function () {
     Route::get('/asignaturas', [AsignaturaController::class, 'index'])->name('asignaturas.index');
     Route::post('/asignaturas', [AsignaturaController::class, 'store'])->name('asignaturas.store');
-    Route::get('/{id_asignatura}/edit', [AsignaturaController::class, 'edit'])->name('asignaturas.edit');
-    Route::put('/{id_asignatura}', [AsignaturaController::class, 'update'])->name('asignaturas.update');
-    Route::delete('/{id_asignatura}', [AsignaturaController::class, 'destroy'])->name('asignaturas.destroy');
+    Route::get('/asignaturas/{id_asignatura}/edit', [AsignaturaController::class, 'edit'])->name('asignaturas.edit');
+    Route::put('/asignaturas/{id_asignatura}', [AsignaturaController::class, 'update'])->name('asignaturas.update');
+    Route::delete('/asignaturas/{id_asignatura}', [AsignaturaController::class, 'destroy'])->name('asignaturas.destroy');
 });
 
 Route::group(['middleware' => ['permission:mantenedor de carga de datos']], function () {

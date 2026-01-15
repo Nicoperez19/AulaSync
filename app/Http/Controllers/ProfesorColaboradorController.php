@@ -8,6 +8,7 @@ use App\Models\Profesor;
 use App\Models\Asignatura;
 use App\Models\Espacio;
 use App\Models\Modulo;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -15,6 +16,35 @@ use Carbon\Carbon;
 
 class ProfesorColaboradorController extends Controller
 {
+    /**
+     * Asegurar que el tenant está correctamente establecido y la conexión está configurada
+     */
+    protected function ensureTenantConnection()
+    {
+        $tenant = Tenant::current();
+        
+        if (!$tenant) {
+            // Si no hay tenant en la sesión, intentar obtener del usuario autenticado
+            if (auth()->check() && auth()->user()->sede_id) {
+                $tenant = Tenant::where('sede_id', auth()->user()->sede_id)->first();
+                if ($tenant) {
+                    $tenant->makeCurrent();
+                }
+            }
+        }
+        
+        // Si tenemos un tenant, asegurar que la conexión está configurada
+        if ($tenant && $tenant->database) {
+            config([
+                'database.connections.tenant.database' => $tenant->database,
+            ]);
+            
+            // Purgar la conexión anterior para forzar reconexión
+            DB::purge('tenant');
+            DB::disconnect('tenant');
+        }
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -60,6 +90,9 @@ class ProfesorColaboradorController extends Controller
      */
     public function create()
     {
+        // Asegurar que el tenant está correctamente establecido
+        $this->ensureTenantConnection();
+        
         $profesores = Profesor::orderBy('name')->get();
         $asignaturas = Asignatura::with('carrera')->orderBy('nombre_asignatura')->get();
         $espacios = Espacio::with('piso')->orderBy('nombre_espacio')->get();
@@ -72,6 +105,9 @@ class ProfesorColaboradorController extends Controller
      */
     public function store(Request $request)
     {
+        // Asegurar que el tenant está correctamente establecido
+        $this->ensureTenantConnection();
+        
         // Validate based on profesor_option
         $validationRules = [
             'nombre_asignatura_temporal' => 'required|string|max:255',
@@ -167,6 +203,9 @@ class ProfesorColaboradorController extends Controller
      */
     public function edit(ProfesorColaborador $profesorColaborador)
     {
+        // Asegurar que el tenant está correctamente establecido
+        $this->ensureTenantConnection();
+        
         $profesorColaborador->load(['planificaciones.modulo', 'planificaciones.espacio']);
         $profesores = Profesor::orderBy('name')->get();
         $asignaturas = Asignatura::with('carrera')->orderBy('nombre_asignatura')->get();
@@ -189,6 +228,9 @@ class ProfesorColaboradorController extends Controller
      */
     public function update(Request $request, ProfesorColaborador $profesorColaborador)
     {
+        // Asegurar que el tenant está correctamente establecido
+        $this->ensureTenantConnection();
+        
         // Si planificaciones viene como JSON string, decodificar
         $planificaciones = $request->planificaciones;
         if (is_string($planificaciones)) {
@@ -352,6 +394,9 @@ class ProfesorColaboradorController extends Controller
     public function getSalasDisponibles(Request $request)
     {
         try {
+            // Asegurar que el tenant está correctamente establecido
+            $this->ensureTenantConnection();
+            
             $modulos = $request->input('modulos', []);
             
             if (empty($modulos)) {

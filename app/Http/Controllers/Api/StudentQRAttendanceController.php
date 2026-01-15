@@ -45,7 +45,7 @@ class StudentQRAttendanceController extends Controller
         // Validación de entrada
         $validator = Validator::make($request->all(), [
             'rut_alumno' => 'required|string|max:20',
-            'id_espacio' => 'required|string|exists:espacios,id_espacio',
+            'id_espacio' => 'required|string|exists:tenant.espacios,id_espacio',
             'nombre_alumno' => 'nullable|string|max:255',
         ], [
             'rut_alumno.required' => 'El RUT del alumno es obligatorio',
@@ -205,7 +205,7 @@ class StudentQRAttendanceController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'rut_alumno' => 'required|string|max:20',
-            'id_espacio' => 'required|string|exists:espacios,id_espacio',
+            'id_espacio' => 'required|string|exists:tenant.espacios,id_espacio',
         ], [
             'rut_alumno.required' => 'El RUT del alumno es obligatorio',
             'id_espacio.required' => 'El ID del espacio es obligatorio',
@@ -305,7 +305,7 @@ class StudentQRAttendanceController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'rut_alumno' => 'required|string|max:20',
-            'id_espacio' => 'required|string|exists:espacios,id_espacio',
+            'id_espacio' => 'required|string|exists:tenant.espacios,id_espacio',
             'nombre_alumno' => 'nullable|string|max:255',
         ]);
 

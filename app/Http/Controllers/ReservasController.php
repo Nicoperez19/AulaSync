@@ -40,10 +40,10 @@ class ReservasController extends Controller
         $request->validate([
             'hora' => 'required',
             'fecha_reserva' => 'required|date',
-            'id_espacio' => 'required|exists:espacios,id_espacio',
+            'id_espacio' => 'required|exists:tenant.espacios,id_espacio',
             // ahora esperamos run del usuario en id_usuario
             'id_usuario' => 'required',
-            'id_asignatura' => 'nullable|string|exists:asignaturas,id_asignatura',
+            'id_asignatura' => 'nullable|string|exists:tenant.asignaturas,id_asignatura',
             'modulos' => 'nullable|integer|min:1|max:10'
         ]);
 
@@ -104,7 +104,7 @@ class ReservasController extends Controller
         $request->validate([
             'hora' => 'required',
             'fecha_reserva' => 'required|date',
-            'id_espacio' => 'required|exists:espacios,id_espacio',
+            'id_espacio' => 'required|exists:tenant.espacios,id_espacio',
             'id' => 'required|exists:users,id',
         ]);
 

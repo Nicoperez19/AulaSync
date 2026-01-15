@@ -44,11 +44,11 @@ class EspacioController extends Controller
 
         try {
             $validated = $request->validate([
-                'id_espacio' => 'required|string|max:50|unique:espacios,id_espacio',
+                'id_espacio' => 'required|string|max:50|unique:tenant.espacios,id_espacio',
                 'nombre_espacio' => 'required|string|max:255',
                 'id_universidad' => 'required|exists:universidades,id_universidad',
                 'id_facultad' => 'required|exists:facultades,id_facultad',
-                'piso_id' => 'required|exists:pisos,id',
+                'piso_id' => 'required|exists:tenant.pisos,id',
                 'tipo_espacio' => 'required|in:Sala de Clases,Laboratorio,Biblioteca,Sala de Reuniones,Oficinas',
                 'estado' => 'required|in:Disponible,Ocupado,Reservado',
                 'puestos_disponibles' => 'nullable|integer|min:1',
@@ -104,11 +104,11 @@ class EspacioController extends Controller
     {
         try {
             $validated = $request->validate([
-                'id_espacio' => 'required|string|max:50|unique:espacios,id_espacio,' . $id_espacio . ',id_espacio',
+                'id_espacio' => 'required|string|max:50|unique:tenant.espacios,id_espacio,' . $id_espacio . ',id_espacio',
                 'nombre_espacio' => 'required|string|max:255',
                 'id_universidad' => 'required|exists:universidades,id_universidad',
                 'id_facultad' => 'required|exists:facultades,id_facultad',
-                'piso_id' => 'required|exists:pisos,id',
+                'piso_id' => 'required|exists:tenant.pisos,id',
                 'tipo_espacio' => 'required|in:Sala de Clases,Laboratorio,Biblioteca,Sala de Reuniones,Oficinas',
                 'estado' => 'required|in:Disponible,Ocupado,Reservado',
                 'puestos_disponibles' => 'nullable|integer|min:1',

@@ -37,8 +37,8 @@ class AttendanceController extends Controller
         // Validación de entrada
         $validator = Validator::make($request->all(), [
             'student_id' => 'required|string|max:20',
-            'room_id' => 'required_without:reservation_id|string|exists:espacios,id_espacio',
-            'reservation_id' => 'required_without:room_id|string|exists:reservas,id_reserva',
+            'room_id' => 'required_without:reservation_id|string|exists:tenant.espacios,id_espacio',
+            'reservation_id' => 'required_without:room_id|string|exists:tenant.reservas,id_reserva',
             'student_name' => 'nullable|string|max:255',
         ], [
             'student_id.required' => 'El ID del estudiante es obligatorio',

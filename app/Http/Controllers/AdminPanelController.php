@@ -105,7 +105,7 @@ class AdminPanelController extends Controller
                 'run' => 'required|string|max:20',
                 'correo' => 'required|email|max:255',
                 'tipo' => 'required|in:profesor,solicitante',
-                'espacio' => 'required|string|exists:espacios,codigo',
+                'espacio' => 'required|string|exists:tenant.espacios,codigo',
                 'fecha' => 'required|date|after_or_equal:today',
                 'modulo_inicial' => 'required|integer|min:1|max:16',
                 'modulo_final' => 'required|integer|min:1|max:16',

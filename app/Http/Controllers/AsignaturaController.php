@@ -41,7 +41,7 @@ class AsignaturaController extends Controller
     {
         try {
             $request->validate([
-                'id_asignatura' => 'required|string|max:20|unique:asignaturas,id_asignatura',
+                'id_asignatura' => 'required|string|max:20|unique:tenant.asignaturas,id_asignatura',
                 'codigo_asignatura' => 'required|string|max:100',
                 'nombre_asignatura' => 'required|string|max:100',
                 'seccion' => 'required|string|max:50',
@@ -49,8 +49,8 @@ class AsignaturaController extends Controller
                 'horas_indirectas' => 'nullable|integer|min:0',
                 'area_conocimiento' => 'nullable|string|max:100',
                 'periodo' => 'nullable|string|max:20',
-                'run_profesor' => 'required|exists:profesors,run_profesor',
-                'run_profesor_reemplazo' => 'nullable|exists:profesors,run_profesor',
+                'run_profesor' => 'required|exists:tenant.profesors,run_profesor',
+                'run_profesor_reemplazo' => 'nullable|exists:tenant.profesors,run_profesor',
                 'id_carrera' => 'required|exists:carreras,id_carrera',
             ]);
 
@@ -107,7 +107,7 @@ class AsignaturaController extends Controller
     {
         try {
             $request->validate([
-                'id_asignatura' => 'required|string|max:20|unique:asignaturas,id_asignatura,' . $id . ',id_asignatura',
+                'id_asignatura' => 'required|string|max:20|unique:tenant.asignaturas,id_asignatura,' . $id . ',id_asignatura',
                 'codigo_asignatura' => 'required|string|max:100',
                 'nombre_asignatura' => 'required|string|max:100',
                 'seccion' => 'required|string|max:50',
@@ -115,8 +115,8 @@ class AsignaturaController extends Controller
                 'horas_indirectas' => 'nullable|integer|min:0',
                 'area_conocimiento' => 'nullable|string|max:100',
                 'periodo' => 'nullable|string|max:20',
-                'run_profesor' => 'required|exists:profesors,run_profesor',
-                'run_profesor_reemplazo' => 'nullable|exists:profesors,run_profesor',
+                'run_profesor' => 'required|exists:tenant.profesors,run_profesor',
+                'run_profesor_reemplazo' => 'nullable|exists:tenant.profesors,run_profesor',
                 'id_carrera' => 'required|exists:carreras,id_carrera',
             ]);
 

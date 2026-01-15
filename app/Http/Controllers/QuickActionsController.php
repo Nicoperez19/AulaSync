@@ -402,7 +402,7 @@ class QuickActionsController extends Controller
                 'correo' => 'required|email|max:255',
                 'telefono' => 'nullable|string|max:20', // OPCIONAL - puede ser null
                 'tipo' => 'required|in:profesor,solicitante,colaborador',
-                'id_asignatura' => 'nullable|string|exists:asignaturas,id_asignatura',
+                'id_asignatura' => 'nullable|string|exists:tenant.asignaturas,id_asignatura',
                 'espacio' => 'required|string',
                 'fecha' => 'required|date',
                 'modulo_inicial' => 'required|integer|min:1|max:12',
