@@ -12,6 +12,7 @@ use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Carbon\Carbon;
 
 class ProfesorColaboradorController extends Controller
@@ -116,17 +117,30 @@ class ProfesorColaboradorController extends Controller
             'tipo_clase' => 'required|in:temporal,reforzamiento,recuperacion',
             'fecha_inicio' => 'required|date',
             'fecha_termino' => 'required|date|after_or_equal:fecha_inicio',
-            'id_asignatura' => 'nullable|exists:asignaturas,id_asignatura,id_asignatura,,tenant',
+            'id_asignatura' => [
+                'nullable',
+                Rule::exists('asignaturas', 'id_asignatura')->connection('tenant')
+            ],
             'planificaciones' => 'required|json',
         ];
 
         if ($request->profesor_option === 'nuevo') {
-            $validationRules['nuevo_run'] = 'required|unique:profesors,run_profesor,,run_profesor,,tenant';
+            $validationRules['nuevo_run'] = [
+                'required',
+                Rule::unique('profesors', 'run_profesor')->connection('tenant')
+            ];
             $validationRules['nuevo_nombre'] = 'required|string|max:255';
-            $validationRules['nuevo_email'] = 'required|email|unique:profesors,email,,id,,tenant';
+            $validationRules['nuevo_email'] = [
+                'required',
+                'email',
+                Rule::unique('profesors', 'email')->connection('tenant')
+            ];
             $validationRules['nuevo_celular'] = 'nullable|string|max:20';
         } else {
-            $validationRules['run_profesor_colaborador'] = 'required|exists:profesors,run_profesor,,run_profesor,,tenant';
+            $validationRules['run_profesor_colaborador'] = [
+                'required',
+                Rule::exists('profesors', 'run_profesor')->connection('tenant')
+            ];
         }
 
         $request->validate($validationRules);
@@ -240,17 +254,29 @@ class ProfesorColaboradorController extends Controller
         $request->merge(['planificaciones' => $planificaciones]);
 
         $request->validate([
-            'run_profesor_colaborador' => 'required|exists:profesors,run_profesor,,run_profesor,,tenant',
+            'run_profesor_colaborador' => [
+                'required',
+                Rule::exists('profesors', 'run_profesor')->connection('tenant')
+            ],
             'nombre_asignatura_temporal' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'tipo_clase' => 'required|in:temporal,reforzamiento,recuperacion',
             'fecha_inicio' => 'required|date',
             'fecha_termino' => 'required|date|after_or_equal:fecha_inicio',
-            'id_asignatura' => 'nullable|exists:asignaturas,id_asignatura,id_asignatura,,tenant',
+            'id_asignatura' => [
+                'nullable',
+                Rule::exists('asignaturas', 'id_asignatura')->connection('tenant')
+            ],
             'estado' => 'required|in:activo,inactivo',
             'planificaciones' => 'required|array|min:1',
-            'planificaciones.*.id_modulo' => 'required|exists:modulos,id_modulo,id_modulo,,tenant',
-            'planificaciones.*.id_espacio' => 'required|exists:espacios,id_espacio,id_espacio,,tenant',
+            'planificaciones.*.id_modulo' => [
+                'required',
+                Rule::exists('modulos', 'id_modulo')->connection('tenant')
+            ],
+            'planificaciones.*.id_espacio' => [
+                'required',
+                Rule::exists('espacios', 'id_espacio')->connection('tenant')
+            ],
         ]);
 
         try {
