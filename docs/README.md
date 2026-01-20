@@ -1,333 +1,248 @@
-# Índice de Documentación - AulaSync API
+# Guía de Instalación Gestor Aulas
+1.- Clonar repositorio:  git clone https://github.com/Nicoperez19/AulaSync
 
-Este documento sirve como índice central para toda la documentación de la API de AulaSync.
+2.- Copiar .env desde .env.example:  cp .env.example .env
 
----
+3.- Crear carpetas necesarias
+mkdir storage\framework\cache
+mkdir storage\framework\sessions
+mkdir storage\framework\views
+mkdir bootstrap\cache
 
-## 📚 Documentación de APIs
+4.- Generar clave de app: php artisan key:generate
+5.- Ejecutar migraciones base de datos central:
+php artisan migrate --path=database/migrations/central
 
-### Cálculos y Estadísticas
+6.- Ejecutar seeders base de datos central:
+php artisan db:seed --class=CentralDatabaseSeeder
 
-Actualizado el: **7 de noviembre de 2025**
+7.- Ejecutar migraciones y seeders base de datos tenants:
+ php artisan tenants:setup --fresh --seed
 
-- **[CALCULO_ESTADISTICAS_CORREGIDO.md](CALCULO_ESTADISTICAS_CORREGIDO.md)** 🔥 NUEVO
-  - Correcciones en cálculos de estadísticas del dashboard
-  - Fórmulas correctas para ocupación semanal/mensual
-  - Cálculo de horas reales utilizadas vs count() de reservas
-  - Consistencia en uso de 15 horas/día laboral
-  - **LECTURA OBLIGATORIA** para entender las correcciones aplicadas
+8.- Compilar frontend o ejecutar frontend de desarrollo:
+npm run build / npm run dev
 
-### API de Espacios y Tipos de Espacios
+9.- Ejecutar servidor de desarrollo laravel:
+php artisan serve 
 
-Agregada el: **27 de octubre de 2025**
+10.- Navegar a la ip asignada.
 
-- **[API_ESPACIOS_Y_TIPOS.md](API_ESPACIOS_Y_TIPOS.md)** - Documentación completa del endpoint de espacios
-  - GET `/api/espacios` - Listar todos los espacios
-  - GET `/api/tipos-espacios` - Listar tipos de espacios
-  - GET `/api/espacios/resumen` - Resumen estadístico
-  
-- **[PRUEBAS_API_ESPACIOS.md](PRUEBAS_API_ESPACIOS.md)** - Guía de pruebas y ejemplos
-  - Ejemplos con cURL, HTTPie, Postman
-  - JavaScript, Python
-  - Resultados esperados
+11.- Ingresar con las credenciales
+usuario: 19716146
+contraseña: password
 
-- **[EJEMPLOS_RESPUESTAS_API_ESPACIOS.md](EJEMPLOS_RESPUESTAS_API_ESPACIOS.md)** - Ejemplos de respuestas
-  - Respuestas completas
-  - Casos de filtrado
-  - Manejo de errores
+12.- Seleccionar sede.
 
-- **[RESUMEN_CAMBIOS_API_ESPACIOS.md](RESUMEN_CAMBIOS_API_ESPACIOS.md)** - Resumen de implementación
-  - Archivos creados/modificados
-  - Verificación de rutas
-  - Próximos pasos
+13.- Inicializar Wizard con la contraseña del .env
 
-### API de Programación Semanal y Asistencia
+14.- Completar la información.
 
-#### Programación Semanal
+15.- Sede y aplicación lista para utilizarse.
 
-Documentado en: **[API_PROGRAMACION_SEMANAL_ASISTENCIA.md](API_PROGRAMACION_SEMANAL_ASISTENCIA.md)**
 
-- GET `/api/programacion-semanal/{id_espacio}` - Consultar programación
 
-#### Reserva Activa por Espacio
 
-Agregado el: **29 de octubre de 2025**
+# CONFIGURACION DEL .ENV
 
-- **[API_RESERVA_ACTIVA_ESPACIO.md](API_RESERVA_ACTIVA_ESPACIO.md)** 🔥 NUEVO
-  - GET `/api/reservas/activa/{id_espacio}` - Obtener reserva activa de un espacio
-  - Consulta en tiempo real
-  - **Diferencia entre ocupación con/sin reserva formal** ⚠️
-  - Información completa (profesor, asignatura, asistencia)
-  - Ideal para pantallas de estado y apps nativas
-  - Lógica dual: Reserva formal O estado manual "Ocupado"
+## 1. Configuración de Base de Datos
 
-- **[LOGICA_OCUPACION_ESPACIOS.md](LOGICA_OCUPACION_ESPACIOS.md)** 📚 GUÍA CONCEPTUAL
-  - Explicación detallada de cómo funciona la ocupación de espacios
-  - Diferencia entre estado "Ocupado" con y sin reserva
-  - Casos de uso reales con ejemplos
-  - Diagramas de flujo y código de integración
-  - **LECTURA RECOMENDADA** para entender el modelo de negocio
+### Conexión Principal (Central Database)
+```env
+# Tipo de conexión de base de datos
+DB_CONNECTION=mysql
 
-#### Registro de Asistencia (Actualizado)
+# Host donde corre MySQL (127.0.0.1 para localhost, o IP del servidor)
+DB_HOST=127.0.0.1
 
-Actualizado el: **29 de octubre de 2025**
+# Puerto de MySQL (3306 es el puerto por defecto)
+DB_PORT=3306
 
-- **[API_REGISTRO_ASISTENCIA.md](API_REGISTRO_ASISTENCIA.md)** ⭐ PRINCIPAL
-  - POST `/api/asistencia` - Registrar asistencia y finalizar clase
-  - Documentación completa y detallada
-  - Ejemplos en múltiples lenguajes
-  - Integración con apps nativas
-  - Guía de migración
+# Nombre de la base de datos central
+# Esta base de datos CENTRAL almacena: usuarios, sedes, universidades, regiones, roles, permisos
+DB_DATABASE=gestor
 
-- **[GUIA_RAPIDA_ASISTENCIA.md](GUIA_RAPIDA_ASISTENCIA.md)** 🚀 INICIO RÁPIDO
-  - Guía de 5 minutos
-  - Casos de uso comunes
-  - Código listo para copiar/pegar
-  - Tips y troubleshooting
+# Credenciales del usuario MySQL
+DB_USERNAME=root
+DB_PASSWORD=
 
-- **[RESUMEN_CAMBIOS_ASISTENCIA.md](RESUMEN_CAMBIOS_ASISTENCIA.md)** 📋 CHANGELOG
-  - Lista completa de cambios
-  - Migración desde versión anterior
-  - Checklist de implementación
-  - Próximos pasos sugeridos
+# Credenciales root para operaciones administrativas
+# Se usa para crear automáticamente bases de datos de tenants
+# Requiere permisos: CREATE DATABASE, DROP DATABASE, ALTER
+DB_ROOT_USERNAME=root
+DB_ROOT_PASSWORD=
+```
 
-- **Ejemplos JSON:** `ejemplos/`
-  - `asistencia-completa.json` - Ejemplo completo con 5 estudiantes
-  - `asistencia-simple.json` - Ejemplo mínimo
-  - `asistencia-sin-finalizar.json` - Registro sin finalizar clase
+**Notas importantes:**
+- `DB_DATABASE=gestor` es la **base de datos central** compartida por todos los tenants
+- Contiene tablas del sistema: `users`, `roles`, `permissions`, `sedes`, `tenants`, etc.
+- Los `DB_ROOT_*` deben tener permisos de administrador para crear/borrar BDs de tenants
 
 ---
 
-## 🗂️ Documentación por Categoría
+## 2. Configuración Multi-Tenancy
 
-### Configuración y Setup
+### Habilitación del Sistema Multi-Tenant
+```env
+# Habilita o deshabilita el sistema multi-tenant
+MULTITENANCY_ENABLED=true
 
-- [CONFIGURACION_GMAIL.md](CONFIGURACION_GMAIL.md) - Configuración de Gmail para envío de correos
-- [CORREOS_INICIO_RAPIDO.md](CORREOS_INICIO_RAPIDO.md) - Guía rápida de correos
-- [ACTIVACION_CORREOS.md](ACTIVACION_CORREOS.md) - Activación del sistema de correos
+# Usar bases de datos separadas para cada tenant
+# Si es 'false': todos los tenants usan la misma BD (filtrados por tenant_id)
+# Si es 'true': cada tenant tiene su propia BD (RECOMENDADO)
+MULTITENANCY_SEPARATE_DATABASES=false
 
-### Funcionalidades del Sistema
+# Nombre de la BD base para tenants (solo si SEPARATE_DATABASES=false)
+DB_TENANT_DATABASE=${DB_DATABASE}
+```
 
-- [SISTEMA_LICENCIAS_RECUPERACION.md](SISTEMA_LICENCIAS_RECUPERACION.md) - Gestión de licencias y recuperación
-- [REPORTES_CLASES_NO_REALIZADAS.md](REPORTES_CLASES_NO_REALIZADAS.md) - Sistema de reportes
-- [MANTENEDORES_GUIA.md](MANTENEDORES_GUIA.md) - Guía de mantenedores
+### ¿Cómo funciona la multi-tenancy?
 
-### Correos y Plantillas
+**Arquitectura actual de AulaSync:**
 
-- [CORREOS_MASIVOS_GUIA.md](CORREOS_MASIVOS_GUIA.md) - Envío de correos masivos
-- [PLANTILLAS_CORREOS_GUIA.md](PLANTILLAS_CORREOS_GUIA.md) - Gestión de plantillas
-- [DESTINATARIOS_EXTERNOS_GUIA.md](DESTINATARIOS_EXTERNOS_GUIA.md) - Gestión de destinatarios externos
-- [ENVIO_CORREOS_GUIA.md](ENVIO_CORREOS_GUIA.md) - Guía de envío de correos
-- [VARIABLES_CORREOS.md](VARIABLES_CORREOS.md) - Variables disponibles en plantillas
-- [VARIABLES_IMPLEMENTACION.md](VARIABLES_IMPLEMENTACION.md) - Implementación de variables
-- [CORREOS_EXTERNOS_Y_ENVIO.md](CORREOS_EXTERNOS_Y_ENVIO.md) - Correos a externos
-- [RESUMEN_CAMBIOS_CORREOS.md](RESUMEN_CAMBIOS_CORREOS.md) - Changelog del sistema de correos
+```
+┌─────────────────────────────────────────┐
+│      BASE DE DATOS CENTRAL (gestor)     │
+│  ────────────────────────────────────   │
+│  • users (todos los usuarios del app)   │
+│  • roles, permissions (permisos)        │
+│  • sedes (sedes de universidades)       │
+│  • tenants (info de tenants)            │
+│  • universidades, regiones, etc.        │
+└─────────────────────────────────────────┘
 
-### Testing y Pruebas
+        TENANT 1            TENANT 2
+        ────────           ────────
+    (Sede IT A) (Sede IT B)
+    
+    • espacios          • espacios
+    • reservas          • reservas
+    • profesores        • profesores
+    • asignaturas       • asignaturas
+    • asistencias       • asistencias
+    • etc.              • etc.
+```
 
-- [TEST_PLANTILLAS_PDF.md](TEST_PLANTILLAS_PDF.md) - Testing de plantillas PDF
-- [INTEGRACION_TEST_PLANTILLAS.md](INTEGRACION_TEST_PLANTILLAS.md) - Integración con tests
-- [TESTS_API_PROGRAMACION_ASISTENCIA.md](TESTS_API_PROGRAMACION_ASISTENCIA.md) - Tests de API
-- [EJEMPLOS_API_PROGRAMACION_ASISTENCIA.md](EJEMPLOS_API_PROGRAMACION_ASISTENCIA.md) - Ejemplos de API
-
-### Comandos y Utilidades
-
-- [COMANDO_USUARIOS_PROFESORES.md](COMANDO_USUARIOS_PROFESORES.md) - Comandos de gestión de usuarios
-
----
-
-## 🎯 Guías de Inicio Rápido
-
-### Para Desarrolladores Frontend/Apps Nativas
-
-1. **Espacios:**
-   - Leer: [API_ESPACIOS_Y_TIPOS.md](API_ESPACIOS_Y_TIPOS.md)
-   - Probar: [PRUEBAS_API_ESPACIOS.md](PRUEBAS_API_ESPACIOS.md)
-
-2. **Asistencia:**
-   - Inicio: [GUIA_RAPIDA_ASISTENCIA.md](GUIA_RAPIDA_ASISTENCIA.md) ⭐
-   - Detalle: [API_REGISTRO_ASISTENCIA.md](API_REGISTRO_ASISTENCIA.md)
-   - Ejemplos: `ejemplos/asistencia-*.json`
-
-3. **Programación:**
-   - Leer: [API_PROGRAMACION_SEMANAL_ASISTENCIA.md](API_PROGRAMACION_SEMANAL_ASISTENCIA.md)
-
-### Para Desarrolladores Backend
-
-1. **Revisar cambios recientes:**
-   - [RESUMEN_CAMBIOS_API_ESPACIOS.md](RESUMEN_CAMBIOS_API_ESPACIOS.md)
-   - [RESUMEN_CAMBIOS_ASISTENCIA.md](RESUMEN_CAMBIOS_ASISTENCIA.md)
-
-2. **Implementar nuevas features:**
-   - Revisar estructura de controladores en `app/Http/Controllers/Api/`
-   - Consultar documentación de modelos
-
-### Para QA/Testing
-
-1. **APIs:**
-   - [PRUEBAS_API_ESPACIOS.md](PRUEBAS_API_ESPACIOS.md)
-   - [TESTS_API_PROGRAMACION_ASISTENCIA.md](TESTS_API_PROGRAMACION_ASISTENCIA.md)
-
-2. **Ejemplos listos:**
-   - Carpeta `ejemplos/` con archivos JSON
-   - Comandos cURL en las guías
+**Método de Identificación:** `session`
+- El tenant se identifica por la sesión del usuario
+- Cuando un usuario inicia sesión, se establece el `tenant_id` en la sesión
+- Todas las consultas se filtran automáticamente por `tenant_id`
 
 ---
 
-## 📊 Endpoints Disponibles
+## 3. Configuración de Sesión y Cache
 
-### Espacios
+```env
+# Driver de sesión (file = guardado en storage/framework/sessions)
+SESSION_DRIVER=file
 
-| Método | Endpoint | Descripción | Documentación |
-|--------|----------|-------------|---------------|
-| GET | `/api/espacios` | Listar espacios | [Ver](API_ESPACIOS_Y_TIPOS.md#1-listar-todos-los-espacios) |
-| GET | `/api/tipos-espacios` | Listar tipos | [Ver](API_ESPACIOS_Y_TIPOS.md#2-listar-tipos-de-espacios) |
-| GET | `/api/espacios/resumen` | Resumen estadístico | [Ver](API_ESPACIOS_Y_TIPOS.md#3-resumen-de-espacios) |
+# Tiempo de vida de la sesión en minutos (120 = 2 horas)
+SESSION_LIFETIME=120
 
-### Programación y Asistencia
+# Driver de cache (file = archivos temporales)
+CACHE_DRIVER=file
 
-| Método | Endpoint | Descripción | Documentación |
-|--------|----------|-------------|---------------|
-| GET | `/api/programacion-semanal/{id_espacio}` | Consultar programación | [Ver](API_PROGRAMACION_SEMANAL_ASISTENCIA.md) |
-| GET | `/api/reservas/activa/{id_espacio}` | Obtener reserva activa | [Ver](API_RESERVA_ACTIVA_ESPACIO.md) 🔥 |
-| POST | `/api/asistencia` | Registrar asistencia | [Ver](API_REGISTRO_ASISTENCIA.md) ⭐ |
-
----
-
-## 🔄 Historial de Cambios
-
-### Octubre 2025
-
-**29 de octubre:**
-- ✅ Nuevo endpoint de reserva activa por espacio
-- 📝 Documentación: API_RESERVA_ACTIVA_ESPACIO.md
-- ✅ Actualización completa API de asistencia
-- ✅ Nuevo sistema de observaciones por estudiante
-- ✅ Finalización flexible de clases
-- ✅ Vinculación con asignaturas
-- 📝 Documentación: API_REGISTRO_ASISTENCIA.md
-- 📝 Guía rápida: GUIA_RAPIDA_ASISTENCIA.md
-- 📝 Changelog: RESUMEN_CAMBIOS_ASISTENCIA.md
-
-**27 de octubre:**
-- ✅ Nueva API de espacios y tipos
-- 📝 Documentación: API_ESPACIOS_Y_TIPOS.md
-- 📝 Pruebas: PRUEBAS_API_ESPACIOS.md
-- 📝 Ejemplos: EJEMPLOS_RESPUESTAS_API_ESPACIOS.md
-- 📝 Resumen: RESUMEN_CAMBIOS_API_ESPACIOS.md
-
----
-
-## 🔍 Buscar por Tema
-
-### Asistencia
-- [API_REGISTRO_ASISTENCIA.md](API_REGISTRO_ASISTENCIA.md) - Principal
-- [GUIA_RAPIDA_ASISTENCIA.md](GUIA_RAPIDA_ASISTENCIA.md) - Inicio rápido
-- [RESUMEN_CAMBIOS_ASISTENCIA.md](RESUMEN_CAMBIOS_ASISTENCIA.md) - Changelog
-
-### Espacios/Salas
-- [API_ESPACIOS_Y_TIPOS.md](API_ESPACIOS_Y_TIPOS.md) - API completa
-- [PRUEBAS_API_ESPACIOS.md](PRUEBAS_API_ESPACIOS.md) - Testing
-
-### Programación Semanal
-- [API_PROGRAMACION_SEMANAL_ASISTENCIA.md](API_PROGRAMACION_SEMANAL_ASISTENCIA.md)
-- [EJEMPLOS_API_PROGRAMACION_ASISTENCIA.md](EJEMPLOS_API_PROGRAMACION_ASISTENCIA.md)
-
-### Reservas
-- [API_RESERVA_ACTIVA_ESPACIO.md](API_RESERVA_ACTIVA_ESPACIO.md) 🔥 - Consultar reserva activa
-
-### Correos
-- [CORREOS_MASIVOS_GUIA.md](CORREOS_MASIVOS_GUIA.md)
-- [PLANTILLAS_CORREOS_GUIA.md](PLANTILLAS_CORREOS_GUIA.md)
-- [ENVIO_CORREOS_GUIA.md](ENVIO_CORREOS_GUIA.md)
-
-### Testing
-- [PRUEBAS_API_ESPACIOS.md](PRUEBAS_API_ESPACIOS.md)
-- [TEST_PLANTILLAS_PDF.md](TEST_PLANTILLAS_PDF.md)
-- [TESTS_API_PROGRAMACION_ASISTENCIA.md](TESTS_API_PROGRAMACION_ASISTENCIA.md)
-
----
-
-## 💾 Archivos de Ejemplo
-
-### JSON para Testing
-
-Ubicación: `docs/ejemplos/`
-
-**Asistencia:**
-- `asistencia-completa.json` - Registro completo con múltiples estudiantes
-- `asistencia-simple.json` - Registro mínimo (1 estudiante)
-- `asistencia-sin-finalizar.json` - Registro sin finalizar clase
-
-**Reserva Activa:**
-- `reserva-activa-con-reserva.json` - Respuesta con reserva activa
-- `reserva-activa-sin-reserva.json` - Respuesta sin reserva activa
-
-### Uso
-
-```bash
-curl -X POST http://localhost:8000/api/asistencia \
-  -H "Content-Type: application/json" \
-  -d @docs/ejemplos/asistencia-completa.json
+# Driver de cola de trabajos
+QUEUE_CONNECTION=sync
 ```
 
 ---
 
-## 🆘 Ayuda y Soporte
+## 4. Configuración de Email (Para notificaciones)
 
-### Encontrar Información
+```env
+MAIL_DRIVER=smtp
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=soportegestoraulasit@gmail.com
+MAIL_PASSWORD=atqrzexhcbqokyuk      # Contraseña de App Gmail
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS="hello@example.com"
+MAIL_FROM_NAME="${APP_NAME}"
 
-1. **Usa este índice** para localizar la documentación relevante
-2. **Busca por categoría** en las secciones de arriba
-3. **Consulta las guías rápidas** para información concisa
-4. **Revisa los ejemplos** en `ejemplos/` para código listo
-
-### Reportar Problemas
-
-Si encuentras errores o inconsistencias:
-1. Verifica la fecha del documento (puede estar desactualizado)
-2. Consulta el changelog correspondiente
-3. Revisa los logs del sistema
-4. Contacta al equipo de desarrollo
-
-### Contribuir
-
-Para agregar documentación:
-1. Seguir el formato existente
-2. Incluir ejemplos prácticos
-3. Actualizar este índice
-4. Crear PR con los cambios
+# Correos de administradores para alertas del sistema
+ADMIN_EMAIL_1=admin1@example.com
+ADMIN_EMAIL_2=admin2@example.com
+```
 
 ---
 
-## 📌 Convenciones
+## 5. Configuración del Wizard de Inicialización
 
-### Íconos Utilizados
+```env
+# Contraseña requerida para acceder al wizard de configuración inicial
+# Se usa en el paso 0 del wizard (configuración de sede)
+TENANT_INIT_PASSWORD=gestoraulasit2024
+```
 
-- ⭐ - Documentación principal/más importante
-- 🚀 - Guía de inicio rápido
-- 📋 - Changelog/resumen de cambios
-- ✅ - Característica implementada
-- ❌ - Característica eliminada/obsoleta
-- 📝 - Documentación
-- 🔧 - Configuración
-- 🧪 - Testing
-- 💡 - Tips y mejores prácticas
-
-### Estado de Documentos
-
-- **Actualizado** - Documento vigente y actualizado
-- **En progreso** - Documento en desarrollo
-- **Obsoleto** - Documento desactualizado (se indica fecha)
+**Uso:** 
+- Cuando un tenant nuevo accede por primera vez, el wizard solicita esta contraseña
+- La contraseña es configurada por el administrador del sistema
+- Se debe cambiar antes de ir a producción
 
 ---
 
-## 📅 Última Actualización
+## Ejemplo de Configuración Completa para Desarrollo Local
 
-**Fecha:** 29 de octubre de 2025  
-**Versión:** 2.0  
-**Mantenedor:** Sistema de IA
+```env
+# APP
+APP_NAME=AulaSync
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost
+
+# DATABASE
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=gestor
+DB_USERNAME=root
+DB_PASSWORD=
+
+# ROOT CREDENTIALS (para crear BDs de tenants)
+DB_ROOT_USERNAME=root
+DB_ROOT_PASSWORD=
+
+# MULTI-TENANCY
+MULTITENANCY_ENABLED=true
+MULTITENANCY_SEPARATE_DATABASES=false
+DB_TENANT_DATABASE=gestor
+
+# SESSION & CACHE
+SESSION_DRIVER=file
+SESSION_LIFETIME=120
+CACHE_DRIVER=file
+
+# TENANT INITIALIZATION
+TENANT_INIT_PASSWORD=gestoraulasit2024
+
+# MAIL (opcional para desarrollo)
+MAIL_DRIVER=log
+```
 
 ---
 
-*Para más información, contacta al equipo de desarrollo de AulaSync.*
+## Flujo de Creación de Tenant
+
+1. **Administrador crea una sede** (desde panel de admin)
+2. **Sistema crea automáticamente:**
+   - Nueva BD: `aulasync_{nombre_sede}` (si SEPARATE_DATABASES=true)
+   - Registro en tabla `tenants`
+   - Enlace con `sedes`
+3. **Usuario accede a la sede**
+4. **Se establece `tenant_id` en sesión**
+5. **Todos los modelos se filtran automáticamente por `tenant_id`**
+
+---
+
+## Troubleshooting
+
+### Error: "Table not found: roles"
+- Ejecutar: `php artisan migrate --path=database/migrations/central`
+
+### Tenants no se crean automáticamente
+- Verificar: `MULTITENANCY_ENABLED=true`
+- Verificar: `DB_ROOT_USERNAME` y `DB_ROOT_PASSWORD` tienen permisos
+
+### Usuario ve datos de otro tenant
+- Verificar el middleware `EnsureTenantIsSet` en rutas
+- Revisar que los modelos tengan el trait `BelongsToTenant`

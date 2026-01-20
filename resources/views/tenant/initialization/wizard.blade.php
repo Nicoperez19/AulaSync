@@ -101,7 +101,7 @@
         <!-- Main Content -->
         <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 {{ $step === 6 ? '!p-0 !container-none !max-w-full' : '' }}">
             <!-- Step Indicators (solo mostrar después del paso 0) -->
-            @if($step > 0 && $step !== 6)
+            @if($step > 0 && $step !== 5)
             <div class="max-w-4xl mx-auto mb-8">
                 <!-- Fila de círculos y líneas -->
                 <div class="flex items-center justify-between mb-3">
@@ -112,8 +112,7 @@
                             3 => ['icon' => 'fa-building', 'title' => 'Información'],
                             4 => ['icon' => 'fa-upload', 'title' => 'Carga Masiva'],
                             5 => ['icon' => 'fa-calendar', 'title' => 'Períodos'],
-                            6 => ['icon' => 'fa-map', 'title' => 'Plano Digital'],
-                            7 => ['icon' => 'fa-check', 'title' => 'Finalizar'],
+                            6 => ['icon' => 'fa-check', 'title' => 'Finalizar'],
                         ];
                     @endphp
 
@@ -129,7 +128,7 @@
                         </div>
 
                         <!-- Línea conectora (excepto después del último paso) -->
-                        @if($stepNum < 7)
+                        @if($stepNum < 6)
                             <div class="step-line {{ $step > $stepNum ? 'completed' : 'bg-gray-300' }}"></div>
                         @endif
                     @endforeach
@@ -190,8 +189,8 @@
             @endif
 
             <!-- Step Content -->
-            <div class="fade-in {{ $step === 6 ? 'h-screen' : 'max-w-2xl mx-auto' }}">
-                <div class="bg-white {{ $step === 6 ? 'h-full flex flex-col' : 'rounded-xl shadow-lg overflow-hidden' }}">
+            <div class="fade-in {{ $step === 5 ? 'h-screen' : 'max-w-2xl mx-auto' }}">
+                <div class="bg-white {{ $step === 5 ? 'h-full flex flex-col' : 'rounded-xl shadow-lg overflow-hidden' }}">
                     @switch($step)
                         @case(0)
                             @include('tenant.initialization.steps.step0-password')
@@ -212,9 +211,6 @@
                             @include('tenant.initialization.steps.step5-periods')
                             @break
                         @case(6)
-                            @include('tenant.initialization.steps.step6-plan')
-                            @break
-                        @case(7)
                             @include('tenant.initialization.steps.step7-complete')
                             @break
                         @default
