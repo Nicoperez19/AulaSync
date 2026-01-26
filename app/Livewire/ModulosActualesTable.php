@@ -1106,6 +1106,24 @@ class ModulosActualesTable extends Component
                                 $numeroModuloInicio = $moduloInicio ? explode('.', $moduloInicio->id_modulo)[1] ?? '' : '';
                                 $numeroModuloFin = $moduloFin ? explode('.', $moduloFin->id_modulo)[1] ?? '' : '';
                                 
+                                // FALLBACK: Si no hay planificaciones, intentar obtener módulos de las observaciones de la reserva
+                                if (empty($numeroModuloInicio) || empty($numeroModuloFin)) {
+                                    if ($reservaProfesor->observaciones && preg_match('/Módulos: (\d+)-(\d+)/', $reservaProfesor->observaciones, $matches)) {
+                                        $numeroModuloInicio = $matches[1];
+                                        $numeroModuloFin = $matches[2];
+                                    } elseif ($reservaProfesor->modulos) {
+                                        // Si modulos contiene la duración, calcular desde la hora
+                                        $horaReserva = $reservaProfesor->hora;
+                                        foreach ($horariosDelDia as $numMod => $horarioMod) {
+                                            if ($horaReserva >= $horarioMod['inicio'] && $horaReserva <= $horarioMod['fin']) {
+                                                $numeroModuloInicio = (string)$numMod;
+                                                $numeroModuloFin = (string)($numMod + (int)$reservaProfesor->modulos - 1);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                                
                                 $horaInicio = '';
                                 $horaFin = '';
                                 
