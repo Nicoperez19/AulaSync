@@ -293,6 +293,17 @@
                     </div>
                 </div>
                 
+                <!-- Preview del nuevo horario seleccionado -->
+                <div class="bg-blue-50 border border-blue-300 rounded-lg p-3">
+                    <div class="flex items-start gap-2">
+                        <i class="fa-solid fa-calendar-check text-blue-600 mt-0.5"></i>
+                        <div class="text-sm">
+                            <span class="font-medium text-blue-700">Nuevo horario:</span>
+                            <span class="text-blue-900" id="preview-horario">Seleccione los módulos</span>
+                        </div>
+                    </div>
+                </div>
+                
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones originales</label>
@@ -491,10 +502,11 @@ async function cargarModulosParaModal() {
 window.actualizarModulosFinalesModal = function() {
     const moduloInicial = document.getElementById('edit-modulo-inicial').value;
     const selectFinal = document.getElementById('edit-modulo-final');
+    const preview = document.getElementById('preview-horario');
     
     if (!moduloInicial) {
         selectFinal.innerHTML = '<option value="">Primero seleccione módulo inicial</option>';
-        document.getElementById('preview-horario').textContent = 'Seleccione los módulos';
+        if (preview) preview.textContent = 'Seleccione los módulos';
         return;
     }
     
@@ -514,6 +526,8 @@ function actualizarPreviewHorario() {
     const moduloInicialId = document.getElementById('edit-modulo-inicial').value;
     const moduloFinalId = document.getElementById('edit-modulo-final').value;
     const preview = document.getElementById('preview-horario');
+    
+    if (!preview) return; // Protección contra elemento inexistente
     
     if (!moduloInicialId || !moduloFinalId) {
         preview.textContent = 'Seleccione los módulos';
