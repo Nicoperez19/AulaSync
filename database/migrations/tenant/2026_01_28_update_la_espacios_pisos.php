@@ -6,43 +6,81 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * Esta migración se ejecuta solo en la base de datos del tenant (aulasync_la, etc)
+     * Recrea los pisos y espacios de Los Ángeles (aulasync_la) desde cero
      */
     public function up(): void
     {
-        // Obtener los pisos nuevos por nombre (directamente en la conexión del tenant)
-        $pisoCaupolicán = \DB::table('pisos')
-            ->where('nombre_piso', 'CAUPOLICÁN 276')
-            ->first();
-
-        $pisoVillagrán220 = \DB::table('pisos')
-            ->where('nombre_piso', 'VILLAGRÁN 220')
-            ->first();
-
-        $pisoVillagrán251 = \DB::table('pisos')
-            ->where('nombre_piso', 'VILLAGRÁN 251')
-            ->first();
-
-        // Mapear espacios de Caupolicán 276 (piso_id 8 y 9)
-        if ($pisoCaupolicán) {
-            \DB::table('espacios')
-                ->whereIn('piso_id', [8, 9])
-                ->update(['piso_id' => $pisoCaupolicán->id]);
+        // Verificar que estamos en la base de datos correcta (aulasync_la)
+        $currentDb = \DB::connection()->getDatabaseName();
+        
+        // Solo ejecutar para la BD de Los Ángeles
+        if ($currentDb !== 'aulasync_la') {
+            return;
         }
 
-        // Mapear espacios de Villagrán 220 (piso_id 10)
-        if ($pisoVillagrán220) {
-            \DB::table('espacios')
-                ->where('piso_id', 10)
-                ->update(['piso_id' => $pisoVillagrán220->id]);
+        // 1. Borrar los pisos antiguos (esto borrará en cascada los espacios asociados)
+        \DB::table('pisos')->whereIn('id', [8, 9, 10, 11, 12, 13])->delete();
+        echo "✓ Eliminados pisos antiguos\n";
+
+        // 2. Crear los 3 pisos nuevos
+        $pisos = [
+            ['id' => 8, 'numero_piso' => 1, 'nombre_piso' => 'CAUPOLICÁN 276', 'id_facultad' => 'IT_LA', 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 10, 'numero_piso' => 2, 'nombre_piso' => 'VILLAGRÁN 220', 'id_facultad' => 'IT_LA', 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 12, 'numero_piso' => 3, 'nombre_piso' => 'VILLAGRÁN 251', 'id_facultad' => 'IT_LA', 'created_at' => now(), 'updated_at' => now()],
+        ];
+
+        foreach ($pisos as $piso) {
+            \DB::table('pisos')->insert($piso);
+        }
+        echo "✓ Creados 3 pisos nuevos para Los Ángeles\n";
+
+        // 3. Cargar espacios desde el archivo de configuración
+        $sedeId = 'LA';
+        $file = __DIR__ . "/../../seeders/Data/Espacios/{$sedeId}.php";
+
+        if (!file_exists($file)) {
+            echo "⚠ No hay archivo de definición de espacios para LA\n";
+            return;
         }
 
-        // Mapear espacios de Villagrán 251 (piso_id 11 y 12)
-        if ($pisoVillagrán251) {
-            \DB::table('espacios')
-                ->whereIn('piso_id', [11, 12])
-                ->update(['piso_id' => $pisoVillagrán251->id]);
+        $todosLosEspacios = require $file;
+
+        // 4. Mapeo de pisos antiguos a nuevos
+        $pisoMap = [
+            8 => 8,   // Caupolicán 276 (piso_id 8 → piso_id 8)
+            9 => 8,   // Caupolicán 276 (piso_id 9 → piso_id 8)
+            10 => 10, // Villagrán 220 (piso_id 10 → piso_id 10)
+            11 => 12, // Villagrán 251 (piso_id 11 → piso_id 12)
+            12 => 12, // Villagrán 251 (piso_id 12 → piso_id 12)
+        ];
+
+        // 5. Procesar y crear espacios
+        $espacios = collect($todosLosEspacios)
+            ->map(function ($espacio) use ($pisoMap) {
+                // Mapear piso_id antiguo a nuevo ID
+                if (isset($espacio['piso_id']) && isset($pisoMap[$espacio['piso_id']])) {
+                    $espacio['piso_id'] = $pisoMap[$espacio['piso_id']];
+                }
+                
+                // Asegurar capacidad_maxima
+                if (!isset($espacio['capacidad_maxima']) || $espacio['capacidad_maxima'] === null) {
+                    $espacio['capacidad_maxima'] = $espacio['puestos_disponibles'] ?? 0;
+                }
+                
+                $espacio['created_at'] = now();
+                $espacio['updated_at'] = now();
+                
+                return $espacio;
+            })
+            ->all();
+
+        // 6. Insertar espacios
+        foreach ($espacios as $data) {
+            \DB::table('espacios')->insert($data);
         }
+        
+        echo "✓ Creados " . count($espacios) . " espacios para Los Ángeles\n";
+        echo "✓ Migración completada exitosamente para aulasync_la\n";
     }
 
     /**
@@ -50,50 +88,16 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // Obtener los pisos nuevos
-        $pisoCaupolicán = \DB::table('pisos')
-            ->where('nombre_piso', 'CAUPOLICÁN 276')
-            ->first();
-
-        $pisoVillagrán220 = \DB::table('pisos')
-            ->where('nombre_piso', 'VILLAGRÁN 220')
-            ->first();
-
-        $pisoVillagrán251 = \DB::table('pisos')
-            ->where('nombre_piso', 'VILLAGRÁN 251')
-            ->first();
-
-        // Revertir los cambios (restaurar IDs antiguos)
-        if ($pisoCaupolicán) {
-            $espaciosCaupolicán = \DB::table('espacios')
-                ->where('piso_id', $pisoCaupolicán->id)
-                ->get();
-
-            foreach ($espaciosCaupolicán as $index => $espacio) {
-                $nuevoId = $index % 2 === 0 ? 8 : 9;
-                \DB::table('espacios')
-                    ->where('id_espacio', $espacio->id_espacio)
-                    ->update(['piso_id' => $nuevoId]);
-            }
+        $currentDb = \DB::connection()->getDatabaseName();
+        
+        if ($currentDb !== 'aulasync_la') {
+            return;
         }
 
-        if ($pisoVillagrán220) {
-            \DB::table('espacios')
-                ->where('piso_id', $pisoVillagrán220->id)
-                ->update(['piso_id' => 10]);
-        }
-
-        if ($pisoVillagrán251) {
-            $espaciosVillagrán251 = \DB::table('espacios')
-                ->where('piso_id', $pisoVillagrán251->id)
-                ->get();
-
-            foreach ($espaciosVillagrán251 as $index => $espacio) {
-                $nuevoId = $index % 2 === 0 ? 11 : 12;
-                \DB::table('espacios')
-                    ->where('id_espacio', $espacio->id_espacio)
-                    ->update(['piso_id' => $nuevoId]);
-            }
-        }
+        // Eliminar los espacios y pisos creados
+        \DB::table('espacios')->whereIn('piso_id', [8, 10, 12])->delete();
+        \DB::table('pisos')->whereIn('id', [8, 10, 12])->delete();
+        
+        echo "✓ Migración revertida para aulasync_la\n";
     }
 };
