@@ -596,7 +596,8 @@
                         data.forEach(piso => {
                             const option = document.createElement('option');
                             option.value = piso.id;
-                            option.textContent = `Piso ${piso.numero_piso}`;
+                            // Mostrar nombre_piso si existe, sino mostrar "Piso {numero_piso}"
+                            option.textContent = piso.nombre_piso ? piso.nombre_piso : `Piso ${piso.numero_piso}`;
                             elements.pisoSelect.appendChild(option);
                         });
                     })
