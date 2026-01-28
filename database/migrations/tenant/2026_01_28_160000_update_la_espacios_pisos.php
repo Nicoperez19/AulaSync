@@ -18,11 +18,13 @@ return new class extends Migration
             return;
         }
 
-        // 1. Borrar los pisos antiguos (esto borrará en cascada los espacios asociados)
-        \DB::table('pisos')->whereIn('id', [8, 9, 10, 11, 12, 13])->delete();
-        echo "✓ Eliminados pisos antiguos\n";
+        // 1. Borrar todos los espacios existentes primero
+        \DB::table('espacios')->delete();
+        echo "✓ Eliminados todos los espacios\n";
 
-        // 2. Crear los 3 pisos nuevos
+        // 2. Borrar todos los pisos
+        \DB::table('pisos')->delete();
+        echo "✓ Eliminados todos los pisos\n";
         $pisos = [
             ['id' => 8, 'numero_piso' => 1, 'nombre_piso' => 'CAUPOLICÁN 276', 'id_facultad' => 'IT_LA', 'created_at' => now(), 'updated_at' => now()],
             ['id' => 10, 'numero_piso' => 2, 'nombre_piso' => 'VILLAGRÁN 220', 'id_facultad' => 'IT_LA', 'created_at' => now(), 'updated_at' => now()],
