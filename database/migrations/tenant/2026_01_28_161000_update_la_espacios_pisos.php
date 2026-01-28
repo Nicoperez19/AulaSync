@@ -54,6 +54,7 @@ return new class extends Migration
             10 => 10, // Villagrán 220 (piso_id 10 → piso_id 10)
             11 => 12, // Villagrán 251 (piso_id 11 → piso_id 12)
             12 => 12, // Villagrán 251 (piso_id 12 → piso_id 12)
+            13 => 12, // Villagrán 251 (piso_id 13 → piso_id 12) - espacios adicionales
         ];
 
         // 5. Procesar y crear espacios
