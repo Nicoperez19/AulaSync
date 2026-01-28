@@ -82,7 +82,7 @@ class PlanoDigitalController extends Controller
                 return [
                     'id' => $piso->id,
                     'numero' => $piso->numero_piso,
-                    'nombre' => "Piso {$piso->numero_piso}",
+                    'nombre' => $piso->nombre_piso ? $piso->nombre_piso : "Piso {$piso->numero_piso}",
                     'id_mapa' => $primerMapa ? $primerMapa->id_mapa : null
                 ];
             });
