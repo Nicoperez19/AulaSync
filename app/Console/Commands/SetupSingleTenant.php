@@ -7,14 +7,15 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Artisan;
 use App\Models\Tenant;
 
-class SetupTenantDatabases extends Command
+class SetupSingleTenant extends Command
 {
     /**
      * The name and signature of the console command.
      *
      * @var string
      */
-    protected $signature = 'tenants:setup
+    protected $signature = 'tenant:setup
+                            {tenant : ID, domain o sede_id del tenant (ej: 1, th, LA)}
                             {--seed : Ejecutar seeders después de las migraciones}
                             {--fresh : Ejecutar migrate:fresh en lugar de migrate (¡CUIDADO! Se perderán todos los datos)}';
 
@@ -23,72 +24,66 @@ class SetupTenantDatabases extends Command
      *
      * @var string
      */
-    protected $description = 'Ejecutar migraciones y seeders en las bases de datos de cada tenant';
+    protected $description = 'Ejecutar migraciones y seeders para un tenant específico';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->info('=== Configuración de bases de datos de tenants ===');
-        $this->newLine();
+        $tenantIdentifier = $this->argument('tenant');
+        
+        // Buscar el tenant por ID, domain o sede_id
+        $tenant = Tenant::where('id', $tenantIdentifier)
+            ->orWhere('domain', strtolower($tenantIdentifier))
+            ->orWhere('sede_id', strtoupper($tenantIdentifier))
+            ->first();
 
-        // Mostrar información de conexión
-        $this->info('Conexión a BD:');
-        $this->line('  Host: ' . config('database.connections.tenant.host'));
-        $this->line('  Usuario: ' . config('database.connections.tenant.username'));
-        $this->newLine();
-
-        // Obtener todos los tenants
-        $tenants = Tenant::all();
-
-        if ($tenants->isEmpty()) {
-            $this->error('No se encontraron tenants configurados.');
-            $this->info('Por favor ejecuta primero: php artisan db:seed --class=CentralDatabaseSeeder');
+        if (!$tenant) {
+            $this->error("No se encontró el tenant: {$tenantIdentifier}");
+            $this->info('Tenants disponibles:');
+            Tenant::all()->each(function ($t) {
+                $this->line("  - ID: {$t->id} | Domain: {$t->domain} | Sede: {$t->sede_id} | DB: {$t->database}");
+            });
             return 1;
         }
 
-        $this->info("Se encontraron {$tenants->count()} tenants:");
-        foreach ($tenants as $tenant) {
-            $this->line("  - {$tenant->name} ({$tenant->domain}) -> {$tenant->database}");
-        }
+        $this->info("=== Configuración de tenant: {$tenant->name} ===");
         $this->newLine();
-
-        if ($this->option('fresh')) {
-            if (!$this->confirm('⚠️  ¿Estás seguro de que quieres ejecutar migrate:fresh? Se perderán todos los datos de las tablas.', false)) {
-                $this->info('Operación cancelada.');
-                return 0;
-            }
-        }
-
-        foreach ($tenants as $tenant) {
-            $this->processTenant($tenant);
-        }
-
-        $this->newLine();
-        $this->info('✅ Proceso completado exitosamente');
+        $this->processTenant($tenant);
 
         return 0;
     }
 
     /**
-     * Procesar un tenant: conectar a su BD, ejecutar migraciones y seeders.
-     * 
-     * NOTA: Las operaciones se ejecutan usando la conexión 'tenant' definida en config/database.php
-     * con las credenciales DB_USERNAME y DB_PASSWORD del archivo .env
+     * Procesar un tenant específico
      */
     protected function processTenant(Tenant $tenant)
     {
         $dbName = $tenant->database;
 
-        $this->newLine();
-        $this->info("Procesando tenant: {$tenant->name}");
+        $this->info("Tenant: {$tenant->name}");
+        $this->line("  Domain: {$tenant->domain}");
+        $this->line("  Sede ID: {$tenant->sede_id}");
         $this->line("  Database: {$dbName}");
         $this->line("  Usuario BD: " . config('database.connections.tenant.username'));
+        $this->newLine();
+
+        if ($this->option('fresh')) {
+            if (!$this->confirm('⚠️  ¿Estás seguro de que quieres ejecutar migrate:fresh? Se perderán todos los datos de las tablas.', false)) {
+                $this->info('Operación cancelada.');
+                return;
+            }
+        }
 
         try {
             // Configurar la conexión tenant para usar esta base de datos
             config(['database.connections.tenant.database' => $dbName]);
+            
+            // Si el tenant tiene un host específico, usarlo
+            if ($tenant->database_host) {
+                config(['database.connections.tenant.host' => $tenant->database_host]);
+            }
 
             // Purgar conexión para forzar reconexión con la nueva base de datos
             app('db')->purge('tenant');
@@ -136,15 +131,18 @@ class SetupTenantDatabases extends Command
 
                 if ($exitCode !== 0) {
                     $this->warn("  ⚠ Seeders completados con advertencias");
+                    $this->line(Artisan::output());
                 } else {
                     $this->line("  ✓ Seeders completados exitosamente");
                 }
             }
 
-            $this->info("  ✅ {$tenant->name} configurado correctamente");
+            $this->newLine();
+            $this->info("✅ {$tenant->name} configurado correctamente");
 
         } catch (\Exception $e) {
-            $this->error("  ❌ Error procesando {$tenant->name}: " . $e->getMessage());
+            $this->newLine();
+            $this->error("❌ Error procesando {$tenant->name}: " . $e->getMessage());
         }
     }
 }

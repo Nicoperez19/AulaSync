@@ -1,4 +1,5 @@
 # Dockerfile para Laravel (PHP + Composer + Node + pnpm)
+# Proyecto: AulaManager
 
 FROM php:8.2-fpm AS php_base
 
@@ -34,7 +35,7 @@ COPY resources ./resources
 COPY public ./public
 
 RUN corepack enable \
-    && corepack prepare pnpm@7 --activate \
+    && corepack prepare pnpm@9 --activate \
     && pnpm config set auto-install-peers true \
     && pnpm install --frozen-lockfile \
     && pnpm build
@@ -52,7 +53,7 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get update && apt-get install -y nodejs \
     && corepack enable \
-    && corepack prepare pnpm@7 --activate
+    && corepack prepare pnpm@9 --activate
 
 # Dependencias PHP
 RUN composer install --no-interaction --prefer-dist --optimize-autoloader

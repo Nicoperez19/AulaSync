@@ -125,22 +125,29 @@ class EspacioSeeder extends Seeder
             $map[6] = $piso2 ? $piso2->id : null;
             $map[7] = $piso3 ? $piso3->id : null; // Gimnasio
         }
-        // Mapeo para Los Ángeles (LA) - 3 pisos únicos por localidad
+        // Mapeo para Los Ángeles (LA) - 6 pisos por edificio/piso
         elseif ($tenant->sede_id === 'LA') {
-            $pisoCaupolicán = $pisos->where('nombre_piso', 'CAUPOLICÁN 276')->first()->id ?? null;
-            $pisoVillagrán220 = $pisos->where('nombre_piso', 'VILLAGRÁN 220')->first()->id ?? null;
-            $pisoVillagrán251 = $pisos->where('nombre_piso', 'VILLAGRÁN 251')->first()->id ?? null;
+            $pisoCaupolicán1 = $pisos->where('nombre_piso', 'CAUPOLICÁN 276 - 1er piso')->first()->id ?? null;
+            $pisoCaupolicán2 = $pisos->where('nombre_piso', 'CAUPOLICÁN 276 - 2do piso')->first()->id ?? null;
+            $pisoVillagrán220_1 = $pisos->where('nombre_piso', 'VILLAGRÁN 220 - 1er piso')->first()->id ?? null;
+            $pisoVillagrán220_2 = $pisos->where('nombre_piso', 'VILLAGRÁN 220 - 2do piso')->first()->id ?? null;
+            $pisoVillagrán251_1 = $pisos->where('nombre_piso', 'VILLAGRÁN 251 - 1er piso')->first()->id ?? null;
+            $pisoVillagrán251_2 = $pisos->where('nombre_piso', 'VILLAGRÁN 251 - 2do piso')->first()->id ?? null;
             
-            // Todos los espacios de Caupolicán 276 al mismo piso (8, 9)
-            $map[8] = $pisoCaupolicán;
-            $map[9] = $pisoCaupolicán;
-            
-            // Todos los espacios de Villagrán 220 al mismo piso (10)
-            $map[10] = $pisoVillagrán220;
-            
-            // Todos los espacios de Villagrán 251 al mismo piso (11, 12)
-            $map[11] = $pisoVillagrán251;
-            $map[12] = $pisoVillagrán251;
+            // Mapear los IDs originales a los nuevos IDs de la DB
+            $map[8] = $pisoCaupolicán1;  // CAUPOLICÁN 276 - 1er piso
+            $map[9] = $pisoCaupolicán2;  // CAUPOLICÁN 276 - 2do piso
+            $map[10] = $pisoVillagrán220_1;  // VILLAGRÁN 220 - 1er piso
+            $map[11] = $pisoVillagrán220_2;  // VILLAGRÁN 220 - 2do piso
+            $map[12] = $pisoVillagrán251_1;  // VILLAGRÁN 251 - 1er piso
+            $map[13] = $pisoVillagrán251_2;  // VILLAGRÁN 251 - 2do piso
+        }
+        // Mapeo para Concepción (CCP)
+        elseif ($tenant->sede_id === 'CCP') {
+            $piso1 = $pisos->where('numero_piso', 1)->first();
+            $piso2 = $pisos->where('numero_piso', 2)->first();
+            $map[1] = $piso1 ? $piso1->id : null;
+            $map[2] = $piso2 ? $piso2->id : null;
         }
 
         return $map;

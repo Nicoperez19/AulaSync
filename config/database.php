@@ -97,9 +97,9 @@ return [
             'url' => env('DATABASE_URL'),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '3306'),
-            'database' => 'aulasync_th', // Valor por defecto temporal - debe ser configurado por makeCurrent()
-            'username' => env('DB_TENANT_USERNAME', 'root'),
-            'password' => env('DB_TENANT_PASSWORD', ''),
+            'database' => 'aulamanager_th', // Valor por defecto - se configura dinámicamente por tenant
+            'username' => env('DB_USERNAME', 'aulamanager'),
+            'password' => env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
             'charset' => 'utf8mb4',
             'collation' => 'utf8mb4_unicode_ci',
@@ -110,22 +110,6 @@ return [
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
-        ],
-
-        'tenant-admin' => [
-            'driver' => 'mysql',
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '3306'),
-            'database' => 'mysql',
-            'username' => env('DB_ROOT_USERNAME', 'root'),
-            'password' => env('DB_ROOT_PASSWORD', 'root'),
-            'unix_socket' => env('DB_SOCKET', ''),
-            'charset' => 'utf8mb4',
-            'collation' => 'utf8mb4_unicode_ci',
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'strict' => false,
-            'engine' => null,
         ],
 
     ],

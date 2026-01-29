@@ -1,70 +1,29 @@
 services:
-  app:
-    build: .
-    container_name: laravel_app
-    restart: unless-stopped
-    working_dir: /var/www
-    volumes:
-      - ./storage:/var/www/storage
-      - ./bootstrap/cache:/var/www/bootstrap/cache
-    entrypoint: /usr/local/bin/docker-entrypoint.sh
-    command: sh -c "php-fpm"
-    environment:
-      - APP_NAME=GestorAulasIT
-      - APP_ENV=production
-      - APP_DEBUG=false
-      - APP_URL=http://0.0.0.0:8000
-      - DB_CONNECTION=mysql
-      - DB_HOST=db
-      - DB_PORT=3306
-      - DB_DATABASE=gestoraulasit
-      - DB_USERNAME=gestoraulasit
-      - DB_PASSWORD=aulasync
-      - LOG_CHANNEL=stack
-      - SESSION_DRIVER=file
-      - CACHE_DRIVER=file
-    networks:
-      - GestorAulasIT_net
-    depends_on:
-      - db
-    expose:
-      - 9000
-
-  nginx:
-    image: nginx:alpine
-    container_name: nginx_server
-    restart: unless-stopped
-    ports:
-      - "8000:80"
-    volumes:
-      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
-      - ./public:/var/www/public:ro
-    networks:
-      - GestorAulasIT_net
-    depends_on:
-      - app
-
+  # ============================================
+  # BASE DE DATOS MARIADB (TODAS LAS BDs)
+  # ============================================
   db:
-    image: mysql:8.0
-    container_name: mysql_db
+    image: mariadb:10.11
+    container_name: aulamanager_db
     restart: unless-stopped
     environment:
-      MYSQL_DATABASE: gestoraulasit
-      MYSQL_USER: gestoraulasit
-      MYSQL_PASSWORD: aulasync
-      MYSQL_ROOT_PASSWORD: root
+      MARIADB_ROOT_PASSWORD: root_secret
     volumes:
       - db_data:/var/lib/mysql
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - GestorAulasIT_net
-    expose:
-      - 3306
+      - aulamanager_net
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
-  GestorAulasIT_net:
+  aulamanager_net:
     driver: bridge
-    # network is bridge (not internal) so host port mappings work
 
 volumes:
   db_data:

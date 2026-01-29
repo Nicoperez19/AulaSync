@@ -25,10 +25,12 @@ class CentralDatabaseSeeder extends Seeder
         $this->call(UniversidadSeeder::class);
         $this->call(SedeSeeder::class);
         $this->call(CampusSeeder::class);
-        $this->call(FacultadSeeder::class);
-        $this->call(AreaAcademicaSeeder::class);
-        $this->call(CarreraSeeder::class);
         $this->call(TenantSeeder::class);
+
+        // Los siguientes seeders usan conexión 'tenant', se ejecutan en TenantDatabaseSeeder:
+        // - FacultadSeeder
+        // - AreaAcademicaSeeder
+        // - CarreraSeeder
 
         // Módulos (compartidos) - Ahora en tenant
         // $this->call(ModulosSeeder::class);

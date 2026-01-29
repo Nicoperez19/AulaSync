@@ -62,9 +62,16 @@ class PisoSeeder extends Seeder
             ['numero_piso' => 3], // Gimnasio
             ],
             'IT_LA' => [
-            ['numero_piso' => 1, 'nombre_piso' => 'CAUPOLICÁN 276'],
-            ['numero_piso' => 2, 'nombre_piso' => 'VILLAGRÁN 220'],
-            ['numero_piso' => 3, 'nombre_piso' => 'VILLAGRÁN 251'],
+            ['numero_piso' => 1, 'nombre_piso' => 'CAUPOLICÁN 276 - 1er piso'],
+            ['numero_piso' => 2, 'nombre_piso' => 'CAUPOLICÁN 276 - 2do piso'],
+            ['numero_piso' => 3, 'nombre_piso' => 'VILLAGRÁN 220 - 1er piso'],
+            ['numero_piso' => 4, 'nombre_piso' => 'VILLAGRÁN 220 - 2do piso'],
+            ['numero_piso' => 5, 'nombre_piso' => 'VILLAGRÁN 251 - 1er piso'],
+            ['numero_piso' => 6, 'nombre_piso' => 'VILLAGRÁN 251 - 2do piso'],
+            ],
+            'IT_CCP' => [
+            ['numero_piso' => 1, 'nombre_piso' => 'Piso 1'],
+            ['numero_piso' => 2, 'nombre_piso' => 'Piso 2'],
             ],
         ];
         
