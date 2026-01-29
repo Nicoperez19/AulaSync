@@ -1106,6 +1106,24 @@ class ModulosActualesTable extends Component
                                 $numeroModuloInicio = $moduloInicio ? explode('.', $moduloInicio->id_modulo)[1] ?? '' : '';
                                 $numeroModuloFin = $moduloFin ? explode('.', $moduloFin->id_modulo)[1] ?? '' : '';
                                 
+                                // FALLBACK: Si no hay planificaciones, intentar obtener módulos de las observaciones de la reserva
+                                if (empty($numeroModuloInicio) || empty($numeroModuloFin)) {
+                                    if ($reservaProfesor->observaciones && preg_match('/Módulos: (\d+)-(\d+)/', $reservaProfesor->observaciones, $matches)) {
+                                        $numeroModuloInicio = $matches[1];
+                                        $numeroModuloFin = $matches[2];
+                                    } elseif ($reservaProfesor->modulos) {
+                                        // Si modulos contiene la duración, calcular desde la hora
+                                        $horaReserva = $reservaProfesor->hora;
+                                        foreach ($horariosDelDia as $numMod => $horarioMod) {
+                                            if ($horaReserva >= $horarioMod['inicio'] && $horaReserva <= $horarioMod['fin']) {
+                                                $numeroModuloInicio = (string)$numMod;
+                                                $numeroModuloFin = (string)($numMod + (int)$reservaProfesor->modulos - 1);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                                
                                 $horaInicio = '';
                                 $horaFin = '';
                                 
@@ -1130,17 +1148,56 @@ class ModulosActualesTable extends Component
                                     'modulo_fin' => $numeroModuloFin,
                                 ];
                             } else {
-                                // Reserva sin asignatura (uso libre)
+                                // Reserva sin asignatura (uso libre o espontánea)
+                                // Intentar obtener módulos de las observaciones de la reserva
+                                $moduloInicioReserva = '';
+                                $moduloFinReserva = '';
+                                
+                                if ($reservaProfesor->observaciones && preg_match('/Módulos: (\d+)-(\d+)/', $reservaProfesor->observaciones, $matches)) {
+                                    $moduloInicioReserva = $matches[1];
+                                    $moduloFinReserva = $matches[2];
+                                } elseif ($reservaProfesor->modulos) {
+                                    // Si modulos contiene la duración, calcular desde la hora
+                                    $horaReserva = $reservaProfesor->hora;
+                                    foreach ($horariosDelDia as $numMod => $horarioMod) {
+                                        if ($horaReserva >= $horarioMod['inicio'] && $horaReserva <= $horarioMod['fin']) {
+                                            $moduloInicioReserva = (string)$numMod;
+                                            $moduloFinReserva = (string)($numMod + (int)$reservaProfesor->modulos - 1);
+                                            break;
+                                        }
+                                    }
+                                }
+                                
+                                $horaInicio = $reservaProfesor->hora ?? '-';
+                                $horaFin = $reservaProfesor->hora_salida ?? '-';
+                                
+                                // Si tenemos módulos, obtener las horas correspondientes
+                                if ($moduloInicioReserva && isset($horariosDelDia[$moduloInicioReserva])) {
+                                    $horaInicio = substr($horariosDelDia[$moduloInicioReserva]['inicio'], 0, 5);
+                                }
+                                if ($moduloFinReserva && isset($horariosDelDia[$moduloFinReserva])) {
+                                    $horaFin = substr($horariosDelDia[$moduloFinReserva]['fin'], 0, 5);
+                                }
+                                
                                 $datosProfesor = [
                                     'nombre' => $reservaProfesor->profesor->name ?? '-',
                                     'run' => $reservaProfesor->run_profesor ?? '-',
-                                    'hora_inicio' => $reservaProfesor->hora ?? '-',
-                                    'hora_salida' => $reservaProfesor->hora_salida ?? '-',
+                                    'hora_inicio' => $horaInicio,
+                                    'hora_salida' => $horaFin,
                                     'nombre_asignatura' => 'Uso libre',
                                     'codigo_asignatura' => '-',
                                     'carrera' => '-',
                                     'inscritos' => null,
+                                    'modulo_inicio' => $moduloInicioReserva,
+                                    'modulo_fin' => $moduloFinReserva,
                                 ];
+                                
+                                Log::info('ModulosActuales - Procesando reserva espontánea:', [
+                                    'espacio' => $espacio->id_espacio,
+                                    'profesor' => $reservaProfesor->profesor->name ?? 'N/A',
+                                    'run' => $reservaProfesor->run_profesor,
+                                    'modulos' => $moduloInicioReserva . '-' . $moduloFinReserva,
+                                ]);
                             }
                         }
                         
@@ -1235,6 +1292,14 @@ class ModulosActualesTable extends Component
                             // CORRECIÓN BUG 2: Si hay reserva espontánea activa, SIEMPRE mostrar como Ocupado
                             // Esto debe evaluarse ANTES que las verificaciones de clase finalizada
                             $estado = 'Ocupado';
+                        } elseif ($tieneReservaProfesor && !$tieneClase) {
+                            // NUEVO: Reserva espontánea de profesor (sin planificación de clase)
+                            // Mostrar como Ocupado y mantener los datos del profesor
+                            $estado = 'Ocupado';
+                            Log::info('ModulosActuales - Reserva espontánea de profesor detectada', [
+                                'espacio' => $espacio->id_espacio,
+                                'profesor' => $datosProfesor['nombre'] ?? 'N/A',
+                            ]);
                         } elseif ($tieneClase && ($claseFinalizada || $claseTerminoAntes)) {
                             // Si la clase ya terminó (por horario o porque el profesor se fue antes)
                             // Limpiar información de la clase y marcar como disponible

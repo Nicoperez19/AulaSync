@@ -193,7 +193,11 @@
                                                 @elseif(($espacio['tiene_reserva_profesor'] ?? false) && !empty($espacio['datos_profesor']))
                                                     <div class="font-medium text-gray-900 text-sm">
                                                         <div class="flex items-center gap-2 text-base font-semibold">
-                                                            {{ $this->moduloActual['numero'] ?? '--' }}
+                                                            @if(!empty($espacio['datos_profesor']['modulo_inicio']) && !empty($espacio['datos_profesor']['modulo_fin']))
+                                                                {{ $espacio['datos_profesor']['modulo_inicio'] }} - {{ $espacio['datos_profesor']['modulo_fin'] }}
+                                                            @else
+                                                                {{ $this->moduloActual['numero'] ?? '--' }}
+                                                            @endif
                                                         </div>
                                                         <div class="text-gray-600">
                                                             {{ isset($espacio['datos_profesor']['hora_inicio']) ? substr($espacio['datos_profesor']['hora_inicio'], 0, 5) : '--:--' }} - {{ isset($espacio['datos_profesor']['hora_salida']) ? substr($espacio['datos_profesor']['hora_salida'], 0, 5) : '--:--' }}

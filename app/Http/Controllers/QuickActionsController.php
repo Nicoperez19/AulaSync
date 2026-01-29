@@ -910,9 +910,14 @@ class QuickActionsController extends Controller
             $horaActual = now()->format('H:i:s');
 
             // Verificar si la reserva es del día actual
-            if ($reserva->fecha_reserva !== $fechaActual) {
+            // NOTA: fecha_reserva es un objeto Carbon (por el cast), por lo que necesitamos formatearlo
+            $fechaReserva = $reserva->fecha_reserva instanceof \Carbon\Carbon 
+                ? $reserva->fecha_reserva->format('Y-m-d') 
+                : $reserva->fecha_reserva;
+            
+            if ($fechaReserva !== $fechaActual) {
                 Log::info('📅 Reserva no es del día actual - no se ocupa el espacio', [
-                    'fecha_reserva' => $reserva->fecha_reserva,
+                    'fecha_reserva' => $fechaReserva,
                     'fecha_actual' => $fechaActual
                 ]);
                 return false;
@@ -1274,10 +1279,9 @@ class QuickActionsController extends Controller
                     ->with('error', 'Solo se pueden editar reservas activas');
             }
 
-            // Obtener espacios disponibles
-            $espacios = Espacio::select('codigo_espacio', 'nombre_espacio')
-                ->where('activo', true)
-                ->orderBy('codigo_espacio')
+            // Obtener espacios disponibles (usando id_espacio como identificador)
+            $espacios = Espacio::select('id_espacio', 'nombre_espacio')
+                ->orderBy('id_espacio')
                 ->get();
 
             return view('quick_actions.editar-reserva', compact('reserva', 'espacios'));
@@ -1299,9 +1303,9 @@ class QuickActionsController extends Controller
                 'datos' => $request->all()
             ]);
 
-            // Validación
+            // Validación - usar id_espacio en lugar de codigo_espacio
             $request->validate([
-                'codigo_espacio' => 'required|string',
+                'id_espacio' => 'required|string',
                 'fecha' => 'required|date',
                 'hora' => 'required',
                 'modulos' => 'required|integer|min:1',
@@ -1326,8 +1330,8 @@ class QuickActionsController extends Controller
                 ], 400);
             }
 
-            // Obtener el espacio
-            $espacio = Espacio::where('codigo_espacio', $request->codigo_espacio)->first();
+            // Obtener el espacio usando id_espacio
+            $espacio = Espacio::where('id_espacio', $request->id_espacio)->first();
 
             if (!$espacio) {
                 return response()->json([
@@ -1338,9 +1342,9 @@ class QuickActionsController extends Controller
 
             // Actualizar datos
             $reserva->id_espacio = $espacio->id_espacio;
-            $reserva->fecha = $request->fecha;
+            $reserva->fecha_reserva = $request->fecha;
             $reserva->hora = $request->hora;
-            $reserva->cant_modulos = $request->modulos;
+            $reserva->modulos = $request->modulos;
             $reserva->observaciones = $request->observaciones;
 
             // Marcar como editada (se usa updated_at automáticamente por Laravel)
@@ -1358,10 +1362,10 @@ class QuickActionsController extends Controller
                 'mensaje' => 'Reserva actualizada correctamente',
                 'reserva' => [
                     'id' => $reserva->id_reserva,
-                    'espacio' => $espacio->codigo_espacio,
-                    'fecha' => $reserva->fecha,
+                    'espacio' => $espacio->id_espacio,
+                    'fecha' => $reserva->fecha_reserva,
                     'hora' => $reserva->hora,
-                    'modulos' => $reserva->cant_modulos
+                    'modulos' => $reserva->modulos
                 ]
             ]);
 

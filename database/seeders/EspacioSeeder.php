@@ -125,14 +125,22 @@ class EspacioSeeder extends Seeder
             $map[6] = $piso2 ? $piso2->id : null;
             $map[7] = $piso3 ? $piso3->id : null; // Gimnasio
         }
-        // Mapeo para Los Ángeles (LA) - usar nombre_piso para diferenciar edificios
+        // Mapeo para Los Ángeles (LA) - 3 pisos únicos por localidad
         elseif ($tenant->sede_id === 'LA') {
-            $map[8] = $pisos->where('nombre_piso', 'CAUPOLICÁN 276 - 1er piso')->first()->id ?? null;
-            $map[9] = $pisos->where('nombre_piso', 'CAUPOLICÁN 276 - 2do piso')->first()->id ?? null;
-            $map[10] = $pisos->where('nombre_piso', 'VILLAGRÁN 220 - 1er piso')->first()->id ?? null;
-            $map[11] = $pisos->where('nombre_piso', 'VILLAGRÁN 220 - 2do piso')->first()->id ?? null;
-            $map[12] = $pisos->where('nombre_piso', 'VILLAGRÁN 251 - 1er piso')->first()->id ?? null;
-            $map[13] = $pisos->where('nombre_piso', 'VILLAGRÁN 251 - 2do piso')->first()->id ?? null;
+            $pisoCaupolicán = $pisos->where('nombre_piso', 'CAUPOLICÁN 276')->first()->id ?? null;
+            $pisoVillagrán220 = $pisos->where('nombre_piso', 'VILLAGRÁN 220')->first()->id ?? null;
+            $pisoVillagrán251 = $pisos->where('nombre_piso', 'VILLAGRÁN 251')->first()->id ?? null;
+            
+            // Todos los espacios de Caupolicán 276 al mismo piso (8, 9)
+            $map[8] = $pisoCaupolicán;
+            $map[9] = $pisoCaupolicán;
+            
+            // Todos los espacios de Villagrán 220 al mismo piso (10)
+            $map[10] = $pisoVillagrán220;
+            
+            // Todos los espacios de Villagrán 251 al mismo piso (11, 12)
+            $map[11] = $pisoVillagrán251;
+            $map[12] = $pisoVillagrán251;
         }
 
         return $map;

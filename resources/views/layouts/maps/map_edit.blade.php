@@ -31,7 +31,7 @@
                 @if($mapa->piso)
                 <div>
                     <span class="font-medium text-gray-600">Piso:</span>
-                    <span class="ml-2 text-gray-800">{{ $mapa->piso->numero_piso ?? 'N/A' }}</span>
+                    <span class="ml-2 text-gray-800">{{ $mapa->piso->nombre_piso ?? 'Piso ' . $mapa->piso->numero_piso }}</span>
                 </div>
                 @endif
                 @if($mapa->piso && $mapa->piso->facultad)
@@ -659,7 +659,8 @@
                         data.forEach(piso => {
                             const option = document.createElement('option');
                             option.value = piso.id_piso ?? piso.id;
-                            option.textContent = piso.numero_piso ? `Piso ${piso.numero_piso}` : piso.nombre;
+                            // Mostrar nombre_piso si existe, sino mostrar "Piso {numero_piso}"
+                            option.textContent = piso.nombre_piso ? piso.nombre_piso : `Piso ${piso.numero_piso}`;
                             // Selecciona el piso actual si corresponde
                             if (option.value == (window.mapaPisoId || "")) {
                                 option.selected = true;

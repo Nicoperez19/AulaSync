@@ -61,14 +61,14 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Espacio *</label>
                         <select 
-                            id="codigo-espacio"
+                            id="id-espacio"
                             required
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="">Seleccione espacio</option>
                             @foreach($espacios as $espacio)
-                                <option value="{{ $espacio->codigo_espacio }}" 
-                                    {{ $reserva->espacio->codigo_espacio == $espacio->codigo_espacio ? 'selected' : '' }}>
-                                    {{ $espacio->codigo_espacio }} - {{ $espacio->nombre_espacio }}
+                                <option value="{{ $espacio->id_espacio }}" 
+                                    {{ $reserva->id_espacio == $espacio->id_espacio ? 'selected' : '' }}>
+                                    {{ $espacio->id_espacio }} - {{ $espacio->nombre_espacio }}
                                 </option>
                             @endforeach
                         </select>
@@ -80,7 +80,7 @@
                             type="date" 
                             id="fecha"
                             required
-                            value="{{ $reserva->fecha }}"
+                            value="{{ $reserva->fecha_reserva->format('Y-m-d') }}"
                             min="{{ date('Y-m-d') }}"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
@@ -105,7 +105,7 @@
                             required
                             min="1"
                             max="12"
-                            value="{{ $reserva->cant_modulos }}"
+                            value="{{ $reserva->modulos ?? 1 }}"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
@@ -147,13 +147,13 @@ async function procesarEditarReserva(event) {
     event.preventDefault();
     
     // Validar formulario
-    const codigoEspacio = document.getElementById('codigo-espacio').value;
+    const idEspacio = document.getElementById('id-espacio').value;
     const fecha = document.getElementById('fecha').value;
     const hora = document.getElementById('hora').value;
     const modulos = document.getElementById('modulos').value;
     const observaciones = document.getElementById('observaciones').value;
     
-    if (!codigoEspacio || !fecha || !hora || !modulos) {
+    if (!idEspacio || !fecha || !hora || !modulos) {
         Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -183,7 +183,7 @@ async function procesarEditarReserva(event) {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
             body: JSON.stringify({
-                codigo_espacio: codigoEspacio,
+                id_espacio: idEspacio,
                 fecha: fecha,
                 hora: hora + ':00',
                 modulos: parseInt(modulos),
