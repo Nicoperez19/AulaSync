@@ -97,7 +97,8 @@ class DataLoadController extends Controller
         ]);
 
         $semestreSeleccionado = $request->input('semestre_selector');
-        $anioActual = date('Y');
+        // Usar el año académico configurado en lugar de la fecha del sistema
+        $anioActual = \App\Helpers\SemesterHelper::getCurrentAcademicYear();
         $periodoSeleccionado = $anioActual . '-' . $semestreSeleccionado;
 
         try {
@@ -259,7 +260,9 @@ class DataLoadController extends Controller
                             'name' => $name,
                             'email' => $email,
                             'id_carrera' => $idCarrera,
-                            'tipo_profesor' => $tipoProfesor // También actualizar tipo
+                            'tipo_profesor' => $tipoProfesor, // También actualizar tipo
+                            'sede_id' => $sedeActual ? $sedeActual->id_sede : null,
+                            'id_facultad' => $facultadDeLaSede ? $facultadDeLaSede->id_facultad : null
                         ]);
                         $processedUsersCount++;
                     } else {
@@ -269,7 +272,9 @@ class DataLoadController extends Controller
                             'name' => $name,
                             'email' => $email,
                             'id_carrera' => $idCarrera,
-                            'tipo_profesor' => $tipoProfesor
+                            'tipo_profesor' => $tipoProfesor,
+                            'sede_id' => $sedeActual ? $sedeActual->id_sede : null,
+                            'id_facultad' => $facultadDeLaSede ? $facultadDeLaSede->id_facultad : null
                         ]);
                         $processedUsersCount++;
                     }
