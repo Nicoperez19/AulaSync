@@ -25,20 +25,6 @@
     </x-slot>
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
-        @if(isset($user))
-            <div class="p-4 mb-6 border-2 border-blue-400 rounded-lg bg-blue-50">
-                <div class="flex items-center gap-3 mb-2">
-                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                    </svg>
-                    <h3 class="font-semibold text-blue-800">{{ __('Edición de Usuario - Seguridad Requerida') }}</h3>
-                </div>
-                <p class="text-sm text-blue-700">
-                    {{ __('Para editar este usuario, debes proporcionar la contraseña del wizard del sistema.') }}
-                </p>
-            </div>
-        @endif
-
         <form id="edit-user-form" method="POST" action="{{ isset($user) ? route('users.update', $user->run) : route('users.store') }}" x-data="{ isSuperuser: {{ old('is_superuser', $user->is_superuser ?? false) ? 'true' : 'false' }} }">
             @csrf
             @if(isset($user))
@@ -141,21 +127,7 @@
                         @enderror
                     </div>
 
-                    @if(isset($user))
-                        <div>
-                            <x-form.label for="wizard_password" :value="__('Contraseña del Wizard *')" />
-                            <x-form.input-with-icon-wrapper>
-                                <x-slot name="icon">
-                                    <x-heroicon-o-lock-closed class="w-5 h-5" />
-                                </x-slot>
-                                <x-form.input withicon id="wizard_password" name="wizard_password" class="block w-full" type="password"
-                                    placeholder="{{ __('Ingresa la contraseña del wizard') }}" required />
-                            </x-form.input-with-icon-wrapper>
-                            @error('wizard_password')
-                                <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    @endif
+
                 </div>
 
                 <!-- Contraseña del Usuario -->
@@ -240,18 +212,30 @@
                         </div>
                     </div>
 
-                    <!-- Alerta de seguridad cuando se marca como superusuario -->
-                    <div x-show="isSuperuser" x-transition class="p-4 mt-4 border-l-4 border-red-500 bg-red-50 rounded">
-                        <div class="flex gap-3">
-                            <svg class="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4v2m0 2a9 9 0 110-18 9 9 0 010 18z"></path>
+                    <!-- Contraseña del Wizard - Solo si es Superusuario -->
+                    <div x-show="isSuperuser" x-transition class="p-4 mt-4 border-2 border-red-400 rounded-lg bg-red-50">
+                        <div class="flex items-center gap-3 mb-3">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                             </svg>
-                            <div>
-                                <h4 class="font-semibold text-red-800">{{ __('¡Atención!') }}</h4>
-                                <p class="text-sm text-red-700 mt-1">
-                                    {{ __('Para otorgar permisos de superusuario a este usuario, debes proporcionar la contraseña del wizard en el campo "Contraseña del Wizard" arriba.') }}
-                                </p>
-                            </div>
+                            <h4 class="font-semibold text-red-800">{{ __('Seguridad Requerida') }}</h4>
+                        </div>
+                        <div>
+                            <x-form.label for="wizard_password" :value="__('Contraseña  *')" />
+                            <x-form.input-with-icon-wrapper>
+                                <x-slot name="icon">
+                                    <x-heroicon-o-lock-closed class="w-5 h-5" />
+                                </x-slot>
+                                <x-form.input withicon id="wizard_password" name="wizard_password" class="block w-full" type="password"
+                                    placeholder="{{ __('Ingresa la contraseña para efectuar el cambio') }}"
+                                    x-bind:required="isSuperuser" />
+                            </x-form.input-with-icon-wrapper>
+                            @error('wizard_password')
+                                <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                            @enderror
+                            <p class="text-sm text-red-700 mt-2">
+                                {{ __('Debes proporcionar la contraseña para efectuar el cambio para otorgar permisos de superusuario.') }}
+                            </p>
                         </div>
                     </div>
                 </div>
