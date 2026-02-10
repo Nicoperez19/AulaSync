@@ -2384,13 +2384,13 @@
                     }, 100);
                 }
             } else {
-                // CASO 2: Profesor SIN clases - solicita con módulos (máx 2)
-                await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado, 2); // Máximo 2 módulos
+                // CASO 2: Profesor SIN clases - solicita con módulos (todos los disponibles)
+                await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado);
                 return; // No continuar, esperar selección de módulos
             }
         } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
-            // CASO 3: Solicitante registrado - solicita con módulos (máx 2)
-            await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado, 2); // Máximo 2 módulos
+            // CASO 3: Solicitante registrado - solicita con módulos (todos los disponibles)
+            await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado);
             return; // No continuar, esperar selección de módulos
         } else {
             ordenEscaneo = 'usuario';
@@ -5123,11 +5123,11 @@
             }
         }
 
-        async function mostrarModalSeleccionarModulos(idEspacio, run, maxModulos = 2) {
+        async function mostrarModalSeleccionarModulos(idEspacio, run) {
                     const modulosDisponibles = await calcularModulosDisponibles(idEspacio);
 
-        // Limitar a máximo 2 módulos según la lógica del negocio
-        maxModulosDisponibles = Math.min(modulosDisponibles, maxModulos);
+        // Usar exactamente los módulos disponibles calculados por el servidor
+        maxModulosDisponibles = modulosDisponibles;
 
         // Actualizar elementos del modal si existen
         const maxModulosElement = document.getElementById('max-modulos-disponibles');

@@ -40,6 +40,7 @@ class UserController extends Controller
                 'run' => 'required|integer|digits_between:7,8|unique:users',
                 'celular' => 'nullable|string|regex:/^9\d{8}$/',
                 'password' => 'required|string|min:8',
+                'wizard_password' => 'required|string',
                 'roles' => 'required|array',
                 'roles.*' => 'exists:roles,id',
                 'permissions' => 'nullable|array',
@@ -51,6 +52,22 @@ class UserController extends Controller
                 'is_active' => 'boolean',
                 'is_superuser' => 'boolean'
             ]);
+
+            // Validar contraseña del wizard
+            if ($validated['wizard_password'] !== env('TENANT_INIT_PASSWORD')) {
+                Log::warning('Intento de creación de usuario con contraseña de wizard incorrecta', [
+                    'run' => $validated['run'],
+                    'ip' => $request->ip(),
+                ]);
+
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Contraseña del wizard incorrecta.'
+                    ], 422);
+                }
+                return back()->withErrors(['wizard_password' => 'Contraseña del wizard incorrecta.'])->withInput();
+            }
 
             // Verificar si el RUN ya existe
             if (User::where('run', $validated['run'])->exists()) {
@@ -75,6 +92,11 @@ class UserController extends Controller
                 'current_semester' => $validated['current_semester'] ?? null,
                 'is_active' => $validated['is_active'] ?? true,
                 'is_superuser' => $validated['is_superuser'] ?? false
+            ]);
+
+            Log::info('Usuario creado exitosamente', [
+                'run' => $user->run,
+                'name' => $user->name,
             ]);
 
             $user->roles()->sync($validated['roles']);

@@ -25,6 +25,20 @@
     </x-slot>
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
+        @if(!isset($user))
+            <div class="p-4 mb-6 border-2 border-red-400 rounded-lg bg-red-50">
+                <div class="flex items-center gap-3 mb-2">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                    <h3 class="font-semibold text-red-800">{{ __('Creación de Usuario - Seguridad Requerida') }}</h3>
+                </div>
+                <p class="text-sm text-red-700">
+                    {{ __('Para crear un nuevo usuario, debes proporcionar la contraseña del wizard del sistema.') }}
+                </p>
+            </div>
+        @endif
+
         <form id="edit-user-form" method="POST" action="{{ isset($user) ? route('users.update', $user->run) : route('users.store') }}">
             @csrf
             @if(isset($user))
@@ -127,9 +141,27 @@
                         @enderror
                     </div>
 
+                    @if(!isset($user))
+                        <div>
+                            <x-form.label for="wizard_password" :value="__('Contraseña del Wizard')" />
+                            <x-form.input-with-icon-wrapper>
+                                <x-slot name="icon">
+                                    <x-heroicon-o-lock-closed class="w-5 h-5" />
+                                </x-slot>
+                                <x-form.input withicon id="wizard_password" name="wizard_password" class="block w-full" type="password"
+                                    placeholder="{{ __('Ingresa la contraseña del wizard') }}" />
+                            </x-form.input-with-icon-wrapper>
+                            @error('wizard_password')
+                                <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                            @enderror
+                        </div>
+                    @endif
+                </div>
 
+                <!-- Contraseña del Usuario -->
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                        <x-form.label for="password" :value="__('Contraseña Nueva')" />
+                        <x-form.label for="password" :value="__('Contraseña' . (!isset($user) ? ' *' : ' Nueva'))" />
                         <x-form.input-with-icon-wrapper>
                             <x-slot name="icon">
                                 <x-heroicon-o-lock-closed class="w-5 h-5" />

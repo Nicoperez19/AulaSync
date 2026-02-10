@@ -246,7 +246,7 @@ class SolicitanteController extends Controller
             $request->validate([
                 'run_solicitante' => 'required|string',
                 'id_espacio' => 'required|string',
-                'modulos' => 'required|integer|min:1|max:2'
+                'modulos' => 'required|integer|min:1|max:15'
             ]);
 
             $ahora = Carbon::now();
