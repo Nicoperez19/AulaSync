@@ -612,10 +612,8 @@ class ModulosActualesTable extends Component
             if ($periodoActual && $periodoActual->noHaIniciado()) {
                 $this->periodoNoIniciado = true;
                 $this->nombrePeriodo = $periodoActual->nombre_completo;
-                // Si el periodo no ha iniciado, no verificamos feriados ni cargamos datos
-                $this->esFeriado = false;
-                $this->nombreFeriado = '';
-                return;
+                // Si el periodo no ha iniciado, seguimos mostrando los espacios
+                // pero NO cargaremos las planificaciones del semestre (sí las reservas espontáneas)
             } else {
                 $this->periodoNoIniciado = false;
                 $this->nombrePeriodo = '';
@@ -691,7 +689,8 @@ class ModulosActualesTable extends Component
                     'encontrado' => $moduloDB ? 'SÍ' : 'NO'
                 ]);
 
-                if ($moduloDB) {
+                if ($moduloDB && !$this->periodoNoIniciado) {
+                    // Solo cargar planificaciones si el periodo ya ha iniciado
                     // Obtener todas las planificaciones del módulo actual con eager loading optimizado
                     $planificacionesActivas = Planificacion_Asignatura::with([
                         'asignatura.profesor',
@@ -731,6 +730,8 @@ class ModulosActualesTable extends Component
                         ->get()
                         ->groupBy('id_asignatura'); // Agrupar por asignatura para búsqueda rápida
                 } else {
+                    // Si el periodo no ha iniciado o no hay módulo, no cargamos planificaciones del semestre
+                    // pero seguiremos cargando las reservas espontáneas más abajo
                     $planificacionesActivas = collect();
                     $planificacionesColaboradores = collect();
                     $todasLasPlanificaciones = collect();
