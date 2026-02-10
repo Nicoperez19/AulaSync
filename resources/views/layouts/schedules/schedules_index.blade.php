@@ -187,6 +187,9 @@
 
     {{-- Scripts --}}
     <script>
+        // Año académico actual desde el backend
+        const currentYear = "{{ \App\Helpers\SemesterHelper::getCurrentAcademicYear() }}";
+
         // Buscador por nombre o RUN con debounce rápido y spinner
         function debounce(fn, delay) {
             let timeout;
@@ -275,8 +278,8 @@
             // Construir la URL con el año actual y el semestre seleccionado
             let url = `/horarios/${run}`;
             const params = new URLSearchParams();
-            // Usar el año actual (2025)
-            params.append('anio', '2025');
+            // Usar el año actual configurado
+            params.append('anio', currentYear);
             if (semestreFiltro) params.append('semestre', semestreFiltro);
             if (params.toString()) {
                 url += '?' + params.toString();
@@ -303,7 +306,7 @@
                         document.getElementById('modalCorreoProfesor').textContent = `Correo: ${data.profesor.email}`;
                         // Actualizar el período mostrado en el modal
                         document.getElementById('modalSemestre').textContent = semestreFiltro || '{{ \App\Helpers\SemesterHelper::getCurrentSemester() }}';
-                        document.getElementById('modalAnio').textContent = '2025';
+                        document.getElementById('modalAnio').textContent = currentYear;
                         const horarioBody = document.getElementById('horarioBody');
                         horarioBody.innerHTML = `<tr><td colspan='7' class='py-8 text-center'><div class='p-4 rounded-lg text-amber-600 bg-amber-50'><i class='mr-2 fa-solid fa-exclamation-triangle'></i>${data.mensaje}</div></td></tr>`;
                         return;
@@ -316,7 +319,7 @@
                     document.getElementById('modalCorreoProfesor').textContent = `Correo: ${data.horario.profesor.email}`;
                     // Actualizar el período mostrado en el modal
                     document.getElementById('modalSemestre').textContent = semestreFiltro || '{{ \App\Helpers\SemesterHelper::getCurrentSemester() }}';
-                    document.getElementById('modalAnio').textContent = '2025';
+                    document.getElementById('modalAnio').textContent = currentYear;
                     const horarioBody = document.getElementById('horarioBody');
                     horarioBody.innerHTML = '';
 
@@ -432,7 +435,7 @@
         function aplicarFiltros() {
             const formData = new FormData(filtroForm);
             // Agregar el año actual automáticamente
-            formData.append('anio', '2025');
+            formData.append('anio', currentYear);
             const params = new URLSearchParams(formData).toString();
             mostrarSpinner();
             fetch(`?${params}`, {
