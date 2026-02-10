@@ -127,11 +127,7 @@
                         @enderror
                     </div>
 
-
-                </div>
-
-                <!-- Contraseña del Usuario -->
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <!-- Contraseña del Usuario -->
                     <div>
                         <x-form.label for="password" :value="__('Contraseña' . (!isset($user) ? ' *' : ' Nueva'))" />
                         <x-form.input-with-icon-wrapper>
