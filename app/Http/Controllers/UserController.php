@@ -26,7 +26,9 @@ class UserController extends Controller
     public function create()
     {
         $years = range(2010, date('Y'));
-        return view('layouts.user.user_update', compact('years'));
+        $roles = Role::all();
+        $permissions = Permission::all();
+        return view('layouts.user.user_update', compact('years', 'roles', 'permissions'));
     }
 
     public function store(Request $request)
