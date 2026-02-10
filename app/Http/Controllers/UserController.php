@@ -46,7 +46,8 @@ class UserController extends Controller
                 'year_of_graduation' => 'nullable|integer|min:2010|max:' . (date('Y') + 5),
                 'career' => 'nullable|string|max:255',
                 'current_semester' => 'nullable|integer|min:1|max:20',
-                'is_active' => 'boolean'
+                'is_active' => 'boolean',
+                'is_superuser' => 'boolean'
             ]);
 
             // Verificar si el RUN ya existe
@@ -70,7 +71,8 @@ class UserController extends Controller
                 'year_of_graduation' => $validated['year_of_graduation'] ?? null,
                 'career' => $validated['career'] ?? null,
                 'current_semester' => $validated['current_semester'] ?? null,
-                'is_active' => $validated['is_active'] ?? true
+                'is_active' => $validated['is_active'] ?? true,
+                'is_superuser' => $validated['is_superuser'] ?? false
             ]);
 
             $user->roles()->sync($validated['roles']);
@@ -147,7 +149,8 @@ class UserController extends Controller
                 'year_of_graduation' => 'nullable|integer|min:2010|max:' . (date('Y') + 5),
                 'career' => 'nullable|string|max:255',
                 'current_semester' => 'nullable|integer|min:1|max:20',
-                'is_active' => 'boolean'
+                'is_active' => 'boolean',
+                'is_superuser' => 'boolean'
             ]);
 
             $user->update([
@@ -159,7 +162,8 @@ class UserController extends Controller
                 'year_of_graduation' => $validated['year_of_graduation'] ?? null,
                 'career' => $validated['career'] ?? null,
                 'current_semester' => $validated['current_semester'] ?? null,
-                'is_active' => $validated['is_active'] ?? true
+                'is_active' => $validated['is_active'] ?? true,
+                'is_superuser' => $validated['is_superuser'] ?? false
             ]);
 
             if (!empty($validated['password'])) {

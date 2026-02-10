@@ -41,6 +41,7 @@ class User extends Authenticatable
         'id_carrera',
         'id_area_academica',
         'id_sede',
+        'is_superuser',
     ];
 
     protected $hidden = [
@@ -53,6 +54,7 @@ class User extends Authenticatable
         'password' => 'hashed',
         'run' => 'string',
         'fecha_nacimiento' => 'date',
+        'is_superuser' => 'boolean',
     ];
 
     /**
