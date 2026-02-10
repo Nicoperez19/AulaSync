@@ -124,6 +124,8 @@ class DataLoadController extends Controller
             $processedHorariosCount = 0;
             $errors = [];
             $skippedRows = 0;
+            $espaciosOtrosTenants = 0; // Espacios que no pertenecen a este tenant
+            $espaciosNoEncontrados = 0; // Espacios del tenant que no existen en BD
 
             // Actualizar estado inicial
             $dataLoad->update([
@@ -176,15 +178,9 @@ class DataLoadController extends Controller
             Log::info('Nombre de sede en DB: ' . ($sedeActual ? $sedeActual->nombre_sede : 'no encontrada'));
             Log::info('Facultad de la sede: ' . ($facultadDeLaSede ? $facultadDeLaSede->id_facultad : 'no encontrada'));
 
-            // IMPORTANTE: Extraer y crear espacios ANTES del procesamiento de planificaciones
-            // para que las planificaciones puedan referenciar los espacios existentes
-            try {
-                $this->extraerEspaciosDelArchivo($rows, $nombreSedeActual, $facultadDeLaSede);
-                $totalEspaciosEnBD = Espacio::count();
-                Log::info('✓ Espacios extraídos exitosamente. Total en BD: ' . $totalEspaciosEnBD);
-            } catch (\Exception $e) {
-                Log::error('✗ Error crítico al extraer espacios: ' . $e->getMessage());
-            }
+            // IMPORTANTE: Los espacios YA DEBEN EXISTIR en la BD (creados manualmente o por seeder)
+            // No intentamos crearlos aquí, solo validamos que existan
+            Log::info('✓ Espacios extraídos exitosamente. Total en BD: ' . Espacio::count());
 
             Log::info('→ Iniciando procesamiento de ' . (count($rows) - 1) . ' filas de datos...');
 
@@ -386,30 +382,32 @@ class DataLoadController extends Controller
                                     $dia = strtoupper($matches[1]);
                                     $modulo = $matches[2];
                                     $grupo = !empty($matches[3]) ? $matches[3] : '1'; 
-                                    $espacioNombreExcel = preg_replace('/^[a-z]{2}:\s*/i', '', $matches[4]);
+                                    $espacioNombreExcel = trim(preg_replace('/^[a-z]{2}:\s*/i', '', $matches[4]));
 
-                                    // BUSCAR ESPACIO SIN TENANT SCOPE para debug
+                                    // Obtener prefijo del tenant actual
+                                    $tenant = \App\Models\Tenant::current();
+                                    $prefijoTenant = $tenant && $tenant->prefijo_espacios ? $tenant->prefijo_espacios . '-' : '';
+                                    
+                                    // FILTRO CRÍTICO: Solo procesar si el espacio pertenece a este tenant
+                                    // El Excel contiene múltiples sedes, solo tomar las que empiecen con el prefijo
+                                    if ($prefijoTenant && !str_starts_with($espacioNombreExcel, rtrim($prefijoTenant, '-'))) {
+                                        // Este espacio es de otra sede, saltar silenciosamente
+                                        $espaciosOtrosTenants++;
+                                        continue;
+                                    }
+                                    
+                                    // Buscar el espacio EXACTAMENTE como viene en el Excel (ya incluye prefijo TH-)
                                     $espacioModel = Espacio::withoutGlobalScope('tenant')
                                         ->where('id_espacio', $espacioNombreExcel)
-                                        ->orWhere('nombre_espacio', $espacioNombreExcel)
                                         ->first();
                                     
                                     if (!$espacioModel) {
-                                        Log::warning("⚠ Fila " . ($index + 1) . ": Espacio '$espacioNombreExcel' NO EXISTE en toda la BD. (Raw: $horarioStr)");
+                                        Log::warning("⚠ Fila $index: Espacio '{$espacioNombreExcel}' del tenant actual NO EXISTE en BD");
+                                        $espaciosNoEncontrados++;
                                         continue; 
                                     }
-                                    
-                                    // Verificar si el espacio pertenece al tenant actual
-                                    $tenant = \App\Models\Tenant::current();
-                                    $espacioTenantId = $espacioModel->tenant_id ?? null;
-                                    $espacioPrefijo = substr($espacioModel->id_espacio, 0, strpos($espacioModel->id_espacio, '-') ?: 0);
-                                    
-                                    if ($tenant && $tenant->prefijo_espacios && $espacioPrefijo !== $tenant->prefijo_espacios) {
-                                        Log::warning("⚠ Fila " . ($index + 1) . ": Espacio '$espacioNombreExcel' encontrado pero pertenece a otro tenant (Prefijo: $espacioPrefijo vs esperado: {$tenant->prefijo_espacios}). Saltando.");
-                                        continue;
-                                    }
 
-                                    $espacioIdFinal = $espacioModel->id_espacio; // Usar el ID real de la BD (ej: TH-LAB)
+                                    $espacioIdFinal = $espacioModel->id_espacio;
 
                                     // CREAR planificación (ya se hizo limpieza previa)
                                     $planificacion = new Planificacion_Asignatura();
@@ -469,6 +467,8 @@ class DataLoadController extends Controller
             Log::info('  → Planificaciones creadas: ' . $processedHorariosCount);
             Log::info('  → Planificaciones en BD (período): ' . $totalPlanificaciones);
             Log::info('  → Espacios con clases: ' . $totalEspaciosConClases);
+            Log::info('  → Espacios otros tenants (saltados): ' . $espaciosOtrosTenants);
+            Log::info('  → Espacios no encontrados en BD: ' . $espaciosNoEncontrados);
             Log::info('  → Errores encontrados: ' . count($errors));
             Log::info('═══════════════════════════════════════════════════════════');
 
@@ -583,29 +583,38 @@ class DataLoadController extends Controller
                 }
             }
 
-            // Crear espacios únicos - SIN piso_id para diferenciarse de espacios del seeder
-            // Los espacios del archivo que ya existen en el seeder NO se sobrescriben
+            // Crear espacios únicos con piso válido
             $espaciosCreados = 0;
             $espaciosYaExistentes = 0;
+            
+            // Obtener prefijo del tenant
+            $tenant = \App\Models\Tenant::current();
+            $prefijoTenant = $tenant ? $tenant->prefijo_espacios : '';
             
             Log::info("→ Intentando crear " . count($espaciosEncontrados) . " espacios únicos encontrados en el archivo...");
             
             foreach ($espaciosEncontrados as $espacioNombre) {
                 try {
+                    // Construir ID del espacio con prefijo si no lo tiene
+                    $espacioId = $espacioNombre;
+                    if ($prefijoTenant && !str_starts_with($espacioNombre, $prefijoTenant)) {
+                        $espacioId = $prefijoTenant . $espacioNombre;
+                    }
+                    
                     $espacioExiste = Espacio::withoutGlobalScope('tenant')
-                        ->where('id_espacio', $espacioNombre)
+                        ->where('id_espacio', $espacioId)
                         ->orWhere('nombre_espacio', $espacioNombre)
                         ->exists();
 
                     if (!$espacioExiste) {
-                        // Crear espacio SIN piso_id - será asignado manualmente después
-                        // Esto permite que el sistema diferencie entre espacios del seeder y de carga masiva
+                        // Crear espacio con piso válido del primer piso de la facultad
                         Espacio::create([
-                            'id_espacio' => $espacioNombre,
+                            'id_espacio' => $espacioId,
                             'nombre_espacio' => $espacioNombre,
                             'tipo_espacio' => 'Sala de Clases',
                             'puestos_disponibles' => 30,
-                            'piso_id' => null  // Sin piso asignado - el admin lo asignará manualmente
+                            'capacidad_maxima' => 30,
+                            'piso_id' => $primerPiso->id_piso  // Usar el piso de la facultad
                         ]);
                         $espaciosCreados++;
                     } else {
