@@ -512,11 +512,30 @@ class HorariosController extends Controller
             $semestreFiltro = $request->input('semestre');
             $anioFiltro = $request->input('anio', SemesterHelper::getCurrentAcademicYear());
 
+            $tenant = tenant();
+            Log::info("DEBUG API getHorariosPorPeriodo", [
+                'tenant_id' => $tenant ? $tenant->id : 'NULL',
+                'tenant_prefijo' => $tenant ? $tenant->prefijo_espacios : 'NULL',
+                'anio' => $anioFiltro,
+                'semestre' => $semestreFiltro
+            ]);
+
             if (!$semestreFiltro) {
                 return response()->json(['error' => 'Se requiere semestre'], 400);
             }
 
             $periodo = $anioFiltro . '-' . $semestreFiltro;
+
+            // DEBUG: Verificar existencia de datos crudos en la BD
+            try {
+                $countRaw = \DB::connection('tenant')->table('planificacion_asignaturas')
+                    ->join('horarios', 'planificacion_asignaturas.id_horario', '=', 'horarios.id_horario')
+                    ->where('horarios.periodo', $periodo)
+                    ->count();
+                Log::info("DEBUG: Count RAW en DB ($periodo): $countRaw");
+            } catch (\Exception $e) {
+                Log::error("Error contando raw: " . $e->getMessage());
+            }
 
             // Cargar horarios solo para el período seleccionado
             $planificaciones = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo', 'espacio', 'horario'])
@@ -524,6 +543,8 @@ class HorariosController extends Controller
                     $q->where('periodo', $periodo);
                 })
                 ->get();
+
+            Log::info("DEBUG: Planificaciones recuperadas vía Eloquent: " . $planificaciones->count());
 
             // Agrupar por espacio
             $horariosPorEspacio = $planificaciones->groupBy('id_espacio')->map(function ($items) {
