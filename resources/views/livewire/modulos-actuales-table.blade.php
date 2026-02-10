@@ -16,6 +16,14 @@
             }
         }));
 
+        // Emitir información de periodo no iniciado
+        window.dispatchEvent(new CustomEvent('actualizar-periodo', {
+            detail: {
+                periodoNoIniciado: {{ $periodoNoIniciado ? 'true' : 'false' }},
+                nombrePeriodo: '{{ $nombrePeriodo }}'
+            }
+        }));
+
         // Animación inicial
         setTimeout(() => {
             const initialPage = document.querySelector('[data-pagina=\'0\']');
@@ -78,6 +86,22 @@
                         <p class="text-yellow-800 text-sm">No hay sedes disponibles configuradas en el sistema.</p>
                     </div>
                 @endif
+            </div>
+        </div>
+    @elseif ($periodoNoIniciado)
+        <!-- Mensaje cuando el periodo no ha iniciado -->
+        <div class="flex items-center justify-center min-h-96 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg border-2 border-dashed border-yellow-300 p-8">
+            <div class="text-center max-w-md">
+                <div class="mb-6 flex justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-20 h-20 text-yellow-500">
+                        <path fill-rule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25ZM12.75 6a.75.75 0 0 0-1.5 0v6c0 .414.336.75.75.75h4.5a.75.75 0 0 0 0-1.5h-3.75V6Z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ $nombrePeriodo }}</h2>
+                <p class="text-gray-600 mb-4">El periodo académico aún no ha comenzado</p>
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
+                    <p class="text-yellow-800 text-sm">Las actividades académicas se mostrarán una vez que el periodo académico oficial haya iniciado.</p>
+                </div>
             </div>
         </div>
     @elseif (count($pisos) > 0)
@@ -452,6 +476,13 @@
                     detail: {
                         esFeriado: {{ $esFeriado ? 'true' : 'false' }},
                         nombreFeriado: '{{ $nombreFeriado }}'
+                    }
+                }));
+                
+                window.dispatchEvent(new CustomEvent('actualizar-periodo', {
+                    detail: {
+                        periodoNoIniciado: {{ $periodoNoIniciado ? 'true' : 'false' }},
+                        nombrePeriodo: '{{ $nombrePeriodo }}'
                     }
                 }));
             });

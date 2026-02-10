@@ -16,10 +16,20 @@ class ClasesNoRealizadasController extends Controller
     {
         $periodo = SemesterHelper::getCurrentPeriod();
         
-        // Obtener estadísticas de atrasos (simplificado)
-        $totalAtrasos = ProfesorAtraso::where('periodo', $periodo)->count();
-        $promedioMinutosAtraso = ProfesorAtraso::where('periodo', $periodo)
-            ->avg('minutos_atraso') ?? 0;
+        // Verificar si el periodo académico ha iniciado
+        $periodoActual = \App\Models\PeriodoAcademico::where('activo', true)->first();
+        $periodoNoIniciado = $periodoActual && $periodoActual->noHaIniciado();
+        
+        // Si el periodo no ha iniciado, las estadísticas son 0
+        if ($periodoNoIniciado) {
+            $totalAtrasos = 0;
+            $promedioMinutosAtraso = 0;
+        } else {
+            // Obtener estadísticas de atrasos (simplificado)
+            $totalAtrasos = ProfesorAtraso::where('periodo', $periodo)->count();
+            $promedioMinutosAtraso = ProfesorAtraso::where('periodo', $periodo)
+                ->avg('minutos_atraso') ?? 0;
+        }
         
         return view('admin.clases-no-realizadas', compact(
             'totalAtrasos',
@@ -33,6 +43,12 @@ class ClasesNoRealizadasController extends Controller
      */
     public function exportExcel(Request $request)
     {
+        // Verificar si el periodo académico ha iniciado
+        $periodoActual = \App\Models\PeriodoAcademico::where('activo', true)->first();
+        if ($periodoActual && $periodoActual->noHaIniciado()) {
+            return back()->with('error', 'No se puede exportar porque el periodo académico aún no ha iniciado.');
+        }
+        
         $request->validate([
             'fecha_inicio' => 'nullable|date',
             'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
@@ -70,6 +86,12 @@ class ClasesNoRealizadasController extends Controller
      */
     public function exportAllExcel(Request $request)
     {
+        // Verificar si el periodo académico ha iniciado
+        $periodoActual = \App\Models\PeriodoAcademico::where('activo', true)->first();
+        if ($periodoActual && $periodoActual->noHaIniciado()) {
+            return back()->with('error', 'No se puede exportar porque el periodo académico aún no ha iniciado.');
+        }
+        
         $request->validate([
             'fecha_inicio' => 'nullable|date',
             'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',

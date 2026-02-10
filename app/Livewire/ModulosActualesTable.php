@@ -38,6 +38,10 @@ class ModulosActualesTable extends Component
 
     public $nombreFeriado = '';
 
+    public $periodoNoIniciado = false;
+
+    public $nombrePeriodo = '';
+
     // Propiedades para manejo de tenants
     public $tenantActual = null;
 
@@ -602,6 +606,20 @@ class ModulosActualesTable extends Component
 
             $this->horaActual = Carbon::now()->format('H:i:s');
             $this->fechaActual = Carbon::now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY');
+
+            // Verificar si el periodo académico ha iniciado
+            $periodoActual = \App\Models\PeriodoAcademico::where('activo', true)->first();
+            if ($periodoActual && $periodoActual->noHaIniciado()) {
+                $this->periodoNoIniciado = true;
+                $this->nombrePeriodo = $periodoActual->nombre_completo;
+                // Si el periodo no ha iniciado, no verificamos feriados ni cargamos datos
+                $this->esFeriado = false;
+                $this->nombreFeriado = '';
+                return;
+            } else {
+                $this->periodoNoIniciado = false;
+                $this->nombrePeriodo = '';
+            }
 
             // Verificar si la fecha actual es un día feriado o sin actividades
             $feriado = DiaFeriado::obtenerFeriadoEnFecha(Carbon::now()->toDateString());

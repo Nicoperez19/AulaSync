@@ -477,6 +477,26 @@ class ClasesNoRealizadasTable extends Component
 
     public function render()
     {        
+        // Verificar si el periodo académico ha iniciado
+        $periodoActual = \App\Models\PeriodoAcademico::where('activo', true)->first();
+        $periodoNoIniciado = $periodoActual && $periodoActual->noHaIniciado();
+        
+        // Si el periodo no ha iniciado, no mostrar datos
+        if ($periodoNoIniciado) {
+            return view('livewire.clases-no-realizadas-table', [
+                'clasesNoRealizadas' => collect()->paginate($this->perPage),
+                'estadisticas' => [
+                    'total' => 0,
+                    'pendientes' => 0,
+                    'justificadas' => 0,
+                    'recuperadas' => 0,
+                    'porcentaje_recuperadas' => 0,
+                ],
+                'periodoNoIniciado' => true,
+                'nombrePeriodo' => $periodoActual->nombre_completo,
+            ]);
+        }
+        
         // Limpiar cache de estadísticas para este render
         $this->cachedEstadisticas = null;
         
@@ -513,6 +533,8 @@ class ClasesNoRealizadasTable extends Component
         return view('livewire.clases-no-realizadas-table', [
             'clasesNoRealizadas' => $clasesNoRealizadas,
             'estadisticas' => $estadisticas,
+            'periodoNoIniciado' => false,
+            'nombrePeriodo' => '',
         ]);
     }
 
