@@ -446,6 +446,10 @@ class HorariosController extends Controller
             });
         }
 
+        // Definir variables para la vista
+        $semestre = $semestreFiltro ?: SemesterHelper::getCurrentSemester();
+        $anioActual = $anioFiltro;
+
         return view('layouts.spacetime.spacetime_show', compact(
             'pisos',
             'horariosPorEspacio',
