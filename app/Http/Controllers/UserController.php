@@ -147,8 +147,8 @@ class UserController extends Controller
             
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
-                'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-                'run' => 'required|integer|digits_between:7,8|unique:users,run,' . $user->id,
+                'email' => 'required|string|email|max:255|unique:users,email,' . $user->run . ',run',
+                'run' => 'required|integer|digits_between:7,8|unique:users,run,' . $user->run . ',run',
                 'celular' => 'nullable|string|regex:/^9\d{8}$/',
                 'password' => 'nullable|string|min:8',
                 'wizard_password' => $isMarkingAsSuperuser ? 'required|string' : 'nullable|string',
