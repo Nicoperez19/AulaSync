@@ -140,6 +140,55 @@ class DataLoadController extends Controller
             $planificacionesEliminadas = Planificacion_Asignatura::whereIn('id_horario', $horariosDelPeriodo)->delete();
             Log::info('Planificaciones eliminadas del período ' . $periodoSeleccionado . ': ' . $planificacionesEliminadas);
 
+            // GARANTIZAR QUE EXISTAN MÓDULOS: Sin ellos la FK falla y 0 planificaciones se crean
+            $modulosExistentes = \App\Models\Modulo::count();
+            if ($modulosExistentes === 0) {
+                Log::info('⚠ Tabla modulos VACÍA - Creando módulos automáticamente...');
+                $dias = [
+                    'LU' => 'lunes', 'MA' => 'martes', 'MI' => 'miércoles',
+                    'JU' => 'jueves', 'VI' => 'viernes', 'SA' => 'sábado',
+                ];
+                $modulosBase = [
+                    ['hora_inicio' => '08:10', 'hora_termino' => '09:00'],
+                    ['hora_inicio' => '09:10', 'hora_termino' => '10:00'],
+                    ['hora_inicio' => '10:10', 'hora_termino' => '11:00'],
+                    ['hora_inicio' => '11:10', 'hora_termino' => '12:00'],
+                    ['hora_inicio' => '12:10', 'hora_termino' => '13:00'],
+                    ['hora_inicio' => '13:10', 'hora_termino' => '14:00'],
+                    ['hora_inicio' => '14:10', 'hora_termino' => '15:00'],
+                    ['hora_inicio' => '15:10', 'hora_termino' => '16:00'],
+                    ['hora_inicio' => '16:10', 'hora_termino' => '17:00'],
+                    ['hora_inicio' => '17:10', 'hora_termino' => '18:00'],
+                    ['hora_inicio' => '18:10', 'hora_termino' => '19:00'],
+                    ['hora_inicio' => '19:10', 'hora_termino' => '20:00'],
+                    ['hora_inicio' => '20:10', 'hora_termino' => '21:00'],
+                    ['hora_inicio' => '21:10', 'hora_termino' => '22:00'],
+                    ['hora_inicio' => '22:10', 'hora_termino' => '23:00'],
+                ];
+                $modulosCreados = 0;
+                foreach ($dias as $codigoDia => $nombreDia) {
+                    // Sábado solo tiene módulos 1-5 (hasta 13:00hrs)
+                    $maxModulos = ($codigoDia === 'SA') ? 5 : 15;
+                    
+                    foreach ($modulosBase as $idx => $mod) {
+                        $numeroModulo = $idx + 1;
+                        if ($numeroModulo > $maxModulos) {
+                            break; // Skip módulos > 5 para sábado
+                        }
+                        
+                        $idModulo = $codigoDia . '.' . $numeroModulo;
+                        \App\Models\Modulo::firstOrCreate(
+                            ['id_modulo' => $idModulo],
+                            ['dia' => $nombreDia, 'hora_inicio' => $mod['hora_inicio'], 'hora_termino' => $mod['hora_termino']]
+                        );
+                        $modulosCreados++;
+                    }
+                }
+                Log::info("✓ Módulos creados: {$modulosCreados} (LU-VI: 15 módulos, SA: 5 módulos)");
+            } else {
+                Log::info("✓ Módulos existentes en BD: {$modulosExistentes}");
+            }
+
             // PRESERVAR ESPACIOS DEL SEEDER: Solo eliminar espacios SIN piso_id válido (creados por cargas anteriores)
             // Los espacios con piso_id configurado vienen del seeder y deben mantenerse
             $tenant = \App\Models\Tenant::current();
