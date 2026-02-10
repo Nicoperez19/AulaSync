@@ -40,7 +40,6 @@ class UserController extends Controller
                 'run' => 'required|integer|digits_between:7,8|unique:users',
                 'celular' => 'nullable|string|regex:/^9\d{8}$/',
                 'password' => 'required|string|min:8',
-                'wizard_password' => 'required|string',
                 'roles' => 'required|array',
                 'roles.*' => 'exists:roles,id',
                 'permissions' => 'nullable|array',
@@ -52,22 +51,6 @@ class UserController extends Controller
                 'is_active' => 'boolean',
                 'is_superuser' => 'boolean'
             ]);
-
-            // Validar contraseña del wizard
-            if ($validated['wizard_password'] !== env('TENANT_INIT_PASSWORD')) {
-                Log::warning('Intento de creación de usuario con contraseña de wizard incorrecta', [
-                    'run' => $validated['run'],
-                    'ip' => $request->ip(),
-                ]);
-
-                if ($request->ajax()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Contraseña del wizard incorrecta.'
-                    ], 422);
-                }
-                return back()->withErrors(['wizard_password' => 'Contraseña del wizard incorrecta.'])->withInput();
-            }
 
             // Verificar si el RUN ya existe
             if (User::where('run', $validated['run'])->exists()) {
@@ -159,12 +142,16 @@ class UserController extends Controller
                 $request->merge(['run' => (int) $request->run]);
             }
 
+            // Validación condicional: wizard_password es obligatorio si se marca como superusuario
+            $isMarkingAsSuperuser = $request->has('is_superuser') && $request->input('is_superuser') && !$user->is_superuser;
+            
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
                 'run' => 'required|integer|digits_between:7,8|unique:users,run,' . $user->id,
                 'celular' => 'nullable|string|regex:/^9\d{8}$/',
                 'password' => 'nullable|string|min:8',
+                'wizard_password' => $isMarkingAsSuperuser ? 'required|string' : 'nullable|string',
                 'roles' => 'required|array',
                 'roles.*' => 'exists:roles,id',
                 'permissions' => 'nullable|array',
@@ -176,6 +163,33 @@ class UserController extends Controller
                 'is_active' => 'boolean',
                 'is_superuser' => 'boolean'
             ]);
+
+            // Validar contraseña del wizard si fue proporcionada
+            if (!empty($validated['wizard_password'])) {
+                if ($validated['wizard_password'] !== env('TENANT_INIT_PASSWORD')) {
+                    Log::warning('Intento de edición de usuario con contraseña de wizard incorrecta', [
+                        'run' => $user->run,
+                        'ip' => $request->ip(),
+                    ]);
+
+                    if ($request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Contraseña del wizard incorrecta.'
+                        ], 422);
+                    }
+                    return back()->withErrors(['wizard_password' => 'Contraseña del wizard incorrecta.'])->withInput();
+                }
+            } elseif ($isMarkingAsSuperuser) {
+                // Si está intentando marcar como superusuario pero no proporcionó contraseña
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'La contraseña del wizard es obligatoria para otorgar permisos de superusuario.'
+                    ], 422);
+                }
+                return back()->withErrors(['wizard_password' => 'La contraseña del wizard es obligatoria para otorgar permisos de superusuario.'])->withInput();
+            }
 
             $user->update([
                 'name' => $validated['name'],
