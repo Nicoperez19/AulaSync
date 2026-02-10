@@ -57,9 +57,10 @@ trait BelongsToTenant
             };
             
             // Filtrar por prefijo de espacio si el modelo tiene id_espacio
+            // Usar LOWER para comparación case-insensitive (prefijo puede estar en minúsculas)
             if ($hasColumn('id_espacio')) {
                 if ($tenant->prefijo_espacios) {
-                    $builder->where($table . '.id_espacio', 'like', $tenant->prefijo_espacios . '%');
+                    $builder->whereRaw('LOWER(' . $table . '.id_espacio) LIKE ?', [strtolower($tenant->prefijo_espacios) . '%']);
                 }
             }
             // Filtrar por sede directamente si el modelo tiene sede_id (pero no id_espacio)
@@ -125,8 +126,9 @@ trait BelongsToTenant
             }
             
             // Si el modelo tiene id_espacio y prefijo, asegurarse de que comience con el prefijo
+            // Comparación case-insensitive para evitar duplicar prefijos (ej: 'th' vs 'TH')
             if ($hasColumn('id_espacio') && $tenant->prefijo_espacios) {
-                if (isset($model->id_espacio) && !str_starts_with($model->id_espacio, $tenant->prefijo_espacios)) {
+                if (isset($model->id_espacio) && !str_starts_with(strtolower($model->id_espacio), strtolower($tenant->prefijo_espacios))) {
                     $model->id_espacio = $tenant->prefijo_espacios . $model->id_espacio;
                 }
             }

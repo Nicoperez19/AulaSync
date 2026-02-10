@@ -428,24 +428,28 @@ class DataLoadController extends Controller
                                     $espacioIdFinal = $espacioModel->id_espacio;
 
                                     // CREAR planificación (ya se hizo limpieza previa)
-                                    $planificacion = new Planificacion_Asignatura();
-                                    $planificacion->id_asignatura = $idAsignatura;
-                                    $planificacion->id_horario = $horario->id_horario;
-                                    $planificacion->id_modulo = $dia . '.' . $modulo;
-                                    $planificacion->id_espacio = $espacioIdFinal; // IMPORTANTE: Usar el ID resuelto
-                                    $planificacion->inscritos = $inscritos;
-
-                                    if (!$planificacion->save()) {
-                                        Log::error("✗ Fila $index - Error al guardar planificación para espacio $espacioIdFinal");
-                                        throw new \Exception("Error al guardar la planificación");
-                                    } else {
+                                    $idModulo = $dia . '.' . $modulo;
+                                    
+                                    try {
+                                        $planificacion = new Planificacion_Asignatura();
+                                        $planificacion->id_asignatura = $idAsignatura;
+                                        $planificacion->id_horario = $horario->id_horario;
+                                        $planificacion->id_modulo = $idModulo;
+                                        $planificacion->id_espacio = $espacioIdFinal;
+                                        $planificacion->inscritos = $inscritos;
+                                        $planificacion->save();
+                                        
                                         $processedHorariosCount++;
                                         $planificacionesGuardadas++;
                                         
-                                        // Log de éxito solo cada 50 planificaciones para no saturar
-                                        if ($planificacionesGuardadas % 50 == 1) {
-                                            Log::info("✓ Planificación #{$planificacionesGuardadas}: {$dia}.{$modulo} → {$espacioIdFinal}");
+                                        // Log de éxito: primeras 5 y cada 100
+                                        if ($planificacionesGuardadas <= 5 || $planificacionesGuardadas % 100 == 0) {
+                                            Log::info("✓ Planificación #{$planificacionesGuardadas}: asig={$idAsignatura}, hor={$horario->id_horario}, mod={$idModulo}, esp={$espacioIdFinal}");
                                         }
+                                    } catch (\Exception $planEx) {
+                                        Log::error("✗ Fila $index - Error al crear planificación: " . $planEx->getMessage());
+                                        Log::error("  → Datos: asig={$idAsignatura}, hor={$horario->id_horario}, mod={$idModulo}, esp={$espacioIdFinal}");
+                                        // NO lanzar excepción, continuar con las demás
                                     }
                                 } else {
                                     // Solo registrar si hay contenido pero no matchea (puede ser formato inesperado)
