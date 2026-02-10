@@ -36,10 +36,6 @@ class HorariosController extends Controller
             ->sort()
             ->values();
 
-        Log::info('Períodos disponibles en directorio de profesores:', [
-            'periodos' => $periodosDisponibles->toArray()
-        ]);
-
         // Separar años y semestres de los períodos
         $aniosDisponibles = [];
         $semestresDisponibles = [];
@@ -93,12 +89,6 @@ class HorariosController extends Controller
             });
         }
 
-        Log::info('Filtros aplicados en directorio de profesores:', [
-            'semestreFiltro' => $semestreFiltro,
-            'anioFiltro' => $anioFiltro,
-            'periodoFiltro' => $periodoFiltro ?? null
-        ]);
-
         $profesores = $query->orderBy('name')->paginate(27);
 
         // Determinar el período para los horarios (siempre usar año actual)
@@ -109,20 +99,9 @@ class HorariosController extends Controller
             $periodo = $anioFiltro . '-' . $semestre;
         }
 
-        Log::info('Período determinado para horarios en directorio de profesores:', [
-            'anioActual' => $anioActual ?? null,
-            'semestre' => $semestre ?? null,
-            'periodo' => $periodo
-        ]);
-
         $horarios = Horario::with(['profesor', 'planificaciones.asignatura', 'planificaciones.espacio'])
             ->where('periodo', $periodo)
             ->get();
-
-        Log::info('Horarios encontrados en directorio de profesores:', [
-            'total_horarios' => $horarios->count(),
-            'periodo' => $periodo
-        ]);
 
         // Formatear las horas de inicio y término de los módulos
         $horarios->each(function ($horario) {
@@ -398,10 +377,6 @@ class HorariosController extends Controller
             ->sort()
             ->values();
 
-        Log::info('Períodos disponibles en la base de datos:', [
-            'periodos' => $periodosDisponibles->toArray()
-        ]);
-
         // Separar años y semestres de los períodos
         $aniosDisponibles = [];
         $semestresDisponibles = [];
@@ -425,17 +400,6 @@ class HorariosController extends Controller
         sort($aniosDisponibles);
         sort($semestresDisponibles);
 
-        // Determinar el período por defecto usando el helper
-        $anioActual = SemesterHelper::getCurrentAcademicYear();
-        $semestre = SemesterHelper::getCurrentSemester();
-        $periodo = SemesterHelper::getCurrentPeriod();
-
-        Log::info('Período determinado por el helper:', [
-            'anioActual' => $anioActual,
-            'semestre' => $semestre,
-            'periodo' => $periodo
-        ]);
-
         // Obtener todos los pisos con sus espacios, ordenados por número de piso
         $pisos = Piso::with([
             'espacios' => function ($q) {
@@ -451,18 +415,8 @@ class HorariosController extends Controller
             $semestreFiltro = SemesterHelper::getCurrentSemester();
         }
 
-        Log::info('Período determinado en showEspacios:', [
-            'semestreFiltro' => $semestreFiltro,
-            'anioFiltro' => $anioFiltro,
-            'periodo_por_defecto' => $periodo
-        ]);
-
         if ($semestreFiltro) {
             $periodo = $anioFiltro . '-' . $semestreFiltro;
-
-            Log::info('Período final para búsqueda:', [
-                'periodo' => $periodo
-            ]);
 
             // Cargar horarios solo para el período seleccionado
             $planificaciones = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo', 'espacio', 'horario'])
@@ -471,10 +425,7 @@ class HorariosController extends Controller
                 })
                 ->get();
 
-            Log::info('Planificaciones encontradas en showEspacios:', [
-                'total_planificaciones' => $planificaciones->count(),
-                'periodo' => $periodo
-            ]);
+            Log::info("🏫 Vista Espacios - Período: $periodo, Planificaciones: " . $planificaciones->count());
 
             // Agrupar por espacio
             $horariosPorEspacio = $planificaciones->groupBy('id_espacio')->map(function ($items) {
@@ -512,39 +463,27 @@ class HorariosController extends Controller
             $semestreFiltro = $request->input('semestre');
             $anioFiltro = $request->input('anio', SemesterHelper::getCurrentAcademicYear());
 
-            $tenant = tenant();
-            Log::info("DEBUG API getHorariosPorPeriodo", [
-                'tenant_id' => $tenant ? $tenant->id : 'NULL',
-                'tenant_prefijo' => $tenant ? $tenant->prefijo_espacios : 'NULL',
-                'anio' => $anioFiltro,
-                'semestre' => $semestreFiltro
-            ]);
-
             if (!$semestreFiltro) {
                 return response()->json(['error' => 'Se requiere semestre'], 400);
             }
 
             $periodo = $anioFiltro . '-' . $semestreFiltro;
+            
+            // Log inicial simplificado
+            $tenant = tenant();
+            Log::info("📡 API getHorariosPorPeriodo - Período: $periodo, Tenant: " . ($tenant ? $tenant->prefijo_espacios : 'NULL'));
 
-            // DEBUG: Verificar existencia de datos crudos en la BD
-            try {
-                $countRaw = \DB::connection('tenant')->table('planificacion_asignaturas')
-                    ->join('horarios', 'planificacion_asignaturas.id_horario', '=', 'horarios.id_horario')
-                    ->where('horarios.periodo', $periodo)
-                    ->count();
-                Log::info("DEBUG: Count RAW en DB ($periodo): $countRaw");
-            } catch (\Exception $e) {
-                Log::error("Error contando raw: " . $e->getMessage());
-            }
-
-            // Cargar horarios solo para el período seleccionado
+            // Verificar datos en BD
             $planificaciones = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo', 'espacio', 'horario'])
                 ->whereHas('horario', function ($q) use ($periodo) {
                     $q->where('periodo', $periodo);
                 })
                 ->get();
 
-            Log::info("DEBUG: Planificaciones recuperadas vía Eloquent: " . $planificaciones->count());
+            $totalPlanificaciones = $planificaciones->count();
+            $espaciosUnicos = $planificaciones->pluck('id_espacio')->unique()->count();
+            
+            Log::info("📊 Resultado: $totalPlanificaciones planificaciones en $espaciosUnicos espacios");
 
             // Agrupar por espacio
             $horariosPorEspacio = $planificaciones->groupBy('id_espacio')->map(function ($items) {
@@ -579,17 +518,13 @@ class HorariosController extends Controller
     public function exportHorarioEspacioPDF($idEspacio, Request $request)
     {
         try {
-            Log::info('Iniciando exportación PDF para espacio:', ['id_espacio' => $idEspacio]);
-
             // Obtener el espacio con sus relaciones
             $espacio = Espacio::with(['piso.facultad'])->where('id_espacio', $idEspacio)->first();
 
             if (!$espacio) {
-                Log::warning('Espacio no encontrado:', ['id_espacio' => $idEspacio]);
+                Log::warning("⚠ Espacio '$idEspacio' no encontrado para export PDF");
                 return response()->json(['error' => 'Espacio no encontrado'], 404);
             }
-
-            Log::info('Espacio encontrado:', ['espacio' => $espacio->toArray()]);
 
             // Obtener el período de los filtros o usar el actual
             $semestreFiltro = $request->input('semestre');
@@ -604,12 +539,6 @@ class HorariosController extends Controller
                 $periodo = SemesterHelper::getCurrentPeriod();
             }
 
-            Log::info('Período determinado:', [
-                'semestreFiltro' => $semestreFiltro,
-                'anioFiltro' => $anioFiltro,
-                'periodo' => $periodo
-            ]);
-
             // Obtener las planificaciones del espacio
             $planificaciones = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo'])
                 ->where('id_espacio', $idEspacio)
@@ -618,11 +547,7 @@ class HorariosController extends Controller
                 })
                 ->get();
 
-            Log::info('Planificaciones encontradas:', [
-                'total_planificaciones' => $planificaciones->count(),
-                'id_espacio' => $idEspacio,
-                'periodo' => $periodo
-            ]);
+            Log::info("📄 Exportando PDF: Espacio '$idEspacio', Período '$periodo', Planificaciones: " . $planificaciones->count());
 
             // Formatear los horarios
             $horarios = $planificaciones->map(function ($plan) {
@@ -637,10 +562,6 @@ class HorariosController extends Controller
                     'hora_termino' => $plan->modulo->hora_termino ?? '',
                 ];
             })->toArray();
-
-            Log::info('Horarios formateados:', [
-                'total_horarios' => count($horarios)
-            ]);
 
             // Obtener TODOS los módulos disponibles desde las 8:10 hasta el último horario
             $todosLosModulos = Modulo::orderBy('hora_inicio')->get();
