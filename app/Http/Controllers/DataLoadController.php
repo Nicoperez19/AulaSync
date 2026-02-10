@@ -384,27 +384,44 @@ class DataLoadController extends Controller
                                     $dia = $matches[1];
                                     $modulo = $matches[2];
                                     $grupo = $matches[3];
-                                    $espacio = preg_replace('/^[a-z]{2}:\s*/i', '', $matches[4]);
+                                    // Limpiamos el nombre del espacio del Excel
+                                    $espacioNombreExcel = preg_replace('/^[a-z]{2}:\s*/i', '', $matches[4]);
 
-                                    $espacioExiste = Espacio::where('id_espacio', $espacio)->exists();
+                                    // LÓGICA ROBUSTA DE BÚSQUEDA DE ESPACIO
+                                    // 1. Buscamos por coincidencia exacta de ID
+                                    $espacioModel = Espacio::where('id_espacio', $espacioNombreExcel)->first();
 
-                                    if (!$espacioExiste) {
-                                        continue; // Saltar esta planificación si el espacio no existe
+                                    // 2. Si no, buscamos por coincidencia exacta de Nombre (para mapear Excel "Laboratorio X" -> BD "TH-LAB")
+                                    if (!$espacioModel) {
+                                        $espacioModel = Espacio::where('nombre_espacio', $espacioNombreExcel)->first();
                                     }
 
+                                    // 3. Fallback: Intentar buscar por similitud de nombre si es necesario, o asumir que fue creado en la etapa anterior
+                                    if (!$espacioModel) {
+                                        // Si llegamos aquí, la etapa extraerEspaciosDelArchivo debió haberlo creado con ID = $espacioNombreExcel
+                                        $espacioModel = Espacio::where('id_espacio', $espacioNombreExcel)->first();
+                                    }
+                                    
+                                    if (!$espacioModel) {
+                                        Log::warning("Fila " . ($index + 1) . ": Espacio '$espacioNombreExcel' no encontrado en BD. Saltando planificación.");
+                                        continue; 
+                                    }
+
+                                    $espacioIdFinal = $espacioModel->id_espacio; // Usar el ID real de la BD (ej: TH-LAB)
+
                                     // CREAR planificación (ya se hizo limpieza previa)
-                                        $planificacion = new Planificacion_Asignatura();
-                                        $planificacion->id_asignatura = $idAsignatura;
-                                        $planificacion->id_horario = $horario->id_horario;
-                                        $planificacion->id_modulo = $dia . '.' . $modulo;
-                                        $planificacion->id_espacio = $espacio;
-                                        $planificacion->inscritos = $inscritos;
+                                    $planificacion = new Planificacion_Asignatura();
+                                    $planificacion->id_asignatura = $idAsignatura;
+                                    $planificacion->id_horario = $horario->id_horario;
+                                    $planificacion->id_modulo = $dia . '.' . $modulo;
+                                    $planificacion->id_espacio = $espacioIdFinal; // IMPORTANTE: Usar el ID resuelto
+                                    $planificacion->inscritos = $inscritos;
 
-                                        if (!$planificacion->save()) {
-                                            throw new \Exception("Error al guardar la planificación");
-                                        }
+                                    if (!$planificacion->save()) {
+                                        throw new \Exception("Error al guardar la planificación");
+                                    }
 
-                                        $processedHorariosCount++;
+                                    $processedHorariosCount++;
                                 }
                             }
                         }
