@@ -370,21 +370,31 @@ class DataLoadController extends Controller
                         }
 
                         if ($horario && $horario->id_horario && !empty($horarioProfesor)) {
+                            // Limpieza de caracteres invisibles o raros
+                            $horarioProfesor = preg_replace('/[\x00-\x1F\x7F]/u', '', $horarioProfesor);
                             $horarioProfesorNormalizado = preg_replace('/(?<!-)\s*([a-z]{2}:\s*)/i', ' - $1', $horarioProfesor);
 
                             // Divide por guiones
                             $horarios = explode(' - ', $horarioProfesorNormalizado);
-                            foreach ($horarios as $horarioStr) {
+                            $planificacionesGuardadas = 0;
+
+                            foreach ($horarios as $horarioIdx => $horarioStr) {
                                 if (preg_match('/^[a-záéíóúñ]{2,}:$/u', trim($horarioStr))) {
                                     continue;
                                 }
-                                preg_match('/([A-Za-z]+)\.(\d+)\/G:(\d+)\s*\(([^)]+)\)/', $horarioStr, $matches);
 
-                                if (count($matches) === 5) {
-                                    $dia = $matches[1];
+                                // DEBUG: Ver qué está intentando parsear
+                                if ($index < 5) {
+                                    Log::info("Fila $index - Intentando parsear: '$horarioStr'");
+                                }
+
+                                // Regex más flexible: soporta "LU.1/G:1 (Sala)" y variaciones como "LU.1 (Sala)"
+                                preg_match('/([A-Za-z]{2})\s*\.?\s*(\d{1,2})(?:\s*\/G:(\d+))?\s*\(([^)]+)\)/', $horarioStr, $matches);
+
+                                if (count($matches) >= 5) { // Index 4 existe (Sala)
+                                    $dia = strtoupper($matches[1]);
                                     $modulo = $matches[2];
-                                    $grupo = $matches[3];
-                                    // Limpiamos el nombre del espacio del Excel
+                                    $grupo = !empty($matches[3]) ? $matches[3] : '1'; 
                                     $espacioNombreExcel = preg_replace('/^[a-z]{2}:\s*/i', '', $matches[4]);
 
                                     // LÓGICA ROBUSTA DE BÚSQUEDA DE ESPACIO
@@ -398,16 +408,19 @@ class DataLoadController extends Controller
 
                                     // 3. Fallback: Intentar buscar por similitud de nombre si es necesario, o asumir que fue creado en la etapa anterior
                                     if (!$espacioModel) {
-                                        // Si llegamos aquí, la etapa extraerEspaciosDelArchivo debió haberlo creado con ID = $espacioNombreExcel
                                         $espacioModel = Espacio::where('id_espacio', $espacioNombreExcel)->first();
                                     }
                                     
                                     if (!$espacioModel) {
-                                        Log::warning("Fila " . ($index + 1) . ": Espacio '$espacioNombreExcel' no encontrado en BD. Saltando planificación.");
+                                        Log::warning("Fila " . ($index + 1) . ": Espacio '$espacioNombreExcel' no encontrado en BD. Saltando planificación. (Raw: $horarioStr)");
                                         continue; 
                                     }
 
                                     $espacioIdFinal = $espacioModel->id_espacio; // Usar el ID real de la BD (ej: TH-LAB)
+
+                                    if ($index < 5) {
+                                        Log::info("Fila $index - Espacio encontrado: '$espacioIdFinal' para '$espacioNombreExcel'");
+                                    }
 
                                     // CREAR planificación (ya se hizo limpieza previa)
                                     $planificacion = new Planificacion_Asignatura();
@@ -418,12 +431,27 @@ class DataLoadController extends Controller
                                     $planificacion->inscritos = $inscritos;
 
                                     if (!$planificacion->save()) {
+                                        Log::error("Fila $index - Error al guardar planificación");
                                         throw new \Exception("Error al guardar la planificación");
+                                    } else {
+                                        if ($index < 5) Log::info("Fila $index - Planificación guardada correctamente: " . $planificacion->id);
+                                        $processedHorariosCount++;
+                                        $planificacionesGuardadas++;
                                     }
-
-                                    $processedHorariosCount++;
+                                } else {
+                                    if ($index < 5 || count($matches) > 0) {
+                                        Log::warning("Fila $index - El formato de horario no coincide con la Regex: '$horarioStr'. Matches count: " . count($matches));
+                                    }
                                 }
                             }
+                            
+                            if ($planificacionesGuardadas == 0 && !empty($horarioProfesor) && $index < 20) {
+                                Log::warning("Fila $index - ALERTA: Texto de horario presente pero 0 planificaciones creadas. Texto original: '$horarioProfesor'");
+                            }
+                        } else {
+                             if (!empty($horarioProfesor) && $index < 5) {
+                                Log::warning("Fila $index - Horario no procesado. ID Horario: " . ($horario->id_horario ?? 'NULL'));
+                             }
                         }
                     } catch (\Exception $e) {
                         $errors[] = "Fila " . ($index + 1) . ": Error al procesar horario - " . $e->getMessage();
