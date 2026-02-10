@@ -126,6 +126,7 @@ class DataLoadController extends Controller
             $skippedRows = 0;
             $espaciosOtrosTenants = 0; // Espacios que no pertenecen a este tenant
             $espaciosNoEncontrados = 0; // Espacios del tenant que no existen en BD
+            $espaciosFaltantes = []; // Lista de espacios TH- que no se encontraron en BD
 
             // Actualizar estado inicial
             $dataLoad->update([
@@ -158,6 +159,17 @@ class DataLoadController extends Controller
             // Obtener la primera facultad de la sede para crear carreras automáticamente si es necesario
             $facultadDeLaSede = $sedeActual ? \App\Models\Facultad::where('id_sede', $sedeActual->id_sede)->first() : null;
 
+            // LOGS DETALLADOS DE CONFIGURACIÓN DEL TENANT
+            Log::info('═══════════════════════════════════════════════════════════');
+            Log::info('🔧 CONFIGURACIÓN DEL TENANT PARA IMPORTACIÓN');
+            Log::info('  → Tenant ID: ' . ($tenant ? $tenant->id : 'NO CONFIGURADO'));
+            Log::info('  → Prefijo espacios (raw): "' . ($tenant && $tenant->prefijo_espacios ? $tenant->prefijo_espacios : 'NO CONFIGURADO') . '"');
+            Log::info('  → Prefijo espacios (normalizado): "' . ($tenant && $tenant->prefijo_espacios ? strtoupper(trim($tenant->prefijo_espacios)) : 'NO CONFIGURADO') . '"');
+            Log::info('  → Sede ID: ' . ($tenant ? $tenant->sede_id : 'N/A'));
+            Log::info('  → Nombre sede: ' . ($nombreSedeActual ?? 'N/A'));
+            Log::info('  → Filtro espacios: ' . ($tenant && $tenant->prefijo_espacios ? strtoupper(trim($tenant->prefijo_espacios)) . '-*' : 'NO CONFIGURADO'));
+            Log::info('═══════════════════════════════════════════════════════════');
+
             // Si no existe facultad, crear una genérica para la sede
             if ($sedeActual && !$facultadDeLaSede) {
                 try {
@@ -173,14 +185,9 @@ class DataLoadController extends Controller
                 }
             }
 
-            Log::info('Procesando carga masiva para sede: ' . ($nombreSedeActual ?? 'no definida'));
-            Log::info('Sede ID del tenant: ' . ($tenant ? $tenant->sede_id : 'no hay tenant'));
-            Log::info('Nombre de sede en DB: ' . ($sedeActual ? $sedeActual->nombre_sede : 'no encontrada'));
-            Log::info('Facultad de la sede: ' . ($facultadDeLaSede ? $facultadDeLaSede->id_facultad : 'no encontrada'));
-
             // IMPORTANTE: Los espacios YA DEBEN EXISTIR en la BD (creados manualmente o por seeder)
-            // No intentamos crearlos aquí, solo validamos que existan
-            Log::info('✓ Espacios extraídos exitosamente. Total en BD: ' . Espacio::count());
+            // No se crean espacios durante la importación, solo se usan los existentes
+            Log::info('✓ Espacios existentes en BD del tenant: ' . Espacio::count() . ' (no se crearán nuevos)');
 
             Log::info('→ Iniciando procesamiento de ' . (count($rows) - 1) . ' filas de datos...');
 
@@ -375,23 +382,28 @@ class DataLoadController extends Controller
                                     continue;
                                 }
 
-                                // Regex más flexible: soporta "LU.1/G:1 (Sala)" y variaciones como "LU.1 (Sala)"
-                                preg_match('/([A-Za-z]{2})\s*\.?\s*(\d{1,2})(?:\s*\/G:(\d+))?\s*\(([^)]+)\)/', $horarioStr, $matches);
+                                // Regex actualizado: captura prefijos ca:/la: y el formato DIA.MODULO/G:GRUPO (ESPACIO)
+                                // Ejemplos: "ca: LU.12/G:1 (TH-01)", "la: MI.4/G:1 (TH-L06)", "LU.1/G:1 (TH-02)"
+                                preg_match('/(?:[a-záéíóúñ]+:\s*)?([A-Za-z]{2})\s*\.\s*(\d{1,2})(?:\s*\/G:(\d+))?\s*\(([^)]+)\)/', $horarioStr, $matches);
 
                                 if (count($matches) >= 5) { // Index 4 existe (Sala)
                                     $dia = strtoupper($matches[1]);
                                     $modulo = $matches[2];
                                     $grupo = !empty($matches[3]) ? $matches[3] : '1'; 
-                                    $espacioNombreExcel = trim(preg_replace('/^[a-z]{2}:\s*/i', '', $matches[4]));
+                                    $espacioNombreExcel = trim($matches[4]);
 
-                                    // Obtener prefijo del tenant actual
+                                    // Obtener prefijo del tenant actual (sin guión) y normalizar a MAYÚSCULAS
                                     $tenant = \App\Models\Tenant::current();
-                                    $prefijoTenant = $tenant && $tenant->prefijo_espacios ? $tenant->prefijo_espacios . '-' : '';
+                                    $prefijoTenant = $tenant && $tenant->prefijo_espacios 
+                                        ? strtoupper(trim($tenant->prefijo_espacios)) 
+                                        : '';
                                     
-                                    // FILTRO CRÍTICO: Solo procesar si el espacio pertenece a este tenant
-                                    // El Excel contiene múltiples sedes, solo tomar las que empiecen con el prefijo
-                                    if ($prefijoTenant && !str_starts_with($espacioNombreExcel, rtrim($prefijoTenant, '-'))) {
-                                        // Este espacio es de otra sede, saltar silenciosamente
+                                    // FILTRO ESTRICTO: Solo procesar espacios que EMPIECEN con el prefijo del tenant
+                                    // El Excel contiene múltiples sedes mezcladas (TH-01, CC-05, 07-34, etc.)
+                                    // SOLO procesamos los que empiecen con "TH-" en este caso (case-insensitive)
+                                    $espacioNombreUpper = strtoupper($espacioNombreExcel);
+                                    if (!$prefijoTenant || !str_starts_with($espacioNombreUpper, $prefijoTenant . '-')) {
+                                        // Espacio sin prefijo TH- o de otra sede - IGNORAR
                                         $espaciosOtrosTenants++;
                                         continue;
                                     }
@@ -404,6 +416,12 @@ class DataLoadController extends Controller
                                     if (!$espacioModel) {
                                         Log::warning("⚠ Fila $index: Espacio '{$espacioNombreExcel}' del tenant actual NO EXISTE en BD");
                                         $espaciosNoEncontrados++;
+                                        
+                                        // Trackear espacios faltantes únicos
+                                        if (!in_array($espacioNombreExcel, $espaciosFaltantes)) {
+                                            $espaciosFaltantes[] = $espacioNombreExcel;
+                                        }
+                                        
                                         continue; 
                                     }
 
@@ -423,6 +441,11 @@ class DataLoadController extends Controller
                                     } else {
                                         $processedHorariosCount++;
                                         $planificacionesGuardadas++;
+                                        
+                                        // Log de éxito solo cada 50 planificaciones para no saturar
+                                        if ($planificacionesGuardadas % 50 == 1) {
+                                            Log::info("✓ Planificación #{$planificacionesGuardadas}: {$dia}.{$modulo} → {$espacioIdFinal}");
+                                        }
                                     }
                                 } else {
                                     // Solo registrar si hay contenido pero no matchea (puede ser formato inesperado)
@@ -469,6 +492,14 @@ class DataLoadController extends Controller
             Log::info('  → Espacios con clases: ' . $totalEspaciosConClases);
             Log::info('  → Espacios otros tenants (saltados): ' . $espaciosOtrosTenants);
             Log::info('  → Espacios no encontrados en BD: ' . $espaciosNoEncontrados);
+            
+            if (!empty($espaciosFaltantes)) {
+                Log::warning('⚠ ESPACIOS FALTANTES QUE DEBES CREAR MANUALMENTE:');
+                foreach ($espaciosFaltantes as $espFaltante) {
+                    Log::warning('  - ' . $espFaltante);
+                }
+            }
+            
             Log::info('  → Errores encontrados: ' . count($errors));
             Log::info('═══════════════════════════════════════════════════════════');
 
