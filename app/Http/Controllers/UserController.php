@@ -174,7 +174,17 @@ class UserController extends Controller
 
             // Validar contraseña del wizard si fue proporcionada
             if (!empty($validated['wizard_password'])) {
-                if ($validated['wizard_password'] !== env('TENANT_INIT_PASSWORD')) {
+                $expectedPassword = config('app.tenant_init_password', env('TENANT_INIT_PASSWORD'));
+                $providedPassword = trim($validated['wizard_password']);
+                
+                Log::info('Validando contraseña wizard', [
+                    'provided_length' => strlen($providedPassword),
+                    'expected_length' => strlen($expectedPassword),
+                    'expected_is_null' => is_null($expectedPassword),
+                    'passwords_match' => $providedPassword === $expectedPassword
+                ]);
+                
+                if ($providedPassword !== $expectedPassword) {
                     Log::warning('Intento de edición de usuario con contraseña de wizard incorrecta', [
                         'run' => $user->run,
                         'ip' => $request->ip(),
@@ -183,20 +193,20 @@ class UserController extends Controller
                     if ($request->ajax()) {
                         return response()->json([
                             'success' => false,
-                            'message' => 'Contraseña del wizard incorrecta.'
+                            'message' => 'Contraseña admin incorrecta.'
                         ], 422);
                     }
-                    return back()->withErrors(['wizard_password' => 'Contraseña del wizard incorrecta.'])->withInput();
+                    return back()->withErrors(['wizard_password' => 'Contraseña admin incorrecta.'])->withInput();
                 }
             } elseif ($isMarkingAsSuperuser) {
                 // Si está intentando marcar como superusuario pero no proporcionó contraseña
                 if ($request->ajax()) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'La contraseña del wizard es obligatoria para otorgar permisos de superusuario.'
+                        'message' => 'La contraseña admin es obligatoria para otorgar permisos de superusuario.'
                     ], 422);
                 }
-                return back()->withErrors(['wizard_password' => 'La contraseña del wizard es obligatoria para otorgar permisos de superusuario.'])->withInput();
+                return back()->withErrors(['wizard_password' => 'La contraseña admin es obligatoria para otorgar permisos de superusuario.'])->withInput();
             }
 
             $user->update([
