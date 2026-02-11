@@ -42,6 +42,9 @@
                             <x-form.input withicon id="run" class="block w-full" type="text" name="run"
                                 value="{{ old('run', $user->run ?? '') }}" autofocus placeholder="{{ __('RUN') }}" />
                         </x-form.input-with-icon-wrapper>
+                        @error('run')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div>
@@ -53,6 +56,9 @@
                             <x-form.input withicon id="name" class="block w-full" type="text" name="name"
                                 value="{{ old('name', $user->name ?? '') }}" placeholder="{{ __('Nombre') }}" />
                         </x-form.input-with-icon-wrapper>
+                        @error('name')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
 
@@ -67,6 +73,9 @@
                             <x-form.input withicon id="email" class="block w-full" type="email" name="email"
                                 value="{{ old('email', $user->email ?? '') }}" placeholder="{{ __('Correo') }}" />
                         </x-form.input-with-icon-wrapper>
+                        @error('email')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div>
@@ -78,6 +87,9 @@
                             <x-form.input withicon id="celular" class="block w-full" type="text" name="celular"
                                 value="{{ old('celular', $user->celular ?? '') }}" placeholder="{{ __('Celular') }}" />
                         </x-form.input-with-icon-wrapper>
+                        @error('celular')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
 
@@ -93,6 +105,9 @@
                                 value="{{ old('direccion', $user->direccion ?? '') }}"
                                 placeholder="{{ __('Dirección') }}" />
                         </x-form.input-with-icon-wrapper>
+                        @error('direccion')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div>
@@ -105,6 +120,9 @@
                                 name="fecha_nacimiento"
                                 value="{{ old('fecha_nacimiento', $user->fecha_nacimiento ?? '') }}" />
                         </x-form.input-with-icon-wrapper>
+                        @error('fecha_nacimiento')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
 

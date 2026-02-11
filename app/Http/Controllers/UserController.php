@@ -155,6 +155,18 @@ class UserController extends Controller
                 'direccion' => 'nullable|string|max:255',
                 'fecha_nacimiento' => 'nullable|date',
                 'is_superuser' => 'boolean'
+            ], [
+                'email.unique' => 'Este correo electrónico ya está registrado en el sistema.',
+                'run.unique' => 'Este RUN ya está registrado en el sistema.',
+                'run.required' => 'El RUN es obligatorio.',
+                'run.integer' => 'El RUN debe ser un número válido.',
+                'run.digits_between' => 'El RUN debe tener entre 7 y 8 dígitos.',
+                'email.required' => 'El correo electrónico es obligatorio.',
+                'email.email' => 'Debe ingresar un correo electrónico válido.',
+                'name.required' => 'El nombre es obligatorio.',
+                'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+                'roles.required' => 'Debe seleccionar al menos un rol.',
+                'celular.regex' => 'El celular debe comenzar con 9 y tener 9 dígitos.',
             ]);
 
             // Validar contraseña del wizard si fue proporcionada
