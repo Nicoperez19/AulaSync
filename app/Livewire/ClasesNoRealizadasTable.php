@@ -484,7 +484,7 @@ class ClasesNoRealizadasTable extends Component
         // Si el periodo no ha iniciado, no mostrar datos
         if ($periodoNoIniciado) {
             return view('livewire.clases-no-realizadas-table', [
-                'clasesNoRealizadas' => collect()->paginate($this->perPage),
+                'clasesNoRealizadas' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, $this->perPage),
                 'estadisticas' => [
                     'total' => 0,
                     'pendientes' => 0,
