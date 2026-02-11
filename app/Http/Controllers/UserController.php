@@ -137,18 +137,13 @@ class UserController extends Controller
     public function update(Request $request, User $user)
     {
         try {
-            // Convertir el RUN a entero antes de la validación
-            if ($request->has('run')) {
-                $request->merge(['run' => (int) $request->run]);
-            }
-
             // Validación condicional: wizard_password es obligatorio si se marca como superusuario
             $isMarkingAsSuperuser = $request->has('is_superuser') && $request->input('is_superuser') && !$user->is_superuser;
             
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
-                'email' => 'required|string|email|max:255|unique:users,email,' . $user->run . ',run',
-                'run' => 'required|integer|digits_between:7,8|unique:users,run,' . $user->run . ',run',
+                'email' => ['required', 'string', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users')->ignore($user->run, 'run')],
+                'run' => ['required', 'integer', 'digits_between:7,8', \Illuminate\Validation\Rule::unique('users')->ignore($user->run, 'run')],
                 'celular' => 'nullable|string|regex:/^9\d{8}$/',
                 'password' => 'nullable|string|min:8',
                 'wizard_password' => $isMarkingAsSuperuser ? 'required|string' : 'nullable|string',
@@ -156,11 +151,9 @@ class UserController extends Controller
                 'roles.*' => 'exists:roles,id',
                 'permissions' => 'nullable|array',
                 'permissions.*' => 'exists:permissions,id',
-                'year_of_entry' => 'nullable|integer|min:2010|max:' . date('Y'),
-                'year_of_graduation' => 'nullable|integer|min:2010|max:' . (date('Y') + 5),
-                'career' => 'nullable|string|max:255',
-                'current_semester' => 'nullable|integer|min:1|max:20',
-                'is_active' => 'boolean',
+                'anio_ingreso' => 'nullable|integer|min:2010|max:' . date('Y'),
+                'direccion' => 'nullable|string|max:255',
+                'fecha_nacimiento' => 'nullable|date',
                 'is_superuser' => 'boolean'
             ]);
 
@@ -196,11 +189,9 @@ class UserController extends Controller
                 'email' => $validated['email'],
                 'run' => $validated['run'],
                 'celular' => $validated['celular'] ?? null,
-                'year_of_entry' => $validated['year_of_entry'] ?? null,
-                'year_of_graduation' => $validated['year_of_graduation'] ?? null,
-                'career' => $validated['career'] ?? null,
-                'current_semester' => $validated['current_semester'] ?? null,
-                'is_active' => $validated['is_active'] ?? true,
+                'anio_ingreso' => $validated['anio_ingreso'] ?? null,
+                'direccion' => $validated['direccion'] ?? null,
+                'fecha_nacimiento' => $validated['fecha_nacimiento'] ?? null,
                 'is_superuser' => $validated['is_superuser'] ?? false
             ]);
 
@@ -212,6 +203,12 @@ class UserController extends Controller
             if (!empty($validated['permissions'])) {
                 $user->permissions()->sync($validated['permissions']);
             }
+
+            Log::info('Usuario actualizado exitosamente', [
+                'run' => $user->run,
+                'updated_by' => auth()->user()->run ?? 'unknown',
+                'is_superuser' => $user->is_superuser
+            ]);
 
             if ($request->ajax()) {
                 return response()->json([

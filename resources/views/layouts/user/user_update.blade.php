@@ -135,6 +135,7 @@
                                 <x-heroicon-o-lock-closed class="w-5 h-5" />
                             </x-slot>
                             <x-form.input withicon id="password" name="password" class="block w-full" type="password"
+                                autocomplete="new-password"
                                 placeholder="{{ isset($user) ? __('Dejar en blanco si no desea cambiarla') : __('Mínimo 8 caracteres') }}"
                                 {{ !isset($user) ? 'required' : '' }} />
                         </x-form.input-with-icon-wrapper>
