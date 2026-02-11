@@ -134,9 +134,12 @@ class UserController extends Controller
         }
     }
 
-    public function update(Request $request, User $user)
+    public function update(Request $request, $run)
     {
         try {
+            // Buscar el usuario por RUN
+            $user = User::where('run', $run)->firstOrFail();
+            
             // Validación condicional: wizard_password es obligatorio si se marca como superusuario
             $isMarkingAsSuperuser = $request->has('is_superuser') && $request->input('is_superuser') && !$user->is_superuser;
             

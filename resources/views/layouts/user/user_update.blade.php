@@ -242,6 +242,7 @@
                                     <x-heroicon-o-lock-closed class="w-5 h-5" />
                                 </x-slot>
                                 <x-form.input withicon id="wizard_password" name="wizard_password" class="block w-full" type="password"
+                                    autocomplete="off"
                                     placeholder="{{ __('Ingresa la contraseña para efectuar el cambio') }}"
                                     x-bind:required="isSuperuser" />
                             </x-form.input-with-icon-wrapper>
