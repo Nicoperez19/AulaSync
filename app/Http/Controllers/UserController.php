@@ -142,8 +142,8 @@ class UserController extends Controller
             
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
-                'email' => ['required', 'string', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users')->ignore($user->run, 'run')],
-                'run' => ['required', 'integer', 'digits_between:7,8', \Illuminate\Validation\Rule::unique('users')->ignore($user->run, 'run')],
+                'email' => ['required', 'string', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users', 'email')->ignore($user->run, 'run')],
+                'run' => ['required', 'integer', 'digits_between:7,8', \Illuminate\Validation\Rule::unique('users', 'run')->ignore($user->run, 'run')],
                 'celular' => 'nullable|string|regex:/^9\d{8}$/',
                 'password' => 'nullable|string|min:8',
                 'wizard_password' => $isMarkingAsSuperuser ? 'required|string' : 'nullable|string',
