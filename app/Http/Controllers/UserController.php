@@ -154,7 +154,6 @@ class UserController extends Controller
                 'roles.*' => 'exists:roles,id',
                 'permissions' => 'nullable|array',
                 'permissions.*' => 'exists:permissions,id',
-                'anio_ingreso' => 'nullable|integer|min:2010|max:' . date('Y'),
                 'direccion' => 'nullable|string|max:255',
                 'fecha_nacimiento' => 'nullable|date',
                 'is_superuser' => 'boolean'
@@ -214,7 +213,6 @@ class UserController extends Controller
                 'email' => $validated['email'],
                 'run' => $validated['run'],
                 'celular' => $validated['celular'] ?? null,
-                'anio_ingreso' => $validated['anio_ingreso'] ?? null,
                 'direccion' => $validated['direccion'] ?? null,
                 'fecha_nacimiento' => $validated['fecha_nacimiento'] ?? null,
                 'is_superuser' => $validated['is_superuser'] ?? false

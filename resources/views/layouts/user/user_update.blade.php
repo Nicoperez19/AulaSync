@@ -126,25 +126,8 @@
                     </div>
                 </div>
 
-                <!-- Año de Ingreso y Contraseña -->
+                <!-- Contraseña -->
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div class="space-y-2">
-                        <x-form.label for="anio_ingreso_add" :value="__('Año de Ingreso')" class="text-left" />
-                        <select id="anio_ingreso" name="anio_ingreso" class="block w-full sm:w-1/2" required>
-                            <option value="" disabled selected>Seleccione un año</option>
-                            @foreach ($years as $year)
-                                <option value="{{ $year }}"
-                                    {{ old('anio_ingreso', $user->anio_ingreso ?? '') == $year ? 'selected' : '' }}>
-                                    {{ $year }}
-                                </option>
-                            @endforeach
-                        </select>
-
-                        @error('anio_ingreso')
-                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
-                        @enderror
-                    </div>
-
                     <!-- Contraseña del Usuario -->
                     <div>
                         <x-form.label for="password" :value="__('Contraseña' . (!isset($user) ? ' *' : ' Nueva'))" />

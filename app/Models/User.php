@@ -35,7 +35,6 @@ class User extends Authenticatable
         'celular',
         'direccion',
         'fecha_nacimiento',
-        'anio_ingreso',
         'id_universidad',
         'id_facultad',
         'id_carrera',
