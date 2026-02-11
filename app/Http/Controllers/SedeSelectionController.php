@@ -14,7 +14,7 @@ class SedeSelectionController extends Controller
 
     /**
      * Mostrar la página de selección de sedes
-     * Filtra solo las sedes asignadas al usuario autenticado
+     * Filtra según los permisos del usuario
      */
     public function index()
     {
@@ -25,14 +25,18 @@ class SedeSelectionController extends Controller
         })
         ->with(['tenant', 'universidad', 'comuna']);
         
+        // Los superusuarios ven TODAS las sedes disponibles
+        if ($user->is_superuser) {
+            // No aplicar filtros - ver todas las sedes activas
+        }
         // Si el usuario tiene una sede específica asignada, mostrar solo esa
-        if ($user->id_sede) {
+        elseif ($user->id_sede) {
             $query->where('id_sede', $user->id_sede);
-        } elseif ($user->id_universidad) {
-            // Si el usuario tiene universidad asignada pero no sede, mostrar todas las de esa U
+        } 
+        // Si el usuario tiene universidad asignada pero no sede, mostrar todas las de esa U
+        elseif ($user->id_universidad) {
             $query->where('id_universidad', $user->id_universidad);
         }
-        // Si no tiene ni sede ni universidad (ej. Super Admin global), ve todas las sedes
         
         $sedes = $query->get();
 

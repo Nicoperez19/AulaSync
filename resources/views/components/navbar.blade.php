@@ -75,6 +75,13 @@
                     {{ __('Perfil') }}
                 </x-dropdown-link>
 
+                @if(Auth::user()->is_superuser)
+                    <x-dropdown-link :href="route('sedes.selection')">
+                        <x-heroicon-o-building-office class="w-4 h-4 mr-2 inline" aria-hidden="true" />
+                        {{ __('Cambiar Sede') }}
+                    </x-dropdown-link>
+                @endif
+
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
 
