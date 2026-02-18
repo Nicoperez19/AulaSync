@@ -242,7 +242,7 @@
         }
 
         function performSearch(query) {
-            const chapters = @json(array_values(array_map(fn($c) => ['title' => $c['title'], 'slug' => $c['slug'], 'text' => strip_tags($c['html'])], $chapters)));
+            const chapters = @json($chaptersSearch);
             const results = [];
 
             chapters.forEach(chapter => {

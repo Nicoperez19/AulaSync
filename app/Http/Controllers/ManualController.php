@@ -44,9 +44,19 @@ class ManualController extends Controller
             ? $converter->convert($chapters[0]['intro'])->getContent()
             : '';
 
+        // Preparar datos para el buscador JS (sin html completo, solo texto plano)
+        $chaptersSearch = array_values(array_map(function ($c) {
+            return [
+                'title' => $c['title'],
+                'slug'  => $c['slug'],
+                'text'  => strip_tags($c['html']),
+            ];
+        }, $chapters));
+
         return view('manual.index', [
-            'chapters'  => $chapters,
-            'introHtml' => $introHtml,
+            'chapters'       => $chapters,
+            'introHtml'      => $introHtml,
+            'chaptersSearch' => $chaptersSearch,
         ]);
     }
 

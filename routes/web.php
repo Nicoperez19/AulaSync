@@ -29,6 +29,7 @@ use App\Http\Controllers\LicenciaProfesorController;
 use App\Http\Controllers\RecuperacionClaseController;
 use App\Http\Controllers\DiaFeriadoController;
 use App\Http\Controllers\ManualController;
+use App\Http\Controllers\SupportTicketController;
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
@@ -95,6 +96,19 @@ Route::middleware(['tenant', 'extend.execution:180'])->group(function () {
 // Manual de Usuario - accesible para cualquier usuario autenticado
 Route::middleware(['auth'])->group(function () {
     Route::get('/ayuda', [ManualController::class, 'index'])->name('manual.index');
+});
+
+// Soporte Técnico (sistema de tickets)
+Route::middleware(['auth', 'tenant.init'])->prefix('soporte')->name('soporte.')->group(function () {
+    Route::get('/',                               [SupportTicketController::class, 'index'])->name('index');
+    Route::get('/nuevo',                          [SupportTicketController::class, 'create'])->name('create');
+    Route::post('/',                              [SupportTicketController::class, 'store'])->name('store');
+    Route::get('/{ticket}',                       [SupportTicketController::class, 'show'])->name('show');
+    Route::post('/{ticket}/responder',            [SupportTicketController::class, 'reply'])->name('reply');
+    Route::patch('/{ticket}/estado',              [SupportTicketController::class, 'updateStatus'])->name('status');
+    Route::patch('/{ticket}/asignar',             [SupportTicketController::class, 'assign'])->name('assign');
+    Route::post('/{ticket}/cerrar',               [SupportTicketController::class, 'close'])->name('close');
+    Route::post('/{ticket}/reabrir',              [SupportTicketController::class, 'reopen'])->name('reopen');
 });
 
 // Dashboard - Solo Administrador y Supervisor
