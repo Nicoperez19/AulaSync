@@ -28,6 +28,7 @@ use App\Http\Controllers\ClasesNoRealizadasController;
 use App\Http\Controllers\LicenciaProfesorController;
 use App\Http\Controllers\RecuperacionClaseController;
 use App\Http\Controllers\DiaFeriadoController;
+use App\Http\Controllers\ManualController;
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
@@ -89,6 +90,11 @@ Route::get('/', function () {
 Route::middleware(['tenant', 'extend.execution:180'])->group(function () {
     Route::get('/modulos-actuales', [\App\Http\Controllers\TableController::class, 'index'])->name('modulos.actuales');
     Route::get('/modulos-actuales/actualizar-datos', [\App\Http\Controllers\TableController::class, 'actualizarDatos'])->name('modulos.actuales.datos');
+});
+
+// Manual de Usuario - accesible para cualquier usuario autenticado
+Route::middleware(['auth'])->group(function () {
+    Route::get('/ayuda', [ManualController::class, 'index'])->name('manual.index');
 });
 
 // Dashboard - Solo Administrador y Supervisor
