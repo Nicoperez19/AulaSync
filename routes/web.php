@@ -96,6 +96,9 @@ Route::middleware(['tenant', 'extend.execution:180'])->group(function () {
 // Manual de Usuario - accesible para cualquier usuario autenticado
 Route::middleware(['auth'])->group(function () {
     Route::get('/ayuda', [ManualController::class, 'index'])->name('manual.index');
+    Route::get('/ayuda/images/{file}', [ManualController::class, 'serveImage'])
+         ->where('file', '[a-zA-Z0-9_\-\.]+')
+         ->name('manual.image');
 });
 
 // Soporte Técnico (sistema de tickets)

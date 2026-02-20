@@ -15,65 +15,65 @@
 
     <style>
         /* Estilos para el contenido markdown renderizado */
-        .manual-content h1 { font-size: 1.875rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #1e3a5f; border-bottom: 2px solid #3b82f6; padding-bottom: 0.5rem; }
-        .manual-content h2 { font-size: 1.5rem; font-weight: 700; margin-top: 1.75rem; margin-bottom: 0.75rem; color: #1e40af; }
-        .manual-content h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #1d4ed8; }
-        .manual-content h4 { font-size: 1.1rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #2563eb; }
+        .manual-content h1 { font-size: 1.875rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.75rem; color: #7f1d1d; border-bottom: 2px solid #ef4444; padding-bottom: 0.5rem; }
+        .manual-content h2 { font-size: 1.5rem; font-weight: 700; margin-top: 1.75rem; margin-bottom: 0.75rem; color: #991b1b; }
+        .manual-content h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; color: #b91c1c; }
+        .manual-content h4 { font-size: 1.1rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #dc2626; }
         .manual-content p { margin-top: 0.5rem; margin-bottom: 1rem; line-height: 1.75; color: #374151; }
         .manual-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; }
         .manual-content ol { list-style-type: decimal; padding-left: 1.5rem; margin-bottom: 1rem; }
         .manual-content li { margin-bottom: 0.25rem; line-height: 1.75; color: #374151; }
         .manual-content strong { font-weight: 700; color: #111827; }
         .manual-content em { font-style: italic; }
-        .manual-content code { background-color: #f3f4f6; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.875rem; font-family: monospace; color: #dc2626; }
+        .manual-content code { background-color: #fef2f2; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-size: 0.875rem; font-family: monospace; color: #b91c1c; }
         .manual-content pre { background-color: #1f2937; color: #f9fafb; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; margin-bottom: 1rem; }
         .manual-content pre code { background-color: transparent; color: inherit; padding: 0; }
-        .manual-content blockquote { border-left: 4px solid #3b82f6; padding-left: 1rem; margin: 1rem 0; color: #6b7280; font-style: italic; }
+        .manual-content blockquote { border-left: 4px solid #ef4444; padding-left: 1rem; margin: 1rem 0; color: #6b7280; font-style: italic; }
         .manual-content hr { border: none; border-top: 1px solid #e5e7eb; margin: 1.5rem 0; }
-        .manual-content a { color: #2563eb; text-decoration: underline; }
-        .manual-content img { max-width: 100%; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 1rem 0; }
+        .manual-content a { color: #dc2626; text-decoration: underline; }
+        .manual-content img { max-width: 100%; border-radius: 0.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin: 1rem 0; border: 1px solid #fee2e2; }
         .manual-content table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
         .manual-content th, .manual-content td { border: 1px solid #d1d5db; padding: 0.5rem 0.75rem; text-align: left; }
-        .manual-content th { background-color: #f9fafb; font-weight: 600; }
+        .manual-content th { background-color: #fef2f2; font-weight: 600; color: #991b1b; }
 
         .chapter-section { display: none; }
         .chapter-section.active { display: block; }
 
         .toc-item { transition: all 0.15s ease; }
-        .toc-item.active { background-color: #dbeafe; border-left: 3px solid #2563eb; }
-        .toc-item:not(.active):hover { background-color: #f0f4ff; }
+        .toc-item.active { background-color: #fee2e2; border-left: 3px solid #dc2626; }
+        .toc-item:not(.active):hover { background-color: #fef2f2; }
     </style>
 </head>
 
 <body class="font-sans antialiased bg-gray-100">
 
     <!-- Barra superior -->
-    <header class="fixed top-0 left-0 right-0 z-50 bg-[#1a3a5c] shadow-md flex items-center justify-between px-4 py-3">
+    <header class="fixed top-0 left-0 right-0 z-50 bg-red-800 shadow-md flex items-center justify-between px-4 py-3">
         <div class="flex items-center gap-3">
             <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}"
-               class="flex items-center gap-2 text-white hover:text-blue-200 transition-colors">
+               class="flex items-center gap-2 text-white hover:text-red-200 transition-colors">
                 <i class="fas fa-arrow-left text-sm"></i>
                 <span class="text-sm font-medium hidden sm:inline">Volver</span>
             </a>
             <div class="w-px h-5 bg-white/30 hidden sm:block"></div>
             <div class="flex items-center gap-2">
-                <i class="fas fa-book-open text-blue-300 text-lg"></i>
+                <i class="fas fa-book-open text-red-300 text-lg"></i>
                 <span class="text-white font-semibold text-lg">Manual de Usuario</span>
-                <span class="text-blue-300 text-xs ml-1 hidden sm:inline">— Gestor de Aulas IT</span>
+                <span class="text-red-300 text-xs ml-1 hidden sm:inline">— Gestor de Aulas IT</span>
             </div>
         </div>
         <div class="flex items-center gap-2">
             <!-- Buscador interno -->
             <div class="relative hidden md:flex items-center">
-                <i class="fas fa-search absolute left-3 text-gray-400 text-sm"></i>
+                <i class="fas fa-search absolute left-3 text-red-300 text-sm"></i>
                 <input
                     type="text"
                     id="manual-search"
                     placeholder="Buscar en el manual..."
-                    class="pl-9 pr-4 py-1.5 text-sm rounded-md bg-white/10 text-white placeholder-blue-200 border border-white/20 focus:outline-none focus:bg-white/20 focus:border-white/40 w-56"
+                    class="pl-9 pr-4 py-1.5 text-sm rounded-md bg-white/10 text-white placeholder-red-200 border border-white/20 focus:outline-none focus:bg-white/20 focus:border-white/40 w-56"
                 >
             </div>
-            <span id="manual-version" class="text-blue-200 text-xs hidden sm:inline">
+            <span id="manual-version" class="text-red-200 text-xs hidden sm:inline">
                 Actualizado: {{ date('d/m/Y', filemtime(base_path('docs/MANUAL.md'))) }}
             </span>
         </div>
@@ -101,7 +101,7 @@
                         data-slug="{{ $chapter['slug'] }}"
                         class="toc-item w-full text-left px-4 py-2.5 flex items-start gap-2.5 border-l-3 border-transparent {{ $index === 0 ? 'active' : '' }}"
                     >
-                        <span class="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-xs font-bold flex items-center justify-center mt-0.5">
+                        <span class="flex-shrink-0 w-6 h-6 rounded-full bg-red-100 text-red-700 text-xs font-bold flex items-center justify-center mt-0.5">
                             {{ $index + 1 }}
                         </span>
                         <span class="text-sm text-gray-700 font-medium leading-snug">{{ $chapter['title'] }}</span>
@@ -112,7 +112,7 @@
             <!-- Footer sidebar -->
             <div class="px-4 py-3 bg-gray-50 border-t border-gray-200">
                 <a href="{{ route('dashboard') }}"
-                   class="flex items-center gap-2 text-xs text-gray-500 hover:text-blue-600 transition-colors">
+                   class="flex items-center gap-2 text-xs text-gray-500 hover:text-red-600 transition-colors">
                     <i class="fas fa-home"></i>
                     <span>Ir al inicio</span>
                 </a>
@@ -123,7 +123,7 @@
         <button
             id="sidebar-toggle"
             onclick="document.getElementById('manual-sidebar').classList.toggle('-translate-x-full')"
-            class="fixed bottom-4 left-4 z-50 md:hidden bg-blue-600 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg"
+            class="fixed bottom-4 left-4 z-50 md:hidden bg-red-600 text-white rounded-full w-12 h-12 flex items-center justify-center shadow-lg"
         >
             <i class="fas fa-list"></i>
         </button>
@@ -145,12 +145,12 @@
                         class="chapter-section {{ $index === 0 ? 'active' : '' }}"
                     >
                         <!-- Header de capítulo -->
-                        <div class="mb-6 pb-4 border-b-2 border-blue-100">
+                        <div class="mb-6 pb-4 border-b-2 border-red-100">
                             <div class="flex items-center gap-3 mb-1">
-                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-600 text-white text-sm font-bold">
+                                <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-600 text-white text-sm font-bold">
                                     {{ $index + 1 }}
                                 </span>
-                                <span class="text-xs font-medium text-blue-500 uppercase tracking-wide">Capítulo {{ $index + 1 }}</span>
+                                <span class="text-xs font-medium text-red-500 uppercase tracking-wide">Capítulo {{ $index + 1 }}</span>
                             </div>
                         </div>
 

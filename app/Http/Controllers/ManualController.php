@@ -44,6 +44,23 @@ class ManualController extends Controller
             ? $converter->convert($chapters[0]['intro'])->getContent()
             : '';
 
+        // Reescribir rutas de imágenes relativas a la URL servida por Laravel
+        foreach ($chapters as &$chapter) {
+            $chapter['html'] = preg_replace_callback(
+                '/<img([^>]*?)src="([^"]+)"([^>]*?)>/',
+                function ($matches) {
+                    $src = $matches[2];
+                    // Solo reescribir rutas relativas (sin http/https/data)
+                    if (!preg_match('/^(https?:|data:|\/)/', $src)) {
+                        $src = route('manual.image', ['file' => basename($src)]);
+                    }
+                    return '<img' . $matches[1] . 'src="' . $src . '"' . $matches[3] . '>';
+                },
+                $chapter['html']
+            );
+        }
+        unset($chapter);
+
         // Preparar datos para el buscador JS (sin html completo, solo texto plano)
         $chaptersSearch = array_values(array_map(function ($c) {
             return [
@@ -111,6 +128,32 @@ class ManualController extends Controller
         }
 
         return $chapters;
+    }
+
+    /**
+     * Sirve una imagen almacenada en docs/ de forma segura.
+     */
+    public function serveImage(string $file)
+    {
+        $path = base_path('docs/' . $file);
+
+        if (!file_exists($path)) {
+            abort(404);
+        }
+
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+        $mimeTypes = [
+            'png'  => 'image/png',
+            'jpg'  => 'image/jpeg',
+            'jpeg' => 'image/jpeg',
+            'gif'  => 'image/gif',
+            'webp' => 'image/webp',
+            'svg'  => 'image/svg+xml',
+        ];
+
+        $mime = $mimeTypes[$extension] ?? 'application/octet-stream';
+
+        return response()->file($path, ['Content-Type' => $mime]);
     }
 
     /**
