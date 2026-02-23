@@ -3,11 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Reserva;
+use App\Models\Profesor;
 use Illuminate\Http\Request;
 use App\Models\Universidad;
 use App\Models\Espacio;
+use App\Mail\ConfirmacionReserva;
+use App\Mail\ConfirmacionDevolucion;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 class ReservasController extends Controller
 {
@@ -78,6 +82,9 @@ class ReservasController extends Controller
 
         $reserva = Reserva::create($reservaData);
 
+        // Enviar correo de confirmación de reserva
+        $this->enviarCorreoReserva($reserva);
+
         // Marcar el espacio como ocupado para que el plano se actualice
         try {
             $espacio = Espacio::where('id_espacio', $request->id_espacio)->first();
@@ -117,7 +124,11 @@ class ReservasController extends Controller
     // Eliminar una reserva
     public function destroy($id_reserva)
     {
-        $reserva = Reserva::findOrFail($id_reserva);
+        $reserva = Reserva::with(['profesor', 'solicitante', 'espacio', 'asignatura'])->findOrFail($id_reserva);
+
+        // Enviar correo de confirmación de devolución
+        $this->enviarCorreoDevolucion($reserva);
+
         // Marcar el espacio relacionado como disponible
         if ($reserva->id_espacio) {
             $espacio = Espacio::where('id_espacio', $reserva->id_espacio)->first();
@@ -156,6 +167,55 @@ class ReservasController extends Controller
 
     return response()->json($espacios);
 }
+
+    /**
+     * Envía el correo de confirmación de reserva al profesor o solicitante.
+     */
+    private function enviarCorreoReserva(Reserva $reserva): void
+    {
+        try {
+            $reserva->load(['profesor', 'solicitante', 'espacio', 'asignatura']);
+            $email = $this->resolverEmail($reserva);
+            if ($email) {
+                Mail::to($email)->send(new ConfirmacionReserva($reserva));
+            }
+        } catch (\Exception $e) {
+            Log::error('Error al enviar correo de confirmación de reserva: ' . $e->getMessage(), [
+                'id_reserva' => $reserva->id_reserva,
+            ]);
+        }
+    }
+
+    /**
+     * Envía el correo de confirmación de devolución al profesor o solicitante.
+     */
+    private function enviarCorreoDevolucion(Reserva $reserva): void
+    {
+        try {
+            $email = $this->resolverEmail($reserva);
+            if ($email) {
+                Mail::to($email)->send(new ConfirmacionDevolucion($reserva));
+            }
+        } catch (\Exception $e) {
+            Log::error('Error al enviar correo de confirmación de devolución: ' . $e->getMessage(), [
+                'id_reserva' => $reserva->id_reserva,
+            ]);
+        }
+    }
+
+    /**
+     * Resuelve el correo electrónico del responsable de la reserva.
+     */
+    private function resolverEmail(Reserva $reserva): ?string
+    {
+        if ($reserva->run_profesor && $reserva->profesor) {
+            return $reserva->profesor->email ?: null;
+        }
+        if ($reserva->run_solicitante && $reserva->solicitante) {
+            return $reserva->solicitante->correo ?: null;
+        }
+        return null;
+    }
 
     /**
      * Verifica y actualiza los estados de espacios basándose en reservas expiradas

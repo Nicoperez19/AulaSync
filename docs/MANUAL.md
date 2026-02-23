@@ -1,5 +1,54 @@
 # Manual de Usuario 
 
+## Navegación
+![alt text](image-16.png)
+La barra de navegación superior es el elemento de control constante que permite al usuario gestionar su sesión y acceder a herramientas de apoyo rápidas desde cualquier sección del sistema.A continuación, se detallan sus componentes:
+
+### Identidad Institucional
+Ubicado en el extremo izquierdo, se presenta el logotipo del Instituto Tecnológico UCSC. Al hacer clic sobre este elemento, el sistema redireccionará automáticamente al usuario al Dashboard principal del sistema.
+
+### Panel de Navegación Lateral (Colapsado)
+Para mostrar el menú lateral haga click en este botón.
+
+### Panel de Navegación Lateral (Expandido)
+![alt text](image-19.png)
+El menú lateral expandido constituye el eje principal de navegación de AulaSync, permitiendo al usuario desplazarse de forma intuitiva entre los distintos módulos de gestión académica y administrativa. A continuación, se describen las secciones disponibles:
+
+- Dashboard: Es la pantalla de inicio del sistema, donde se presenta una visión global y analítica del estado de la sede a través de métricas e indicadores clave de rendimiento.
+
+- Monitoreo de Espacios: Módulo dedicado a la visualización en tiempo real del uso de las salas y laboratorios, permitiendo identificar rápidamente la disponibilidad de la infraestructura. Desde aquí se realizan las reservas mediante escaneo de código QR.
+
+- Horarios por Espacios: Permite la consulta y gestión de la programación horaria asignada a cada recinto específico del Instituto.
+
+- Horarios Profesores: Sección orientada a la revisión de las agendas de los docentes, facilitando la coordinación de actividades y la resolución de conflictos horarios.
+
+- Carga Masiva: Herramienta técnica diseñada para la importación eficiente de grandes volúmenes de datos mediante archivos externos, optimizando la actualización de registros en el sistema. (Solo visible para perfiles técnicos)
+
+- Tablero Académico: Panel de control especializado que consolida información administrativa y académica crítica para la toma de decisiones directivas.
+
+- Mantenedores: Este menú desplegable agrupa las opciones de configuración base del sistema, permitiendo la gestión y edición de las tablas maestras que alimentan los demás módulos de AulaSync. (Este menú es solo visible para los perfiles técnicos)
+
+### Acciones Rápidas
+Este botón destacado permite ejecutar funciones relacionadas con la reserva de espacios y la puesta en mantenimiento de estos.
+
+### Centro de Notificaciones
+Representado por el icono de campana, este apartado alerta al usuario sobre eventos importantes, actualizaciones del sistema o estados de carga masiva de datos que requieran atención inmediata.
+
+### Menú de Perfil de Usuario
+Muestra el nombre del usuario con sesión activa (por ejemplo, Lucas Ayala). Al desplegar este menú, se habilitan las siguientes opciones:
+
+- Perfil: Acceso a los detalles de la cuenta del usuario.
+
+- Cambiar Sede: Permite alternar la gestión entre las distintas sedes del Instituto en caso de poseer los permisos necesarios.
+
+- Ayuda: Enlace directo a la documentación de soporte técnico.
+
+- Contactar Soporte: Canal directo para reportar incidencias o solicitar asistencia especializada.
+
+- Cerrar Sesión: Finaliza la sesión de forma segura, protegiendo la integridad de los datos académicos y administrativos gestionados.
+
+![alt text](image-18.png)
+
 ## Panel de administración general
  ![alt text](image.png)
 
@@ -81,3 +130,138 @@ Debajo del bloque de estadísticas Detalladas, usted podrá ver que clases deben
 
 ![alt text](image-14.png)
 Similar al bloque anterior usted puede ver con la misma información mencionada recientemente las *clases que no se registraron* durante el día actual.
+
+## Acciones Rápidas
+![alt text](image-20.png)
+Al seleccionar el botón de Acciones Rápidas en la barra superior, el sistema despliega una interfaz de gestión operativa diseñada para agilizar las tareas administrativas críticas del día a día.
+
+### Resumen de Disponibilidad en Tiempo Real
+![alt text](image-22.png)
+En la parte superior se presenta un tablero informativo que indica el estado actual de la sede:
+
+- Reservas Hoy: Cantidad total de solicitudes de espacio programadas para la fecha actual.
+
+- Espacios Libres: Número de salas, laboratorios y talleres disponibles para su uso inmediato.
+
+- Espacios Ocupados: Recintos que se encuentran con actividad académica en curso.
+
+- En Mantención: Cantidad de espacios inhabilitados temporalmente por labores técnicas.
+
+### Panel de Gestión Directa
+![alt text](image-23.png)
+Esta sección permite la ejecución de flujos de trabajo principales mediante tres pilares operativos:
+
+- Crear Reserva: Acceso directo para generar una nueva asignación de espacio de manera rápida.
+
+- Gestionar Reservas: Panel de administración para editar, reasignar o cancelar reservas ya existentes en el sistema.
+
+- Gestionar Espacios: Herramienta de configuración para administrar y actualizar los estados de disponibilidad de cada recinto.
+
+### Accesos Rápidos Complementarios
+![alt text](image-21.png)
+En la zona inferior se habilitan enlaces directos a herramientas de soporte, como la visualización del Plano Digital, la generación de Reportes detallados y la administración de Usuarios.
+
+## Creación de Reserva Manual
+![alt text](image-24.png)
+Este módulo permite registrar una reserva específica para un profesor o solicitante externo de manera directa, sin depender del escaneo de código de espacio
+
+### Acceso al Formulario
+Desde el panel de Acciones Rápidas, debe seleccionar el botón destacado "Crear Nueva" ubicado dentro de la tarjeta verde de Crear Reserva. Esta acción desplegará el formulario de registro.
+
+### Información del Responsable
+En esta sección se deben ingresar los datos de contacto y validación de quien solicita el espacio:
+
+- Búsqueda: Permite localizar a una persona existente en la base de datos mediante su RUN o nombre.
+
+- Datos Obligatorios: Se debe completar el Nombre completo, RUN (sin puntos ni guion), Correo electrónico y un teléfono de contacto de 9 dígitos.
+
+- Tipo de Solicitante: Menú desplegable para categorizar al responsable como Profesor, Profesor Colaborador o Solicitante externo.
+
+### Detalles de la Reserva
+Aquí se definen las coordenadas espacio-temporales de la solicitud:
+
+- Espacio: Selección del recinto específico (sala o laboratorio) a reservar.
+
+- Fecha: Calendario para definir el día exacto de la actividad.
+
+- Bloques Horarios: Selección obligatoria del Módulo inicial y Módulo final para determinar la duración del préstamo.
+
+- Observaciones: Campo opcional para añadir detalles adicionales relevantes para la gestión administrativa.
+
+### Finalización del Registro
+Una vez validados los datos, el usuario dispone de dos controles finales:
+
+- Crear Reserva: Botón verde que confirma y guarda la información en el sistema, actualizando la disponibilidad del espacio en tiempo real.
+
+- Cancelar/Volver: Permite abortar el proceso y regresar al panel de Acciones Rápidas sin guardar los cambios.
+
+En caso de que el proceso se haya logrado concretar correctamente aparecerá el siguiente dialogo emergente:
+![alt text](image-25.png)
+
+## Gestión de reservas
+![alt text](image-26.png)
+Este panel centraliza el control de todas las reservas, permitiendo a los administradores supervisar tanto las actividades en curso como el historial de ocupación de la sede.
+
+### Filtros y Organización de Datos
+Para facilitar la localización de registros específicos, el módulo dispone de herramientas de búsqueda y ordenamiento:
+
+- Estado: Permite filtrar la lista según la condición de la reserva (Todos los estados, Activa, Finalizada o Editada).
+
+- Fecha: Filtro de calendario para visualizar registros de un día específico.
+
+- Ordenar por: Selector para organizar la tabla por criterios de temporalidad (ej. Fecha más reciente).
+
+- Actualizar: Botón de refresco manual para asegurar que se visualizan los datos en tiempo real.
+
+### Visualización de la Tabla de Registros
+La interfaz presenta una tabla detallada con la siguiente información crítica:
+
+- Estado: Indicador visual del flujo de la reserva (ej. Etiqueta verde para "Activa").
+
+- Espacio: Código identificador del recinto asignado (ej. TH-03).
+
+- Responsable: Nombre completo y categoría del solicitante (profesor o solicitante externo).
+
+- Fecha y Módulos: Detalle del día programado y el rango de bloques horarios utilizados (ej. M10-11).
+
+### Acciones de Administración
+Cada registro cuenta con una columna de Acciones que habilita controles específicos según el estado de la reserva:
+
+- Editar (Icono de lápiz): Permite modificar los datos de una reserva activa en caso de cambios de último minuto.
+
+- Cancelar (Icono de "X" roja): Elimina la reserva del sistema y libera el espacio de forma inmediata.
+
+- Ver detalles (Icono de ojo): Abre una vista de solo lectura con toda la información extendida del registro.
+
+### Creación Directa
+Desde este panel también se habilita el botón "+ Nueva Reserva", el cual redirige al usuario al formulario de creación manual detallado anteriormente, permitiendo un flujo de trabajo fluido sin necesidad de regresar al Dashboard principal.
+
+## Gestión de Espacios
+![](image-27.png)
+Este panel permite a los administradores supervisar y modificar el estado operativo de los recintos físicos de la sede (salas y laboratorios) de manera individual, garantizando que el sistema refleje la disponibilidad real de la infraestructura.
+
+### Herramientas de Filtrado y Búsqueda
+Dada la cantidad de recintos en la sede, el módulo integra controles para segmentar la información:
+
+- Estado: Filtro para visualizar espacios según su condición (Disponible, Ocupado o En Mantención).
+
+- Piso: Permite restringir la vista a un nivel específico del edificio (ej. Piso 2).
+
+- Búsqueda: Campo de texto para localizar un recinto directamente ingresando su código (ej. TH-01) o su nombre.
+
+### Control de Mantenimiento
+La funcionalidad principal de este módulo se encuentra en la columna de Acciones:
+
+- Botón Mantenimiento: Permite cambiar el estado de un recinto de forma manual. Al activar esta opción, el espacio quedará inhabilitado para nuevas reservas, apareciendo como "En Mantención" en todo el sistema hasta que el administrador revierta la acción. Al hacer click en este botón emergera un dialogo de confirmación para cambiar el espacio a modo mantención
+![alt text](image-28.png)
+
+- Botón Liberar: Si el estado del espacio es "Mantención" no se podrán ejecutar reservas en dichos espacios. Para cambiar nuevamente el espacio a "Disponible" debe pulsar en este botón. Se pedirá confirmación para ejecutar esta acción.
+![alt text](image-29.png)
+ _Nota_: En caso de que exista una reserva activa pero el espacio está físicamente desocupado, se puede utilizar el botón de liberar para cambiar el estado a Disponible, pero esto no eliminará el registro de reserva. 
+ ![alt text](image-30.png)
+
+- Sincronización: Al igual que en otros módulos, el botón Actualizar permite refrescar la lista para visualizar cambios recientes realizados por otros usuarios.
+
+
+### Flujo de Trabajo Integrado
+Para optimizar la navegación, se mantiene el botón de "+ Nueva Reserva", permitiendo que el administrador, tras verificar la disponibilidad o capacidad de una sala, proceda directamente al formulario de creación sin cambiar de sección.
