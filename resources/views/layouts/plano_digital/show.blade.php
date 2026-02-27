@@ -2895,7 +2895,14 @@
             elements.pasoClasesContainer.style.display = 'block';
             
             // OCULTAR los contenedores antiguos
-            if (elements.ocupanteContainer) elements.ocupanteContainer.style.display = 'none';
+            // Para solicitantes, MOSTRAR el contenedor de ocupante con su info detallada
+            if (elements.ocupanteContainer) {
+                if (data.tipo_ocupacion === 'solicitante') {
+                    elements.ocupanteContainer.style.display = 'block';
+                } else {
+                    elements.ocupanteContainer.style.display = 'none';
+                }
+            }
             if (elements.proximaClaseContainer) elements.proximaClaseContainer.style.display = 'none';
             if (elements.claseActualContainer) elements.claseActualContainer.style.display = 'none';
             
@@ -3019,8 +3026,17 @@
                             ${horario ? `<div class="text-xs text-blue-600">${horario}</div>` : ''}
                         </div>
                     `;
+                } else if (data.tipo_ocupacion === 'solicitante' && indicator?.estado === 'Ocupado') {
+                    // Solicitante (persona externa, no profesor)
+                    elements.pasoEstadoActual.innerHTML = `
+                        <div class="text-center">
+                            <div class="font-semibold text-blue-700 mb-1">${data.nombre || 'Solicitante'}</div>
+                            <div class="text-xs text-gray-500">${data.tipo_solicitante || 'Solicitante externo'}</div>
+                            ${data.hora_inicio ? `<div class="text-xs text-blue-600">${data.hora_inicio.substring(0, 5)}</div>` : ''}
+                        </div>
+                    `;
                 } else if (indicator?.estado === 'Ocupado' && data.nombre) {
-                    // Espacio ocupado sin asignatura → reserva espontánea o uso libre
+                    // Espacio ocupado sin asignatura → reserva espontánea o uso libre (profesor)
                     const etiqueta = data.tipo_reserva === 'espontanea' ? 'Reserva espontánea' : 'En uso';
                     elements.pasoEstadoActual.innerHTML = `
                         <div class="text-center">

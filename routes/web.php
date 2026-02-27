@@ -27,6 +27,7 @@ use App\Http\Controllers\QuickActionsController;
 use App\Http\Controllers\ClasesNoRealizadasController;
 use App\Http\Controllers\LicenciaProfesorController;
 use App\Http\Controllers\RecuperacionClaseController;
+use App\Http\Controllers\ControlDocenteController;
 use App\Http\Controllers\DiaFeriadoController;
 use App\Http\Controllers\ManualController;
 use App\Http\Controllers\SupportTicketController;
@@ -218,14 +219,25 @@ Route::group(['middleware' => ['permission:mantenedor de permisos']], function (
     Route::post('/permission/permission_store', [PermisionController::class, 'store'])->name('permission.add');
 });
 
-// Ausencias de Profesores
-Route::group(['middleware' => ['auth', 'permission:gestionar licencias profesores']], function () {
-    Route::get('/ausencias-profesores', [LicenciaProfesorController::class, 'index'])->name('ausencias-profesores');
+// Control Docente - Vista combinada Ausencias + Recuperación
+Route::group(['middleware' => ['auth']], function () {
+    Route::get('/control-docente/ausencias-recuperacion', [ControlDocenteController::class, 'ausenciasRecuperacion'])
+        ->name('control-docente.ausencias-recuperacion')
+        ->middleware('permission:gestionar licencias profesores|gestionar recuperacion clases');
 });
 
-// Recuperación de Clases
+// Ausencias de Profesores (ruta legacy, redirige a la vista combinada)
+Route::group(['middleware' => ['auth', 'permission:gestionar licencias profesores']], function () {
+    Route::get('/ausencias-profesores', function () {
+        return redirect()->route('control-docente.ausencias-recuperacion', ['tab' => 'ausencias']);
+    })->name('ausencias-profesores');
+});
+
+// Recuperación de Clases (ruta legacy, redirige a la vista combinada)
 Route::group(['middleware' => ['auth', 'permission:gestionar recuperacion clases']], function () {
-    Route::get('/recuperacion-clases', [RecuperacionClaseController::class, 'index'])->name('recuperacion-clases.index');
+    Route::get('/recuperacion-clases', function () {
+        return redirect()->route('control-docente.ausencias-recuperacion', ['tab' => 'recuperacion']);
+    })->name('recuperacion-clases.index');
 });
 
 // Días Feriados

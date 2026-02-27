@@ -1273,13 +1273,15 @@ class EspacioController extends Controller
             'fecha_actual' => $fechaActual
         ]);
         
-        // PRIMERO: Buscar reservas futuras del día actual
+        // PRIMERO: Buscar reservas futuras del día actual.
+        // Excluimos reservas espontáneas porque no tienen clase asociada y mostrarían "Reserva sin asignatura".
         $reservaFutura = Reserva::select('id_reserva', 'run_profesor', 'run_solicitante', 'hora', 'hora_salida', 'id_asignatura')
             ->with(['asignatura:id_asignatura,nombre_asignatura', 'profesor:run_profesor,name'])
             ->where('id_espacio', $idEspacio)
             ->where('fecha_reserva', $fechaActual)
             ->where('hora', '>', $horaActual)
             ->where('estado', 'activa')
+            ->where('tipo_reserva', '!=', 'espontanea')
             ->orderBy('hora', 'asc')
             ->first();
         
