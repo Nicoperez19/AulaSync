@@ -1145,7 +1145,15 @@ class EspacioController extends Controller
         // Primero intentar obtener asignatura directamente de la reserva
         $asignatura = null;
         
-        if ($reserva->id_asignatura && $reserva->asignatura) {
+        // Las reservas espontáneas NO deben mostrar información de clase programada.
+        // Esto evita que el modal de cronología muestre una asignatura incorrecta.
+        if ($reserva->tipo_reserva === 'espontanea') {
+            Log::info("Reserva espontánea - no se busca asignatura", [
+                'id_reserva' => $reserva->id_reserva,
+                'run_profesor' => $runProfesor
+            ]);
+            $asignatura = null;
+        } elseif ($reserva->id_asignatura && $reserva->asignatura) {
             // La reserva tiene asignatura asignada directamente (ej. desde acciones rápidas)
             $asignatura = $reserva->asignatura->nombre_asignatura;
             Log::info("Asignatura obtenida desde reserva", [
@@ -1357,13 +1365,14 @@ class EspacioController extends Controller
             'fecha_actual' => $fechaActual
         ]);
         
-        // PRIMERO: Buscar reservas anteriores del día actual
-        $reservaAnterior = Reserva::select('id_reserva', 'run_profesor', 'run_solicitante', 'hora', 'hora_salida', 'id_asignatura')
+        // PRIMERO: Buscar reservas FINALIZADAS anteriores del día actual.
+        // Excluimos reservas activas para no mostrar la reserva actual como "clase anterior".
+        $reservaAnterior = Reserva::select('id_reserva', 'run_profesor', 'run_solicitante', 'hora', 'hora_salida', 'id_asignatura', 'tipo_reserva')
             ->with(['asignatura:id_asignatura,nombre_asignatura', 'profesor:run_profesor,name'])
             ->where('id_espacio', $idEspacio)
             ->where('fecha_reserva', $fechaActual)
             ->where('hora', '<', $horaActual)
-            ->where('estado', 'activa')
+            ->where('estado', 'finalizada')
             ->orderBy('hora', 'desc')
             ->first();
         
@@ -1371,18 +1380,25 @@ class EspacioController extends Controller
             'encontrada' => $reservaAnterior ? 'SÍ' : 'NO',
             'id_reserva' => $reservaAnterior?->id_reserva,
             'hora' => $reservaAnterior?->hora,
-            'asignatura_id' => $reservaAnterior?->id_asignatura
+            'asignatura_id' => $reservaAnterior?->id_asignatura,
+            'tipo_reserva' => $reservaAnterior?->tipo_reserva
         ]);
         
         if ($reservaAnterior) {
+            // Las reservas espontáneas no deben mostrar nombre de asignatura
+            $esEspontanea = $reservaAnterior->tipo_reserva === 'espontanea';
+            
             Log::info("Clase anterior encontrada en RESERVAS", [
                 'espacio' => $idEspacio,
                 'hora' => $reservaAnterior->hora,
-                'asignatura' => $reservaAnterior->asignatura?->nombre_asignatura
+                'tipo_reserva' => $reservaAnterior->tipo_reserva,
+                'asignatura' => $esEspontanea ? 'Reserva espontánea' : $reservaAnterior->asignatura?->nombre_asignatura
             ]);
             
             return [
-                'asignatura' => $reservaAnterior->asignatura?->nombre_asignatura ?? 'Reserva sin asignatura',
+                'asignatura' => $esEspontanea 
+                    ? 'Reserva espontánea' 
+                    : ($reservaAnterior->asignatura?->nombre_asignatura ?? 'Reserva sin asignatura'),
                 'profesor' => $reservaAnterior->profesor?->name ?? 'No especificado',
                 'profesor_run' => $reservaAnterior->run_profesor ?? null,
                 'hora_inicio' => $reservaAnterior->hora ?? null,

@@ -3020,10 +3020,13 @@
                         </div>
                     `;
                 } else if (indicator?.estado === 'Ocupado' && data.nombre) {
+                    // Espacio ocupado sin asignatura → reserva espontánea o uso libre
+                    const etiqueta = data.tipo_reserva === 'espontanea' ? 'Reserva espontánea' : 'En uso';
                     elements.pasoEstadoActual.innerHTML = `
                         <div class="text-center">
                             <div class="font-semibold text-blue-700 mb-1">${data.nombre}</div>
-                            <div class="text-xs text-gray-500">En uso</div>
+                            <div class="text-xs text-gray-500">${etiqueta}</div>
+                            ${data.hora_inicio ? `<div class="text-xs text-blue-600">${data.hora_inicio.substring(0, 5)}</div>` : ''}
                         </div>
                     `;
                 } else {
