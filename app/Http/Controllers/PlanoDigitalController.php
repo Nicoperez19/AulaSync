@@ -177,7 +177,7 @@ class PlanoDigitalController extends Controller
             ->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'))
             ->get();
 
-        return $mapa->bloques->map(function ($bloque) use ($planificacionesActivas, $planificacionesProximas, $reservasProximas, $mapa, $horaActualStr, $fechaActual) {
+        return $mapa->bloques->map(function ($bloque) use ($planificacionesActivas, $planificacionesProximas, $reservasProximas, $mapa, $horaActualStr, $fechaActual, $moduloActual) {
             $idEspacio = $bloque->id_espacio;
             $espacio = $bloque->espacio;
 
@@ -323,10 +323,20 @@ class PlanoDigitalController extends Controller
 
     private function obtenerModuloActual(array $estadoActual): ?Modulo
     {
-        return Modulo::where('dia', $estadoActual['dia'])
+        $modulo = Modulo::where('dia', $estadoActual['dia'])
             ->where('hora_inicio', '<=', $estadoActual['hora'])
             ->where('hora_termino', '>=', $estadoActual['hora'])
             ->first();
+
+        // Si no hay módulo en curso (fuera de horario), asumir módulo 1 del día
+        if (!$modulo) {
+            $codigoDia = $this->obtenerCodigoDia($estadoActual['dia']);
+            if ($codigoDia) {
+                $modulo = Modulo::where('id_modulo', $codigoDia . '.1')->first();
+            }
+        }
+
+        return $modulo;
     }
 
     private function obtenerPlanificacionesActivas(Mapa $mapa, ?Modulo $moduloActual)
