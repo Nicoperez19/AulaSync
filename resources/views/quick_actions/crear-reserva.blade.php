@@ -137,6 +137,38 @@
                                 </div>
                                 <p class="text-xs text-gray-500 mt-1">Busque cualquier asignatura del instituto</p>
                             </div>
+
+                            <!-- Campos para actividad externa (solo visible cuando es solicitante) -->
+                            <div id="actividad-externa-fields" class="hidden space-y-4">
+                                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                    <div class="flex items-center gap-2 mb-2">
+                                        <i class="fa-solid fa-info-circle text-blue-500"></i>
+                                        <span class="text-sm font-medium text-blue-800">Información de la Actividad</span>
+                                    </div>
+                                    <p class="text-xs text-blue-600">Complete los datos de la actividad que se llevará a cabo en el espacio reservado.</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Nombre de la Actividad *</label>
+                                    <input
+                                        type="text"
+                                        id="nombre-actividad"
+                                        placeholder="Ej: Charla de Seguridad Industrial, Reunión de Apoderados..."
+                                        maxlength="255"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Descripción de la Actividad</label>
+                                    <textarea
+                                        id="descripcion-actividad"
+                                        rows="2"
+                                        placeholder="Breve descripción de la actividad, participantes esperados, etc."
+                                        maxlength="500"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"></textarea>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -245,7 +277,9 @@ async function procesarCrearReserva(event) {
         fecha: document.getElementById('fecha-reserva').value,
         modulo_inicial: parseInt(document.getElementById('modulo-inicial').value),
         modulo_final: parseInt(document.getElementById('modulo-final').value),
-        observaciones: document.getElementById('observaciones-reserva').value.trim()
+        observaciones: document.getElementById('observaciones-reserva').value.trim(),
+        nombre_actividad: document.getElementById('nombre-actividad')?.value?.trim() || null,
+        descripcion_actividad: document.getElementById('descripcion-actividad')?.value?.trim() || null,
     };
 
     console.log('📤 Datos a enviar:', formData);
@@ -260,6 +294,12 @@ async function procesarCrearReserva(event) {
     // Validar asignatura si es profesor (no colaborador)
     if (formData.tipo === 'profesor' && !formData.id_asignatura) {
         Swal.fire('Error', 'Debe seleccionar una asignatura para la reserva del profesor', 'error');
+        return;
+    }
+
+    // Validar nombre de actividad si es solicitante externo
+    if (formData.tipo === 'solicitante' && !formData.nombre_actividad) {
+        Swal.fire('Error', 'Debe indicar el nombre de la actividad para reservas de solicitantes externos', 'error');
         return;
     }
 
@@ -626,6 +666,7 @@ function toggleAsignaturaField() {
     const tipoSelect = document.getElementById('tipo-responsable');
     const asignaturaField = document.getElementById('asignatura-field');
     const buscarAsignaturaField = document.getElementById('buscar-asignatura-field');
+    const actividadExternaFields = document.getElementById('actividad-externa-fields');
     const asignaturaSelect = document.getElementById('id-asignatura');
     const buscarAsignaturaInput = document.getElementById('buscar-asignatura');
 
@@ -637,16 +678,24 @@ function toggleAsignaturaField() {
         // Profesor regular: mostrar select de sus asignaturas
         asignaturaField.classList.remove('hidden');
         buscarAsignaturaField.classList.add('hidden');
+        actividadExternaFields.classList.add('hidden');
         cargarAsignaturasProfesor();
     } else if (tipoSelect.value === 'colaborador') {
         // Profesor colaborador: mostrar búsqueda de asignaturas
         asignaturaField.classList.add('hidden');
         buscarAsignaturaField.classList.remove('hidden');
+        actividadExternaFields.classList.add('hidden');
         configurarBusquedaAsignaturas();
-    } else {
-        // Solicitante: ocultar ambos
+    } else if (tipoSelect.value === 'solicitante') {
+        // Solicitante externo: mostrar campos de actividad
         asignaturaField.classList.add('hidden');
         buscarAsignaturaField.classList.add('hidden');
+        actividadExternaFields.classList.remove('hidden');
+    } else {
+        // Sin selección: ocultar todo
+        asignaturaField.classList.add('hidden');
+        buscarAsignaturaField.classList.add('hidden');
+        actividadExternaFields.classList.add('hidden');
     }
 }
 

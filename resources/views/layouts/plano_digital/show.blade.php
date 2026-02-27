@@ -230,6 +230,10 @@
                                 <span class="flex-1 text-xs text-white">Reservado</span>
                             </div>
                             <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-indigo-400 border-2 border-white rounded-full"></div>
+                                <span class="flex-1 text-xs text-white">Programado</span>
+                            </div>
+                            <div class="flex items-center w-full gap-1">
                                 <div class="w-3 h-3 bg-blue-500 border-2 border-white rounded-full"></div>
                                 <span class="flex-1 text-xs text-white">Próximo</span>
                             </div>
@@ -1947,6 +1951,71 @@
                 return;
             }
 
+            if (resultadoVerificacion.tipo === 'activacion_reserva') {
+                // La reserva programada fue activada exitosamente por el escaneo
+                const block = state.indicators.find(b => b.id === espacio);
+                if (block) {
+                    block.estado = '#FF0000'; // Rojo = Ocupado
+                    state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                    drawIndicators();
+                }
+
+                const nombreActividad = resultadoVerificacion.reserva?.nombre_actividad 
+                    ? `<br><small class="text-gray-600">${resultadoVerificacion.reserva.nombre_actividad}</small>` 
+                    : '';
+
+                Swal.fire({
+                    title: '¡Reserva Activada!',
+                    html: `Tu reserva programada ha sido activada correctamente.${nombreActividad}`,
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#059669',
+                    timer: 2500,
+                    timerProgressBar: true,
+                    showConfirmButton: false
+                });
+
+                setTimeout(() => {
+                    limpiarEstadoLectura();
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 3000);
+
+                ordenEscaneo = 'usuario';
+                return;
+            }
+
+            if (resultadoVerificacion.tipo === 'reserva_fuera_horario') {
+                // El usuario tiene reserva programada pero no es el horario aún
+                Swal.fire({
+                    title: 'Reserva Programada',
+                    html: `<div class="text-left">
+                        <p class="mb-3">${resultadoVerificacion.mensaje}</p>
+                        ${resultadoVerificacion.reserva?.nombre_actividad 
+                            ? `<p class="mb-2"><strong>Actividad:</strong> ${resultadoVerificacion.reserva.nombre_actividad}</p>` 
+                            : ''}
+                        <p class="mb-2"><strong>Módulos:</strong> ${resultadoVerificacion.reserva?.modulo_inicio || '-'} - ${resultadoVerificacion.reserva?.modulo_fin || '-'}</p>
+                    </div>`,
+                    icon: 'info',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#818CF8',
+                    timer: 3000,
+                    timerProgressBar: true,
+                    showConfirmButton: false
+                });
+
+                setTimeout(() => {
+                    limpiarEstadoLectura();
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 3500);
+
+                ordenEscaneo = 'usuario';
+                return;
+            }
+
             if (resultadoVerificacion.tipo === 'espacio_ocupado') {
                 // Procesando espacio ocupado...
                 // Verificar si el ocupante es el mismo usuario que acaba de escanear
@@ -2341,6 +2410,8 @@
                     color = '#059669'; // Verde
                 } else if (estadoLower === 'ocupado') {
                     color = '#FF0000'; // Rojo
+                } else if (estadoLower === 'programado') {
+                    color = '#818CF8'; // Indigo/Violeta - Programado (reserva anticipada, persona no ha llegado)
                 } else if (estadoLower === 'reservado') {
                     color = '#F59E0B'; // Naranja
                 } else if (estadoLower === 'proximo') {
@@ -2528,7 +2599,10 @@
                 '#6B7280': { texto: 'En Mantención', pill: 'border-2 border-gray-500 bg-gray-100 text-gray-700', icon: 'bg-gray-500' },
                 'ClaseSinAsistentes': { texto: 'Clase no realizada (15+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' },
                 'clasesinasistentes': { texto: 'Clase no realizada (15+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' },
-                '#1F2937': { texto: 'Clase no realizada (15+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' }
+                '#1F2937': { texto: 'Clase no realizada (15+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' },
+                'programado': { texto: 'Programado', pill: 'border-2 border-indigo-500 bg-indigo-100 text-indigo-700', icon: 'bg-indigo-400' },
+                'Programado': { texto: 'Programado', pill: 'border-2 border-indigo-500 bg-indigo-100 text-indigo-700', icon: 'bg-indigo-400' },
+                '#818CF8': { texto: 'Programado', pill: 'border-2 border-indigo-500 bg-indigo-100 text-indigo-700', icon: 'bg-indigo-400' }
             };
 
             const config = estadoConfig[estadoReal] || {

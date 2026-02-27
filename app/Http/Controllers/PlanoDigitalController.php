@@ -188,6 +188,16 @@ class PlanoDigitalController extends Controller
                 ->where('estado', 'activa')
                 ->first();
 
+            // Verificar si hay una reserva PROGRAMADA (creada con antelación, aún no activada)
+            $reservaProgramada = null;
+            if (!$reservaActiva) {
+                $reservaProgramada = Reserva::with(['profesor', 'asignatura.carrera', 'solicitante'])
+                    ->where('id_espacio', $idEspacio)
+                    ->where('estado', 'programada')
+                    ->where('fecha_reserva', $fechaActual)
+                    ->first();
+            }
+
             // Verificar si hay una clase no realizada en la tabla clases_no_realizadas para hoy
             $clasesNoRealizadasHoy = \App\Models\ClaseNoRealizada::with('modulo')
                 ->where('id_espacio', $idEspacio)
@@ -217,6 +227,9 @@ class PlanoDigitalController extends Controller
                     $espacio->estado = 'Ocupado';
                     $espacio->save();
                 }
+            } elseif ($reservaProgramada) {
+                // 1.5. Hay reserva PROGRAMADA = Programado (el solicitante/profesor aún no ha llegado)
+                $estadoFinal = 'Programado';
             } elseif ($claseSinAsistentesActiva) {
                 // 2. Hubo una clase sin asistentes y el módulo aún no termina
                 $estadoFinal = 'ClaseSinAsistentes';
@@ -280,14 +293,16 @@ class PlanoDigitalController extends Controller
                     $this->prepararDetallesBloque(
                         $bloque->espacio,
                         $planificacionActiva ?? null,
-                        $reservaActiva, // Pasar la reserva activa completa
+                        $reservaActiva ?? $reservaProgramada, // Pasar la reserva (activa o programada)
                         $planificacionProxima ?? null
                     ),
                     [
                         'estado' => $espacio->estado,
                         'facultad' => $mapa->piso->facultad->nombre_facultad,
                         'clase_sin_asistentes' => $claseSinAsistentesActiva,
-                        'clases_no_realizadas' => $clasesNoRealizadasHoy
+                        'clases_no_realizadas' => $clasesNoRealizadasHoy,
+                        'es_programada' => ($estadoFinal === 'Programado'),
+                        'nombre_actividad' => $reservaProgramada->nombre_actividad ?? null,
                     ]
                 )
             ];
@@ -572,6 +587,12 @@ class PlanoDigitalController extends Controller
             ->where('estado', 'activa')
             ->get();
 
+        // Obtener reservas programadas para hoy (creadas con antelación)
+        $reservasProgramadas = Reserva::with(['asignatura', 'profesor', 'solicitante'])
+            ->where('fecha_reserva', $fechaActual)
+            ->where('estado', 'programada')
+            ->get();
+
         // Obtener reservas próximas (próximos 10 minutos)
         $horaLimite = $horaActual->copy()->addMinutes(10)->format('H:i:s');
         $reservasProximas = Reserva::with(['asignatura', 'profesor', 'solicitante'])
@@ -583,7 +604,7 @@ class PlanoDigitalController extends Controller
 
         return response()->json([
             'success' => true,
-            'espacios' => $espacios->map(function($espacio) use ($horaActual, $horaActualStr, $diaActual, $planificacionesActivas, $reservasActivas, $reservasProximas, $moduloActual) {
+            'espacios' => $espacios->map(function($espacio) use ($horaActual, $horaActualStr, $diaActual, $planificacionesActivas, $reservasActivas, $reservasProgramadas, $reservasProximas, $moduloActual) {
                 $estadoTabla = $espacio->estado; // Estado actual en la tabla espacios
 
                 // Verificar si el espacio está ocupado por una reserva activa
@@ -652,6 +673,9 @@ class PlanoDigitalController extends Controller
                     $estado = 'Ocupado';
                 } elseif ($tieneReservaActiva) {
                     $estado = 'Reservado';
+                } elseif ($reservasProgramadas->where('id_espacio', $espacio->id_espacio)->isNotEmpty()) {
+                    // Hay una reserva programada (creada con antelación, persona aún no llega)
+                    $estado = 'Programado';
                 } elseif ($tieneClaseEnCurso && $estadoTabla !== 'Ocupado') {
                     // Clase en curso en el módulo actual - mostrar naranja
                     $estado = 'Reservado'; // Naranja
@@ -1088,7 +1112,125 @@ class PlanoDigitalController extends Controller
                     ],
                     'espacio_disponible' => false
                 ]);
-            } elseif ($espacioDisponible) {
+            }
+
+            // Verificar si el usuario tiene una reserva PROGRAMADA en este espacio
+            $reservaProgramada = Reserva::where(function($query) use ($runUsuario) {
+                    $query->where('run_profesor', $runUsuario)
+                          ->orWhere('run_solicitante', $runUsuario);
+                })
+                ->where('id_espacio', $idEspacio)
+                ->where('estado', 'programada')
+                ->where('fecha_reserva', Carbon::today()->toDateString())
+                ->first();
+
+            if ($reservaProgramada) {
+                // El usuario tiene una reserva programada para este espacio.
+                // Verificar si la hora actual está dentro del rango de módulos de la reserva.
+                $ahora = Carbon::now();
+                $puedeActivar = false;
+
+                if ($reservaProgramada->modulo_inicio && $reservaProgramada->modulo_fin) {
+                    // Verificar con la hora actual vs horarios de los módulos
+                    $horaActualStr = $ahora->format('H:i:s');
+                    $horarioModulos = $this->obtenerMapaHorariosModulos();
+
+                    $horaInicioModulo = $horarioModulos[$reservaProgramada->modulo_inicio]['inicio'] ?? null;
+                    $horaFinModulo = $horarioModulos[$reservaProgramada->modulo_fin]['fin'] ?? null;
+
+                    if ($horaInicioModulo && $horaFinModulo) {
+                        $puedeActivar = ($horaActualStr >= $horaInicioModulo && $horaActualStr <= $horaFinModulo);
+                    }
+                }
+
+                if ($puedeActivar) {
+                    // Activar la reserva: cambiar de programada → activa
+                    $reservaProgramada->estado = 'activa';
+                    $reservaProgramada->hora = $ahora->format('H:i:s');
+                    $reservaProgramada->save();
+
+                    // Marcar espacio como Ocupado
+                    $espacio->estado = 'Ocupado';
+                    $espacio->save();
+
+                    \Log::info("✅ Reserva programada activada por escaneo - Usuario: {$runUsuario}, Espacio: {$idEspacio}, Reserva: {$reservaProgramada->id_reserva}");
+
+                    return response()->json([
+                        'tipo' => 'activacion_reserva',
+                        'success' => true,
+                        'mensaje' => 'Reserva programada activada exitosamente. El espacio ha sido asignado.',
+                        'reserva' => [
+                            'id_reserva' => $reservaProgramada->id_reserva,
+                            'hora_inicio' => $reservaProgramada->hora,
+                            'fecha' => $reservaProgramada->fecha_reserva,
+                            'espacio' => $espacio->nombre_espacio,
+                            'nombre_actividad' => $reservaProgramada->nombre_actividad,
+                        ],
+                        'espacio_disponible' => false
+                    ]);
+                } else {
+                    // El usuario tiene reserva programada pero NO estamos en la franja horaria
+                    \Log::info("⏰ Reserva programada encontrada pero fuera de horario - Usuario: {$runUsuario}, Reserva: {$reservaProgramada->id_reserva}");
+
+                    return response()->json([
+                        'tipo' => 'reserva_fuera_horario',
+                        'success' => false,
+                        'mensaje' => 'Tienes una reserva programada para este espacio, pero aún no es el horario correspondiente. La reserva se activará cuando llegue el momento.',
+                        'reserva' => [
+                            'id_reserva' => $reservaProgramada->id_reserva,
+                            'fecha' => $reservaProgramada->fecha_reserva,
+                            'modulo_inicio' => $reservaProgramada->modulo_inicio,
+                            'modulo_fin' => $reservaProgramada->modulo_fin,
+                            'nombre_actividad' => $reservaProgramada->nombre_actividad,
+                        ],
+                        'espacio_disponible' => false
+                    ]);
+                }
+            }
+
+            if ($espacioDisponible) {
+                // Antes de permitir nueva reserva, verificar si hay una reserva programada
+                // de OTRO usuario que cubre el módulo actual
+                $reservaProgramadaOtro = Reserva::with(['profesor', 'solicitante'])
+                    ->where('id_espacio', $idEspacio)
+                    ->where('estado', 'programada')
+                    ->where('fecha_reserva', Carbon::today()->toDateString())
+                    ->where(function($query) use ($runUsuario) {
+                        $query->where(function($q) use ($runUsuario) {
+                            $q->whereNotNull('run_profesor')->where('run_profesor', '!=', $runUsuario);
+                        })->orWhere(function($q) use ($runUsuario) {
+                            $q->whereNotNull('run_solicitante')->where('run_solicitante', '!=', $runUsuario);
+                        });
+                    })
+                    ->first();
+
+                if ($reservaProgramadaOtro && $reservaProgramadaOtro->modulo_inicio && $reservaProgramadaOtro->modulo_fin) {
+                    $horaActualStr = Carbon::now()->format('H:i:s');
+                    $horarioModulos = $this->obtenerMapaHorariosModulos();
+                    $horaInicioMod = $horarioModulos[$reservaProgramadaOtro->modulo_inicio]['inicio'] ?? null;
+                    $horaFinMod = $horarioModulos[$reservaProgramadaOtro->modulo_fin]['fin'] ?? null;
+
+                    if ($horaInicioMod && $horaFinMod && $horaActualStr >= $horaInicioMod && $horaActualStr <= $horaFinMod) {
+                        // Hay una reserva programada de otro usuario que cubre el horario actual
+                        $nombreOcupante = $reservaProgramadaOtro->profesor->name 
+                            ?? $reservaProgramadaOtro->solicitante->nombre 
+                            ?? 'Otro usuario';
+                        
+                        return response()->json([
+                            'tipo' => 'espacio_ocupado',
+                            'mensaje' => "El espacio tiene una reserva programada por {$nombreOcupante} en este horario.",
+                            'espacio_disponible' => false,
+                            'ocupante' => [
+                                'tipo' => $reservaProgramadaOtro->run_profesor ? 'profesor' : 'solicitante',
+                                'nombre' => $nombreOcupante,
+                                'run' => $reservaProgramadaOtro->run_profesor ?? $reservaProgramadaOtro->run_solicitante,
+                                'hora_inicio' => $horarioModulos[$reservaProgramadaOtro->modulo_inicio]['inicio'] ?? '-',
+                                'fecha' => $reservaProgramadaOtro->fecha_reserva,
+                            ]
+                        ]);
+                    }
+                }
+
                 // El espacio está disponible para crear una nueva reserva
                 return response()->json([
                     'tipo' => 'nueva_reserva',
@@ -2449,6 +2591,30 @@ class PlanoDigitalController extends Controller
                 ]);
             }
         }
+    }
+
+    /**
+     * Obtener mapa de horarios de módulos (número → inicio/fin)
+     * Horarios estándar de la institución.
+     */
+    private function obtenerMapaHorariosModulos(): array
+    {
+        return [
+            1  => ['inicio' => '08:10:00', 'fin' => '08:55:00'],
+            2  => ['inicio' => '08:55:00', 'fin' => '09:40:00'],
+            3  => ['inicio' => '09:55:00', 'fin' => '10:40:00'],
+            4  => ['inicio' => '10:40:00', 'fin' => '11:25:00'],
+            5  => ['inicio' => '11:35:00', 'fin' => '12:20:00'],
+            6  => ['inicio' => '12:20:00', 'fin' => '13:05:00'],
+            7  => ['inicio' => '13:30:00', 'fin' => '14:15:00'],
+            8  => ['inicio' => '14:15:00', 'fin' => '15:00:00'],
+            9  => ['inicio' => '15:15:00', 'fin' => '16:00:00'],
+            10 => ['inicio' => '16:00:00', 'fin' => '16:45:00'],
+            11 => ['inicio' => '16:55:00', 'fin' => '17:40:00'],
+            12 => ['inicio' => '17:40:00', 'fin' => '18:25:00'],
+            13 => ['inicio' => '18:30:00', 'fin' => '19:15:00'],
+            14 => ['inicio' => '19:15:00', 'fin' => '20:00:00'],
+        ];
     }
 
 }

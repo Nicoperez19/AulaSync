@@ -211,6 +211,19 @@
                                                             {{ isset($espacio['datos_profesor']['hora_inicio']) ? substr($espacio['datos_profesor']['hora_inicio'], 0, 5) : '--:--' }} - {{ isset($espacio['datos_profesor']['hora_salida']) ? substr($espacio['datos_profesor']['hora_salida'], 0, 5) : '--:--' }}
                                                         </div>
                                                     </div>
+                                                @elseif(($espacio['tiene_reserva_solicitante'] ?? false) && !empty($espacio['datos_solicitante']))
+                                                    <div class="font-medium text-gray-900 text-sm">
+                                                        <div class="flex items-center gap-2 text-base font-semibold">
+                                                            @if(!empty($espacio['datos_solicitante']['modulo_inicio']) && !empty($espacio['datos_solicitante']['modulo_fin']))
+                                                                {{ $espacio['datos_solicitante']['modulo_inicio'] }} - {{ $espacio['datos_solicitante']['modulo_fin'] }}
+                                                            @else
+                                                                {{ $this->moduloActual['numero'] ?? '--' }}
+                                                            @endif
+                                                        </div>
+                                                        <div class="text-gray-600">
+                                                            {{ isset($espacio['datos_solicitante']['hora_inicio']) ? substr($espacio['datos_solicitante']['hora_inicio'], 0, 5) : '--:--' }} - {{ isset($espacio['datos_solicitante']['hora_salida']) ? substr($espacio['datos_solicitante']['hora_salida'], 0, 5) : '--:--' }}
+                                                        </div>
+                                                    </div>
                                                 @elseif(!empty($espacio['proxima_clase']) && is_array($espacio['proxima_clase']))
                                                      <div class="flex items-center gap-2 text-base font-semibold">
 
@@ -258,16 +271,34 @@
                                                 $esColaborador = $espacio['datos_clase']['es_colaborador'] ?? false;
                                             @endphp
                                             @if (($espacio['tiene_reserva_solicitante'] ?? false) && !empty($espacio['datos_solicitante']))
-                                                <span class="font-medium text--700 text-sm">Solicitante: {{ $espacio['datos_solicitante']['nombre'] ?? 'N/A' }}</span>
-                                            @elseif (($espacio['tiene_reserva_profesor'] ?? false) && !empty($espacio['datos_profesor']) && !empty($espacio['datos_profesor']['nombre']))
-                                                <div class="font-medium text-gray-900 text-sm">
-                                                    <div>
-                                                        @if(!empty($espacio['datos_profesor']['codigo_asignatura']))
-                                                            <span class="font-semibold">{{ $espacio['datos_profesor']['codigo_asignatura'] }} - </span>
+                                                <div class="font-medium text-gray-900 text-sm flex items-start justify-between gap-2">
+                                                    <div class="flex-1">
+                                                        @if(!empty($espacio['datos_solicitante']['nombre_actividad']))
+                                                            <div class="font-semibold">{{ $espacio['datos_solicitante']['nombre_actividad'] }}</div>
                                                         @endif
-                                                        {{ $espacio['datos_profesor']['nombre_asignatura'] ?? $asignatura ?? 'Sin asignatura' }}
+                                                        <div>Solicitante: {{ $espacio['datos_solicitante']['nombre'] ?? 'N/A' }}</div>
+                                                        @if(!empty($espacio['datos_solicitante']['descripcion_actividad']))
+                                                            <div class="text-xs text-gray-500 truncate" title="{{ $espacio['datos_solicitante']['descripcion_actividad'] }}">{{ Str::limit($espacio['datos_solicitante']['descripcion_actividad'], 50) }}</div>
+                                                        @endif
                                                     </div>
-                                                    <div>Prof: {{ $espacio['datos_profesor']['nombre'] ?? 'N/A' }}</div>
+                                                    @if($espacio['es_programada'] ?? false)
+                                                        <span class="px-2 py-0.5 bg-indigo-200 text-indigo-700 text-xs font-semibold rounded whitespace-nowrap">PROGRAMADO</span>
+                                                    @endif
+                                                </div>
+                                            @elseif (($espacio['tiene_reserva_profesor'] ?? false) && !empty($espacio['datos_profesor']) && !empty($espacio['datos_profesor']['nombre']))
+                                                <div class="font-medium text-gray-900 text-sm flex items-start justify-between gap-2">
+                                                    <div class="flex-1">
+                                                        <div>
+                                                            @if(!empty($espacio['datos_profesor']['codigo_asignatura']))
+                                                                <span class="font-semibold">{{ $espacio['datos_profesor']['codigo_asignatura'] }} - </span>
+                                                            @endif
+                                                            {{ $espacio['datos_profesor']['nombre_asignatura'] ?? $asignatura ?? 'Sin asignatura' }}
+                                                        </div>
+                                                        <div>Prof: {{ $espacio['datos_profesor']['nombre'] ?? 'N/A' }}</div>
+                                                    </div>
+                                                    @if(!empty($espacio['datos_profesor']['es_programada']))
+                                                        <span class="px-2 py-0.5 bg-indigo-200 text-indigo-700 text-xs font-semibold rounded whitespace-nowrap">PROGRAMADO</span>
+                                                    @endif
                                                 </div>
                                             @elseif (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']))
                                                 @if($esColaborador)
@@ -344,6 +375,9 @@
                                             @if($esColaborador)
                                                 <!-- No mostrar carrera para clases colaboradoras -->
                                                 <span class="text-gray-400 italic text-sm">-</span>
+                                            @elseif(($espacio['tiene_reserva_solicitante'] ?? false) && !empty($espacio['datos_solicitante']))
+                                                {{-- Para solicitantes, mostrar tipo de solicitante --}}
+                                                <span class="font-medium text-gray-700 text-sm">{{ ucfirst($espacio['datos_solicitante']['tipo_solicitante'] ?? 'Externo') }}</span>
                                             @elseif (($espacio['tiene_reserva_profesor'] ?? false) && !empty($espacio['datos_profesor']['carrera']))
                                                 {{-- PRIORIDAD 1: Si hay reserva de profesor activa, mostrar SU carrera (ej: adelantó clase) --}}
                                                 <span class="font-medium text-gray-700 text-sm">{{ $espacio['datos_profesor']['carrera'] }}</span>

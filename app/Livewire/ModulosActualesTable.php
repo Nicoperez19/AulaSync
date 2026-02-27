@@ -740,7 +740,7 @@ class ModulosActualesTable extends Component
                 // Obtener reservas activas de solicitantes para el día actual
                 $reservasSolicitantes = Reserva::with(['solicitante'])
                     ->where('fecha_reserva', Carbon::now()->toDateString())
-                    ->where('estado', 'activa')
+                    ->whereIn('estado', ['activa', 'programada'])
                     ->whereNotNull('run_solicitante')
                     ->get()
                     ->keyBy('id_espacio'); // Indexar por espacio para búsqueda rápida
@@ -761,24 +761,32 @@ class ModulosActualesTable extends Component
                     'espacios' => $reservasProfesores->keys()->toArray(),
                 ]);
                 
-                // Obtener reservas PENDIENTES de profesores (reservadas pero sin marcar entrada aún)
-                // Estas se mostrarán como "Reservado" en lugar de "Disponible"
+                // Obtener reservas PENDIENTES/PROGRAMADAS de profesores (reservadas pero sin marcar entrada aún)
+                // Estas se mostrarán como "Programado" o "Reservado" en lugar de "Disponible"
                 $reservasProfesoresPendientes = Reserva::with(['profesor', 'asignatura', 'asignatura.carrera'])
                     ->where('fecha_reserva', Carbon::now()->toDateString())
-                    ->whereIn('estado', ['pendiente', 'activa']) // Pendiente o activa sin entrada
+                    ->whereIn('estado', ['pendiente', 'activa', 'programada'])
                     ->whereNotNull('run_profesor')
                     ->whereNull('hora') // Aún no ha marcado entrada
                     ->get()
                     ->keyBy('id_espacio');
                 
-                Log::info('ModulosActuales - Reservas de profesores (pendientes/sin entrada):', [
+                Log::info('ModulosActuales - Reservas de profesores (pendientes/programadas/sin entrada):', [
                     'total' => $reservasProfesoresPendientes->count(),
                     'espacios' => $reservasProfesoresPendientes->keys()->toArray(),
                 ]);
                 
+                // Obtener reservas PROGRAMADAS de solicitantes (para mostrar como "Programado")
+                $reservasSolicitantesProgramadas = Reserva::with(['solicitante'])
+                    ->where('fecha_reserva', Carbon::now()->toDateString())
+                    ->where('estado', 'programada')
+                    ->whereNotNull('run_solicitante')
+                    ->get()
+                    ->keyBy('id_espacio');
+                
                 // También verificar TODAS las reservas activas del día (sin filtro de hora)
                 $todasReservasActivas = Reserva::where('fecha_reserva', Carbon::now()->toDateString())
-                    ->whereIn('estado', ['activa', 'pendiente'])
+                    ->whereIn('estado', ['activa', 'pendiente', 'programada'])
                     ->get();
                 
                 Log::info('ModulosActuales - TODAS las reservas activas/pendientes del día:', [
@@ -1088,13 +1096,48 @@ class ModulosActualesTable extends Component
                         }
 
                         if ($reservaSolicitante) {
-                            $tieneReservaSolicitante = true;
+                            // Determinar si la reserva de solicitante está en la franja actual
+                            $reservaSolicitanteEnFranja = false;
+                            $moduloInicioSol = $reservaSolicitante->modulo_inicio;
+                            $moduloFinSol = $reservaSolicitante->modulo_fin;
+                            $moduloActualNum = $this->moduloActual['numero'] ?? null;
+                            
+                            if ($moduloActualNum && $moduloInicioSol && $moduloFinSol) {
+                                $reservaSolicitanteEnFranja = ($moduloActualNum >= $moduloInicioSol && $moduloActualNum <= $moduloFinSol);
+                            } elseif ($reservaSolicitante->estado === 'activa') {
+                                // Si no tiene módulos definidos pero está activa, considerarla en franja
+                                $reservaSolicitanteEnFranja = true;
+                            }
+                            
+                            // Solo marcar como "tiene reserva solicitante" (ocupado) si está ACTIVA
+                            // Las reservas programadas NO se auto-activan aquí;
+                            // el solicitante debe llegar y escanear su carnet/QR para activarla
+                            if ($reservaSolicitante->estado === 'activa' && $reservaSolicitanteEnFranja) {
+                                $tieneReservaSolicitante = true;
+                            }
+                            
+                            // Obtener horas de inicio/fin desde los módulos si están disponibles
+                            $horaSolInicio = $reservaSolicitante->hora ?? '-';
+                            $horaSolFin = $reservaSolicitante->hora_salida ?? '-';
+                            
+                            if ($moduloInicioSol && isset($horariosDelDia[$moduloInicioSol])) {
+                                $horaSolInicio = substr($horariosDelDia[$moduloInicioSol]['inicio'], 0, 5);
+                            }
+                            if ($moduloFinSol && isset($horariosDelDia[$moduloFinSol])) {
+                                $horaSolFin = substr($horariosDelDia[$moduloFinSol]['fin'], 0, 5);
+                            }
+                            
                             $datosSolicitante = [
                                 'nombre' => $reservaSolicitante->solicitante->nombre ?? '-',
                                 'run' => $reservaSolicitante->run_solicitante ?? '-',
                                 'tipo_solicitante' => $reservaSolicitante->solicitante->tipo_solicitante ?? '-',
-                                'hora_inicio' => $reservaSolicitante->hora ?? '-',
-                                'hora_salida' => $reservaSolicitante->hora_salida ?? '-',
+                                'hora_inicio' => $horaSolInicio,
+                                'hora_salida' => $horaSolFin,
+                                'nombre_actividad' => $reservaSolicitante->nombre_actividad ?? null,
+                                'descripcion_actividad' => $reservaSolicitante->descripcion_actividad ?? null,
+                                'modulo_inicio' => $moduloInicioSol,
+                                'modulo_fin' => $moduloFinSol,
+                                'es_programada' => $reservaSolicitante->estado === 'programada',
                             ];
                         }
 
@@ -1224,26 +1267,44 @@ class ModulosActualesTable extends Component
                         // Procesar reserva pendiente de profesor (sin entrada aún pero reservado)
                         // Solo si NO hay ya una reserva activa con entrada
                         if (!$tieneReservaProfesor && $reservaProfesorPendiente) {
+                            // Determinar si la reserva está programada (futura)
+                            // NO auto-activar: el profesor debe llegar y escanear su carnet/QR
+                            $esProgramadaProfesor = ($reservaProfesorPendiente->estado === 'programada');
+                            $moduloInicioPend = $reservaProfesorPendiente->modulo_inicio;
+                            $moduloFinPend = $reservaProfesorPendiente->modulo_fin;
+                            
                             $tieneReservaPendiente = true;
+                            
+                            // Obtener horas desde los módulos almacenados
+                            $horaInicioPend = '-';
+                            $horaFinPend = '-';
+                            if ($moduloInicioPend && isset($horariosDelDia[$moduloInicioPend])) {
+                                $horaInicioPend = substr($horariosDelDia[$moduloInicioPend]['inicio'], 0, 5);
+                            }
+                            if ($moduloFinPend && isset($horariosDelDia[$moduloFinPend])) {
+                                $horaFinPend = substr($horariosDelDia[$moduloFinPend]['fin'], 0, 5);
+                            }
                             
                             // Obtener datos básicos de la reserva pendiente
                             $datosProfesor = [
                                 'nombre' => $reservaProfesorPendiente->profesor->name ?? '-',
                                 'run' => $reservaProfesorPendiente->run_profesor ?? '-',
-                                'hora_inicio' => '-',
-                                'hora_salida' => '-',
+                                'hora_inicio' => $horaInicioPend,
+                                'hora_salida' => $horaFinPend,
                                 'nombre_asignatura' => $reservaProfesorPendiente->asignatura->nombre_asignatura ?? 'Reservado',
                                 'codigo_asignatura' => $reservaProfesorPendiente->asignatura->codigo_asignatura ?? '-',
                                 'carrera' => $reservaProfesorPendiente->asignatura->carrera->nombre ?? '-',
                                 'inscritos' => null,
-                                'modulo_inicio' => '',
-                                'modulo_fin' => '',
-                                'es_pendiente' => true, // Marcar como pendiente
+                                'modulo_inicio' => $moduloInicioPend ?? '',
+                                'modulo_fin' => $moduloFinPend ?? '',
+                                'es_pendiente' => true,
+                                'es_programada' => $esProgramadaProfesor,
                             ];
                             
                             Log::info('ModulosActuales - Reserva pendiente encontrada:', [
                                 'espacio' => $espacio->id_espacio,
                                 'profesor' => $reservaProfesorPendiente->profesor->name ?? 'N/A',
+                                'es_programada' => $esProgramadaProfesor,
                             ]);
                         }
 
@@ -1308,9 +1369,8 @@ class ModulosActualesTable extends Component
                             $estado = 'Disponible';
                             $tieneClase = false;
                             $datosClase = null;
-                        } elseif ($tieneReservaSolicitante) {
-                            // CORRECIÓN BUG 2: Si hay reserva espontánea activa, SIEMPRE mostrar como Ocupado
-                            // Esto debe evaluarse ANTES que las verificaciones de clase finalizada
+                        } elseif ($tieneReservaSolicitante && !($datosSolicitante['es_programada'] ?? false)) {
+                            // Reserva de solicitante ACTIVA (en franja actual) → Ocupado
                             $estado = 'Ocupado';
                         } elseif ($tieneReservaProfesor && !$tieneClase) {
                             // NUEVO: Reserva espontánea de profesor (sin planificación de clase)
@@ -1371,8 +1431,16 @@ class ModulosActualesTable extends Component
                             $estado = 'Clase por iniciar';
                         } elseif ($tieneReservaPendiente) {
                             // Si hay una reserva pendiente (profesor reservó pero no ha marcado entrada)
-                            $estado = 'Reservado';
+                            if (!empty($datosProfesor['es_programada'])) {
+                                $estado = 'Programado';
+                            } else {
+                                $estado = 'Reservado';
+                            }
                             $tieneReservaProfesor = true; // Marcar para mostrar info del profesor
+                        } elseif ($reservaSolicitante && ($datosSolicitante['es_programada'] ?? false)) {
+                            // Reserva de solicitante PROGRAMADA (fuera de franja actual) → Programado
+                            $estado = 'Programado';
+                            $tieneReservaSolicitante = true; // Mostrar info del solicitante
                         } else {
                             // Si no hay clase, ni reserva, ni nada, el espacio está disponible
                             // NO confiar en el estado de la BD que puede estar desactualizado
@@ -1431,6 +1499,7 @@ class ModulosActualesTable extends Component
                             'proxima_clase' => $proximaClase,
                             'rango_disponibilidad' => $rangoDisponibilidad,
                             'es_recuperacion' => $esRecuperacion,
+                            'es_programada' => ($estado === 'Programado'),
                         ];
                     }
                     $this->espacios[$piso->id] = $espaciosPiso;
@@ -1587,6 +1656,8 @@ class ModulosActualesTable extends Component
     {
         if (strtolower($estado) === 'ocupado' || $estado === 'Ocupado') {
             return 'bg-red-500';
+        } elseif (strtolower($estado) === 'programado' || $estado === 'Programado') {
+            return 'bg-indigo-400'; // Violeta claro para reservas programadas (futuras)
         } elseif (strtolower($estado) === 'clase finalizada' || $estado === 'Clase finalizada') {
             return 'bg-blue-500'; // Color azul para clases que terminaron
         } elseif (strtolower($estado) === 'clase no realizada' || $estado === 'Clase no realizada') {

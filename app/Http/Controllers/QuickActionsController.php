@@ -407,7 +407,9 @@ class QuickActionsController extends Controller
                 'fecha' => 'required|date',
                 'modulo_inicial' => 'required|integer|min:1|max:12',
                 'modulo_final' => 'required|integer|min:1|max:12',
-                'observaciones' => 'nullable|string|max:500'
+                'observaciones' => 'nullable|string|max:500',
+                'nombre_actividad' => 'nullable|string|max:255',
+                'descripcion_actividad' => 'nullable|string|max:500',
             ]);
 
             Log::info('📝 Datos validados correctamente', [
@@ -420,6 +422,14 @@ class QuickActionsController extends Controller
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'Debe seleccionar una asignatura para las reservas de profesores'
+                ], 400);
+            }
+
+            // Validar que si es solicitante externo tenga nombre de actividad
+            if ($request->tipo === 'solicitante' && !$request->nombre_actividad) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Debe indicar el nombre de la actividad para reservas de solicitantes externos'
                 ], 400);
             }
 
@@ -500,12 +510,17 @@ class QuickActionsController extends Controller
 
             $duracionModulos = $request->modulo_final - $request->modulo_inicial + 1;
 
-            // VALIDAR QUE NO EXISTA UNA RESERVA ACTIVA EN ESE ESPACIO Y FECHA
-            // Para solapamiento, consideramos que si hay cualquier reserva activa en el mismo espacio/fecha,
-            // podría haber conflicto. El usuario debe finalizar la anterior primero.
+            // VALIDAR QUE NO EXISTA UNA RESERVA ACTIVA EN ESE ESPACIO Y FECHA para los mismos módulos
             $reservaExistente = Reserva::where('id_espacio', $request->espacio)
                 ->where('fecha_reserva', $request->fecha)
-                ->where('estado', 'activa')
+                ->whereIn('estado', ['activa', 'programada'])
+                ->where(function($q) use ($request) {
+                    // Verificar solapamiento de módulos
+                    $q->where(function($inner) use ($request) {
+                        $inner->where('modulo_inicio', '<=', $request->modulo_final)
+                              ->where('modulo_fin', '>=', $request->modulo_inicial);
+                    });
+                })
                 ->first();
 
             if ($reservaExistente) {
@@ -537,16 +552,48 @@ class QuickActionsController extends Controller
             // Preparar datos de la reserva
             // Campo modulos es unsignedSmallInteger - calculamos duración en módulos (ya se calculó antes)
 
+            // Determinar si la reserva es para ahora o es programada con antelación
+            $fechaActual = now()->format('Y-m-d');
+            $horaActualStr = now()->format('H:i:s');
+            $esMismoDia = ($request->fecha === $fechaActual);
+            
+            // Determinar si estamos dentro de la franja horaria de los módulos reservados
+            $estaEnFranjaActual = false;
+            if ($esMismoDia) {
+                $horaInicioModulo = $horariosModulos[$request->modulo_inicial]['inicio'] ?? null;
+                $horaFinModulo = $horariosModulos[$request->modulo_final]['fin'] ?? null;
+                if ($horaInicioModulo && $horaFinModulo) {
+                    $estaEnFranjaActual = ($horaActualStr >= $horaInicioModulo && $horaActualStr <= $horaFinModulo);
+                }
+            }
+            
+            // Si es el mismo día Y estamos dentro de la franja → activa
+            // En cualquier otro caso → programada (con antelación)
+            $estadoReserva = ($esMismoDia && $estaEnFranjaActual) ? 'activa' : 'programada';
+            
+            Log::info('📊 Estado de reserva determinado:', [
+                'fecha_reserva' => $request->fecha,
+                'fecha_actual' => $fechaActual,
+                'hora_actual' => $horaActualStr,
+                'es_mismo_dia' => $esMismoDia,
+                'esta_en_franja' => $estaEnFranjaActual,
+                'estado' => $estadoReserva,
+            ]);
+
             $datosReserva = [
                 'id_reserva' => $idReserva,
                 'fecha_reserva' => $request->fecha,
                 'id_espacio' => $request->espacio,
                 'id_asignatura' => $request->id_asignatura,
                 'modulos' => $duracionModulos,
-                'hora' => $horaInicio,
+                'modulo_inicio' => $request->modulo_inicial,
+                'modulo_fin' => $request->modulo_final,
+                'hora' => $estadoReserva === 'activa' ? $horaInicio : null,
                 'tipo_reserva' => $request->tipo === 'profesor' || $request->tipo === 'colaborador' ? 'clase' : 'espontanea',
-                'estado' => 'activa',
+                'estado' => $estadoReserva,
                 'observaciones' => $observacionesCompletas,
+                'nombre_actividad' => $request->nombre_actividad,
+                'descripcion_actividad' => $request->descripcion_actividad,
                 'created_at' => now(),
                 'updated_at' => now()
             ];
@@ -609,7 +656,9 @@ class QuickActionsController extends Controller
             ]);
 
             $mensaje = 'Reserva creada exitosamente';
-            if ($espacioOcupado) {
+            if ($estadoReserva === 'programada') {
+                $mensaje .= '. La reserva queda como PROGRAMADA. El solicitante debe escanear su carnet/QR en el espacio al momento de llegar para activarla';
+            } elseif ($espacioOcupado) {
                 $mensaje .= '. Espacio ' . $request->espacio . ' marcado como ocupado automáticamente';
             }
 
@@ -624,6 +673,8 @@ class QuickActionsController extends Controller
                     'modulos' => $request->modulo_inicial . ' - ' . $request->modulo_final,
                     'hora' => $horaInicio,
                     'tipo' => $request->tipo === 'profesor' ? 'Académica' : 'Externa',
+                    'estado' => $estadoReserva === 'programada' ? 'Programada' : 'Activa',
+                    'nombre_actividad' => $request->nombre_actividad,
                     'creado_por' => $usuario->name ?? 'Administrador',
                     'espacio_ocupado' => $espacioOcupado
                 ]
