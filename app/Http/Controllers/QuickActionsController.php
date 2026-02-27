@@ -410,6 +410,7 @@ class QuickActionsController extends Controller
                 'observaciones' => 'nullable|string|max:500',
                 'nombre_actividad' => 'nullable|string|max:255',
                 'descripcion_actividad' => 'nullable|string|max:500',
+                'forzar' => 'nullable|boolean',
             ]);
 
             Log::info('📝 Datos validados correctamente', [
@@ -540,13 +541,51 @@ class QuickActionsController extends Controller
                 ], 409); // 409 Conflict
             }
 
+            // Verificar conflictos con planificaciones académicas (a menos que se fuerce)
+            if (!$request->input('forzar', false)) {
+                $periodo = \App\Helpers\SemesterHelper::getCurrentPeriod(\Carbon\Carbon::parse($request->fecha));
+                $conflictoPlanificacion = false;
+
+                for ($modulo = $request->modulo_inicial; $modulo <= $request->modulo_final; $modulo++) {
+                    $idModuloBusqueda = $prefijoReserva . '.' . $modulo;
+                    $planificacionExistente = \App\Models\Planificacion_Asignatura::where('id_espacio', $request->espacio)
+                        ->where('id_modulo', $idModuloBusqueda)
+                        ->whereHas('horario', function ($q) use ($periodo) {
+                            $q->where('periodo', $periodo);
+                        })
+                        ->first();
+
+                    if ($planificacionExistente) {
+                        $conflictoPlanificacion = true;
+                        break;
+                    }
+                }
+
+                if ($conflictoPlanificacion) {
+                    return response()->json([
+                        'success' => false,
+                        'mensaje' => 'El espacio ' . $request->espacio . ' tiene clases programadas en los módulos solicitados. ' .
+                                    'Use la opción "Forzar reserva" (mantenga presionado 3 segundos) para reservar igualmente.',
+                        'tipo_conflicto' => 'planificacion'
+                    ], 409);
+                }
+            } else {
+                Log::warning('⚠️ Reserva FORZADA sobre planificación existente', [
+                    'espacio' => $request->espacio,
+                    'fecha' => $request->fecha,
+                    'modulos' => $request->modulo_inicial . '-' . $request->modulo_final,
+                    'usuario' => auth()->user()->name ?? 'Desconocido',
+                ]);
+            }
+
             // Generar ID único para la reserva
             $idReserva = 'RES-' . strtoupper(uniqid());
 
             // Preparar observaciones con información de creación manual
             $usuario = auth()->user();
             $rangoModulos = "Módulos: " . $request->modulo_inicial . "-" . $request->modulo_final . " | ";
-            $observacionesAutomaticas = "RESERVA CREADA MANUALMENTE por " . ($usuario->name ?? 'Administrador') . " el " . now()->format('d/m/Y H:i:s') . " | " . $rangoModulos;
+            $forzadoTag = $request->input('forzar', false) ? "⚠️ RESERVA FORZADA (sobre planificación existente) | " : "";
+            $observacionesAutomaticas = $forzadoTag . "RESERVA CREADA MANUALMENTE por " . ($usuario->name ?? 'Administrador') . " el " . now()->format('d/m/Y H:i:s') . " | " . $rangoModulos;
             $observacionesCompletas = $observacionesAutomaticas . ($request->observaciones ?? '');
 
             // Preparar datos de la reserva
@@ -693,6 +732,93 @@ class QuickActionsController extends Controller
                 'success' => false,
                 'mensaje' => 'Error interno del servidor: ' . $e->getMessage(),
                 'error_details' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Verificar conflictos de planificación para un espacio/fecha/módulos
+     * Retorna las clases programadas que chocan con la reserva solicitada
+     */
+    public function verificarConflictos(Request $request)
+    {
+        try {
+            $request->validate([
+                'espacio' => 'required|string',
+                'fecha' => 'required|date',
+                'modulo_inicial' => 'required|integer|min:1|max:14',
+                'modulo_final' => 'required|integer|min:1|max:14',
+            ]);
+
+            $conflictos = [];
+
+            // 1. Verificar planificaciones académicas regulares (clases del semestre)
+            $fechaReserva = \Carbon\Carbon::parse($request->fecha);
+            $prefijosDias = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+            $prefijoDia = $prefijosDias[$fechaReserva->dayOfWeek];
+            $periodo = \App\Helpers\SemesterHelper::getCurrentPeriod($fechaReserva);
+
+            // Buscar planificaciones que ocupen el espacio en los módulos solicitados
+            for ($modulo = $request->modulo_inicial; $modulo <= $request->modulo_final; $modulo++) {
+                $idModulo = $prefijoDia . '.' . $modulo;
+
+                $planificacion = \App\Models\Planificacion_Asignatura::with(['asignatura.profesor', 'asignatura.carrera', 'modulo'])
+                    ->where('id_espacio', $request->espacio)
+                    ->where('id_modulo', $idModulo)
+                    ->whereHas('horario', function ($q) use ($periodo) {
+                        $q->where('periodo', $periodo);
+                    })
+                    ->first();
+
+                if ($planificacion) {
+                    $conflictos[] = [
+                        'tipo' => 'planificacion',
+                        'modulo' => $modulo,
+                        'id_modulo' => $idModulo,
+                        'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'Sin nombre',
+                        'codigo' => $planificacion->asignatura->codigo_asignatura ?? '-',
+                        'profesor' => $planificacion->asignatura->profesor->name ?? 'Sin profesor',
+                        'carrera' => $planificacion->asignatura->carrera->nombre ?? '-',
+                    ];
+                }
+            }
+
+            // 2. Verificar reservas existentes (activas o programadas)
+            $reservaExistente = Reserva::with(['profesor', 'solicitante', 'asignatura'])
+                ->where('id_espacio', $request->espacio)
+                ->where('fecha_reserva', $request->fecha)
+                ->whereIn('estado', ['activa', 'programada'])
+                ->where(function($q) use ($request) {
+                    $q->where(function($inner) use ($request) {
+                        $inner->where('modulo_inicio', '<=', $request->modulo_final)
+                              ->where('modulo_fin', '>=', $request->modulo_inicial);
+                    });
+                })
+                ->get();
+
+            foreach ($reservaExistente as $reserva) {
+                $conflictos[] = [
+                    'tipo' => 'reserva',
+                    'id_reserva' => $reserva->id_reserva,
+                    'estado' => $reserva->estado,
+                    'modulo_inicio' => $reserva->modulo_inicio,
+                    'modulo_fin' => $reserva->modulo_fin,
+                    'responsable' => $reserva->profesor->name ?? $reserva->solicitante->nombre ?? 'Desconocido',
+                    'asignatura' => $reserva->asignatura->nombre_asignatura ?? $reserva->nombre_actividad ?? '-',
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'tiene_conflictos' => count($conflictos) > 0,
+                'conflictos' => $conflictos,
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Error al verificar conflictos: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error al verificar conflictos: ' . $e->getMessage(),
             ], 500);
         }
     }

@@ -235,6 +235,54 @@
                                 placeholder="Observaciones adicionales..."
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"></textarea>
                         </div>
+
+                        <!-- Banner de conflictos de planificación -->
+                        <div id="conflicto-banner" class="hidden">
+                            <div class="bg-red-50 border-l-4 border-red-500 rounded-lg p-4">
+                                <div class="flex items-start gap-3">
+                                    <div class="flex-shrink-0 mt-0.5">
+                                        <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="text-sm font-semibold text-red-800 mb-1">
+                                            <i class="fa-solid fa-lock mr-1"></i> Espacio Ocupado — Conflicto de Horario
+                                        </h4>
+                                        <div id="conflicto-detalles" class="text-sm text-red-700 space-y-1"></div>
+                                        <p class="text-xs text-red-600 mt-2">La sala está bloqueada. Si necesita reservar igualmente, use la opción de forzar debajo.</p>
+                                    </div>
+                                </div>
+
+                                <!-- Checkbox forzar con hold de 3 segundos -->
+                                <div class="mt-4 pt-3 border-t border-red-200">
+                                    <div class="flex items-center gap-3">
+                                        <div class="relative">
+                                            <button
+                                                type="button"
+                                                id="btn-forzar"
+                                                class="relative flex items-center gap-2 px-4 py-2 bg-white border-2 border-red-300 rounded-lg text-red-700 text-sm font-medium hover:bg-red-50 transition-colors select-none cursor-pointer"
+                                                title="Mantener presionado 3 segundos para forzar"
+                                            >
+                                                <div id="forzar-progress" class="absolute inset-0 bg-red-200 rounded-lg opacity-40 transition-all duration-100" style="width: 0%"></div>
+                                                <span class="relative z-10 flex items-center gap-2">
+                                                    <svg id="forzar-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                                    </svg>
+                                                    <span id="forzar-texto">Mantener presionado 3s para forzar</span>
+                                                </span>
+                                            </button>
+                                        </div>
+                                        <input type="hidden" id="forzar-reserva" value="0" />
+                                    </div>
+                                    <p id="forzar-estado" class="text-xs text-gray-500 mt-2 hidden">
+                                        <i class="fa-solid fa-check-circle text-green-500 mr-1"></i>
+                                        Reserva forzada activada. Se creará la reserva ignorando la planificación existente.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
@@ -266,6 +314,7 @@
 async function procesarCrearReserva(event) {
     event.preventDefault();
 
+    const forzarActivo = document.getElementById('forzar-reserva')?.value === '1';
     const formData = {
         nombre: document.getElementById('nombre-responsable').value.trim(),
         run: document.getElementById('run-responsable').value.trim(),
@@ -280,6 +329,7 @@ async function procesarCrearReserva(event) {
         observaciones: document.getElementById('observaciones-reserva').value.trim(),
         nombre_actividad: document.getElementById('nombre-actividad')?.value?.trim() || null,
         descripcion_actividad: document.getElementById('descripcion-actividad')?.value?.trim() || null,
+        forzar: forzarActivo,
     };
 
     console.log('📤 Datos a enviar:', formData);
@@ -316,6 +366,18 @@ async function procesarCrearReserva(event) {
 
     if (formData.modulo_inicial > formData.modulo_final) {
         Swal.fire('Error', 'El módulo inicial no puede ser mayor al módulo final', 'error');
+        return;
+    }
+
+    // Validar conflictos: si hay conflictos y no se ha forzado, bloquear
+    if (tieneConflictos && !forzarActivo) {
+        Swal.fire({
+            title: 'Espacio Bloqueado',
+            html: 'Este espacio tiene clases o reservas programadas en los módulos seleccionados.<br><br>Para continuar, use el botón <strong>"Mantener presionado 3s para forzar"</strong> que aparece en el banner de conflicto.',
+            icon: 'warning',
+            confirmButtonText: 'Entendido',
+            confirmButtonColor: '#EF4444',
+        });
         return;
     }
 
@@ -892,18 +954,279 @@ async function cargarEspaciosDisponibles() {
     }
 }
 
-// Función para actualizar módulos disponibles según espacio (placeholder)
+// Función para actualizar módulos disponibles según espacio
 function actualizarModulosDisponibles() {
-    // Por ahora, esta función solo recarga los módulos
-    // En el futuro podría filtrar módulos ocupados según el espacio y fecha
     cargarModulosParaSeleccion();
+    verificarConflictosReserva();
     console.log('🔄 Módulos actualizados para el espacio seleccionado');
 }
 
 // Función para actualizar módulos finales
 function actualizarModulosFinales() {
-    // Ya implementada en cargarModulosParaSeleccion
     console.log('🔄 Actualizando módulos finales...');
+    // Dar un pequeño delay para que el select se actualice antes de verificar
+    setTimeout(() => verificarConflictosReserva(), 100);
+}
+
+// =====================================================
+// VERIFICACIÓN DE CONFLICTOS DE PLANIFICACIÓN
+// =====================================================
+let conflictoTimeout = null;
+let tieneConflictos = false;
+
+async function verificarConflictosReserva() {
+    const espacio = document.getElementById('espacio-reserva')?.value;
+    const fecha = document.getElementById('fecha-reserva')?.value;
+    const moduloInicial = document.getElementById('modulo-inicial')?.value;
+    const moduloFinal = document.getElementById('modulo-final')?.value;
+
+    // Limpiar estado previo
+    const banner = document.getElementById('conflicto-banner');
+    if (!banner) return;
+
+    // Solo verificar si todos los campos están completos
+    if (!espacio || !fecha || !moduloInicial || !moduloFinal) {
+        banner.classList.add('hidden');
+        tieneConflictos = false;
+        resetearForzar();
+        return;
+    }
+
+    // Debounce para no hacer muchas llamadas
+    if (conflictoTimeout) clearTimeout(conflictoTimeout);
+    conflictoTimeout = setTimeout(async () => {
+        try {
+            const response = await fetch('/quick-actions/api/verificar-conflictos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    espacio: espacio,
+                    fecha: fecha,
+                    modulo_inicial: parseInt(moduloInicial),
+                    modulo_final: parseInt(moduloFinal)
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.tiene_conflictos) {
+                tieneConflictos = true;
+                mostrarConflictos(data.conflictos);
+            } else {
+                tieneConflictos = false;
+                banner.classList.add('hidden');
+                resetearForzar();
+            }
+        } catch (error) {
+            console.error('Error al verificar conflictos:', error);
+            tieneConflictos = false;
+            banner.classList.add('hidden');
+        }
+    }, 400);
+}
+
+function mostrarConflictos(conflictos) {
+    const banner = document.getElementById('conflicto-banner');
+    const detalles = document.getElementById('conflicto-detalles');
+    if (!banner || !detalles) return;
+
+    let html = '';
+
+    // Agrupar planificaciones
+    const planificaciones = conflictos.filter(c => c.tipo === 'planificacion');
+    const reservas = conflictos.filter(c => c.tipo === 'reserva');
+
+    if (planificaciones.length > 0) {
+        // Agrupar por asignatura+profesor para mostrar rango de módulos
+        const grupos = {};
+        planificaciones.forEach(p => {
+            const key = p.codigo + '|' + p.profesor;
+            if (!grupos[key]) {
+                grupos[key] = { ...p, modulos: [p.modulo] };
+            } else {
+                grupos[key].modulos.push(p.modulo);
+            }
+        });
+
+        html += '<div class="font-medium mb-1">📚 Clases programadas en este horario:</div>';
+        Object.values(grupos).forEach(g => {
+            const modulosStr = g.modulos.length > 1 
+                ? `Módulos ${Math.min(...g.modulos)}-${Math.max(...g.modulos)}` 
+                : `Módulo ${g.modulos[0]}`;
+            html += `<div class="ml-4 text-xs">• <strong>${g.codigo}</strong> - ${g.asignatura} (${modulosStr})<br>&nbsp;&nbsp;Prof: ${g.profesor} | ${g.carrera}</div>`;
+        });
+    }
+
+    if (reservas.length > 0) {
+        html += '<div class="font-medium mb-1 mt-2">📋 Reservas existentes:</div>';
+        reservas.forEach(r => {
+            html += `<div class="ml-4 text-xs">• <strong>${r.estado.toUpperCase()}</strong> — ${r.asignatura} (Módulos ${r.modulo_inicio}-${r.modulo_fin})<br>&nbsp;&nbsp;Responsable: ${r.responsable}</div>`;
+        });
+    }
+
+    detalles.innerHTML = html;
+    banner.classList.remove('hidden');
+    resetearForzar();
+}
+
+// =====================================================
+// BOTÓN FORZAR — MANTENER PRESIONADO 3 SEGUNDOS
+// =====================================================
+let forzarTimer = null;
+let forzarStartTime = null;
+let forzarAnimFrame = null;
+const FORZAR_DURACION_MS = 3000;
+
+function resetearForzar() {
+    const hidden = document.getElementById('forzar-reserva');
+    const texto = document.getElementById('forzar-texto');
+    const estado = document.getElementById('forzar-estado');
+    const progress = document.getElementById('forzar-progress');
+    const btn = document.getElementById('btn-forzar');
+    const icon = document.getElementById('forzar-icon');
+    
+    if (hidden) hidden.value = '0';
+    if (texto) texto.textContent = 'Mantener presionado 3s para forzar';
+    if (estado) estado.classList.add('hidden');
+    if (progress) progress.style.width = '0%';
+    if (btn) {
+        btn.classList.remove('bg-green-100', 'border-green-500', 'text-green-700');
+        btn.classList.add('bg-white', 'border-red-300', 'text-red-700');
+    }
+    if (icon) {
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>';
+    }
+    
+    if (forzarTimer) { clearTimeout(forzarTimer); forzarTimer = null; }
+    if (forzarAnimFrame) { cancelAnimationFrame(forzarAnimFrame); forzarAnimFrame = null; }
+    forzarStartTime = null;
+}
+
+function activarForzar() {
+    const hidden = document.getElementById('forzar-reserva');
+    const texto = document.getElementById('forzar-texto');
+    const estado = document.getElementById('forzar-estado');
+    const progress = document.getElementById('forzar-progress');
+    const btn = document.getElementById('btn-forzar');
+    const icon = document.getElementById('forzar-icon');
+    
+    if (hidden) hidden.value = '1';
+    if (texto) texto.textContent = '✓ Reserva forzada';
+    if (estado) estado.classList.remove('hidden');
+    if (progress) progress.style.width = '100%';
+    if (btn) {
+        btn.classList.remove('bg-white', 'border-red-300', 'text-red-700');
+        btn.classList.add('bg-green-100', 'border-green-500', 'text-green-700');
+    }
+    if (icon) {
+        icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"/>';
+    }
+}
+
+function animarProgreso() {
+    if (!forzarStartTime) return;
+    const elapsed = Date.now() - forzarStartTime;
+    const pct = Math.min((elapsed / FORZAR_DURACION_MS) * 100, 100);
+    const progress = document.getElementById('forzar-progress');
+    const texto = document.getElementById('forzar-texto');
+    
+    if (progress) progress.style.width = pct + '%';
+    if (texto) {
+        const remaining = Math.max(0, Math.ceil((FORZAR_DURACION_MS - elapsed) / 1000));
+        texto.textContent = remaining > 0 ? `Manteniendo... ${remaining}s` : 'Soltando...';
+    }
+    
+    if (pct < 100) {
+        forzarAnimFrame = requestAnimationFrame(animarProgreso);
+    }
+}
+
+function configurarForzarCheckbox() {
+    const btn = document.getElementById('btn-forzar');
+    if (!btn) return;
+
+    // Mouse events
+    btn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        if (document.getElementById('forzar-reserva')?.value === '1') {
+            // Ya está forzado, desactivar
+            resetearForzar();
+            return;
+        }
+        forzarStartTime = Date.now();
+        forzarAnimFrame = requestAnimationFrame(animarProgreso);
+        forzarTimer = setTimeout(() => {
+            activarForzar();
+            forzarTimer = null;
+        }, FORZAR_DURACION_MS);
+    });
+
+    btn.addEventListener('mouseup', () => {
+        if (forzarTimer) {
+            // Soltó antes de 3 segundos
+            clearTimeout(forzarTimer);
+            forzarTimer = null;
+            if (forzarAnimFrame) { cancelAnimationFrame(forzarAnimFrame); forzarAnimFrame = null; }
+            forzarStartTime = null;
+            const progress = document.getElementById('forzar-progress');
+            const texto = document.getElementById('forzar-texto');
+            if (progress) progress.style.width = '0%';
+            if (texto && document.getElementById('forzar-reserva')?.value !== '1') {
+                texto.textContent = 'Mantener presionado 3s para forzar';
+            }
+        }
+    });
+
+    btn.addEventListener('mouseleave', () => {
+        if (forzarTimer) {
+            clearTimeout(forzarTimer);
+            forzarTimer = null;
+            if (forzarAnimFrame) { cancelAnimationFrame(forzarAnimFrame); forzarAnimFrame = null; }
+            forzarStartTime = null;
+            const progress = document.getElementById('forzar-progress');
+            const texto = document.getElementById('forzar-texto');
+            if (progress) progress.style.width = '0%';
+            if (texto && document.getElementById('forzar-reserva')?.value !== '1') {
+                texto.textContent = 'Mantener presionado 3s para forzar';
+            }
+        }
+    });
+
+    // Touch events (mobile)
+    btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        if (document.getElementById('forzar-reserva')?.value === '1') {
+            resetearForzar();
+            return;
+        }
+        forzarStartTime = Date.now();
+        forzarAnimFrame = requestAnimationFrame(animarProgreso);
+        forzarTimer = setTimeout(() => {
+            activarForzar();
+            // Vibración haptica si está disponible
+            if (navigator.vibrate) navigator.vibrate(200);
+            forzarTimer = null;
+        }, FORZAR_DURACION_MS);
+    });
+
+    btn.addEventListener('touchend', () => {
+        if (forzarTimer) {
+            clearTimeout(forzarTimer);
+            forzarTimer = null;
+            if (forzarAnimFrame) { cancelAnimationFrame(forzarAnimFrame); forzarAnimFrame = null; }
+            forzarStartTime = null;
+            const progress = document.getElementById('forzar-progress');
+            const texto = document.getElementById('forzar-texto');
+            if (progress) progress.style.width = '0%';
+            if (texto && document.getElementById('forzar-reserva')?.value !== '1') {
+                texto.textContent = 'Mantener presionado 3s para forzar';
+            }
+        }
+    });
 }
 
 // Inicializar al cargar la página
@@ -921,7 +1244,21 @@ document.addEventListener('DOMContentLoaded', function() {
     cargarEspaciosDisponibles();
     cargarModulosParaSeleccion();
     configurarAutocompletado();
-    console.log('🔍 Autocompletado configurado');
+    configurarForzarCheckbox();
+
+    // Verificar conflictos cuando cambie la fecha
+    const fechaInput = document.getElementById('fecha-reserva');
+    if (fechaInput) {
+        fechaInput.addEventListener('change', () => verificarConflictosReserva());
+    }
+
+    // Verificar conflictos cuando cambie el módulo final
+    const moduloFinal = document.getElementById('modulo-final');
+    if (moduloFinal) {
+        moduloFinal.addEventListener('change', () => verificarConflictosReserva());
+    }
+
+    console.log('🔍 Autocompletado y verificación de conflictos configurados');
 });
 </script>
 @endpush

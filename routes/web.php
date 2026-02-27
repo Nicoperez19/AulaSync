@@ -484,6 +484,9 @@ Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-acti
     // API para buscar asignaturas (autocompletado)
     Route::get('/api/buscar-asignaturas', [QuickActionsController::class, 'buscarAsignaturas'])->name('api.buscar-asignaturas');
 
+    // API para verificar conflictos de planificación antes de crear reserva
+    Route::post('/api/verificar-conflictos', [QuickActionsController::class, 'verificarConflictos'])->name('api.verificar-conflictos');
+
     // API para crear reserva
     Route::post('/api/crear-reserva', [QuickActionsController::class, 'procesarCrearReserva'])->name('api.crear-reserva');
 
