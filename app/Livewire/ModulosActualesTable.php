@@ -1272,8 +1272,16 @@ class ModulosActualesTable extends Component
                             $esProgramadaProfesor = ($reservaProfesorPendiente->estado === 'programada');
                             $moduloInicioPend = $reservaProfesorPendiente->modulo_inicio;
                             $moduloFinPend = $reservaProfesorPendiente->modulo_fin;
+                            $moduloActualNum = $this->moduloActual['numero'] ?? null;
                             
-                            $tieneReservaPendiente = true;
+                            // Solo mostrar como pendiente/programado si el módulo actual 
+                            // está dentro del rango de la reserva (o si no tiene módulos definidos)
+                            $reservaPendEnFranja = true; // Por defecto mostrar si no tiene módulos
+                            if ($moduloActualNum && $moduloInicioPend && $moduloFinPend) {
+                                $reservaPendEnFranja = ($moduloActualNum >= $moduloInicioPend && $moduloActualNum <= $moduloFinPend);
+                            }
+                            
+                            $tieneReservaPendiente = $reservaPendEnFranja;
                             
                             // Obtener horas desde los módulos almacenados
                             $horaInicioPend = '-';
@@ -1438,9 +1446,23 @@ class ModulosActualesTable extends Component
                             }
                             $tieneReservaProfesor = true; // Marcar para mostrar info del profesor
                         } elseif ($reservaSolicitante && ($datosSolicitante['es_programada'] ?? false)) {
-                            // Reserva de solicitante PROGRAMADA (fuera de franja actual) → Programado
-                            $estado = 'Programado';
-                            $tieneReservaSolicitante = true; // Mostrar info del solicitante
+                            // Reserva de solicitante PROGRAMADA → solo mostrar si estamos en su franja de módulos
+                            $modActNum = $this->moduloActual['numero'] ?? null;
+                            $modIniSol = $datosSolicitante['modulo_inicio'] ?? null;
+                            $modFinSol = $datosSolicitante['modulo_fin'] ?? null;
+                            $solEnFranja = true; // Por defecto si no tiene módulos
+                            if ($modActNum && $modIniSol && $modFinSol) {
+                                $solEnFranja = ($modActNum >= $modIniSol && $modActNum <= $modFinSol);
+                            }
+                            if (!$solEnFranja) {
+                                // Fuera de franja → Disponible, no mostrar como programado
+                                $estado = 'Disponible';
+                                $tieneReservaSolicitante = false;
+                                $datosSolicitante = null;
+                            } else {
+                                $estado = 'Programado';
+                                $tieneReservaSolicitante = true;
+                            }
                         } else {
                             // Si no hay clase, ni reserva, ni nada, el espacio está disponible
                             // NO confiar en el estado de la BD que puede estar desactualizado

@@ -196,6 +196,18 @@ class PlanoDigitalController extends Controller
                     ->where('estado', 'programada')
                     ->where('fecha_reserva', $fechaActual)
                     ->first();
+
+                // Solo considerar la reserva programada si el módulo actual está dentro de su rango
+                if ($reservaProgramada && $moduloActual) {
+                    $numModActual = (int) (explode('.', $moduloActual->id_modulo)[1] ?? 0);
+                    $modIniProg = (int) ($reservaProgramada->modulo_inicio ?? 0);
+                    $modFinProg = (int) ($reservaProgramada->modulo_fin ?? 0);
+                    if ($numModActual && $modIniProg && $modFinProg) {
+                        if ($numModActual < $modIniProg || $numModActual > $modFinProg) {
+                            $reservaProgramada = null; // Fuera de franja → ignorar
+                        }
+                    }
+                }
             }
 
             // Verificar si hay una clase no realizada en la tabla clases_no_realizadas para hoy
@@ -228,7 +240,7 @@ class PlanoDigitalController extends Controller
                     $espacio->save();
                 }
             } elseif ($reservaProgramada) {
-                // 1.5. Hay reserva PROGRAMADA = Programado (el solicitante/profesor aún no ha llegado)
+                // 1.5. Hay reserva PROGRAMADA y el módulo actual está en su rango
                 $estadoFinal = 'Programado';
             } elseif ($claseSinAsistentesActiva) {
                 // 2. Hubo una clase sin asistentes y el módulo aún no termina
@@ -674,8 +686,22 @@ class PlanoDigitalController extends Controller
                 } elseif ($tieneReservaActiva) {
                     $estado = 'Reservado';
                 } elseif ($reservasProgramadas->where('id_espacio', $espacio->id_espacio)->isNotEmpty()) {
-                    // Hay una reserva programada (creada con antelación, persona aún no llega)
-                    $estado = 'Programado';
+                    // Hay una reserva programada — verificar que el módulo actual esté en el rango
+                    $resProg = $reservasProgramadas->where('id_espacio', $espacio->id_espacio)->first();
+                    $progEnFranja = true;
+                    if ($moduloActual) {
+                        $numModActual = (int) (explode('.', $moduloActual->id_modulo)[1] ?? 0);
+                        $modIniProg = (int) ($resProg->modulo_inicio ?? 0);
+                        $modFinProg = (int) ($resProg->modulo_fin ?? 0);
+                        if ($numModActual && $modIniProg && $modFinProg) {
+                            $progEnFranja = ($numModActual >= $modIniProg && $numModActual <= $modFinProg);
+                        }
+                    }
+                    if ($progEnFranja) {
+                        $estado = 'Programado';
+                    } else {
+                        $estado = 'Disponible';
+                    }
                 } elseif ($tieneClaseEnCurso && $estadoTabla !== 'Ocupado') {
                     // Clase en curso en el módulo actual - mostrar naranja
                     $estado = 'Reservado'; // Naranja
