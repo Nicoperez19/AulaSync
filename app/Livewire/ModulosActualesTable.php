@@ -1102,8 +1102,9 @@ class ModulosActualesTable extends Component
                         if ($reservaProfesor) {
                             $tieneReservaProfesor = true;
                             
-                            // Si la reserva tiene asignatura, usarla para obtener la planificación correcta
-                            if ($reservaProfesor->asignatura) {
+                            // Si la reserva tiene asignatura Y NO es espontánea, usarla para obtener la planificación correcta
+                            // Las reservas espontáneas no deben mostrar información de clase programada
+                            if ($reservaProfesor->asignatura && $reservaProfesor->tipo_reserva !== 'espontanea') {
                                 // Buscar las planificaciones de ESTA asignatura (no del espacio)
                                 $planificacionesReserva = Planificacion_Asignatura::where('id_asignatura', $reservaProfesor->asignatura->id_asignatura)
                                     ->whereHas('horario', function($q) use ($periodo) {

@@ -418,9 +418,10 @@ class PlanoDigitalController extends Controller
             'planificacion_proxima' => null
         ];
 
-        // PRIORIDAD 1: Si hay reserva activa de profesor con asignatura, mostrar ESA información
+        // PRIORIDAD 1: Si hay reserva activa de profesor con asignatura Y es programada/cambio de sala
         // Esto asegura que se muestre la clase que realmente se está dando, no la programada
-        if ($reserva && $reserva->run_profesor && $reserva->asignatura) {
+        // Las reservas espontáneas NO deben mostrar información de clase
+        if ($reserva && $reserva->run_profesor && $reserva->asignatura && $reserva->tipo_reserva !== 'espontanea') {
             // El profesor está dando esta asignatura (puede ser diferente a la planificada)
             $detalles['planificacion'] = [
                 'asignatura' => $reserva->asignatura->nombre_asignatura ?? 'Sin asignatura',
@@ -677,7 +678,11 @@ class PlanoDigitalController extends Controller
                     // Obtener información de la reserva manual activa
                     $reservaActiva = $reservasActivas->where('id_espacio', $espacio->id_espacio)->first();
                     if ($reservaActiva) {
-                        $asignaturaInfo = $reservaActiva->asignatura ? $reservaActiva->asignatura->nombre_asignatura : 'Sin asignatura';
+                        // Para reservas espontáneas, NO mostrar asignatura
+                        $asignaturaInfo = 'Reserva espontánea';
+                        if ($reservaActiva->tipo_reserva !== 'espontanea' && $reservaActiva->asignatura) {
+                            $asignaturaInfo = $reservaActiva->asignatura->nombre_asignatura;
+                        }
                         
                         $nombreProfesor = 'No especificado';
                         if ($reservaActiva->profesor) {
@@ -1518,39 +1523,19 @@ class PlanoDigitalController extends Controller
             ->where('id_espacio', $espacio->id_espacio)
             ->first();
 
-        // Si no hay clase actual, buscar la siguiente clase programada en este espacio
+        // =====================================================
+        // BÚSQUEDA DE CLASE ASOCIADA A LA RESERVA
+        // Prioridad: 1) En curso aquí → 2) Próxima aquí (15min) → 3) En curso en otra sala (cambio) → 4) Espontánea
+        // =====================================================
         $siguienteClaseProgramada = null;
+        $claseEnOtraSala = null;
+        $esCambioDeSala = false;
+
         if (!$claseProgramadaActual) {
-            // Primero, buscar todas las clases del profesor para este día para debug
-            $todasLasClasesDelDia = Planificacion_Asignatura::with([
-                    'asignatura:id_asignatura,nombre_asignatura,run_profesor', 
-                    'modulo:id_modulo,dia,hora_inicio,hora_termino'
-                ])
-                ->whereHas('asignatura', function($query) use ($runUsuario) {
-                    $query->where('run_profesor', $runUsuario);
-                })
-                ->whereHas('modulo', function($query) use ($diaActual) {
-                    $query->where('dia', $diaActual);
-                })
-                ->whereHas('horario', function($query) use ($periodo) {
-                    $query->where('periodo', $periodo);
-                })
-                ->where('id_espacio', $espacio->id_espacio)
-                ->get();
-                
-            \Log::info('Clases encontradas para el día', [
-                'total_clases' => $todasLasClasesDelDia->count(),
-                'clases' => $todasLasClasesDelDia->map(function($c) {
-                    return [
-                        'asignatura' => $c->asignatura->nombre_asignatura ?? 'N/A',
-                        'modulo' => $c->modulo->id_modulo ?? 'N/A',
-                        'hora_inicio' => $c->modulo->hora_inicio ?? 'N/A',
-                        'hora_termino' => $c->modulo->hora_termino ?? 'N/A'
-                    ];
-                })
-            ]);
-            
-            // Buscar la siguiente clase programada
+            // Buscar siguiente clase que INICIA en los próximos 15 minutos en ESTA sala
+            // (evita asociar clases que empiezan horas después)
+            $horaLimiteAnticipada = Carbon::createFromFormat('H:i:s', $horaActual)->addMinutes(15)->format('H:i:s');
+
             $siguienteClaseProgramada = Planificacion_Asignatura::with([
                     'asignatura:id_asignatura,nombre_asignatura,run_profesor', 
                     'modulo:id_modulo,dia,hora_inicio,hora_termino'
@@ -1558,101 +1543,73 @@ class PlanoDigitalController extends Controller
                 ->whereHas('asignatura', function($query) use ($runUsuario) {
                     $query->where('run_profesor', $runUsuario);
                 })
-                ->whereHas('modulo', function($query) use ($diaActual, $horaActual) {
+                ->whereHas('modulo', function($query) use ($diaActual, $horaActual, $horaLimiteAnticipada) {
                     $query->where('dia', $diaActual)
-                          ->where('hora_inicio', '>', $horaActual); // Clases que empiezan después
+                          ->where('hora_inicio', '>', $horaActual)
+                          ->where('hora_inicio', '<=', $horaLimiteAnticipada);
                 })
                 ->whereHas('horario', function($query) use ($periodo) {
                     $query->where('periodo', $periodo);
                 })
                 ->where('id_espacio', $espacio->id_espacio)
-                ->orderBy('id_modulo') // Ordenar por módulo para obtener la más próxima
+                ->orderBy('id_modulo')
                 ->first();
                 
-            \Log::info('Siguiente clase encontrada', [
-                'encontrada' => $siguienteClaseProgramada !== null,
-                'asignatura' => $siguienteClaseProgramada ? ($siguienteClaseProgramada->asignatura->nombre_asignatura ?? 'N/A') : null,
-                'hora_inicio' => $siguienteClaseProgramada ? ($siguienteClaseProgramada->modulo->hora_inicio ?? 'N/A') : null
-            ]);
-            
-            // Si no encuentra siguiente clase en este espacio, buscar en cualquier espacio del profesor
+            // CAMBIO DE SALA: Si no hay clase en esta sala (ni en curso ni próxima),
+            // verificar si el profesor tiene una clase EN CURSO en otra sala.
+            // Esto permite que el profesor realice su clase programada en una sala diferente
+            // y quede registro correcto de que SÍ realizó la clase.
             if (!$siguienteClaseProgramada) {
-                \Log::info('No se encontró siguiente clase en este espacio, buscando en otros espacios');
-                
-                $siguienteClaseEnOtroEspacio = Planificacion_Asignatura::with(['asignatura', 'modulo', 'espacio'])
+                $claseEnOtraSala = Planificacion_Asignatura::with([
+                        'asignatura:id_asignatura,nombre_asignatura,run_profesor', 
+                        'modulo:id_modulo,dia,hora_inicio,hora_termino',
+                        'espacio:id_espacio,nombre_espacio'
+                    ])
                     ->whereHas('asignatura', function($query) use ($runUsuario) {
                         $query->where('run_profesor', $runUsuario);
                     })
                     ->whereHas('modulo', function($query) use ($diaActual, $horaActual) {
                         $query->where('dia', $diaActual)
-                              ->where('hora_inicio', '>', $horaActual);
+                              ->where('hora_inicio', '<=', $horaActual)
+                              ->where('hora_termino', '>', $horaActual);
                     })
                     ->whereHas('horario', function($query) use ($periodo) {
                         $query->where('periodo', $periodo);
                     })
-                    ->orderBy('id_modulo')
+                    ->where('id_espacio', '!=', $espacio->id_espacio)
                     ->first();
-                    
-                \Log::info('Siguiente clase en otro espacio', [
-                    'encontrada' => $siguienteClaseEnOtroEspacio !== null,
-                    'espacio' => $siguienteClaseEnOtroEspacio ? ($siguienteClaseEnOtroEspacio->espacio->id_espacio ?? 'N/A') : null,
-                    'asignatura' => $siguienteClaseEnOtroEspacio ? ($siguienteClaseEnOtroEspacio->asignatura->nombre_asignatura ?? 'N/A') : null
-                ]);
-                
-                // BÚSQUEDA ALTERNATIVA MÁS SIMPLE
-                // Si las consultas anteriores fallan, intentar un enfoque más directo
-                if (!$siguienteClaseProgramada && !$siguienteClaseEnOtroEspacio) {
-                    \Log::info('Intentando búsqueda alternativa directa');
-                    
-                    // Buscar directamente en la tabla de módulos sin whereHas complejos
-                    $modulosDelProfesor = \DB::connection('tenant')->table('planificacion_asignaturas as pa')
-                        ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
-                        ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
-                        ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
-                        ->where('a.run_profesor', $runUsuario)
-                        ->where('m.dia', $diaActual)
-                        ->where('h.periodo', $periodo)
-                        ->where('pa.id_espacio', $espacio->id_espacio)
-                        ->where('m.hora_inicio', '>', $horaActual)
-                        ->select('pa.*', 'a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino')
-                        ->orderBy('m.hora_inicio')
-                        ->first();
-                        
-                    \Log::info('Búsqueda directa resultado', [
-                        'encontrada' => $modulosDelProfesor !== null,
-                        'asignatura' => $modulosDelProfesor ? $modulosDelProfesor->nombre_asignatura : null,
-                        'hora_inicio' => $modulosDelProfesor ? $modulosDelProfesor->hora_inicio : null
+
+                if ($claseEnOtraSala) {
+                    $esCambioDeSala = true;
+                    \Log::info('Cambio de sala detectado', [
+                        'run_profesor' => $runUsuario,
+                        'sala_original' => $claseEnOtraSala->id_espacio,
+                        'sala_nueva' => $espacio->id_espacio,
+                        'asignatura' => $claseEnOtraSala->asignatura->nombre_asignatura ?? 'N/A'
                     ]);
-                    
-                    // Si encontramos algo con la búsqueda directa, convertirlo al formato esperado
-                    if ($modulosDelProfesor) {
-                        $siguienteClaseProgramada = Planificacion_Asignatura::with([
-                                'asignatura:id_asignatura,nombre_asignatura,run_profesor', 
-                                'modulo:id_modulo,dia,hora_inicio,hora_termino'
-                            ])
-                            ->where('id_planificacion', $modulosDelProfesor->id_planificacion)
-                            ->first();
-                    }
                 }
             }
         }
 
-        // Usar la clase encontrada (actual o siguiente)
-        $claseEncontrada = $claseProgramadaActual ?? $siguienteClaseProgramada;
-        $esClaseAnticipada = !$claseProgramadaActual && $siguienteClaseProgramada;
+        // Determinar la clase encontrada según prioridad:
+        // 1) Clase en curso en esta sala, 2) Clase próxima en esta sala, 3) Clase en curso en otra sala (cambio)
+        $claseEncontrada = $claseProgramadaActual ?? $siguienteClaseProgramada ?? $claseEnOtraSala;
+        $esClaseAnticipada = !$claseProgramadaActual && $siguienteClaseProgramada !== null;
 
         $todosLosModulosClase = null;
         $horaInicioCompleta = $horaActual;
         $horaFinCompleta = null;
         
         if ($claseEncontrada) {
-            // Buscar todos los módulos de la misma asignatura en el mismo día y espacio
+            // Para cambio de sala, buscar módulos en la sala ORIGINAL (donde está programada la clase)
+            $espacioBusquedaModulos = $esCambioDeSala ? $claseEnOtraSala->id_espacio : $espacio->id_espacio;
+
             $todosLosModulosClase = Planificacion_Asignatura::with([
                     'asignatura:id_asignatura,nombre_asignatura,run_profesor', 
                     'modulo:id_modulo,dia,hora_inicio,hora_termino'
                 ])
                 ->where('id_asignatura', $claseEncontrada->id_asignatura)
-                ->where('id_espacio', $espacio->id_espacio)
+                ->where('id_espacio', $espacioBusquedaModulos)
                 ->whereHas('modulo', function($query) use ($diaActual) {
                     $query->where('dia', $diaActual);
                 })
@@ -1668,16 +1625,16 @@ class PlanoDigitalController extends Controller
             
             // Encontrar el índice del módulo objetivo (actual o siguiente clase)
             foreach ($todosLosModulosClase as $index => $planificacion) {
-                if ($claseProgramadaActual) {
-                    // Para clase en curso, buscar módulo actual
+                if ($claseProgramadaActual || $esCambioDeSala) {
+                    // Para clase en curso o cambio de sala, buscar módulo actual por hora
                     if ($planificacion->modulo->hora_inicio <= $horaActual && 
                         $planificacion->modulo->hora_termino > $horaActual) {
                         $moduloObjetivoIndex = $index;
                         break;
                     }
                 } else {
-                    // Para siguiente clase, buscar el módulo de la siguiente clase
-                    if ($planificacion->id_modulo === $siguienteClaseProgramada->id_modulo) {
+                    // Para siguiente clase (anticipada), buscar el módulo de la siguiente clase
+                    if ($siguienteClaseProgramada && $planificacion->id_modulo === $siguienteClaseProgramada->id_modulo) {
                         $moduloObjetivoIndex = $index;
                         break;
                     }
@@ -1783,8 +1740,9 @@ class PlanoDigitalController extends Controller
                 $reserva->id_planificacion = $claseEncontrada->id_planificacion ?? null;
                 $reserva->id_asignatura = $claseEncontrada->id_asignatura;
                 
-                // Usar la hora de inicio de la secuencia completa de módulos
-                $reserva->hora = $horaInicioCompleta;
+                // Guardar la hora REAL de llegada del profesor (no la hora programada del módulo).
+                // Esto permite calcular atrasos en informes comparando hora vs. hora_inicio del módulo.
+                $reserva->hora = $horaActual;
                 
                 // Calcular duración total en módulos
                 $totalModulos = count($modulosConsecutivos);
@@ -1793,13 +1751,34 @@ class PlanoDigitalController extends Controller
                     $modulosInfo[] = explode('.', $modulo->modulo->id_modulo)[1] ?? 'N/A';
                 }
                 
-                // Determinar el tipo de asignación
-                $tipoAsignacion = $esClaseAnticipada ? 'anticipada' : 'en horario';
+                // Detectar atraso: el profesor llegó después del inicio programado del módulo.
+                // Solo aplica cuando la clase ya estaba en curso ($claseProgramadaActual) y no es cambio de sala.
+                $esAtraso = false;
+                $minutosAtraso = 0;
+                $infoAtraso = '';
+                if ($claseProgramadaActual !== null && !$esCambioDeSala) {
+                    $horaInicioClaseCarbon = Carbon::createFromFormat('H:i:s', $horaInicioCompleta);
+                    $horaActualCarbon      = Carbon::createFromFormat('H:i:s', $horaActual);
+                    if ($horaActualCarbon->gt($horaInicioClaseCarbon)) {
+                        $esAtraso      = true;
+                        $minutosAtraso = $horaInicioClaseCarbon->diffInMinutes($horaActualCarbon);
+                        $infoAtraso    = " (atraso: {$minutosAtraso} min desde las " . substr($horaInicioCompleta, 0, 5) . ")";
+                    }
+                }
+
+                // Determinar el tipo de asignación (prioridad: cambio de sala > anticipada > atraso > en horario)
+                $tipoAsignacion = $esCambioDeSala ? 'cambio de sala' : ($esClaseAnticipada ? 'anticipada' : ($esAtraso ? 'con atraso' : 'en horario'));
                 $tiempoAnticipacion = '';
-                
+                $infoCambioDeSala = '';
+
+                if ($esCambioDeSala) {
+                    $salaOriginal = $claseEnOtraSala->id_espacio;
+                    $infoCambioDeSala = " (sala original: {$salaOriginal})";
+                }
+
                 if ($esClaseAnticipada) {
-                    $horaInicioClase = \Carbon\Carbon::createFromFormat('H:i:s', $horaInicioCompleta);
-                    $horaActualCarbon = \Carbon\Carbon::createFromFormat('H:i:s', $horaActual);
+                    $horaInicioClase = Carbon::createFromFormat('H:i:s', $horaInicioCompleta);
+                    $horaActualCarbon = Carbon::createFromFormat('H:i:s', $horaActual);
                     $minutosAnticipacion = $horaInicioClase->diffInMinutes($horaActualCarbon);
                     $tiempoAnticipacion = " ({$minutosAnticipacion} min antes)";
                 }
@@ -1807,9 +1786,11 @@ class PlanoDigitalController extends Controller
                 $nombreAsignatura = $claseEncontrada->asignatura->nombre_asignatura ?? 'Error al cargar asignatura';
                 
                 $reserva->observaciones = sprintf(
-                    'Reserva asignada automáticamente %s%s - Clase programada: %s | Módulos: %s (%s - %s) | Duración: %d módulos',
+                    'Reserva asignada automáticamente %s%s%s%s - Clase programada: %s | Módulos: %s (%s - %s) | Duración: %d módulos',
                     $tipoAsignacion,
                     $tiempoAnticipacion,
+                    $infoAtraso,
+                    $infoCambioDeSala,
                     $nombreAsignatura,
                     implode(', ', $modulosInfo),
                     substr($horaInicioCompleta, 0, 5),
@@ -1818,21 +1799,27 @@ class PlanoDigitalController extends Controller
                 );
                 
                 $mensaje = sprintf(
-                    'Reserva de clase programada asignada automáticamente %s por %d módulos (%s - %s)%s',
+                    'Reserva de clase programada asignada automáticamente %s por %d módulos (%s - %s)%s%s%s',
                     $tipoAsignacion,
                     $totalModulos,
                     substr($horaInicioCompleta, 0, 5),
                     substr($horaFinCompleta, 0, 5),
-                    $tiempoAnticipacion
+                    $tiempoAnticipacion,
+                    $infoAtraso,
+                    $infoCambioDeSala
                 );
                 
                 $informacionModulos = [
-                    'total_modulos' => $totalModulos,
-                    'modulos' => $modulosInfo,
+                    'total_modulos'       => $totalModulos,
+                    'modulos'             => $modulosInfo,
                     'hora_inicio_completa' => substr($horaInicioCompleta, 0, 5),
-                    'hora_fin_completa' => substr($horaFinCompleta, 0, 5),
-                    'asignatura' => $nombreAsignatura,
-                    'es_anticipada' => $esClaseAnticipada,
+                    'hora_fin_completa'   => substr($horaFinCompleta, 0, 5),
+                    'asignatura'          => $nombreAsignatura,
+                    'es_anticipada'       => $esClaseAnticipada,
+                    'es_atraso'           => $esAtraso,
+                    'minutos_atraso'      => $minutosAtraso,
+                    'es_cambio_sala'      => $esCambioDeSala,
+                    'sala_original'       => $esCambioDeSala ? ($claseEnOtraSala->id_espacio ?? null) : null,
                     'minutos_anticipacion' => $esClaseAnticipada ? $minutosAnticipacion : 0
                 ];
             }
@@ -1846,8 +1833,9 @@ class PlanoDigitalController extends Controller
             ]);
             
             $reserva->tipo_reserva = 'espontanea';
+            $reserva->id_asignatura = null; // Explícitamente sin clase asociada
             $reserva->hora = $horaActual;
-            $mensaje = 'Reserva espontánea creada exitosamente - No se detectaron clases programadas';
+            $mensaje = 'Reserva espontánea creada exitosamente';
             $informacionModulos = null;
         }
         
@@ -1865,6 +1853,9 @@ class PlanoDigitalController extends Controller
             'mensaje' => $mensaje,
             'es_clase_programada' => $claseEncontrada !== null,
             'es_clase_anticipada' => $esClaseAnticipada,
+            'es_atraso' => $esAtraso,
+            'minutos_atraso' => $minutosAtraso,
+            'es_cambio_sala' => $esCambioDeSala,
             'reserva' => [
                 'id' => $reserva->id_reserva,
                 'espacio' => $espacio->nombre_espacio,
