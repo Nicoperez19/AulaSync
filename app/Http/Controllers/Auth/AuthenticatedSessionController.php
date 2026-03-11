@@ -61,6 +61,14 @@ class AuthenticatedSessionController extends Controller
             'id_sede_type' => gettype($user->id_sede),
         ]);
 
+        // Si el usuario es Control Docente, redirigir directamente a Plano Digital
+        if ($user->hasRole('Control Docente')) {
+            Log::info('✅ Control Docente detectado, redirigiendo a Plano Digital', [
+                'run' => $user->run,
+            ]);
+            return redirect()->route('plano.index');
+        }
+
         // Si el usuario es superusuario, mostrar selección de sedes
         if ($user->is_superuser) {
             Log::info('✅ Superusuario detectado, mostrando selección de sedes', [
