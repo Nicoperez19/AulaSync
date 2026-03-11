@@ -17,6 +17,7 @@ class RoleSeeder extends Seeder
         $roleSupervisor = Role::firstOrCreate(['name' => 'Supervisor']);
         $roleUsuario = Role::firstOrCreate(['name' => 'Usuario']);
         $roleProfesor = Role::firstOrCreate(['name' => 'Profesor']);
+        $roleControlDocente = Role::firstOrCreate(['name' => 'Control Docente']);
 
         $permission1 = Permission::firstOrCreate(['name' => 'dashboard']);
         $permission2 = Permission::firstOrCreate(['name' => 'mantenedor de roles']);
@@ -67,6 +68,11 @@ class RoleSeeder extends Seeder
 
         $roleProfesor->syncPermissions([
             $permission15, $permission16,
+        ]);
+
+        // Control Docente: puede ver mapas y registrar reservas (vista de espacios)
+        $roleControlDocente->syncPermissions([
+            $permission10, $permission12, $permission15, $permission22,
         ]);
     }
 }
