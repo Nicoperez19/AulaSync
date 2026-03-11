@@ -277,7 +277,7 @@ El Plano Digital constituye una herramienta integral que facilita la visualizaci
 
 Este flujo de trabajo optimizado elimina la necesidad de formularios manuales, agilizando significativamente el proceso de asignación de espacios y mejorando la experiencia del usuario final.
 
-## Procedimiento de Reserva mediante Código QR
+### Procedimiento de Reserva mediante Código QR
 
 El proceso de reserva desde el Plano Digital se estructura en los siguientes pasos:
 
@@ -287,7 +287,7 @@ El proceso de reserva desde el Plano Digital se estructura en los siguientes pas
 4. **Escaneo del Código QR**: Utilice un dispositivo de lectura para capturar el código QR asociado al espacio
 5. **Confirmación**: El sistema procesará automáticamente la solicitud y confirmará la asignación en tiempo real
 
-## Procedimiento de Reserva para Solicitantes No Registrados
+### Procedimiento de Reserva para Solicitantes No Registrados
 
 Para usuarios que no se encuentran previamente registrados en el sistema, el procedimiento incluye un paso adicional de registro:
 
@@ -298,7 +298,7 @@ Para usuarios que no se encuentran previamente registrados en el sistema, el pro
 5. **Segunda Validación del Solicitante**: Escanee nuevamente su cédula de identidad
 6. **Escaneo del Código QR**: Utilice el dispositivo de lectura para capturar el código QR asociado al espacio
 7. **Confirmación**: Aparecerá en pantalla una confirmación indicando que su reserva ha sido efectuada.
-## Procedimiento para Devolución de un Espacio
+### Procedimiento para Devolución de un Espacio
 
 El proceso de devolución de un espacio reservado se estructura en los siguientes pasos:
 
