@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\Mapa;
+use App\Models\Piso;
 use App\Providers\RouteServiceProvider;
 use App\Traits\RedirectByRole;
 use Illuminate\Http\RedirectResponse;
@@ -61,12 +63,35 @@ class AuthenticatedSessionController extends Controller
             'id_sede_type' => gettype($user->id_sede),
         ]);
 
-        // Si el usuario es Control Docente, redirigir directamente a Plano Digital
-        if ($user->hasRole('Control Docente')) {
-            Log::info('✅ Control Docente detectado, redirigiendo a Plano Digital', [
+        // Si el usuario es Control Docente, redirigir directamente al primer plano de su sede
+        if ($user->hasRole('Control Docente') && $user->id_sede) {
+            Log::info('✅ Control Docente detectado, buscando plano de su sede', [
                 'run' => $user->run,
+                'id_sede' => $user->id_sede,
             ]);
-            return redirect()->route('plano.index');
+            
+            // Obtener el primer mapa disponible de la sede del usuario
+            $mapa = Mapa::withoutGlobalScopes()
+                ->whereHas('piso.facultad.sede', function($query) use ($user) {
+                    $query->where('id_sede', $user->id_sede);
+                })
+                ->where('ruta_mapa', '!=', '0')
+                ->whereNotNull('ruta_mapa')
+                ->where('ruta_mapa', '!=', '')
+                ->first();
+            
+            if ($mapa) {
+                Log::info('✅ Plano encontrado, redirigiendo', [
+                    'id_mapa' => $mapa->id_mapa,
+                ]);
+                return redirect()->route('plano.show', ['id' => $mapa->id_mapa]);
+            } else {
+                Log::warning('⚠️ No hay planos disponibles para Control Docente', [
+                    'run' => $user->run,
+                    'id_sede' => $user->id_sede,
+                ]);
+                return redirect()->route('plano.index');
+            }
         }
 
         // Si el usuario es superusuario, mostrar selección de sedes
