@@ -15,6 +15,9 @@ class ControlDocenteSeeder extends Seeder
      */
     public function run(): void
     {
+        // Crear el rol Control Docente si no existe
+        $rolControlDocente = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'Control Docente']);
+        
         // Definir profesores de control docente para cada sede
         $controlDocenteUsers = [
             [
@@ -63,14 +66,9 @@ class ControlDocenteSeeder extends Seeder
                 ]
             );
 
-            // Asignar rol Profesor para poder registrar reservas
-            if (!\Spatie\Permission\Models\Role::where('name', 'Profesor')->exists()) {
-                // Crear el rol si no existe
-                \Spatie\Permission\Models\Role::create(['name' => 'Profesor']);
-            }
-
-            if (!$user->hasRole('Profesor')) {
-                $user->assignRole('Profesor');
+            // Asignar rol Control Docente
+            if (!$user->hasRole('Control Docente')) {
+                $user->assignRole($rolControlDocente);
             }
         }
     }

@@ -14,6 +14,11 @@ trait RedirectByRole
     {
         $user = Auth::user();
         
+        // Control Docente redirige al Plano Digital
+        if ($user->hasRole('Control Docente')) {
+            return redirect()->route('plano.index');
+        }
+        
         // Verificar si el usuario tiene el permiso dashboard
         $hasDashboardPermission = false;
         try {
