@@ -18,7 +18,7 @@ El menú lateral expandido constituye el eje principal de navegación de AulaSyn
 
 - Monitoreo de Espacios: Módulo dedicado a la visualización en tiempo real del uso de las salas y laboratorios, permitiendo identificar rápidamente la disponibilidad de la infraestructura. Desde aquí se realizan las reservas mediante escaneo de código QR.
 
-- Horarios por Espacios: Permite la consulta y gestión de la programación horaria asignada a cada recinto específico del Instituto.
+- Horarios por Espacios: Permite la consulta y gestión de la programación horaria asignada a cada espacio específico del Instituto.
 
 - Horarios Profesores: Sección orientada a la revisión de las agendas de los docentes, facilitando la coordinación de actividades y la resolución de conflictos horarios.
 
@@ -143,7 +143,7 @@ En la parte superior se presenta un tablero informativo que indica el estado act
 
 - Espacios Libres: Número de salas, laboratorios y talleres disponibles para su uso inmediato.
 
-- Espacios Ocupados: Recintos que se encuentran con actividad académica en curso.
+- Espacios Ocupados: espacios que se encuentran con actividad académica en curso.
 
 - En Mantención: Cantidad de espacios inhabilitados temporalmente por labores técnicas.
 
@@ -155,7 +155,7 @@ Esta sección permite la ejecución de flujos de trabajo principales mediante tr
 
 - Gestionar Reservas: Panel de administración para editar, reasignar o cancelar reservas ya existentes en el sistema.
 
-- Gestionar Espacios: Herramienta de configuración para administrar y actualizar los estados de disponibilidad de cada recinto.
+- Gestionar Espacios: Herramienta de configuración para administrar y actualizar los estados de disponibilidad de cada espacio.
 
 ### Accesos Rápidos Complementarios
 ![alt text](image-21.png)
@@ -180,7 +180,7 @@ En esta sección se deben ingresar los datos de contacto y validación de quien 
 ### Detalles de la Reserva
 Aquí se definen las coordenadas espacio-temporales de la solicitud:
 
-- Espacio: Selección del recinto específico (sala o laboratorio) a reservar.
+- Espacio: Selección del espacio específico (sala o laboratorio) a reservar.
 
 - Fecha: Calendario para definir el día exacto de la actividad.
 
@@ -218,7 +218,7 @@ La interfaz presenta una tabla detallada con la siguiente información crítica:
 
 - Estado: Indicador visual del flujo de la reserva (ej. Etiqueta verde para "Activa").
 
-- Espacio: Código identificador del recinto asignado (ej. TH-03).
+- Espacio: Código identificador del espacio asignado (ej. TH-03).
 
 - Responsable: Nombre completo y categoría del solicitante (profesor o solicitante externo).
 
@@ -238,21 +238,21 @@ Desde este panel también se habilita el botón "+ Nueva Reserva", el cual redir
 
 ## Gestión de Espacios
 ![](image-27.png)
-Este panel permite a los administradores supervisar y modificar el estado operativo de los recintos físicos de la sede (salas y laboratorios) de manera individual, garantizando que el sistema refleje la disponibilidad real de la infraestructura.
+Este panel permite a los administradores supervisar y modificar el estado operativo de los espacios físicos de la sede (salas y laboratorios) de manera individual, garantizando que el sistema refleje la disponibilidad real de la infraestructura.
 
 ### Herramientas de Filtrado y Búsqueda
-Dada la cantidad de recintos en la sede, el módulo integra controles para segmentar la información:
+Dada la cantidad de espacios en la sede, el módulo integra controles para segmentar la información:
 
 - Estado: Filtro para visualizar espacios según su condición (Disponible, Ocupado o En Mantención).
 
 - Piso: Permite restringir la vista a un nivel específico del edificio (ej. Piso 2).
 
-- Búsqueda: Campo de texto para localizar un recinto directamente ingresando su código (ej. TH-01) o su nombre.
+- Búsqueda: Campo de texto para localizar un espacio directamente ingresando su código (ej. TH-01) o su nombre.
 
 ### Control de Mantenimiento
 La funcionalidad principal de este módulo se encuentra en la columna de Acciones:
 
-- Botón Mantenimiento: Permite cambiar el estado de un recinto de forma manual. Al activar esta opción, el espacio quedará inhabilitado para nuevas reservas, apareciendo como "En Mantención" en todo el sistema hasta que el administrador revierta la acción. Al hacer click en este botón emergera un dialogo de confirmación para cambiar el espacio a modo mantención
+- Botón Mantenimiento: Permite cambiar el estado de un espacio de forma manual. Al activar esta opción, el espacio quedará inhabilitado para nuevas reservas, apareciendo como "En Mantención" en todo el sistema hasta que el administrador revierta la acción. Al hacer click en este botón emergera un dialogo de confirmación para cambiar el espacio a modo mantención
 ![alt text](image-28.png)
 
 - Botón Liberar: Si el estado del espacio es "Mantención" no se podrán ejecutar reservas en dichos espacios. Para cambiar nuevamente el espacio a "Disponible" debe pulsar en este botón. Se pedirá confirmación para ejecutar esta acción.
@@ -265,3 +265,46 @@ La funcionalidad principal de este módulo se encuentra en la columna de Accione
 
 ### Flujo de Trabajo Integrado
 Para optimizar la navegación, se mantiene el botón de "+ Nueva Reserva", permitiendo que el administrador, tras verificar la disponibilidad o capacidad de una sala, proceda directamente al formulario de creación sin cambiar de sección.
+
+## Plano Digital
+### Acceso al Plano Digital
+
+El Plano Digital constituye una herramienta integral que facilita la visualización espacial de la infraestructura académica y permite la ejecución directa de reservas mediante tecnología de código QR. A través de esta funcionalidad, los usuarios pueden:
+
+- **Visualizar la distribución arquitectónica** de la sede en formato interactivo
+- **Identificar espacios disponibles** en tiempo real con indicadores visuales claramente diferenciados
+- **Efectuar reservas instantáneas** escaneando el código QR asociado a la llave del espacio y el cédula de identidad del solicitante
+
+Este flujo de trabajo optimizado elimina la necesidad de formularios manuales, agilizando significativamente el proceso de asignación de espacios y mejorando la experiencia del usuario final.
+
+## Procedimiento de Reserva mediante Código QR
+
+El proceso de reserva desde el Plano Digital se estructura en los siguientes pasos:
+
+1. **Acceso al Plano**: Navigue hacia la sección de Plano Digital desde el menú lateral
+2. **Identificación del Espacio**: Localice visualmente el espacio deseado en la representación gráfica de la sede
+3. **Validación del Solicitante**: Escanee el cédula de identidad del responsable de la reserva
+4. **Escaneo del Código QR**: Utilice un dispositivo de lectura para capturar el código QR asociado al espacio
+5. **Confirmación**: El sistema procesará automáticamente la solicitud y confirmará la asignación en tiempo real
+
+## Procedimiento de Reserva para Solicitantes No Registrados
+
+Para usuarios que no se encuentran previamente registrados en el sistema, el procedimiento incluye un paso adicional de registro:
+
+1. **Acceso al Plano**: Navigue hacia la sección de Plano Digital desde el menú lateral
+2. **Identificación del Espacio**: Localice visualmente el espacio deseado en la representación gráfica de la sede
+3. **Primera Validación del Solicitante**: Escanee su cédula de identidad
+4. **Completar Formulario de Registro**: Ingrese sus datos personales (nombre completo, RUN, correo electrónico y teléfono de contacto)
+5. **Segunda Validación del Solicitante**: Escanee nuevamente su cédula de identidad
+6. **Escaneo del Código QR**: Utilice el dispositivo de lectura para capturar el código QR asociado al espacio
+7. **Confirmación**: Aparecerá en pantalla una confirmación indicando que su reserva ha sido efectuada.
+## Procedimiento para Devolución de un Espacio
+
+El proceso de devolución de un espacio reservado se estructura en los siguientes pasos:
+
+1. **Acceso al Plano**: Navigue hacia la sección de Plano Digital desde el menú lateral
+2. **Identificación del Espacio**: Localice visualmente el espacio ocupado que desea devolver
+3. **Validación del Responsable**: Escanee la cédula de identidad del responsable de la reserva
+4. **Escaneo del Código QR**: Utilice eln dispositivo de lectura para capturar el código QR asociado al espacio reservado
+5. **Confirmación**: El sistema procesará automáticamente la devolución y liberará el espacio en tiempo real, actualizando su estado a "Disponible"
+

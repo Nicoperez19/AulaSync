@@ -2746,6 +2746,30 @@ class DashboardController extends Controller
             return $plan->id_asignatura . '-' . $plan->id_espacio . '-' . $dia;
         });
 
+        // =====================================================
+        // CARGAR RESERVAS DEL MES PARA VERIFICAR CLASES REALIZADAS
+        // Una clase solo se considera "realizada" si tiene una reserva
+        // =====================================================
+        $reservasMes = Reserva::whereMonth('fecha_reserva', $mes)
+            ->whereYear('fecha_reserva', $anio)
+            ->where('fecha_reserva', '<=', $hoy)
+            ->whereIn('estado', ['activa', 'finalizada'])
+            ->whereNotNull('hora')
+            ->get();
+
+        // Construir lookup indexado por fecha|espacio para búsqueda rápida
+        $reservasLookup = [];
+        foreach ($reservasMes as $reserva) {
+            $fechaKey = $reserva->fecha_reserva->format('Y-m-d');
+            $keyBase = $fechaKey . '|' . $reserva->id_espacio;
+            $reservasLookup[$keyBase] = true;
+            // También indexar por asignatura si está disponible
+            if ($reserva->id_asignatura) {
+                $keyAsig = $keyBase . '|' . $reserva->id_asignatura;
+                $reservasLookup[$keyAsig] = true;
+            }
+        }
+
         // Agrupar por día para el gráfico de barras - SOLO HASTA HOY
         $diasDelMes = [];
         $inicio = Carbon::create($anio, $mes, 1);
@@ -2773,6 +2797,7 @@ class DashboardController extends Controller
         $fechaHoyFormato = $hoy->format('d/m');
 
         // Contar CLASES planificadas (agrupadas) solo para días que ya pasaron o es hoy
+        // Una clase se considera "realizada" SOLO si hay una reserva que lo respalde
         foreach ($planificacionesAgrupadas as $key => $modulos) {
             $primerPlan = $modulos->first();
             if ($primerPlan && $primerPlan->modulo) {
@@ -2790,13 +2815,23 @@ class DashboardController extends Controller
                                 if ($horaActual < $horaLimite) {
                                     // La clase aún está por realizar (no ha pasado el tiempo de gracia)
                                     $diasDelMes[$diaFormato]['por_realizar']++;
-                                } else {
-                                    // Ya pasó el tiempo, cuenta como realizada (si no está en no_realizadas)
-                                    $diasDelMes[$diaFormato]['realizadas']++;
+                                    continue;
                                 }
-                            } else {
-                                // Días anteriores: cuenta como realizada por defecto
+                            }
+                            
+                            // Verificar si existe una reserva para esta clase en esta fecha
+                            $fechaStr = $fecha->format('Y-m-d');
+                            $lookupKeyAsig = $fechaStr . '|' . $primerPlan->id_espacio . '|' . $primerPlan->id_asignatura;
+                            $lookupKeyBase = $fechaStr . '|' . $primerPlan->id_espacio;
+                            
+                            // Primero buscar por espacio+asignatura (más preciso), luego solo espacio
+                            $tieneReserva = isset($reservasLookup[$lookupKeyAsig]) || isset($reservasLookup[$lookupKeyBase]);
+                            
+                            if ($tieneReserva) {
                                 $diasDelMes[$diaFormato]['realizadas']++;
+                            } else {
+                                // No hay reserva → la clase no se realizó
+                                $diasDelMes[$diaFormato]['no_realizadas']++;
                             }
                         }
                     }
@@ -2804,13 +2839,12 @@ class DashboardController extends Controller
             }
         }
 
-        // Contar clases no realizadas por día y agregar detalle (ya agrupadas)
+        // Agregar detalle de clases no realizadas (ya agrupadas)
+        // Los conteos ya se calcularon arriba basándose en reservas,
+        // aquí solo agregamos la información de detalle y recuperaciones
         foreach ($clasesNoRealizadas as $clase) {
             $diaFormato = $clase->fecha_clase->format('d/m');
             if (isset($diasDelMes[$diaFormato])) {
-                $diasDelMes[$diaFormato]['no_realizadas']++;
-                $diasDelMes[$diaFormato]['realizadas'] = max(0, $diasDelMes[$diaFormato]['realizadas'] - 1);
-                
                 // Contar recuperadas
                 if ($clase->estado === 'recuperada') {
                     $diasDelMes[$diaFormato]['recuperadas']++;
@@ -2930,6 +2964,23 @@ class DashboardController extends Controller
             return $plan->id_asignatura . '-' . $plan->id_espacio . '-' . $dia;
         });
 
+        // Cargar reservas del rango para verificar clases realizadas
+        $reservasRango = Reserva::whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
+            ->whereIn('estado', ['activa', 'finalizada'])
+            ->whereNotNull('hora')
+            ->get();
+
+        // Construir lookup indexado por fecha|espacio
+        $reservasLookupFiltro = [];
+        foreach ($reservasRango as $reserva) {
+            $fechaKey = $reserva->fecha_reserva->format('Y-m-d');
+            $keyBase = $fechaKey . '|' . $reserva->id_espacio;
+            $reservasLookupFiltro[$keyBase] = true;
+            if ($reserva->id_asignatura) {
+                $reservasLookupFiltro[$keyBase . '|' . $reserva->id_asignatura] = true;
+            }
+        }
+
         // Calcular días laborales en el rango (Lun-Vie + Sábados hasta 13:00)
         $diasTotales = 0;
         $diasLaborales = 0;
@@ -2958,35 +3009,32 @@ class DashboardController extends Controller
                 if ($diaSemanaKey !== 'Domingo') {
                     // Contar CLASES (no módulos) planeadas para este día de la semana
                     $diaIngles = strtolower($diasSemana[$diaSemanaIndex]);
-                    $clasesDelDia = 0;
+                    $fechaStr = $fecha->format('Y-m-d');
                     
                     foreach ($planificacionesAgrupadas as $key => $modulos) {
                         $primerPlan = $modulos->first();
                         if ($primerPlan && $primerPlan->modulo && strtolower($primerPlan->modulo->dia) === $diaIngles) {
-                            $clasesDelDia++; // +1 por clase, no por módulo
+                            $porDiaSemana[$diaSemanaKey]['total']++;
+                            
+                            // Verificar si existe reserva para esta clase
+                            $lookupKeyAsig = $fechaStr . '|' . $primerPlan->id_espacio . '|' . $primerPlan->id_asignatura;
+                            $lookupKeyBase = $fechaStr . '|' . $primerPlan->id_espacio;
+                            $tieneReserva = isset($reservasLookupFiltro[$lookupKeyAsig]) || isset($reservasLookupFiltro[$lookupKeyBase]);
+                            
+                            if ($tieneReserva) {
+                                $porDiaSemana[$diaSemanaKey]['realizadas']++;
+                            } else {
+                                $porDiaSemana[$diaSemanaKey]['no_realizadas']++;
+                            }
                         }
                     }
-                    
-                    $porDiaSemana[$diaSemanaKey]['total'] += $clasesDelDia;
-                    $porDiaSemana[$diaSemanaKey]['realizadas'] += $clasesDelDia;
                 }
             }
         }
 
-        // Restar clases no realizadas (ya agrupadas)
-        foreach ($clasesNoRealizadas as $clase) {
-            $diaSemanaIndex = $clase->fecha_clase->dayOfWeek;
-            $diaSemanaKey = $diasSemanaES[$diaSemanaIndex];
-            
-            if (isset($porDiaSemana[$diaSemanaKey])) {
-                $porDiaSemana[$diaSemanaKey]['no_realizadas']++;
-                $porDiaSemana[$diaSemanaKey]['realizadas']--;
-            }
-        }
-
-        // Calcular totales (usando clases agrupadas)
+        // Calcular totales (usando conteos basados en reservas)
         $totalRealizadas = collect($porDiaSemana)->sum('realizadas');
-        $totalNoRealizadas = $clasesNoRealizadas->count();
+        $totalNoRealizadas = collect($porDiaSemana)->sum('no_realizadas');
         $clasesRecuperadas = $clasesNoRealizadas->where('estado', 'recuperada')->count();
         $clasesPendientes = $clasesNoRealizadas->where('estado', 'pendiente')->count();
         $total = $totalRealizadas + $totalNoRealizadas;
