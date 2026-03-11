@@ -21,6 +21,7 @@ class CentralDatabaseSeeder extends Seeder
         // Datos compartidos/centralizados
         $this->call(RoleSeeder::class);
         $this->call(UserSeeder::class);
+        $this->call(ControlDocenteSeeder::class);
         $this->call(AdministracionChileSeeder::class);
         $this->call(UniversidadSeeder::class);
         $this->call(SedeSeeder::class);
