@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Sede;
 use App\Models\Tenant;
+use App\Models\Mapa;
 use App\Traits\RedirectByRole;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -62,18 +63,27 @@ class SedeSelectionController extends Controller
         $sede->tenant->makeCurrent();
 
         // DEBUG: Log para verificar
+        $user = Auth::user();
         \Log::info('SedeSelectionController::redirect', [
             'sede_id' => $sedeId,
             'tenant_id' => $sede->tenant->id,
             'tenant_domain' => $sede->tenant->domain,
             'is_initialized' => $sede->tenant->is_initialized,
             'needs_initialization' => $sede->tenant->needsInitialization(),
+            'user_roles' => $user->getRoleNames(),
+            'has_control_docente_role' => $user->hasRole('Control Docente'),
         ]);
 
         // Verificar si el tenant necesita inicialización
         if ($sede->tenant->needsInitialization()) {
             \Log::info('Redirecting to tenant initialization');
             return redirect()->route('tenant.initialization.index');
+        }
+
+        // Si es Control Docente, redirigir directamente al plano
+        if ($user->hasRole('Control Docente')) {
+            \Log::info('✅ Control Docente detectado, redirigiendo directamente al plano');
+            return redirect()->route('plano.index');
         }
 
         // Ya autenticado y tenant seleccionado, redirigir al dashboard según rol
