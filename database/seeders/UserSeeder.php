@@ -62,8 +62,6 @@ class UserSeeder extends Seeder
                 'fecha_nacimiento' => '1985-05-20',
             ]
         )->assignRole('Administrador');
-            ]
-        )->assignRole('Supervisor');
 
         User::updateOrCreate(
             ['run' => '99999999'],
