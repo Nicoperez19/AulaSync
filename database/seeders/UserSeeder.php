@@ -61,17 +61,7 @@ class UserSeeder extends Seeder
                 'direccion' => 'Calle Falsa 123',
                 'fecha_nacimiento' => '1985-05-20',
             ]
-        )->assignRole('Supervisor');
-
-        User::updateOrCreate(
-            ['run' => '11111111'],
-            [
-                'name' => 'Supervisor',
-                'email' => 'supervisor@ucsc.cl',
-                'password' => bcrypt('password'),
-                'celular' => '912345678',
-                'direccion' => 'Avenida Siempreviva 742',
-                'fecha_nacimiento' => '1992-08-15',
+        )->assignRole('Administrador');
             ]
         )->assignRole('Supervisor');
 
@@ -98,6 +88,18 @@ class UserSeeder extends Seeder
                 'fecha_nacimiento' => '1992-08-15',
             ]
         )->assignRole('Profesor');
+
+        User::updateOrCreate(
+            ['run' => '13103602'],
+            [
+                'name' => 'Claudia Martinez',
+                'email' => 'cmartinez@ucsc.cl',
+                'password' => bcrypt('password'),
+                'celular' => '912345678',
+                'direccion' => 'Avenida Siempreviva 742',
+                'fecha_nacimiento' => '1992-08-15',
+            ]
+        )->assignRole('Administrador');
 
         // Crear usuarios automáticamente para todos los profesores (si estamos en contexto de tenant)
         // Solo intentar obtener profesores si estamos conectados a base de datos de tenant
