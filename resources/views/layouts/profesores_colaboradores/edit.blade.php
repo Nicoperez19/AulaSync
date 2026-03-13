@@ -136,11 +136,15 @@
                                             <option value="temporal" {{ old('tipo_clase', $profesorColaborador->tipo_clase ?? 'temporal') === 'temporal' ? 'selected' : '' }}>Temporal</option>
                                             <option value="reforzamiento" {{ old('tipo_clase', $profesorColaborador->tipo_clase ?? 'temporal') === 'reforzamiento' ? 'selected' : '' }}>Reforzamiento</option>
                                             <option value="recuperacion" {{ old('tipo_clase', $profesorColaborador->tipo_clase ?? 'temporal') === 'recuperacion' ? 'selected' : '' }}>Recuperación</option>
+                                            <option value="actividad_externa" {{ old('tipo_clase', $profesorColaborador->tipo_clase ?? 'temporal') === 'actividad_externa' ? 'selected' : '' }}>Actividad Externa</option>
+                                            <option value="actividad_interna" {{ old('tipo_clase', $profesorColaborador->tipo_clase ?? 'temporal') === 'actividad_interna' ? 'selected' : '' }}>Actividad Interna</option>
                                         </select>
                                         <p class="mt-1 text-xs text-gray-500">
                                             <span class="inline-block px-2 py-0.5 bg-purple-200 text-purple-700 rounded mr-2">Temporal</span>
                                             <span class="inline-block px-2 py-0.5 bg-orange-200 text-orange-700 rounded mr-2">Reforzamiento</span>
-                                            <span class="inline-block px-2 py-0.5 bg-green-200 text-green-700 rounded">Recuperación</span>
+                                            <span class="inline-block px-2 py-0.5 bg-green-200 text-green-700 rounded mr-2">Recuperación</span>
+                                            <span class="inline-block px-2 py-0.5 bg-sky-200 text-sky-700 rounded mr-2">Actividad Externa</span>
+                                            <span class="inline-block px-2 py-0.5 bg-indigo-200 text-indigo-700 rounded">Actividad Interna</span>
                                         </p>
                                         @error('tipo_clase')
                                             <p class="text-red-500 text-sm mt-1">{{ $message }}</p>

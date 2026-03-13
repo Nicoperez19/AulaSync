@@ -116,8 +116,9 @@
                                     id="id-asignatura"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
                                     <option value="">Seleccione una asignatura</option>
+                                    <option value="otro">Otro</option>
                                 </select>
-                                <p class="text-xs text-gray-500 mt-1">Seleccione la asignatura para esta reserva</p>
+                                <p class="text-xs text-gray-500 mt-1">Seleccione la asignatura para esta reserva o use "Otro" si no aplica</p>
                             </div>
 
                             <!-- Campo para buscar asignatura (solo visible cuando es colaborador) -->
@@ -733,7 +734,7 @@ function toggleAsignaturaField() {
     const buscarAsignaturaInput = document.getElementById('buscar-asignatura');
 
     // Limpiar campos
-    asignaturaSelect.innerHTML = '<option value="">Seleccione una asignatura</option>';
+    asignaturaSelect.innerHTML = '<option value="">Seleccione una asignatura</option><option value="otro">Otro</option>';
     buscarAsignaturaInput.value = '';
 
     if (tipoSelect.value === 'profesor') {
@@ -767,14 +768,14 @@ async function cargarAsignaturasProfesor() {
     const asignaturaSelect = document.getElementById('id-asignatura');
 
     if (!runProfesor) {
-        asignaturaSelect.innerHTML = '<option value="">Primero seleccione un profesor</option>';
+        asignaturaSelect.innerHTML = '<option value="">Primero seleccione un profesor</option><option value="otro">Otro</option>';
         console.warn('⚠️ No hay RUN de profesor para cargar asignaturas');
         return;
     }
 
     try {
         console.log('📚 Cargando asignaturas para profesor:', runProfesor);
-        asignaturaSelect.innerHTML = '<option value="">Cargando asignaturas...</option>';
+        asignaturaSelect.innerHTML = '<option value="">Cargando asignaturas...</option><option value="otro">Otro</option>';
 
         const response = await fetch(`/api/profesor/${runProfesor}/asignaturas`, {
             headers: {
@@ -790,7 +791,7 @@ async function cargarAsignaturasProfesor() {
         const data = await response.json();
         console.log('📦 Datos recibidos de asignaturas:', data);
 
-        asignaturaSelect.innerHTML = '<option value="">Seleccione una asignatura</option>';
+        asignaturaSelect.innerHTML = '<option value="">Seleccione una asignatura</option><option value="otro">Otro</option>';
 
         if (data.success && data.asignaturas && data.asignaturas.length > 0) {
             console.log(`✅ Se encontraron ${data.asignaturas.length} asignaturas para el profesor`);
@@ -817,7 +818,7 @@ async function cargarAsignaturasProfesor() {
         }
     } catch (error) {
         console.error('❌ Error al cargar asignaturas:', error);
-        asignaturaSelect.innerHTML = '<option value="">Error al cargar asignaturas</option>';
+        asignaturaSelect.innerHTML = '<option value="">Error al cargar asignaturas</option><option value="otro">Otro</option>';
 
         Swal.fire({
             title: 'Error',

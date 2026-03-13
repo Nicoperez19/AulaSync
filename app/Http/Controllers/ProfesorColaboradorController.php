@@ -114,7 +114,7 @@ class ProfesorColaboradorController extends Controller
             'nombre_asignatura_temporal' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'cantidad_inscritos' => 'required|integer|min:1',
-            'tipo_clase' => 'required|in:temporal,reforzamiento,recuperacion',
+            'tipo_clase' => 'required|in:temporal,reforzamiento,recuperacion,actividad_externa,actividad_interna',
             'fecha_inicio' => 'required|date',
             'fecha_termino' => 'required|date|after_or_equal:fecha_inicio',
             'id_asignatura' => [
@@ -260,7 +260,7 @@ class ProfesorColaboradorController extends Controller
             ],
             'nombre_asignatura_temporal' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
-            'tipo_clase' => 'required|in:temporal,reforzamiento,recuperacion',
+            'tipo_clase' => 'required|in:temporal,reforzamiento,recuperacion,actividad_externa,actividad_interna',
             'fecha_inicio' => 'required|date',
             'fecha_termino' => 'required|date|after_or_equal:fecha_inicio',
             'id_asignatura' => [

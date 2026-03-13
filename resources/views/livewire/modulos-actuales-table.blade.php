@@ -309,6 +309,8 @@
                                                             'temporal' => ['bg' => 'bg-purple-200', 'text' => 'text-purple-700', 'label' => 'TEMPORAL'],
                                                             'reforzamiento' => ['bg' => 'bg-orange-200', 'text' => 'text-orange-700', 'label' => 'REFORZAMIENTO'],
                                                             'recuperacion' => ['bg' => 'bg-green-200', 'text' => 'text-green-700', 'label' => 'RECUPERACIÓN'],
+                                                            'actividad_externa' => ['bg' => 'bg-sky-200', 'text' => 'text-sky-700', 'label' => 'ACT. EXTERNA'],
+                                                            'actividad_interna' => ['bg' => 'bg-indigo-200', 'text' => 'text-indigo-700', 'label' => 'ACT. INTERNA'],
                                                         ];
                                                         $etiqueta = $etiquetaConfig[$tipoClase] ?? $etiquetaConfig['temporal'];
                                                     @endphp

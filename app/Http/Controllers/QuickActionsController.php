@@ -402,7 +402,7 @@ class QuickActionsController extends Controller
                 'correo' => 'required|email|max:255',
                 'telefono' => 'nullable|string|max:20', // OPCIONAL - puede ser null
                 'tipo' => 'required|in:profesor,solicitante,colaborador',
-                'id_asignatura' => 'nullable|string|exists:tenant.asignaturas,id_asignatura',
+                'id_asignatura' => 'nullable|string',
                 'espacio' => 'required|string',
                 'fecha' => 'required|date',
                 'modulo_inicial' => 'required|integer|min:1|max:12',
@@ -418,11 +418,23 @@ class QuickActionsController extends Controller
                 'tipo' => $request->tipo
             ]);
 
-            // Validar que si es profesor o colaborador tenga asignatura
-            if (($request->tipo === 'profesor' || $request->tipo === 'colaborador') && !$request->id_asignatura) {
+            $idAsignatura = $request->id_asignatura;
+            if ($idAsignatura === 'otro') {
+                $idAsignatura = null;
+            }
+
+            if ($idAsignatura && !Asignatura::where('id_asignatura', $idAsignatura)->exists()) {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Debe seleccionar una asignatura para las reservas de profesores'
+                    'mensaje' => 'La asignatura seleccionada no existe en este tenant'
+                ], 422);
+            }
+
+            // Validar que si es profesor o colaborador tenga asignatura
+            if ($request->tipo === 'colaborador' && !$idAsignatura) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Debe seleccionar una asignatura para las reservas de profesor colaborador'
                 ], 400);
             }
 
@@ -623,7 +635,7 @@ class QuickActionsController extends Controller
                 'id_reserva' => $idReserva,
                 'fecha_reserva' => $request->fecha,
                 'id_espacio' => $request->espacio,
-                'id_asignatura' => $request->id_asignatura,
+                'id_asignatura' => $idAsignatura,
                 'modulos' => $duracionModulos,
                 'modulo_inicio' => $request->modulo_inicial,
                 'modulo_fin' => $request->modulo_final,
