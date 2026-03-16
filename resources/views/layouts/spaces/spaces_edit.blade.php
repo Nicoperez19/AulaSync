@@ -116,7 +116,7 @@
                         <select name="tipo_espacio" id="tipo_espacio"
                             class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m"
                             required>
-                            @foreach (['Aula', 'Laboratorio', 'Biblioteca', 'Sala de Reuniones', 'Oficinas'] as $tipo)
+                            @foreach (['Aula', 'Laboratorio', 'Biblioteca', 'Sala de Reuniones', 'Oficinas', 'Taller'] as $tipo)
                                 <option value="{{ $tipo }}"
                                     {{ $espacio->tipo_espacio == $tipo ? 'selected' : '' }}>
                                     {{ $tipo }}
