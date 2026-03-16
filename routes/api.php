@@ -477,6 +477,9 @@ Route::get('/espacios/resumen', [EspacioApiController::class, 'resumenEspacios']
 
 use App\Http\Controllers\SalaEstudioController;
 
+// Registrar asistencia grupal en sala de estudio (primer carnet = responsable)
+Route::post('/sala-estudio/registrar-asistencia', [PlanoDigitalController::class, 'registrarAsistenciaSalaEstudio']);
+
 // Registrar acceso a sala de estudio
 Route::post('/sala-estudio/registrar-acceso', [SalaEstudioController::class, 'registrarAcceso']);
 

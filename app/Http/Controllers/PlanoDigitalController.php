@@ -13,6 +13,7 @@ use App\Models\Piso;
 use App\Models\Espacio;
 use App\Models\Profesor;
 use App\Models\Solicitante;
+use App\Models\Asistencia;
 use App\Models\Tenant;
 use App\Helpers\SemesterHelper;
 use App\Mail\ConfirmacionReserva;
@@ -2389,6 +2390,9 @@ class PlanoDigitalController extends Controller
     public function registrarAsistenciaSalaEstudio(Request $request)
     {
         try {
+            // Asegurar contexto tenant para consultas/escrituras
+            $this->establecerContextoTenant();
+
             $validated = $request->validate([
                 'espacio_id' => 'required|string|exists:tenant.espacios,id_espacio',
                 'asistentes' => 'required|array|min:1',
@@ -2397,7 +2401,23 @@ class PlanoDigitalController extends Controller
             ]);
 
             $espacioId = $validated['espacio_id'];
-            $asistentes = $validated['asistentes'];
+            $asistentes = collect($validated['asistentes'])
+                ->map(function ($asistente) {
+                    return [
+                        'run' => preg_replace('/[^0-9kK]/', '', (string) $asistente['run']),
+                        'nombre' => trim((string) $asistente['nombre']),
+                    ];
+                })
+                ->filter(fn ($a) => $a['run'] !== '' && $a['nombre'] !== '')
+                ->unique('run')
+                ->values();
+
+            if ($asistentes->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Debe registrar al menos un asistente válido'
+                ], 422);
+            }
 
             // Verificar que el espacio sea una sala de estudio
             $espacio = Espacio::where('id_espacio', $espacioId)->first();
@@ -2417,60 +2437,159 @@ class PlanoDigitalController extends Controller
             }
 
             // Verificar capacidad
-            if (count($asistentes) > $espacio->capacidad_maxima) {
+            if ($espacio->capacidad_maxima && $asistentes->count() > (int) $espacio->capacidad_maxima) {
                 return response()->json([
                     'success' => false,
                     'message' => 'La cantidad de asistentes excede la capacidad máxima de la sala'
                 ], 400);
             }
 
-            $horaActual = Carbon::now();
-            $fechaActual = $horaActual->format('Y-m-d');
+            $ahora = Carbon::now();
+            $fechaActual = $ahora->toDateString();
+            $horaActual = $ahora->format('H:i:s');
 
-            // Crear una reserva para cada asistente o una única reserva grupal
-            // Opción 1: Reserva grupal (recomendada)
-            $primerasistente = $asistentes[0];
-            
-            // Buscar o crear solicitante para el primer asistente
-            $solicitante = Solicitante::firstOrCreate(
-                ['run_solicitante' => $primerasistente['run']],
-                [
-                    'nombre_solicitante' => $primerasistente['nombre'],
-                    'email_solicitante' => $primerasistente['run'] . '@temp.com',
-                    'telefono_solicitante' => '000000000',
-                    'tipo_solicitante' => 'estudiante'
-                ]
-            );
+            $reserva = DB::transaction(function () use ($espacio, $espacioId, $asistentes, $fechaActual, $horaActual, $ahora) {
+                // Evitar múltiples reservas activas simultáneas en la misma sala de estudio
+                $reservaActiva = Reserva::where('id_espacio', $espacioId)
+                    ->whereDate('fecha_reserva', $fechaActual)
+                    ->where('estado', 'activa')
+                    ->lockForUpdate()
+                    ->first();
 
-            // Crear la reserva grupal
-            $reserva = Reserva::create([
-                'id_espacio' => $espacioId,
-                'run_solicitante' => $solicitante->run_solicitante,
-                'fecha_reserva' => $fechaActual,
-                'hora_inicio' => $horaActual->format('H:i:s'),
-                'hora_fin' => $horaActual->copy()->addHours(2)->format('H:i:s'), // 2 horas por defecto
-                'estado_reserva' => 'Ocupado',
-                'motivo' => 'Sala de Estudio - Grupo de ' . count($asistentes) . ' asistentes',
-                'observaciones' => 'Asistentes: ' . implode(', ', array_column($asistentes, 'nombre'))
-            ]);
+                if ($reservaActiva) {
+                    // Si vuelve a escanear el responsable, se interpreta como devolución/cierre de sala
+                    $runEscaneados = $asistentes->pluck('run')->values();
+                    if ($runEscaneados->contains((string) $reservaActiva->run_solicitante)) {
+                        $horaSalida = $ahora->format('H:i:s');
 
-            // Actualizar estado del espacio
-            $espacio->update([
-                'estado' => 'Ocupado',
-                'puestos_disponibles' => max(0, $espacio->capacidad_maxima - count($asistentes))
-            ]);
+                        $reservaActiva->estado = 'finalizada';
+                        $reservaActiva->hora_salida = $horaSalida;
+                        $reservaActiva->observaciones = trim(($reservaActiva->observaciones ?? '') . ' | Sala de estudio finalizada por responsable');
+                        $reservaActiva->save();
+
+                        // Finalizar asistencias en curso de esa reserva
+                        Asistencia::where('id_reserva', $reservaActiva->id_reserva)
+                            ->where('estado', Asistencia::ESTADO_PRESENTE)
+                            ->update([
+                                'estado' => Asistencia::ESTADO_FINALIZADO,
+                                'hora_salida' => $horaSalida,
+                                'updated_at' => now(),
+                            ]);
+
+                        // Liberar espacio
+                        $espacio->estado = 'Disponible';
+                        if (!is_null($espacio->capacidad_maxima)) {
+                            $espacio->puestos_disponibles = (int) $espacio->capacidad_maxima;
+                        }
+                        $espacio->save();
+
+                        return [
+                            'accion' => 'devolucion',
+                            'reserva' => $reservaActiva,
+                            'run_responsable' => (string) $reservaActiva->run_solicitante,
+                        ];
+                    }
+
+                    throw new \RuntimeException('Ya existe una reserva activa en esta sala de estudio. Solo el responsable puede finalizarla escaneando nuevamente su carnet.');
+                }
+
+                // El primer carnet escaneado es el responsable de la reserva
+                $responsable = $asistentes->first();
+
+                $solicitanteResponsable = Solicitante::firstOrCreate(
+                    ['run_solicitante' => $responsable['run']],
+                    [
+                        'nombre' => $responsable['nombre'],
+                        'correo' => $responsable['run'] . '@temp.com',
+                        'telefono' => '000000000',
+                        'tipo_solicitante' => 'estudiante',
+                        'activo' => true,
+                        'fecha_registro' => now(),
+                    ]
+                );
+
+                // Crear reserva grupal (formato real de la tabla reservas)
+                $reservaNueva = new Reserva();
+                $reservaNueva->id_reserva = Reserva::generarIdUnico();
+                $reservaNueva->id_espacio = $espacioId;
+                $reservaNueva->run_solicitante = $solicitanteResponsable->run_solicitante;
+                $reservaNueva->fecha_reserva = $fechaActual;
+                $reservaNueva->hora = $horaActual;
+                $reservaNueva->hora_salida = $ahora->copy()->addHours(2)->format('H:i:s');
+                $reservaNueva->estado = 'activa';
+                $reservaNueva->tipo_reserva = 'espontanea';
+                $reservaNueva->observaciones = sprintf(
+                    'Sala de Estudio | Responsable: %s (%s) | Asistentes: %d',
+                    $responsable['nombre'],
+                    $responsable['run'],
+                    $asistentes->count()
+                );
+                $reservaNueva->save();
+
+                // Registrar asistencia de todos los escaneados (incluye responsable)
+                foreach ($asistentes as $asistente) {
+                    // Mantener solicitantes mínimos para trazabilidad de RUN/nombre
+                    Solicitante::firstOrCreate(
+                        ['run_solicitante' => $asistente['run']],
+                        [
+                            'nombre' => $asistente['nombre'],
+                            'correo' => $asistente['run'] . '@temp.com',
+                            'telefono' => '000000000',
+                            'tipo_solicitante' => 'estudiante',
+                            'activo' => true,
+                            'fecha_registro' => now(),
+                        ]
+                    );
+
+                    Asistencia::create([
+                        'id_reserva' => $reservaNueva->id_reserva,
+                        'id_espacio' => $espacioId,
+                        'rut_asistente' => $asistente['run'],
+                        'nombre_asistente' => $asistente['nombre'],
+                        'hora_llegada' => $horaActual,
+                        'tipo_entrada' => Asistencia::TIPO_ESPONTANEA,
+                        'estado' => Asistencia::ESTADO_PRESENTE,
+                        'observaciones' => $asistente['run'] === $responsable['run']
+                            ? 'Responsable de reserva de sala de estudio'
+                            : 'Asistente de sala de estudio',
+                    ]);
+                }
+
+                // Actualizar estado/cupos del espacio
+                $espacio->estado = 'Ocupado';
+                if (!is_null($espacio->capacidad_maxima)) {
+                    $espacio->puestos_disponibles = max(0, (int) $espacio->capacidad_maxima - $asistentes->count());
+                }
+                $espacio->save();
+
+                return [
+                    'accion' => 'registro',
+                    'reserva' => $reservaNueva,
+                    'run_responsable' => $responsable['run'] ?? null,
+                ];
+            });
+
+            $accion = $reserva['accion'] ?? 'registro';
+            $reservaResultado = $reserva['reserva'];
+            $runResponsable = $reserva['run_responsable'] ?? ($asistentes->first()['run'] ?? null);
 
             \Log::info('Asistencia registrada en sala de estudio', [
                 'espacio_id' => $espacioId,
-                'cantidad_asistentes' => count($asistentes),
-                'reserva_id' => $reserva->id_reserva
+                'cantidad_asistentes' => $asistentes->count(),
+                'responsable' => $runResponsable,
+                'reserva_id' => $reservaResultado->id_reserva,
+                'accion' => $accion
             ]);
 
             return response()->json([
                 'success' => true,
-                'message' => 'Asistencia registrada exitosamente',
-                'reserva_id' => $reserva->id_reserva,
-                'cantidad_asistentes' => count($asistentes)
+                'accion' => $accion,
+                'message' => $accion === 'devolucion'
+                    ? 'Sala de estudio devuelta exitosamente por el responsable'
+                    : 'Asistencia registrada exitosamente',
+                'reserva_id' => $reservaResultado->id_reserva,
+                'cantidad_asistentes' => $asistentes->count(),
+                'run_responsable' => $runResponsable
             ]);
 
         } catch (\Illuminate\Validation\ValidationException $e) {

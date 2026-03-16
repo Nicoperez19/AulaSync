@@ -20,6 +20,9 @@ use App\Models\Profesor;
 use App\Models\Reserva;
 use App\Traits\SafeCacheTrait;
 use Dompdf\Dompdf;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class EspacioController extends Controller
 {
@@ -43,16 +46,7 @@ class EspacioController extends Controller
         Log::info('Datos recibidos:', $request->all());
 
         try {
-            $validated = $request->validate([
-                'id_espacio' => 'required|string|max:50|unique:tenant.espacios,id_espacio',
-                'nombre_espacio' => 'required|string|max:255',
-                'id_universidad' => 'required|exists:universidades,id_universidad',
-                'id_facultad' => 'required|exists:facultades,id_facultad',
-                'piso_id' => 'required|exists:tenant.pisos,id',
-                'tipo_espacio' => 'required|in:Sala de Clases,Laboratorio,Biblioteca,Sala de Reuniones,Oficinas',
-                'estado' => 'required|in:Disponible,Ocupado,Reservado',
-                'puestos_disponibles' => 'nullable|integer|min:1',
-            ]);
+            $validated = $this->validarDatosEspacio($request);
 
             $espacio = Espacio::create([
                 'id_espacio' => $validated['id_espacio'],
@@ -67,6 +61,8 @@ class EspacioController extends Controller
                 ->route('spaces_index')
                 ->with('success', 'Espacio creado exitosamente.');
 
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Error al crear espacio:', [
                 'error' => $e->getMessage(),
@@ -89,6 +85,8 @@ class EspacioController extends Controller
             ->where('id_espacio', $id_espacio)
             ->firstOrFail();
 
+        $this->autorizarGestionEspacio($espacio);
+
         $universidades = Universidad::all();
         $sedes = Sede::where('id_universidad', $espacio->piso->facultad->sede->id_universidad)->get();
         $facultades = Facultad::where('id_sede', $espacio->piso->facultad->id_sede)->get();
@@ -103,18 +101,11 @@ class EspacioController extends Controller
     public function update(Request $request, string $id_espacio)
     {
         try {
-            $validated = $request->validate([
-                'id_espacio' => 'required|string|max:50|unique:tenant.espacios,id_espacio,' . $id_espacio . ',id_espacio',
-                'nombre_espacio' => 'required|string|max:255',
-                'id_universidad' => 'required|exists:universidades,id_universidad',
-                'id_facultad' => 'required|exists:facultades,id_facultad',
-                'piso_id' => 'required|exists:tenant.pisos,id',
-                'tipo_espacio' => 'required|in:Sala de Clases,Laboratorio,Biblioteca,Sala de Reuniones,Oficinas',
-                'estado' => 'required|in:Disponible,Ocupado,Reservado',
-                'puestos_disponibles' => 'nullable|integer|min:1',
-            ]);
-
             $espacio = Espacio::where('id_espacio', $id_espacio)->firstOrFail();
+            $this->autorizarGestionEspacio($espacio);
+
+            $validated = $this->validarDatosEspacio($request, $id_espacio);
+
             $espacio->update([
                 'id_espacio' => $validated['id_espacio'],
                 'nombre_espacio' => $validated['nombre_espacio'],
@@ -128,6 +119,8 @@ class EspacioController extends Controller
                 ->route('spaces_index')
                 ->with('success', 'Espacio actualizado correctamente.');
 
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Error al actualizar espacio:', [
                 'error' => $e->getMessage(),
@@ -147,6 +140,7 @@ class EspacioController extends Controller
     {
         try {
             $espacio = Espacio::where('id_espacio', $id_espacio)->firstOrFail();
+            $this->autorizarGestionEspacio($espacio);
             $espacio->delete();
 
             return redirect()
@@ -163,6 +157,134 @@ class EspacioController extends Controller
                 ->route('spaces_index')
                 ->with('error', 'Error al eliminar el espacio: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Normaliza y valida los datos del espacio para create/update.
+     */
+    private function validarDatosEspacio(Request $request, ?string $idEspacioActual = null): array
+    {
+        $this->normalizarIdEspacio($request);
+
+        $reglaUnique = Rule::unique('tenant.espacios', 'id_espacio');
+        if ($idEspacioActual !== null) {
+            $reglaUnique->ignore($idEspacioActual, 'id_espacio');
+        }
+
+        $validated = $request->validate([
+            'id_espacio' => ['required', 'string', 'max:50', $reglaUnique],
+            'nombre_espacio' => ['required', 'string', 'max:255'],
+            'id_universidad' => ['required', Rule::exists('mysql.universidades', 'id_universidad')],
+            'id_facultad' => ['required', Rule::exists('tenant.facultades', 'id_facultad')],
+            'piso_id' => ['required', Rule::exists('tenant.pisos', 'id')],
+            'tipo_espacio' => ['required', Rule::in([
+                'Sala de Clases',
+                'Laboratorio',
+                'Laboratorio de Computación',
+                'Biblioteca',
+                'Sala de Reuniones',
+                'Oficinas',
+                'Taller',
+                'Auditorio',
+                'Sala de Estudio',
+                'Gimnasio',
+                'Sala Multiusos',
+            ])],
+            'estado' => ['required', Rule::in(['Disponible', 'Ocupado', 'Reservado'])],
+            'puestos_disponibles' => ['nullable', 'integer', 'min:1'],
+        ], [
+            'id_espacio.unique' => 'El identificador del espacio ya existe en esta sede.',
+            'id_espacio.required' => 'Debes ingresar el identificador del espacio.',
+            'id_espacio.max' => 'El identificador del espacio no puede superar 50 caracteres.',
+            'piso_id.exists' => 'El piso seleccionado no existe en el tenant actual.',
+            'id_facultad.exists' => 'La facultad seleccionada no existe en el tenant actual.',
+            'id_universidad.exists' => 'La universidad seleccionada no existe.',
+        ]);
+
+        $piso = Piso::with('facultad')->find($validated['piso_id']);
+        if (!$piso || !$piso->facultad) {
+            throw ValidationException::withMessages([
+                'piso_id' => 'El piso seleccionado no tiene una facultad válida.',
+            ]);
+        }
+
+        if ((string) $piso->id_facultad !== (string) $validated['id_facultad']) {
+            throw ValidationException::withMessages([
+                'id_facultad' => 'La facultad seleccionada no corresponde al piso elegido.',
+            ]);
+        }
+
+        if ((string) $piso->facultad->id_universidad !== (string) $validated['id_universidad']) {
+            throw ValidationException::withMessages([
+                'id_universidad' => 'La universidad seleccionada no corresponde a la facultad/piso elegido.',
+            ]);
+        }
+
+        $this->autorizarGestionSede((string) $piso->facultad->id_sede);
+
+        return $validated;
+    }
+
+    /**
+     * Normaliza id_espacio aplicando prefijo del tenant cuando corresponda.
+     */
+    private function normalizarIdEspacio(Request $request): void
+    {
+        $idEspacio = trim((string) $request->input('id_espacio', ''));
+        if ($idEspacio === '') {
+            return;
+        }
+
+        $prefijo = tenant_prefijo();
+        if ($prefijo) {
+            $prefijoNormalizado = strtoupper(trim($prefijo));
+            if ($prefijoNormalizado !== '' && !str_starts_with(strtoupper($idEspacio), $prefijoNormalizado)) {
+                $idEspacio = $prefijoNormalizado . $idEspacio;
+            }
+        }
+
+        $request->merge([
+            'id_espacio' => $idEspacio,
+        ]);
+    }
+
+    /**
+     * Autoriza CRUD de espacios según sede (admins solo su sede, superusers todas).
+     */
+    private function autorizarGestionSede(string $idSede): void
+    {
+        $user = Auth::user();
+
+        if (!$user) {
+            abort(403, 'Usuario no autenticado.');
+        }
+
+        if ($user->is_superuser) {
+            return;
+        }
+
+        if (!$user->id_sede) {
+            abort(403, 'Tu cuenta no tiene una sede asignada.');
+        }
+
+        if ((string) $user->id_sede !== $idSede) {
+            abort(403, 'No tienes permisos para gestionar espacios de otra sede.');
+        }
+    }
+
+    /**
+     * Autoriza gestión de un espacio ya existente.
+     */
+    private function autorizarGestionEspacio(Espacio $espacio): void
+    {
+        $espacio->loadMissing('piso.facultad');
+
+        $idSede = $espacio->piso?->facultad?->id_sede;
+        if (!$idSede) {
+            abort(403, 'No se pudo determinar la sede del espacio.');
+        }
+
+        $this->autorizarGestionSede((string) $idSede);
     }
 
     /**

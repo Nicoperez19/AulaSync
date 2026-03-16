@@ -5532,10 +5532,13 @@
             const data = await response.json();
 
             if (data.success) {
+                const esDevolucion = data.accion === 'devolucion';
                 Swal.fire({
                     icon: 'success',
-                    title: '¡Asistencia registrada!',
-                    text: `Se registró la asistencia de ${salaEstudioState.asistentes.length} asistente(s)`,
+                    title: esDevolucion ? '¡Sala desocupada!' : '¡Asistencia registrada!',
+                    text: data.message || (esDevolucion
+                        ? 'La sala de estudio fue devuelta por el responsable'
+                        : `Se registró la asistencia de ${salaEstudioState.asistentes.length} asistente(s)`),
                     confirmButtonColor: '#ec4899'
                 });
 
