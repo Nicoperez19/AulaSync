@@ -308,3 +308,116 @@ El proceso de devolución de un espacio reservado se estructura en los siguiente
 4. **Escaneo del Código QR**: Utilice eln dispositivo de lectura para capturar el código QR asociado al espacio reservado
 5. **Confirmación**: El sistema procesará automáticamente la devolución y liberará el espacio en tiempo real, actualizando su estado a "Disponible"
 
+### Procedimiento de Reserva de Salas de Estudio
+
+Las salas de estudio son espacios grupales donde múltiples estudiantes pueden trabajar colaborativamente. El flujo de reserva de salas de estudio es diferente al de otros espacios, ya que permite registrar un grupo de estudiantes en una sola transacción.
+
+#### Registro de Grupo en Sala de Estudio
+
+El proceso de reserva e ingreso a una sala de estudio se estructura en los siguientes pasos:
+
+1. **Acceso al Plano**: Navigue hacia la sección de Plano Digital desde el menú lateral
+2. **Identificación de la Sala**: Localice visualmente la sala de estudio deseada en la representación gráfica de la sede
+3. **Clic en la Sala de Estudio**: Al hacer clic sobre la sala, el sistema **automáticamente detecta que es una "Sala de Estudio"** y abre un modal especializado con:
+   - Información de la capacidad disponible
+   - Un campo para escanear QR/carnet
+   - Una lista de alumnos registrados
+   - Un indicador de ocupación en tiempo real
+4. **Primera Validación - Responsable**: Escanee la cédula de identidad del estudiante **responsable del grupo** (primera persona que escanea)
+   - Esta persona será registrada como el responsable de la reserva de la sala
+   - Los datos de asistencia del responsable se registran automáticamente
+4. **Ingreso de Asistentes Adicionales**: El sistema solicitará el ingreso de los nombres y RUN de los otros miembros del grupo
+   - Ingrese los datos de cada estudiante adicional que accederá a la sala
+   - El sistema registrará la asistencia de cada uno de ellos automáticamente
+   - Respete el límite de capacidad máxima de la sala de estudio
+5. **Escaneo del Código QR**: Utilice un dispositivo de lectura para capturar el código QR asociado a la sala de estudio
+6. **Confirmación de Registro**: El sistema desplegará un mensaje confirmando **"¡Asistencia registrada!"** y la sala quedará marcada como ocupada
+
+#### Devolución de Sala de Estudio
+
+Cuando el grupo haya finalizado de utilizar la sala, el responsable debe proceder a devolverla:
+
+1. **Acceso al Plano**: Navigue hacia la sección de Plano Digital desde el menú lateral
+2. **Identificación de la Sala**: Localice visualmente la sala de estudio que está siendo utilizada
+3. **Validación del Responsable**: Escanee la cédula de identidad del **responsable de la reserva** (el mismo que realizó el registro inicial)
+4. **Escaneo del Código QR**: Utilice el dispositivo de lectura para capturar el código QR asociado a la sala
+5. **Finalización de la Reserva**: El sistema detectará que el responsable está escaneando nuevamente y automáticamente:
+   - Marcará la asistencia como **finalizada** para todos los estudiantes del grupo
+   - Liberará la sala de estudio actualizando su estado a **"Disponible"**
+   - Mostrará el mensaje **"¡Sala desocupada!"** confirmando la devolución exitosa
+
+#### Consideraciones Importantes
+
+- **Solo el responsable puede cerrar la sesión**: Únicamente el estudiante responsable (quien realizó el registro inicial) puede devolver la sala. Esto garantiza que se registre correctamente la hora de salida del grupo.
+- **Registro automático de asistencia**: Todos los integrantes del grupo tienen su asistencia registrada automáticamente sin necesidad de escaneos individuales adicionales.
+- **Capacidad máxima**: El sistema validará que el número de asistentes no exceda la capacidad máxima definida para la sala de estudio.
+- **Historial de uso**: Todos los registros de entrada y salida quedan documentados en el sistema para fines de auditoría y reportería.
+
+## Clases temporales, reforzamientos, cursos y eventos (internos y externos)
+
+Esta sección describe el procedimiento para crear y administrar actividades temporales —por ejemplo, reforzamientos, cursos o eventos que se desarrollan durante más de un día— y está orientada a usuarios con permisos de gestión docente.
+
+1. Acceda al módulo **Control docente** desde el menú principal.
+2. Seleccione la opción **Clases temporales** para acceder al listado y a las herramientas de gestión.
+3. Pulse **Nueva asignatura temporal** para abrir el formulario de creación.
+
+![alt text](image-31.png)
+
+![alt text](image-32.png)
+Paso 1 — Identificación del responsable:
+- Ingrese el **RUN** del docente responsable y seleccione el registro existente si corresponde.
+- Si el docente no se encuentra registrado en el sistema, rellene los campos obligatorios: nombre completo, RUN, correo electrónico y teléfono de contacto.
+
+![alt text](image-33.png)
+![alt text](image-34.png)
+Paso 2 — Definición de la actividad:
+- Complete los datos generales de la asignatura o actividad: nombre, tipo, descripción y observaciones pertinentes.
+- Seleccione el **tipo de clase** con cuidado; esta clasificación condicionará cómo se visualizará la actividad en la vista aérea y en los reportes.
+
+![alt text](image-36.png)
+Paso 3 — Programación horaria:
+- Defina los bloques horarios en que se impartirá la actividad y verifique la coherencia de la programación con el resto de la planificación.
+![alt text](image-37.png)
+Paso 4 — Selección de espacio:
+- Según la información anterior el sistema automaticamente determinó que espacios se pueden utilizar de acuerdo al horario, día y capacidad.
+- Para lo anterior solo se muestran los espacios de tipo "Sala de Clases" si necesita utilizar algún tipo de espacio específico como taller, laboratorio o auditorio, puede habilitarlo al marcar la casilla "Mostrar salas específicas (Auditorios, Laboratorios y Talleres)". Por otro lado, si lo desea tambien puede consultar los espacios descartados mediante el botón "Ver salas descartadas"
+![alt text](image-38.png)
+- Haga click en el espacio que estime conveniente y luego haga click en guardar.
+Revisión y confirmación:
+- Revise el resumen de la asignatura temporal y confirme la creación. Una vez confirmado, el sistema incorporará la actividad en la planificación central y la mostrará en el Plano Digital y Vista aerea según la configuración seleccionada.
+
+- Si el proceso se ejecutó correctamente aparecerá un mensaje de confirmación y los espacios quedaron reservados temporalmente para la actividad, en caso contrario contacte al administrador de sistema.
+
+## Ausencias y Recuperación de Clases
+![alt text](image-39.png)
+
+Descripción general
+- Esta pantalla permite gestionar dos áreas relacionadas: el registro de ausencias de docentes y la programación de la recuperación de clases afectadas. La vista está organizada en pestañas para separar ambas funcionalidades y mostrar las herramientas pertinentes según los permisos del usuario.
+
+Permisos y comportamiento inicial
+- La pestaña mostrada por defecto depende de los permisos del usuario: si posee permiso para gestionar ausencias, se mostrará inicialmente la pestaña "Ausencias"; en caso contrario, se mostrará la pestaña de "Recuperación".
+- Mensajes: notificaciones de éxito o error se muestran en la parte superior a través de mensajes de sesión (banners verdes/rojos).
+
+Flujos principales
+
+1) Registrar una nueva ausencia
+- Pulse el botón **Nueva Ausencia** para iniciar el proceso de registro.
+- Complete los datos solicitados: docente responsable (búsqueda por RUN o nombre), fecha de inicio, fecha de término y motivo. Dependiendo de la implementación del formulario, podrá especificar también las clases que deben recuperarse.
+- Revise y confirme la creación. Tras la creación, la plataforma mostrará un mensaje de confirmación y la nueva ausencia aparecerá en el listado.
+
+2) Gestionar una ausencia existente
+- En la tabla de **Ausencias de Profesores** puede utilizar las acciones asociadas a cada fila (Editar, Cancelar, Ver detalles) para mantener el registro actualizado.
+- Al editar, modifique los campos necesarios y confirme los cambios. Si se cancela una ausencia, el sistema liberará las clases afectadas según la lógica normalmente definida.
+
+3) Planificar o revisar recuperaciones
+- Cambie a la pestaña **Recuperación de Clases** para ver y gestionar las sesiones pendientes de reagendamiento.
+- Utilice los filtros y la búsqueda para localizar recuperaciones por docente, estado o fecha.
+- Las acciones típicas en esta pestaña incluyen asignar nuevas fechas, reasignar espacios y confirmar la programación de las clases recuperadas.
+
+Controles y filtros
+- Búsqueda por profesor: localice rápidamente registros escribiendo el RUN o el nombre.
+- Selector de estado: filtre la lista por estados (por ejemplo: todas, activas, finalizadas, canceladas) para centrar la gestión.
+- Paginación y orden: las tablas Livewire permiten ordenar columnas y navegar en páginas de resultados.
+
+Buenas prácticas y consideraciones
+- Verifique siempre el profesor seleccionado al crear una ausencia.
