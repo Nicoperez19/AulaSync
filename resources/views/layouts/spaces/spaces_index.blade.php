@@ -190,6 +190,10 @@
                                     <option value="Oficinas" {{ old('tipo_espacio') == 'Oficinas' ? 'selected' : '' }}>
                                         {{ __('Oficinas') }}
                                     </option>
+                                    
+                                    <option value="Taller" {{ old('tipo_espacio') == 'Taller' ? 'selected' : '' }}>
+                                        {{ __('Taller') }}
+                                    </option>
                                 </select>
                             </div>
 
