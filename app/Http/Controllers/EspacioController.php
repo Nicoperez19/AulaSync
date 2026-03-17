@@ -107,7 +107,6 @@ class EspacioController extends Controller
             $validated = $this->validarDatosEspacio($request, $id_espacio);
 
             $espacio->update([
-                'id_espacio' => $validated['id_espacio'],
                 'nombre_espacio' => $validated['nombre_espacio'],
                 'piso_id' => $validated['piso_id'],
                 'tipo_espacio' => $validated['tipo_espacio'],
@@ -164,15 +163,22 @@ class EspacioController extends Controller
      */
     private function validarDatosEspacio(Request $request, ?string $idEspacioActual = null): array
     {
-        $this->normalizarIdEspacio($request);
-
-        $reglaUnique = Rule::unique('tenant.espacios', 'id_espacio');
+        // En edición no se permite cambiar la PK, por lo que se fija el id actual.
         if ($idEspacioActual !== null) {
-            $reglaUnique->ignore($idEspacioActual, 'id_espacio');
+            $request->merge([
+                'id_espacio' => $idEspacioActual,
+            ]);
+        } else {
+            $this->normalizarIdEspacio($request);
+        }
+
+        $reglaIdEspacio = ['required', 'string', 'max:50'];
+        if ($idEspacioActual === null) {
+            $reglaIdEspacio[] = Rule::unique('tenant.espacios', 'id_espacio');
         }
 
         $validated = $request->validate([
-            'id_espacio' => ['required', 'string', 'max:50', $reglaUnique],
+            'id_espacio' => $reglaIdEspacio,
             'nombre_espacio' => ['required', 'string', 'max:255'],
             'id_universidad' => ['required', Rule::exists('mysql.universidades', 'id_universidad')],
             'id_facultad' => ['required', Rule::exists('tenant.facultades', 'id_facultad')],

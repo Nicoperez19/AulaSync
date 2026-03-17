@@ -37,7 +37,8 @@
                     <div>
                         <x-form.label for="id_espacio" :value="__('ID del Espacio')" />
                         <x-form.input id="id_espacio" class="block w-full" type="text" name="id_espacio"
-                            value="{{ old('id_espacio', $espacio->id_espacio) }}" required />
+                            value="{{ old('id_espacio', $espacio->id_espacio) }}" required readonly />
+                        <p class="mt-1 text-xs text-gray-500">El identificador del espacio no se puede modificar en edición.</p>
                     </div>
 
                     <div>
