@@ -69,15 +69,15 @@ class LiberarEspaciosCommand extends Command
 
             $this->line("  Se finalizaron {$reservasFinalizadas} reservas activas.");
 
-            // 2. Cambiar todos los espacios ocupados a disponibles
+            // 2. Cambiar todos los espacios ocupados o reservados a disponibles
             $espaciosLiberados = Espacio::on('tenant')
-                ->where('estado', 'Ocupado')
+                ->whereIn('estado', ['Ocupado', 'Reservado'])
                 ->update([
-                    'estado' => 'disponible',
+                    'estado' => 'Disponible',
                     'updated_at' => Carbon::now()
                 ]);
 
-            $this->line("  Se liberaron {$espaciosLiberados} espacios ocupados.");
+            $this->line("  Se liberaron {$espaciosLiberados} espacios (Ocupados/Reservados).");
 
             $this->info("  ✅ Proceso completado: {$reservasFinalizadas} reservas finalizadas + {$espaciosLiberados} espacios liberados");
         } catch (\Exception $e) {
