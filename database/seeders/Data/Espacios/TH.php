@@ -2,12 +2,12 @@
 
 return [
     [
-        'id_espacio' => 'TH-30',
+        'id_espacio' => 'TH-L09',
         'nombre_espacio' => 'Laboratorio Termodinámica',
         'piso_id' => 1,
         'tipo_espacio' => 'Laboratorio',
         'estado' => 'Disponible',
-        'puestos_disponibles' => 80,
+        'puestos_disponibles' => 38,
     ],
     [
         'id_espacio' => 'TH-LA8',
@@ -18,7 +18,7 @@ return [
         'puestos_disponibles' => 30,
     ],
     [
-        'id_espacio' => 'TH-LA9',
+        'id_espacio' => 'TH-LA10',
         'nombre_espacio' => 'Taller de Soldadura',
         'piso_id' => 1,
         'tipo_espacio' => 'Taller',
@@ -131,19 +131,35 @@ return [
     ],
     [
         'id_espacio' => 'TH-L04',
-        'nombre_espacio' => 'Taller de Enfermeria',
+        'nombre_espacio' => 'Taller de Enfermeria LAB-A',
+        'piso_id' => 1,
+        'tipo_espacio' => 'Taller',
+        'estado' => 'Disponible',
+        'puestos_disponibles' => 28,
+    ],
+    [
+        'id_espacio' => 'TH-L05',
+        'nombre_espacio' => 'Taller de Enfermeria LAB-B',
         'piso_id' => 1,
         'tipo_espacio' => 'Taller',
         'estado' => 'Disponible',
         'puestos_disponibles' => 20,
     ],
     [
-        'id_espacio' => 'TH-L05',
+        'id_espacio' => 'TH-L06',
+        'nombre_espacio' => 'Taller de Enfermeria LAB-C',
+        'piso_id' => 1,
+        'tipo_espacio' => 'Taller',
+        'estado' => 'Disponible',
+        'puestos_disponibles' => 20,
+    ],
+    [
+        'id_espacio' => 'TH-L07',
         'nombre_espacio' => 'Taller de Párvulos',
         'piso_id' => 1,
         'tipo_espacio' => 'Taller',
         'estado' => 'Disponible',
-        'puestos_disponibles' => 30,
+        'puestos_disponibles' => 33,
     ],
     [
         'id_espacio' => 'TH-SR1',

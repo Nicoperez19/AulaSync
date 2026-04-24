@@ -2,10 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\Configuracion;
+use App\Models\Facultad;
+use App\Models\Sede;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
-use App\Models\Configuracion;
-use App\Models\Sede;
 
 class ConfiguracionSeeder extends Seeder
 {
@@ -16,7 +17,7 @@ class ConfiguracionSeeder extends Seeder
     {
         // Create logo configuration for each sede
         $sedes = Sede::all();
-        
+
         foreach ($sedes as $sede) {
             Configuracion::firstOrCreate(
                 ['clave' => "logo_institucional_{$sede->id_sede}"],
@@ -28,8 +29,8 @@ class ConfiguracionSeeder extends Seeder
         }
 
         // Create email configuration for each facultad (escuela)
-        $facultades = \App\Models\Facultad::all();
-        
+        $facultades = Facultad::all();
+
         foreach ($facultades as $facultad) {
             Configuracion::firstOrCreate(
                 ['clave' => "correo_administrativo_{$facultad->id_facultad}"],
@@ -38,7 +39,7 @@ class ConfiguracionSeeder extends Seeder
                     'descripcion' => "Correo administrativo de la escuela {$facultad->nombre_facultad}"
                 ]
             );
-            
+
             Configuracion::firstOrCreate(
                 ['clave' => "nombre_remitente_{$facultad->id_facultad}"],
                 [

@@ -17,11 +17,13 @@
                     </p>
                 </div>
             </div>
-            <x-button target="_blank" variant="add" class="justify-end max-w-xs gap-2 p-2"
-                x-on:click="$dispatch('open-modal', 'add-data')">
-                <x-icons.add class="w-6 h-6" aria-hidden="true" />
-                Cargar archivo
-            </x-button>
+            <div class="flex items-center gap-2 max-w-xs justify-end">
+                <x-button target="_blank" variant="add" class="gap-2 p-2"
+                    x-on:click="$dispatch('open-modal', 'add-data')">
+                    <x-icons.add class="w-6 h-6" aria-hidden="true" />
+                    Cargar archivo
+                </x-button>
+            </div>
         </div>
     </x-slot>
 
@@ -586,8 +588,9 @@
 
             if (errorMessage) errorMessage.classList.add('hidden');
             if (successMessage) successMessage.classList.add('hidden');
-            if (uploadedFileName) uploadedFileName.classList.add('hidden');
             if (selectedFileName) selectedFileName.textContent = '';
         }
+
+
     </script>
 </x-app-layout>

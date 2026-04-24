@@ -1,9 +1,10 @@
 <?php
 
 namespace Database\Seeders;
-use Illuminate\Database\Seeder;
-use App\Models\User;
+
 use App\Models\Profesor;
+use App\Models\User;
+use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder
 {
@@ -25,6 +26,7 @@ class UserSeeder extends Seeder
                 'celular' => '987654321',
                 'direccion' => 'Calle Falsa 123',
                 'fecha_nacimiento' => '1985-05-20',
+                'is_superuser' => true,
             ]
         )->assignRole('Administrador');
         User::updateOrCreate(
@@ -48,10 +50,12 @@ class UserSeeder extends Seeder
                 'celular' => '987654321',
                 'direccion' => 'Calle Falsa 123',
                 'fecha_nacimiento' => '1985-05-20',
+                'id_sede' => 'TH',
+                'id_universidad' => 'UCSC',
             ]
         )->assignRole('Administrador');
 
-       User::updateOrCreate(
+        User::updateOrCreate(
             ['run' => '16600867'],
             [
                 'name' => 'Romina',
@@ -60,6 +64,8 @@ class UserSeeder extends Seeder
                 'celular' => '987654321',
                 'direccion' => 'Calle Falsa 123',
                 'fecha_nacimiento' => '1985-05-20',
+                'id_sede' => 'TH',
+                'id_universidad' => 'UCSC',
             ]
         )->assignRole('Administrador');
 
@@ -96,6 +102,8 @@ class UserSeeder extends Seeder
                 'celular' => '912345678',
                 'direccion' => 'Avenida Siempreviva 742',
                 'fecha_nacimiento' => '1992-08-15',
+                'id_sede' => 'TH',
+                'id_universidad' => 'UCSC',
             ]
         )->assignRole('Administrador');
 
@@ -103,11 +111,11 @@ class UserSeeder extends Seeder
         // Solo intentar obtener profesores si estamos conectados a base de datos de tenant
         try {
             $profesores = Profesor::all();
-        
+
             foreach ($profesores as $profesor) {
                 // Verificar si el RUN corresponde a un usuario base protegido
                 if (in_array($profesor->run_profesor, $baseUserRuns)) {
-                    continue; // Saltar usuarios base para no modificarlos
+                    continue;  // Saltar usuarios base para no modificarlos
                 }
 
                 // Saltar si el RUN está vacío o es nulo
@@ -117,11 +125,11 @@ class UserSeeder extends Seeder
 
                 // Usar updateOrCreate para evitar duplicados
                 $newUser = User::updateOrCreate(
-                    ['run' => $profesor->run_profesor], // Condición de búsqueda
+                    ['run' => $profesor->run_profesor],  // Condición de búsqueda
                     [
                         'name' => $profesor->name,
                         'email' => $profesor->email,
-                        'password' => bcrypt($profesor->run_profesor), // Contraseña es el mismo RUN
+                        'password' => bcrypt($profesor->run_profesor),  // Contraseña es el mismo RUN
                         'celular' => $profesor->celular,
                         'direccion' => $profesor->direccion,
                         'fecha_nacimiento' => $profesor->fecha_nacimiento,
@@ -131,7 +139,7 @@ class UserSeeder extends Seeder
                         'id_area_academica' => $profesor->id_area_academica,
                     ]
                 );
-                
+
                 // Asignar rol Profesor si existe y el usuario no tiene ya ese rol
                 if (\Spatie\Permission\Models\Role::where('name', 'Profesor')->exists()) {
                     if (!$newUser->hasRole('Profesor')) {

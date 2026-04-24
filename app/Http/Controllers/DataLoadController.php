@@ -2,22 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\DataLoad;
-use App\Models\Profesor;
 use App\Models\Asignatura;
 use App\Models\Carrera;
-use App\Models\Horario;
-use App\Models\Planificacion_Asignatura;
+use App\Models\DataLoad;
 use App\Models\Espacio;
-use App\Models\Piso;
 use App\Models\Facultad;
+use App\Models\Horario;
+use App\Models\Modulo;
+use App\Models\Piso;
+use App\Models\Planificacion_Asignatura;
+use App\Models\Profesor;
+use App\Models\Sede;
+use App\Services\QRService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Services\QRService;
 
 class DataLoadController extends Controller
 {
@@ -124,9 +126,9 @@ class DataLoadController extends Controller
             $processedHorariosCount = 0;
             $errors = [];
             $skippedRows = 0;
-            $espaciosOtrosTenants = 0; // Espacios que no pertenecen a este tenant
-            $espaciosNoEncontrados = 0; // Espacios del tenant que no existen en BD
-            $espaciosFaltantes = []; // Lista de espacios TH- que no se encontraron en BD
+            $espaciosOtrosTenants = 0;  // Espacios que no pertenecen a este tenant
+            $espaciosNoEncontrados = 0;  // Espacios del tenant que no existen en BD
+            $espaciosFaltantes = [];  // Lista de espacios TH- que no se encontraron en BD
 
             // Actualizar estado inicial
             $dataLoad->update([
@@ -141,12 +143,16 @@ class DataLoadController extends Controller
             Log::info('Planificaciones eliminadas del período ' . $periodoSeleccionado . ': ' . $planificacionesEliminadas);
 
             // GARANTIZAR QUE EXISTAN MÓDULOS: Sin ellos la FK falla y 0 planificaciones se crean
-            $modulosExistentes = \App\Models\Modulo::count();
+            $modulosExistentes = Modulo::count();
             if ($modulosExistentes === 0) {
                 Log::info('⚠ Tabla modulos VACÍA - Creando módulos automáticamente...');
                 $dias = [
-                    'LU' => 'lunes', 'MA' => 'martes', 'MI' => 'miércoles',
-                    'JU' => 'jueves', 'VI' => 'viernes', 'SA' => 'sábado',
+                    'LU' => 'lunes',
+                    'MA' => 'martes',
+                    'MI' => 'miércoles',
+                    'JU' => 'jueves',
+                    'VI' => 'viernes',
+                    'SA' => 'sábado',
                 ];
                 $modulosBase = [
                     ['hora_inicio' => '08:10', 'hora_termino' => '09:00'],
@@ -169,15 +175,15 @@ class DataLoadController extends Controller
                 foreach ($dias as $codigoDia => $nombreDia) {
                     // Sábado solo tiene módulos 1-5 (hasta 13:00hrs)
                     $maxModulos = ($codigoDia === 'SA') ? 5 : 15;
-                    
+
                     foreach ($modulosBase as $idx => $mod) {
                         $numeroModulo = $idx + 1;
                         if ($numeroModulo > $maxModulos) {
-                            break; // Skip módulos > 5 para sábado
+                            break;  // Skip módulos > 5 para sábado
                         }
-                        
+
                         $idModulo = $codigoDia . '.' . $numeroModulo;
-                        \App\Models\Modulo::firstOrCreate(
+                        Modulo::firstOrCreate(
                             ['id_modulo' => $idModulo],
                             ['dia' => $nombreDia, 'hora_inicio' => $mod['hora_inicio'], 'hora_termino' => $mod['hora_termino']]
                         );
@@ -202,11 +208,11 @@ class DataLoadController extends Controller
             }
 
             // Obtener la sede actual del tenant
-            $sedeActual = $tenant ? \App\Models\Sede::find($tenant->sede_id) : null;
+            $sedeActual = $tenant ? Sede::find($tenant->sede_id) : null;
             $nombreSedeActual = $sedeActual ? strtolower(trim($sedeActual->nombre_sede)) : null;
 
             // Obtener la primera facultad de la sede para crear carreras automáticamente si es necesario
-            $facultadDeLaSede = $sedeActual ? \App\Models\Facultad::where('id_sede', $sedeActual->id_sede)->first() : null;
+            $facultadDeLaSede = $sedeActual ? Facultad::where('id_sede', $sedeActual->id_sede)->first() : null;
 
             // LOGS DETALLADOS DE CONFIGURACIÓN DEL TENANT
             Log::info('═══════════════════════════════════════════════════════════');
@@ -222,7 +228,7 @@ class DataLoadController extends Controller
             // Si no existe facultad, crear una genérica para la sede
             if ($sedeActual && !$facultadDeLaSede) {
                 try {
-                    $facultadDeLaSede = \App\Models\Facultad::create([
+                    $facultadDeLaSede = Facultad::create([
                         'id_facultad' => $sedeActual->id_sede . '_FAC',
                         'nombre_facultad' => 'Facultad de ' . $sedeActual->nombre_sede,
                         'id_sede' => $sedeActual->id_sede,
@@ -242,7 +248,7 @@ class DataLoadController extends Controller
 
             foreach ($rows as $index => $row) {
                 if ($index === 0) {
-                    continue; // Saltar encabezados
+                    continue;  // Saltar encabezados
                 }
 
                 try {
@@ -275,9 +281,9 @@ class DataLoadController extends Controller
                                         'tipo_area_academica' => 'escuela',
                                         'id_facultad' => $facultadDeLaSede->id_facultad,
                                     ]);
-                                    Log::info("Área académica genérica creada: " . $areaAcademicaGenerica->id_area_academica);
+                                    Log::info('Área académica genérica creada: ' . $areaAcademicaGenerica->id_area_academica);
                                 } catch (\Exception $e) {
-                                    Log::warning("Error al crear área académica: " . $e->getMessage());
+                                    Log::warning('Error al crear área académica: ' . $e->getMessage());
                                 }
                             }
                         }
@@ -288,10 +294,10 @@ class DataLoadController extends Controller
                                 'nombre' => $nombreCarrera,
                                 'id_area_academica' => isset($areaAcademicaGenerica) ? $areaAcademicaGenerica->id_area_academica : null,
                             ]);
-                            Log::info("Carrera creada automáticamente: " . $idCarrera . " - " . $nombreCarrera);
+                            Log::info('Carrera creada automáticamente: ' . $idCarrera . ' - ' . $nombreCarrera);
                         } catch (\Exception $e) {
-                            $errors[] = "Fila " . ($index + 1) . ": No se pudo crear la carrera " . $idCarrera;
-                            Log::warning("Error al crear carrera " . $idCarrera . ": " . $e->getMessage());
+                            $errors[] = 'Fila ' . ($index + 1) . ': No se pudo crear la carrera ' . $idCarrera;
+                            Log::warning('Error al crear carrera ' . $idCarrera . ': ' . $e->getMessage());
                             continue;
                         }
                     }
@@ -308,7 +314,7 @@ class DataLoadController extends Controller
                             'name' => $name,
                             'email' => $email,
                             'id_carrera' => $idCarrera,
-                            'tipo_profesor' => $tipoProfesor, // También actualizar tipo
+                            'tipo_profesor' => $tipoProfesor,  // También actualizar tipo
                             'sede_id' => $sedeActual ? $sedeActual->id_sede : null,
                             'id_facultad' => $facultadDeLaSede ? $facultadDeLaSede->id_facultad : null
                         ]);
@@ -331,12 +337,12 @@ class DataLoadController extends Controller
                     $codigoAsignatura = $row[1];
                     $nombreAsignatura = preg_replace('/^[a-z]{2}:\s*/i', '', $row[2]);
 
-                    $numeroSeccion = trim($row[3]); // Columna D
-                    $inscritos = isset($row[9]) ? (int)$row[9] : null; // Columna J - Inscritos
+                    $numeroSeccion = trim($row[3]);  // Columna D
+                    $inscritos = isset($row[9]) ? (int) $row[9] : null;  // Columna J - Inscritos
 
                     // Validar que la sección sea un número de hasta 4 dígitos
                     if (!empty($numeroSeccion) && !preg_match('/^\d{1,4}$/', $numeroSeccion)) {
-                        $errors[] = "Fila " . ($index + 1) . ": Sección inválida - debe ser un número de 1 a 4 dígitos (valor: " . $numeroSeccion . ")";
+                        $errors[] = 'Fila ' . ($index + 1) . ': Sección inválida - debe ser un número de 1 a 4 dígitos (valor: ' . $numeroSeccion . ')';
                         continue;
                     }
 
@@ -397,24 +403,30 @@ class DataLoadController extends Controller
                             $horario = $existingHorario;
                             // ACTUALIZACIÓN COMPLETA del horario
                             $horario->update([
-                                'nombre' => "Horario de " . $name,
+                                'nombre' => 'Horario de ' . $name,
                                 'periodo' => $periodo,
                                 'run_profesor' => $run
                             ]);
                         } else {
                             $horario = new Horario();
                             $horario->id_horario = $idHorario;
-                            $horario->nombre = "Horario de " . $name;
+                            $horario->nombre = 'Horario de ' . $name;
                             $horario->periodo = $periodo;
                             $horario->run_profesor = $run;
 
                             if (!$horario->save()) {
-                                throw new \Exception("Error al guardar el horario");
+                                throw new \Exception('Error al guardar el horario');
                             }
 
                             if (!$horario->id_horario) {
-                                throw new \Exception("El horario no se creó correctamente");
+                                throw new \Exception('El horario no se creó correctamente');
                             }
+                        }
+
+                        // Obtener prefijo del tenant UNA SOLA VEZ (fuera del loop de matches)
+                        $prefijoTenantFiltro = '';
+                        if (isset($tenant) && $tenant && $tenant->prefijo_espacios) {
+                            $prefijoTenantFiltro = strtoupper(trim($tenant->prefijo_espacios));
                         }
 
                         if ($horario && $horario->id_horario && !empty($horarioProfesor)) {
@@ -422,63 +434,67 @@ class DataLoadController extends Controller
                             $horarioProfesor = preg_replace('/[\x00-\x1F\x7F]/u', '', $horarioProfesor);
                             $horarioProfesorNormalizado = preg_replace('/(?<!-)\s*([a-z]{2}:\s*)/i', ' - $1', $horarioProfesor);
 
-                            // Divide por guiones
-                            $horarios = explode(' - ', $horarioProfesorNormalizado);
+                            // LOG DIAGNÓSTICO: primeras 3 filas para verificar qué se está leyendo de col U
+                            if ($index <= 3) {
+                                Log::info("[DIAG] Fila $index - Col U raw: '" . substr($horarioProfesor, 0, 200) . "'");
+                                Log::info("[DIAG] Fila $index - Prefijo tenant: '" . $prefijoTenantFiltro . "'");
+                            }
+
+                            // Busca TODAS las coincidencias del patrón en todo el texto, sin importar cómo estén separadas.
+                            // Formato esperado: DIA.MODULO/G:GRUPO (ESPACIO)
+                            // El /G:GRUPO es opcional.
+                            preg_match_all('/([A-Za-z]{2})\s*\.\s*(\d{1,2})(?:\s*\/G:(\d+))?\s*\(([^)]+)\)/', $horarioProfesorNormalizado, $matchesList, PREG_SET_ORDER);
+
+                            if ($index <= 3 && !empty($matchesList)) {
+                                Log::info("[DIAG] Fila $index - Matches encontrados: " . count($matchesList));
+                                foreach ($matchesList as $mi => $mm) {
+                                    Log::info("[DIAG]   Match $mi: DIA={$mm[1]}, MOD={$mm[2]}, ESP=" . (isset($mm[4]) ? $mm[4] : 'N/A'));
+                                }
+                            }
+
                             $planificacionesGuardadas = 0;
 
-                            foreach ($horarios as $horarioIdx => $horarioStr) {
-                                if (preg_match('/^[a-záéíóúñ]{2,}:$/u', trim($horarioStr))) {
-                                    continue;
-                                }
-
-                                // Regex actualizado: captura prefijos ca:/la: y el formato DIA.MODULO/G:GRUPO (ESPACIO)
-                                // Ejemplos: "ca: LU.12/G:1 (TH-01)", "la: MI.4/G:1 (TH-L06)", "LU.1/G:1 (TH-02)"
-                                preg_match('/(?:[a-záéíóúñ]+:\s*)?([A-Za-z]{2})\s*\.\s*(\d{1,2})(?:\s*\/G:(\d+))?\s*\(([^)]+)\)/', $horarioStr, $matches);
-
-                                if (count($matches) >= 5) { // Index 4 existe (Sala)
+                            foreach ($matchesList as $matches) {
                                     $dia = strtoupper($matches[1]);
                                     $modulo = $matches[2];
-                                    $grupo = !empty($matches[3]) ? $matches[3] : '1'; 
+                                    $grupo = !empty($matches[3]) ? $matches[3] : '1';
                                     $espacioNombreExcel = trim($matches[4]);
 
-                                    // Obtener prefijo del tenant actual (sin guión) y normalizar a MAYÚSCULAS
-                                    $tenant = \App\Models\Tenant::current();
-                                    $prefijoTenant = $tenant && $tenant->prefijo_espacios 
-                                        ? strtoupper(trim($tenant->prefijo_espacios)) 
-                                        : '';
-                                    
                                     // FILTRO ESTRICTO: Solo procesar espacios que EMPIECEN con el prefijo del tenant
                                     // El Excel contiene múltiples sedes mezcladas (TH-01, CC-05, 07-34, etc.)
-                                    // SOLO procesamos los que empiecen con "TH-" en este caso (case-insensitive)
+                                    // SOLO procesamos los que empiecen con el prefijo configurado (ej: "TH-")
                                     $espacioNombreUpper = strtoupper($espacioNombreExcel);
-                                    if (!$prefijoTenant || !str_starts_with($espacioNombreUpper, $prefijoTenant . '-')) {
-                                        // Espacio sin prefijo TH- o de otra sede - IGNORAR
+                                    if (!$prefijoTenantFiltro || !str_starts_with($espacioNombreUpper, $prefijoTenantFiltro . '-')) {
+                                        // Espacio sin prefijo del tenant o de otra sede - IGNORAR
+                                        if ($index <= 3) {
+                                            Log::info("[DIAG] Fila $index - SALTANDO espacio '{$espacioNombreExcel}' (prefijo no coincide con '{$prefijoTenantFiltro}-')");
+                                        }
                                         $espaciosOtrosTenants++;
                                         continue;
                                     }
-                                    
+
                                     // Buscar el espacio EXACTAMENTE como viene en el Excel (ya incluye prefijo TH-)
                                     $espacioModel = Espacio::withoutGlobalScope('tenant')
                                         ->where('id_espacio', $espacioNombreExcel)
                                         ->first();
-                                    
+
                                     if (!$espacioModel) {
                                         Log::warning("⚠ Fila $index: Espacio '{$espacioNombreExcel}' del tenant actual NO EXISTE en BD");
                                         $espaciosNoEncontrados++;
-                                        
+
                                         // Trackear espacios faltantes únicos
                                         if (!in_array($espacioNombreExcel, $espaciosFaltantes)) {
                                             $espaciosFaltantes[] = $espacioNombreExcel;
                                         }
-                                        
-                                        continue; 
+
+                                        continue;
                                     }
 
                                     $espacioIdFinal = $espacioModel->id_espacio;
 
                                     // CREAR planificación (ya se hizo limpieza previa)
                                     $idModulo = $dia . '.' . $modulo;
-                                    
+
                                     try {
                                         $planificacion = new Planificacion_Asignatura();
                                         $planificacion->id_asignatura = $idAsignatura;
@@ -487,10 +503,10 @@ class DataLoadController extends Controller
                                         $planificacion->id_espacio = $espacioIdFinal;
                                         $planificacion->inscritos = $inscritos;
                                         $planificacion->save();
-                                        
+
                                         $processedHorariosCount++;
                                         $planificacionesGuardadas++;
-                                        
+
                                         // Log de éxito: primeras 5 y cada 100
                                         if ($planificacionesGuardadas <= 5 || $planificacionesGuardadas % 100 == 0) {
                                             Log::info("✓ Planificación #{$planificacionesGuardadas}: asig={$idAsignatura}, hor={$horario->id_horario}, mod={$idModulo}, esp={$espacioIdFinal}");
@@ -500,25 +516,18 @@ class DataLoadController extends Controller
                                         Log::error("  → Datos: asig={$idAsignatura}, hor={$horario->id_horario}, mod={$idModulo}, esp={$espacioIdFinal}");
                                         // NO lanzar excepción, continuar con las demás
                                     }
-                                } else {
-                                    // Solo registrar si hay contenido pero no matchea (puede ser formato inesperado)
-                                    if (!empty(trim($horarioStr)) && strlen(trim($horarioStr)) > 3) {
-                                        Log::warning("⚠ Fila $index - Formato no reconocido: '$horarioStr'");
-                                    }
                                 }
-                            }
-                            
+
                             if ($planificacionesGuardadas == 0 && !empty($horarioProfesor)) {
                                 Log::warning("⚠ Fila $index - Horario presente pero 0 planificaciones creadas. Raw: '$horarioProfesor'");
                             }
                         }
                     } catch (\Exception $e) {
-                        $errors[] = "Fila " . ($index + 1) . ": Error al procesar horario - " . $e->getMessage();
+                        $errors[] = 'Fila ' . ($index + 1) . ': Error al procesar horario - ' . $e->getMessage();
                         continue;
                     }
-
                 } catch (\Exception $e) {
-                    $errorMsg = "Fila " . ($index + 1) . ": " . $e->getMessage();
+                    $errorMsg = 'Fila ' . ($index + 1) . ': ' . $e->getMessage();
                     $errors[] = $errorMsg;
                 }
             }
@@ -529,10 +538,10 @@ class DataLoadController extends Controller
             ]);
 
             // RESUMEN FINAL
-            $totalPlanificaciones = Planificacion_Asignatura::whereHas('horario', function($q) use ($periodoSeleccionado) {
+            $totalPlanificaciones = Planificacion_Asignatura::whereHas('horario', function ($q) use ($periodoSeleccionado) {
                 $q->where('periodo', $periodoSeleccionado);
             })->count();
-            $totalEspaciosConClases = Planificacion_Asignatura::whereHas('horario', function($q) use ($periodoSeleccionado) {
+            $totalEspaciosConClases = Planificacion_Asignatura::whereHas('horario', function ($q) use ($periodoSeleccionado) {
                 $q->where('periodo', $periodoSeleccionado);
             })->distinct('id_espacio')->count('id_espacio');
 
@@ -545,20 +554,20 @@ class DataLoadController extends Controller
             Log::info('  → Espacios con clases: ' . $totalEspaciosConClases);
             Log::info('  → Espacios otros tenants (saltados): ' . $espaciosOtrosTenants);
             Log::info('  → Espacios no encontrados en BD: ' . $espaciosNoEncontrados);
-            
+
             if (!empty($espaciosFaltantes)) {
                 Log::warning('⚠ ESPACIOS FALTANTES QUE DEBES CREAR MANUALMENTE:');
                 foreach ($espaciosFaltantes as $espFaltante) {
                     Log::warning('  - ' . $espFaltante);
                 }
             }
-            
+
             Log::info('  → Errores encontrados: ' . count($errors));
             Log::info('═══════════════════════════════════════════════════════════');
 
-            $message = 'Archivo procesado exitosamente. Se procesaron ' . $processedUsersCount . ' profesores, ' .
-                $processedAsignaturasCount . ' asignaturas y ' . $processedHorariosCount . ' planificaciones. ' .
-                'Total en BD: ' . $totalPlanificaciones . ' planificaciones en ' . $totalEspaciosConClases . ' espacios.';
+            $message = 'Archivo procesado exitosamente. Se procesaron ' . $processedUsersCount . ' profesores, '
+                . $processedAsignaturasCount . ' asignaturas y ' . $processedHorariosCount . ' planificaciones. '
+                . 'Total en BD: ' . $totalPlanificaciones . ' planificaciones en ' . $totalEspaciosConClases . ' espacios.';
             if (!empty($errors)) {
                 $message .= ' Se encontraron ' . count($errors) . ' errores.';
             }
@@ -574,7 +583,6 @@ class DataLoadController extends Controller
                     'errores' => $errors
                 ]
             ]);
-
         } catch (\Exception $e) {
             Log::error('Error en carga masiva: ' . $e->getMessage());
             return response()->json([
@@ -599,7 +607,8 @@ class DataLoadController extends Controller
 
             // Iterar por las filas del archivo
             foreach ($rows as $index => $row) {
-                if ($index === 0) continue; // Saltar encabezados
+                if ($index === 0)
+                    continue;  // Saltar encabezados
 
                 $sede = isset($row[7]) ? $row[7] : '';
 
@@ -610,26 +619,17 @@ class DataLoadController extends Controller
 
                 // Columna 20 es el horario del profesor
                 $horarioProfesor = isset($row[20]) ? $row[20] : '';
-                
+
                 // Limpieza de caracteres invisibles o raros
                 $horarioProfesor = preg_replace('/[\x00-\x1F\x7F]/u', '', $horarioProfesor);
 
-                if (empty($horarioProfesor)) continue;
+                if (empty($horarioProfesor))
+                    continue;
 
-                // Normalizar el formato del horario
-                $horarioProfesorNormalizado = preg_replace('/(?<!-)\s*([a-z]{2}:\s*)/i', ' - $1', $horarioProfesor);
-                $horarios = explode(' - ', $horarioProfesorNormalizado);
+                preg_match_all('/([A-Za-z]{2})\s*\.\s*(\d{1,2})(?:\s*\/G:(\d+))?\s*\(([^)]+)\)/', $horarioProfesor, $matchesList, PREG_SET_ORDER);
 
-                // Extraer espacios de cada segmento del horario
-                foreach ($horarios as $horarioStr) {
-                    if (preg_match('/^[a-záéíóúñ]{2,}:$/u', trim($horarioStr))) {
-                        continue;
-                    }
-
-                    // Patrón robusto: dia.modulo/G:grupo (espacio) - Grupo opcional
-                    preg_match('/([A-Za-z]{2})\s*\.?\s*(\d{1,2})(?:\s*\/G:(\d+))?\s*\(([^)]+)\)/', $horarioStr, $matches);
-
-                    // Debería tener al menos 5 elementos: [0]Full, [1]Dia, [2]Mod, [3]Grupo(opt), [4]Espacio
+                // Extraer espacios de las coincidencias
+                foreach ($matchesList as $matches) {
                     if (count($matches) >= 5) {
                         $espacioNombre = preg_replace('/^[a-z]{2}:\s*/i', '', $matches[4]);
 
@@ -663,20 +663,20 @@ class DataLoadController extends Controller
                     Log::info('Piso genérico creado: ' . $primerPiso->id);
                 } catch (\Exception $e) {
                     Log::warning('No se pudo crear piso genérico: ' . $e->getMessage());
-                    return; // Si no se puede crear el piso, no continuamos
+                    return;  // Si no se puede crear el piso, no continuamos
                 }
             }
 
             // Crear espacios únicos con piso válido
             $espaciosCreados = 0;
             $espaciosYaExistentes = 0;
-            
+
             // Obtener prefijo del tenant
             $tenant = \App\Models\Tenant::current();
             $prefijoTenant = $tenant ? $tenant->prefijo_espacios : '';
-            
-            Log::info("→ Intentando crear " . count($espaciosEncontrados) . " espacios únicos encontrados en el archivo...");
-            
+
+            Log::info('→ Intentando crear ' . count($espaciosEncontrados) . ' espacios únicos encontrados en el archivo...');
+
             foreach ($espaciosEncontrados as $espacioNombre) {
                 try {
                     // Construir ID del espacio con prefijo si no lo tiene
@@ -684,7 +684,7 @@ class DataLoadController extends Controller
                     if ($prefijoTenant && !str_starts_with($espacioNombre, $prefijoTenant)) {
                         $espacioId = $prefijoTenant . $espacioNombre;
                     }
-                    
+
                     $espacioExiste = Espacio::withoutGlobalScope('tenant')
                         ->where('id_espacio', $espacioId)
                         ->orWhere('nombre_espacio', $espacioNombre)
@@ -710,7 +710,6 @@ class DataLoadController extends Controller
             }
 
             Log::info("✓ Espacios procesados: $espaciosCreados nuevos, $espaciosYaExistentes ya existían");
-
         } catch (\Exception $e) {
             Log::error('Error al extraer espacios del archivo: ' . $e->getMessage());
         }
@@ -725,7 +724,8 @@ class DataLoadController extends Controller
 
             $dataLoad->delete();
 
-            return redirect()->route('data.index')
+            return redirect()
+                ->route('data.index')
                 ->with('success', 'Registro de carga eliminado exitosamente.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Error al eliminar el registro de carga.']);
@@ -795,11 +795,44 @@ class DataLoadController extends Controller
             case 'procesando':
                 return 'Procesando archivo...';
             case 'completado':
-                return 'Procesamiento completado exitosamente';
+                return 'Proceso finalizado';
             case 'error':
                 return 'Error en el procesamiento';
             default:
                 return 'Estado desconocido';
+        }
+    }
+
+    public function limpiarPeriodo(Request $request)
+    {
+        $request->validate([
+            'semestre_selector' => 'required|in:1,2'
+        ]);
+
+        $semestreSeleccionado = $request->input('semestre_selector');
+        $anioActual = \App\Helpers\SemesterHelper::getCurrentAcademicYear();
+        $periodoSeleccionado = $anioActual . '-' . $semestreSeleccionado;
+
+        try {
+            // Eliminar planificaciones del periodo
+            $horariosDelPeriodo = Horario::where('periodo', $periodoSeleccionado)->pluck('id_horario');
+            $planificacionesEliminadas = Planificacion_Asignatura::whereIn('id_horario', $horariosDelPeriodo)->delete();
+            
+            // Eliminar los horarios asociados a ese periodo
+            $horariosEliminados = Horario::where('periodo', $periodoSeleccionado)->delete();
+
+            Log::info("Limpieza manual del periodo {$periodoSeleccionado}: {$planificacionesEliminadas} planificaciones y {$horariosEliminados} horarios eliminados.");
+
+            return response()->json([
+                'success' => true,
+                'message' => "Se han eliminado {$planificacionesEliminadas} planificaciones y {$horariosEliminados} horarios del periodo {$periodoSeleccionado} exitosamente."
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error al limpiar periodo: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al limpiar los datos del periodo: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

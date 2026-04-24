@@ -92,10 +92,10 @@ class SetupTenantDatabases extends Command
                 $adminDB->statement("CREATE DATABASE `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
 
                 // Otorgar permisos al usuario aulasync sobre la nueva base de datos
-                $adminDB->statement("GRANT ALL PRIVILEGES ON `{$dbName}`.* TO 'aulasync'@'%'");
+                // $adminDB->statement("GRANT ALL PRIVILEGES ON `{$dbName}`.* TO 'aulasync'@'%'");
                 // Otorgar permisos al usuario gestoraulasit sobre la nueva base de datos
-                $adminDB->statement("GRANT ALL PRIVILEGES ON `{$dbName}`.* TO 'gestoraulasit'@'%'");
-                $adminDB->statement("FLUSH PRIVILEGES");
+                // $adminDB->statement("GRANT ALL PRIVILEGES ON `{$dbName}`.* TO 'gestoraulasit'@'%'");
+                // $adminDB->statement("FLUSH PRIVILEGES");
             } else {
                 $this->line("  La database ya existe: {$dbName}");
             }

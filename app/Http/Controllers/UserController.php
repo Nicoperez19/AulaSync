@@ -13,6 +13,7 @@ use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Models\Sede;
 
 class UserController extends Controller
 {
@@ -20,7 +21,8 @@ class UserController extends Controller
     {
         $users = User::all();
         $years = range(2010, date('Y'));
-        return view('layouts.user.user_index', compact('users', 'years'));
+        $sedes = Sede::all();
+        return view('layouts.user.user_index', compact('users', 'years', 'sedes'));
     }
 
     public function create()
@@ -28,7 +30,8 @@ class UserController extends Controller
         $years = range(2010, date('Y'));
         $roles = Role::all();
         $permissions = Permission::all();
-        return view('layouts.user.user_update', compact('years', 'roles', 'permissions'));
+        $sedes = Sede::all();
+        return view('layouts.user.user_update', compact('years', 'roles', 'permissions', 'sedes'));
     }
 
     public function store(Request $request)
@@ -49,7 +52,8 @@ class UserController extends Controller
                 'career' => 'nullable|string|max:255',
                 'current_semester' => 'nullable|integer|min:1|max:20',
                 'is_active' => 'boolean',
-                'is_superuser' => 'boolean'
+                'is_superuser' => 'boolean',
+                'id_sede' => 'nullable|exists:sedes,id_sede'
             ]);
 
             // Verificar si el RUN ya existe
@@ -74,7 +78,8 @@ class UserController extends Controller
                 'career' => $validated['career'] ?? null,
                 'current_semester' => $validated['current_semester'] ?? null,
                 'is_active' => $validated['is_active'] ?? true,
-                'is_superuser' => $validated['is_superuser'] ?? false
+                'is_superuser' => $validated['is_superuser'] ?? false,
+                'id_sede' => $validated['id_sede'] ?? null
             ]);
 
             Log::info('Usuario creado exitosamente', [
@@ -127,7 +132,8 @@ class UserController extends Controller
             $years = range(2010, date('Y'));
             $roles = Role::all();
             $permissions = Permission::all();
-            return view('layouts.user.user_update', compact('user', 'years', 'roles', 'permissions'));
+            $sedes = Sede::all();
+            return view('layouts.user.user_update', compact('user', 'years', 'roles', 'permissions', 'sedes'));
         } catch (\Exception $e) {
             Log::error('Error al cargar la vista de edición de usuario: ' . $e->getMessage());
             return redirect()->route('users.index')->withErrors(['error' => 'Hubo un problema al cargar los datos del usuario.']);
@@ -156,7 +162,8 @@ class UserController extends Controller
                 'permissions.*' => 'exists:permissions,id',
                 'direccion' => 'nullable|string|max:255',
                 'fecha_nacimiento' => 'nullable|date',
-                'is_superuser' => 'boolean'
+                'is_superuser' => 'boolean',
+                'id_sede' => 'nullable|exists:sedes,id_sede'
             ], [
                 'email.unique' => 'Este correo electrónico ya está registrado en el sistema.',
                 'run.unique' => 'Este RUN ya está registrado en el sistema.',
@@ -215,7 +222,8 @@ class UserController extends Controller
                 'celular' => $validated['celular'] ?? null,
                 'direccion' => $validated['direccion'] ?? null,
                 'fecha_nacimiento' => $validated['fecha_nacimiento'] ?? null,
-                'is_superuser' => $validated['is_superuser'] ?? false
+                'is_superuser' => $validated['is_superuser'] ?? false,
+                'id_sede' => $validated['id_sede'] ?? null
             ]);
 
             if (!empty($validated['password'])) {

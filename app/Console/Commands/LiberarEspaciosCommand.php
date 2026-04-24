@@ -58,28 +58,40 @@ class LiberarEspaciosCommand extends Command
             Config::set('database.connections.tenant.database', $tenant->database);
             DB::purge('tenant');
 
-            // 1. Finalizar todas las reservas activas
-            $reservasFinalizadas = Reserva::on('tenant')
-                ->where('estado', 'activa')
-                ->update([
+            // 1. Finalizar todas las reservas activas o programadas del día (o anteriores)
+            $reservasActualizadas = Reserva::on('tenant')
+                ->whereIn('estado', ['activa', 'programada'])
+                ->where('fecha_reserva', '<=', Carbon::now()->toDateString())
+                ->get();
+
+            $totalReservas = 0;
+            foreach ($reservasActualizadas as $reserva) {
+                $motivo = $reserva->estado === 'activa' 
+                    ? 'Reserva finalizada automáticamente por reset diario (posible olvido de check-out).' 
+                    : 'Reserva cancelada automáticamente por reset diario (el usuario no asistió).';
+
+                $reserva->update([
                     'estado' => 'finalizada',
-                    'hora_salida' => Carbon::now()->format('H:i:s'),
+                    'hora_salida' => $reserva->estado === 'activa' ? Carbon::now()->format('H:i:s') : $reserva->hora_salida,
+                    'observaciones' => trim(($reserva->observaciones ?? '') . "\n" . $motivo),
                     'updated_at' => Carbon::now()
                 ]);
+                $totalReservas++;
+            }
 
-            $this->line("  Se finalizaron {$reservasFinalizadas} reservas activas.");
+            $this->line("  Se finalizaron {$totalReservas} reservas (activas/programadas).");
 
-            // 2. Cambiar todos los espacios ocupados a disponibles
+            // 2. Cambiar todos los espacios ocupados o reservados a disponibles
             $espaciosLiberados = Espacio::on('tenant')
-                ->where('estado', 'Ocupado')
+                ->whereIn('estado', ['Ocupado', 'Reservado'])
                 ->update([
-                    'estado' => 'disponible',
+                    'estado' => 'Disponible',
                     'updated_at' => Carbon::now()
                 ]);
 
-            $this->line("  Se liberaron {$espaciosLiberados} espacios ocupados.");
+            $this->line("  Se liberaron {$espaciosLiberados} espacios (Ocupados/Reservados).");
 
-            $this->info("  ✅ Proceso completado: {$reservasFinalizadas} reservas finalizadas + {$espaciosLiberados} espacios liberados");
+            $this->info("  ✅ Proceso completado: {$totalReservas} reservas procesadas + {$espaciosLiberados} espacios liberados");
         } catch (\Exception $e) {
             $this->error("  Error procesando tenant {$tenant->name}: " . $e->getMessage());
             Log::error("Error en LiberarEspaciosCommand para tenant {$tenant->name}", [

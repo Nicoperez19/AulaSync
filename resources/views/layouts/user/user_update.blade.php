@@ -126,6 +126,33 @@
                     </div>
                 </div>
 
+                <!-- Sede -->
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div>
+                        <x-form.label for="id_sede" :value="__('Sede Asignada')" />
+                        <x-form.input-with-icon-wrapper>
+                            <x-slot name="icon">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                </svg>
+                            </x-slot>
+                            <select name="id_sede" id="id_sede" class="block w-full py-2 pl-10 pr-3 text-base border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">{{ __('Sin Sede Asignada') }}</option>
+                                @foreach($sedes as $sede)
+                                    <option value="{{ $sede->id_sede }}" {{ old('id_sede', $user->id_sede ?? '') == $sede->id_sede ? 'selected' : '' }}>
+                                        {{ $sede->nombre_sede }} ({{ $sede->id_sede }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </x-form.input-with-icon-wrapper>
+                        @error('id_sede')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
+                        <p class="mt-1 text-xs text-gray-500 italic">
+                            {{ __('Si el usuario no es superusuario, solo podrá acceder a los datos de esta sede.') }}
+                        </p>
+                    </div>
+
                 <!-- Contraseña -->
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <!-- Contraseña del Usuario -->

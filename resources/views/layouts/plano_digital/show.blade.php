@@ -222,32 +222,32 @@
                         </h3>
                         <div class="flex flex-col items-start gap-1">
                             <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-red-500 border-2 border-white rounded-full"></div>
+                                <div class="w-3 h-3 bg-emerald-500 rounded-full shadow-sm"></div>
+                                <span class="flex-1 text-xs text-white">Disponible</span>
+                            </div>
+                            <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-red-500 rounded-full shadow-sm"></div>
                                 <span class="flex-1 text-xs text-white">Ocupado</span>
                             </div>
                             <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-orange-500 border-2 border-white rounded-full"></div>
+                                <div class="w-3 h-3 bg-amber-500 rounded-full shadow-sm"></div>
                                 <span class="flex-1 text-xs text-white">Reservado</span>
                             </div>
                             <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-indigo-400 border-2 border-white rounded-full"></div>
+                                <div class="w-3 h-3 bg-indigo-500 rounded-full shadow-sm"></div>
                                 <span class="flex-1 text-xs text-white">Programado</span>
                             </div>
                             <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-blue-500 border-2 border-white rounded-full"></div>
+                                <div class="w-3 h-3 bg-blue-500 rounded-full shadow-sm"></div>
                                 <span class="flex-1 text-xs text-white">Próximo</span>
                             </div>
                             <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-gray-700 border-2 border-white rounded-full"></div>
+                                <div class="w-3 h-3 bg-gray-700 rounded-full shadow-sm"></div>
                                 <span class="flex-1 text-xs text-white">Clase no realizada (20+ min)</span>
                             </div>
                             <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-gray-400 border-2 border-white rounded-full"></div>
+                                <div class="w-3 h-3 bg-gray-400 rounded-full shadow-sm"></div>
                                 <span class="flex-1 text-xs text-white">En Mantención</span>
-                            </div>
-                            <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
-                                <span class="flex-1 text-xs text-white">Disponible</span>
                             </div>
                         </div>
                     </div>
@@ -1526,6 +1526,30 @@
             }
         }
 
+        async function forzarCierreYTomarEspacio(runUsuario, idEspacio, idReservaAnterior) {
+            try {
+                const response = await fetch('/api/forzar-cierre-espacio', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        run_usuario: runUsuario,
+                        id_espacio: idEspacio,
+                        id_reserva_anterior: idReservaAnterior
+                    })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error en forzarCierreYTomarEspacio:', error);
+                return {
+                    success: false,
+                    mensaje: 'Error de conexión con el servidor'
+                };
+            }
+        }
+
         let lastBufferLength = 0;
         let processingTimeout = null;
         let errorTimeout = null;
@@ -1800,7 +1824,17 @@
 
         // Normalizar el formato del espacio para que coincida con la BD (TH-C1)
         if (espacio) {
-            espacio = espacio.toUpperCase().replace(/'/g, '-');
+            // Eliminar espacios y convertir a mayúsculas
+            espacio = espacio.toUpperCase().trim().replace(/\s+/g, '');
+            // Si empieza por TH y no tiene guion, agregarlo (excepto si el código ya lo trae en otro formato)
+            if (espacio.startsWith('TH') && !espacio.includes('-') && espacio.length > 2) {
+                // Solo si el tercer caracter es una letra o número (ej: TH30 -> TH-30)
+                if (/[A-Z0-9]/.test(espacio[2])) {
+                    espacio = 'TH-' + espacio.substring(2);
+                }
+            }
+            // Reemplazar comillas por guiones (formato heredado)
+            espacio = espacio.replace(/'/g, '-');
         }
 
                     // Verificar estado del espacio y reservas del usuario
@@ -1830,7 +1864,7 @@
                     if (resultadoVerificacion.tipo === 'error') {
             // Error al verificar estado - resetear flujo
             // Error al verificar estado del espacio
-            limpiarEstadoLectura('Error al verificar el estado del espacio');
+            limpiarEstadoLectura(resultadoVerificacion.mensaje || 'Error al verificar el estado del espacio');
             // Restaurar autofocus del qr-input después de error en verificación de espacio
             setTimeout(() => {
                 if (qrInputManager) {
@@ -2022,6 +2056,80 @@
                 if (resultadoVerificacion.ocupante && resultadoVerificacion.ocupante.run === usuarioEscaneado) {
                     // Es el mismo usuario, no mostrar mensaje de ocupado
                     ordenEscaneo = 'usuario';
+                    return;
+                }
+
+                // NUEVA LÓGICA: Si puede forzar cierre, mostrar modal con botón de acción
+                if (resultadoVerificacion.puede_forzar_cierre) {
+                    const ocupante = resultadoVerificacion.ocupante;
+                    const idReservaAnterior = resultadoVerificacion.id_reserva_anterior;
+                    
+                    Swal.fire({
+                        title: 'Sala Ocupada',
+                        html: `
+                            <div class="text-left">
+                                <p class="mb-4 text-orange-600 font-semibold">La sala aún figura ocupada por el docente anterior.</p>
+                                <div class="p-3 mb-4 bg-orange-50 border-l-4 border-orange-500 rounded text-sm">
+                                    <p><strong>Docente anterior:</strong> ${ocupante.nombre}</p>
+                                    <p><strong>Hora inicio:</strong> ${ocupante.hora_inicio}</p>
+                                </div>
+                                <p class="text-gray-700">Usted tiene una clase programada en este bloque. ¿Desea forzar el cierre de la sesión anterior e iniciar su clase?</p>
+                            </div>
+                        `,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, Forzar Cierre e Iniciar Clase',
+                        cancelButtonText: 'Cancelar',
+                        confirmButtonColor: '#059669',
+                        cancelButtonColor: '#6B7280',
+                    }).then(async (result) => {
+                        if (result.isConfirmed) {
+                            // Mostrar cargando
+                            Swal.fire({
+                                title: 'Procesando...',
+                                text: 'Realizando cierre forzado e iniciando su clase',
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                }
+                            });
+
+                            const forceResult = await forzarCierreYTomarEspacio(usuarioEscaneado, espacio, idReservaAnterior);
+                            
+                            if (forceResult && forceResult.success) {
+                                // Éxito
+                                Swal.fire({
+                                    title: '¡Éxito!',
+                                    text: forceResult.mensaje,
+                                    icon: 'success',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                                
+                                // Actualizar UI
+                                const block = state.indicators.find(b => b.id === espacio);
+                                if (block) {
+                                    block.estado = '#FF0000'; // Rojo = Ocupado
+                                    state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                                    drawIndicators();
+                                }
+                            } else {
+                                // Error
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: forceResult.mensaje || 'No se pudo realizar el cierre forzado',
+                                    icon: 'error'
+                                });
+                            }
+                        }
+                        
+                        limpiarEstadoLectura();
+                        if (qrInputManager) {
+                            qrInputManager.setActiveInput('main');
+                        }
+                        ordenEscaneo = 'usuario';
+                    });
+                    
                     return;
                 }
 
@@ -2343,38 +2451,63 @@
         function dibujarIndicador(elements, position, finalWidth, finalHeight, color, id, isHovered, detalles,
             moduloActual) {
             // Calcular el factor de escala para el efecto hover
-            const scale = isHovered ? 1.2 : 1.0;
+            const scale = isHovered ? 1.15 : 1.0;
             const scaledWidth = finalWidth * scale;
             const scaledHeight = finalHeight * scale;
 
             // Calcular la posición para que el escalado sea desde el centro
-            const offsetX = (scaledWidth - finalWidth) / 2;
-            const offsetY = (scaledHeight - finalHeight) / 2;
             const drawX = position.x - scaledWidth / 2;
             const drawY = position.y - scaledHeight / 2;
+            const radius = 8;
 
-            // Dibujar el rectángulo del indicador
-            elements.indicatorsCtx.fillStyle = color;
-            elements.indicatorsCtx.fillRect(drawX, drawY, scaledWidth, scaledHeight);
+            // 1. Dibujar Sombra (Efecto Elevación)
+            elements.indicatorsCtx.save();
+            elements.indicatorsCtx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            elements.indicatorsCtx.shadowBlur = isHovered ? 15 : 8;
+            elements.indicatorsCtx.shadowOffsetX = 0;
+            elements.indicatorsCtx.shadowOffsetY = 4;
 
-            // Dibujar el borde del indicador
-            elements.indicatorsCtx.lineWidth = 2;
-            elements.indicatorsCtx.strokeStyle = config.indicatorBorder;
-            elements.indicatorsCtx.strokeRect(drawX, drawY, scaledWidth, scaledHeight);
+            // 2. Dibujar el rectángulo con bordes redondeados
+            elements.indicatorsCtx.beginPath();
+            elements.indicatorsCtx.roundRect(drawX, drawY, scaledWidth, scaledHeight, radius);
+            
+            // 3. Crear Gradiente Premium
+            const gradient = elements.indicatorsCtx.createLinearGradient(drawX, drawY, drawX, drawY + scaledHeight);
+            
+            // Función para aclarar color (ajustar brillo)
+            const lightenColor = (col, amt) => {
+                let usePound = false;
+                if (col[0] == "#") { col = col.slice(1); usePound = true; }
+                let num = parseInt(col, 16);
+                let r = (num >> 16) + amt;
+                if (r > 255) r = 255; else if (r < 0) r = 0;
+                let b = ((num >> 8) & 0x00FF) + amt;
+                if (b > 255) b = 255; else if (b < 0) b = 0;
+                let g = (num & 0x0000FF) + amt;
+                if (g > 255) g = 255; else if (g < 0) g = 0;
+                return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16).padStart(6, '0');
+            };
 
-            // Dibujar el texto del indicador (dividir por guion si existe)
-            elements.indicatorsCtx.font = `bold ${config.fontSize}px Arial`;
-            elements.indicatorsCtx.fillStyle = config.indicatorTextColor;
+            gradient.addColorStop(0, lightenColor(color, 30));
+            gradient.addColorStop(1, color);
+            
+            elements.indicatorsCtx.fillStyle = gradient;
+            elements.indicatorsCtx.fill();
+            elements.indicatorsCtx.restore();
+
+            // 4. Dibujar el texto del indicador (Sin borde blanco por solicitud)
+            elements.indicatorsCtx.font = `bold ${config.fontSize}px 'Inter', system-ui, sans-serif`;
+            elements.indicatorsCtx.fillStyle = '#FFFFFF';
             elements.indicatorsCtx.textAlign = 'center';
             elements.indicatorsCtx.textBaseline = 'middle';
+            
+            // Sombra de texto para legibilidad
+            elements.indicatorsCtx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            elements.indicatorsCtx.shadowBlur = 4;
+            elements.indicatorsCtx.shadowOffsetX = 1;
+            elements.indicatorsCtx.shadowOffsetY = 1;
 
-            let lines = [];
-            if (id.includes('-')) {
-                lines = id.split('-');
-            } else {
-                lines = [id];
-            }
-
+            let lines = id.includes('-') ? id.split('-') : [id];
             const lineHeight = config.fontSize + 2;
             const totalTextHeight = lines.length * lineHeight;
             const startY = position.y - (totalTextHeight / 2) + (lineHeight / 2);
@@ -2401,25 +2534,25 @@
                 // Determinar color basado en el estado
                 let color = indicator.estado;
 
-                // Convertir estado a minúsculas para comparación
-                const estadoLower = indicator.estado.toLowerCase();
+                // Normalizar estado para comparación robusta (quitar acentos y pasar a minúsculas)
+                const estadoLower = indicator.estado.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-                if (estadoLower === 'mantención' || estadoLower === 'mantenimiento') {
-                    color = '#6B7280'; // Gris - Mantenimiento
+                if (estadoLower === 'mantencion' || estadoLower === 'mantenimiento') {
+                    color = '#9ca3af'; // Gris 400 - Mantenimiento
                 } else if (estadoLower === 'disponible' || estadoLower === 'libre') {
-                    color = '#059669'; // Verde
+                    color = '#10b981'; // Esmeralda 500 - Disponible
                 } else if (estadoLower === 'ocupado') {
-                    color = '#FF0000'; // Rojo
+                    color = '#ef4444'; // Rojo 500 - Ocupado
                 } else if (estadoLower === 'programado') {
-                    color = '#818CF8'; // Indigo/Violeta - Programado (reserva anticipada, persona no ha llegado)
+                    color = '#818cf8'; // Indigo 400 - Programado
                 } else if (estadoLower === 'reservado') {
-                    color = '#F59E0B'; // Naranja
+                    color = '#f59e0b'; // Amber 500 - Reservado
                 } else if (estadoLower === 'proximo') {
-                    color = '#3B82F6'; // Azul
+                    color = '#3b82f6'; // Azul 500 - Próximo
                 } else if (estadoLower === 'clasesinasistentes') {
-                    color = '#1F2937'; // Negro oscuro - Clase sin asistentes (después de 15 min)
+                    color = '#374151'; // Gris 700 - Clase sin asistentes
                 } else {
-                    color = '#059669'; // Verde por defecto
+                    color = '#10b981'; // Esmeralda por defecto
                 }
 
                 // Verificar si este indicador está siendo hover

@@ -102,14 +102,31 @@
                         </div>
                     </div>
 
-                    <div class="space-y-2">
-                        <x-form.label for="password_add" value="Contraseña *" />
-                        <x-form.input id="password_add" name="password" type="password"
-                            class="w-full @error('password') border-red-500 @enderror" required minlength="8"
-                            placeholder="Mínimo 8 caracteres" />
-                        @error('password')
-                            <p class="text-sm text-red-600">{{ $message }}</p>
-                        @enderror
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <div class="space-y-2">
+                            <x-form.label for="password_add" value="Contraseña *" />
+                            <x-form.input id="password_add" name="password" type="password"
+                                class="w-full @error('password') border-red-500 @enderror" required minlength="8"
+                                placeholder="Mínimo 8 caracteres" />
+                            @error('password')
+                                <p class="text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="space-y-2">
+                            <x-form.label for="id_sede_add" value="Sede Asignada" />
+                            <select name="id_sede" id="id_sede_add" class="block w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white focus:ring-red-500 focus:border-red-500">
+                                <option value="">Sin Sede Asignada</option>
+                                @foreach($sedes as $sede)
+                                    <option value="{{ $sede->id_sede }}" {{ old('id_sede') == $sede->id_sede ? 'selected' : '' }}>
+                                        {{ $sede->nombre_sede }} ({{ $sede->id_sede }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('id_sede')
+                                <p class="text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
 
                     <div class="flex justify-end mt-6">

@@ -1,0 +1,34 @@
+# ============================================================
+# CONFIGURACIÓN DEL SCHEDULER DE LARAVEL EN SERVIDOR LINUX
+# ============================================================
+# Agregar esta línea al crontab del servidor.
+# Ejecutar como el usuario que tiene permisos sobre el proyecto
+# (normalmente www-data o el usuario de deploy):
+#
+#   crontab -e
+#
+# Luego pegar exactamente esta línea (ajusta el PATH si es necesario):
+* * * * * cd /var/www/aulasync && php artisan schedule:run >> /dev/null 2>&1
+
+# ============================================================
+# WINDOWS LOCAL (desarrollo con XAMPP)
+# ============================================================
+# Para desarrollo local en Windows, ejecutar este comando
+# en una terminal PowerShell aparte mientras desarrollas:
+#
+#   while ($true) { php artisan schedule:run; Start-Sleep 60 }
+#
+# O registrar con el Task Scheduler (requiere correr como Admin):
+#   schtasks /create /tn "AulaSync Laravel Scheduler" ^
+#       /tr "\"C:\xampp\php\php.exe\" \"d:\Proyectos\AulaSync\artisan\" schedule:run >> \"d:\Proyectos\AulaSync\storage\logs\scheduler.log\" 2>&1" ^
+#       /sc MINUTE /mo 1 /ru SYSTEM /f
+
+# ============================================================
+# COMANDOS PROGRAMADOS (Kernel.php)
+# ============================================================
+# espacios:actualizar-estado    → cada 15 min
+# reservas:finalizar-expiradas  → cada hora
+# espacios:liberar              → 00:00 diario  ← RESET NOCTURNO
+# sistema:verificar-estado      → cada 30 min
+# clases:detectar-no-realizadas → cada 5 min (08:00-23:00, Lun-Sáb)
+# reservas:finalizar-no-devueltas → cada 5 min

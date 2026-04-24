@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 class MapasController extends Controller
 {
 
-public function edit($id)
+    public function edit($id)
     {
         $mapa = Mapa::withoutGlobalScopes()->with('bloques.espacio')->findOrFail($id);
         $pisos = Piso::all();
@@ -24,7 +24,18 @@ public function edit($id)
         // Obtener sede y facultad del tenant actual
         $tenant = \App\Models\Tenant::current();
         $sede = $tenant ? Sede::find($tenant->sede_id) : null;
+        
+        // Log para depuración
+        Log::info('MapasController::edit', [
+            'tenant' => $tenant ? $tenant->sede_id : 'null',
+            'sede' => $sede ? $sede->id_sede : 'null',
+        ]);
+
         $facultad = $sede ? Facultad::where('id_sede', $sede->id_sede)->first() : null;
+        
+        if (!$facultad) {
+            Log::warning('No se encontró facultad para la sede en MapasController::edit', ['sede_id' => $sede ? $sede->id_sede : 'null']);
+        }
 
         return view('layouts.maps.map_edit', compact('mapa', 'pisos', 'sede', 'facultad'));
     }
@@ -114,14 +125,25 @@ public function edit($id)
         return view('layouts.maps.map_index', compact('mapas'));
     }
 
-    public function add()
+        public function add()
     {
         $universidades = Universidad::all();
 
         // Obtener sede y facultad del tenant actual
         $tenant = \App\Models\Tenant::current();
         $sede = $tenant ? Sede::find($tenant->sede_id) : null;
+        
+        // Log para depuración
+        Log::info('MapasController::add', [
+            'tenant' => $tenant ? $tenant->sede_id : 'null',
+            'sede' => $sede ? $sede->id_sede : 'null',
+        ]);
+
         $facultad = $sede ? Facultad::where('id_sede', $sede->id_sede)->first() : null;
+        
+        if (!$facultad) {
+            Log::warning('No se encontró facultad para la sede en MapasController::add', ['sede_id' => $sede ? $sede->id_sede : 'null']);
+        }
 
         return view('layouts.maps.map_add', compact('universidades', 'sede', 'facultad'));
     }

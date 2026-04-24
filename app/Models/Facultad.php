@@ -10,8 +10,6 @@ class Facultad extends Model
 {
     use HasFactory, BelongsToTenant;
     
-    protected $connection = 'tenant';
-
     protected $table = 'facultades';
     protected $primaryKey = 'id_facultad';
     public $incrementing = false;

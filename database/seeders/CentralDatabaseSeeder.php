@@ -19,17 +19,17 @@ class CentralDatabaseSeeder extends Seeder
     public function run(): void
     {
         // Datos compartidos/centralizados
-        $this->call(RoleSeeder::class);
-        $this->call(UserSeeder::class);
-        $this->call(ControlDocenteSeeder::class);
         $this->call(AdministracionChileSeeder::class);
         $this->call(UniversidadSeeder::class);
         $this->call(SedeSeeder::class);
         $this->call(CampusSeeder::class);
+        $this->call(RoleSeeder::class);
+        $this->call(UserSeeder::class);
+        $this->call(ControlDocenteSeeder::class);
+        $this->call(TenantSeeder::class);
         $this->call(FacultadSeeder::class);
         $this->call(AreaAcademicaSeeder::class);
         $this->call(CarreraSeeder::class);
-        $this->call(TenantSeeder::class);
 
         // Módulos (compartidos) - Ahora en tenant
         // $this->call(ModulosSeeder::class);

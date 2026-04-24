@@ -63,7 +63,9 @@ class TenantsSeedSpaces extends Command
 
                 if ($fresh) {
                     $this->warn("Wiping spaces table for tenant {$tenant->domain}...");
+                    DB::connection('tenant')->statement('SET FOREIGN_KEY_CHECKS=0;');
                     DB::connection('tenant')->table('espacios')->truncate();
+                    DB::connection('tenant')->statement('SET FOREIGN_KEY_CHECKS=1;');
                 }
 
                 // Seed spaces
