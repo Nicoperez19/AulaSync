@@ -20,7 +20,7 @@
                         <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
                             <i class="fa-solid fa-circle-check text-green-600 text-sm"></i>
                             <div class="flex items-center gap-1">
-                                <span class="text-xs font-medium text-green-700">Activas:</span>
+                                <span class="text-xs font-medium text-green-700">Vigentes:</span>
                                 <span class="text-sm font-bold text-green-900" id="stats-activas-header">0</span>
                             </div>
                         </div>
@@ -47,7 +47,7 @@
         <div class="p-3">
             <div class="flex items-center justify-center gap-2">
                 <i class="fa-solid fa-circle-check text-green-600 text-lg"></i>
-                <span class="text-sm font-medium text-green-700">Activas:</span>
+                <span class="text-sm font-medium text-green-700">Vigentes:</span>
                 <span class="text-xl font-bold text-green-900" id="stats-activas-mobile">0</span>
             </div>
         </div>
@@ -65,6 +65,7 @@
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
                         <option value="">Todos los estados</option>
                         <option value="activa">Activas</option>
+                        <option value="programada">Programadas</option>
                         <option value="finalizada">Finalizadas</option>
                     </select>
                 </div>
@@ -369,11 +370,11 @@ window.editarReserva = async function(idReserva) {
         return;
     }
     
-    if (reserva.estado !== 'activa') {
+    if (reserva.estado !== 'activa' && reserva.estado !== 'programada') {
         Swal.fire({
             icon: 'warning',
             title: 'Advertencia',
-            text: 'Solo se pueden editar reservas activas'
+            text: 'Solo se pueden editar reservas activas o programadas'
         });
         return;
     }
@@ -764,7 +765,7 @@ function actualizarContadorSeleccionadas() {
         const reservasSeleccionadas = Array.from(checkboxes).map(cb => cb.value);
         const todasActivas = reservasSeleccionadas.every(id => {
             const reserva = reservasOriginales.find(r => r.id == id);
-            return reserva && reserva.estado === 'activa';
+            return reserva && (reserva.estado === 'activa' || reserva.estado === 'programada');
         });
         
         btnFinalizarLote.disabled = !todasActivas;
@@ -795,15 +796,15 @@ async function finalizarReservasEnLote() {
         return;
     }
     
-    // Verificar que todas estén activas
+    // Verificar que todas estén activas o programadas
     const reservasSeleccionadas = reservasIds.map(id => reservasOriginales.find(r => r.id == id));
-    const reservasInactivas = reservasSeleccionadas.filter(r => r.estado !== 'activa');
+    const reservasInactivas = reservasSeleccionadas.filter(r => r.estado !== 'activa' && r.estado !== 'programada');
     
     if (reservasInactivas.length > 0) {
         Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Solo se pueden finalizar reservas que estén activas'
+            text: 'Solo se pueden finalizar reservas que estén activas o programadas'
         });
         return;
     }
@@ -929,7 +930,7 @@ function verDetalleReserva(reservaId) {
         title: `Reserva #${reserva.id}`,
         html: `
             <div class="text-left space-y-3">
-                <div><strong>Estado:</strong> <span class="px-2 py-1 rounded text-sm ${reserva.estado === 'activa' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${reserva.estado === 'activa' ? 'Activa' : 'Finalizada'}</span></div>
+                <div><strong>Estado:</strong> <span class="px-2 py-1 rounded text-sm ${reserva.estado === 'activa' ? 'bg-green-100 text-green-800' : reserva.estado === 'programada' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">${reserva.estado === 'activa' ? 'Activa' : reserva.estado === 'programada' ? 'Programada' : 'Finalizada'}</span></div>
                 <div><strong>Espacio:</strong> ${reserva.id_espacio}</div>
                 <div><strong>Responsable:</strong> ${reserva.nombre_responsable || 'Sin nombre'} <br><small class="text-gray-600">${reserva.tipo_responsable || 'N/A'} - RUN: ${reserva.run_responsable}</small></div>
                 <div><strong>Fecha:</strong> ${formatearFecha(reserva.fecha)}</div>
@@ -1072,9 +1073,11 @@ function mostrarReservasEnTabla(reservas) {
                     <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full ${
                         reserva.estado === 'activa' 
                             ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
+                            : reserva.estado === 'programada'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-gray-100 text-gray-800'
                     }">
-                        ${reserva.estado === 'activa' ? 'Activa' : 'Fin.'}
+                        ${reserva.estado === 'activa' ? 'Activa' : reserva.estado === 'programada' ? 'Programada' : 'Finalizada'}
                     </span>
                     ${reserva.editada ? '<span class="px-2 py-0.5 inline-flex text-xs font-medium rounded-full bg-blue-100 text-blue-700"><i class="fa-solid fa-pen-to-square text-xs mr-1"></i>Editada</span>' : ''}
                 </div>
@@ -1090,7 +1093,7 @@ function mostrarReservasEnTabla(reservas) {
             </td>
             <td class="px-2 py-2 text-right">
                 <div class="flex justify-end gap-1">
-                    ${reserva.estado === 'activa' 
+                    ${reserva.estado === 'activa' || reserva.estado === 'programada'
                         ? `<button 
                             type="button"
                             onclick="editarReserva('${reserva.id}')"
@@ -1130,10 +1133,12 @@ function mostrarReservasEnTabla(reservas) {
                         <div class="flex flex-wrap gap-1 mt-1">
                             <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full ${
                                 reserva.estado === 'activa' 
-                                    ? 'bg-green-100 text-green-800' 
-                                    : 'bg-gray-100 text-gray-800'
+                                    ? 'bg-green-100 text-green-800'
+                                    : reserva.estado === 'programada'
+                                        ? 'bg-blue-100 text-blue-800'
+                                        : 'bg-gray-100 text-gray-800'
                             }">
-                                ${reserva.estado === 'activa' ? 'Activa' : 'Finalizada'}
+                                ${reserva.estado === 'activa' ? 'Activa' : reserva.estado === 'programada' ? 'Programada' : 'Finalizada'}
                             </span>
                             ${reserva.editada ? '<span class="px-2 py-1 inline-flex text-xs font-medium rounded-full bg-blue-100 text-blue-700"><i class="fa-solid fa-pen-to-square text-xs mr-1"></i>Editada</span>' : ''}
                         </div>
@@ -1176,7 +1181,7 @@ function mostrarReservasEnTabla(reservas) {
             </div>
             
             <div class="mt-4 flex gap-2">
-                ${reserva.estado === 'activa' 
+                ${reserva.estado === 'activa' || reserva.estado === 'programada'
                     ? `<button 
                         type="button"
                         onclick="editarReserva('${reserva.id}')"
@@ -1314,7 +1319,7 @@ function formatearModulosInfo(modulosInfo) {
 
 // Actualizar estadísticas
 function actualizarEstadisticas(reservas) {
-    const activas = reservas.filter(r => r.estado === 'activa').length;
+    const activas = reservas.filter(r => r.estado === 'activa' || r.estado === 'programada').length;
     
     // Actualizar contador desktop
     const headerCounter = document.getElementById('stats-activas-header');

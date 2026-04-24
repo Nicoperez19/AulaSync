@@ -196,7 +196,7 @@ class EspacioController extends Controller
                 'Gimnasio',
                 'Sala Multiusos',
             ])],
-            'estado' => ['required', Rule::in(['Disponible', 'Ocupado', 'Reservado'])],
+            'estado' => ['required', Rule::in(['Disponible', 'Ocupado', 'Reservado', 'Mantenimiento'])],
             'puestos_disponibles' => ['nullable', 'integer', 'min:1'],
         ], [
             'id_espacio.unique' => 'El identificador del espacio ya existe en esta sede.',
@@ -205,6 +205,8 @@ class EspacioController extends Controller
             'piso_id.exists' => 'El piso seleccionado no existe en el tenant actual.',
             'id_facultad.exists' => 'La facultad seleccionada no existe en el tenant actual.',
             'id_universidad.exists' => 'La universidad seleccionada no existe.',
+            'tipo_espacio.in' => 'El tipo de espacio seleccionado no es válido.',
+            'estado.in' => 'El estado seleccionado no es válido.',
         ]);
 
         $piso = Piso::with('facultad')->find($validated['piso_id']);

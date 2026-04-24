@@ -37,25 +37,33 @@ class ProfessorsTable extends Component
 
     public function render()
     {
+        $searchTerm = trim($this->search);
+        $universidadIds = collect();
+
+        if ($searchTerm !== '') {
+            $universidadIds = \App\Models\Universidad::where('nombre_universidad', 'like', '%' . $searchTerm . '%')
+                ->pluck('id_universidad');
+        }
+
         $profesores = Profesor::query()
             ->with(['carrera', 'universidad', 'facultad', 'areaAcademica'])
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('run_profesor', 'like', '%' . $this->search . '%')
-                      ->orWhere('name', 'like', '%' . $this->search . '%')
-                      ->orWhere('email', 'like', '%' . $this->search . '%')
-                      ->orWhere('tipo_profesor', 'like', '%' . $this->search . '%')
-                      ->orWhereHas('carrera', function ($subQuery) {
-                          $subQuery->where('nombre', 'like', '%' . $this->search . '%');
+            ->when($searchTerm, function ($query) use ($searchTerm, $universidadIds) {
+                $query->where(function ($q) use ($searchTerm, $universidadIds) {
+                    $q->where('run_profesor', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('name', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('email', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('tipo_profesor', 'like', '%' . $searchTerm . '%')
+                      ->orWhereHas('carrera', function ($subQuery) use ($searchTerm) {
+                          $subQuery->where('nombre', 'like', '%' . $searchTerm . '%');
                       })
-                      ->orWhereHas('universidad', function ($subQuery) {
-                          $subQuery->where('nombre_universidad', 'like', '%' . $this->search . '%');
+                      ->when($universidadIds->isNotEmpty(), function ($q2) use ($universidadIds) {
+                          $q2->orWhereIn('id_universidad', $universidadIds);
                       })
-                      ->orWhereHas('facultad', function ($subQuery) {
-                          $subQuery->where('nombre_facultad', 'like', '%' . $this->search . '%');
+                      ->orWhereHas('facultad', function ($subQuery) use ($searchTerm) {
+                          $subQuery->where('nombre_facultad', 'like', '%' . $searchTerm . '%');
                       })
-                      ->orWhereHas('areaAcademica', function ($subQuery) {
-                          $subQuery->where('nombre_area_academica', 'like', '%' . $this->search . '%');
+                      ->orWhereHas('areaAcademica', function ($subQuery) use ($searchTerm) {
+                          $subQuery->where('nombre_area_academica', 'like', '%' . $searchTerm . '%');
                       });
                 });
             })

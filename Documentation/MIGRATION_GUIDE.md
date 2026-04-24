@@ -36,8 +36,6 @@ php artisan tenants:setup --fresh --seed
 
 ---
 
-> [!WARNING]
-> **NO utilices scripts manuales** como `seed_ct.php` o similares que se encuentren en la raíz del proyecto. Estos scripts son obsoletos y pueden causar inconsistencias. Utiliza siempre el flujo estándar descrito arriba.
 
 ---
 
@@ -51,6 +49,23 @@ El sistema cuenta con tareas programadas (Schedule) para mantener la integridad 
 ## Estructura de Migraciones
 
 Para mantener el orden, no agregues migraciones en la raíz de `database/migrations`. Utiliza las subcarpetas:
+
+---
+
+## Automatización en el Servidor (IMPORTANTE)
+
+Para que el reset de las 00:00 y las detecciones funcionen automáticamente, **debes** configurar el programador de tareas en el servidor:
+
+### En Linux (Ubuntu/Debian)
+1. Ejecuta `crontab -e`.
+2. Añade esta línea al final (ajusta la ruta):
+   ```bash
+   * * * * * cd /ruta/al/proyecto && php artisan schedule:run >> /dev/null 2>&1
+   ```
+
+### En Windows
+1. Crea una tarea en el **Programador de Tareas** que se ejecute cada 1 minuto.
+2. Acción: Iniciar programa `php` con argumentos `C:\ruta\al\proyecto\artisan schedule:run`.
 
 - `database/migrations/central/`: Tablas globales (Usuarios, Sedes, Tenants).
 - `database/migrations/tenant/`: Tablas específicas de cada sede (Espacios, Reservas, Planificaciones).

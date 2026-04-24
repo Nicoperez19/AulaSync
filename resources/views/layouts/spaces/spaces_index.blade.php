@@ -175,25 +175,26 @@
                                     class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500 sm:text-sm"
                                     required>
                                     <option value="" disabled selected>{{ __('Seleccionar Tipo de Espacio') }}</option>
-                                    <option value="Sala de Clases" {{ old('tipo_espacio') == 'Sala de Clases' ? 'selected' : '' }}>
-                                        {{ __('Aula') }}
-                                    </option>
-                                    <option value="Laboratorio" {{ old('tipo_espacio') == 'Laboratorio' ? 'selected' : '' }}>
-                                        {{ __('Laboratorio') }}
-                                    </option>
-                                    <option value="Biblioteca" {{ old('tipo_espacio') == 'Biblioteca' ? 'selected' : '' }}>
-                                        {{ __('Biblioteca') }}
-                                    </option>
-                                    <option value="Sala de Reuniones" {{ old('tipo_espacio') == 'Sala de Reuniones' ? 'selected' : '' }}>
-                                        {{ __('Sala de Reuniones') }}
-                                    </option>
-                                    <option value="Oficinas" {{ old('tipo_espacio') == 'Oficinas' ? 'selected' : '' }}>
-                                        {{ __('Oficinas') }}
-                                    </option>
-                                    
-                                    <option value="Taller" {{ old('tipo_espacio') == 'Taller' ? 'selected' : '' }}>
-                                        {{ __('Taller') }}
-                                    </option>
+                                    @php
+                                        $tipos = [
+                                            'Sala de Clases' => 'Sala de Clases',
+                                            'Laboratorio' => 'Laboratorio',
+                                            'Laboratorio de Computación' => 'Laboratorio de Computación',
+                                            'Biblioteca' => 'Biblioteca',
+                                            'Sala de Reuniones' => 'Sala de Reuniones',
+                                            'Oficinas' => 'Oficinas',
+                                            'Taller' => 'Taller',
+                                            'Auditorio' => 'Auditorio',
+                                            'Sala de Estudio' => 'Sala de Estudio',
+                                            'Gimnasio' => 'Gimnasio',
+                                            'Sala Multiusos' => 'Sala Multiusos',
+                                        ];
+                                    @endphp
+                                    @foreach ($tipos as $value => $label)
+                                        <option value="{{ $value }}" {{ old('tipo_espacio') == $value ? 'selected' : '' }}>
+                                            {{ $label }}
+                                        </option>
+                                    @endforeach
                                 </select>
                             </div>
 

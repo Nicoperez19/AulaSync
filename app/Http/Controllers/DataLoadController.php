@@ -253,7 +253,7 @@ class DataLoadController extends Controller
 
                 try {
                     $sede = $row[7];
-
+                    
                     // Filtrar por sede actual del tenant (dinámico)
                     if ($nombreSedeActual && strtolower(trim($sede)) !== $nombreSedeActual) {
                         $skippedRows++;
@@ -261,9 +261,9 @@ class DataLoadController extends Controller
                     }
 
                     $idCarrera = $row[17];
-
+                    
                     // Durante la inicialización o si la carrera no existe, intentar crearla o usar una genérica
-                    $carrera = Carrera::find($idCarrera);
+                    $carrera = Carrera::withoutGlobalScope('tenant')->find($idCarrera);
                     if (!$carrera) {
                         // Intentar crear una carrera genérica para esta sede
                         $nombreCarrera = isset($row[18]) && !empty($row[18]) ? $row[18] : 'Carrera ' . $idCarrera;
@@ -306,7 +306,7 @@ class DataLoadController extends Controller
                     $name = $row[12];
                     $email = $row[13];
                     $tipoProfesor = $row[16];
-                    $existingProfesor = Profesor::where('run_profesor', $run)->first();
+                    $existingProfesor = Profesor::withoutGlobalScope('tenant')->where('run_profesor', $run)->first();
 
                     if ($existingProfesor) {
                         // ACTUALIZACIÓN COMPLETA del profesor
@@ -342,7 +342,9 @@ class DataLoadController extends Controller
 
                     // Validar que la sección sea un número de hasta 4 dígitos
                     if (!empty($numeroSeccion) && !preg_match('/^\d{1,4}$/', $numeroSeccion)) {
-                        $errors[] = 'Fila ' . ($index + 1) . ': Sección inválida - debe ser un número de 1 a 4 dígitos (valor: ' . $numeroSeccion . ')';
+                        $errorMsg = 'Fila ' . ($index + 1) . ': Sección inválida - debe ser un número de 1 a 4 dígitos (valor: ' . $numeroSeccion . ')';
+                        Log::warning($errorMsg);
+                        $errors[] = $errorMsg;
                         continue;
                     }
 
@@ -351,7 +353,7 @@ class DataLoadController extends Controller
                         $numeroSeccion = '1';
                     }
 
-                    $existingAsignatura = Asignatura::where('id_asignatura', $idAsignatura)->first();
+                    $existingAsignatura = Asignatura::withoutGlobalScope('tenant')->where('id_asignatura', $idAsignatura)->first();
                     if (!$existingAsignatura) {
                         $asignatura = Asignatura::create([
                             'id_asignatura' => $idAsignatura,
@@ -381,11 +383,11 @@ class DataLoadController extends Controller
                     try {
                         $idHorario = 'HOR_' . $run . '_' . $periodo;
 
-                        $existingHorario = Horario::where('id_horario', $idHorario)->first();
+                        $existingHorario = Horario::withoutGlobalScope('tenant')->where('id_horario', $idHorario)->first();
 
                         if (!$existingHorario) {
                             $oldIdHorario = 'HOR_' . $run;
-                            $existingHorario = Horario::where('id_horario', $oldIdHorario)->first();
+                            $existingHorario = Horario::withoutGlobalScope('tenant')->where('id_horario', $oldIdHorario)->first();
 
                             if ($existingHorario) {
                                 // Migrar horario existente al nuevo formato
@@ -523,11 +525,14 @@ class DataLoadController extends Controller
                             }
                         }
                     } catch (\Exception $e) {
-                        $errors[] = 'Fila ' . ($index + 1) . ': Error al procesar horario - ' . $e->getMessage();
+                        $errorMsg = 'Fila ' . ($index + 1) . ': ' . $e->getMessage();
+                        Log::error($errorMsg);
+                        $errors[] = $errorMsg;
                         continue;
                     }
                 } catch (\Exception $e) {
                     $errorMsg = 'Fila ' . ($index + 1) . ': ' . $e->getMessage();
+                    Log::error($errorMsg);
                     $errors[] = $errorMsg;
                 }
             }

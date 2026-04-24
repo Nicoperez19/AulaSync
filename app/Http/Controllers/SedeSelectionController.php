@@ -57,7 +57,10 @@ class SedeSelectionController extends Controller
 
         // Almacenar el tenant en la sesión
         // El sistema ahora identifica tenants por sesión en lugar de subdominio
+        \Log::info('SedeSelectionController: Saving tenant_id to session', ['tenant_id' => $sede->tenant->id]);
         session(['tenant_id' => $sede->tenant->id]);
+        session()->save(); // Forzar guardado inmediato
+        \Log::info('SedeSelectionController: Session saved', ['session_id' => session()->getId(), 'has_tenant' => session()->has('tenant_id')]);
 
         // Establecer el tenant como actual
         $sede->tenant->makeCurrent();

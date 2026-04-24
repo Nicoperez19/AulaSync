@@ -929,7 +929,7 @@ class QuickActionsController extends Controller
             ]);
 
             $request->validate([
-                'estado' => 'required|in:activa,finalizada,cancelada'
+                'estado' => 'required|in:activa,programada,finalizada,cancelada'
             ]);
 
             // Buscar reserva por id_reserva (que es string, no int)
@@ -1462,10 +1462,10 @@ class QuickActionsController extends Controller
                     ->with('error', 'Reserva no encontrada');
             }
 
-            // Verificar que la reserva esté activa
-            if ($reserva->estado !== 'activa') {
+            // Verificar que la reserva esté activa o programada
+            if ($reserva->estado !== 'activa' && $reserva->estado !== 'programada') {
                 return redirect()->route('quick-actions.gestionar-reservas')
-                    ->with('error', 'Solo se pueden editar reservas activas');
+                    ->with('error', 'Solo se pueden editar reservas activas o programadas');
             }
 
             // Obtener espacios disponibles (usando id_espacio como identificador)
@@ -1511,11 +1511,11 @@ class QuickActionsController extends Controller
                 ], 404);
             }
 
-            // Verificar que esté activa
-            if ($reserva->estado !== 'activa') {
+            // Verificar que esté activa o programada
+            if ($reserva->estado !== 'activa' && $reserva->estado !== 'programada') {
                 return response()->json([
                     'success' => false,
-                    'mensaje' => 'Solo se pueden editar reservas activas'
+                    'mensaje' => 'Solo se pueden editar reservas activas o programadas'
                 ], 400);
             }
 
