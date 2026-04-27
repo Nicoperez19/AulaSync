@@ -327,7 +327,7 @@ class HorariosController extends Controller
         try {
             $id_espacio = $request->input('id_espacio');
 
-            $query = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo', 'espacio']);
+            $query = Planificacion_Asignatura::with(['asignatura', 'horario.profesor', 'modulo', 'espacio']);
 
             if ($id_espacio) {
                 $query->where('id_espacio', $id_espacio);
@@ -340,8 +340,8 @@ class HorariosController extends Controller
                 return $items->map(function ($plan) {
                     return [
                         'asignatura' => $plan->asignatura->nombre_asignatura ?? '',
-                        'profesor' => $plan->asignatura->profesor ? [
-                            'name' => $plan->asignatura->profesor->name
+                        'profesor' => $plan->horario->profesor ? [
+                            'name' => $plan->horario->profesor->name
                         ] : null,
                         'dia' => $plan->modulo->dia ?? '',
                         'hora_inicio' => $plan->modulo->hora_inicio ?? '',
@@ -419,7 +419,7 @@ class HorariosController extends Controller
             $periodo = $anioFiltro . '-' . $semestreFiltro;
 
             // Cargar horarios solo para el período seleccionado
-            $planificaciones = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo', 'espacio', 'horario'])
+            $planificaciones = Planificacion_Asignatura::with(['asignatura', 'modulo', 'espacio', 'horario.profesor'])
                 ->whereHas('horario', function ($q) use ($periodo) {
                     $q->where('periodo', $periodo);
                 })
@@ -433,8 +433,8 @@ class HorariosController extends Controller
                     return [
                         'asignatura' => $plan->asignatura->nombre_asignatura ?? '',
                         'codigo_asignatura' => $plan->asignatura->codigo_asignatura ?? '',
-                        'profesor' => $plan->asignatura->profesor ? [
-                            'name' => $plan->asignatura->profesor->name
+                        'profesor' => $plan->horario->profesor ? [
+                            'name' => $plan->horario->profesor->name
                         ] : null,
                         'dia' => $plan->modulo->dia ?? '',
                         'hora_inicio' => $plan->modulo->hora_inicio ?? '',
@@ -478,7 +478,7 @@ class HorariosController extends Controller
             Log::info("📡 API getHorariosPorPeriodo - Período: $periodo, Tenant: " . ($tenant ? $tenant->prefijo_espacios : 'NULL'));
 
             // Verificar datos en BD
-            $planificaciones = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo', 'espacio', 'horario'])
+            $planificaciones = Planificacion_Asignatura::with(['asignatura', 'modulo', 'espacio', 'horario.profesor'])
                 ->whereHas('horario', function ($q) use ($periodo) {
                     $q->where('periodo', $periodo);
                 })
@@ -495,8 +495,8 @@ class HorariosController extends Controller
                     return [
                         'asignatura' => $plan->asignatura->nombre_asignatura ?? '',
                         'codigo_asignatura' => $plan->asignatura->codigo_asignatura ?? '',
-                        'profesor' => $plan->asignatura->profesor ? [
-                            'name' => $plan->asignatura->profesor->name
+                        'profesor' => $plan->horario->profesor ? [
+                            'name' => $plan->horario->profesor->name
                         ] : null,
                         'dia' => $plan->modulo->dia ?? '',
                         'hora_inicio' => $plan->modulo->hora_inicio ?? '',
@@ -544,7 +544,7 @@ class HorariosController extends Controller
             }
 
             // Obtener las planificaciones del espacio
-            $planificaciones = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo'])
+            $planificaciones = Planificacion_Asignatura::with(['asignatura', 'horario.profesor', 'modulo'])
                 ->where('id_espacio', $idEspacio)
                 ->whereHas('horario', function ($q) use ($periodo) {
                     $q->where('periodo', $periodo);
@@ -558,8 +558,8 @@ class HorariosController extends Controller
                 return [
                     'asignatura' => $plan->asignatura->nombre_asignatura ?? '',
                     'codigo_asignatura' => $plan->asignatura->codigo_asignatura ?? '',
-                    'profesor' => $plan->asignatura->profesor ? [
-                        'name' => $plan->asignatura->profesor->name
+                    'profesor' => $plan->horario->profesor ? [
+                        'name' => $plan->horario->profesor->name
                     ] : null,
                     'dia' => $plan->modulo->dia ?? '',
                     'hora_inicio' => $plan->modulo->hora_inicio ?? '',

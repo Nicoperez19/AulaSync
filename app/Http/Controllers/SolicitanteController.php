@@ -658,7 +658,7 @@ class SolicitanteController extends Controller
     private function obtenerInfoProximaClase($moduloCodigo, $espacioId)
     {
         // Usar explícitamente la conexión 'tenant'
-        $planificacion = Planificacion_Asignatura::on('tenant')->with(['asignatura.profesor', 'modulo'])
+        $planificacion = Planificacion_Asignatura::on('tenant')->with(['asignatura', 'horario.profesor', 'modulo'])
             ->where('id_espacio', $espacioId)
             ->where('id_modulo', $moduloCodigo)
             ->first();
@@ -667,7 +667,7 @@ class SolicitanteController extends Controller
             return [
                 'modulo' => $moduloCodigo,
                 'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'Sin asignatura',
-                'profesor' => $planificacion->asignatura->profesor->name ?? 'No especificado',
+                'profesor' => $planificacion->horario->profesor->name ?? 'No especificado',
                 'hora_inicio' => $planificacion->modulo->hora_inicio ?? '',
                 'hora_termino' => $planificacion->modulo->hora_termino ?? ''
             ];

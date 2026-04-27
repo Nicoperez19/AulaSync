@@ -478,7 +478,7 @@ class PlanoDigitalController extends Controller
             $detalles['planificacion'] = [
                 'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'Sin asignatura',
                 'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? '-',
-                'profesor' => ucwords($planificacion->asignatura->profesor->name ?? 'No asignado'),
+                'profesor' => ucwords($planificacion->horario->profesor->name ?? 'No asignado'),
                 'carrera' => $planificacion->asignatura->carrera->nombre ?? '-',
                 'es_reserva_activa' => false,
                 'modulos' => $planificacion
@@ -501,7 +501,7 @@ class PlanoDigitalController extends Controller
         if ($planificacionProxima && $planificacionProxima->asignatura) {
             $detalles['planificacion_proxima'] = [
                 'asignatura' => $planificacionProxima->asignatura->nombre_asignatura ?? 'Sin asignatura',
-                'profesor' => ucwords($planificacionProxima->asignatura->profesor->name ?? 'No asignado'),
+                'profesor' => ucwords($planificacionProxima->horario->profesor->name ?? 'No asignado'),
                 'hora_inicio' => substr($planificacionProxima->modulo->hora_inicio ?? '00:00', 0, 5),
                 'hora_termino' => substr($planificacionProxima->modulo->hora_termino ?? '00:00', 0, 5),
                 'modulo' => explode('.', $planificacionProxima->modulo->id_modulo ?? '')[1] ?? 'No especificado'
@@ -601,7 +601,7 @@ class PlanoDigitalController extends Controller
 
         // Obtener SOLO las planificaciones del módulo actual (no todas del período)
         if ($moduloActual) {
-            $planificacionesActivas = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura.profesor'])
+            $planificacionesActivas = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura', 'horario.profesor'])
                 ->where('id_modulo', $moduloActual->id_modulo)
                 ->whereHas('horario', function ($query) use ($periodo) {
                     $query->where('periodo', $periodo);
@@ -739,7 +739,7 @@ class PlanoDigitalController extends Controller
                 if ($tieneClaseEnCurso && $claseEnCurso) {
                     $informacionAdicional = [
                         'asignatura' => $claseEnCurso->asignatura->nombre_asignatura ?? 'Sin asignatura',
-                        'profesor' => $claseEnCurso->asignatura->profesor->name ?? 'No especificado',
+                        'profesor' => $claseEnCurso->horario->profesor->name ?? 'No especificado',
                         'modulo' => explode('.', $claseEnCurso->modulo->id_modulo)[1] ?? 'No especificado',
                         'hora_inicio' => substr($claseEnCurso->modulo->hora_inicio, 0, 5),
                         'hora_termino' => substr($claseEnCurso->modulo->hora_termino, 0, 5)
@@ -2377,7 +2377,7 @@ class PlanoDigitalController extends Controller
             ]);
 
             // Obtener período actual
-            $periodo = \App\Helpers\SemesterHelper::getCurrentPeriod();
+            $periodo = SemesterHelper::getCurrentPeriod();
 
             \Log::info('verificarClasesProgramadas - Período obtenido', [
                 'periodo' => $periodo

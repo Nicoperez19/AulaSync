@@ -764,7 +764,7 @@ class EspacioController extends Controller
      */
     private function obtenerInfoProximaClase($moduloCodigo, $espacioId)
     {
-    $planificacion = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo'])
+    $planificacion = Planificacion_Asignatura::with(['asignatura', 'horario.profesor', 'modulo'])
             ->where('id_espacio', $espacioId)
             ->where('id_modulo', $moduloCodigo)
             ->first();
@@ -773,8 +773,8 @@ class EspacioController extends Controller
             return [
                 'modulo' => $moduloCodigo,
                 'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'Sin asignatura',
-                // acceder al profesor a través de la asignatura (asignatura->profesor)
-                'profesor' => $planificacion->asignatura->profesor->name ?? 'No especificado',
+                // acceder al profesor a través del horario
+                'profesor' => $planificacion->horario->profesor->name ?? 'No especificado',
                 'hora_inicio' => $planificacion->modulo->hora_inicio ?? '',
                 'hora_termino' => $planificacion->modulo->hora_termino ?? ''
             ];
@@ -1448,7 +1448,7 @@ class EspacioController extends Controller
 
         // Cargar planificaciones del espacio para el día (filtrando por id_modulo que comienza con el código de día)
         // Incluir relación profesor en la asignatura para poder mostrar nombre y run correctamente
-        $planificaciones = Planificacion_Asignatura::with(['modulo', 'asignatura.profesor'])
+        $planificaciones = Planificacion_Asignatura::with(['modulo', 'asignatura', 'horario.profesor'])
             ->where('id_espacio', $idEspacio)
             ->where('id_modulo', 'like', $codigoDia . '.%')
             ->get();
@@ -1480,8 +1480,8 @@ class EspacioController extends Controller
 
         return [
             'asignatura' => $proxima->asignatura->nombre_asignatura ?? 'Sin asignatura',
-            'profesor' => $proxima->asignatura->profesor->name ?? 'No especificado',
-            'profesor_run' => $proxima->asignatura->run_profesor ?? null,
+            'profesor' => $proxima->horario->profesor->name ?? 'No especificado',
+            'profesor_run' => $proxima->horario->profesor->run_profesor ?? null,
             'hora_inicio' => $proxima->modulo->hora_inicio ?? null,
             'hora_termino' => $proxima->modulo->hora_termino ?? null
         ];
@@ -1547,7 +1547,7 @@ class EspacioController extends Controller
         $codigoDia = $codigosDias[$diaActual] ?? 'LU';
 
         // Cargar planificaciones del espacio para el día (filtrando por id_modulo que comienza con el código de día)
-        $planificaciones = Planificacion_Asignatura::with(['modulo', 'asignatura.profesor'])
+        $planificaciones = Planificacion_Asignatura::with(['modulo', 'asignatura', 'horario.profesor'])
             ->where('id_espacio', $idEspacio)
             ->where('id_modulo', 'like', $codigoDia . '.%')
             ->get();
@@ -1579,8 +1579,8 @@ class EspacioController extends Controller
 
         return [
             'asignatura' => $anterior->asignatura->nombre_asignatura ?? 'Sin asignatura',
-            'profesor' => $anterior->asignatura->profesor->name ?? 'No especificado',
-            'profesor_run' => $anterior->asignatura->run_profesor ?? null,
+            'profesor' => $anterior->horario->profesor->name ?? 'No especificado',
+            'profesor_run' => $anterior->horario->profesor->run_profesor ?? null,
             'hora_inicio' => $anterior->modulo->hora_inicio ?? null,
             'hora_termino' => $anterior->modulo->hora_termino ?? null
         ];

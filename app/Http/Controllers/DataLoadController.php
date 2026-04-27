@@ -253,7 +253,7 @@ class DataLoadController extends Controller
 
                 try {
                     $sede = $row[7];
-                    
+
                     // Filtrar por sede actual del tenant (dinámico)
                     if ($nombreSedeActual && strtolower(trim($sede)) !== $nombreSedeActual) {
                         $skippedRows++;
@@ -261,7 +261,7 @@ class DataLoadController extends Controller
                     }
 
                     $idCarrera = $row[17];
-                    
+
                     // Durante la inicialización o si la carrera no existe, intentar crearla o usar una genérica
                     $carrera = Carrera::withoutGlobalScope('tenant')->find($idCarrera);
                     if (!$carrera) {
@@ -377,7 +377,8 @@ class DataLoadController extends Controller
 
                     $processedAsignaturasCount++;
 
-                    $horarioProfesor = $row[20];
+                    $horarioProfesor = $row[20] ?? null;
+
                     $periodo = $periodoSeleccionado;
 
                     try {
@@ -457,68 +458,68 @@ class DataLoadController extends Controller
                             $planificacionesGuardadas = 0;
 
                             foreach ($matchesList as $matches) {
-                                    $dia = strtoupper($matches[1]);
-                                    $modulo = $matches[2];
-                                    $grupo = !empty($matches[3]) ? $matches[3] : '1';
-                                    $espacioNombreExcel = trim($matches[4]);
+                                $dia = strtoupper($matches[1]);
+                                $modulo = $matches[2];
+                                $grupo = !empty($matches[3]) ? $matches[3] : '1';
+                                $espacioNombreExcel = trim($matches[4]);
 
-                                    // FILTRO ESTRICTO: Solo procesar espacios que EMPIECEN con el prefijo del tenant
-                                    // El Excel contiene múltiples sedes mezcladas (TH-01, CC-05, 07-34, etc.)
-                                    // SOLO procesamos los que empiecen con el prefijo configurado (ej: "TH-")
-                                    $espacioNombreUpper = strtoupper($espacioNombreExcel);
-                                    if (!$prefijoTenantFiltro || !str_starts_with($espacioNombreUpper, $prefijoTenantFiltro . '-')) {
-                                        // Espacio sin prefijo del tenant o de otra sede - IGNORAR
-                                        if ($index <= 3) {
-                                            Log::info("[DIAG] Fila $index - SALTANDO espacio '{$espacioNombreExcel}' (prefijo no coincide con '{$prefijoTenantFiltro}-')");
-                                        }
-                                        $espaciosOtrosTenants++;
-                                        continue;
+                                // FILTRO ESTRICTO: Solo procesar espacios que EMPIECEN con el prefijo del tenant
+                                // El Excel contiene múltiples sedes mezcladas (TH-01, CC-05, 07-34, etc.)
+                                // SOLO procesamos los que empiecen con el prefijo configurado (ej: "TH-")
+                                $espacioNombreUpper = strtoupper($espacioNombreExcel);
+                                if (!$prefijoTenantFiltro || !str_starts_with($espacioNombreUpper, $prefijoTenantFiltro . '-')) {
+                                    // Espacio sin prefijo del tenant o de otra sede - IGNORAR
+                                    if ($index <= 3) {
+                                        Log::info("[DIAG] Fila $index - SALTANDO espacio '{$espacioNombreExcel}' (prefijo no coincide con '{$prefijoTenantFiltro}-')");
                                     }
-
-                                    // Buscar el espacio EXACTAMENTE como viene en el Excel (ya incluye prefijo TH-)
-                                    $espacioModel = Espacio::withoutGlobalScope('tenant')
-                                        ->where('id_espacio', $espacioNombreExcel)
-                                        ->first();
-
-                                    if (!$espacioModel) {
-                                        Log::warning("⚠ Fila $index: Espacio '{$espacioNombreExcel}' del tenant actual NO EXISTE en BD");
-                                        $espaciosNoEncontrados++;
-
-                                        // Trackear espacios faltantes únicos
-                                        if (!in_array($espacioNombreExcel, $espaciosFaltantes)) {
-                                            $espaciosFaltantes[] = $espacioNombreExcel;
-                                        }
-
-                                        continue;
-                                    }
-
-                                    $espacioIdFinal = $espacioModel->id_espacio;
-
-                                    // CREAR planificación (ya se hizo limpieza previa)
-                                    $idModulo = $dia . '.' . $modulo;
-
-                                    try {
-                                        $planificacion = new Planificacion_Asignatura();
-                                        $planificacion->id_asignatura = $idAsignatura;
-                                        $planificacion->id_horario = $horario->id_horario;
-                                        $planificacion->id_modulo = $idModulo;
-                                        $planificacion->id_espacio = $espacioIdFinal;
-                                        $planificacion->inscritos = $inscritos;
-                                        $planificacion->save();
-
-                                        $processedHorariosCount++;
-                                        $planificacionesGuardadas++;
-
-                                        // Log de éxito: primeras 5 y cada 100
-                                        if ($planificacionesGuardadas <= 5 || $planificacionesGuardadas % 100 == 0) {
-                                            Log::info("✓ Planificación #{$planificacionesGuardadas}: asig={$idAsignatura}, hor={$horario->id_horario}, mod={$idModulo}, esp={$espacioIdFinal}");
-                                        }
-                                    } catch (\Exception $planEx) {
-                                        Log::error("✗ Fila $index - Error al crear planificación: " . $planEx->getMessage());
-                                        Log::error("  → Datos: asig={$idAsignatura}, hor={$horario->id_horario}, mod={$idModulo}, esp={$espacioIdFinal}");
-                                        // NO lanzar excepción, continuar con las demás
-                                    }
+                                    $espaciosOtrosTenants++;
+                                    continue;
                                 }
+
+                                // Buscar el espacio EXACTAMENTE como viene en el Excel (ya incluye prefijo TH-)
+                                $espacioModel = Espacio::withoutGlobalScope('tenant')
+                                    ->where('id_espacio', $espacioNombreExcel)
+                                    ->first();
+
+                                if (!$espacioModel) {
+                                    Log::warning("⚠ Fila $index: Espacio '{$espacioNombreExcel}' del tenant actual NO EXISTE en BD");
+                                    $espaciosNoEncontrados++;
+
+                                    // Trackear espacios faltantes únicos
+                                    if (!in_array($espacioNombreExcel, $espaciosFaltantes)) {
+                                        $espaciosFaltantes[] = $espacioNombreExcel;
+                                    }
+
+                                    continue;
+                                }
+
+                                $espacioIdFinal = $espacioModel->id_espacio;
+
+                                // CREAR planificación (ya se hizo limpieza previa)
+                                $idModulo = $dia . '.' . $modulo;
+
+                                try {
+                                    $planificacion = new Planificacion_Asignatura();
+                                    $planificacion->id_asignatura = $idAsignatura;
+                                    $planificacion->id_horario = $horario->id_horario;
+                                    $planificacion->id_modulo = $idModulo;
+                                    $planificacion->id_espacio = $espacioIdFinal;
+                                    $planificacion->inscritos = $inscritos;
+                                    $planificacion->save();
+
+                                    $processedHorariosCount++;
+                                    $planificacionesGuardadas++;
+
+                                    // Log de éxito: primeras 5 y cada 100
+                                    if ($planificacionesGuardadas <= 5 || $planificacionesGuardadas % 100 == 0) {
+                                        Log::info("✓ Planificación #{$planificacionesGuardadas}: asig={$idAsignatura}, hor={$horario->id_horario}, mod={$idModulo}, esp={$espacioIdFinal}");
+                                    }
+                                } catch (\Exception $planEx) {
+                                    Log::error("✗ Fila $index - Error al crear planificación: " . $planEx->getMessage());
+                                    Log::error("  → Datos: asig={$idAsignatura}, hor={$horario->id_horario}, mod={$idModulo}, esp={$espacioIdFinal}");
+                                    // NO lanzar excepción, continuar con las demás
+                                }
+                            }
 
                             if ($planificacionesGuardadas == 0 && !empty($horarioProfesor)) {
                                 Log::warning("⚠ Fila $index - Horario presente pero 0 planificaciones creadas. Raw: '$horarioProfesor'");
@@ -593,130 +594,6 @@ class DataLoadController extends Controller
             return response()->json([
                 'message' => 'Error al procesar el archivo: ' . $e->getMessage()
             ], 500);
-        }
-    }
-
-    /**
-     * Extraer espacios únicos de los datos cargados
-     * Evita duplicados usando un conjunto de espacios ya procesados
-     */
-    private function extraerEspaciosDelArchivo($rows, $nombreSedeActual, $facultadDeLaSede)
-    {
-        try {
-            if (!$facultadDeLaSede) {
-                Log::info('No hay facultad disponible para crear espacios');
-                return;
-            }
-
-            $espaciosEncontrados = [];
-
-            // Iterar por las filas del archivo
-            foreach ($rows as $index => $row) {
-                if ($index === 0)
-                    continue;  // Saltar encabezados
-
-                $sede = isset($row[7]) ? $row[7] : '';
-
-                // Filtrar por sede actual
-                if ($nombreSedeActual && strtolower(trim($sede)) !== $nombreSedeActual) {
-                    continue;
-                }
-
-                // Columna 20 es el horario del profesor
-                $horarioProfesor = isset($row[20]) ? $row[20] : '';
-
-                // Limpieza de caracteres invisibles o raros
-                $horarioProfesor = preg_replace('/[\x00-\x1F\x7F]/u', '', $horarioProfesor);
-
-                if (empty($horarioProfesor))
-                    continue;
-
-                preg_match_all('/([A-Za-z]{2})\s*\.\s*(\d{1,2})(?:\s*\/G:(\d+))?\s*\(([^)]+)\)/', $horarioProfesor, $matchesList, PREG_SET_ORDER);
-
-                // Extraer espacios de las coincidencias
-                foreach ($matchesList as $matches) {
-                    if (count($matches) >= 5) {
-                        $espacioNombre = preg_replace('/^[a-z]{2}:\s*/i', '', $matches[4]);
-
-                        // Agregar a conjunto si no existe
-                        if (!in_array($espacioNombre, $espaciosEncontrados)) {
-                            $espaciosEncontrados[] = $espacioNombre;
-                        }
-                    }
-                }
-            }
-
-            // Crear espacios en la base de datos si no existen
-            if (empty($espaciosEncontrados)) {
-                Log::info('No se encontraron espacios para crear');
-                return;
-            }
-
-            // Obtener el primer piso de la facultad, o crear uno genérico
-            $primerPiso = Piso::where('id_facultad', $facultadDeLaSede->id_facultad)
-                ->orderBy('numero_piso')
-                ->first();
-
-            if (!$primerPiso) {
-                // Crear un piso genérico si no existe
-                try {
-                    $primerPiso = Piso::create([
-                        'numero_piso' => 1,
-                        'nombre_piso' => 'Piso 1',
-                        'id_facultad' => $facultadDeLaSede->id_facultad
-                    ]);
-                    Log::info('Piso genérico creado: ' . $primerPiso->id);
-                } catch (\Exception $e) {
-                    Log::warning('No se pudo crear piso genérico: ' . $e->getMessage());
-                    return;  // Si no se puede crear el piso, no continuamos
-                }
-            }
-
-            // Crear espacios únicos con piso válido
-            $espaciosCreados = 0;
-            $espaciosYaExistentes = 0;
-
-            // Obtener prefijo del tenant
-            $tenant = \App\Models\Tenant::current();
-            $prefijoTenant = $tenant ? $tenant->prefijo_espacios : '';
-
-            Log::info('→ Intentando crear ' . count($espaciosEncontrados) . ' espacios únicos encontrados en el archivo...');
-
-            foreach ($espaciosEncontrados as $espacioNombre) {
-                try {
-                    // Construir ID del espacio con prefijo si no lo tiene
-                    $espacioId = $espacioNombre;
-                    if ($prefijoTenant && !str_starts_with($espacioNombre, $prefijoTenant)) {
-                        $espacioId = $prefijoTenant . $espacioNombre;
-                    }
-
-                    $espacioExiste = Espacio::withoutGlobalScope('tenant')
-                        ->where('id_espacio', $espacioId)
-                        ->orWhere('nombre_espacio', $espacioNombre)
-                        ->exists();
-
-                    if (!$espacioExiste) {
-                        // Crear espacio con piso válido del primer piso de la facultad
-                        Espacio::create([
-                            'id_espacio' => $espacioId,
-                            'nombre_espacio' => $espacioNombre,
-                            'tipo_espacio' => 'Sala de Clases',
-                            'puestos_disponibles' => 30,
-                            'capacidad_maxima' => 30,
-                            'piso_id' => $primerPiso->id_piso  // Usar el piso de la facultad
-                        ]);
-                        $espaciosCreados++;
-                    } else {
-                        $espaciosYaExistentes++;
-                    }
-                } catch (\Exception $e) {
-                    Log::error("✗ Error al crear espacio '$espacioNombre': " . $e->getMessage());
-                }
-            }
-
-            Log::info("✓ Espacios procesados: $espaciosCreados nuevos, $espaciosYaExistentes ya existían");
-        } catch (\Exception $e) {
-            Log::error('Error al extraer espacios del archivo: ' . $e->getMessage());
         }
     }
 
@@ -822,7 +699,7 @@ class DataLoadController extends Controller
             // Eliminar planificaciones del periodo
             $horariosDelPeriodo = Horario::where('periodo', $periodoSeleccionado)->pluck('id_horario');
             $planificacionesEliminadas = Planificacion_Asignatura::whereIn('id_horario', $horariosDelPeriodo)->delete();
-            
+
             // Eliminar los horarios asociados a ese periodo
             $horariosEliminados = Horario::where('periodo', $periodoSeleccionado)->delete();
 
