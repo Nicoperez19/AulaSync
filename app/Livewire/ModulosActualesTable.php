@@ -356,7 +356,7 @@ class ModulosActualesTable extends Component
 
         // Solo marcar como no realizada si han pasado 20 minutos desde el inicio del primer módulo
         // Y si NO hay reserva con entrada del profesor (ni en este espacio ni en otro)
-        $hasPasado20Minutos = $ahora->diffInMinutes($inicioModulo) >= 20;
+        $hasPasado20Minutos = $ahora->gt($inicioModulo) && $ahora->diffInMinutes($inicioModulo) >= 20;
 
         // Verificar nuevamente si registró entrada en otro espacio
         $tuvoEntradaEnOtroEspacio = false;
@@ -881,7 +881,7 @@ class ModulosActualesTable extends Component
                             if ($horaInicioModulo && $runProfesor) {
                                 $inicioModulo = Carbon::createFromTimeString($horaInicioModulo);
                                 $ahora = Carbon::createFromTimeString($horaActual);
-                                $hasPasado20Minutos = $ahora->diffInMinutes($inicioModulo) >= 20;
+                                $hasPasado20Minutos = $ahora->gt($inicioModulo) && $ahora->diffInMinutes($inicioModulo) >= 20;
                                 
                                 // Verificar si el profesor ha registrado entrada hoy
                                 $tuvoEntradaHoy = \App\Models\Reserva::where('fecha_reserva', Carbon::now()->toDateString())
@@ -1417,8 +1417,19 @@ class ModulosActualesTable extends Component
                             $claseYaDebioEmpezar = false;
                             if ($this->moduloActual && isset($this->moduloActual['tipo'])) {
                                 if ($this->moduloActual['tipo'] === 'break') {
-                                    // En break: verificar si el siguiente módulo es mayor al de inicio de la clase
-                                    $claseYaDebioEmpezar = $this->moduloActual['numero'] >= $numeroModuloInicio;
+                                    // Si estamos en break, verificar si el siguiente módulo es el inicio de la clase
+                                    // Y si faltan 10 minutos o menos para que empiece
+                                    $minutosParaInicio = 999;
+                                    if ($this->moduloActual['numero'] == $numeroModuloInicio) {
+                                        $inicioM = Carbon::createFromTimeString($this->moduloActual['inicio']);
+                                        $minutosParaInicio = Carbon::now()->diffInMinutes($inicioM, false);
+                                    }
+                                    
+                                    $estaCerca = ($this->moduloActual['numero'] == $numeroModuloInicio && $minutosParaInicio <= 10 && $minutosParaInicio >= 0);
+
+                                    // La clase ya debió empezar si el módulo actual es mayor al de inicio, 
+                                    // o si estamos en el break previo (mismo número) y faltan 10 min o menos.
+                                    $claseYaDebioEmpezar = ($this->moduloActual['numero'] > $numeroModuloInicio) || $estaCerca;
                                 } else {
                                     // En módulo: verificar si estamos en o después del módulo de inicio
                                     $claseYaDebioEmpezar = $this->moduloActual['numero'] >= $numeroModuloInicio;

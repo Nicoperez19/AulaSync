@@ -237,9 +237,9 @@ class QuickActionsController extends Controller
                     'id_espacio' => $reserva->id_espacio,
                     'nombre_espacio' => $nombreEspacio,
                     'asignatura' => $asignaturaInfo,
-                    'fecha' => $reserva->fecha_reserva instanceof \Carbon\Carbon 
-                                ? $reserva->fecha_reserva->format('Y-m-d') 
-                                : $reserva->fecha_reserva,
+                    'fecha' => $reserva->fecha_reserva instanceof Carbon
+                        ? $reserva->fecha_reserva->format('Y-m-d')
+                        : $reserva->fecha_reserva,
                     'hora' => $reserva->hora,
                     'modulos' => $reserva->modulos ?? 1,
                     'modulos_info' => $modulosInfo,
@@ -1538,8 +1538,9 @@ class QuickActionsController extends Controller
                 ->where('id_reserva', '!=', $id)
                 ->whereIn('estado', ['activa', 'programada'])
                 ->where(function ($q) use ($request) {
-                    $q->where('modulo_inicio', '<=', $request->modulo_fin)
-                      ->where('modulo_fin', '>=', $request->modulo_inicio);
+                    $q
+                        ->where('modulo_inicio', '<=', $request->modulo_fin)
+                        ->where('modulo_fin', '>=', $request->modulo_inicio);
                 })
                 ->exists();
 
