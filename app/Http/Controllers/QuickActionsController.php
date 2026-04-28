@@ -660,8 +660,11 @@ class QuickActionsController extends Controller
 
             // Asignar responsable según el tipo
             if ($request->tipo === 'profesor' || $request->tipo === 'colaborador') {
-                // Buscar o crear profesor
-                $profesor = Profesor::where('run_profesor', $request->run)->first();
+                // Buscar o crear profesor (por RUN o Email para evitar duplicados)
+                $profesor = Profesor::where('run_profesor', $request->run)
+                    ->orWhere('email', $request->correo)
+                    ->first();
+
                 if (!$profesor) {
                     // Crear nuevo profesor básico
                     $tipoProfesor = $request->tipo === 'colaborador' ? 'Colaborador' : 'Invitado';
@@ -673,10 +676,15 @@ class QuickActionsController extends Controller
                         'tipo_profesor' => $tipoProfesor
                     ]);
                 }
-                $datosReserva['run_profesor'] = $request->run;
+                // Usar el RUN del profesor encontrado o creado para la reserva
+                $datosReserva['run_profesor'] = $profesor->run_profesor;
             } else {
-                // Buscar o crear solicitante
-                $solicitante = Solicitante::on('tenant')->where('run_solicitante', $request->run)->first();
+                // Buscar o crear solicitante (por RUN o Correo para evitar duplicados)
+                $solicitante = Solicitante::on('tenant')
+                    ->where('run_solicitante', $request->run)
+                    ->orWhere('correo', $request->correo)
+                    ->first();
+
                 if (!$solicitante) {
                     // Crear nuevo solicitante
                     $solicitante = Solicitante::create([
@@ -689,7 +697,8 @@ class QuickActionsController extends Controller
                         'fecha_registro' => now()
                     ]);
                 }
-                $datosReserva['run_solicitante'] = $request->run;
+                // Usar el RUN del solicitante encontrado o creado para la reserva
+                $datosReserva['run_solicitante'] = $solicitante->run_solicitante;
             }
 
             // Crear la reserva
