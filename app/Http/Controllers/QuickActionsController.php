@@ -237,9 +237,11 @@ class QuickActionsController extends Controller
                     'id_espacio' => $reserva->id_espacio,
                     'nombre_espacio' => $nombreEspacio,
                     'asignatura' => $asignaturaInfo,
-                    'fecha' => $reserva->fecha_reserva,
+                    'fecha' => $reserva->fecha_reserva instanceof \Carbon\Carbon 
+                                ? $reserva->fecha_reserva->format('Y-m-d') 
+                                : $reserva->fecha_reserva,
                     'hora' => $reserva->hora,
-                    'modulos' => $reserva->cant_modulos ?? 1,
+                    'modulos' => $reserva->modulos ?? 1,
                     'modulos_info' => $modulosInfo,
                     'tipo_reserva' => $reserva->tipo_reserva,
                     'estado' => strtolower($reserva->estado ?? 'activa'),
@@ -1497,6 +1499,8 @@ class QuickActionsController extends Controller
                 'fecha' => 'required|date',
                 'hora' => 'required',
                 'modulos' => 'required|integer|min:1',
+                'modulo_inicio' => 'required|integer',
+                'modulo_fin' => 'required|integer',
                 'observaciones' => 'nullable|string'
             ]);
 
@@ -1528,11 +1532,31 @@ class QuickActionsController extends Controller
                 ], 404);
             }
 
+            // Verificar conflictos de disponibilidad (excluyendo esta misma reserva)
+            $conflicto = Reserva::where('id_espacio', $request->id_espacio)
+                ->where('fecha_reserva', $request->fecha)
+                ->where('id_reserva', '!=', $id)
+                ->whereIn('estado', ['activa', 'programada'])
+                ->where(function ($q) use ($request) {
+                    $q->where('modulo_inicio', '<=', $request->modulo_fin)
+                      ->where('modulo_fin', '>=', $request->modulo_inicio);
+                })
+                ->exists();
+
+            if ($conflicto) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'El espacio ya está reservado para el horario seleccionado'
+                ], 400);
+            }
+
             // Actualizar datos
             $reserva->id_espacio = $espacio->id_espacio;
             $reserva->fecha_reserva = $request->fecha;
             $reserva->hora = $request->hora;
             $reserva->modulos = $request->modulos;
+            $reserva->modulo_inicio = $request->modulo_inicio;
+            $reserva->modulo_fin = $request->modulo_fin;
             $reserva->observaciones = $request->observaciones;
 
             // Marcar como editada (se usa updated_at automáticamente por Laravel)

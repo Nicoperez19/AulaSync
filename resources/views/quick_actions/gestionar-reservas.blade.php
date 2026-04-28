@@ -466,10 +466,18 @@ async function cargarModulosParaModal() {
     }
     
     try {
-        // Obtener módulos únicos ordenados por hora
-        const response = await fetch('/api/modulos'); // Necesitarás crear esta ruta
+        // Intentar obtener módulos únicos de la API
+        const response = await fetch('/api/modulos');
         
-        // Fallback: crear módulos por defecto si la API no existe
+        if (response.ok) {
+            const data = await response.json();
+            modulosCargados = Array.isArray(data) ? data : (data.data || []);
+        } else {
+            throw new Error('Ruta /api/modulos no encontrada');
+        }
+    } catch (error) {
+        console.log('ℹ️ Usando módulos por defecto para el modal');
+        // Fallback: crear módulos por defecto si la API no existe o falla
         modulosCargados = [
             {id_modulo: '1', hora_inicio: '08:10:00', hora_termino: '09:00:00'},
             {id_modulo: '2', hora_inicio: '09:10:00', hora_termino: '10:00:00'},
@@ -487,15 +495,14 @@ async function cargarModulosParaModal() {
             {id_modulo: '14', hora_inicio: '21:10:00', hora_termino: '22:00:00'},
             {id_modulo: '15', hora_inicio: '22:10:00', hora_termino: '23:00:00'}
         ];
-        
-        const selectInicial = document.getElementById('edit-modulo-inicial');
+    }
+    
+    const selectInicial = document.getElementById('edit-modulo-inicial');
+    if (selectInicial) {
         selectInicial.innerHTML = '<option value="">Seleccione módulo inicial</option>' +
             modulosCargados.map(modulo => 
                 `<option value="${modulo.id_modulo}">Módulo ${modulo.id_modulo} (${modulo.hora_inicio.substring(0,5)} - ${modulo.hora_termino.substring(0,5)})</option>`
             ).join('');
-        
-    } catch (error) {
-        console.error('Error al cargar módulos:', error);
     }
 }
 
@@ -607,6 +614,8 @@ window.guardarEdicionReserva = async function(event) {
                 fecha: fecha,
                 hora: hora,
                 modulos: cantidadModulos,
+                modulo_inicio: parseInt(moduloInicialId),
+                modulo_fin: parseInt(moduloFinalId),
                 observaciones: observacionesFinales
             })
         });
@@ -674,11 +683,43 @@ function aplicarOrdenamiento() {
         }
     }
     
-    if (!reservasOriginales || reservasOriginales.length === 0) return;
+    // En lugar de mostrar directamente, llamamos a filtrar que ahora centraliza todo
+    filtrarReservas();
+}
+
+function procesarReservas() {
+    // Si no hay reservas cargadas aún (undefined o null), no hacemos nada
+    if (!reservasOriginales) return;
+
+    // Si el arreglo está vacío, mostramos el estado vacío directamente
+    if (reservasOriginales.length === 0) {
+        mostrarReservasEnTabla([]);
+        actualizarEstadisticas([]);
+        return;
+    }
+
+    const estadoFiltro = document.getElementById('filtro-estado-reserva').value;
+    const fechaFiltro = document.getElementById('filtro-fecha-reserva').value;
     
-    console.log('📊 Aplicando ordenamiento:', ordenActual);
+    console.log('🔍 Procesando reservas con filtros:', { estadoFiltro, fechaFiltro, orden: ordenActual });
+
+    // 1. Aplicar filtros
+    let reservasProcesadas = [...reservasOriginales];
     
-    const reservasOrdenadas = [...reservasOriginales].sort((a, b) => {
+    if (estadoFiltro) {
+        reservasProcesadas = reservasProcesadas.filter(r => r.estado === estadoFiltro);
+    }
+    
+    if (fechaFiltro) {
+        reservasProcesadas = reservasProcesadas.filter(r => {
+            // Normalizar fecha (quitar parte de tiempo si existe)
+            const fechaReserva = r.fecha && r.fecha.includes('T') ? r.fecha.split('T')[0] : r.fecha;
+            return fechaReserva === fechaFiltro;
+        });
+    }
+
+    // 2. Aplicar ordenamiento
+    reservasProcesadas.sort((a, b) => {
         let valorA, valorB;
         
         switch (ordenActual.campo) {
@@ -711,8 +752,9 @@ function aplicarOrdenamiento() {
         return 0;
     });
     
-    mostrarReservasEnTabla(reservasOrdenadas);
-    actualizarEstadisticas(reservasOrdenadas);
+    // 3. Mostrar resultados
+    mostrarReservasEnTabla(reservasProcesadas);
+    actualizarEstadisticas(reservasProcesadas);
 }
 
 function extraerPrimeraHora(reserva) {
@@ -947,11 +989,9 @@ function verDetalleReserva(reservaId) {
 document.addEventListener('DOMContentLoaded', function() {
     cargarReservas();
     
-    // Event listener para el selector de ordenamiento
-    const selectOrdenar = document.getElementById('ordenar-reservas');
-    if (selectOrdenar) {
-        selectOrdenar.addEventListener('change', aplicarOrdenamiento);
-    }
+    // Los event listeners se manejan vía onchange en el HTML para mayor claridad
+    // o se pueden agregar aquí si se desea centralizar.
+    // El onchange ya llama a filtrarReservas() o aplicarOrdenamiento()
     
     // Verificar que las funciones estén disponibles globalmente
     console.log('🔧 Funciones globales verificación:');
@@ -974,18 +1014,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Función específica para cargar reservas en el mantenedor
 async function cargarReservas() {
+    const tbody = document.getElementById('tabla-reservas-body');
+    const cardsContainer = document.getElementById('tabla-reservas-cards');
+    
     try {
-        const tbody = document.getElementById('tabla-reservas-body');
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="7" class="px-6 py-12 text-center text-gray-500">
-                    <div class="flex flex-col items-center">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-                        <p>Cargando reservas...</p>
-                    </div>
-                </td>
-            </tr>
-        `;
+        if (tbody) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                        <div class="flex flex-col items-center">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                            <p>Cargando reservas...</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        if (cardsContainer) {
+            cardsContainer.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12 text-gray-500">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                    <p>Cargando reservas...</p>
+                </div>
+            `;
+        }
 
         console.log('🔗 URL de reservas:', '/quick-actions/api/reservas');
         const response = await fetch('/quick-actions/api/reservas');
@@ -996,24 +1049,24 @@ async function cargarReservas() {
         if (data.success && data.data) {
             reservasOriginales = data.data;
             console.log('🔍 Estructura de primera reserva:', data.data[0]);
-            console.log('🔍 IDs de reservas:', data.data.map(r => r.id));
-            if (data.data[0] && data.data[0].modulos_info) {
-                console.log('📋 modulos_info detalle:', data.data[0].modulos_info);
-                console.log('📋 tipo de modulos_info:', typeof data.data[0].modulos_info);
-            }
-            mostrarReservasEnTabla(data.data);
-            actualizarEstadisticas(data.data);
+            procesarReservas();
         } else {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="7" class="px-6 py-12 text-center text-gray-500">
                         <div class="flex flex-col items-center">
-                            <i class="fa-solid fa-triangle-exclamation text-6xl text-yellow-300 mb-4"></i>
-                            <p>No se encontraron reservas</p>
-                            <p class="text-xs text-red-500 mt-2">Respuesta: ${JSON.stringify(data)}</p>
+                            <i class="fa-solid fa-calendar-xmark text-6xl text-gray-300 mb-4"></i>
+                            <p class="text-lg font-medium">No hay reservas</p>
+                            <p class="text-sm">No se pudieron cargar los datos o no existen registros.</p>
                         </div>
                     </td>
                 </tr>
+            `;
+            cardsContainer.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12 text-gray-500">
+                    <i class="fa-solid fa-calendar-xmark text-6xl text-gray-300 mb-4"></i>
+                    <p class="text-lg font-medium">No hay reservas</p>
+                </div>
             `;
         }
     } catch (error) {
@@ -1045,8 +1098,8 @@ function mostrarReservasEnTabla(reservas) {
             <tr>
                 <td colspan="7" class="px-6 py-12 text-center text-gray-500">
                     <div class="flex flex-col items-center">
-                        <i class="fa-solid fa-folder-open text-6xl text-gray-300 mb-4"></i>
-                        <p>No hay reservas con los filtros aplicados</p>
+                        <i class="fa-solid fa-calendar-xmark text-6xl text-gray-300 mb-4"></i>
+                        <p class="text-lg font-medium">No hay reservas</p>
                     </div>
                 </td>
             </tr>
@@ -1055,8 +1108,8 @@ function mostrarReservasEnTabla(reservas) {
         // Vista mobile
         cardsContainer.innerHTML = `
             <div class="flex flex-col items-center justify-center py-12 text-gray-500">
-                <i class="fa-solid fa-folder-open text-6xl text-gray-300 mb-4"></i>
-                <p>No hay reservas con los filtros aplicados</p>
+                <i class="fa-solid fa-calendar-xmark text-6xl text-gray-300 mb-4"></i>
+                <p class="text-lg font-medium">No hay reservas</p>
             </div>
         `;
         return;
@@ -1336,21 +1389,7 @@ function actualizarEstadisticas(reservas) {
 
 // Filtrar reservas
 function filtrarReservas() {
-    const estadoFiltro = document.getElementById('filtro-estado-reserva').value;
-    const fechaFiltro = document.getElementById('filtro-fecha-reserva').value;
-    
-    let reservasFiltradas = [...reservasOriginales];
-    
-    if (estadoFiltro) {
-        reservasFiltradas = reservasFiltradas.filter(r => r.estado === estadoFiltro);
-    }
-    
-    if (fechaFiltro) {
-        reservasFiltradas = reservasFiltradas.filter(r => r.fecha === fechaFiltro);
-    }
-    
-    mostrarReservasEnTabla(reservasFiltradas);
-    actualizarEstadisticas(reservasFiltradas);
+    procesarReservas();
 }
 
 // Cambiar estado de reserva - Función global
