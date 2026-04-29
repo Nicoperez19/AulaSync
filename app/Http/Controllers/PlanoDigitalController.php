@@ -1034,7 +1034,7 @@ class PlanoDigitalController extends Controller
             $this->establecerContextoTenant();
 
             $request->validate([
-                'id_reserva' => 'required|integer',
+                'id_reserva' => 'required|string',
                 'hubo_asistentes' => 'required|boolean'
             ]);
 
@@ -1093,7 +1093,7 @@ class PlanoDigitalController extends Controller
                 $request->validate([
                     'run_usuario' => 'required|string',
                     'id_espacio' => 'required|string',
-                    'id_reserva_anterior' => 'required|integer'
+                    'id_reserva_anterior' => 'required|string'
                 ]);
 
                 $runNuevo = $request->input('run_usuario');
