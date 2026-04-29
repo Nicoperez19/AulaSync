@@ -62,14 +62,22 @@ class ReservasController extends Controller
             return redirect()->route('reservas.index')->withErrors(['usuario' => 'Usuario no encontrado.']);
         }
 
+        // Calcular hora_salida basada en modulos (50 min por modulo + 10 min de descanso entre ellos)
+        $modulos = $request->input('modulos', 1);
+        $horaInicio = Carbon::parse($request->hora);
+        $minutosTotales = ($modulos * 60) - 10;
+        $horaSalida = $horaInicio->copy()->addMinutes($minutosTotales)->format('H:i:s');
+
         $reservaData = [
             'id_reserva' => Reserva::generarIdUnico(),
             'hora' => $request->hora,
+            'hora_salida' => $horaSalida,
             'fecha_reserva' => $request->fecha_reserva,
             'id_espacio' => $request->id_espacio,
             'id_asignatura' => $request->input('id_asignatura'),
-            'modulos' => $request->input('modulos', 1),
+            'modulos' => $modulos,
             'estado' => 'activa',
+            'tipo_reserva' => 'directa', // Marcar como directa para diferenciarla de espontanea/clase
         ];
 
         // Mapear run a la columna adecuada

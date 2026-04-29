@@ -644,6 +644,7 @@ class QuickActionsController extends Controller
                 'modulo_inicio' => $request->modulo_inicial,
                 'modulo_fin' => $request->modulo_final,
                 'hora' => $horaInicio,
+                'hora_salida' => $horaFin,
                 'tipo_reserva' => $request->tipo === 'profesor' || $request->tipo === 'colaborador' ? 'clase' : 'espontanea',
                 'estado' => $estadoReserva,
                 'observaciones' => $observacionesCompletas,
