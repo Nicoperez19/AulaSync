@@ -359,7 +359,8 @@ class PlanoDigitalController extends Controller
         $horaActual = Carbon::now()->format('H:i:s');
 
         // Obtener planificaciones de asignaturas regulares
-        $planificacionesRegulares = Planificacion_Asignatura::with(['horario', 'asignatura.profesor', 'modulo', 'espacio'])
+        $planificacionesRegulares = Planificacion_Asignatura::with(['horario.profesor', 'asignatura.profesor', 'modulo', 'espacio'])
+
             ->where('id_modulo', $moduloActual->id_modulo)
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
@@ -408,7 +409,8 @@ class PlanoDigitalController extends Controller
         }
 
         // Obtener planificaciones regulares próximas
-        $planificacionesRegularesProximas = Planificacion_Asignatura::with(['horario', 'asignatura.profesor', 'modulo', 'espacio'])
+        $planificacionesRegularesProximas = Planificacion_Asignatura::with(['horario.profesor', 'asignatura.profesor', 'modulo', 'espacio'])
+
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
             })

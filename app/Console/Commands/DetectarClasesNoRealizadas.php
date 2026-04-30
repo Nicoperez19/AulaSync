@@ -232,10 +232,14 @@ class DetectarClasesNoRealizadas extends Command
                     continue;
                 }
 
-                $runProfesor = $primerModulo->asignatura->run_profesor ?? null;
+                // Priorizar el profesor del HORARIO sobre el de la ASIGNATURA
+                // ya que el horario es específico para este bloque y espacio.
+                $runProfesor = $primerModulo->horario->run_profesor ?? $primerModulo->asignatura->run_profesor ?? null;
+
                 if (!$runProfesor) {
                     continue;
                 }
+
 
                 // Verificar si ya existe registro de clase no realizada para esta clase hoy
                 $yaRegistrada = ClaseNoRealizada::where('id_asignatura', $primerModulo->id_asignatura)
@@ -372,12 +376,13 @@ class DetectarClasesNoRealizadas extends Command
             return $prefijoDia . '.' . $num;
         }, $modulosNumeros);
 
-        return Planificacion_Asignatura::with(['asignatura.profesor', 'espacio', 'modulo'])
+        return Planificacion_Asignatura::with(['asignatura.profesor', 'horario.profesor', 'espacio', 'modulo'])
             ->whereIn('id_modulo', $modulosIds)
             ->whereHas('horario', function ($q) use ($periodo) {
                 $q->where('periodo', $periodo);
             })
             ->get();
+
     }
 
     /**

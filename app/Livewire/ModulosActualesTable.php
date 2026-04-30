@@ -694,10 +694,12 @@ class ModulosActualesTable extends Component
                     // Obtener todas las planificaciones del módulo actual con eager loading optimizado
                     $planificacionesActivas = Planificacion_Asignatura::with([
                         'asignatura.profesor',
+                        'horario.profesor',
                         'asignatura.carrera',
                         'espacio',
                         'modulo',
                     ])
+
                         ->where('id_modulo', $moduloDB->id_modulo)
                         ->whereHas('horario', function ($q) use ($periodo) {
                             $q->where('periodo', $periodo);
@@ -1086,8 +1088,11 @@ class ModulosActualesTable extends Component
                                 'nombre_asignatura' => $planificacionActiva->asignatura->nombre_asignatura ?? '-',
                                 'seccion' => $planificacionActiva->asignatura->seccion ?? '-',
                                 'profesor' => [
-                                    'name' => $planificacionActiva->asignatura->profesor->name ?? '-',
+                                    'name' => ($planificacionActiva->horario && $planificacionActiva->horario->profesor) 
+                                        ? $planificacionActiva->horario->profesor->name 
+                                        : ($planificacionActiva->asignatura->profesor->name ?? '-'),
                                 ],
+
                                 'carrera' => $planificacionActiva->asignatura->carrera->nombre ?? '-',
                                 'modulo_inicio' => $numeroModuloInicio,
                                 'modulo_fin' => $numeroModuloFin,
