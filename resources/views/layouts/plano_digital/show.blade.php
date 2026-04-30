@@ -1912,6 +1912,20 @@
                 drawIndicators();
             }
 
+            // INVALIDAR CACHE Y REFRESCAR MODAL SI ESTÁ ABIERTO
+            // Esto asegura que la UI se sincronice inmediatamente con el servidor
+            sessionStorage.removeItem(`espacio_${espacio}`);
+            sessionStorage.removeItem(`espacio_${espacio}_time`);
+            
+            if (state.currentIndicatorId === espacio) {
+                console.log(`Refrescando modal para espacio devuelto: ${espacio}`);
+                const indicator = state.indicators.find(i => i.id === espacio);
+                if (indicator) {
+                    // Volver a cargar la información detallada desde el servidor
+                    mostrarModalEspacio(indicator);
+                }
+            }
+
             // Verificar si es devolución en el primer módulo
             if (devolucion.devolucion_primer_modulo && devolucion.info_clase) {
                 // Mostrar modal para preguntar si hubo asistentes
@@ -3063,6 +3077,10 @@
                         timerProgressBar: true,
                         showConfirmButton: false
                     });
+
+                    // Invalidar cache local
+                    sessionStorage.removeItem(`espacio_${espacioId}`);
+                    sessionStorage.removeItem(`espacio_${espacioId}_time`);
 
                     // Cerrar modal primero
                     cerrarModalEspacio();
