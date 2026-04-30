@@ -14,6 +14,7 @@ use App\Models\Piso;
 use App\Models\Planificacion_Asignatura;
 use App\Models\PlanificacionProfesorColaborador;
 use App\Models\Profesor;
+use App\Models\ClaseNoRealizada;
 use App\Models\Reserva;
 use App\Models\Sede;
 use App\Models\Solicitante;
@@ -954,6 +955,7 @@ class PlanoDigitalController extends Controller
                         . "; DESOCUPACIÓN FORZOSA por administrador RUN: {$runAdministrador} el " . now()->format('Y-m-d H:i:s');
                 }
 
+                $reservaActiva->observaciones = trim(($reservaActiva->observaciones ?? '') . "\nFinalizada por el usuario a las " . now()->format('H:i:s'));
                 $reservaActiva->save();
 
                 // Enviar correo de confirmación de devolución
@@ -1068,8 +1070,66 @@ class PlanoDigitalController extends Controller
 
             // Guardar en el campo dedicado
             $reserva->hubo_asistentes = $huboAsistentes;
-
             $reserva->save();
+
+            // NUEVA LÓGICA: Registrar Clase No Realizada si no hubo asistentes
+            if (!$huboAsistentes && $reserva->id_asignatura) {
+                try {
+                    $periodo = SemesterHelper::getCurrentPeriod();
+                    
+                    // Buscar el módulo actual basado en la reserva
+                    $idModulo = null;
+                    if ($reserva->modulo_inicio) {
+                        // El formato suele ser "DIA.MODULO", ej: "lunes.1"
+                        $dia = strtolower(now()->locale('es')->isoFormat('dddd'));
+                        
+                        // Normalizar nombres de días si es necesario (Carbon vs BD)
+                        $diasMapa = [
+                            'monday' => 'lunes', 'tuesday' => 'martes', 'wednesday' => 'miércoles',
+                            'thursday' => 'jueves', 'friday' => 'viernes', 'saturday' => 'sábado', 'sunday' => 'domingo'
+                        ];
+                        $diaEng = strtolower(now()->englishDayOfWeek);
+                        $diaNormalizado = $diasMapa[$diaEng] ?? $dia;
+
+                        $idModulo = $diaNormalizado . '.' . $reserva->modulo_inicio;
+                    } else {
+                        // Fallback: buscar por hora actual
+                        $horaActual = now()->format('H:i:s');
+                        $dia = strtolower(now()->locale('es')->isoFormat('dddd'));
+                        $modulo = Modulo::where('dia', $dia)
+                            ->where('hora_inicio', '<=', $horaActual)
+                            ->where('hora_termino', '>=', $horaActual)
+                            ->first();
+                        $idModulo = $modulo ? $modulo->id_modulo : null;
+                    }
+
+                    if ($idModulo) {
+                        ClaseNoRealizada::updateOrCreate(
+                            [
+                                'id_asignatura' => $reserva->id_asignatura,
+                                'id_espacio' => $reserva->id_espacio,
+                                'id_modulo' => $idModulo,
+                                'fecha_clase' => $reserva->fecha_reserva,
+                            ],
+                            [
+                                'run_profesor' => $reserva->run_profesor,
+                                'periodo' => $periodo,
+                                'motivo' => 'Confirmado por profesor: Clase sin asistentes',
+                                'observaciones' => 'El docente devolvió las llaves en el primer módulo e informó que no hubo asistentes.',
+                                'estado' => 'no_realizada',
+                                'hora_deteccion' => now(),
+                            ]
+                        );
+                        \Log::info("Clase no realizada registrada por confirmación de profesor", [
+                            'reserva' => $reserva->id_reserva,
+                            'asignatura' => $reserva->id_asignatura,
+                            'modulo' => $idModulo
+                        ]);
+                    }
+                } catch (\Exception $e) {
+                    \Log::error("Error al registrar clase no realizada: " . $e->getMessage());
+                }
+            }
 
             \Log::info("Asistencia registrada para reserva {$idReserva}: " . ($huboAsistentes ? 'CON asistentes' : 'SIN asistentes'));
 
