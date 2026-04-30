@@ -1374,23 +1374,7 @@ class ReportController extends Controller
  
     private function generarDatosOcupacionHorarios($fechaInicio, $fechaFin, $piso = null, $tipoUsuario = null, $tipoEspacioFiltro = null, $diaFiltro = null)
     {
-        $modulosHorarios = [
-            1 => ['inicio' => '08:10', 'fin' => '09:00'],
-            2 => ['inicio' => '09:10', 'fin' => '10:00'],
-            3 => ['inicio' => '10:10', 'fin' => '11:00'],
-            4 => ['inicio' => '11:10', 'fin' => '12:00'],
-            5 => ['inicio' => '12:10', 'fin' => '13:00'],
-            6 => ['inicio' => '13:10', 'fin' => '14:00'],
-            7 => ['inicio' => '14:10', 'fin' => '15:00'],
-            8 => ['inicio' => '15:10', 'fin' => '16:00'],
-            9 => ['inicio' => '16:10', 'fin' => '17:00'],
-            10 => ['inicio' => '17:10', 'fin' => '18:00'],
-            11 => ['inicio' => '18:10', 'fin' => '19:00'],
-            12 => ['inicio' => '19:10', 'fin' => '20:00'],
-            13 => ['inicio' => '20:10', 'fin' => '21:00'],
-            14 => ['inicio' => '21:10', 'fin' => '22:00'],
-            15 => ['inicio' => '22:10', 'fin' => '23:00']
-        ];
+        $modulosHorarios = $this->getModulosHorarios();
 
         $dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
         
@@ -1577,25 +1561,34 @@ class ReportController extends Controller
      */
     private function obtenerHoraModulo($moduloNum, $tipo = 'inicio')
     {
-        $modulosHorarios = [
-            1 => ['inicio' => '08:10', 'fin' => '09:00'],
-            2 => ['inicio' => '09:10', 'fin' => '10:00'],
-            3 => ['inicio' => '10:10', 'fin' => '11:00'],
-            4 => ['inicio' => '11:10', 'fin' => '12:00'],
-            5 => ['inicio' => '12:10', 'fin' => '13:00'],
-            6 => ['inicio' => '13:10', 'fin' => '14:00'],
-            7 => ['inicio' => '14:10', 'fin' => '15:00'],
-            8 => ['inicio' => '15:10', 'fin' => '16:00'],
-            9 => ['inicio' => '16:10', 'fin' => '17:00'],
+        $modulosHorarios = $this->getModulosHorarios();
+        
+        return $modulosHorarios[$moduloNum][$tipo] ?? '00:00';
+    }
+
+    /**
+     * Fuente de verdad única para el mapeo de módulos académicos.
+     * Equivalente al ModulosSeeder: 15 módulos, 08:10–23:00.
+     */
+    private function getModulosHorarios(): array
+    {
+        return [
+            1  => ['inicio' => '08:10', 'fin' => '09:00'],
+            2  => ['inicio' => '09:10', 'fin' => '10:00'],
+            3  => ['inicio' => '10:10', 'fin' => '11:00'],
+            4  => ['inicio' => '11:10', 'fin' => '12:00'],
+            5  => ['inicio' => '12:10', 'fin' => '13:00'],
+            6  => ['inicio' => '13:10', 'fin' => '14:00'],
+            7  => ['inicio' => '14:10', 'fin' => '15:00'],
+            8  => ['inicio' => '15:10', 'fin' => '16:00'],
+            9  => ['inicio' => '16:10', 'fin' => '17:00'],
             10 => ['inicio' => '17:10', 'fin' => '18:00'],
             11 => ['inicio' => '18:10', 'fin' => '19:00'],
             12 => ['inicio' => '19:10', 'fin' => '20:00'],
             13 => ['inicio' => '20:10', 'fin' => '21:00'],
             14 => ['inicio' => '21:10', 'fin' => '22:00'],
-            15 => ['inicio' => '22:10', 'fin' => '23:00']
+            15 => ['inicio' => '22:10', 'fin' => '23:00'],
         ];
-        
-        return $modulosHorarios[$moduloNum][$tipo] ?? '00:00';
     }
 
     /**

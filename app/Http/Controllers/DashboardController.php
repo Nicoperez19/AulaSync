@@ -228,8 +228,11 @@ class DashboardController extends Controller
             ->orderBy('fecha_reserva', 'desc')
             ->get();
 
+        // Obtener el nombre del día en español (coincidente con la tabla modulos)
+        $diaActualModulo = $this->getNombreDiaEspanol(Carbon::now());
+
         // Obtener módulo actual
-        $moduloActual = Modulo::where('dia', Carbon::now()->format('l'))
+        $moduloActual = Modulo::where('dia', $diaActualModulo)
             ->where('hora_inicio', '<=', Carbon::now()->format('H:i:s'))
             ->where('hora_termino', '>=', Carbon::now()->format('H:i:s'))
             ->first();
@@ -1689,7 +1692,7 @@ class DashboardController extends Controller
     private function obtenerHorariosAgrupados($facultad, $piso)
     {
         // Día y módulo actual
-        $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
+        $diaActual = $this->getNombreDiaEspanol(now());
         $horaActual = now()->format('H:i:s');
 
         Log::info('obtenerHorariosAgrupados - Inicio', [
@@ -2229,8 +2232,8 @@ class DashboardController extends Controller
 
         $planificaciones = Planificacion_Asignatura::with(['asignatura.profesor', 'espacio', 'modulo'])
             ->whereHas('modulo', function ($q) use ($fecha) {
-                $dia = Carbon::parse($fecha)->locale('es')->isoFormat('dddd');
-                $q->where('dia', strtolower($dia));
+                $dia = $this->getNombreDiaEspanol(Carbon::parse($fecha));
+                $q->where('dia', $dia);
             })
             ->whereHas('horario', function ($q) use ($periodo) {
                 $q->where('periodo', $periodo);
@@ -2270,9 +2273,7 @@ class DashboardController extends Controller
 
     public function horariosActualAjax(Request $request)
     {
-        $diaActual = strtolower([
-            'domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'
-        ][date('w')]);
+        $diaActual = $this->getNombreDiaEspanol(now());
         $horaAhora = date('H:i:s');
         $moduloActualNum = null;
         $moduloActualHorario = null;
@@ -3448,5 +3449,26 @@ class DashboardController extends Controller
                 'fin' => $fechaFin->format('d/m/Y')
             ]
         ];
+    }
+
+    /**
+     * Devuelve el nombre del día en español tal como está en el seeder de módulos.
+     * Esto asegura que las consultas a la tabla Modulos funcionen correctamente
+     * independientemente de la configuración local del sistema.
+     */
+    private function getNombreDiaEspanol($date)
+    {
+        $dias = [
+            0 => 'domingo',
+            1 => 'lunes',
+            2 => 'martes',
+            3 => 'miércoles',
+            4 => 'jueves',
+            5 => 'viernes',
+            6 => 'sábado'
+        ];
+
+        $carbonDate = $date instanceof Carbon ? $date : Carbon::parse($date);
+        return $dias[$carbonDate->dayOfWeek];
     }
 }

@@ -189,6 +189,7 @@ class PlanoDigitalController extends Controller
             $reservaActiva = Reserva::with(['profesor', 'asignatura.carrera', 'solicitante'])
                 ->where('id_espacio', $idEspacio)
                 ->where('estado', 'activa')
+                ->where('fecha_reserva', $fechaActual)
                 ->first();
 
             // Verificar si hay una reserva PROGRAMADA (creada con antelación, aún no activada)
