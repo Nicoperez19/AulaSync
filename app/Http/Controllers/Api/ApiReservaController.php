@@ -12,9 +12,12 @@ use App\Models\Solicitante;
 use App\Models\Profesor;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Traits\RunNormalizer;
 
 class ApiReservaController extends Controller
 {
+    use RunNormalizer;
+
     public function verificarEspacio($userId, $espacioId)
     {
         try {
@@ -70,9 +73,13 @@ class ApiReservaController extends Controller
         try {
             // Validar datos de entrada
             $request->validate([
-                'run' => 'required|exists:tenant.profesors,run_profesor',
+                'run' => 'required',
                 'espacio_id' => 'required|exists:tenant.espacios,id_espacio'
             ]);
+
+            // Normalizar RUN
+            $runNormalizado = $this->normalizeRun($request->run);
+
 
             // Obtener la hora actual
             $horaActual = Carbon::now();
@@ -94,7 +101,8 @@ class ApiReservaController extends Controller
                 ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                 ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
                 ->where('pa.id_espacio', $request->espacio_id)
-                ->where('h.run_profesor', $request->run)
+                ->where('h.run_profesor', $runNormalizado)
+
                 ->where('m.dia', $diaActual)
                 ->where(function($query) use ($horaActualStr) {
                     $query->where('m.hora_inicio', '<=', $horaActualStr)
@@ -105,7 +113,8 @@ class ApiReservaController extends Controller
 
             // Si no tiene clase programada, obtener la primera asignatura del profesor para uso libre
             if (!$tieneClase) {
-                $profesor = \App\Models\Profesor::where('run_profesor', $request->run)->first();
+                $profesor = \App\Models\Profesor::where('run_profesor', $runNormalizado)->first();
+
                 $asignaturaLibre = $profesor ? $profesor->asignaturas()->first() : null;
                 
                 // Buscar el módulo actual según la hora
@@ -131,7 +140,8 @@ class ApiReservaController extends Controller
                 // Crear la reserva
                 $reserva = new Reserva();
                 $reserva->id_reserva = Reserva::generarIdUnico();
-                $reserva->run_profesor = $request->run;
+                $reserva->run_profesor = $runNormalizado;
+
                 $reserva->id_espacio = $request->espacio_id;
                 $reserva->id_asignatura = $tieneClase->id_asignatura ?? null;
                 $reserva->fecha_reserva = $horaActual->format('Y-m-d');
@@ -191,6 +201,10 @@ class ApiReservaController extends Controller
                 'espacio_id' => 'required'
             ]);
 
+            // Normalizar RUN
+            $runNormalizado = $this->normalizeRun($request->run);
+
+
             DB::connection('tenant')->beginTransaction();
 
             // Buscar la reserva activa para el espacio sin restricción de fecha
@@ -226,11 +240,13 @@ class ApiReservaController extends Controller
                 ->where('estado', 'finalizada')
                 ->where('fecha_reserva', Carbon::now()->toDateString())
                 ->whereNotNull('observaciones')
+                ->whereNotNull('observaciones')
                 ->where('observaciones', 'LIKE', '%finalizó automáticamente por excederse en el tiempo%')
-                ->where(function($query) use ($request) {
-                    $query->where('run_profesor', $request->run)
-                          ->orWhere('run_solicitante', $request->run);
+                ->where(function($query) use ($runNormalizado) {
+                    $query->where('run_profesor', $runNormalizado)
+                          ->orWhere('run_solicitante', $runNormalizado);
                 })
+
                 ->orderBy('updated_at', 'desc')
                 ->first();
 
@@ -266,14 +282,18 @@ class ApiReservaController extends Controller
     {
         try {
             $request->validate([
-                'user_id' => 'required|exists:users,run',
+                'user_id' => 'required',
                 'espacio_id' => 'required|exists:tenant.espacios,id_espacio',
                 'modulos' => 'required|array|min:1',
                 'modulos.*' => 'required|string'
             ]);
 
+            // Normalizar RUN
+            $runNormalizado = $this->normalizeRun($request->user_id);
+
             // Verificar que el usuario es profesor
-            $usuario = User::where('run', $request->user_id)
+            $usuario = User::where('run', $runNormalizado)
+
                           ->whereHas('roles', function($query) {
                               $query->where('name', 'profesor');
                           })
@@ -308,8 +328,9 @@ class ApiReservaController extends Controller
                 'hora' => $horaInicio,
                 'fecha_reserva' => $fechaReserva,
                 'id_espacio' => $request->espacio_id,
-                'run_profesor' => $request->user_id,
+                'run_profesor' => $runNormalizado,
                 'tipo_reserva' => 'espontanea',
+
                 'estado' => 'activa'
             ]);
 

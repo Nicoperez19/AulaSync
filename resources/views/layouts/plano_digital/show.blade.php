@@ -1658,34 +1658,47 @@
         }
 
         async function procesarUsuario() {
-                    // Extraer RUN del QR (buscar "RUN" seguido de números)
-        const runMatch = bufferQR.match(/RUN[^0-9]*(\d+)/);
-        let run = null;
+            // Extraer RUN del QR - Soportar múltiples formatos
+            let run = null;
 
-        if (!runMatch) {
-            // Intentar otros formatos de RUN
-            const runMatchAlt = bufferQR.match(/(\d{7,8})/);
-            if (!runMatchAlt) {
-                // Solo mostrar error si el buffer tiene contenido significativo y no es ruido
+            // 1. Intentar extraer de parámetros de URL (ej: Registro Civil que usa ?run=... o &run=...)
+            // Capturamos el contenido hasta el siguiente '&' o fin de cadena
+            const runUrlMatch = bufferQR.match(/[?&]run=([^&]+)/i);
+            
+            if (runUrlMatch) {
+                run = runUrlMatch[1];
+                console.log('RUN bruto extraído de URL (Registro Civil):', run);
+            } else {
+                // 2. Intentar formato con prefijo "RUN" (ej: RUN 12.345.678-9)
+                const runMatch = bufferQR.match(/RUN[^0-9]*([0-9.Kk-]+)/i);
+                if (runMatch) {
+                    run = runMatch[1];
+                    console.log('RUN bruto extraído con prefijo:', run);
+                } else {
+                    // 3. Fallback: buscar secuencia de 7 a 9 números, puntos o guiones
+                    // Buscamos algo que parezca un RUT (números con puntos/guion opcional)
+                    const runMatchAlt = bufferQR.match(/([0-9]{1,2}(?:\.[0-9]{3}){2}-?[0-9Kk]|[0-9]{7,9}-?[0-9Kk]?)/i);
+                    if (runMatchAlt) {
+                        run = runMatchAlt[1];
+                        console.log('RUN bruto extraído por secuencia:', run);
+                    }
+                }
+            }
+
+            if (!run) {
+                // Solo mostrar error si el buffer tiene contenido significativo
                 if (bufferQR.length > 8) {
-                    // Lectura errónea: No se pudo extraer RUN del QR
-                    limpiarEstadoLectura('QR de usuario inválido');
-                    // Restaurar autofocus del qr-input después de error de QR inválido
+                    limpiarEstadoLectura('QR de usuario inválido - No se detectó RUN');
                     setTimeout(() => {
-                        if (qrInputManager) {
-                            qrInputManager.setActiveInput('main');
-                        }
+                        if (qrInputManager) qrInputManager.setActiveInput('main');
                     }, 100);
                 } else {
-                    // Error silencioso para buffers cortos
                     limpiarEstadoSilencioso();
                 }
                 return;
             }
-            run = runMatchAlt[1];
-        } else {
-            run = runMatch[1];
-        }
+
+
 
         // RUN extraído
 

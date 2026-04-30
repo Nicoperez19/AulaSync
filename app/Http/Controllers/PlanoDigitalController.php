@@ -25,8 +25,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
+use App\Traits\RunNormalizer;
+
 class PlanoDigitalController extends Controller
 {
+    use RunNormalizer;
+
     public function index()
     {
         $sedes = Sede::with(['universidad', 'facultades.pisos.mapas' => function ($query) {
@@ -1097,15 +1101,16 @@ class PlanoDigitalController extends Controller
                     'id_reserva_anterior' => 'required|string'
                 ]);
 
-                $runNuevo = $request->input('run_usuario');
+                $runNuevo = $this->normalizeRun($request->input('run_usuario'));
                 $idEspacio = $request->input('id_espacio');
                 $idReservaAnterior = $request->input('id_reserva_anterior');
 
                 // 1. Obtener datos de los involucrados
                 $docenteNuevo = Profesor::where('run_profesor', $runNuevo)->first();
                 if (!$docenteNuevo) {
-                    return response()->json(['success' => false, 'mensaje' => 'Docente nuevo no encontrado'], 404);
+                    return response()->json(['success' => false, 'mensaje' => 'Docente nuevo no encontrado (' . $runNuevo . ')'], 404);
                 }
+
 
                 $reservaAnterior = Reserva::with(['profesor', 'solicitante'])->find($idReservaAnterior);
                 if (!$reservaAnterior || $reservaAnterior->id_espacio !== $idEspacio) {
@@ -1250,8 +1255,9 @@ class PlanoDigitalController extends Controller
                 'id_espacio' => 'required|string'
             ]);
 
-            $runUsuario = $request->input('run');
+            $runUsuario = $this->normalizeRun($request->input('run'));
             $idEspacio = $request->input('id_espacio');
+
 
             // Verificar que el espacio existe (ignorar scopes globales para evitar problemas de filtrado por sede/tenant)
             $espacio = Espacio::withoutGlobalScopes()->where('id_espacio', $idEspacio)->first();
@@ -1498,10 +1504,17 @@ class PlanoDigitalController extends Controller
                 $puedeForzarCierre = false;
                 $idReservaAnterior = $reservaOcupante ? $reservaOcupante->id_reserva : null;
 
-                if ($reservaOcupante && $reservaOcupante->run_profesor !== $runUsuario) {
+                if ($reservaOcupante && (string)$reservaOcupante->run_profesor !== (string)$runUsuario && (string)$reservaOcupante->run_solicitante !== (string)$runUsuario) {
                     $horaActual = Carbon::now();
                     $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
                     $horaActualStr = $horaActual->format('H:i:s');
+
+                    \Log::info('Verificando si scanner puede forzar cierre', [
+                        'scanner_run' => $runUsuario,
+                        'dia' => $diaActual,
+                        'hora' => $horaActualStr,
+                        'espacio' => $idEspacio
+                    ]);
 
                     // Buscar si el usuario que escanea tiene planificación en este bloque
                     $planificacionScanner = Planificacion_Asignatura::where('id_espacio', $idEspacio)
@@ -1517,20 +1530,26 @@ class PlanoDigitalController extends Controller
                         ->first();
 
                     if ($planificacionScanner) {
+                        \Log::info('Planificación encontrada para forzar cierre', ['id' => $planificacionScanner->id]);
                         $puedeForzarCierre = true;
                     } else {
                         // También verificar reservas programadas del scanner
                         $reservaProgramadaScanner = Reserva::where('id_espacio', $idEspacio)
-                            ->where('run_profesor', $runUsuario)
+                            ->where(function($q) use ($runUsuario) {
+                                $q->where('run_profesor', $runUsuario)
+                                  ->orWhere('run_solicitante', $runUsuario);
+                            })
                             ->where('estado', 'programada')
                             ->where('fecha_reserva', Carbon::today()->toDateString())
                             ->first();
 
                         if ($reservaProgramadaScanner) {
+                            \Log::info('Reserva programada encontrada para forzar cierre', ['id' => $reservaProgramadaScanner->id_reserva]);
                             $puedeForzarCierre = true;
                         }
                     }
                 }
+
 
                 return response()->json([
                     'tipo' => 'espacio_ocupado',
@@ -1556,7 +1575,9 @@ class PlanoDigitalController extends Controller
     public function verificarUsuario($run)
     {
         try {
+            $run = $this->normalizeRun($run);
             // Establecer contexto del tenant desde el request
+
             $this->establecerContextoTenant();
 
             // CASO 1: Verificar si es profesor registrado

@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
+use App\Traits\RunNormalizer;
 
 /**
  * Controlador para registro de asistencia de estudiantes
@@ -23,6 +24,8 @@ use Carbon\Carbon;
  */
 class AttendanceController extends Controller
 {
+    use RunNormalizer;
+
     /**
      * Registrar la asistencia de un estudiante
      * 
@@ -59,10 +62,11 @@ class AttendanceController extends Controller
         try {
             DB::beginTransaction();
 
-            $studentId = $request->student_id;
+            $studentId = $this->normalizeRun($request->student_id);
             $roomId = $request->room_id;
             $reservationId = $request->reservation_id;
             $now = Carbon::now();
+
 
             // Log para debugging
             Log::info('Registro de asistencia iniciado', [

@@ -15,8 +15,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
+use App\Traits\RunNormalizer;
+
 class QuickActionsController extends Controller
 {
+    use RunNormalizer;
+
     public function __construct()
     {
         $this->middleware('can:acciones rapidas');
@@ -416,6 +420,11 @@ class QuickActionsController extends Controller
                 'forzar' => 'nullable|boolean',
             ]);
 
+            // Normalizar RUN
+            $runNormalizado = $this->normalizeRun($request->run);
+            Log::info('🔍 RUN normalizado:', ['original' => $request->run, 'normalizado' => $runNormalizado]);
+
+
             Log::info('📝 Datos validados correctamente', [
                 'espacio' => $request->espacio,
                 'tipo' => $request->tipo
@@ -661,46 +670,37 @@ class QuickActionsController extends Controller
 
             // Asignar responsable según el tipo
             if ($request->tipo === 'profesor' || $request->tipo === 'colaborador') {
-                // Buscar o crear profesor (por RUN o Email para evitar duplicados)
-                $profesor = Profesor::where('run_profesor', $request->run)
-                    ->orWhere('email', $request->correo)
-                    ->first();
-
-                if (!$profesor) {
-                    // Crear nuevo profesor básico
-                    $tipoProfesor = $request->tipo === 'colaborador' ? 'Colaborador' : 'Invitado';
-                    $profesor = Profesor::create([
-                        'run_profesor' => $request->run,
+                // Usar updateOrCreate para evitar errores de duplicidad y mantener datos actualizados
+                $tipoProfesor = $request->tipo === 'colaborador' ? 'Colaborador' : 'Invitado';
+                
+                $profesor = Profesor::updateOrCreate(
+                    ['run_profesor' => $runNormalizado],
+                    [
                         'name' => $request->nombre,
                         'email' => $request->correo,
-                        'celular' => $request->telefono,  // Puede ser null
+                        'celular' => $request->telefono,
                         'tipo_profesor' => $tipoProfesor
-                    ]);
-                }
-                // Usar el RUN del profesor encontrado o creado para la reserva
+                    ]
+                );
+                
                 $datosReserva['run_profesor'] = $profesor->run_profesor;
             } else {
-                // Buscar o crear solicitante (por RUN o Correo para evitar duplicados)
-                $solicitante = Solicitante::on('tenant')
-                    ->where('run_solicitante', $request->run)
-                    ->orWhere('correo', $request->correo)
-                    ->first();
-
-                if (!$solicitante) {
-                    // Crear nuevo solicitante
-                    $solicitante = Solicitante::create([
-                        'run_solicitante' => $request->run,
+                // Usar updateOrCreate para solicitantes en la BD tenant
+                $solicitante = Solicitante::on('tenant')->updateOrCreate(
+                    ['run_solicitante' => $runNormalizado],
+                    [
                         'nombre' => $request->nombre,
                         'correo' => $request->correo,
-                        'telefono' => $request->telefono,  // Puede ser null
+                        'telefono' => $request->telefono,
                         'tipo_solicitante' => 'visitante',
                         'activo' => true,
                         'fecha_registro' => now()
-                    ]);
-                }
-                // Usar el RUN del solicitante encontrado o creado para la reserva
+                    ]
+                );
+                
                 $datosReserva['run_solicitante'] = $solicitante->run_solicitante;
             }
+
 
             // Crear la reserva
             $reserva = Reserva::create($datosReserva);

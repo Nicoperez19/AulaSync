@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
+use App\Traits\RunNormalizer;
+
 /**
  * Controlador para manejar operaciones de solicitantes
  *
@@ -23,6 +25,8 @@ use Illuminate\Validation\ValidationException;
  */
 class SolicitanteController extends Controller
 {
+    use RunNormalizer;
+
     /**
      * Verificar si un solicitante existe en la base de datos
      */
@@ -49,11 +53,15 @@ class SolicitanteController extends Controller
         Config::set('database.connections.tenant.database', $tenant->database);
         DB::purge('tenant');
 
+        // Normalizar RUN
+        $run = $this->normalizeRun($run);
+
         try {
             $solicitante = Solicitante::on('tenant')
                 ->where('run_solicitante', $run)
                 ->where('activo', true)
                 ->first();
+
 
             if ($solicitante) {
                 return response()->json([
@@ -113,24 +121,6 @@ class SolicitanteController extends Controller
         DB::purge('tenant');
 
         try {
-            // Validar que el RUN sea único en el tenant
-            $runExistente = Solicitante::on('tenant')->where('run_solicitante', $request->run_solicitante)->exists();
-            if ($runExistente) {
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'El RUN ya está registrado como solicitante'
-                ], 422);
-            }
-
-            // Validar que el correo sea único en el tenant
-            $correoExistente = Solicitante::on('tenant')->where('correo', $request->correo)->exists();
-            if ($correoExistente) {
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'El correo electrónico ya está registrado'
-                ], 422);
-            }
-
             $request->validate([
                 'run_solicitante' => 'required|string',
                 'nombre' => 'required|string|max:255',
@@ -139,15 +129,21 @@ class SolicitanteController extends Controller
                 'tipo_solicitante' => 'required|in:estudiante,personal,visitante,otro'
             ]);
 
-            $solicitante = Solicitante::on('tenant')->create([
-                'run_solicitante' => $request->run_solicitante,
-                'nombre' => $request->nombre,
-                'correo' => $request->correo,
-                'telefono' => $request->telefono,
-                'tipo_solicitante' => $request->tipo_solicitante,
-                'activo' => true,
-                'fecha_registro' => now()
-            ]);
+            // Normalizar RUN
+            $runNormalizado = $this->normalizeRun($request->run_solicitante);
+
+            $solicitante = Solicitante::on('tenant')->updateOrCreate(
+                ['run_solicitante' => $runNormalizado],
+                [
+                    'nombre' => $request->nombre,
+                    'correo' => $request->correo,
+                    'telefono' => $request->telefono,
+                    'tipo_solicitante' => $request->tipo_solicitante,
+                    'activo' => true,
+                    'fecha_registro' => now()
+                ]
+            );
+
 
             // Registrar también como visitante para que aparezca en el mantenedor
             try {
@@ -252,11 +248,15 @@ class SolicitanteController extends Controller
             $horaActual = $ahora->format('H:i:s');
             $fechaActual = $ahora->toDateString();
 
+            // Normalizar RUN
+            $runNormalizado = $this->normalizeRun($request->run_solicitante);
+
             // Verificar que el solicitante existe y está activo (búsqueda en BD tenant)
             $solicitante = Solicitante::on('tenant')
-                ->where('run_solicitante', $request->run_solicitante)
+                ->where('run_solicitante', $runNormalizado)
                 ->where('activo', true)
                 ->first();
+
 
             if (!$solicitante) {
                 return response()->json([
@@ -281,9 +281,11 @@ class SolicitanteController extends Controller
                 ], 400);
             }
 
-            // Verificar que el solicitante no tenga reservas VIGENTES (que aún no han terminado)
+            // NOTA: Se ha relajado la restricción de reservas vigentes para permitir múltiples reservas
+            // como fue solicitado por el usuario.
+            /*
             $reservaActiva = Reserva::on('tenant')
-                ->where('run_solicitante', $request->run_solicitante)
+                ->where('run_solicitante', $runNormalizado)
                 ->where('estado', 'activa')
                 ->where('fecha_reserva', $fechaActual)  // Hoy
                 ->where('hora_salida', '>', $horaActual)  // Aún no ha terminado
@@ -295,6 +297,8 @@ class SolicitanteController extends Controller
                     'mensaje' => 'Ya tienes una reserva activa en este horario. Debes finalizarla antes de solicitar una nueva.'
                 ], 400);
             }
+            */
+
 
             // Validar módulos consecutivos disponibles
             $modulosSolicitados = $request->modulos;
@@ -461,8 +465,9 @@ class SolicitanteController extends Controller
                 'hora' => $horaInicio,
                 'fecha_reserva' => $fechaActual,
                 'id_espacio' => $request->id_espacio,
-                'run_solicitante' => $request->run_solicitante,
+                'run_solicitante' => $runNormalizado,
                 'run_profesor' => null,
+
                 'tipo_reserva' => 'espontanea',
                 'estado' => 'activa',
                 'created_at' => $ahora,

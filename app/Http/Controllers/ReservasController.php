@@ -55,7 +55,7 @@ class ReservasController extends Controller
         $run = $request->input('id_usuario');
 
         $user = \App\Models\User::where('run', $run)->first();
-        $profesor = class_exists('\App\\Models\\Profesor') ? \App\Models\Profesor::where('run_profesor', $run)->first() : null;
+        $profesor = class_exists('\App\\Models\\Profesor') ? Profesor::where('run_profesor', $run)->first() : null;
         $solicitante = class_exists('\App\\Models\\Solicitante') ? \App\Models\Solicitante::on('tenant')->where('run_solicitante', $run)->first() : null;
 
         if (!$user && !$profesor && !$solicitante) {
@@ -151,30 +151,30 @@ class ReservasController extends Controller
         return redirect()->route('reservas.index')->with('success', 'Reserva eliminada exitosamente.');
     }
     public function getEspaciosDisponibles(Request $request)
-{
-    $request->validate([
-        'universidad' => 'required|exists:universidades,id_universidad',
-        'facultad' => 'required|exists:facultades,id_facultad'
-    ]);
+    {
+        $request->validate([
+            'universidad' => 'required|exists:universidades,id_universidad',
+            'facultad' => 'required|exists:facultades,id_facultad'
+        ]);
 
-    $espacios = Espacio::with('piso')
-        ->whereHas('piso.facultad', function($q) use ($request) {
-            $q->where('id_facultad', $request->facultad)
-              ->where('id_universidad', $request->universidad);
-        })
-        ->where('estado', 'disponible')
-        ->get()
-        ->map(function($espacio) {
-            return [
-                'id_espacio' => $espacio->id_espacio,
-                'tipo_espacio' => $espacio->tipo_espacio,
-                'puestos_disponibles' => $espacio->puestos_disponibles,
-                'piso_numero' => $espacio->piso->numero_piso
-            ];
-        });
+        $espacios = Espacio::with('piso')
+            ->whereHas('piso.facultad', function ($q) use ($request) {
+                $q->where('id_facultad', $request->facultad)
+                    ->where('id_universidad', $request->universidad);
+            })
+            ->where('estado', 'disponible')
+            ->get()
+            ->map(function ($espacio) {
+                return [
+                    'id_espacio' => $espacio->id_espacio,
+                    'tipo_espacio' => $espacio->tipo_espacio,
+                    'puestos_disponibles' => $espacio->puestos_disponibles,
+                    'piso_numero' => $espacio->piso->numero_piso
+                ];
+            });
 
-    return response()->json($espacios);
-}
+        return response()->json($espacios);
+    }
 
     /**
      * Envía el correo de confirmación de reserva al profesor o solicitante.
@@ -233,30 +233,30 @@ class ReservasController extends Controller
     {
         try {
             $fechaActual = Carbon::now()->format('Y-m-d');
-            
+
             // Finalizar reservas del día anterior que aún estén activas
             $reservasExpiradas = Reserva::where('estado', 'activa')
                 ->where('fecha_reserva', '<', $fechaActual)
                 ->get();
-            
+
             foreach ($reservasExpiradas as $reserva) {
                 // Finalizar la reserva
                 $reserva->update(['estado' => 'finalizada']);
-                
+
                 // Liberar el espacio si no hay otras reservas activas para hoy
                 if ($reserva->id_espacio) {
                     $reservasActivasHoy = Reserva::where('id_espacio', $reserva->id_espacio)
                         ->where('estado', 'activa')
                         ->where('fecha_reserva', $fechaActual)
                         ->count();
-                    
+
                     if ($reservasActivasHoy == 0) {
                         Espacio::where('id_espacio', $reserva->id_espacio)
                             ->update(['estado' => 'disponible']);
                     }
                 }
             }
-            
+
             return true;
         } catch (\Exception $e) {
             \Log::error('Error al verificar estados de espacios: ' . $e->getMessage());
