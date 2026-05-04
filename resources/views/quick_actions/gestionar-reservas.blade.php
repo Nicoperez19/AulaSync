@@ -56,7 +56,7 @@
     <!-- Filtros -->
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
         <div class="p-4 sm:p-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                     <select 
@@ -69,7 +69,27 @@
                         <option value="finalizada">Finalizadas</option>
                     </select>
                 </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Espacio</label>
+                    <select 
+                        id="filtro-espacio-reserva"
+                        onchange="filtrarReservas()"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
+                        <option value="">Todos los espacios</option>
+                    </select>
+                </div>
                 
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Módulo</label>
+                    <select 
+                        id="filtro-modulo-reserva"
+                        onchange="filtrarReservas()"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
+                        <option value="">Todos los módulos</option>
+                    </select>
+                </div>
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
                     <input 
@@ -123,22 +143,23 @@
                                     </th>
                                     <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 w-20" onclick="ordenarPor('estado')">
                                         Estado
-                                        <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                                        <i id="sort-icon-estado" class="fa-solid fa-sort ml-1 text-xs"></i>
                                     </th>
                                     <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 w-24" onclick="ordenarPor('espacio')">
                                         Espacio
-                                        <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                                        <i id="sort-icon-espacio" class="fa-solid fa-sort ml-1 text-xs"></i>
                                     </th>
                                     <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700" onclick="ordenarPor('responsable')">
                                         Responsable
-                                        <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                                        <i id="sort-icon-responsable" class="fa-solid fa-sort ml-1 text-xs"></i>
                                     </th>
                                     <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 w-28" onclick="ordenarPor('fecha')">
                                         Fecha
-                                        <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                                        <i id="sort-icon-fecha" class="fa-solid fa-sort ml-1 text-xs"></i>
                                     </th>
-                                    <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-32">
+                                    <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 w-32" onclick="ordenarPor('modulo')">
                                         Módulos
+                                        <i id="sort-icon-modulo" class="fa-solid fa-sort ml-1 text-xs"></i>
                                     </th>
                                     <th class="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase w-32">
                                         Acciones
@@ -669,8 +690,41 @@ function ordenarPor(campo) {
         ordenActual.direccion = 'asc';
     }
     
+    // Sincronizar con el select de ordenamiento si existe la opción
+    const select = document.getElementById('ordenar-reservas');
+    if (select) {
+        const opcionValor = `${campo}-${ordenActual.direccion}`;
+        const existeOpcion = Array.from(select.options).some(opt => opt.value === opcionValor);
+        if (existeOpcion) {
+            select.value = opcionValor;
+        } else {
+            // Si no existe exactamente, podemos ponerlo en blanco o dejarlo como está
+            // pero lo importante es que ordenActual ya cambió
+        }
+    }
+
     console.log('🔄 Nuevo estado:', ordenActual);
-    aplicarOrdenamiento();
+    actualizarIconosOrden();
+    filtrarReservas();
+}
+
+function actualizarIconosOrden() {
+    const campos = ['estado', 'espacio', 'responsable', 'fecha', 'modulo'];
+    campos.forEach(campo => {
+        const icon = document.getElementById(`sort-icon-${campo}`);
+        if (!icon) return;
+        
+        // Reset a estado neutral
+        icon.className = 'fa-solid fa-sort ml-1 text-xs';
+        
+        if (ordenActual.campo === campo) {
+            if (ordenActual.direccion === 'asc') {
+                icon.className = 'fa-solid fa-sort-up ml-1 text-xs text-blue-600';
+            } else {
+                icon.className = 'fa-solid fa-sort-down ml-1 text-xs text-blue-600';
+            }
+        }
+    });
 }
 
 function aplicarOrdenamiento() {
@@ -699,15 +753,31 @@ function procesarReservas() {
     }
 
     const estadoFiltro = document.getElementById('filtro-estado-reserva').value;
+    const espacioFiltro = document.getElementById('filtro-espacio-reserva').value;
+    const moduloFiltro = document.getElementById('filtro-modulo-reserva').value;
     const fechaFiltro = document.getElementById('filtro-fecha-reserva').value;
     
-    console.log('🔍 Procesando reservas con filtros:', { estadoFiltro, fechaFiltro, orden: ordenActual });
+    console.log('🔍 Procesando reservas con filtros:', { estadoFiltro, espacioFiltro, moduloFiltro, fechaFiltro, orden: ordenActual });
 
     // 1. Aplicar filtros
     let reservasProcesadas = [...reservasOriginales];
     
     if (estadoFiltro) {
         reservasProcesadas = reservasProcesadas.filter(r => r.estado === estadoFiltro);
+    }
+
+    if (espacioFiltro) {
+        reservasProcesadas = reservasProcesadas.filter(r => r.id_espacio === espacioFiltro);
+    }
+
+    if (moduloFiltro) {
+        const mSelect = parseInt(moduloFiltro);
+        reservasProcesadas = reservasProcesadas.filter(r => {
+            if (!r.modulos_info) return false;
+            const mInicio = parseInt(r.modulos_info.modulo_inicial);
+            const mFin = parseInt(r.modulos_info.modulo_final);
+            return mSelect >= mInicio && mSelect <= mFin;
+        });
     }
     
     if (fechaFiltro) {
@@ -740,6 +810,7 @@ function procesarReservas() {
                 valorB = b.estado;
                 break;
             case 'hora':
+            case 'modulo':
                 valorA = extraerPrimeraHora(a);
                 valorB = extraerPrimeraHora(b);
                 break;
@@ -988,6 +1059,11 @@ function verDetalleReserva(reservaId) {
 // Cargar reservas al inicializar
 document.addEventListener('DOMContentLoaded', function() {
     cargarReservas();
+    cargarEspaciosParaFiltro();
+    cargarModulosParaFiltro();
+    
+    // Inicializar iconos de orden
+    actualizarIconosOrden();
     
     // Los event listeners se manejan vía onchange en el HTML para mayor claridad
     // o se pueden agregar aquí si se desea centralizar.
@@ -1011,6 +1087,51 @@ document.addEventListener('DOMContentLoaded', function() {
     // La función cambiarEstadoReserva ya está definida globalmente arriba
     console.log('✅ Funciones asignadas al scope global');
 });
+
+// Cargar espacios para el filtro
+async function cargarEspaciosParaFiltro() {
+    try {
+        const response = await fetch('/quick-actions/api/espacios');
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+            const select = document.getElementById('filtro-espacio-reserva');
+            if (select) {
+                const opcionesHtml = data.data.map(espacio => {
+                    const nombre = espacio.nombre_espacio || espacio.nombre_tipo_espacio || 'Sin nombre';
+                    return `<option value="${espacio.id_espacio}">${espacio.id_espacio} - ${nombre}</option>`;
+                }).join('');
+                select.innerHTML = '<option value="">Todos los espacios</option>' + opcionesHtml;
+            }
+        }
+    } catch (error) {
+        console.error('Error al cargar espacios para el filtro:', error);
+    }
+}
+
+// Cargar módulos para el filtro
+async function cargarModulosParaFiltro() {
+    try {
+        // Intentar obtener de la API o usar los cargados para el modal
+        if (modulosCargados.length === 0) {
+            await cargarModulosParaModal();
+        }
+        
+        if (modulosCargados.length > 0) {
+            const select = document.getElementById('filtro-modulo-reserva');
+            if (select) {
+                const opcionesHtml = modulosCargados.map(modulo => {
+                    const hInicio = modulo.hora_inicio ? modulo.hora_inicio.substring(0, 5) : '?';
+                    const hFin = modulo.hora_termino ? modulo.hora_termino.substring(0, 5) : '?';
+                    return `<option value="${modulo.id_modulo}">Módulo ${modulo.id_modulo} (${hInicio} - ${hFin})</option>`;
+                }).join('');
+                select.innerHTML = '<option value="">Todos los módulos</option>' + opcionesHtml;
+            }
+        }
+    } catch (error) {
+        console.error('Error al cargar módulos para el filtro:', error);
+    }
+}
 
 // Función específica para cargar reservas en el mantenedor
 async function cargarReservas() {

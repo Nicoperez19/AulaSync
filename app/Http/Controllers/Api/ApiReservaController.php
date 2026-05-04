@@ -23,15 +23,15 @@ class ApiReservaController extends Controller
         try {
             $espacio = Espacio::findOrFail($espacioId);
             $usuario = User::where('id', $userId)
-                          ->whereHas('roles', function($query) {
-                              $query->where('name', 'profesor');
-                          })
-                          ->firstOrFail();
-            
+                ->whereHas('roles', function ($query) {
+                    $query->where('name', 'profesor');
+                })
+                ->firstOrFail();
+
             // Obtener la hora actual
             $ahora = Carbon::now();
             $diaActual = strtolower($ahora->locale('es')->isoFormat('dddd'));
-            
+
             // Verificar si el espacio está ocupado
             $reservaActiva = Reserva::where('espacio_id', $espacioId)
                 ->where('fecha', $ahora->toDateString())
@@ -104,30 +104,30 @@ class ApiReservaController extends Controller
                 ->where('h.run_profesor', $runNormalizado)
 
                 ->where('m.dia', $diaActual)
-                ->where(function($query) use ($horaActualStr) {
+                ->where(function ($query) use ($horaActualStr) {
                     $query->where('m.hora_inicio', '<=', $horaActualStr)
-                          ->where('m.hora_termino', '>=', $horaActualStr);
+                        ->where('m.hora_termino', '>=', $horaActualStr);
                 })
                 ->select('a.id_asignatura', 'a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino')
                 ->first();
 
             // Si no tiene clase programada, obtener la primera asignatura del profesor para uso libre
             if (!$tieneClase) {
-                $profesor = \App\Models\Profesor::where('run_profesor', $runNormalizado)->first();
+                $profesor = Profesor::where('run_profesor', $runNormalizado)->first();
 
                 $asignaturaLibre = $profesor ? $profesor->asignaturas()->first() : null;
-                
+
                 // Buscar el módulo actual según la hora
-                $moduloActual = \App\Models\Modulo::where('dia', $diaActual)
+                $moduloActual = Modulo::where('dia', $diaActual)
                     ->where('hora_inicio', '<=', $horaActualStr)
                     ->where('hora_termino', '>=', $horaActualStr)
                     ->first();
-                
+
                 // Si no hay módulo actual, usar horarios por defecto
                 $horaInicio = $moduloActual ? $moduloActual->hora_inicio : $horaActualStr;
                 $horaTermino = $moduloActual ? $moduloActual->hora_termino : Carbon::parse($horaActualStr)->addMinutes(50)->format('H:i:s');
-                
-                $tieneClase = (object)[
+
+                $tieneClase = (object) [
                     'id_asignatura' => $asignaturaLibre ? $asignaturaLibre->id_asignatura : null,
                     'nombre_asignatura' => 'Uso libre',
                     'hora_inicio' => $horaInicio,
@@ -242,9 +242,9 @@ class ApiReservaController extends Controller
                 ->whereNotNull('observaciones')
                 ->whereNotNull('observaciones')
                 ->where('observaciones', 'LIKE', '%finalizó automáticamente por excederse en el tiempo%')
-                ->where(function($query) use ($runNormalizado) {
+                ->where(function ($query) use ($runNormalizado) {
                     $query->where('run_profesor', $runNormalizado)
-                          ->orWhere('run_solicitante', $runNormalizado);
+                        ->orWhere('run_solicitante', $runNormalizado);
                 })
 
                 ->orderBy('updated_at', 'desc')
@@ -256,7 +256,7 @@ class ApiReservaController extends Controller
                 $nuevaObservacion = "\nProfesor finalizó la clase más tarde y devolvió llave de acceso a las " . Carbon::now()->format('H:i:s') . ".";
                 $reservaAutoFinalizada->observaciones = $observacionActual . $nuevaObservacion;
                 $reservaAutoFinalizada->save();
-                
+
                 \Log::info("Reserva auto-finalizada {$reservaAutoFinalizada->id_reserva} actualizada: profesor devolvió llave tarde");
             }
 
@@ -294,10 +294,10 @@ class ApiReservaController extends Controller
             // Verificar que el usuario es profesor
             $usuario = User::where('run', $runNormalizado)
 
-                          ->whereHas('roles', function($query) {
-                              $query->where('name', 'profesor');
-                          })
-                          ->firstOrFail();
+                ->whereHas('roles', function ($query) {
+                    $query->where('name', 'profesor');
+                })
+                ->firstOrFail();
 
             $fechaReserva = now()->format('Y-m-d');
             $horaActual = now()->format('H:i:s');
@@ -412,7 +412,7 @@ class ApiReservaController extends Controller
             // Obtener información del usuario (profesor o solicitante)
             $usuario = null;
             $nombreUsuario = '';
-            
+
             if ($reservaActiva->run_profesor) {
                 $usuario = Profesor::where('run_profesor', $reservaActiva->run_profesor)->first();
                 $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
@@ -456,7 +456,7 @@ class ApiReservaController extends Controller
         try {
             // Primero verificamos el estado del espacio
             $espacio = Espacio::where('id_espacio', $id)->first();
-            
+
             if (!$espacio) {
                 return response()->json([
                     'success' => false,
@@ -476,7 +476,7 @@ class ApiReservaController extends Controller
                     // Obtener información del usuario (profesor o solicitante)
                     $nombreUsuario = '';
                     $emailUsuario = '';
-                    
+
                     if ($ultimaReserva->run_profesor) {
                         $usuario = Profesor::where('run_profesor', $ultimaReserva->run_profesor)->first();
                         $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
@@ -486,7 +486,7 @@ class ApiReservaController extends Controller
                         $nombreUsuario = $solicitante ? $solicitante->nombre : 'Solicitante no encontrado';
                         $emailUsuario = $solicitante ? $solicitante->correo : 'Sin información';
                     }
-                    
+
                     return response()->json([
                         'success' => true,
                         'reserva' => [
@@ -521,9 +521,9 @@ class ApiReservaController extends Controller
 
             // Si no está ocupado, buscamos reservas activas
             $reserva = Reserva::where('id_espacio', $id)
-                ->where('fecha_reserva', \Carbon\Carbon::today())
-                ->where('hora', '<=', \Carbon\Carbon::now()->format('H:i:s'))
-                ->where('hora_salida', '>=', \Carbon\Carbon::now()->format('H:i:s'))
+                ->where('fecha_reserva', Carbon::today())
+                ->where('hora', '<=', Carbon::now()->format('H:i:s'))
+                ->where('hora_salida', '>=', Carbon::now()->format('H:i:s'))
                 ->with(['user', 'espacio'])
                 ->first();
 
@@ -537,7 +537,7 @@ class ApiReservaController extends Controller
             // Obtener información del usuario (profesor o solicitante)
             $nombreUsuario = '';
             $emailUsuario = '';
-            
+
             if ($reserva->run_profesor) {
                 $usuario = Profesor::where('run_profesor', $reserva->run_profesor)->first();
                 $nombreUsuario = $usuario ? $usuario->name : 'Profesor no encontrado';
