@@ -303,30 +303,6 @@ Route::get('/verificar-planificacion-multiple', function (Request $request) {
 });
 
 
-// Ruta para obtener pisos de la sede TH y facultad IT_TH
-Route::get('/pisos/th/it', function () {
-    try {
-        $pisos = \App\Models\Piso::with(['facultad.sede'])
-            ->whereHas('facultad', function ($query) {
-                $query->where('id_facultad', 'IT_TH');
-            })
-            ->whereHas('facultad.sede', function ($query) {
-                $query->where('id_sede', 'TH');
-            })
-            ->orderBy('numero_piso')
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'pisos' => $pisos
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Error al obtener los pisos: ' . $e->getMessage()
-        ], 500);
-    }
-});
 
 Route::get('/verificar-horario/{run}', [PlanoDigitalController::class, 'verificarHorario']);
 

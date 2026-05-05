@@ -396,7 +396,6 @@ class ClasesNoRealizadasTable extends Component
                 DB::raw("SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) as pendientes"),
                 DB::raw("SUM(CASE WHEN estado = 'justificado' THEN 1 ELSE 0 END) as justificados"),
             ])
-            // Excluir registros que tienen un atraso correspondiente
             ->whereNotExists(function($subQuery) {
                 $subQuery->select(DB::raw(1))
                     ->from('profesor_atrasos')
@@ -404,6 +403,13 @@ class ClasesNoRealizadasTable extends Component
                     ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio')
                     ->whereColumn('profesor_atrasos.id_modulo', 'clases_no_realizadas.id_modulo')
                     ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase');
+            })
+            // Excluir registros que caen en feriados o periodos sin actividad
+            ->whereNotExists(function($subQuery) {
+                $subQuery->select(DB::raw(1))
+                    ->from('dias_feriados')
+                    ->whereColumn('clases_no_realizadas.fecha_clase', '>=', 'dias_feriados.fecha_inicio')
+                    ->whereColumn('clases_no_realizadas.fecha_clase', '<=', 'dias_feriados.fecha_fin');
             })
             ->when($this->periodo, function($q) {
                 $q->where('periodo', $this->periodo);
@@ -437,7 +443,6 @@ class ClasesNoRealizadasTable extends Component
         
         $query = ClaseNoRealizada::query()
             ->select('clases_no_realizadas.*')
-            // Excluir registros que tienen un atraso correspondiente
             ->whereNotExists(function($subQuery) {
                 $subQuery->select(DB::raw(1))
                     ->from('profesor_atrasos')
@@ -445,6 +450,13 @@ class ClasesNoRealizadasTable extends Component
                     ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio')
                     ->whereColumn('profesor_atrasos.id_modulo', 'clases_no_realizadas.id_modulo')
                     ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase');
+            })
+            // Excluir registros que caen en feriados o periodos sin actividad
+            ->whereNotExists(function($subQuery) {
+                $subQuery->select(DB::raw(1))
+                    ->from('dias_feriados')
+                    ->whereColumn('clases_no_realizadas.fecha_clase', '>=', 'dias_feriados.fecha_inicio')
+                    ->whereColumn('clases_no_realizadas.fecha_clase', '<=', 'dias_feriados.fecha_fin');
             })
             ->when($this->periodo, function($q) {
                 $q->where('clases_no_realizadas.periodo', $this->periodo);

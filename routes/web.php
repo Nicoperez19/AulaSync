@@ -452,32 +452,7 @@ Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-acti
     Route::get('/dashboard-data', [QuickActionsController::class, 'getDashboardData'])->name('dashboard-data');
     Route::get('/api/espacios', [QuickActionsController::class, 'getEspacios'])->name('api.espacios');
     Route::get('/api/reservas', [QuickActionsController::class, 'getReservas'])->name('api.reservas');
-    Route::get('/debug/test', function () {
-        return response()->json([
-            'message' => 'Quick Actions API funcionando',
-            'user' => auth()->user()->name ?? 'No autenticado',
-            'timestamp' => now()
-        ]);
-    })->name('debug.test');
 
-    Route::get('/debug/espacios', function () {
-        try {
-            $count = \App\Models\Espacio::count();
-            $first = \App\Models\Espacio::first();
-            return response()->json([
-                'message' => 'Debug espacios',
-                'count' => $count,
-                'first_espacio' => $first,
-                'columns' => $first ? array_keys($first->toArray()) : []
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => $e->getMessage(),
-                'line' => $e->getLine(),
-                'file' => $e->getFile()
-            ]);
-        }
-    })->name('debug.espacios');
 
     // API para buscar personas por RUN (autocompletado)
     Route::get('/api/buscar-personas', [QuickActionsController::class, 'buscarPersonas'])->name('api.buscar-personas');
@@ -505,30 +480,6 @@ Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-acti
     Route::put('/api/reserva/{id}', [QuickActionsController::class, 'actualizarReserva'])->name('api.actualizar-reserva');
 
     // Debug para verificar estructura de personas
-    Route::get('/debug/personas', function () {
-        try {
-            $profesorCount = \App\Models\Profesor::count();
-            $solicitanteCount = \App\Models\Solicitante::count();
-            $firstProfesor = \App\Models\Profesor::first();
-            $firstSolicitante = \App\Models\Solicitante::first();
-
-            return response()->json([
-                'message' => 'Debug personas',
-                'profesores_count' => $profesorCount,
-                'solicitantes_count' => $solicitanteCount,
-                'first_profesor' => $firstProfesor,
-                'first_solicitante' => $firstSolicitante,
-                'profesor_columns' => $firstProfesor ? array_keys($firstProfesor->toArray()) : [],
-                'solicitante_columns' => $firstSolicitante ? array_keys($firstSolicitante->toArray()) : []
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => $e->getMessage(),
-                'line' => $e->getLine(),
-                'file' => $e->getFile()
-            ]);
-        }
-    })->name('debug.personas');
     Route::put('/api/espacio/{codigo}/estado', [QuickActionsController::class, 'cambiarEstadoEspacio'])->name('api.espacio.estado');
     Route::put('/api/reserva/{id}/estado', [QuickActionsController::class, 'cambiarEstadoReserva'])->name('api.reserva.estado');
 });
@@ -538,12 +489,3 @@ Route::get('/csrf-token', function () {
     return response()->json(['token' => csrf_token()]);
 });
 
-// ===================================================
-// RUTAS DE TEST - Plantillas PDF
-// ===================================================
-Route::prefix('test/plantillas-pdf')->name('test.plantillas.pdf.')->group(function () {
-    Route::get('/', [App\Http\Controllers\TestPlantillaPdfController::class, 'index'])->name('index');
-    Route::get('/preview/{id}', [App\Http\Controllers\TestPlantillaPdfController::class, 'vistaPrevia'])->name('preview');
-    Route::get('/generar/{id}', [App\Http\Controllers\TestPlantillaPdfController::class, 'generarPdf'])->name('generar');
-    Route::get('/todos', [App\Http\Controllers\TestPlantillaPdfController::class, 'generarTodos'])->name('todos');
-});

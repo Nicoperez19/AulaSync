@@ -689,20 +689,17 @@ class ModulosActualesTable extends Component
                     'encontrado' => $moduloDB ? 'SÍ' : 'NO'
                 ]);
 
-                if ($moduloDB && !$this->periodoNoIniciado) {
-                    $planificacionesActivas = Planificacion_Asignatura::with([
-                        'asignatura.profesor',
-                        'horario.profesor',
-                        'asignatura.carrera',
-                        'espacio',
-                        'modulo',
-                    ])
-                        ->where('id_modulo', $moduloDB->id_modulo)
-                        ->whereHas('horario', function ($q) use ($periodo) {
-                            $q->where('periodo', $periodo);
+                // 1. Obtener planificaciones activas para el módulo actual (OPTIMIZADO)
+                // Si es feriado, no cargar planificaciones regulares
+                $planificacionesActivas = collect();
+                if (!$this->esFeriado && $moduloDB && !$this->periodoNoIniciado) {
+                    $planificacionesActivas = Planificacion_Asignatura::where('id_modulo', $idModulo)
+                        ->whereHas('horario', function ($query) use ($periodo) {
+                            $query->where('periodo', $periodo);
                         })
+                        ->with(['asignatura.profesor', 'horario.profesor', 'asignatura.carrera'])
                         ->get()
-                        ->keyBy('id_espacio');  // Indexar por espacio para búsqueda rápida
+                        ->keyBy('id_espacio');
 
                     Log::info('ModulosActuales - Planificaciones activas encontradas: ' . $planificacionesActivas->count());
                     Log::info('ModulosActuales - ID Módulo buscado: ' . $moduloDB->id_modulo);

@@ -200,6 +200,12 @@ class DetectarClasesNoRealizadas extends Command
             $hoy = Carbon::now();
             $horaActual = $hoy->format('H:i:s');
 
+            // Verificar si hoy es feriado o día sin actividad para este tenant
+            if (\App\Models\DiaFeriado::esFeriado($fechaActual)) {
+                $this->info("  [{$tenant->database}] Hoy es feriado o día sin actividad. Se omiten detecciones automáticas.");
+                return;
+            }
+
             // Obtener módulos que ya pasaron el tiempo de gracia
             $modulosParaVerificar = $this->obtenerModulosParaVerificar($diaKey, $horaActual);
             

@@ -34,6 +34,11 @@ class ClasesNoRealizadasReportService
             ->orderBy('id_modulo', 'asc')
             ->get();
 
+        // Filtrar clases que son feriados o días sin actividad (estos no deben contar en reportes)
+        $clasesNoRealizadas = $clasesNoRealizadas->reject(function ($clase) {
+            return \App\Models\DiaFeriado::esFeriado($clase->fecha_clase);
+        });
+
         // Agrupar por profesor
         $clasesPorProfesor = $clasesNoRealizadas->groupBy('run_profesor');
 
@@ -108,6 +113,11 @@ class ClasesNoRealizadasReportService
             ->orderBy('fecha_clase', 'asc')
             ->orderBy('id_modulo', 'asc')
             ->get();
+
+        // Filtrar clases que son feriados o días sin actividad (estos no deben contar en reportes)
+        $clasesNoRealizadas = $clasesNoRealizadas->reject(function ($clase) {
+            return \App\Models\DiaFeriado::esFeriado($clase->fecha_clase);
+        });
 
         // Calcular total de clases programadas en el mes
         $totalClasesProgramadas = Planificacion_Asignatura::whereHas('horario', function ($query) use ($fechaInicio) {

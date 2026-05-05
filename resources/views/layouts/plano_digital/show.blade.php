@@ -3264,7 +3264,7 @@
                             ${horario ? `<div class="text-xs text-blue-600">${horario}</div>` : ''}
                         </div>
                     `;
-                } else if (data.tipo_ocupacion === 'solicitante' && indicator?.estado === 'Ocupado') {
+                } else if (data.tipo_ocupacion === 'solicitante' && (indicator?.estado === 'Ocupado' || indicator?.estado === 'Programado')) {
                     // Solicitante (persona externa, no profesor)
                     elements.pasoEstadoActual.innerHTML = `
                         <div class="text-center">
@@ -3273,9 +3273,15 @@
                             ${data.hora_inicio ? `<div class="text-xs text-blue-600">${data.hora_inicio.substring(0, 5)}</div>` : ''}
                         </div>
                     `;
-                } else if (indicator?.estado === 'Ocupado' && data.nombre) {
+                } else if ((indicator?.estado === 'Ocupado' || indicator?.estado === 'Reservado' || indicator?.estado === 'Programado') && data.nombre) {
                     // Espacio ocupado sin asignatura → reserva espontánea o uso libre (profesor)
-                    const etiqueta = data.tipo_reserva === 'espontanea' ? 'Reserva espontánea' : 'En uso';
+                    let etiqueta = 'En uso';
+                    if (data.tipo_reserva === 'espontanea') etiqueta = 'Reserva espontánea';
+                    if (data.tipo_reserva === 'clase_regular') etiqueta = 'Clase programada';
+                    if (data.tipo_reserva === 'clase_colaborador') etiqueta = 'Clase temporal';
+                    if (data.tipo_reserva === 'programada') etiqueta = 'Reserva programada';
+                    if (data.tipo_reserva === 'programada_docente') etiqueta = 'Clase programada';
+
                     elements.pasoEstadoActual.innerHTML = `
                         <div class="text-center">
                             <div class="font-semibold text-blue-700 mb-1">${data.nombre}</div>
