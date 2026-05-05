@@ -690,8 +690,6 @@ class ModulosActualesTable extends Component
                 ]);
 
                 if ($moduloDB && !$this->periodoNoIniciado) {
-                    // Solo cargar planificaciones si el periodo ya ha iniciado
-                    // Obtener todas las planificaciones del módulo actual con eager loading optimizado
                     $planificacionesActivas = Planificacion_Asignatura::with([
                         'asignatura.profesor',
                         'horario.profesor',
@@ -699,7 +697,6 @@ class ModulosActualesTable extends Component
                         'espacio',
                         'modulo',
                     ])
-
                         ->where('id_modulo', $moduloDB->id_modulo)
                         ->whereHas('horario', function ($q) use ($periodo) {
                             $q->where('periodo', $periodo);
@@ -1088,11 +1085,10 @@ class ModulosActualesTable extends Component
                                 'nombre_asignatura' => $planificacionActiva->asignatura->nombre_asignatura ?? '-',
                                 'seccion' => $planificacionActiva->asignatura->seccion ?? '-',
                                 'profesor' => [
-                                    'name' => ($planificacionActiva->horario && $planificacionActiva->horario->profesor) 
-                                        ? $planificacionActiva->horario->profesor->name 
+                                    'name' => ($planificacionActiva->horario && $planificacionActiva->horario->profesor)
+                                        ? $planificacionActiva->horario->profesor->name
                                         : ($planificacionActiva->asignatura->profesor->name ?? '-'),
                                 ],
-
                                 'carrera' => $planificacionActiva->asignatura->carrera->nombre ?? '-',
                                 'modulo_inicio' => $numeroModuloInicio,
                                 'modulo_fin' => $numeroModuloFin,
@@ -1216,6 +1212,9 @@ class ModulosActualesTable extends Component
                                     'inscritos' => $inscritos,
                                     'modulo_inicio' => $numeroModuloInicio,
                                     'modulo_fin' => $numeroModuloFin,
+                                    'nombre_actividad' => $reservaProfesor->nombre_actividad ?? null,
+                                    'descripcion_actividad' => $reservaProfesor->descripcion_actividad ?? null,
+                                    'tipo_reserva' => $reservaProfesor->tipo_reserva ?? 'clase',
                                 ];
                             } else {
                                 // Reserva sin asignatura (uso libre o espontánea)
@@ -1260,6 +1259,9 @@ class ModulosActualesTable extends Component
                                     'inscritos' => null,
                                     'modulo_inicio' => $moduloInicioReserva,
                                     'modulo_fin' => $moduloFinReserva,
+                                    'nombre_actividad' => $reservaProfesor->nombre_actividad ?? null,
+                                    'descripcion_actividad' => $reservaProfesor->descripcion_actividad ?? null,
+                                    'tipo_reserva' => $reservaProfesor->tipo_reserva ?? 'espontanea',
                                 ];
 
                                 Log::info('ModulosActuales - Procesando reserva espontánea:', [

@@ -289,12 +289,19 @@
                                                 <div class="font-medium text-gray-900 text-sm flex items-start justify-between gap-2">
                                                     <div class="flex-1">
                                                         <div>
-                                                            @if(!empty($espacio['datos_profesor']['codigo_asignatura']))
+                                                            @if(!empty($espacio['datos_profesor']['nombre_actividad']))
+                                                                <span class="font-semibold text-blue-600">{{ $espacio['datos_profesor']['nombre_actividad'] }}</span>
+                                                            @elseif(!empty($espacio['datos_profesor']['codigo_asignatura']) && ($espacio['datos_profesor']['tipo_reserva'] ?? '') === 'clase')
                                                                 <span class="font-semibold">{{ $espacio['datos_profesor']['codigo_asignatura'] }} - </span>
+                                                                {{ $espacio['datos_profesor']['nombre_asignatura'] ?? $asignatura ?? 'Sin asignatura' }}
+                                                            @else
+                                                                {{ $espacio['datos_profesor']['nombre_asignatura'] ?? $asignatura ?? 'Sin asignatura' }}
                                                             @endif
-                                                            {{ $espacio['datos_profesor']['nombre_asignatura'] ?? $asignatura ?? 'Sin asignatura' }}
                                                         </div>
                                                         <div>Prof: {{ $espacio['datos_profesor']['nombre'] ?? 'N/A' }}</div>
+                                                        @if(!empty($espacio['datos_profesor']['descripcion_actividad']))
+                                                            <div class="text-xs text-gray-500 truncate" title="{{ $espacio['datos_profesor']['descripcion_actividad'] }}">{{ Str::limit($espacio['datos_profesor']['descripcion_actividad'], 50) }}</div>
+                                                        @endif
                                                     </div>
                                                     @if(!empty($espacio['datos_profesor']['es_programada']))
                                                         <span class="px-2 py-0.5 bg-indigo-200 text-indigo-700 text-xs font-semibold rounded whitespace-nowrap">PROGRAMADO</span>

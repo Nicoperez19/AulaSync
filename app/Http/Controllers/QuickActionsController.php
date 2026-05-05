@@ -654,7 +654,7 @@ class QuickActionsController extends Controller
                 'modulo_fin' => $request->modulo_final,
                 'hora' => $horaInicio,
                 'hora_salida' => $horaFin,
-                'tipo_reserva' => $request->tipo === 'profesor' || $request->tipo === 'colaborador' ? 'clase' : 'espontanea',
+                'tipo_reserva' => ($request->tipo === 'profesor' || $request->tipo === 'colaborador') && $idAsignatura ? 'clase' : 'espontanea',
                 'estado' => $estadoReserva,
                 'observaciones' => $observacionesCompletas,
                 'nombre_actividad' => $request->nombre_actividad,
@@ -673,6 +673,12 @@ class QuickActionsController extends Controller
                 // Usar updateOrCreate para evitar errores de duplicidad y mantener datos actualizados
                 $tipoProfesor = $request->tipo === 'colaborador' ? 'Colaborador' : 'Invitado';
                 
+                Log::info('👨‍🏫 Actualizando/Creando profesor en QuickActions:', [
+                    'run' => $runNormalizado,
+                    'tipo' => $tipoProfesor,
+                    'nombre' => $request->nombre
+                ]);
+
                 $profesor = Profesor::updateOrCreate(
                     ['run_profesor' => $runNormalizado],
                     [
