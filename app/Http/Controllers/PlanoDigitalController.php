@@ -402,9 +402,9 @@ class PlanoDigitalController extends Controller
             $horaInicioBusqueda = '05:00:00';
             $horaFinBusqueda = '05:10:00';
         } else {
-            // Para otros horarios, usar la lógica normal (10 minutos después)
+            // Para otros horarios, usar la lógica normal (15 minutos después)
             $horaInicioBusqueda = $horaActual->format('H:i:s');
-            $horaFinBusqueda = $horaActual->copy()->addMinutes(10)->format('H:i:s');
+            $horaFinBusqueda = $horaActual->copy()->addMinutes(15)->format('H:i:s');
         }
 
         // Obtener planificaciones regulares próximas
@@ -420,7 +420,7 @@ class PlanoDigitalController extends Controller
                     // Para el rango 05:00-05:10, buscar módulos que empiecen a las 05:10
                     $query->where('hora_inicio', '=', '05:10:00');
                 } else {
-                    // Para otros horarios, buscar módulos que empiecen en los próximos 10 minutos
+                    // Para otros horarios, buscar módulos que empiecen en los próximos 15 minutos
                     // IMPORTANTE: >= para incluir clases que comienzan AHORA también
                     $query
                         ->where('hora_inicio', '>=', $horaInicioBusqueda)
@@ -605,9 +605,10 @@ class PlanoDigitalController extends Controller
         // Obtener todos los espacios
         $espacios = Espacio::all();
 
-        $horaLimite = $horaActual->copy()->addMinutes(10)->format('H:i:s');
+        // Tiempo límite para considerar una clase como "Próxima" (15 minutos)
+        $horaLimite = $horaActual->copy()->addMinutes(15)->format('H:i:s');
 
-        // Obtener planificaciones para el módulo actual O que empiecen pronto (10 min)
+        // Obtener planificaciones para el módulo actual O que empiecen pronto (15 min)
         $planificacionesActivasYProximas = Planificacion_Asignatura::with(['modulo', 'espacio', 'asignatura', 'horario.profesor'])
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
@@ -620,7 +621,7 @@ class PlanoDigitalController extends Controller
                             $q2->where('hora_inicio', '<=', $horaActualStr)
                                ->where('hora_termino', '>', $horaActualStr);
                         })
-                        // O que empiece en los próximos 10 min
+                        // O que empiece en los próximos 15 min
                         ->orWhere(function($q2) use ($horaActualStr, $horaLimite) {
                             $q2->where('hora_inicio', '>', $horaActualStr)
                                ->where('hora_inicio', '<=', $horaLimite);
@@ -641,8 +642,8 @@ class PlanoDigitalController extends Controller
             ->where('estado', 'programada')
             ->get();
 
-        // Obtener reservas próximas (próximos 10 minutos)
-        $horaLimite = $horaActual->copy()->addMinutes(10)->format('H:i:s');
+        // Obtener reservas próximas (próximos 15 minutos)
+        $horaLimite = $horaActual->copy()->addMinutes(15)->format('H:i:s');
         $reservasProximas = Reserva::with(['asignatura', 'profesor', 'solicitante'])
             ->where('fecha_reserva', $fechaActual)
             ->where('estado', 'activa')
@@ -697,7 +698,14 @@ class PlanoDigitalController extends Controller
                 if ($estadoTabla === 'Mantención' || $estadoTabla === 'Mantenimiento') {
                     $estado = 'Mantención';
                 } elseif ($tieneClaseSinAsistentes) {
-                    $estado = 'ClaseSinAsistentes';
+                    $estado = 'Clase no registrada';
+                } elseif ($tieneReservaActiva) {
+                    $reservaActiva = $reservasActivas->where('id_espacio', $espacio->id_espacio)->first();
+                    if ($reservaActiva && $reservaActiva->tipo_reserva === 'espontanea') {
+                        $estado = 'Reserva Espontánea';
+                    } else {
+                        $estado = 'Clase registrada';
+                    }
                 } elseif ($estadoTabla === 'Ocupado') {
                     $estado = 'Ocupado';
                 } elseif ($tieneReservaActiva) {
@@ -716,7 +724,7 @@ class PlanoDigitalController extends Controller
                     if ($progEnFranja) {
                         $estado = 'Programado';
                     } elseif ($tieneClaseEnCurso && $estadoTabla !== 'Ocupado') {
-                        $estado = 'Reservado';
+                        $estado = 'Clase Programada';
                     } elseif ($tieneClaseProxima || $tieneReservaProxima) {
                         $estado = 'Reservado';
                     } elseif ($estadoTabla === 'Disponible') {
@@ -1179,7 +1187,7 @@ class PlanoDigitalController extends Controller
                     ->whereHas('modulo', function ($q) use ($diaActual, $horaActualStr, $horaActual) {
                         $q
                             ->where('dia', $diaActual)
-                            ->where('hora_inicio', '<=', $horaActual->copy()->addMinutes(10)->toTimeString())
+                            ->where('hora_inicio', '<=', $horaActual->copy()->addMinutes(15)->toTimeString())
                             ->where('hora_termino', '>=', $horaActualStr);
                     })
                     ->first();
@@ -1314,9 +1322,8 @@ class PlanoDigitalController extends Controller
 
             // Verificar si el usuario tiene una reserva activa en otro espacio (prioridad alta)
             $reservaExistente = Reserva::where(function ($query) use ($runUsuario) {
-                $query
-                    ->where('run_profesor', $runUsuario)
-                    ->orWhere('run_solicitante', $runUsuario);
+                $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
             })
                 ->where('id_espacio', '!=', $idEspacio)
                 ->where('estado', 'activa')
@@ -1333,10 +1340,10 @@ class PlanoDigitalController extends Controller
             }
 
             // Verificar si el usuario tiene una reserva activa en este espacio
+            // Usamos una comparación más robusta para el RUN por si existen puntos o guiones en la BD
             $reservaActiva = Reserva::where(function ($query) use ($runUsuario) {
-                $query
-                    ->where('run_profesor', $runUsuario)
-                    ->orWhere('run_solicitante', $runUsuario);
+                $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
             })
                 ->where('id_espacio', $idEspacio)
                 ->where('estado', 'activa')
@@ -1363,9 +1370,8 @@ class PlanoDigitalController extends Controller
 
             // Verificar si el usuario tiene una reserva PROGRAMADA en este espacio
             $reservaProgramada = Reserva::where(function ($query) use ($runUsuario) {
-                $query
-                    ->where('run_profesor', $runUsuario)
-                    ->orWhere('run_solicitante', $runUsuario);
+                $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
             })
                 ->where('id_espacio', $idEspacio)
                 ->where('estado', 'programada')
@@ -1387,8 +1393,8 @@ class PlanoDigitalController extends Controller
                     $horaFinModulo = $horarioModulos[$reservaProgramada->modulo_fin]['fin'] ?? null;
 
                     if ($horaInicioModulo && $horaFinModulo) {
-                        // Aplicar margen de 10 minutos para activación anticipada
-                        $horaInicioConMargen = Carbon::createFromFormat('H:i:s', $horaInicioModulo)->subMinutes(10)->format('H:i:s');
+                        // Aplicar margen de 15 minutos para activación anticipada
+                        $horaInicioConMargen = Carbon::createFromFormat('H:i:s', $horaInicioModulo)->subMinutes(15)->format('H:i:s');
                         $puedeActivar = ($horaActualStr >= $horaInicioConMargen && $horaActualStr <= $horaFinModulo);
                     }
                 }
@@ -1447,9 +1453,9 @@ class PlanoDigitalController extends Controller
                     ->where('fecha_reserva', Carbon::today()->toDateString())
                     ->where(function ($query) use ($runUsuario) {
                         $query->where(function ($q) use ($runUsuario) {
-                            $q->whereNotNull('run_profesor')->where('run_profesor', '!=', $runUsuario);
+                            $q->whereNotNull('run_profesor')->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') != ?", [$runUsuario]);
                         })->orWhere(function ($q) use ($runUsuario) {
-                            $q->whereNotNull('run_solicitante')->where('run_solicitante', '!=', $runUsuario);
+                            $q->whereNotNull('run_solicitante')->whereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') != ?", [$runUsuario]);
                         });
                     })
                     ->first();
@@ -1542,47 +1548,62 @@ class PlanoDigitalController extends Controller
                 }
 
                 // NUEVA LÓGICA: Verificar si el usuario que escanea tiene una clase programada ahora
-                // para permitir forzar el cierre si la sala está ocupada por un tercero.
+                // para permitir forzar el cierre si la sala está ocupada por un tercero (o por él mismo en una sesión antigua).
                 $puedeForzarCierre = false;
                 $idReservaAnterior = $reservaOcupante ? $reservaOcupante->id_reserva : null;
 
-                if ($reservaOcupante && (string) $reservaOcupante->run_profesor !== (string) $runUsuario && (string) $reservaOcupante->run_solicitante !== (string) $runUsuario) {
-                    $horaActual = Carbon::now();
-                    $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
-                    $horaActualStr = $horaActual->format('H:i:s');
+                $horaActual = Carbon::now();
+                $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
+                $horaActualStr = $horaActual->format('H:i:s');
 
+                // 1. Verificamos si la reserva ocupante es "stale" (de días anteriores o ya expiró su tiempo programado)
+                $esReservaAntigua = false;
+                if ($reservaOcupante) {
+                    $fechaReservaStr = $reservaOcupante->fecha_reserva instanceof Carbon 
+                        ? $reservaOcupante->fecha_reserva->toDateString() 
+                        : (is_string($reservaOcupante->fecha_reserva) ? substr($reservaOcupante->fecha_reserva, 0, 10) : null);
+                    
+                    if ($fechaReservaStr && $fechaReservaStr < Carbon::today()->toDateString()) {
+                        $esReservaAntigua = true;
+                    }
+                }
 
+                // 2. Buscar si el usuario que escanea tiene planificación en este bloque (margen de 15 min)
+                $planificacionScanner = Planificacion_Asignatura::where('id_espacio', $idEspacio)
+                    ->whereHas('asignatura', function ($q) use ($runUsuario) {
+                        $q->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
+                    })
+                    ->whereHas('modulo', function ($q) use ($diaActual, $horaActualStr, $horaActual) {
+                        $q
+                            ->where('dia', $diaActual)
+                            ->where('hora_inicio', '<=', $horaActual->copy()->addMinutes(15)->toTimeString())
+                            ->where('hora_termino', '>=', $horaActualStr);
+                    })
+                    ->first();
 
-                    // Buscar si el usuario que escanea tiene planificación en este bloque
-                    $planificacionScanner = Planificacion_Asignatura::where('id_espacio', $idEspacio)
-                        ->whereHas('asignatura', function ($q) use ($runUsuario) {
-                            $q->where('run_profesor', $runUsuario);
+                if ($planificacionScanner || $esReservaAntigua) {
+                    $puedeForzarCierre = true;
+                } else {
+                    // También verificar reservas programadas del scanner (margen de 15 min)
+                    $reservaProgramadaScanner = Reserva::where('id_espacio', $idEspacio)
+                        ->where(function ($q) use ($runUsuario) {
+                            $q->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
+                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
                         })
-                        ->whereHas('modulo', function ($q) use ($diaActual, $horaActualStr, $horaActual) {
-                            $q
-                                ->where('dia', $diaActual)
-                                ->where('hora_inicio', '<=', $horaActual->copy()->addMinutes(10)->toTimeString())
-                                ->where('hora_termino', '>=', $horaActualStr);
-                        })
+                        ->where('estado', 'programada')
+                        ->where('fecha_reserva', Carbon::today()->toDateString())
                         ->first();
 
-                    if ($planificacionScanner) {
-
-                        $puedeForzarCierre = true;
-                    } else {
-                        // También verificar reservas programadas del scanner
-                        $reservaProgramadaScanner = Reserva::where('id_espacio', $idEspacio)
-                            ->where(function ($q) use ($runUsuario) {
-                                $q->where('run_profesor', $runUsuario)
-                                    ->orWhere('run_solicitante', $runUsuario);
-                            })
-                            ->where('estado', 'programada')
-                            ->where('fecha_reserva', Carbon::today()->toDateString())
-                            ->first();
-
-                        if ($reservaProgramadaScanner) {
-
-                            $puedeForzarCierre = true;
+                    if ($reservaProgramadaScanner) {
+                        // Verificar margen de 15 minutos para la reserva programada
+                        $horarioModulos = $this->obtenerMapaHorariosModulos();
+                        $horaInicioMod = $horarioModulos[$reservaProgramadaScanner->modulo_inicio]['inicio'] ?? null;
+                        
+                        if ($horaInicioMod) {
+                            $horaInicioConMargen = Carbon::createFromFormat('H:i:s', $horaInicioMod)->subMinutes(15)->format('H:i:s');
+                            if ($horaActualStr >= $horaInicioConMargen) {
+                                $puedeForzarCierre = true;
+                            }
                         }
                     }
                 }

@@ -54,12 +54,12 @@ class LiberarEspaciosCommand extends Command
         $this->info("\nProcesando tenant: {$tenant->name} ({$tenant->domain})");
 
         try {
-            // Configurar conexión de tenant
-            Config::set('database.connections.tenant.database', $tenant->database);
-            DB::purge('tenant');
+            // Establecer este tenant como el actual (configura conexión y scopes)
+            $tenant->makeCurrent();
 
             // 1. Finalizar todas las reservas activas o programadas del día (o anteriores)
-            $reservasActualizadas = Reserva::on('tenant')
+            // Usamos withoutGlobalScopes() para asegurar que procesamos todos los registros del tenant
+            $reservasActualizadas = Reserva::withoutGlobalScopes()
                 ->whereIn('estado', ['activa', 'programada'])
                 ->where('fecha_reserva', '<=', Carbon::now()->toDateString())
                 ->get();
@@ -82,7 +82,7 @@ class LiberarEspaciosCommand extends Command
             $this->line("  Se finalizaron {$totalReservas} reservas (activas/programadas).");
 
             // 2. Cambiar todos los espacios ocupados o reservados a disponibles
-            $espaciosLiberados = Espacio::on('tenant')
+            $espaciosLiberados = Espacio::withoutGlobalScopes()
                 ->whereIn('estado', ['Ocupado', 'Reservado'])
                 ->update([
                     'estado' => 'Disponible',

@@ -42,9 +42,8 @@ class ActualizarEstadoEspacios extends Command
         $this->info("\nProcesando tenant: {$tenant->name} ({$tenant->domain})");
 
         try {
-            // Configurar conexión de tenant
-            Config::set('database.connections.tenant.database', $tenant->database);
-            DB::purge('tenant');
+            // Establecer este tenant como el actual
+            $tenant->makeCurrent();
 
             $ahora = Carbon::now();
             $diaActual = strtolower($ahora->locale('es')->isoFormat('dddd'));
@@ -100,7 +99,8 @@ class ActualizarEstadoEspacios extends Command
                     ]);
                 }
             } else {
-                // Buscar TODAS las reservas para debug
+                // Establecer este tenant como el actual
+                $tenant->makeCurrent();
                 $todasReservas = Reserva::on('tenant')->get();
                 Log::warning('No se encontraron reservas activas para hoy en horario actual', [
                     'fecha_buscada' => $ahora->toDateString(),

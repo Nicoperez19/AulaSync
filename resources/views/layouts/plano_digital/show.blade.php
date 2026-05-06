@@ -2148,12 +2148,8 @@
 
             if (resultadoVerificacion.tipo === 'espacio_ocupado') {
                 // Procesando espacio ocupado...
-                // Verificar si el ocupante es el mismo usuario que acaba de escanear
-                if (resultadoVerificacion.ocupante && resultadoVerificacion.ocupante.run === usuarioEscaneado) {
-                    // Es el mismo usuario, no mostrar mensaje de ocupado
-                    ordenEscaneo = 'usuario';
-                    return;
-                }
+                // Si es el mismo usuario, permitimos que continúe para que pueda "forzar cierre" 
+                // de su propia sesión si esta quedó abierta o tiene una discrepancia de horario.
 
                 // NUEVA LÓGICA: Si puede forzar cierre, mostrar modal con botón de acción
                 if (resultadoVerificacion.puede_forzar_cierre) {
@@ -2246,7 +2242,7 @@
                     `;
                 }
                 
-                htmlContent += `<p class="mt-4 text-sm text-gray-700 font-semibold">Debe desmarcar la reserva anterior antes de volver a solicitar esta sala.</p></div>`;
+                htmlContent += `<p class="mt-4 text-sm text-gray-700 font-semibold">Si tienes una clase programada próximamente, recuerda que puedes tomar la sala hasta 15 minutos antes del inicio del módulo.</p></div>`;
 
                 // Mostrar SweetAlert
                 Swal.fire({
@@ -2637,16 +2633,18 @@
                     color = '#9ca3af'; // Gris 400 - Mantenimiento
                 } else if (estadoLower === 'disponible' || estadoLower === 'libre') {
                     color = '#10b981'; // Esmeralda 500 - Disponible
-                } else if (estadoLower === 'ocupado') {
-                    color = '#ef4444'; // Rojo 500 - Ocupado
-                } else if (estadoLower === 'programado') {
-                    color = '#818cf8'; // Indigo 400 - Programado
-                } else if (estadoLower === 'reservado') {
-                    color = '#f59e0b'; // Amber 500 - Reservado
+                } else if (estadoLower === 'ocupado' || estadoLower === 'reserva espontanea') {
+                    color = '#ef4444'; // Rojo 500 - Ocupado / Espontánea
+                } else if (estadoLower === 'programado' || estadoLower === 'reservado') {
+                    color = '#f59e0b'; // Amber 500 - Programado / Reservado
+                } else if (estadoLower === 'clase registrada') {
+                    color = '#ef4444'; // Rojo 500 - Clase Registrada
+                } else if (estadoLower === 'clase programada') {
+                    color = '#f59e0b'; // Amber 500 - Clase Programada (por iniciar)
                 } else if (estadoLower === 'proximo') {
                     color = '#3b82f6'; // Azul 500 - Próximo
-                } else if (estadoLower === 'clasesinasistentes') {
-                    color = '#374151'; // Gris 700 - Clase sin asistentes
+                } else if (estadoLower === 'clasesinasistentes' || estadoLower === 'clase no registrada') {
+                    color = '#374151'; // Gris 700 - Clase no registrada
                 } else {
                     color = '#10b981'; // Esmeralda por defecto
                 }
@@ -3214,14 +3212,14 @@
             if (elements.claseActualContainer) elements.claseActualContainer.style.display = 'none';
             
             // Determinar si hay una reserva pendiente verificando la HORA
-            // Una reserva está "AHORA" solo si su hora_inicio está en los próximos 10 minutos
+            // Una reserva está "AHORA" solo si su hora_inicio está en los próximos 15 minutos
             let tieneReservaPendiente = false;
             let reservaEstaAhora = false;
             
             if (data.proxima_clase && data.proxima_clase.asignatura && !data.asignatura) {
                 tieneReservaPendiente = true;
                 
-                // Verificar si la próxima clase está en los próximos 10 minutos
+                // Verificar si la próxima clase está en los próximos 15 minutos
                 if (data.proxima_clase.hora_inicio) {
                     const ahora = new Date();
                     const horaActual = ahora.toLocaleTimeString('es-ES', {
@@ -3238,8 +3236,8 @@
                     const minutoProximo = horaProx * 60 + minProx;
                     const diferencia = minutoProximo - minutoActual;
                     
-                    // La clase está "AHORA" si comienza en los próximos 10 minutos (rango flexible)
-                    reservaEstaAhora = diferencia >= 0 && diferencia <= 10;
+                    // La clase está "AHORA" si comienza en los próximos 15 minutos (rango flexible)
+                    reservaEstaAhora = diferencia >= 0 && diferencia <= 15;
                     
                     console.log('⏰ Análisis de hora:', {
                         hora_actual: horaActual,

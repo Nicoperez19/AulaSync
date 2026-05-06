@@ -62,13 +62,13 @@
                     <!-- Resumen - Fijo -->
                     <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex-shrink-0">
                         <div class="grid gap-4 text-center" :class="diaSeleccionado.por_realizar > 0 ? 'grid-cols-4' : 'grid-cols-3'">
-                            <div class="bg-white rounded-lg p-3 shadow-sm">
+                            <div class="bg-white rounded-lg p-3 shadow-sm" title="Clases programadas que sí se realizaron">
                                 <p class="text-2xl font-bold text-green-600" x-text="diaSeleccionado.realizadas"></p>
-                                <p class="text-xs text-gray-500">Realizadas</p>
+                                <p class="text-xs text-gray-500">Registradas <i class="fas fa-info-circle ml-1"></i></p>
                             </div>
-                            <div class="bg-white rounded-lg p-3 shadow-sm">
+                            <div class="bg-white rounded-lg p-3 shadow-sm" title="Clases que estaban programadas, pero no se realizaron">
                                 <p class="text-2xl font-bold text-red-600" x-text="diaSeleccionado.no_realizadas"></p>
-                                <p class="text-xs text-gray-500">No Realizadas</p>
+                                <p class="text-xs text-gray-500">No Registradas <i class="fas fa-info-circle ml-1"></i></p>
                             </div>
                             <div class="bg-white rounded-lg p-3 shadow-sm" x-show="diaSeleccionado.por_realizar > 0">
                                 <p class="text-2xl font-bold text-yellow-600" x-text="diaSeleccionado.por_realizar || 0"></p>
@@ -89,7 +89,7 @@
                                     <svg class="w-5 h-5 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                                     </svg>
-                                    Clases No Realizadas
+                                    Clases No Registradas
                                     <span class="ml-2 text-sm font-normal text-gray-500" x-text="'(' + diaSeleccionado.clases_no_realizadas_detalle.length + ')'}"></span>
                                 </h4>
                                 <div class="space-y-3">
@@ -120,7 +120,7 @@
                                                                   'bg-orange-100 text-orange-700': clase.estado === 'pendiente',
                                                                   'bg-red-100 text-red-700': clase.estado === 'no_realizada'
                                                               }"
-                                                              x-text="clase.estado === 'recuperada' ? 'Recuperada' : (clase.estado === 'pendiente' ? 'Pendiente' : 'No realizada')">
+                                                              x-text="clase.estado === 'recuperada' ? 'Recuperada' : (clase.estado === 'pendiente' ? 'Pendiente' : 'No registrada')">
                                                         </span>
                                                     </div>
                                                 </div>
@@ -144,7 +144,7 @@
                                 <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
-                                <p class="font-medium text-gray-700">¡Todas las clases fueron realizadas!</p>
+                                <p class="font-medium text-gray-700">¡Todas las clases fueron registradas!</p>
                                 <p class="text-sm text-gray-500 mt-1">No hay clases pendientes de reagendar</p>
                             </div>
                         </template>
@@ -157,7 +157,7 @@
                             <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
                             </svg>
-                            Ver todas las clases no realizadas
+                            Ver todas las clases no registradas
                         </a>
                         <button @click="cerrarModal()" 
                                 class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium">
@@ -194,7 +194,7 @@
         <div class="p-4 bg-white rounded-lg shadow border border-gray-200">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm text-gray-600">Clases Realizadas</p>
+                    <p class="text-sm text-gray-600" title="Clases programadas que sí se realizaron">Clases Registradas <i class="fas fa-info-circle text-gray-400 text-xs ml-1"></i></p>
                     <p class="text-2xl font-bold text-green-600">{{ $totalRealizadas }}</p>
                     <p class="text-xs text-gray-500">{{ $porcentajeRealizadas }}% del total</p>
                 </div>
@@ -207,7 +207,7 @@
         <div class="p-4 bg-white rounded-lg shadow border border-gray-200">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm text-gray-600">Clases No Realizadas</p>
+                    <p class="text-sm text-gray-600" title="Clases que estaban programadas, pero no se realizaron">Clases No Registradas <i class="fas fa-info-circle text-gray-400 text-xs ml-1"></i></p>
                     <p class="text-2xl font-bold text-red-600">{{ $totalNoRealizadas }}</p>
                     <p class="text-xs text-gray-500">{{ $porcentajeNoRealizadas }}% del total</p>
                 </div>
@@ -245,12 +245,12 @@
     </div>
 
     @can('clases-no-realizadas.index')
-    <!-- Botón de acceso rápido a gestión de clases no realizadas -->
+    <!-- Botón de acceso rápido a gestión de clases no registradas -->
     <div class="flex justify-end">
         <a href="{{ route('clases-no-realizadas.index') }}" 
            class="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
             <i class="fas fa-tasks"></i>
-            <span>Gestionar Clases No Realizadas</span>
+            <span>Gestionar Clases No Registradas</span>
             <i class="fas fa-arrow-right"></i>
         </a>
     </div>
@@ -260,7 +260,7 @@
     <div class="p-6 bg-white rounded-lg shadow border border-gray-200">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">
             <i class="fas fa-chart-bar text-blue-600 mr-2"></i>
-            Clases Realizadas vs No Realizadas
+            Clases Registradas vs No Registradas
         </h3>
         <div class="h-80">
             <canvas id="chart-clases-no-realizadas"></canvas>
@@ -379,11 +379,11 @@
                         @else
                             <div class="space-y-2">
                                 <div class="flex justify-between items-center">
-                                    <span class="text-xs text-gray-500">Realizadas</span>
+                                    <span class="text-xs text-gray-500">Registradas</span>
                                     <span class="px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs font-bold">{{ $datos['realizadas'] }}</span>
                                 </div>
                                 <div class="flex justify-between items-center">
-                                    <span class="text-xs text-gray-500">No realizadas</span>
+                                    <span class="text-xs text-gray-500">No registradas</span>
                                     <span class="px-2 py-0.5 bg-red-100 text-red-700 rounded text-xs font-bold">{{ $datos['no_realizadas'] }}</span>
                                 </div>
                                 @if(isset($datos['por_realizar']) && $datos['por_realizar'] > 0)
@@ -432,11 +432,11 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div class="text-center">
                         <p class="text-2xl font-bold text-green-600">{{ $totalSemanaRealizadas }}</p>
-                        <p class="text-xs text-gray-500">Realizadas</p>
+                        <p class="text-xs text-gray-500">Registradas</p>
                     </div>
                     <div class="text-center">
                         <p class="text-2xl font-bold text-red-600">{{ $totalSemanaNoRealizadas }}</p>
-                        <p class="text-xs text-gray-500">No Realizadas</p>
+                        <p class="text-xs text-gray-500">No Registradas</p>
                     </div>
                     <div class="text-center">
                         <p class="text-2xl font-bold text-blue-600">{{ $totalSemanaRecuperadas }}</p>
@@ -511,11 +511,11 @@
             <div class="flex flex-wrap gap-4 mb-4 text-xs">
                 <div class="flex items-center gap-1">
                     <span class="w-3 h-3 rounded bg-green-500"></span>
-                    <span class="text-gray-600">Realizadas</span>
+                    <span class="text-gray-600">Registradas</span>
                 </div>
                 <div class="flex items-center gap-1">
                     <span class="w-3 h-3 rounded bg-red-500"></span>
-                    <span class="text-gray-600">No Realizadas</span>
+                    <span class="text-gray-600">No Registradas</span>
                 </div>
                 <div class="flex items-center gap-1">
                     <span class="w-3 h-3 rounded bg-blue-500"></span>
@@ -630,8 +630,8 @@
                         <thead class="bg-gray-50 border-b border-gray-200 sticky top-0">
                             <tr>
                                 <th class="px-4 py-2 font-semibold text-gray-700">Fecha</th>
-                                <th class="px-4 py-2 font-semibold text-gray-700 text-center">Realizadas</th>
-                                <th class="px-4 py-2 font-semibold text-gray-700 text-center">No Realizadas</th>
+                                <th class="px-4 py-2 font-semibold text-gray-700 text-center">Registradas</th>
+                                <th class="px-4 py-2 font-semibold text-gray-700 text-center">No Registradas</th>
                                 <th class="px-4 py-2 font-semibold text-gray-700 text-center">Recuperadas</th>
                                 <th class="px-4 py-2 font-semibold text-gray-700 text-center">Total</th>
                                 <th class="px-4 py-2 font-semibold text-gray-700 text-center">% Completadas</th>
@@ -718,7 +718,7 @@
                     ctx.chartInstance = new Chart(ctx.getContext('2d'), {
                         type: 'doughnut',
                         data: {
-                            labels: ['Clases Realizadas', 'Clases No Realizadas', 'Clases Recuperadas'],
+                            labels: ['Clases Registradas', 'Clases No Registradas', 'Clases Recuperadas'],
                             datasets: [{
                                 data: [
                                     this.datosFiltrados.realizadas,

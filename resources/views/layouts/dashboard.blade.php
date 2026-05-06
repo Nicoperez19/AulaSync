@@ -722,7 +722,7 @@
         <div class="p-6 bg-white shadow-lg rounded-xl">
             <div class="flex items-center gap-3 mb-6">
                 <i class="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
-                <h3 class="text-lg font-bold text-gray-700">Clases No Realizadas Hoy</h3>
+                <h3 class="text-lg font-bold text-gray-700">Clases No Registradas Hoy</h3>
                 @if($clasesNoRealizadasHoy->count() > 0)
                     <span class="inline-flex items-center justify-center px-3 py-1 ml-auto text-sm font-bold text-white bg-red-600 rounded-full">{{ $clasesNoRealizadasHoy->count() }}</span>
                 @endif

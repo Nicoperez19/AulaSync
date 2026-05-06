@@ -1145,8 +1145,6 @@ class ModulosActualesTable extends Component
                         if ($reservaProfesor) {
                             $tieneReservaProfesor = true;
 
-                            // Si la reserva tiene asignatura Y NO es espontánea, usarla para obtener la planificación correcta
-                            // Las reservas espontáneas no deben mostrar información de clase programada
                             if ($reservaProfesor->asignatura && $reservaProfesor->tipo_reserva !== 'espontanea') {
                                 // Buscar las planificaciones de ESTA asignatura (no del espacio)
                                 $planificacionesReserva = Planificacion_Asignatura::where('id_asignatura', $reservaProfesor->asignatura->id_asignatura)
@@ -1250,7 +1248,7 @@ class ModulosActualesTable extends Component
                                     'run' => $reservaProfesor->run_profesor ?? '-',
                                     'hora_inicio' => $horaInicio,
                                     'hora_salida' => $horaFin,
-                                    'nombre_asignatura' => 'Uso libre',
+                                    'nombre_asignatura' => 'Reserva espontánea',
                                     'codigo_asignatura' => '-',
                                     'carrera' => '-',
                                     'inscritos' => null,
@@ -1385,12 +1383,12 @@ class ModulosActualesTable extends Component
                             $tieneClase = false;
                             $datosClase = null;
                         } elseif ($tieneReservaSolicitante && !($datosSolicitante['es_programada'] ?? false)) {
-                            // Reserva de solicitante ACTIVA (en franja actual) → Ocupado
-                            $estado = 'Ocupado';
+                            // Reserva de solicitante ACTIVA (en franja actual) → Reserva Espontánea
+                            $estado = 'Reserva Espontánea';
                         } elseif ($tieneReservaProfesor && !$tieneClase) {
-                            // NUEVO: Reserva espontánea de profesor (sin planificación de clase)
-                            // Mostrar como Ocupado y mantener los datos del profesor
-                            $estado = 'Ocupado';
+                            // Reserva espontánea de profesor (sin planificación de clase)
+                            // Mostrar como Reserva Espontánea
+                            $estado = 'Reserva Espontánea';
                             Log::info('ModulosActuales - Reserva espontánea de profesor detectada', [
                                 'espacio' => $espacio->id_espacio,
                                 'profesor' => $datosProfesor['nombre'] ?? 'N/A',
@@ -1406,7 +1404,7 @@ class ModulosActualesTable extends Component
                             // Verificar que realmente esté en el rango de módulos de la clase
                             $claseEnCurso = $this->verificarClaseEnCurso((int) $numeroModuloInicio, (int) $numeroModuloFin, $this->moduloActual);
                             if ($claseEnCurso) {
-                                $estado = 'Ocupado';
+                                $estado = 'Clase registrada';
                             } else {
                                 // Si no estamos en el rango de la clase, el espacio está disponible
                                 $estado = 'Disponible';
@@ -1417,7 +1415,7 @@ class ModulosActualesTable extends Component
                             }
                         } elseif ($tieneClase && !$tieneReservaProfesor && $claseNoRealizada) {
                             // Si hay clase programada pero se detectó que no fue realizada
-                            $estado = 'Clase no realizada';
+                            $estado = 'Clase no registrada';
                         } elseif ($tieneClase && !$tieneReservaProfesor) {
                             // Si hay clase programada pero el profesor no ha registrado su ingreso
                             // Verificar si la clase ya debería haber empezado (no estamos en break antes de la clase)
@@ -1432,10 +1430,10 @@ class ModulosActualesTable extends Component
                                         $minutosParaInicio = Carbon::now()->diffInMinutes($inicioM, false);
                                     }
 
-                                    $estaCerca = ($this->moduloActual['numero'] == $numeroModuloInicio && $minutosParaInicio <= 10 && $minutosParaInicio >= 0);
+                                    $estaCerca = ($this->moduloActual['numero'] == $numeroModuloInicio && $minutosParaInicio <= 15 && $minutosParaInicio >= 0);
 
                                     // La clase ya debió empezar si el módulo actual es mayor al de inicio,
-                                    // o si estamos en el break previo (mismo número) y faltan 10 min o menos.
+                                    // o si estamos en el break previo (mismo número) y faltan 15 min o menos.
                                     $claseYaDebioEmpezar = ($this->moduloActual['numero'] > $numeroModuloInicio) || $estaCerca;
                                 } else {
                                     // En módulo: verificar si estamos en o después del módulo de inicio
@@ -1443,10 +1441,10 @@ class ModulosActualesTable extends Component
                                 }
                             }
 
-                            // Si la clase ya debió empezar pero el profesor no ha llegado, marcarla como "Clase por iniciar"
+                            // Si la clase ya debió empezar pero el profesor no ha llegado, marcarla como "Clase Programada"
                             // Si la clase aún no debía empezar, el espacio está "Disponible" y NO mostrar información de clase futura
                             if ($claseYaDebioEmpezar) {
-                                $estado = 'Clase por iniciar';
+                                $estado = 'Clase Programada';
                             } else {
                                 // La clase es más tarde, mostrar como disponible sin información de clase
                                 $estado = 'Disponible';
@@ -1454,7 +1452,7 @@ class ModulosActualesTable extends Component
                                 $datosClase = null;
                             }
                         } elseif ($proximaClase) {
-                            $estado = 'Clase por iniciar';
+                            $estado = 'Clase Programada';
                         } elseif ($tieneReservaPendiente) {
                             // Si hay una reserva pendiente (profesor reservó pero no ha marcado entrada)
                             if (!empty($datosProfesor['es_programada'])) {
@@ -1694,22 +1692,22 @@ class ModulosActualesTable extends Component
      */
     public function getEstadoColor($estado, $tieneClase, $tieneReservaSolicitante, $tieneReservaProfesor = false)
     {
-        if (strtolower($estado) === 'ocupado' || $estado === 'Ocupado') {
+        if (strtolower($estado) === 'clase registrada' || $estado === 'Clase registrada') {
             return 'bg-red-500';
-        } elseif (strtolower($estado) === 'programado' || $estado === 'Programado') {
-            return 'bg-indigo-400';  // Violeta claro para reservas programadas (futuras)
-        } elseif (strtolower($estado) === 'clase finalizada' || $estado === 'Clase finalizada') {
-            return 'bg-blue-500';  // Color azul para clases que terminaron
-        } elseif (strtolower($estado) === 'clase no realizada' || $estado === 'Clase no realizada') {
-            return 'bg-black';  // Color más oscuro para indicar problema
+        } elseif (strtolower($estado) === 'reserva espontanea' || $estado === 'Reserva Espontánea') {
+            return 'bg-red-500';
+        } elseif (strtolower($estado) === 'clase no registrada' || $estado === 'Clase no registrada') {
+            return 'bg-black';
         } elseif (strtolower($estado) === 'reservado' || $estado === 'Reservado') {
             return 'bg-yellow-400';
-        } elseif (strtolower($estado) === 'clase por iniciar' || $estado === 'Clase por iniciar') {
-            return 'bg-yellow-500';  // Amarillo más brillante para que sea visible el puntito
-        } elseif (strtolower($estado) === 'en programa' || $estado === 'En Programa') {
+        } elseif (strtolower($estado) === 'programado' || $estado === 'Programado') {
+            return 'bg-yellow-500';
+        } elseif (strtolower($estado) === 'clase programada' || $estado === 'Clase Programada') {
             return 'bg-yellow-500';
         } elseif (strtolower($estado) === 'disponible' || $estado === 'Disponible') {
             return 'bg-green-500';
+        } elseif (strtolower($estado) === 'mantencion' || $estado === 'Mantención') {
+            return 'bg-gray-400';
         } else {
             return 'bg-green-500';
         }

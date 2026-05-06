@@ -130,9 +130,8 @@ class FinalizarReservasExpiradas extends Command
         $this->info("\nProcesando tenant: {$tenant->name} ({$tenant->domain})");
 
         try {
-            // Configurar conexión de tenant
-            Config::set('database.connections.tenant.database', $tenant->database);
-            DB::purge('tenant');
+            // Establecer este tenant como el actual
+            $tenant->makeCurrent();
 
             $ahora = Carbon::now();
             $fechaHoy = $ahora->toDateString();
@@ -153,7 +152,8 @@ class FinalizarReservasExpiradas extends Command
             $diaKey = $mapaDias[$diaActual] ?? $diaActual;
 
             // Buscar TODAS las reservas activas de hoy
-            $reservasActivas = Reserva::on('tenant')
+            // Usamos withoutGlobalScopes() para asegurar que procesamos todo el tenant
+            $reservasActivas = Reserva::withoutGlobalScopes()
                 ->where('estado', 'activa')
                 ->where('fecha_reserva', $fechaHoy)
                 ->get();

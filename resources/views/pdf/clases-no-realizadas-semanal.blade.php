@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte Semanal - Clases No Realizadas</title>
+    <title>Reporte Semanal - Clases No Registradas</title>
     <style>
         * {
             margin: 0;
@@ -185,6 +185,23 @@
             color: #6B7280;
             font-style: italic;
         }
+
+        .legend {
+            margin-bottom: 15px;
+            font-size: 8px;
+            color: #4B5563;
+            background: #F9FAFB;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #E5E7EB;
+        }
+
+        .legend strong {
+            color: #1F2937;
+            font-size: 9px;
+            display: block;
+            margin-bottom: 5px;
+        }
     </style>
 </head>
 <body>
@@ -195,7 +212,7 @@
     
     <!-- Header -->
     <div class="header">
-        <h1>REPORTE SEMANAL DE CLASES NO REALIZADAS</h1>
+        <h1>REPORTE SEMANAL DE CLASES NO REGISTRADAS</h1>
         <div class="subtitle">Gestor de Aulas IT - Sistema de Gestión Académica</div>
     </div>
 
@@ -206,14 +223,13 @@
         <p><strong>Generado:</strong> {{ now()->format('d/m/Y H:i') }}</p>
     </div>
 
-    <!-- Estadísticas Generales -->
     <div class="estadisticas-grid">
         <div class="stat-box danger">
-            <div class="label">Total Clases No Realizadas</div>
+            <div class="label">Total Clases No Registradas</div>
             <div class="value">{{ $estadisticas['total_clases_no_realizadas'] }}</div>
         </div>
         <div class="stat-box danger">
-            <div class="label">No Realizadas</div>
+            <div class="label">No Registradas</div>
             <div class="value">{{ $estadisticas['total_no_realizadas'] }}</div>
         </div>
         <div class="stat-box success">
@@ -226,6 +242,14 @@
         </div>
     </div>
 
+    <!-- Glosario de Términos -->
+    <div class="legend">
+        <strong>Glosario de Términos:</strong>
+        • <strong>Clases Registradas:</strong> Clases programadas que sí se realizaron.<br>
+        • <strong>Clases No Registradas:</strong> Clases que estaban programadas, pero no se realizaron.<br>
+        • <strong>Reservas Espontáneas:</strong> Reservas generadas fuera del horario programado (dependiendo el caso, no se contabilizan como clases programadas).
+    </div>
+
     @if(count($profesores) > 0)
         <!-- Detalle por Profesor -->
         @foreach($profesores as $profesor)
@@ -235,7 +259,7 @@
                     <div class="info">
                         RUN: {{ $profesor['run'] }} | 
                         Total Ausencias: {{ $profesor['total_ausencias'] }} | 
-                        No Realizadas: {{ $profesor['no_realizadas'] }} | 
+                        No Registradas: {{ $profesor['no_realizadas'] }} | 
                         Justificadas: {{ $profesor['justificadas'] }}
                     </div>
                 </div>
@@ -265,7 +289,7 @@
                                 <td>{{ $clase['modulo'] }}</td>
                                 <td>
                                     <span class="estado-badge estado-{{ $clase['estado'] === 'no_realizada' ? 'no-realizada' : 'justificado' }}">
-                                        {{ $clase['estado'] === 'no_realizada' ? 'No Realizada' : 'Justificado' }}
+                                        {{ $clase['estado'] === 'no_realizada' ? 'No Registrada' : 'Justificado' }}
                                     </span>
                                 </td>
                                 <td style="font-size: 8px;">{{ $clase['motivo'] }}</td>
@@ -277,7 +301,7 @@
         @endforeach
     @else
         <div class="no-data">
-            <p>✓ No se registraron clases no realizadas durante esta semana</p>
+            <p>✓ No se registraron clases no registradas durante esta semana</p>
         </div>
     @endif
 

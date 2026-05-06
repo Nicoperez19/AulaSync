@@ -61,7 +61,7 @@ class ClasesNoRealizadasTable extends Component
             
             return response()->streamDownload(function () use ($pdf) {
                 echo $pdf->output();
-            }, 'Reporte_Semanal_Clases_No_Realizadas.pdf');
+            }, 'Reporte_Semanal_Clases_No_Registradas.pdf');
             
         } catch (\Exception $e) {
             Log::error('Error al generar PDF semanal: ' . $e->getMessage());
@@ -83,7 +83,7 @@ class ClasesNoRealizadasTable extends Component
             
             return response()->streamDownload(function () use ($pdf) {
                 echo $pdf->output();
-            }, 'Reporte_Mensual_Clases_No_Realizadas.pdf');
+            }, 'Reporte_Mensual_Clases_No_Registradas.pdf');
             
         } catch (\Exception $e) {
             Log::error('Error al generar PDF mensual: ' . $e->getMessage());
@@ -351,7 +351,7 @@ class ClasesNoRealizadasTable extends Component
             
             $clase->update(['estado' => $nuevoEstado]);
             
-            session()->flash('message', "Estado cambiado a: " . ($nuevoEstado === 'no_realizada' ? 'Clase no realizada' : 'Justificado'));
+            session()->flash('message', "Estado cambiado a: " . ($nuevoEstado === 'no_realizada' ? 'Clase no registrada' : 'Justificado'));
         } catch (\Exception $e) {
             session()->flash('error', 'Error al cambiar el estado: ' . $e->getMessage());
         }
@@ -536,7 +536,7 @@ class ClasesNoRealizadasTable extends Component
             if ($currentTotal > $this->lastRecordCount) {
                 $nuevos = $currentTotal - $this->lastRecordCount;
                 $this->dispatch('show-info', [
-                    'message' => "Se detectaron {$nuevos} nueva(s) clase(s) no realizada(s)"
+                    'message' => "Se detectaron {$nuevos} nueva(s) clase(s) no registrada(s)"
                 ]);
             }
         }

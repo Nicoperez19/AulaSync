@@ -191,9 +191,8 @@ class DetectarClasesNoRealizadas extends Command
     private function procesarTenant($tenant, $diaKey, $prefijoDia, $periodo, $fechaActual)
     {
         try {
-            // Configurar la base de datos del tenant
-            Config::set('database.connections.tenant.database', $tenant->database);
-            DB::purge('tenant');
+            // Establecer este tenant como el actual
+            $tenant->makeCurrent();
 
             $this->info("Procesando tenant: {$tenant->name} ({$tenant->database})");
 
