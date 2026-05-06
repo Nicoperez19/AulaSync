@@ -966,25 +966,25 @@ async function finalizarReservasEnLote() {
                     })
                 });
                 
-                console.log('📡 Response status para reserva', reservaId, ':', response.status);
+
                 
                 if (!response.ok) {
-                    console.error('❌ Error HTTP:', response.status, response.statusText);
+
                     errores++;
                     continue;
                 }
                 
                 const data = await response.json();
-                console.log('📡 Response data para reserva', reservaId, ':', data);
+
                 if (data.success) {
                     exitosas++;
                 } else {
                     errores++;
-                    console.error(`Error finalizando reserva ${reservaId}:`, data.message);
+
                 }
             } catch (error) {
                 errores++;
-                console.error(`Error finalizando reserva ${reservaId}:`, error);
+
             }
         }
         
@@ -1011,7 +1011,7 @@ async function finalizarReservasEnLote() {
         
     } catch (error) {
         Swal.close();
-        console.error('Error en proceso de finalización en lote:', error);
+
         Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -1024,7 +1024,7 @@ function verDetalleReserva(reservaId) {
     const reserva = reservasOriginales.find(r => r.id == reservaId);
     if (!reserva) return;
     
-    console.log('👁️ Mostrando detalle de reserva:', reserva);
+
     
     // Formatear mejor la información de módulos para el modal
     let infoModulos = 'Sin información de módulos';
@@ -1069,11 +1069,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // o se pueden agregar aquí si se desea centralizar.
     // El onchange ya llama a filtrarReservas() o aplicarOrdenamiento()
     
-    // Verificar que las funciones estén disponibles globalmente
-    console.log('🔧 Funciones globales verificación:');
-    console.log('🔧 ordenarPor disponible:', typeof window.ordenarPor);
-    console.log('🔧 aplicarOrdenamiento disponible:', typeof window.aplicarOrdenamiento);
-    console.log('🔧 toggleSelectAllReservas disponible:', typeof window.toggleSelectAllReservas);
+
     
     // Asegurar que estén en el scope global
     window.ordenarPor = ordenarPor;
@@ -1085,7 +1081,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.finalizarReservasEnLote = finalizarReservasEnLote;
     
     // La función cambiarEstadoReserva ya está definida globalmente arriba
-    console.log('✅ Funciones asignadas al scope global');
+
 });
 
 // Cargar espacios para el filtro
@@ -1105,7 +1101,7 @@ async function cargarEspaciosParaFiltro() {
             }
         }
     } catch (error) {
-        console.error('Error al cargar espacios para el filtro:', error);
+
     }
 }
 
@@ -1129,7 +1125,7 @@ async function cargarModulosParaFiltro() {
             }
         }
     } catch (error) {
-        console.error('Error al cargar módulos para el filtro:', error);
+
     }
 }
 
@@ -1161,15 +1157,15 @@ async function cargarReservas() {
             `;
         }
 
-        console.log('🔗 URL de reservas:', '/quick-actions/api/reservas');
+
         const response = await fetch('/quick-actions/api/reservas');
-        console.log('📡 Respuesta del servidor:', response.status, response.statusText);
+
         const data = await response.json();
-        console.log('📋 Datos recibidos:', data);
+
 
         if (data.success && data.data) {
             reservasOriginales = data.data;
-            console.log('🔍 Estructura de primera reserva:', data.data[0]);
+
             procesarReservas();
         } else {
             tbody.innerHTML = `
@@ -1191,7 +1187,7 @@ async function cargarReservas() {
             `;
         }
     } catch (error) {
-        console.error('Error al cargar reservas:', error);
+
         const tbody = document.getElementById('tabla-reservas-body');
         tbody.innerHTML = `
             <tr>
@@ -1421,7 +1417,7 @@ function formatearModulosInfoCompacto(modulosInfo) {
         return '<span class="text-gray-400 text-xs">-</span>';
         
     } catch (e) {
-        console.warn('🔧 Error al formatear módulos info compacto:', e);
+
         return '<span class="text-gray-400 text-xs">-</span>';
     }
 }
@@ -1484,7 +1480,7 @@ function formatearModulosInfo(modulosInfo) {
         return '<span class="text-gray-500 italic">Sin horarios definidos</span>';
         
     } catch (e) {
-        console.warn('🔧 Error al formatear módulos info:', e);
+
         return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Error al procesar</span>`;
     }
 }
@@ -1517,13 +1513,13 @@ function filtrarReservas() {
 window.cambiarEstadoReserva = async function(idReserva, nuevoEstado) {
     // Verificar que SweetAlert esté disponible
     if (typeof Swal === 'undefined') {
-        console.error('❌ SweetAlert2 no está disponible');
+
         alert('Error: SweetAlert2 no está cargado');
         return;
     }
     
     try {
-        console.log('🔄 Iniciando cambio de estado:', { idReserva, nuevoEstado });
+
         
         const estadoTexto = nuevoEstado === 'activa' ? 'Activar' : 'Finalizar';
         const result = await Swal.fire({
@@ -1538,7 +1534,7 @@ window.cambiarEstadoReserva = async function(idReserva, nuevoEstado) {
         });
 
         if (result.isConfirmed) {
-            console.log('✅ Usuario confirmó el cambio');
+
             
             // Mostrar loading
             Swal.fire({
@@ -1549,7 +1545,7 @@ window.cambiarEstadoReserva = async function(idReserva, nuevoEstado) {
                 }
             });
 
-            console.log('📡 Enviando petición a:', `/quick-actions/api/reserva/${idReserva}/estado`);
+
 
             const response = await fetch(`/quick-actions/api/reserva/${idReserva}/estado`, {
                 method: 'PUT',
@@ -1562,12 +1558,12 @@ window.cambiarEstadoReserva = async function(idReserva, nuevoEstado) {
                 })
             });
 
-            console.log('📡 Response status:', response.status);
+
             const data = await response.json();
-            console.log('📡 Response data:', data);
+
 
             if (data.success) {
-                console.log('✅ Estado cambiado exitosamente');
+
                 Swal.fire({
                     title: '¡Éxito!',
                     text: data.mensaje || `Reserva ${estadoTexto.toLowerCase()}da correctamente`,
@@ -1577,10 +1573,10 @@ window.cambiarEstadoReserva = async function(idReserva, nuevoEstado) {
                 });
                 
                 // Recargar la tabla
-                console.log('🔄 Recargando tabla de reservas...');
+
                 cargarReservas();
             } else {
-                console.error('❌ Error en la respuesta:', data);
+
                 Swal.fire({
                     title: 'Error',
                     text: data.mensaje || `Error al ${estadoTexto.toLowerCase()} la reserva`,
@@ -1588,10 +1584,10 @@ window.cambiarEstadoReserva = async function(idReserva, nuevoEstado) {
                 });
             }
         } else {
-            console.log('❌ Usuario canceló el cambio');
+
         }
     } catch (error) {
-        console.error(`❌ Error al ${estadoTexto.toLowerCase()} reserva:`, error);
+
         Swal.fire({
             title: 'Error de conexión',
             text: `No se pudo ${estadoTexto.toLowerCase()} la reserva. Intenta nuevamente.`,
@@ -1607,7 +1603,7 @@ function formatearFecha(fecha) {
         // Asegurarnos de que la fecha esté en formato correcto
         const date = new Date(fecha.includes('T') ? fecha : fecha + 'T00:00:00');
         if (isNaN(date.getTime())) {
-            console.warn('Fecha inválida:', fecha);
+
             return fecha; // Devolver la fecha original si no se puede parsear
         }
         return date.toLocaleDateString('es-ES', {
@@ -1617,37 +1613,14 @@ function formatearFecha(fecha) {
             day: 'numeric'
         });
     } catch (e) {
-        console.error('Error al formatear fecha:', e);
+
         return fecha;
     }
 }
 
-// Función de test para verificar funcionamiento
-window.testCambiarEstado = function() {
-    console.log('🧪 Testing cambiarEstadoReserva function...');
-    console.log('SweetAlert disponible:', typeof Swal !== 'undefined');
-    console.log('Función cambiarEstadoReserva disponible:', typeof window.cambiarEstadoReserva === 'function');
-    
-    if (typeof window.cambiarEstadoReserva === 'function') {
-        console.log('✅ Todo está listo para cambiar estados');
-        // Hacer un test con datos ficticios
-        Swal.fire({
-            title: 'Test',
-            text: 'La función está funcionando correctamente',
-            icon: 'success',
-            timer: 2000
-        });
-    }
-}
 
-// Verificar cuando el DOM está listo
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ DOM Cargado - Funciones disponibles:');
-    console.log('- cambiarEstadoReserva:', typeof window.cambiarEstadoReserva);
-    console.log('- editarReserva:', typeof window.editarReserva);
-    console.log('- SweetAlert:', typeof Swal);
-    console.log('Para probar, ejecuta: testCambiarEstado()');
-});
+
+
 </script>
 @endpush
 @endsection

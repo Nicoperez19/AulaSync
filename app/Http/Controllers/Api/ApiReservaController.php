@@ -104,8 +104,8 @@ class ApiReservaController extends Controller
                 ->where('h.run_profesor', $runNormalizado)
 
                 ->where('m.dia', $diaActual)
-                ->where(function ($query) use ($horaActualStr) {
-                    $query->where('m.hora_inicio', '<=', $horaActualStr)
+                ->where(function ($query) use ($horaActual, $horaActualStr) {
+                    $query->where('m.hora_inicio', '<=', $horaActual->copy()->addMinutes(10)->toTimeString())
                         ->where('m.hora_termino', '>=', $horaActualStr);
                 })
                 ->select('a.id_asignatura', 'a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino')
@@ -119,7 +119,7 @@ class ApiReservaController extends Controller
 
                 // Buscar el módulo actual según la hora
                 $moduloActual = Modulo::where('dia', $diaActual)
-                    ->where('hora_inicio', '<=', $horaActualStr)
+                    ->where('hora_inicio', '<=', $horaActual->copy()->addMinutes(10)->toTimeString())
                     ->where('hora_termino', '>=', $horaActualStr)
                     ->first();
 
@@ -193,7 +193,7 @@ class ApiReservaController extends Controller
     public function registrarSalidaClase(Request $request)
     {
         try {
-            \Log::info('Datos recibidos en registrarSalidaClase:', $request->all());
+
 
             // Validar los datos de entrada
             $request->validate([
@@ -212,7 +212,7 @@ class ApiReservaController extends Controller
                 ->where('estado', 'activa')
                 ->first();
 
-            \Log::info('Reserva encontrada:', ['reserva' => $reserva]);
+
 
             if (!$reserva) {
                 DB::connection('tenant')->rollBack();
@@ -257,7 +257,7 @@ class ApiReservaController extends Controller
                 $reservaAutoFinalizada->observaciones = $observacionActual . $nuevaObservacion;
                 $reservaAutoFinalizada->save();
 
-                \Log::info("Reserva auto-finalizada {$reservaAutoFinalizada->id_reserva} actualizada: profesor devolvió llave tarde");
+
             }
 
             DB::connection('tenant')->commit();

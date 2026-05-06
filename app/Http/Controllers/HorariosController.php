@@ -176,11 +176,7 @@ class HorariosController extends Controller
     public function getHorarioProfesor($run, Request $request)
     {
         try {
-            Log::info('Solicitud de horario para profesor:', [
-                'run' => $run,
-                'semestreFiltro' => $request->input('semestre'),
-                'anioFiltro' => $request->input('anio')
-            ]);
+
 
             // Obtener el período de los filtros (usar año actual por defecto)
             $semestreFiltro = $request->input('semestre');
@@ -194,10 +190,7 @@ class HorariosController extends Controller
                 $periodo = $anioFiltro . '-' . $semestre;
             }
 
-            Log::info('Período determinado para horario de profesor:', [
-                'periodo' => $periodo,
-                'run' => $run
-            ]);
+
 
             $horario = Horario::with(['profesor', 'planificaciones.asignatura', 'planificaciones.espacio'])
                 ->where('run_profesor', $run)
@@ -220,12 +213,7 @@ class HorariosController extends Controller
 
                     // Log para debugging específico
                     if ($planificacion->asignatura->run_profesor == '10424736') {
-                        Log::info('Verificando planificación:', [
-                            'asignatura_codigo' => $planificacion->asignatura->codigo_asignatura,
-                            'asignatura_periodo' => $asignaturaPeriodo,
-                            'periodo_buscado' => $periodo,
-                            'coincide' => $coincide
-                        ]);
+
                     }
 
                     return $coincide;
@@ -233,20 +221,10 @@ class HorariosController extends Controller
 
                 $totalDespues = $horario->planificaciones->count();
 
-                Log::info('Filtrado de planificaciones:', [
-                    'periodo' => $periodo,
-                    'planificaciones_antes_filtro' => $totalAntes,
-                    'planificaciones_despues_filtro' => $totalDespues,
-                    'planificaciones_filtradas' => $horario->planificaciones->pluck('asignatura.periodo', 'asignatura.codigo_asignatura')->toArray()
-                ]);
+
             }
 
-            Log::info('Búsqueda de horario:', [
-                'run' => $run,
-                'periodo' => $periodo,
-                'horario_encontrado' => $horario ? 'Sí' : 'No',
-                'total_planificaciones_antes_filtro' => $horario ? $horario->planificaciones->count() : 0
-            ]);
+
 
             if (!$horario) {
                 Log::warning('Horario no encontrado:', [
@@ -281,31 +259,11 @@ class HorariosController extends Controller
 
             $modulos = Modulo::orderBy('hora_inicio')->get();
 
-            Log::info('Datos del horario:', [
-                'periodo_buscado' => $periodo,
-                'total_asignaturas_profesor' => $todasAsignaturas->count(),
-                'asignaturas_filtradas' => $asignaturas->count(),
-                'asignaturas_todas' => $todasAsignaturas->pluck('periodo', 'codigo_asignatura')->toArray(),
-                'asignaturas_filtradas_detalle' => $asignaturas->pluck('periodo', 'codigo_asignatura')->toArray(),
-                'horario' => $horario->toArray(),
-                'modulos' => $modulos->toArray()
-            ]);
+
 
             // Logging específico para debugging del modal
             if ($run == '10424736' || $run == '17844444') {
-                Log::info('DEBUG MODAL - Profesor:', [
-                    'run' => $run,
-                    'periodo' => $periodo,
-                    'total_planificaciones_horario' => $horario->planificaciones->count(),
-                    'planificaciones_detalle' => $horario->planificaciones->map(function ($plan) {
-                        return [
-                            'asignatura_codigo' => $plan->asignatura->codigo_asignatura ?? 'N/A',
-                            'asignatura_nombre' => $plan->asignatura->nombre_asignatura ?? 'N/A',
-                            'asignatura_periodo' => $plan->asignatura->periodo ?? 'N/A',
-                            'modulo' => $plan->modulo->id_modulo ?? 'N/A'
-                        ];
-                    })->toArray()
-                ]);
+
             }
 
             return response()->json([
@@ -425,7 +383,7 @@ class HorariosController extends Controller
                 })
                 ->get();
 
-            Log::info("🏫 Vista Espacios - Período: $periodo, Planificaciones: " . $planificaciones->count());
+
 
             // Agrupar por espacio
             $horariosPorEspacio = $planificaciones->groupBy('id_espacio')->map(function ($items) {
@@ -475,7 +433,7 @@ class HorariosController extends Controller
             
             // Log inicial simplificado
             $tenant = tenant();
-            Log::info("📡 API getHorariosPorPeriodo - Período: $periodo, Tenant: " . ($tenant ? $tenant->prefijo_espacios : 'NULL'));
+
 
             // Verificar datos en BD
             $planificaciones = Planificacion_Asignatura::with(['asignatura', 'modulo', 'espacio', 'horario.profesor'])
@@ -487,7 +445,7 @@ class HorariosController extends Controller
             $totalPlanificaciones = $planificaciones->count();
             $espaciosUnicos = $planificaciones->pluck('id_espacio')->unique()->count();
             
-            Log::info("📊 Resultado: $totalPlanificaciones planificaciones en $espaciosUnicos espacios");
+
 
             // Agrupar por espacio
             $horariosPorEspacio = $planificaciones->groupBy('id_espacio')->map(function ($items) {
@@ -551,7 +509,7 @@ class HorariosController extends Controller
                 })
                 ->get();
 
-            Log::info("📄 Exportando PDF: Espacio '$idEspacio', Período '$periodo', Planificaciones: " . $planificaciones->count());
+
 
             // Formatear los horarios
             $horarios = $planificaciones->map(function ($plan) {
@@ -684,11 +642,7 @@ class HorariosController extends Controller
             // Formato del nombre: espacio_horario_2025_1.pdf
             $filename = $idEspacio . '_horario_' . str_replace('-', '_', $periodo) . '.pdf';
 
-            Log::info('PDF generado exitosamente:', [
-                'filename' => $filename,
-                'total_horarios' => count($horarios),
-                'total_modulos' => count($modulosUnicos)
-            ]);
+
 
             return $pdf->download($filename);
 

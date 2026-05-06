@@ -614,6 +614,76 @@
 
 
 
+    <!-- Modal de espera de llaves (Rediseñado con Estilo Banner) -->
+    <div id="modal-espera-llaves" class="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="relative w-full max-w-lg mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all transform scale-95 duration-300 opacity-0" id="modal-espera-llaves-content">
+            
+            <!-- Encabezado Rojo tipo Banner (Igual a la imagen de referencia) -->
+            <div class="relative flex items-center justify-between p-6 bg-red-700">
+                <!-- Círculos decorativos -->
+                <span class="absolute top-0 left-0 w-24 h-24 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                <span class="absolute top-0 right-0 w-24 h-24 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                
+                <div class="flex items-center gap-4 relative z-10">
+                    <!-- Icono Circular Blanco con icono rojo -->
+                    <div class="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white tracking-tight">Escaneo de Llaves</h2>
+                </div>
+
+                <!-- Botón Cerrar Cuadrado Blanco con X Roja (Igual a la imagen) -->
+                <button onclick="cerrarModalEsperaLlaves()" class="flex items-center justify-center w-9 h-9 bg-white rounded-md shadow-lg hover:bg-gray-100 transition-all duration-200 group relative z-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-700 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Contenido del Cuerpo -->
+            <div class="p-8 flex flex-col items-center text-center space-y-8">
+                
+                <div class="space-y-3">
+                    <h3 class="text-3xl font-extrabold text-gray-800" id="espera-llaves-nombre">¡Hola!</h3>
+                    <p class="text-lg text-gray-500 font-medium">Por favor, acerca las llaves al lector para continuar.</p>
+                </div>
+
+                <!-- Animación de Escaneo mejorada -->
+                <div class="relative w-48 h-48 flex items-center justify-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 group-hover:border-red-200 transition-colors">
+                    <!-- Marco de escaneo -->
+                    <div class="absolute top-4 left-4 w-10 h-10 border-t-4 border-l-4 border-red-600 rounded-tl-xl"></div>
+                    <div class="absolute top-4 right-4 w-10 h-10 border-t-4 border-r-4 border-red-600 rounded-tr-xl"></div>
+                    <div class="absolute bottom-4 left-4 w-10 h-10 border-b-4 border-l-4 border-red-600 rounded-bl-xl"></div>
+                    <div class="absolute bottom-4 right-4 w-10 h-10 border-b-4 border-r-4 border-red-600 rounded-br-xl"></div>
+
+                    <!-- Icono Llave Animado -->
+                    <div class="text-red-600 animate-pulse">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-28 w-28" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Banner Informativo Azul (estilo el de la imagen de referencia) -->
+                <div class="w-full bg-blue-50 border border-blue-200 p-4 rounded-xl flex items-start gap-4 text-left shadow-sm">
+                    <div class="bg-blue-600 p-2 rounded-lg shadow-md mt-0.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-bold text-blue-900 text-sm tracking-tight">Información de Escaneo</p>
+                        <p class="text-blue-700 text-xs leading-relaxed mt-1 font-medium">
+                            El sistema está esperando el código del llavero vinculado a este espacio. Acerque el sensor al lector para completar la operación.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal para confirmar si hubo asistentes -->
     <div id="modal-confirmar-asistentes" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
         <div class="flex flex-col w-full max-w-md mx-2 overflow-hidden bg-white rounded-lg shadow-lg md:mx-8">
@@ -1114,21 +1184,48 @@
             }
 
             if (tipo === 'usuario') {
-                // Mostrar información del usuario
-                const infoUsuario = getInfoUsuario();
-                if (infoUsuario) {
-                    infoUsuario.classList.remove('hidden');
-                }
+                // Ya no mostramos info en el sidebar, ahora usamos el modal
+                abrirModalEsperaLlaves(nombre);
+            }
+        }
 
-                // Actualizar datos del usuario
-                document.getElementById('run-escaneado').textContent = run;
-                document.getElementById('nombre-usuario').textContent = nombre;
+        function abrirModalEsperaLlaves(nombre) {
+            const modal = document.getElementById('modal-espera-llaves');
+            const content = document.getElementById('modal-espera-llaves-content');
+            const nombreTxt = document.getElementById('espera-llaves-nombre');
 
-                // Quitar parpadeo del estado QR cuando se procesa usuario
-                const qrStatus = getQrStatus();
-                if (qrStatus) {
-                    qrStatus.classList.remove('parpadeo');
+            if (modal && content && nombreTxt) {
+                nombreTxt.textContent = `¡Hola, ${nombre}!`;
+                modal.classList.remove('hidden');
+                
+                // Forzar reflow para animación
+                setTimeout(() => {
+                    content.classList.remove('scale-95', 'opacity-0');
+                    content.classList.add('scale-100', 'opacity-100');
+                }, 10);
+
+                // Desactivar otros inputs para asegurar que el principal siga capturando
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
                 }
+            }
+        }
+
+        function cerrarModalEsperaLlaves(manual = true) {
+            const modal = document.getElementById('modal-espera-llaves');
+            const content = document.getElementById('modal-espera-llaves-content');
+
+            if (modal && content && !modal.classList.contains('hidden')) {
+                content.classList.remove('scale-100', 'opacity-100');
+                content.classList.add('scale-95', 'opacity-0');
+                
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    // Si es manual (botón X), limpiamos todo el estado para permitir nuevo escaneo de RUN
+                    if (manual) {
+                        limpiarEstadoLectura();
+                    }
+                }, 300);
             }
         }
 
@@ -1229,6 +1326,9 @@
         }
 
         function limpiarEstadoLectura(mensajeError = null) {
+            // Cerrar el modal de espera de llaves si estuviera abierto (sin recursión manual)
+            cerrarModalEsperaLlaves(false);
+
             // Solo limpiar el estado de lectura del QR, NO toda la interfaz
 
             // Limpiar buffer y timeouts
@@ -1702,100 +1802,53 @@
 
         // RUN extraído
 
-                    // Verificar usuario en la base de datos
-                    usuarioInfo = await verificarUsuario(run);
+            // Mostrar modal de carga inmediatamente para mejorar la percepción de velocidad
+            abrirModalEsperaLlaves('Verificando...');
 
-        if (!usuarioInfo) {
-            // Error al verificar usuario - resetear flujo
-            limpiarEstadoLectura('Usuario no encontrado en el sistema');
-            // Restaurar autofocus del qr-input después de error de usuario no encontrado
-            setTimeout(() => {
-                if (qrInputManager) {
-                    qrInputManager.setActiveInput('main');
-                }
-            }, 100);
-            return;
-        }
+            try {
+                const response = await fetch(`/api/procesar-primera-lectura/${run}`);
+                if (!response.ok) throw new Error('Error en la comunicación con el servidor');
+                
+                const result = await response.json();
+                
+                if (result.verificado) {
+                    // Usuario verificado exitosamente
+                    // Actualizar el nombre en el modal (ya está abierto)
+                    const nombreTxt = document.getElementById('espera-llaves-nombre');
+                    if (nombreTxt) nombreTxt.textContent = `¡Hola, ${result.usuario.nombre}!`;
+                    
+                    usuarioEscaneado = run;
+                    ordenEscaneo = 'espacio';
 
-            if (usuarioInfo.verificado) {
-                // Usuario verificado
-
-                if (usuarioInfo.tipo_usuario === 'profesor') {
-                            // Es profesor - verificar si tiene clases programadas
-        const tieneClases = await verificarClasesProfesor(run);
-
-        if (tieneClases === true) {
-            // Profesor CON clases - solo registra solicitud
-            document.getElementById('qr-status').innerHTML = 'Escanea el QR de la sala';
-            mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
-            usuarioEscaneado = run;
-            ordenEscaneo = 'espacio';
-        } else {
-            // Profesor SIN clases - solicita con módulos
-            document.getElementById('qr-status').innerHTML = 'Escanea el QR de la sala';
-            mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
-            usuarioEscaneado = run;
-            ordenEscaneo = 'espacio';
-        }
-                } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
-                            // Es solicitante registrado - solicita con módulos
-        document.getElementById('qr-status').innerHTML = 'Escanea el QR de la sala';
-        mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
-        usuarioEscaneado = run;
-        ordenEscaneo = 'espacio';
+                    // Limpiar buffer
+                    bufferQR = '';
+                    lastBufferLength = 0;
+                    
+                    const inputEscanner = document.getElementById('qr-input');
+                    if (inputEscanner) inputEscanner.value = '';
                 } else {
-                            // Otro tipo de usuario - mostrar error
-                }
-
-                // Limpiar buffer después de procesar usuario exitosamente
-                bufferQR = '';
-                lastBufferLength = 0;
-                const inputEscanner = document.getElementById('qr-input');
-                if (inputEscanner) {
-                    inputEscanner.value = '';
-                }
-
-                // Restaurar autofocus del qr-input después de procesar usuario exitosamente
-                setTimeout(() => {
-                    if (qrInputManager) {
-                        qrInputManager.setActiveInput('main');
+                    // Si no está verificado, cerramos el modal de espera y manejamos el error
+                    cerrarModalEsperaLlaves(false);
+                    
+                    if (result.tipo_usuario === 'solicitante_nuevo') {
+                        // Flujo de registro de nuevo solicitante
+                        runSolicitantePendiente = run;
+                        document.getElementById('run-solicitante-no-registrado').textContent = run;
+                        
+                        window.dispatchEvent(new CustomEvent('close-modal', { detail: 'data-space' }));
+                        
+                        setTimeout(() => {
+                            if (qrInputManager) qrInputManager.desactivarTodosLosInputs();
+                            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'registro-solicitante' }));
+                        }, 300);
+                    } else {
+                        limpiarEstadoLectura(result.mensaje || 'Usuario no autorizado');
                     }
-                }, 100);
-
-            } else {
-                        // Usuario no encontrado - mostrar modal de registro de solicitante
-        runSolicitantePendiente = run;
-        document.getElementById('run-solicitante-no-registrado').textContent = run;
-
-        // Cerrar modal actual si está abierto
-        window.dispatchEvent(new CustomEvent('close-modal', {
-            detail: 'data-space'
-        }));
-
-        // Abrir modal de registro de solicitante
-        setTimeout(() => {
-            // Desactivar todos los inputs QR para permitir escribir cómodamente
-            qrInputManager.desactivarTodosLosInputs();
-
-            window.dispatchEvent(new CustomEvent('open-modal', {
-                detail: 'registro-solicitante'
-            }));
-
-            // Restaurar autofocus del qr-input después de abrir modal de registro
-            setTimeout(() => {
-                if (qrInputManager) {
-                    qrInputManager.setActiveInput('main');
                 }
-            }, 300);
-        }, 300);
-
-        // Limpiar buffer después de abrir modal
-        bufferQR = '';
-        lastBufferLength = 0;
-        const inputEscanner = document.getElementById('qr-input');
-        if (inputEscanner) {
-            inputEscanner.value = '';
-        }
+            } catch (error) {
+                console.error('Error:', error);
+                cerrarModalEsperaLlaves(false);
+                limpiarEstadoLectura('Error de conexión al verificar usuario');
             }
         }
 
@@ -1848,6 +1901,10 @@
             }
             // Reemplazar comillas por guiones (formato heredado)
             espacio = espacio.replace(/'/g, '-');
+
+            // CERRAR MODAL DE ESPERA DE LLAVES INMEDIATAMENTE
+            // Ya tenemos un código de espacio válido, el flujo de espera terminó
+            cerrarModalEsperaLlaves(false);
         }
 
                     // Verificar estado del espacio y reservas del usuario
@@ -1904,6 +1961,9 @@
         const devolucion = await devolverEspacio(usuarioEscaneado, espacio);
 
         if (devolucion && devolucion.success) {
+            // Cerrar el modal de espera de llaves inmediatamente al detectar éxito
+            cerrarModalEsperaLlaves(false);
+
             // Actualizar indicador en el mapa
             const block = state.indicators.find(b => b.id === espacio);
             if (block) {
@@ -1918,7 +1978,7 @@
             sessionStorage.removeItem(`espacio_${espacio}_time`);
             
             if (state.currentIndicatorId === espacio) {
-                console.log(`Refrescando modal para espacio devuelto: ${espacio}`);
+
                 const indicator = state.indicators.find(i => i.id === espacio);
                 if (indicator) {
                     // Volver a cargar la información detallada desde el servidor
@@ -1985,6 +2045,9 @@
             }
 
             if (resultadoVerificacion.tipo === 'reserva_existente') {
+                // Cerrar el modal de espera de llaves inmediatamente
+                cerrarModalEsperaLlaves(false);
+
                 // Procesando reserva existente...
 
                 // Mostrar Sweet Alert de reserva existente
@@ -2013,6 +2076,9 @@
             }
 
             if (resultadoVerificacion.tipo === 'activacion_reserva') {
+                // Cerrar el modal de espera de llaves inmediatamente
+                cerrarModalEsperaLlaves(false);
+
                 // La reserva programada fue activada exitosamente por el escaneo
                 const block = state.indicators.find(b => b.id === espacio);
                 if (block) {
@@ -2048,6 +2114,9 @@
             }
 
             if (resultadoVerificacion.tipo === 'reserva_fuera_horario') {
+                // Cerrar el modal de espera de llaves inmediatamente
+                cerrarModalEsperaLlaves(false);
+
                 // El usuario tiene reserva programada pero no es el horario aún
                 Swal.fire({
                     title: 'Reserva Programada',
@@ -4342,8 +4411,6 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
                     body: JSON.stringify({
-                        id_reserva: idReserva,
-                        hubo_asistentes: huboAsistentes,
                         id_espacio: espacioId,
                         run: run
                     })
@@ -4354,8 +4421,10 @@
                 if (!data.success) {
                     console.error('Error al registrar asistencia:', data.mensaje);
                 }
+                return data;
             } catch (error) {
-                console.error('Error en registrarAsistencia:', error);
+                console.error('Error en registrarAccesoSalaEstudio:', error);
+                return { success: false, mensaje: 'Error de conexión' };
             }
         }
 
@@ -5796,6 +5865,9 @@
     <x-modal-editar-espacios />
 
     <!-- JavaScript del Panel de Administración -->
+    <script>
+        window.horariosModulos = @json($horariosModulos ?? []);
+    </script>
     <script src="{{ asset('js/admin-panel.js') }}"></script>
 
 </x-show-layout>

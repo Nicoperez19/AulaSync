@@ -306,6 +306,7 @@ Route::get('/verificar-planificacion-multiple', function (Request $request) {
 
 Route::get('/verificar-horario/{run}', [PlanoDigitalController::class, 'verificarHorario']);
 
+Route::get('/procesar-primera-lectura/{run}', [PlanoDigitalController::class, 'procesarPrimeraLectura']);
 Route::get('/verificar-usuario/{run}', [PlanoDigitalController::class, 'verificarUsuario']);
 Route::get('/verificar-profesor/{run}', [PlanoDigitalController::class, 'verificarProfesor']);
 

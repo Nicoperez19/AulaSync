@@ -394,7 +394,7 @@ class ProfesorController extends Controller
     {
         try {            // Establecer contexto del tenant desde el request
             $this->establecerContextoTenant();
-            Log::info('📚 Buscando asignaturas para profesor: ' . $run);
+
 
             // Buscar profesor con eager loading de asignaturas
             // IMPORTANTE: Incluir run_profesor en el select para que funcione el eager loading
@@ -414,7 +414,7 @@ class ProfesorController extends Controller
             // Obtener asignaturas - usar la relación cargada
             $asignaturas = $profesor->asignaturas;
 
-            Log::info('✅ Asignaturas encontradas: ' . $asignaturas->count() . ' para profesor ' . $run);
+
 
             return response()->json([
                 'success' => true,
@@ -453,11 +453,7 @@ class ProfesorController extends Controller
             if ($tenant) {
                 Config::set('database.connections.tenant.database', $tenant->database);
                 DB::purge('tenant');
-                Log::info('Tenant establecido en ProfesorController', [
-                    'tenant' => $tenant->name,
-                    'database' => $tenant->database,
-                    'host' => $host
-                ]);
+
             }
         }
     }

@@ -446,15 +446,6 @@ class DashboardController extends Controller
             // Promedio simple de diurno y vespertino
             $resultado = ($diurno + $vespertino) / 2;
 
-            Log::info('Ocupación promedio total (diurno + vespertino)', [
-                'diurno' => $diurno,
-                'vespertino' => $vespertino,
-                'promedio' => round($resultado, 2),
-                'periodo' => $inicio->format('Y-m-d') . ' a ' . $fin->format('Y-m-d'),
-                'facultad' => $facultad,
-                'piso' => $piso
-            ]);
-
             return round($resultado, 2);
         }
 
@@ -505,14 +496,6 @@ class DashboardController extends Controller
 
         // Si no hay reservas, retornar 0
         if ($reservasPorHora->isEmpty()) {
-            Log::warning('Sin datos de ocupación para calcular promedio', [
-                'turno' => $turno ?? 'todos',
-                'totalEspacios' => $totalEspacios,
-                'totalHoras' => 0,
-                'periodo' => $inicio->format('Y-m-d') . ' a ' . $fin->format('Y-m-d'),
-                'facultad' => $facultad,
-                'piso' => $piso
-            ]);
             return 0;
         }
 
@@ -544,16 +527,6 @@ class DashboardController extends Controller
 
         $promedioTotal = array_sum($maximosPorHora) / count($maximosPorHora);
         $resultado = round($promedioTotal, 2);
-
-        Log::info('Ocupación promedio por hora calculada (optimizado)', [
-            'turno' => $turno ?? 'todos',
-            'totalEspacios' => $totalEspacios,
-            'horasConDatos' => count($maximosPorHora),
-            'porcentaje' => $resultado,
-            'periodo' => $inicio->format('Y-m-d') . ' a ' . $fin->format('Y-m-d'),
-            'facultad' => $facultad,
-            'piso' => $piso
-        ]);
 
         return $resultado;
     }
@@ -1456,16 +1429,8 @@ class DashboardController extends Controller
 
         $todosLosTipos = $tiposDeEspacioQuery->select('tipo_espacio')->distinct()->pluck('tipo_espacio');
 
-        Log::info('obtenerComparativaTipos - Tipos encontrados', [
-            'facultad' => $facultad,
-            'piso' => $piso,
-            'tipos' => $todosLosTipos->toArray(),
-            'cantidad' => $todosLosTipos->count()
-        ]);
-
         // Si no hay tipos de espacio, retornar array vacío pero válido
         if ($todosLosTipos->isEmpty()) {
-            Log::warning('obtenerComparativaTipos - No se encontraron tipos de espacio');
             return [];
         }
 
@@ -1554,11 +1519,6 @@ class DashboardController extends Controller
                 'total' => $totalEspaciosTipo
             ];
         }
-
-        Log::info('obtenerComparativaTipos - Resultado final', [
-            'cantidad_tipos' => count($result),
-            'result' => $result
-        ]);
 
         return $result;
     }
@@ -1695,13 +1655,6 @@ class DashboardController extends Controller
         $diaActual = $this->getNombreDiaEspanol(now());
         $horaActual = now()->format('H:i:s');
 
-        Log::info('obtenerHorariosAgrupados - Inicio', [
-            'diaActual' => $diaActual,
-            'horaActual' => $horaActual,
-            'facultad' => $facultad,
-            'piso' => $piso
-        ]);
-
         // Buscar el módulo actual
         $moduloActual = Modulo::where('dia', $diaActual)
             ->where('hora_inicio', '<=', $horaActual)
@@ -1723,25 +1676,12 @@ class DashboardController extends Controller
                 ->first();
         }
 
-        Log::info('obtenerHorariosAgrupados - Módulo encontrado', [
-            'moduloActual' => $moduloActual ? $moduloActual->id_modulo : 'null'
-        ]);
-
         if (!$moduloActual) {
-            Log::warning('obtenerHorariosAgrupados - No se encontró ningún módulo para el día actual');
             return [];
         }
 
         // Determinar el período actual usando el helper
-        $anioActual = SemesterHelper::getCurrentAcademicYear();
-        $semestre = SemesterHelper::getCurrentSemester();
         $periodo = SemesterHelper::getCurrentPeriod();
-
-        Log::info('obtenerHorariosAgrupados - Período', [
-            'anio' => $anioActual,
-            'semestre' => $semestre,
-            'periodo' => $periodo
-        ]);
 
         $planificaciones = Planificacion_Asignatura::with(['asignatura.profesor', 'espacio', 'modulo'])
             ->whereHas('modulo', function ($query) use ($diaActual, $moduloActual) {
@@ -1762,10 +1702,6 @@ class DashboardController extends Controller
                 $query->where('tipo_espacio', 'Sala de Clases');
             })
             ->get();
-
-        Log::info('obtenerHorariosAgrupados - Planificaciones encontradas', [
-            'cantidad' => $planificaciones->count()
-        ]);
 
         $horariosAgrupados = [];
         $hora = $moduloActual->hora_inicio . ' - ' . $moduloActual->hora_termino;
@@ -1800,11 +1736,6 @@ class DashboardController extends Controller
                 ];
             }
         }
-
-        Log::info('obtenerHorariosAgrupados - Resultado final', [
-            'dias' => array_keys($horariosAgrupados),
-            'total_espacios' => collect($horariosAgrupados)->flatten(2)->count()
-        ]);
 
         return $horariosAgrupados;
     }
@@ -1987,7 +1918,7 @@ class DashboardController extends Controller
 
     private function obtenerReservasActivasSinDevolucion($facultad, $piso)
     {
-        return Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
+        $reservas = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
             ->where('estado', 'activa')
             ->whereNull('hora_salida')
             ->whereHas('espacio', function ($query) use ($facultad, $piso) {
@@ -2001,12 +1932,6 @@ class DashboardController extends Controller
             ->latest('fecha_reserva')
             ->latest('hora')
             ->get();
-
-        Log::info('Reservas sin devolución encontradas', [
-            'total' => $reservas->count(),
-            'facultad' => $facultad,
-            'piso' => $piso
-        ]);
 
         return $reservas;
     }

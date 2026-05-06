@@ -44,7 +44,7 @@ class EspacioController extends Controller
      */
     public function store(Request $request)
     {
-        Log::info('Datos recibidos:', $request->all());
+
 
         try {
             $validated = $this->validarDatosEspacio($request);
@@ -365,11 +365,7 @@ class EspacioController extends Controller
         $diaActual = $request->input('dia_actual', strtolower(now()->locale('es')->isoFormat('dddd')));
 
         // Log para debugging
-        Log::info('modulosDisponibles - Parámetros recibidos:', [
-            'espacioId' => $espacioId,
-            'horaActual' => $horaActual,
-            'diaActual' => $diaActual
-        ]);
+
 
         // Mapeo de días a códigos
         $codigosDias = [
@@ -388,11 +384,7 @@ class EspacioController extends Controller
         $moduloActual = $this->determinarModuloActual($horaActual, $diaActual);
 
         // Log para debugging del módulo actual
-        Log::info('modulosDisponibles - Módulo actual determinado:', [
-            'moduloActual' => $moduloActual,
-            'horaActual' => $horaActual,
-            'diaActual' => $diaActual
-        ]);
+
 
         if (!$moduloActual) {
             Log::warning('modulosDisponibles - No se pudo determinar el módulo actual', [
@@ -506,13 +498,7 @@ class EspacioController extends Controller
         ]);
 
         // Log final para debugging
-        Log::info('modulosDisponibles - Respuesta enviada:', [
-            'success' => true,
-            'max_modulos' => $maxModulos,
-            'modulo_actual' => $moduloActual,
-            'codigo_dia' => $codigoDia,
-            'modulos_disponibles_count' => count($modulosDisponibles)
-        ]);
+
     }
 
     /**
@@ -521,10 +507,7 @@ class EspacioController extends Controller
     private function determinarModuloActual($horaActual, $diaActual)
     {
         // Log para debugging
-        Log::info('determinarModuloActual - Iniciando:', [
-            'horaActual' => $horaActual,
-            'diaActual' => $diaActual
-        ]);
+
 
         // Definir horarios de módulos (mismo formato que en el frontend)
         $horariosModulos = [
@@ -618,10 +601,7 @@ class EspacioController extends Controller
         $horariosDia = $horariosModulos[$diaActual] ?? null;
 
         // Log para debugging de horarios del día
-        Log::info('determinarModuloActual - Horarios del día:', [
-            'diaActual' => $diaActual,
-            'horariosDia' => $horariosDia ? 'encontrado' : 'no encontrado'
-        ]);
+
 
         if (!$horariosDia) {
             Log::warning('determinarModuloActual - No se encontraron horarios para el día:', [
@@ -633,12 +613,7 @@ class EspacioController extends Controller
         // Buscar en qué módulo estamos según la hora actual
         foreach ($horariosDia as $modulo => $horario) {
             if ($horaActual >= $horario['inicio'] && $horaActual < $horario['fin']) {
-                Log::info('determinarModuloActual - Módulo encontrado:', [
-                    'modulo' => $modulo,
-                    'horaActual' => $horaActual,
-                    'horarioInicio' => $horario['inicio'],
-                    'horarioFin' => $horario['fin']
-                ]);
+
                 return $modulo;
             }
         }
@@ -647,11 +622,7 @@ class EspacioController extends Controller
         // Esto permite hacer reservas durante los breaks
         foreach ($horariosDia as $modulo => $horario) {
             if ($horaActual < $horario['inicio']) {
-                Log::info('determinarModuloActual - Módulo encontrado durante break:', [
-                    'modulo' => $modulo,
-                    'horaActual' => $horaActual,
-                    'proximoHorarioInicio' => $horario['inicio']
-                ]);
+
                 return $modulo; // Retornar el siguiente módulo
             }
         }
@@ -1062,11 +1033,11 @@ class EspacioController extends Controller
             $cacheTime = $this->safeGet("{$cacheKey}_time", 0);
 
             if ($cachedData && ((time() - $cacheTime) < 30)) {
-                Log::info("Retornando información desde cache para espacio: {$idEspacio}");
+
                 return response()->json($cachedData);
             }
 
-            Log::info("Obteniendo información detallada para espacio: {$idEspacio}");
+
 
             // Buscar el espacio con eager loading
             $espacio = Espacio::where('id_espacio', $idEspacio)->first();
@@ -1099,7 +1070,6 @@ class EspacioController extends Controller
             $estadoActualEspacio = (string)$espacio->estado;
 
             // SIEMPRE buscar información del ocupante/dueño actual, independiente del estado en DB
-            Log::info("Obteniendo información detallada para espacio {$idEspacio} (Estado DB: {$estadoActualEspacio})");
 
             // 1. Prioridad: Buscar reserva ACTIVA (Ocupado)
             $reservaActiva = Reserva::select('id_reserva', 'run_profesor', 'run_solicitante', 'hora', 'hora_salida', 'estado', 'tipo_reserva', 'id_asignatura')
@@ -1127,12 +1097,12 @@ class EspacioController extends Controller
                     
                     if ($reservaVencida) {
                         $reservaActiva = $reservaVencida;
-                        Log::info("Reserva vencida encontrada que necesita finalización", ['reserva_id' => $reservaVencida->id_reserva]);
+
                     }
                 }
 
             if ($reservaActiva) {
-                Log::info("Reserva activa encontrada", ['reserva_id' => $reservaActiva->id_reserva]);
+
 
                 // Determinar tipo de usuario y obtener información
                 if ($reservaActiva->run_profesor) {
@@ -1156,14 +1126,14 @@ class EspacioController extends Controller
                 }
             } else {
                 // 2. Si no hay reserva activa, buscar planificación actual (Regular o Colaborador)
-                Log::info("Buscando planificación actual para espacio {$idEspacio}");
+
                 $planificacionInfo = $this->obtenerInformacionPlanificacionActual($idEspacio, $horaActual);
                 
                 if ($planificacionInfo) {
                     $response = $planificacionInfo;
                 } else {
                     // 3. Si no hay planificación, buscar si hay una reserva PROGRAMADA para este momento
-                    Log::info("Buscando reserva programada para espacio {$idEspacio}");
+
                     $reservaProgramada = Reserva::where('id_espacio', $idEspacio)
                         ->where('fecha_reserva', $fechaActual)
                         ->where('estado', 'programada')
@@ -1216,25 +1186,10 @@ class EspacioController extends Controller
             // Esto es importante para espacios en estado "Reservado" que no están ocupados actualmente
             if (!isset($response['proxima_clase']) || $response['proxima_clase'] === null) {
                 $response['proxima_clase'] = $this->obtenerProximaClase($idEspacio, $horaActual);
-                Log::info("Segunda búsqueda de próxima clase", [
-                    'espacio' => $idEspacio,
-                    'proxima_clase' => $response['proxima_clase']
-                ]);
             }
 
             // TAMBIÉN obtener la clase anterior
             $response['clase_anterior'] = $this->obtenerClaseAnterior($idEspacio, $horaActual);
-            Log::info("Búsqueda de clase anterior", [
-                'espacio' => $idEspacio,
-                'clase_anterior' => $response['clase_anterior']
-            ]);
-
-            Log::info("Respuesta final para espacio {$idEspacio}", [
-                'tipo_ocupacion' => $response['tipo_ocupacion'] ?? 'libre',
-                'tiene_asignatura' => isset($response['asignatura']) && $response['asignatura'] !== null,
-                'tiene_proxima_clase' => isset($response['proxima_clase']) && $response['proxima_clase'] !== null,
-                'estado_espacio' => $espacio->estado
-            ]);
 
             // Guardar en caché de forma segura
             $this->safeCache($cacheKey, $response, 30);
@@ -1304,18 +1259,10 @@ class EspacioController extends Controller
         // Las reservas espontáneas NO deben mostrar información de clase programada.
         // Esto evita que el modal de cronología muestre una asignatura incorrecta.
         if ($reserva->tipo_reserva === 'espontanea') {
-            Log::info("Reserva espontánea - no se busca asignatura", [
-                'id_reserva' => $reserva->id_reserva,
-                'run_profesor' => $runProfesor
-            ]);
             $asignatura = null;
         } elseif ($reserva->id_asignatura && $reserva->asignatura) {
             // La reserva tiene asignatura asignada directamente (ej. desde acciones rápidas)
             $asignatura = $reserva->asignatura->nombre_asignatura;
-            Log::info("Asignatura obtenida desde reserva", [
-                'id_asignatura' => $reserva->id_asignatura,
-                'nombre' => $asignatura
-            ]);
         } else {
             // Si no hay asignatura en la reserva, buscar en planificación (clases regulares)
             try {
@@ -1343,12 +1290,6 @@ class EspacioController extends Controller
                 });
 
                 $asignatura = $planificacion ? $planificacion->asignatura->nombre_asignatura : null;
-                
-                if ($asignatura) {
-                    Log::info("Asignatura obtenida desde planificación", [
-                        'nombre' => $asignatura
-                    ]);
-                }
             } catch (\Exception $e) {
                 Log::error("Error al obtener planificación del profesor", [
                     'run_profesor' => $runProfesor,
@@ -1492,12 +1433,6 @@ class EspacioController extends Controller
     {
         $fechaActual = now()->format('Y-m-d');
         
-        Log::info("🔍 obtenerProximaClase llamada", [
-            'espacio' => $idEspacio,
-            'hora_actual' => $horaActual,
-            'fecha_actual' => $fechaActual
-        ]);
-        
         // PRIMERO: Buscar reservas futuras del día actual.
         // Excluimos reservas espontáneas porque no tienen clase asociada y mostrarían "Reserva sin asignatura".
         $reservaFutura = Reserva::select('id_reserva', 'run_profesor', 'run_solicitante', 'hora', 'hora_salida', 'id_asignatura')
@@ -1510,20 +1445,7 @@ class EspacioController extends Controller
             ->orderBy('hora', 'asc')
             ->first();
         
-        Log::info("🔍 Búsqueda de reserva futura completada", [
-            'encontrada' => $reservaFutura ? 'SÍ' : 'NO',
-            'id_reserva' => $reservaFutura?->id_reserva,
-            'hora' => $reservaFutura?->hora,
-            'asignatura_id' => $reservaFutura?->id_asignatura
-        ]);
-        
         if ($reservaFutura) {
-            Log::info("Próxima clase encontrada en RESERVAS", [
-                'espacio' => $idEspacio,
-                'hora' => $reservaFutura->hora,
-                'asignatura' => $reservaFutura->asignatura?->nombre_asignatura
-            ]);
-            
             return [
                 'asignatura' => $reservaFutura->asignatura?->nombre_asignatura ?? 'Reserva sin asignatura',
                 'profesor' => $reservaFutura->profesor?->name ?? 'No especificado',
@@ -1549,7 +1471,7 @@ class EspacioController extends Controller
             ->get();
 
         if ($planificaciones->isEmpty()) {
-            Log::info("No hay próxima clase en PLANIFICACIONES", ['espacio' => $idEspacio]);
+
             return null;
         }
 
@@ -1567,12 +1489,6 @@ class EspacioController extends Controller
             return $p->modulo->hora_inicio ?? '99:99:99';
         })->first();
 
-        Log::info("Próxima clase encontrada en PLANIFICACIONES", [
-            'espacio' => $idEspacio,
-            'hora' => $proxima->modulo->hora_inicio,
-            'asignatura' => $proxima->asignatura->nombre_asignatura
-        ]);
-
         return [
             'asignatura' => $proxima->asignatura->nombre_asignatura ?? 'Sin asignatura',
             'profesor' => $proxima->horario->profesor->name ?? 'No especificado',
@@ -1586,12 +1502,6 @@ class EspacioController extends Controller
     {
         $fechaActual = now()->format('Y-m-d');
         
-        Log::info("🔍 obtenerClaseAnterior llamada", [
-            'espacio' => $idEspacio,
-            'hora_actual' => $horaActual,
-            'fecha_actual' => $fechaActual
-        ]);
-        
         // PRIMERO: Buscar reservas FINALIZADAS anteriores del día actual.
         // Excluimos reservas activas para no mostrar la reserva actual como "clase anterior".
         $reservaAnterior = Reserva::select('id_reserva', 'run_profesor', 'run_solicitante', 'hora', 'hora_salida', 'id_asignatura', 'tipo_reserva')
@@ -1603,24 +1513,9 @@ class EspacioController extends Controller
             ->orderBy('hora', 'desc')
             ->first();
         
-        Log::info("🔍 Búsqueda de reserva anterior completada", [
-            'encontrada' => $reservaAnterior ? 'SÍ' : 'NO',
-            'id_reserva' => $reservaAnterior?->id_reserva,
-            'hora' => $reservaAnterior?->hora,
-            'asignatura_id' => $reservaAnterior?->id_asignatura,
-            'tipo_reserva' => $reservaAnterior?->tipo_reserva
-        ]);
-        
         if ($reservaAnterior) {
             // Las reservas espontáneas no deben mostrar nombre de asignatura
             $esEspontanea = $reservaAnterior->tipo_reserva === 'espontanea';
-            
-            Log::info("Clase anterior encontrada en RESERVAS", [
-                'espacio' => $idEspacio,
-                'hora' => $reservaAnterior->hora,
-                'tipo_reserva' => $reservaAnterior->tipo_reserva,
-                'asignatura' => $esEspontanea ? 'Reserva espontánea' : $reservaAnterior->asignatura?->nombre_asignatura
-            ]);
             
             return [
                 'asignatura' => $esEspontanea 
@@ -1648,7 +1543,7 @@ class EspacioController extends Controller
             ->get();
 
         if ($planificaciones->isEmpty()) {
-            Log::info("No hay clase anterior en PLANIFICACIONES", ['espacio' => $idEspacio]);
+
             return null;
         }
 
@@ -1665,12 +1560,6 @@ class EspacioController extends Controller
         $anterior = $candidatas->sortBy(function ($p) {
             return $p->modulo->hora_termino ?? '00:00:00';
         })->last();
-
-        Log::info("Clase anterior encontrada en PLANIFICACIONES", [
-            'espacio' => $idEspacio,
-            'hora' => $anterior->modulo->hora_termino,
-            'asignatura' => $anterior->asignatura->nombre_asignatura
-        ]);
 
         return [
             'asignatura' => $anterior->asignatura->nombre_asignatura ?? 'Sin asignatura',

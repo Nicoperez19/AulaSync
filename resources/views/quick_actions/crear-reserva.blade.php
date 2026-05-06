@@ -333,8 +333,7 @@ async function procesarCrearReserva(event) {
         forzar: forzarActivo,
     };
 
-    console.log('📤 Datos a enviar:', formData);
-    console.log('🏢 ID Espacio seleccionado:', formData.espacio);
+
 
     // Validaciones
     if (!formData.nombre || !formData.run || !formData.correo || !formData.tipo) {
@@ -487,40 +486,19 @@ async function procesarCrearReserva(event) {
                     document.getElementById('fecha-reserva').value = new Date().toISOString().split('T')[0];
                     cargarEspaciosDisponibles();
                     cargarModulosParaSeleccion();
-                    console.log('✅ Formulario limpiado para nueva reserva');
+
                 }
             });
         } else {
             Swal.fire('Error', result.mensaje || 'Error al crear la reserva', 'error');
         }
     } catch (error) {
-        console.error('Error al crear reserva:', error);
+
         Swal.fire('Error', 'Error de conexión al crear la reserva', 'error');
     }
 }
 
-// Debug function para probar la conectividad
-async function testConnectivity() {
-    console.log('🧪 Probando conectividad...');
-    try {
-        const response = await fetch('/quick-actions/debug/test');
-        const data = await response.json();
-        console.log('✅ Test de conectividad exitoso:', data);
 
-        // Test adicional de espacios
-        const espaciosResponse = await fetch('/quick-actions/debug/espacios');
-        const espaciosData = await espaciosResponse.json();
-        console.log('🏢 Debug espacios:', espaciosData);
-
-        // Test adicional de personas
-        const personasResponse = await fetch('/quick-actions/debug/personas');
-        const personasData = await personasResponse.json();
-        console.log('👥 Debug personas:', personasData);
-
-    } catch (error) {
-        console.error('❌ Test de conectividad falló:', error);
-    }
-}
 
 // Variables para autocompletado
 let timeoutId = null;
@@ -543,7 +521,7 @@ async function buscarPersonas(termino) {
             document.getElementById('autocomplete-results').classList.add('hidden');
         }
     } catch (error) {
-        console.error('Error al buscar personas:', error);
+
         document.getElementById('autocomplete-results').classList.add('hidden');
     }
 }
@@ -598,7 +576,7 @@ function seleccionarPersona(persona) {
         Información cargada para: ${persona.nombre} (${persona.tipo === 'profesor' ? 'Profesor' : 'Solicitante'})
     `;
 
-    console.log('✅ Persona seleccionada:', persona);
+
 }
 
 // Configurar eventos del autocompletado
@@ -668,7 +646,7 @@ function cargarModulosParaSeleccion() {
     const moduloFinalSelect = document.getElementById('modulo-final');
 
     if (!moduloInicialSelect || !moduloFinalSelect) {
-        console.error('❌ No se encontraron los selectores de módulos');
+
         return;
     }
 
@@ -695,7 +673,7 @@ function cargarModulosParaSeleccion() {
         moduloFinalSelect.appendChild(optionFinal);
     }
 
-    console.log('✅ Módulos con horarios cargados');
+
 
     // Agregar listener para filtrar módulos finales según el inicial seleccionado
     moduloInicialSelect.addEventListener('change', function() {
@@ -716,7 +694,7 @@ function cargarModulosParaSeleccion() {
                 moduloFinalSelect.appendChild(option);
             }
 
-            console.log(`📝 Módulos finales filtrados desde módulo ${moduloInicialSeleccionado}`);
+
         } else {
             // Si no hay módulo inicial, mostrar todos los módulos finales
             cargarModulosParaSeleccion();
@@ -769,12 +747,12 @@ async function cargarAsignaturasProfesor() {
 
     if (!runProfesor) {
         asignaturaSelect.innerHTML = '<option value="">Primero seleccione un profesor</option><option value="otro">Otro</option>';
-        console.warn('⚠️ No hay RUN de profesor para cargar asignaturas');
+
         return;
     }
 
     try {
-        console.log('📚 Cargando asignaturas para profesor:', runProfesor);
+
         asignaturaSelect.innerHTML = '<option value="">Cargando asignaturas...</option><option value="otro">Otro</option>';
 
         const response = await fetch(`/api/profesor/${runProfesor}/asignaturas`, {
@@ -789,12 +767,12 @@ async function cargarAsignaturasProfesor() {
         }
 
         const data = await response.json();
-        console.log('📦 Datos recibidos de asignaturas:', data);
+
 
         asignaturaSelect.innerHTML = '<option value="">Seleccione una asignatura</option><option value="otro">Otro</option>';
 
         if (data.success && data.asignaturas && data.asignaturas.length > 0) {
-            console.log(`✅ Se encontraron ${data.asignaturas.length} asignaturas para el profesor`);
+
             data.asignaturas.forEach(asignatura => {
                 const option = document.createElement('option');
                 option.value = asignatura.id_asignatura;
@@ -802,7 +780,7 @@ async function cargarAsignaturasProfesor() {
                 asignaturaSelect.appendChild(option);
             });
         } else {
-            console.warn('⚠️ No se encontraron asignaturas para el profesor:', runProfesor);
+
             const option = document.createElement('option');
             option.value = '';
             option.textContent = 'No se encontraron asignaturas para este profesor';
@@ -817,7 +795,7 @@ async function cargarAsignaturasProfesor() {
             });
         }
     } catch (error) {
-        console.error('❌ Error al cargar asignaturas:', error);
+
         asignaturaSelect.innerHTML = '<option value="">Error al cargar asignaturas</option><option value="otro">Otro</option>';
 
         Swal.fire({
@@ -847,7 +825,7 @@ async function buscarAsignaturas(termino) {
             document.getElementById('autocomplete-asignaturas').classList.add('hidden');
         }
     } catch (error) {
-        console.error('Error al buscar asignaturas:', error);
+
         document.getElementById('autocomplete-asignaturas').classList.add('hidden');
     }
 }

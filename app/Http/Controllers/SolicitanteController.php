@@ -161,10 +161,7 @@ class SolicitanteController extends Controller
                 Log::warning('No se pudo registrar como visitante: ' . $e->getMessage());
             }
 
-            Log::info('Solicitante registrado exitosamente', [
-                'run_solicitante' => $solicitante->run_solicitante,
-                'nombre' => $solicitante->nombre
-            ]);
+
 
             return response()->json([
                 'success' => true,
@@ -198,8 +195,7 @@ class SolicitanteController extends Controller
      */
     public function crearReservaSolicitante(Request $request)
     {
-        Log::info('=== INICIO CREAR RESERVA SOLICITANTE ===');
-        Log::info('Datos recibidos:', $request->all());
+
 
         // Obtener el tenant del contexto actual
         $tenantId = tenant_id();
@@ -223,19 +219,12 @@ class SolicitanteController extends Controller
         Config::set('database.connections.tenant.host', $tenant->host ?? config('database.connections.mysql.host'));
         DB::purge('tenant');
 
-        Log::info('Configuración de conexión tenant establecida', [
-            'tenantId' => $tenantId,
-            'database' => $tenant->database,
-            'host' => $tenant->host ?? config('database.connections.mysql.host')
-        ]);
+
 
         try {
             // VERIFICAR QUE LA CONEXIÓN TENANT ESTÁ CONFIGURADA
             $tenantConfig = config('database.connections.tenant');
-            Log::info('Configuración de conexión tenant antes de queries', [
-                'database' => $tenantConfig['database'] ?? 'NO CONFIGURADA',
-                'host' => $tenantConfig['host'] ?? 'NO CONFIGURADA'
-            ]);
+
 
             // Validar datos básicos
             $request->validate([
@@ -312,18 +301,52 @@ class SolicitanteController extends Controller
 
             $codigoDia = $codigosDias[$diaActual] ?? 'LU';
 
-            // Determinar módulo actual - pero permitir reservar incluso sin módulo actual definido
+            // Determinar módulo actual
             $moduloActual = $this->determinarModuloActual($horaActual, $diaActual);
 
-            // Si no hay módulo actual (fuera de horario o recreo), usar hora actual
             $usarHoraActual = false;
             if (!$moduloActual) {
-                Log::info('No se encontró módulo actual (fuera de horario o recreo), se usará hora actual', [
-                    'horaActual' => $horaActual,
-                    'diaActual' => $diaActual
-                ]);
-                $moduloActual = 1;  // Valor dummy para compatibilidad con loops
-                $usarHoraActual = true;
+                // Verificar si ya terminó el día académico para el día actual
+                $ultimoModulo = \App\Models\Modulo::on('tenant')
+                    ->where('id_modulo', 'like', $codigoDia . '.%')
+                    ->orderBy('hora_termino', 'desc')
+                    ->first();
+                
+                if ($ultimoModulo && $horaActual >= $ultimoModulo->hora_termino) {
+                    return response()->json([
+                        'success' => false,
+                        'mensaje' => 'El horario académico para el día de hoy ha finalizado. No es posible crear nuevas reservas espontáneas.'
+                    ], 400);
+                }
+
+                // Si estamos antes del primer módulo, empezar desde el módulo 1
+                $primerModulo = \App\Models\Modulo::on('tenant')
+                    ->where('id_modulo', 'like', $codigoDia . '.%')
+                    ->orderBy('hora_inicio', 'asc')
+                    ->first();
+                
+                if ($primerModulo && $horaActual < $primerModulo->hora_inicio) {
+                    $moduloActual = 1;
+                    $usarHoraActual = false; // Empezar en el horario oficial del módulo 1
+                } else {
+                    // Probablemente estamos en un recreo, intentar buscar el siguiente módulo del día
+                    $siguienteModulo = \App\Models\Modulo::on('tenant')
+                        ->where('id_modulo', 'like', $codigoDia . '.%')
+                        ->where('hora_inicio', '>', $horaActual)
+                        ->orderBy('hora_inicio', 'asc')
+                        ->first();
+                    
+                    if ($siguienteModulo) {
+                        // Extraer el número del módulo (ej: "LU.2" -> 2)
+                        $partes = explode('.', $siguienteModulo->id_modulo);
+                        $moduloActual = isset($partes[1]) ? (int)$partes[1] : 1;
+                        $usarHoraActual = false;
+                    } else {
+                        // Fallback de seguridad
+                        $moduloActual = 1;
+                        $usarHoraActual = true;
+                    }
+                }
             }
 
             // Verificar módulos consecutivos disponibles (incluyendo reservas activas)
@@ -485,18 +508,10 @@ class SolicitanteController extends Controller
                         'updated_at' => $ahora
                     ]);
 
-                Log::info('Estado de espacio actualizado inmediatamente después de reserva', [
-                    'id_espacio' => $request->id_espacio,
-                    'id_reserva' => $idReserva,
-                    'nuevo_estado' => 'Ocupado'
-                ]);
+
             }
 
-            Log::info('Inserción directa de reserva', [
-                'id_reserva' => $idReserva,
-                'insertado' => $insertado,
-                'conexion' => 'tenant'
-            ]);
+
 
             // Verificar que la reserva se guardó usando Query Builder
             $reservaVerificacion = DB::connection('tenant')
@@ -516,13 +531,7 @@ class SolicitanteController extends Controller
                 ], 500);
             }
 
-            Log::info('✅ Reserva VERIFICADA en BD tenant', [
-                'id_reserva' => $reservaVerificacion->id_reserva,
-                'estado' => $reservaVerificacion->estado,
-                'fecha' => $reservaVerificacion->fecha_reserva,
-                'hora_inicio' => $reservaVerificacion->hora,
-                'hora_fin' => $reservaVerificacion->hora_salida
-            ]);
+
 
             // Actualizar estado del espacio usando Query Builder también
             DB::connection('tenant')
@@ -530,12 +539,7 @@ class SolicitanteController extends Controller
                 ->where('id_espacio', $request->id_espacio)
                 ->update(['estado' => 'Ocupado', 'updated_at' => $ahora]);
 
-            Log::info('Reserva de solicitante creada exitosamente', [
-                'id_reserva' => $idReserva,
-                'run_solicitante' => $request->run_solicitante,
-                'espacio' => $espacio->nombre_espacio,
-                'modulos' => $modulosSolicitados
-            ]);
+
 
             return response()->json([
                 'success' => true,
@@ -579,37 +583,27 @@ class SolicitanteController extends Controller
         $indexDia = array_search($diaActual, $diasArray);
         $prefijo = $indexDia !== false ? $prefijosDias[$indexDia] : 'LU';
 
-        Log::info('Buscando módulo actual', [
-            'horaActual' => $horaActual,
-            'diaActual' => $diaActual,
-            'prefijo' => $prefijo,
-            'conexionActual' => DB::getDefaultConnection()
-        ]);
+
 
         // Buscar un módulo que contenga la hora actual
         // Probar módulos del 1 al 15
         for ($i = 1; $i <= 15; $i++) {
             try {
                 $idModulo = $prefijo . '.' . $i;
-                Log::info('Buscando módulo ' . $i, ['idModulo' => $idModulo]);
+
 
                 // Usar explícitamente la conexión 'tenant'
                 $modulo = \App\Models\Modulo::on('tenant')->where('id_modulo', $idModulo)->first();
 
                 if ($modulo) {
-                    Log::info('Módulo encontrado', [
-                        'id_modulo' => $idModulo,
-                        'hora_inicio' => $modulo->hora_inicio,
-                        'hora_termino' => $modulo->hora_termino,
-                        'horaActual' => $horaActual
-                    ]);
+
 
                     if ($horaActual >= $modulo->hora_inicio && $horaActual < $modulo->hora_termino) {
-                        Log::info('Módulo activo encontrado', ['modulo' => $i]);
+
                         return $i;
                     }
                 } else {
-                    Log::info('Módulo no encontrado en BD', ['idModulo' => $idModulo]);
+
                 }
             } catch (\Exception $e) {
                 Log::error('Error buscando módulo ' . $i, [
@@ -627,7 +621,7 @@ class SolicitanteController extends Controller
                 $modulo = \App\Models\Modulo::on('tenant')->where('id_modulo', $idModulo)->first();
 
                 if ($modulo && $horaActual < $modulo->hora_inicio) {
-                    Log::info('Siguiente módulo encontrado', ['modulo' => $i]);
+
                     return $i;
                 }
             } catch (\Exception $e) {
@@ -635,7 +629,7 @@ class SolicitanteController extends Controller
             }
         }
 
-        Log::warning('No se encontró módulo actual ni siguiente');
+
         return null;
     }
 
@@ -723,10 +717,7 @@ class SolicitanteController extends Controller
         try {
             $tenantId = tenant_id() ?? null;
 
-            Log::info('establecerContextoTenant - Verificando tenant', [
-                'tenantId' => $tenantId,
-                'host' => request()->getHost()
-            ]);
+
 
             if (!$tenantId) {
                 // Si no hay tenant establecido, buscarlo por dominio
@@ -740,16 +731,9 @@ class SolicitanteController extends Controller
                     // CONFIGURAR EXPLÍCITAMENTE LA CONEXIÓN TENANT
                     Config::set('database.connections.tenant.database', $tenant->database);
                     DB::purge('tenant');
-                    Log::info('Tenant establecido en SolicitanteController', [
-                        'tenant' => $tenant->name,
-                        'database' => $tenant->database,
-                        'host' => $host,
-                        'tenantId' => $tenantId
-                    ]);
+
                 } else {
-                    Log::warning('No se pudo encontrar tenant para dominio', [
-                        'host' => $host
-                    ]);
+
                     return;
                 }
             } else {
@@ -759,15 +743,12 @@ class SolicitanteController extends Controller
                     // CONFIGURAR EXPLÍCITAMENTE LA CONEXIÓN TENANT
                     Config::set('database.connections.tenant.database', $tenant->database);
                     DB::purge('tenant');
-                    Log::info('Reconectando tenant ya establecido', [
-                        'tenantId' => $tenantId,
-                        'database' => $tenant->database
-                    ]);
+
 
                     // VERIFICACIÓN DE CONEXIÓN
                     try {
                         DB::connection('tenant')->getPdo();
-                        Log::info('Conexión tenant verificada correctamente');
+
                     } catch (\Exception $e) {
                         Log::error('Error al verificar conexión tenant: ' . $e->getMessage());
                         throw $e;

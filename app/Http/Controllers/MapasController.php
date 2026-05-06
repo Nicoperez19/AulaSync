@@ -25,24 +25,18 @@ class MapasController extends Controller
         $tenant = \App\Models\Tenant::current();
         $sede = $tenant ? Sede::find($tenant->sede_id) : null;
         
-        // Log para depuración
-        Log::info('MapasController::edit', [
-            'tenant' => $tenant ? $tenant->sede_id : 'null',
-            'sede' => $sede ? $sede->id_sede : 'null',
-        ]);
+
 
         $facultad = $sede ? Facultad::where('id_sede', $sede->id_sede)->first() : null;
         
-        if (!$facultad) {
-            Log::warning('No se encontró facultad para la sede en MapasController::edit', ['sede_id' => $sede ? $sede->id_sede : 'null']);
-        }
+
 
         return view('layouts.maps.map_edit', compact('mapa', 'pisos', 'sede', 'facultad'));
     }
     public function update(Request $request, $id)
     {
         try {
-            Log::info('Actualizando mapa:', ['id' => $id, 'datos' => $request->except('archivo')]);
+
             
             $mapa = Mapa::withoutGlobalScopes()->findOrFail($id);
             $request->validate([
@@ -73,16 +67,15 @@ class MapasController extends Controller
 
             $mapa->save();
             
-            Log::info('Mapa actualizado, procesando bloques...');
+
 
             $bloques = json_decode($request->bloques, true);
             if (json_last_error() !== JSON_ERROR_NONE) {
                 throw new \Exception('Error al decodificar los bloques: ' . json_last_error_msg());
             }
 
-            // Elimina bloques antiguos y crea nuevos
             $mapa->bloques()->delete();
-            Log::info('Bloques antiguos eliminados, creando nuevos...', ['cantidad' => count($bloques)]);
+
             
             foreach ($bloques as $index => $bloque) {
                 try {
@@ -103,7 +96,7 @@ class MapasController extends Controller
                 }
             }
             
-            Log::info('Todos los bloques actualizados exitosamente');
+
 
             return redirect()->route('mapas.index')
                 ->with('success', 'Mapa actualizado exitosamente.');
@@ -133,17 +126,11 @@ class MapasController extends Controller
         $tenant = \App\Models\Tenant::current();
         $sede = $tenant ? Sede::find($tenant->sede_id) : null;
         
-        // Log para depuración
-        Log::info('MapasController::add', [
-            'tenant' => $tenant ? $tenant->sede_id : 'null',
-            'sede' => $sede ? $sede->id_sede : 'null',
-        ]);
+
 
         $facultad = $sede ? Facultad::where('id_sede', $sede->id_sede)->first() : null;
         
-        if (!$facultad) {
-            Log::warning('No se encontró facultad para la sede en MapasController::add', ['sede_id' => $sede ? $sede->id_sede : 'null']);
-        }
+
 
         return view('layouts.maps.map_add', compact('universidades', 'sede', 'facultad'));
     }
@@ -151,7 +138,7 @@ class MapasController extends Controller
     public function store(Request $request)
     {
         try {
-            Log::info('Datos recibidos en store:', $request->all());
+
 
             $request->validate([
                 'nombre_mapa' => 'required|string|max:255',
@@ -171,8 +158,7 @@ class MapasController extends Controller
                 throw new \Exception('Error al decodificar los bloques: ' . json_last_error_msg());
             }
 
-            // Log de las posiciones de los bloques
-            Log::info('Posiciones de los bloques:', $bloques);
+
 
             // Validar la estructura de los bloques
             foreach ($bloques as $bloque) {
@@ -190,14 +176,7 @@ class MapasController extends Controller
 
             $fileName = "{$nombreMapaSlug}.{$extension}";
             
-            Log::info('Intentando guardar archivo:', [
-                'fileName' => $fileName,
-                'isValid' => $file->isValid(),
-                'size' => $file->getSize(),
-                'mimeType' => $file->getMimeType(),
-                'storage_path' => storage_path('app/public/mapas_subidos'),
-                'disk_root' => Storage::disk('public')->path('')
-            ]);
+
             
             // Guardar el archivo
             try {
@@ -209,7 +188,8 @@ class MapasController extends Controller
                 // Verificar si el archivo se guardó correctamente
                 if (Storage::disk('public')->exists($filePath)) {
                     $path = $filePath;
-                    Log::info('Archivo guardado exitosamente:', ['path' => $path]);
+
+
                 } else {
                     $path = false;
                     Log::error('Archivo no existe después de guardarlo', ['path' => $filePath]);
@@ -219,19 +199,13 @@ class MapasController extends Controller
                 $path = false;
             }
 
-            Log::info('Archivo guardado en:', ['path' => $path, 'fileName' => $fileName]);
+
 
             // Generar ID único basado en slug + timestamp para evitar duplicados
             $slugBase = Str::slug($request->nombre_mapa);
             $idMapa = $slugBase . '-' . time();
             
-            Log::info('Datos para crear mapa:', [
-                'id_mapa' => $idMapa,
-                'nombre_mapa' => $request->nombre_mapa,
-                'ruta_mapa' => $path,
-                'ruta_canvas' => $path,
-                'piso_id' => $request->piso_id
-            ]);
+
             
             // Crear mapa sin global scopes para evitar conflictos
             $mapa = Mapa::withoutGlobalScopes()->create([
@@ -242,22 +216,11 @@ class MapasController extends Controller
                 'piso_id' => $request->piso_id
             ]);
             
-            Log::info('Mapa creado exitosamente:', [
-                'id_mapa' => $mapa->id_mapa,
-                'ruta_mapa_guardada' => $mapa->ruta_mapa,
-                'ruta_canvas_guardada' => $mapa->ruta_canvas
-            ]);
 
-            Log::info('Mapa creado exitosamente:', ['id_mapa' => $mapa->id_mapa]);
 
             foreach ($bloques as $index => $bloque) {
                 try {
-                    Log::info("Creando bloque #{$index}:", [
-                        'id_espacio' => $bloque['id_espacio'],
-                        'posicion_x' => $bloque['posicion_x'],
-                        'posicion_y' => $bloque['posicion_y'],
-                        'estado' => $bloque['estado']
-                    ]);
+
                     
                     Bloque::create([
                         'id_bloque' => Str::uuid(),
@@ -268,7 +231,7 @@ class MapasController extends Controller
                         'estado' => $bloque['estado']
                     ]);
                     
-                    Log::info("Bloque #{$index} creado exitosamente");
+
                 } catch (\Exception $bloqueError) {
                     Log::error("Error al crear bloque #{$index}:", [
                         'error' => $bloqueError->getMessage(),
@@ -297,9 +260,8 @@ class MapasController extends Controller
     public function getSedes($universidadId)
     {
         try {
-            Log::info('Obteniendo sedes para universidad:', ['universidad_id' => $universidadId]);
             $sedes = Sede::where('id_universidad', $universidadId)->get();
-            Log::info('Sedes encontradas:', ['sedes' => $sedes->toArray()]);
+
             return response()->json($sedes);
         } catch (\Exception $e) {
             Log::error('Error al obtener sedes:', [
@@ -314,9 +276,8 @@ class MapasController extends Controller
     public function getFacultadesPorSede($sedeId)
     {
         try {
-            Log::info('Obteniendo facultades para sede:', ['sede_id' => $sedeId]);
             $facultades = Facultad::where('id_sede', $sedeId)->get();
-            Log::info('Facultades encontradas:', ['facultades' => $facultades->toArray()]);
+
             return response()->json($facultades);
         } catch (\Exception $e) {
             Log::error('Error al obtener facultades:', [
@@ -331,9 +292,8 @@ class MapasController extends Controller
     public function getPisos($facultadId)
     {
         try {
-            Log::info('Obteniendo pisos para facultad:', ['id_facultad' => $facultadId]);
             $pisos = Piso::where('id_facultad', $facultadId)->get();
-            Log::info('Pisos encontrados:', ['pisos' => $pisos->toArray()]);
+
             return response()->json($pisos);
         } catch (\Exception $e) {
             Log::error('Error al obtener pisos:', [
@@ -348,7 +308,7 @@ class MapasController extends Controller
     public function getEspaciosPorPiso($pisoId)
     {
         try {
-            Log::info('Obteniendo espacios para piso:', ['piso_id' => $pisoId]);
+
 
             // Primero verificamos si el piso existe
             $piso = Piso::find($pisoId);
@@ -361,7 +321,7 @@ class MapasController extends Controller
                 ->where('piso_id', $pisoId)
                 ->get();
 
-            Log::info('Espacios encontrados:', ['espacios' => $espacios->toArray()]);
+
 
             if ($espacios->isEmpty()) {
                 return response()->json([
@@ -384,7 +344,7 @@ class MapasController extends Controller
     public function getEspaciosPorFacultad($facultadId)
     {
         try {
-            Log::info('Obteniendo todos los espacios para facultad:', ['id_facultad' => $facultadId]);
+
 
             // Obtener todos los pisos de la facultad
             $pisos = Piso::where('id_facultad', $facultadId)->pluck('id');
@@ -401,7 +361,7 @@ class MapasController extends Controller
                 ->whereIn('piso_id', $pisos)
                 ->get();
 
-            Log::info('Espacios encontrados:', ['count' => $espacios->count()]);
+
 
             return response()->json($espacios);
         } catch (\Exception $e) {
@@ -417,13 +377,13 @@ class MapasController extends Controller
     public function getBloquesPorMapa($mapaId)
     {
         try {
-            Log::info('Obteniendo bloques para mapa:', ['mapa_id' => $mapaId]);
+
 
             $bloques = Bloque::with('espacio')
                 ->where('id_mapa', $mapaId)
                 ->get();
 
-            Log::info('Bloques encontrados:', ['bloques' => $bloques->toArray()]);
+
 
             return response()->json($bloques);
         } catch (\Exception $e) {
@@ -439,13 +399,10 @@ class MapasController extends Controller
     public function getBloques($mapaId)
     {
         try {
-            Log::info('Obteniendo bloques para mapa:', ['mapa_id' => $mapaId]);
-
             $bloques = Bloque::with('espacio')
                 ->where('id_mapa', $mapaId)
                 ->get();
 
-            Log::info('Bloques encontrados:', ['bloques' => $bloques->toArray()]);
 
             return response()->json($bloques);
         } catch (\Exception $e) {

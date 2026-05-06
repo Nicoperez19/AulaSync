@@ -82,10 +82,7 @@ class UserController extends Controller
                 'id_sede' => $validated['id_sede'] ?? null
             ]);
 
-            Log::info('Usuario creado exitosamente', [
-                'run' => $user->run,
-                'name' => $user->name,
-            ]);
+
 
             $user->roles()->sync($validated['roles']);
             if (!empty($validated['permissions'])) {
@@ -183,12 +180,7 @@ class UserController extends Controller
                 $expectedPassword = config('app.tenant_init_password', env('TENANT_INIT_PASSWORD'));
                 $providedPassword = trim($validated['wizard_password']);
                 
-                Log::info('Validando contraseña wizard', [
-                    'provided_length' => strlen($providedPassword),
-                    'expected_length' => strlen($expectedPassword),
-                    'expected_is_null' => is_null($expectedPassword),
-                    'passwords_match' => $providedPassword === $expectedPassword
-                ]);
+
                 
                 if ($providedPassword !== $expectedPassword) {
                     Log::warning('Intento de edición de usuario con contraseña de wizard incorrecta', [
@@ -235,11 +227,7 @@ class UserController extends Controller
                 $user->permissions()->sync($validated['permissions']);
             }
 
-            Log::info('Usuario actualizado exitosamente', [
-                'run' => $user->run,
-                'updated_by' => auth()->user()->run ?? 'unknown',
-                'is_superuser' => $user->is_superuser
-            ]);
+
 
             if ($request->ajax()) {
                 return response()->json([
@@ -297,10 +285,8 @@ class UserController extends Controller
             ->map(function($u) {
                 return ['id' => $u->run, 'nombre' => $u->name, 'email' => $u->email, 'fuente' => 'usuario'];
             })->toArray();
-        Log::info('Autocomplete users count: ' . count($users));
-        if (count($users) > 0) {
-            Log::info('Autocomplete users sample: ' . json_encode(array_slice($users, 0, 3)));
-        }
+
+
 
         // Buscar en profesores
         $profesores = [];
@@ -314,10 +300,8 @@ class UserController extends Controller
                     ->map(function($p) {
                         return ['id' => $p->run, 'nombre' => $p->nombre, 'email' => $p->email, 'fuente' => 'profesor'];
                     })->toArray();
-                Log::info('Autocomplete profesores count: ' . count($profesores));
-                if (count($profesores) > 0) {
-                    Log::info('Autocomplete profesores sample: ' . json_encode(array_slice($profesores, 0, 3)));
-                }
+
+
             }
         } catch (\Throwable $e) {
             // No bloquear si modelo no existe o falla la consulta
@@ -336,10 +320,8 @@ class UserController extends Controller
                     ->map(function($s) {
                         return ['id' => $s->run, 'nombre' => $s->nombre, 'email' => $s->correo, 'fuente' => 'solicitante'];
                     })->toArray();
-                Log::info('Autocomplete solicitantes count: ' . count($solicitantes));
-                if (count($solicitantes) > 0) {
-                    Log::info('Autocomplete solicitantes sample: ' . json_encode(array_slice($solicitantes, 0, 3)));
-                }
+
+
             }
         } catch (\Throwable $e) {
             Log::warning('Autocomplete solicitantes error: ' . $e->getMessage());
