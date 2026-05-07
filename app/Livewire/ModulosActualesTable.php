@@ -18,6 +18,7 @@ use App\Services\OccupancyService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
+use Livewire\Attributes\Locked;
 
 class ModulosActualesTable extends Component
 {
@@ -25,6 +26,7 @@ class ModulosActualesTable extends Component
 
     public $espacios = [];
 
+    #[Locked]
     public $pisos = [];
 
     public $horaActual;
@@ -44,14 +46,14 @@ class ModulosActualesTable extends Component
     public $nombrePeriodo = '';
 
     // Propiedades para manejo de tenants
-    public $tenantActual = null;
+    public $tenantId = null;
 
     public $tenantsDisponibles = [];
 
     public $mostrarSelectorSedes = false;
 
-    // Inyección de servicio
-    public $occupancyService;
+    // Inyección de servicio (no almacenar objetos no serializables)
+    // private $occupancyService;
 
     // Horarios de módulos basados en la referencia JavaScript
     private $horariosModulos = [
@@ -144,9 +146,6 @@ class ModulosActualesTable extends Component
 
     public function mount()
     {
-        // Inyectar servicio de ocupación
-        $this->occupancyService = app(OccupancyService::class);
-
         set_time_limit(120);
         ini_set('max_execution_time', 120);
 
@@ -157,9 +156,10 @@ class ModulosActualesTable extends Component
             ->toArray();
 
         // Verificar si hay un tenant actual en sesión
-        $this->tenantActual = Tenant::current();
+        $currentTenant = Tenant::current();
+        $this->tenantId = $currentTenant?->id;
 
-        if (!$this->tenantActual && count($this->tenantsDisponibles) > 0) {
+        if (!$currentTenant && count($this->tenantsDisponibles) > 0) {
             // Si no hay tenant activo, mostrar selector
             $this->mostrarSelectorSedes = true;
         } else {
@@ -167,8 +167,8 @@ class ModulosActualesTable extends Component
             $this->actualizarDatos();
 
             // Establecer el primer piso como seleccionado por defecto
-            if (count($this->pisos) > 0) {
-                $this->selectedPiso = $this->pisos[0]->id;
+            if (count($this->pisos) > 0 && is_array($this->pisos) && isset($this->pisos[0]['id'])) {
+                $this->selectedPiso = $this->pisos[0]['id'];
             }
         }
     }
@@ -182,7 +182,7 @@ class ModulosActualesTable extends Component
         if ($tenant && $tenant->is_active) {
             $tenant->makeCurrent();
             session(['tenant_id' => $tenant->id]);
-            $this->tenantActual = $tenant;
+            $this->tenantId = $tenant->id;
             $this->mostrarSelectorSedes = false;
 
             // Emitir evento para actualizar el header
@@ -192,8 +192,8 @@ class ModulosActualesTable extends Component
             $this->actualizarDatos();
 
             // Establecer el primer piso como seleccionado por defecto
-            if (count($this->pisos) > 0) {
-                $this->selectedPiso = $this->pisos[0]->id;
+            if (count($this->pisos) > 0 && is_array($this->pisos) && isset($this->pisos[0]['id'])) {
+                $this->selectedPiso = $this->pisos[0]['id'];
             }
         }
     }
@@ -640,12 +640,8 @@ class ModulosActualesTable extends Component
             $this->moduloActual = $this->obtenerModuloActual();
 
             // Obtener todos los pisos con sus espacios
-            $this->pisos = Piso::with(['espacios'])->get();
-
-            if (!$this->pisos) {
-                $this->pisos = collect();
-            }
-
+            $pisosModels = Piso::with(['espacios'])->get();
+            $this->pisos = $pisosModels;
 
             // Resto del procesamiento existente...
             if ($this->moduloActual) {

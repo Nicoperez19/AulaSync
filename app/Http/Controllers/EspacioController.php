@@ -1041,11 +1041,12 @@ class EspacioController extends Controller
             $horaActual  = now()->format('H:i:s');
             $fechaActual = now()->format('Y-m-d');
             $diaActual   = strtolower(now()->format('l'));
-            $codigosDias = [
-                'monday' => 'LU', 'tuesday' => 'MA', 'wednesday' => 'MI',
-                'thursday' => 'JU', 'friday' => 'VI', 'saturday' => 'SA', 'sunday' => 'DO'
+            // Convertir a nombres de días en español (como están en la BD)
+            $diasEnEspanol = [
+                'monday' => 'lunes', 'tuesday' => 'martes', 'wednesday' => 'miércoles',
+                'thursday' => 'jueves', 'friday' => 'viernes', 'saturday' => 'sábado', 'sunday' => 'domingo'
             ];
-            $codigoDia = $codigosDias[$diaActual] ?? 'LU';
+            $codigoDia = $diasEnEspanol[$diaActual] ?? 'lunes';
 
             // ─── BATCH: todas las consultas necesarias en una sola carga ───────────────
             // 1. Reserva activa + vencida del día (una sola query con orWhere)
