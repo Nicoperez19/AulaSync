@@ -639,8 +639,6 @@ class ModulosActualesTable extends Component
                 $this->pisos = collect();
             }
 
-            Log::info('ModulosActuales - Pisos cargados: ' . $this->pisos->count());
-            Log::info('ModulosActuales - Módulo actual: ' . json_encode($this->moduloActual));
 
             // Resto del procesamiento existente...
             if ($this->moduloActual) {
@@ -701,9 +699,6 @@ class ModulosActualesTable extends Component
                         ->get()
                         ->keyBy('id_espacio');
 
-                    Log::info('ModulosActuales - Planificaciones activas encontradas: ' . $planificacionesActivas->count());
-                    Log::info('ModulosActuales - ID Módulo buscado: ' . $moduloDB->id_modulo);
-                    Log::info('ModulosActuales - Periodo: ' . $periodo);
 
                     // Obtener planificaciones de profesores colaboradores vigentes
                     $planificacionesColaboradores = PlanificacionProfesorColaborador::with([
@@ -725,9 +720,17 @@ class ModulosActualesTable extends Component
                         })
                         ->get()
                         ->groupBy('id_asignatura');  // Agrupar por asignatura para búsqueda rápida
+                    // Pre-cargar planificaciones del período SOLO para el día actual y espacios relevantes
+                    $idsEspacios = $this->pisos->flatMap(fn($p) => $p->espacios->pluck('id_espacio'));
+                    $todasLasPlanificaciones = Planificacion_Asignatura::with(['modulo'])
+                        ->whereIn('id_espacio', $idsEspacios)
+                        ->where('id_modulo', 'like', $prefijoDia . '.%')
+                        ->whereHas('horario', function ($q) use ($periodo) {
+                            $q->where('periodo', $periodo);
+                        })
+                        ->get()
+                        ->groupBy('id_asignatura');
                 } else {
-                    // Si el periodo no ha iniciado o no hay módulo, no cargamos planificaciones del semestre
-                    // pero seguiremos cargando las reservas espontáneas más abajo
                     $planificacionesActivas = collect();
                     $planificacionesColaboradores = collect();
                     $todasLasPlanificaciones = collect();
@@ -751,57 +754,26 @@ class ModulosActualesTable extends Component
                     ->get()
                     ->keyBy('id_espacio');  // Indexar por espacio para búsqueda rápida
 
-                // DEBUG: Log para diagnosticar problema de reservas no mostradas
-                Log::info('ModulosActuales - Reservas de profesores (con entrada):', [
-                    'total' => $reservasProfesores->count(),
-                    'espacios' => $reservasProfesores->keys()->toArray(),
-                ]);
-
-                // Obtener reservas PENDIENTES/PROGRAMADAS de profesores (reservadas pero sin marcar entrada aún)
-                // Estas se mostrarán como "Programado" o "Reservado" en lugar de "Disponible"
-                $reservasProfesoresPendientes = Reserva::with(['profesor', 'asignatura', 'asignatura.carrera'])
-                    ->where('fecha_reserva', Carbon::now()->toDateString())
-                    ->whereIn('estado', ['pendiente', 'activa', 'programada'])
-                    ->whereNotNull('run_profesor')
-                    ->whereNull('hora')  // Aún no ha marcado entrada
-                    ->get()
-                    ->keyBy('id_espacio');
-
-                Log::info('ModulosActuales - Reservas de profesores (pendientes/programadas/sin entrada):', [
-                    'total' => $reservasProfesoresPendientes->count(),
-                    'espacios' => $reservasProfesoresPendientes->keys()->toArray(),
-                ]);
-
-                // Obtener reservas PROGRAMADAS de solicitantes (para mostrar como "Programado")
-                $reservasSolicitantesProgramadas = Reserva::with(['solicitante'])
-                    ->where('fecha_reserva', Carbon::now()->toDateString())
-                    ->where('estado', 'programada')
-                    ->whereNotNull('run_solicitante')
-                    ->get()
-                    ->keyBy('id_espacio');
-
-                // También verificar TODAS las reservas activas del día (sin filtro de hora)
-                $todasReservasActivas = Reserva::where('fecha_reserva', Carbon::now()->toDateString())
-                    ->whereIn('estado', ['activa', 'pendiente', 'programada'])
-                    ->get();
-
-                Log::info('ModulosActuales - TODAS las reservas activas/pendientes del día:', [
-                    'total' => $todasReservasActivas->count(),
-                    'detalle' => $todasReservasActivas->map(function ($r) {
-                        return [
-                            'id_espacio' => $r->id_espacio,
-                            'run_profesor' => $r->run_profesor,
-                            'run_solicitante' => $r->run_solicitante,
-                            'hora' => $r->hora,
-                            'estado' => $r->estado,
-                        ];
-                    })->toArray(),
-                ]);
 
                 // Crear índice de profesores que registraron entrada (para detectar cambios de sala)
                 $profesoresConEntrada = $reservasProfesores->pluck('run_profesor')->unique();
 
-                // Obtener TODAS las reservas del día (incluyendo las no activas) para calcular disponibilidad
+                // [OPTIMIZACIÓN] Pre-cargar TODAS las reservas del día con entrada de profesor (para lookups O(1) en el loop)
+                // Esto evita el N+1 de Reserva::exists() por espacio
+                $todasReservasProfesoresConEntrada = Reserva::where('fecha_reserva', Carbon::now()->toDateString())
+                    ->whereNotNull('run_profesor')
+                    ->whereNotNull('hora')
+                    ->get()
+                    ->groupBy('id_espacio');
+
+                // [OPTIMIZACIÓN] Pre-cargar clases de recuperación pendientes para hoy
+                $clasesRecuperacionHoy = ClaseNoRealizada::with(['profesor', 'asignatura.carrera'])
+                    ->where('fecha_clase', Carbon::now()->toDateString())
+                    ->where('estado', 'pendiente')
+                    ->get()
+                    ->groupBy('id_espacio');
+
+                // Obtener TODAS las reservas del día para calcular disponibilidad
                 $todasLasReservas = Reserva::where('fecha_reserva', Carbon::now()->toDateString())
                     ->get()
                     ->groupBy('id_espacio');
@@ -826,8 +798,7 @@ class ModulosActualesTable extends Component
                         // Buscar si el espacio tiene una reserva de profesor (búsqueda O(1))
                         $reservaProfesor = $reservasProfesores->get($espacio->id_espacio);
 
-                        // Buscar si hay reserva pendiente de profesor (sin entrada aún)
-                        $reservaProfesorPendiente = $reservasProfesoresPendientes->get($espacio->id_espacio);
+
 
                         $tieneClase = false;
                         $tieneReservaSolicitante = false;
@@ -840,23 +811,17 @@ class ModulosActualesTable extends Component
                         $rangoDisponibilidad = null;
                         $esRecuperacion = false;
 
-                        // Verificar si hay una clase de recuperación pendiente para este espacio hoy
-                        // Una clase está pendiente de recuperación cuando: estado='pendiente' y fecha_clase=hoy y id_espacio coincide
-                        // El id_modulo puede ser un solo módulo "LU.1" o múltiples "LU.1,LU.2,LU.3"
-                        $claseRecuperacionPendiente = ClaseNoRealizada::where('fecha_clase', Carbon::now()->toDateString())
-                            ->where('id_espacio', $espacio->id_espacio)
-                            ->where('estado', 'pendiente')  // Está esperando ser recuperada
-                            ->where(function ($query) use ($idModulo) {
-                                // Buscar si id_modulo es exactamente el módulo actual
-                                // O si contiene el módulo actual en una lista separada por comas
-                                $query
-                                    ->where('id_modulo', $idModulo)
-                                    ->orWhere('id_modulo', 'LIKE', $idModulo . ',%')
-                                    ->orWhere('id_modulo', 'LIKE', '%,' . $idModulo)
-                                    ->orWhere('id_modulo', 'LIKE', '%,' . $idModulo . ',%');
-                            })
-                            ->with(['profesor', 'asignatura.carrera'])
-                            ->first();
+                        // [OPTIMIZACIÓN] Usar datos pre-cargados en lugar de hacer query por espacio
+                        $claseRecuperacionPendiente = null;
+                        $clasesEspacio = $clasesRecuperacionHoy->get($espacio->id_espacio, collect());
+                        if ($clasesEspacio->isNotEmpty()) {
+                            $claseRecuperacionPendiente = $clasesEspacio->first(function ($clase) use ($idModulo) {
+                                return $clase->id_modulo === $idModulo
+                                    || str_starts_with($clase->id_modulo, $idModulo . ',')
+                                    || str_ends_with($clase->id_modulo, ',' . $idModulo)
+                                    || str_contains($clase->id_modulo, ',' . $idModulo . ',');
+                            });
+                        }
 
                         // Verificar si hay una clase programada aquí pero el profesor la hizo en otro espacio
                         if ($planificacionActiva && !$reservaProfesor) {
@@ -880,20 +845,18 @@ class ModulosActualesTable extends Component
                                 $ahora = Carbon::createFromTimeString($horaActual);
                                 $hasPasado20Minutos = $ahora->gt($inicioModulo) && $ahora->diffInMinutes($inicioModulo) >= 20;
 
-                                // Verificar si el profesor ha registrado entrada hoy
-                                $tuvoEntradaHoy = Reserva::where('fecha_reserva', Carbon::now()->toDateString())
-                                    ->where('id_espacio', $espacio->id_espacio)
-                                    ->where('run_profesor', $runProfesor)
-                                    ->whereNotNull('hora')
-                                    ->exists();
+                                // [OPTIMIZACIÓN] Verificar usando datos pre-cargados en lugar de queries individuales
+                                $reservasEspacio = $todasReservasProfesoresConEntrada->get($espacio->id_espacio, collect());
+                                $tuvoEntradaHoy = $reservasEspacio->where('run_profesor', $runProfesor)->isNotEmpty();
 
                                 $tuvoEntradaEnOtroEspacio = false;
                                 if (!$tuvoEntradaHoy) {
-                                    $tuvoEntradaEnOtroEspacio = Reserva::where('id_espacio', '!=', $espacio->id_espacio)
-                                        ->where('fecha_reserva', Carbon::now()->toDateString())
+                                    // Buscar en otros espacios usando la colección pre-cargada
+                                    $tuvoEntradaEnOtroEspacio = $todasReservasProfesoresConEntrada
+                                        ->except([$espacio->id_espacio])
+                                        ->flatten()
                                         ->where('run_profesor', $runProfesor)
-                                        ->whereNotNull('hora')
-                                        ->exists();
+                                        ->isNotEmpty();
                                 }
 
                                 if ($hasPasado20Minutos && !$tuvoEntradaHoy && !$tuvoEntradaEnOtroEspacio) {

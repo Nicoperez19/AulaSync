@@ -256,7 +256,7 @@
                 <!-- Enlace Volver -->
                 <div class="w-full mt-4">
                     <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}"
-                       class="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors duration-200 shadow-md"
+                       class="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors duration-100 shadow-md"
                        onclick="qrInputManager.setActiveInput('main')">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
                             <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
@@ -278,7 +278,7 @@
                                 @if ($piso['id_mapa'])
                                     <li role="presentation">
                                         <a href="{{ route('plano.show', $piso['id_mapa']) }}"
-                                            class="px-4 py-2 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
+                                            class="px-4 py-2 text-sm font-semibold transition-all duration-150 rounded-t-xl border border-b-0
                                             {{ $piso['id_mapa'] === $mapa->id_mapa
                                                 ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
                                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}" role="tab"
@@ -355,7 +355,7 @@
                     
                     <!-- Botón cerrar -->
                     <button onclick="cerrarModalEspacio(); qrInputManager.setActiveInput('main')"
-                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
+                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-100 cursor-pointer"
                         title="Cerrar modal (Esc)"
                         aria-label="Cerrar modal">&times;</button>
                 </div>
@@ -468,7 +468,7 @@
 
                 <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
                     <button onclick="cerrarModalSalaEstudio(); qrInputManager.setActiveInput('main')"
-                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
+                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-100 cursor-pointer"
                         title="Cerrar modal (Esc)"
                         aria-label="Cerrar modal">&times;</button>
                 </div>
@@ -492,7 +492,7 @@
                         </div>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-4">
-                        <div id="salaEstudioProgressBar" class="bg-red-600 h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        <div id="salaEstudioProgressBar" class="bg-red-600 h-4 rounded-full transition-all duration-150" style="width: 0%"></div>
                     </div>
                 </div>
 
@@ -616,7 +616,7 @@
 
     <!-- Modal de espera de llaves (Rediseñado con Estilo Banner) -->
     <div id="modal-espera-llaves" class="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-50 hidden">
-        <div class="relative w-full max-w-lg mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all transform scale-95 duration-300 opacity-0" id="modal-espera-llaves-content">
+        <div class="relative w-full max-w-lg mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all transform scale-95 duration-150 opacity-0" id="modal-espera-llaves-content">
             
             <!-- Encabezado Rojo tipo Banner (Igual a la imagen de referencia) -->
             <div class="relative flex items-center justify-between p-6 bg-red-700">
@@ -635,7 +635,7 @@
                 </div>
 
                 <!-- Botón Cerrar Cuadrado Blanco con X Roja (Igual a la imagen) -->
-                <button onclick="cerrarModalEsperaLlaves()" class="flex items-center justify-center w-9 h-9 bg-white rounded-md shadow-lg hover:bg-gray-100 transition-all duration-200 group relative z-10">
+                <button onclick="cerrarModalEsperaLlaves()" class="flex items-center justify-center w-9 h-9 bg-white rounded-md shadow-lg hover:bg-gray-100 transition-all duration-100 group relative z-10">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-700 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
                     </svg>
@@ -726,14 +726,14 @@
                 <!-- Botones de acción -->
                 <div class="grid grid-cols-2 gap-3">
                     <button id="btn-sin-asistentes"
-                        class="flex items-center justify-center px-6 py-3 text-white transition-colors duration-200 bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                        class="flex items-center justify-center px-6 py-3 text-white transition-colors duration-100 bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                         <span class="font-semibold">Sin asistentes</span>
                     </button>
                     <button id="btn-con-asistentes"
-                        class="flex items-center justify-center px-6 py-3 text-white transition-colors duration-200 bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                        class="flex items-center justify-center px-6 py-3 text-white transition-colors duration-100 bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
@@ -769,7 +769,7 @@
 
                 <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
                     <button onclick="cerrarModalModulos()"
-                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
+                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-100 cursor-pointer"
                         title="Cerrar modal (Esc)"
                         aria-label="Cerrar modal">&times;</button>
                 </div>
@@ -834,7 +834,7 @@
 
                 <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
                     <button onclick="cerrarModalRegistroSolicitante(); qrInputManager.setActiveInput('main')"
-                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
+                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-100 cursor-pointer"
                         title="Cerrar modal (Esc)"
                         aria-label="Cerrar modal">&times;</button>
                 </div>
@@ -1225,7 +1225,7 @@
                     if (manual) {
                         limpiarEstadoLectura();
                     }
-                }, 300);
+                }, 150);
             }
         }
 
@@ -1670,10 +1670,10 @@
                             clearTimeout(processingTimeout);
                         }
 
-                        // Procesar automáticamente después de 500ms sin nuevos caracteres
+                        // Procesar automáticamente después de 100ms sin nuevos caracteres (Optimización para lectura rápida)
                         processingTimeout = setTimeout(async () => {
                             await procesarQRCompleto();
-                        }, 500);
+                        }, 100);
 
                         // Timeout de seguridad para detectar lecturas erróneas (60 segundos)
                         if (errorTimeout) {
@@ -1976,13 +1976,17 @@
             // Esto asegura que la UI se sincronice inmediatamente con el servidor
             sessionStorage.removeItem(`espacio_${espacio}`);
             sessionStorage.removeItem(`espacio_${espacio}_time`);
+            sessionStorage.removeItem(`solicitante_espacio_${espacio}`);
+            sessionStorage.removeItem(`solicitante_espacio_${espacio}_time`);
             
+            // Al devolver exitosamente: CERRAR el modal del espacio si está abierto
+            // NO reabrirlo - solo mostrar el mensaje de éxito
             if (state.currentIndicatorId === espacio) {
-
-                const indicator = state.indicators.find(i => i.id === espacio);
-                if (indicator) {
-                    // Volver a cargar la información detallada desde el servidor
-                    mostrarModalEspacio(indicator);
+                // Cerrar el modal del espacio para no confundir al usuario
+                const modal = document.getElementById('modal-espacio');
+                if (modal) {
+                    modal.classList.add('hidden');
+                    state.currentIndicatorId = null;
                 }
             }
 
@@ -2811,6 +2815,10 @@
                 '#FF0000': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
                 '#ef4444': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
                 '#dc2626': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                'reserva espontánea': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                'Reserva Espontánea': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                'clase registrada': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                'Clase registrada': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
                 'reservado': { texto: 'Reservado', pill: 'border-2 border-yellow-500 bg-yellow-100 text-yellow-700', icon: 'bg-yellow-500' },
                 'Reservado': { texto: 'Reservado', pill: 'border-2 border-yellow-500 bg-yellow-100 text-yellow-700', icon: 'bg-yellow-500' },
                 '#FFA500': { texto: 'Reservado', pill: 'border-2 border-yellow-500 bg-yellow-100 text-yellow-700', icon: 'bg-yellow-500' },
@@ -3148,6 +3156,8 @@
                     // Invalidar cache local
                     sessionStorage.removeItem(`espacio_${espacioId}`);
                     sessionStorage.removeItem(`espacio_${espacioId}_time`);
+                    sessionStorage.removeItem(`solicitante_espacio_${espacioId}`);
+                    sessionStorage.removeItem(`solicitante_espacio_${espacioId}_time`);
 
                     // Cerrar modal primero
                     cerrarModalEspacio();
@@ -3331,7 +3341,7 @@
                             ${horario ? `<div class="text-xs text-blue-600">${horario}</div>` : ''}
                         </div>
                     `;
-                } else if (data.tipo_ocupacion === 'solicitante' && (indicator?.estado === 'Ocupado' || indicator?.estado === 'Programado')) {
+                } else if (data.tipo_ocupacion === 'solicitante' && (indicator?.estado === 'Ocupado' || indicator?.estado === 'Programado' || indicator?.estado === 'Reserva Espontánea' || indicator?.estado === 'Clase registrada')) {
                     // Solicitante (persona externa, no profesor)
                     elements.pasoEstadoActual.innerHTML = `
                         <div class="text-center">
@@ -3340,7 +3350,7 @@
                             ${data.hora_inicio ? `<div class="text-xs text-blue-600">${data.hora_inicio.substring(0, 5)}</div>` : ''}
                         </div>
                     `;
-                } else if ((indicator?.estado === 'Ocupado' || indicator?.estado === 'Reservado' || indicator?.estado === 'Programado') && data.nombre) {
+                } else if ((indicator?.estado === 'Ocupado' || indicator?.estado === 'Reservado' || indicator?.estado === 'Programado' || indicator?.estado === 'Reserva Espontánea' || indicator?.estado === 'Clase registrada') && data.nombre) {
                     // Espacio ocupado sin asignatura → reserva espontánea o uso libre (profesor)
                     let etiqueta = 'En uso';
                     if (data.tipo_reserva === 'espontanea') etiqueta = 'Reserva espontánea';
@@ -4047,7 +4057,7 @@
 
                         <!-- Botón de cerrar -->
                         <div class="flex justify-end px-8 py-4 bg-gray-50 border-t border-gray-200">
-                            <button onclick="cerrarModalMantención()" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                            <button onclick="cerrarModalMantención()" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-100">
                                 Entendido
                             </button>
                         </div>
@@ -4360,7 +4370,7 @@
                             container: 'swal-veto-container',
                             popup: 'swal-veto-popup',
                             closeButton: 'swal-veto-close',
-                            confirmButton: 'bg-red-800 hover:bg-red-900 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg'
+                            confirmButton: 'bg-red-800 hover:bg-red-900 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-150 transform hover:scale-105 shadow-lg'
                         },
                         showCloseButton: true,
                         buttonsStyling: false,
@@ -4527,11 +4537,11 @@
                 
                 // Cambiar color según ocupación
                 if (porcentaje >= 90) {
-                    progressBar.className = 'bg-red-600 h-4 rounded-full transition-all duration-300';
+                    progressBar.className = 'bg-red-600 h-4 rounded-full transition-all duration-150';
                 } else if (porcentaje >= 70) {
-                    progressBar.className = 'bg-yellow-500 h-4 rounded-full transition-all duration-300';
+                    progressBar.className = 'bg-yellow-500 h-4 rounded-full transition-all duration-150';
                 } else {
-                    progressBar.className = 'bg-pink-600 h-4 rounded-full transition-all duration-300';
+                    progressBar.className = 'bg-pink-600 h-4 rounded-full transition-all duration-150';
                 }
             }
         }
@@ -4552,7 +4562,7 @@
             };
 
             const toast = document.createElement('div');
-            toast.className = `fixed top-4 right-4 ${colores[tipo]} text-white px-6 py-3 rounded-lg shadow-lg z-[10000] transform transition-all duration-300 translate-x-full`;
+            toast.className = `fixed top-4 right-4 ${colores[tipo]} text-white px-6 py-3 rounded-lg shadow-lg z-[10000] transform transition-all duration-150 translate-x-full`;
             toast.innerHTML = `
                 <div class="flex items-center gap-2">
                     <i class="fas ${iconos[tipo]}"></i>
@@ -5531,6 +5541,8 @@
                 const espacioKey = `espacio_${payload.id_espacio}`;
                 sessionStorage.removeItem(espacioKey);
                 sessionStorage.removeItem(`${espacioKey}_time`);
+                sessionStorage.removeItem(`solicitante_${espacioKey}`);
+                sessionStorage.removeItem(`solicitante_${espacioKey}_time`);
 
                 if (typeof actualizarModuloYColores === 'function') {
                     actualizarModuloYColores();
@@ -5711,11 +5723,11 @@
         // Cambiar color de la barra según ocupación
         const barra = document.getElementById('sala-progreso-bar');
         if (porcentaje >= 90) {
-            barra.className = 'bg-red-500 h-2.5 rounded-full transition-all duration-300';
+            barra.className = 'bg-red-500 h-2.5 rounded-full transition-all duration-150';
         } else if (porcentaje >= 70) {
-            barra.className = 'bg-yellow-500 h-2.5 rounded-full transition-all duration-300';
+            barra.className = 'bg-yellow-500 h-2.5 rounded-full transition-all duration-150';
         } else {
-            barra.className = 'bg-pink-500 h-2.5 rounded-full transition-all duration-300';
+            barra.className = 'bg-pink-500 h-2.5 rounded-full transition-all duration-150';
         }
     }
 
