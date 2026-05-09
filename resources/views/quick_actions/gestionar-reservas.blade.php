@@ -655,6 +655,9 @@ window.guardarEdicionReserva = async function(event) {
             // Cerrar modal
             cerrarModalEditar();
             
+            // [NUEVO] Notificar a otras pestañas
+            localStorage.setItem('reserva_cambiada', Date.now());
+            
             // Recargar tabla
             await cargarReservas();
         } else {
@@ -1571,6 +1574,9 @@ window.cambiarEstadoReserva = async function(idReserva, nuevoEstado) {
                     timer: 2000,
                     showConfirmButton: false
                 });
+                
+                // [NUEVO] Notificar a otras pestañas
+                localStorage.setItem('reserva_cambiada', Date.now());
                 
                 // Recargar la tabla
 

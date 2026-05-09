@@ -992,8 +992,7 @@ class PlanoDigitalController extends Controller
             }
 
             // [OPTIMIZACIÓN] Invalidar caché del plano y del espacio individual
-            $tenantId = Tenant::current()?->id ?? 'default';
-            \Illuminate\Support\Facades\Cache::forget("estados_espacios_{$tenantId}");
+            $this->limpiarCacheEstadosEspacios();
             \Illuminate\Support\Facades\Cache::forget("espacio_info_{$idEspacio}");
             \Illuminate\Support\Facades\Cache::forget("espacio_info_{$idEspacio}_time");
 
@@ -1636,7 +1635,10 @@ class PlanoDigitalController extends Controller
                 // Es profesor - verificar clases programadas inmediatamente
                 $horaActual = now()->format('H:i:s');
                 $diaActual = now()->dayOfWeek;
-                $clasesInfo = $this->verificarClasesProgramadas($run, $horaActual, $diaActual);
+                $clasesResponse = $this->verificarClasesProgramadas($run, $horaActual, $diaActual);
+                $clasesInfo = $clasesResponse instanceof \Illuminate\Http\JsonResponse 
+                    ? $clasesResponse->getData(true) 
+                    : (is_array($clasesResponse) ? $clasesResponse : []);
 
                 return response()->json([
                     'verificado' => true,
@@ -2321,14 +2323,40 @@ class PlanoDigitalController extends Controller
                 ];
             }
         } else {
-            // Log adicional para entender por qué no se detecta la clase
+            // No hay clase programada: crear reserva espontánea
+            // Calcular el módulo actual automáticamente para persistir modulo_inicio / modulo_fin
+            $horariosModulosMap = $this->obtenerMapaHorariosModulos();
+            $moduloInicioEsp = null;
+            $moduloFinEsp    = null;
+            $horaFinEsp      = null;
+            foreach ($horariosModulosMap as $numMod => $franjas) {
+                if ($horaActual >= $franjas['inicio'] && $horaActual <= $franjas['fin']) {
+                    $moduloInicioEsp = $numMod;
+                    $moduloFinEsp    = $numMod;   // Por defecto 1 módulo; el admin puede extenderlo
+                    $horaFinEsp      = $franjas['fin'];
+                    break;
+                }
+            }
 
-
-            $reserva->tipo_reserva = 'espontanea';
-            $reserva->id_asignatura = null;  // Explícitamente sin clase asociada
-            $reserva->hora = $horaActual;
+            $reserva->tipo_reserva  = 'espontanea';
+            $reserva->id_asignatura = null;  // Sin clase asociada
+            $reserva->hora          = $horaActual;
+            if ($moduloInicioEsp) {
+                $reserva->modulo_inicio = $moduloInicioEsp;
+                $reserva->modulo_fin    = $moduloFinEsp;
+                $reserva->hora_salida   = $horaFinEsp;   // Fin del módulo como salida estimada
+                $reserva->modulos       = 1;
+            }
             $mensaje = 'Reserva espontánea creada exitosamente';
-            $informacionModulos = null;
+            $informacionModulos = $moduloInicioEsp ? [
+                'total_modulos' => 1,
+                'modulos' => [$moduloInicioEsp],
+                'hora_inicio_completa' => substr($horaActual, 0, 5),
+                'hora_fin_completa' => $horaFinEsp ? substr($horaFinEsp, 0, 5) : '--:--',
+                'asignatura' => 'Reserva Espontánea',
+                'es_anticipada' => false,
+                'es_atraso' => false,
+            ] : null;
         }
 
         $reserva->save();
@@ -2339,6 +2367,9 @@ class PlanoDigitalController extends Controller
         // Cambiar estado del espacio
         $espacio->estado = 'Ocupado';
         $espacio->save();
+
+        // Invalidar caché de estados para reflejar cambio en tiempo real
+        $this->limpiarCacheEstadosEspacios();
 
         return response()->json([
             'success' => true,
@@ -2438,6 +2469,18 @@ class PlanoDigitalController extends Controller
         $reserva->run_profesor = null;  // explícito: reserva creada por solicitante
         $reserva->tipo_reserva = 'espontanea';
         $reserva->estado = 'activa';
+
+        // Calcular módulo actual para persistir modulo_inicio / modulo_fin
+        $horariosModulosMapSol = $this->obtenerMapaHorariosModulos();
+        foreach ($horariosModulosMapSol as $numMod => $franjas) {
+            if ($horaActual >= $franjas['inicio'] && $horaActual <= $franjas['fin']) {
+                $reserva->modulo_inicio = $numMod;
+                $reserva->modulo_fin    = $numMod;
+                $reserva->hora_salida   = $franjas['fin'];
+                $reserva->modulos       = 1;
+                break;
+            }
+        }
         $reserva->save();
 
         // Enviar correo de confirmación de reserva al solicitante
@@ -2446,6 +2489,9 @@ class PlanoDigitalController extends Controller
         // Cambiar estado del espacio
         $espacio->estado = 'Ocupado';
         $espacio->save();
+
+        // Invalidar caché de estados para reflejar cambio en tiempo real
+        $this->limpiarCacheEstadosEspacios();
 
         return response()->json([
             'success' => true,
@@ -3025,5 +3071,19 @@ class PlanoDigitalController extends Controller
             13 => ['inicio' => '18:30:00', 'fin' => '19:15:00'],
             14 => ['inicio' => '19:15:00', 'fin' => '20:00:00'],
         ];
+    }
+
+    /**
+     * Limpiar el caché de estados de espacios para el tenant actual
+     */
+    private function limpiarCacheEstadosEspacios()
+    {
+        try {
+            $tenantId = Tenant::current()?->id ?? 'default';
+            \Illuminate\Support\Facades\Cache::forget("estados_espacios_{$tenantId}");
+            Log::info("Caché de estados de espacios limpiado para tenant: {$tenantId}");
+        } catch (\Exception $e) {
+            Log::error('Error al limpiar caché de estados: ' . $e->getMessage());
+        }
     }
 }

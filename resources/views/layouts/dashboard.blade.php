@@ -53,21 +53,21 @@
                 <div class="flex flex-col gap-2">
                     <div class="flex items-center justify-between pb-2 border-b border-gray-200">
                         <span class="text-xs text-gray-500">Total Reservas:</span>
-                        <span class="text-2xl font-bold text-blue-600">{{ $totalReservasHoy }}</span>
+                        <span id="total-reservas-hoy" class="text-2xl font-bold text-blue-600">{{ $totalReservasHoy }}</span>
                     </div>
                     <div class="flex flex-row gap-4 mt-1">
                         @if($salasUtilizadas['mas_reservas'])
                             <div class="flex-1">
                                 <span class="text-xs text-gray-400">Mayor cantidad de reservas:</span>
-                                <div class="text-sm font-bold text-yellow-600">{{ $salasUtilizadas['mas_reservas']->espacio->id_espacio ?? 'N/A' }}</div>
-                                <div class="text-xs text-gray-500">{{ $salasUtilizadas['mas_reservas']->total }} reservas</div>
+                                <div id="kpi-sala-mas-reservas" class="text-sm font-bold text-yellow-600">{{ $salasUtilizadas['mas_reservas']->espacio->id_espacio ?? 'N/A' }}</div>
+                                <div id="kpi-count-mas-reservas" class="text-xs text-gray-500">{{ $salasUtilizadas['mas_reservas']->total }} reservas</div>
                             </div>
                         @endif
                         @if($salasUtilizadas['mas_ocupada'])
                             <div class="flex-1">
                                 <span class="text-xs text-gray-400">Mayor ocupación de módulos:</span>
-                                <div class="text-sm font-bold text-orange-600">{{ $salasUtilizadas['mas_ocupada']->espacio->id_espacio ?? 'N/A' }}</div>
-                                <div class="text-xs text-gray-500">{{ number_format(($salasUtilizadas['mas_ocupada']->total / 15) * 100, 2) }}% ocupación</div>
+                                <div id="kpi-sala-mas-ocupada" class="text-sm font-bold text-orange-600">{{ $salasUtilizadas['mas_ocupada']->espacio->id_espacio ?? 'N/A' }}</div>
+                                <div id="kpi-perc-mas-ocupada" class="text-xs text-gray-500">{{ number_format(($salasUtilizadas['mas_ocupada']->total / 15) * 100, 2) }}% ocupación</div>
                             </div>
                         @else
                             @if($salasUtilizadas['mas_reservas'])
@@ -123,15 +123,15 @@
                 class="flex flex-col justify-between p-6 bg-white shadow-lg rounded-2xl border border-gray-100 min-h-[140px] relative overflow-visible">
                 <div class="flex items-center justify-between mb-2">
                     <div class="flex items-center gap-2">
-                        <span class="font-semibold text-gray-500">% Salas de Clases Desocupadas</span>
+                        <span class="font-semibold text-gray-500">% Salas y Laboratorios Desocupados</span>
                         <div class="group relative cursor-help">
                             <i class="text-sm text-gray-400 fa-solid fa-circle-info hover:text-green-500 transition-colors"></i>
                             <div class="invisible group-hover:visible absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-56 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-lg z-50 whitespace-normal">
-                                <p class="font-semibold mb-2">Cálculo de Salas Desocupadas:</p>
-                                <p class="mb-2">Porcentaje de salas libres en el momento actual.</p>
+                                <p class="font-semibold mb-2">Cálculo de Espacios Desocupados:</p>
+                                <p class="mb-2">Porcentaje de salas, laboratorios y talleres libres en el momento actual.</p>
                                 <p class="font-semibold text-gray-200 mb-1">Fórmula:</p>
-                                <p class="bg-gray-700 p-2 rounded text-gray-100 mb-2 font-mono text-xs">(Salas Libres / Total Salas) × 100</p>
-                                <p class="text-gray-300">Se contabiliza en tiempo real basado en el estado actual de todas las salas.</p>
+                                <p class="bg-gray-700 p-2 rounded text-gray-100 mb-2 font-mono text-xs">(Espacios Libres / Total Espacios Académicos) × 100</p>
+                                <p class="text-gray-300">Se contabiliza en tiempo real basado en el estado actual de todos los espacios académicos.</p>
                                 <div class="absolute -top-1 left-1/2 transform -translate-x-1/2 border-4 border-transparent border-b-gray-800"></div>
                             </div>
                         </div>
@@ -145,16 +145,16 @@
                         $porcentajeDesocupadasTotal = $totalSalasTotal > 0 ? round((($salasOcupadas['total']['libres'] ?? 0) / $totalSalasTotal) * 100, 2) : 0;
                     @endphp
                     <div class="text-center">
-                        <div class="text-5xl font-bold text-green-600">{{ $porcentajeDesocupadasTotal }}%</div>
+                        <div id="porcentaje-salas-desocupadas" class="text-5xl font-bold text-green-600">{{ $porcentajeDesocupadasTotal }}%</div>
                     </div>
                     <div class="flex items-center justify-between pt-2 mt-2 border-t border-gray-200">
                         <div class="text-center flex-1">
                             <div class="text-xs text-gray-400">Ocupadas</div>
-                            <div class="text-xl font-bold text-red-600">{{ $salasOcupadas['total']['ocupadas'] ?? 0 }}</div>
+                            <div id="salas-ocupadas-count" class="text-xl font-bold text-red-600">{{ $salasOcupadas['total']['ocupadas'] ?? 0 }}</div>
                         </div>
                         <div class="text-center flex-1">
                             <div class="text-xs text-gray-400">Libres</div>
-                            <div class="text-xl font-bold text-green-600">{{ $salasOcupadas['total']['libres'] ?? 0 }}</div>
+                            <div id="salas-libres-count" class="text-xl font-bold text-green-600">{{ $salasOcupadas['total']['libres'] ?? 0 }}</div>
                         </div>
                     </div>
                 </div>
@@ -1166,6 +1166,47 @@
             const elem = document.getElementById('usuarios-sin-escaneo');
             const value = typeof data.usuariosSinEscaneo === 'number' ? data.usuariosSinEscaneo : 0;
             if (elem) elem.textContent = value + ' usuarios sin registrar asistencia hoy';
+        }
+
+        // [NUEVO] Actualizar Total Reservas Hoy
+        if (data.totalReservasHoy !== undefined) {
+            const elem = document.getElementById('total-reservas-hoy');
+            if (elem) elem.textContent = data.totalReservasHoy;
+        }
+
+        // [NUEVO] Actualizar Sala con más reservas / ocupación
+        if (data.salasUtilizadas) {
+            if (data.salasUtilizadas.mas_reservas) {
+                const elemSala = document.getElementById('kpi-sala-mas-reservas');
+                const elemCount = document.getElementById('kpi-count-mas-reservas');
+                if (elemSala) elemSala.textContent = data.salasUtilizadas.mas_reservas.id_espacio || 'N/A';
+                if (elemCount) elemCount.textContent = data.salasUtilizadas.mas_reservas.total + ' reservas';
+            }
+            if (data.salasUtilizadas.mas_ocupada) {
+                const elemSala = document.getElementById('kpi-sala-mas-ocupada');
+                const elemPerc = document.getElementById('kpi-perc-mas-ocupada');
+                if (elemSala) elemSala.textContent = data.salasUtilizadas.mas_ocupada.id_espacio || 'N/A';
+                if (elemPerc) {
+                    const perc = (data.salasUtilizadas.mas_ocupada.total / 15 * 100).toFixed(2);
+                    elemPerc.textContent = perc + '% ocupación';
+                }
+            }
+        }
+
+        // [NUEVO] Actualizar Salas Desocupadas (% y contadores)
+        if (data.salasOcupadas && data.salasOcupadas.total) {
+            const ocupadas = data.salasOcupadas.total.ocupadas || 0;
+            const libres = data.salasOcupadas.total.libres || 0;
+            const total = ocupadas + libres;
+            const porcentaje = total > 0 ? ((libres / total) * 100).toFixed(2) : 0;
+
+            const elemPerc = document.getElementById('porcentaje-salas-desocupadas');
+            const elemOcup = document.getElementById('salas-ocupadas-count');
+            const elemLibre = document.getElementById('salas-libres-count');
+
+            if (elemPerc) elemPerc.textContent = porcentaje + '%';
+            if (elemOcup) elemOcup.textContent = ocupadas;
+            if (elemLibre) elemLibre.textContent = libres;
         }
     }
 

@@ -354,6 +354,9 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
         $horaActual = \Carbon\Carbon::now();
         $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
         $horaActualStr = $horaActual->format('H:i:s');
+        
+        // Margen de 15 minutos para anticipación
+        $horaConAnticipacion = $horaActual->copy()->addMinutes(15)->format('H:i:s');
 
         // Verificar si el usuario tiene clase programada en este espacio
         $tieneProgramacion = DB::table('planificacion_asignaturas as pa')
@@ -362,9 +365,15 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
             ->where('pa.id_espacio', $espacio)
             ->where('h.run', $usuario)
             ->where('m.dia', $diaActual)
-            ->where(function($query) use ($horaActualStr) {
-                $query->where('m.hora_inicio', '<=', $horaActualStr)
+            ->where(function($query) use ($horaActualStr, $horaConAnticipacion) {
+                // En curso ahora OR empieza en los próximos 15 minutos
+                $query->where(function($q) use ($horaActualStr) {
+                    $q->where('m.hora_inicio', '<=', $horaActualStr)
                       ->where('m.hora_termino', '>=', $horaActualStr);
+                })->orWhere(function($q) use ($horaActualStr, $horaConAnticipacion) {
+                    $q->where('m.hora_inicio', '>', $horaActualStr)
+                      ->where('m.hora_inicio', '<=', $horaConAnticipacion);
+                });
             })
             ->exists();
 

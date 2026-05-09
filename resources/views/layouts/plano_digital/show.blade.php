@@ -1444,6 +1444,17 @@
             }
         }
 
+        async function verificarProgramacionEnEspacio(espacio, run) {
+            try {
+                const response = await fetch(`/api/verificar-programacion/${espacio}/${run}`);
+                const result = await response.json();
+                return result.success && result.tieneProgramacion;
+            } catch (error) {
+                console.error('Error al verificar programación en espacio:', error);
+                return false;
+            }
+        }
+
         async function crearReserva(run, idEspacio, tipoUsuario = 'profesor') {
             try {
                 const response = await fetch('/api/crear-reserva-profesor', {
@@ -1955,8 +1966,17 @@
 
         // El usuario tiene una reserva activa en este espacio - procesar devolución automáticamente
 
-        // Mostrar mensaje de devolución en proceso
-        document.getElementById('qr-status').innerHTML = 'Procesando devolución...';
+        // Mostrar modal de devolución en proceso
+        Swal.fire({
+            title: 'Procesando devolución...',
+            text: 'Liberando espacio y registrando salida.',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
 
         const devolucion = await devolverEspacio(usuarioEscaneado, espacio);
 
@@ -1992,6 +2012,7 @@
 
             // Verificar si es devolución en el primer módulo
             if (devolucion.devolucion_primer_modulo && devolucion.info_clase) {
+                Swal.close(); // Cerrar modal de carga
                 // Mostrar modal para preguntar si hubo asistentes
                 mostrarModalAsistentes(devolucion.info_clase, devolucion.id_reserva, espacio);
                 
@@ -2034,6 +2055,14 @@
         } else {
             // Mostrar error específico de devolución
             const mensajeError = devolucion?.mensaje || 'Error al devolver las llaves';
+            
+            Swal.fire({
+                title: 'Error',
+                text: mensajeError,
+                icon: 'error',
+                timer: 2500,
+                showConfirmButton: false
+            });
 
             // Resetear el estado para permitir nuevo escaneo
             procesandoDevolucion = false;
@@ -2289,11 +2318,13 @@
 
         // Determinar el flujo según el tipo de usuario
         if (usuarioInfo.tipo_usuario === 'profesor') {
-            // Verificar si tiene clases programadas
-            const tieneClases = await verificarClasesProfesor(usuarioEscaneado);
+            // [CAMBIO] Verificar si tiene clase programada ESPECÍFICAMENTE en este espacio ahora
+            // Esto corrige el problema donde si un profesor tiene clases en el día pero en otra sala,
+            // no se le preguntaba cuántos módulos utilizaría en una reserva espontánea.
+            const tieneClaseAqui = await verificarProgramacionEnEspacio(espacio, usuarioEscaneado);
 
-            if (tieneClases === true) {
-                // CASO 1: Profesor CON clases - registrar asistencia usando endpoint específico
+            if (tieneClaseAqui === true) {
+                // CASO 1: Profesor TIENE CLASE AQUÍ - registrar asistencia usando endpoint específico
                 const resultado = await registrarAsistenciaProfesor(usuarioEscaneado, espacio);
                 if (resultado && resultado.success) {
                     // Mostrar mensaje de proceso
@@ -3246,8 +3277,9 @@
                     const minutoProximo = horaProx * 60 + minProx;
                     const diferencia = minutoProximo - minutoActual;
                     
-                    // La clase está "AHORA" si comienza en los próximos 15 minutos (rango flexible)
-                    reservaEstaAhora = diferencia >= 0 && diferencia <= 15;
+                    // La clase está "AHORA" si comienza en los próximos 15 minutos 
+                    // O si ya debería haber comenzado (hasta 90 minutos de margen para cubrir el módulo)
+                    reservaEstaAhora = diferencia <= 15 && diferencia > -90;
                     
                     console.log('⏰ Análisis de hora:', {
                         hora_actual: horaActual,
@@ -5535,6 +5567,7 @@
     // Escuchar cambios en localStorage para sincronizar mapa entre pestañas (p.ej. eliminación de reservas)
     window.addEventListener('storage', function (event) {
         if (!event.key) return;
+        
         if (event.key === 'reserva_eliminada') {
             try {
                 const payload = JSON.parse(event.newValue);
@@ -5549,6 +5582,14 @@
                 }
             } catch (err) {
                 console.error('Error procesando evento storage reserva_eliminada', err);
+            }
+        } else if (event.key === 'reserva_cambiada' || event.key === 'espacio_cambiado') {
+            console.log('🔄 Cambio detectado en localStorage, actualizando mapa...');
+            if (typeof actualizarColoresEspacios === 'function') {
+                actualizarColoresEspacios(true); // forzar
+            }
+            if (typeof actualizarModuloYColores === 'function') {
+                actualizarModuloYColores();
             }
         }
     });

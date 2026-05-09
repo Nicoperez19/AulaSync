@@ -734,6 +734,7 @@ class ModulosActualesTable extends Component
                     $planificacionesActivas = collect();
                     $planificacionesColaboradores = collect();
                     $todasLasPlanificaciones = collect();
+                    $reservasProfesoresPendientes = collect();
                 }
 
                 // Obtener reservas activas de solicitantes para el día actual
@@ -753,6 +754,14 @@ class ModulosActualesTable extends Component
                     ->whereNotNull('hora')  // Solo las que el profesor sí entró
                     ->get()
                     ->keyBy('id_espacio');  // Indexar por espacio para búsqueda rápida
+
+                // [NUEVO] Obtener reservas de profesores PROGRAMADAS (pendientes de entrada) para el día actual
+                $reservasProfesoresPendientes = Reserva::with(['profesor', 'asignatura', 'asignatura.carrera'])
+                    ->where('fecha_reserva', Carbon::now()->toDateString())
+                    ->where('estado', 'programada')
+                    ->whereNotNull('run_profesor')
+                    ->get()
+                    ->groupBy('id_espacio');
 
 
                 // Crear índice de profesores que registraron entrada (para detectar cambios de sala)
@@ -797,6 +806,9 @@ class ModulosActualesTable extends Component
 
                         // Buscar si el espacio tiene una reserva de profesor (búsqueda O(1))
                         $reservaProfesor = $reservasProfesores->get($espacio->id_espacio);
+
+                        // [NUEVO] Buscar si el espacio tiene una reserva de profesor PENDIENTE (búsqueda O(1))
+                        $reservaProfesorPendiente = $reservasProfesoresPendientes->get($espacio->id_espacio)?->first();
 
 
 
@@ -1003,7 +1015,7 @@ class ModulosActualesTable extends Component
 
                         // PRIORIDAD 2: Solo procesar planificación del espacio si NO hay reserva de profesor
                         // Esto evita confusión cuando el profesor está dando otra clase
-                        if ($planificacionActiva && $planificacionActiva->asignatura && !$tieneReservaProfesor) {
+                        if ($planificacionActiva && $planificacionActiva->asignatura && !$reservaProfesor) {
                             $tieneClase = true;
 
                             // Obtener todas las planificaciones de esta asignatura usando datos pre-cargados
@@ -1266,7 +1278,9 @@ class ModulosActualesTable extends Component
                                 'run' => $reservaProfesorPendiente->run_profesor ?? '-',
                                 'hora_inicio' => $horaInicioPend,
                                 'hora_salida' => $horaFinPend,
-                                'nombre_asignatura' => $reservaProfesorPendiente->asignatura->nombre_asignatura ?? 'Reservado',
+                                'nombre_asignatura' => $reservaProfesorPendiente->id_asignatura
+                                    ? ($reservaProfesorPendiente->asignatura->nombre_asignatura ?? 'Reservado')
+                                    : 'Reserva Espontánea',
                                 'codigo_asignatura' => $reservaProfesorPendiente->asignatura->codigo_asignatura ?? '-',
                                 'carrera' => $reservaProfesorPendiente->asignatura->carrera->nombre ?? '-',
                                 'inscritos' => null,
@@ -1274,6 +1288,9 @@ class ModulosActualesTable extends Component
                                 'modulo_fin' => $moduloFinPend ?? '',
                                 'es_pendiente' => true,
                                 'es_programada' => $esProgramadaProfesor,
+                                'tipo_reserva' => $reservaProfesorPendiente->tipo_reserva ?? 'espontanea',
+                                'nombre_actividad' => $reservaProfesorPendiente->nombre_actividad ?? null,
+                                'descripcion_actividad' => $reservaProfesorPendiente->descripcion_actividad ?? null,
                             ];
 
                             Log::info('ModulosActuales - Reserva pendiente encontrada:', [
@@ -1348,34 +1365,34 @@ class ModulosActualesTable extends Component
                         } elseif ($tieneReservaSolicitante && !($datosSolicitante['es_programada'] ?? false)) {
                             // Reserva de solicitante ACTIVA (en franja actual) → Reserva Espontánea
                             $estado = 'Reserva Espontánea';
-                        } elseif ($tieneReservaProfesor && !$tieneClase) {
-                            // Reserva espontánea de profesor (sin planificación de clase)
-                            // Mostrar como Reserva Espontánea
-                            $estado = 'Reserva Espontánea';
-                            Log::info('ModulosActuales - Reserva espontánea de profesor detectada', [
-                                'espacio' => $espacio->id_espacio,
-                                'profesor' => $datosProfesor['nombre'] ?? 'N/A',
-                            ]);
+                        } elseif ($tieneReservaProfesor) {
+                            if (($datosProfesor['tipo_reserva'] ?? '') === 'espontanea') {
+                                $estado = 'Reserva Espontánea';
+                                $tieneClase = false; // Ignorar clase programada
+                            } else {
+                                if ($claseFinalizada || $claseTerminoAntes) {
+                                    $estado = 'Disponible';
+                                    $tieneClase = false;
+                                    $datosClase = null;
+                                    $tieneReservaProfesor = false;
+                                    $datosProfesor = null;
+                                } else {
+                                    $claseEnCurso = $this->verificarClaseEnCurso((int) $numeroModuloInicio, (int) $numeroModuloFin, $this->moduloActual);
+                                    if ($claseEnCurso) {
+                                        $estado = 'Clase registrada';
+                                    } else {
+                                        $estado = 'Disponible';
+                                        $tieneClase = false;
+                                        $datosClase = null;
+                                        $tieneReservaProfesor = false;
+                                        $datosProfesor = null;
+                                    }
+                                }
+                            }
                         } elseif ($tieneClase && ($claseFinalizada || $claseTerminoAntes)) {
-                            // Si la clase ya terminó (por horario o porque el profesor se fue antes)
-                            // Limpiar información de la clase y marcar como disponible
                             $estado = 'Disponible';
                             $tieneClase = false;
                             $datosClase = null;
-                        } elseif ($tieneClase && $tieneReservaProfesor && !$claseFinalizada && !$claseTerminoAntes) {
-                            // Si hay clase y el profesor registró su ingreso Y la clase NO ha terminado
-                            // Verificar que realmente esté en el rango de módulos de la clase
-                            $claseEnCurso = $this->verificarClaseEnCurso((int) $numeroModuloInicio, (int) $numeroModuloFin, $this->moduloActual);
-                            if ($claseEnCurso) {
-                                $estado = 'Clase registrada';
-                            } else {
-                                // Si no estamos en el rango de la clase, el espacio está disponible
-                                $estado = 'Disponible';
-                                $tieneClase = false;
-                                $datosClase = null;
-                                $tieneReservaProfesor = false;
-                                $datosProfesor = null;
-                            }
                         } elseif ($tieneClase && !$tieneReservaProfesor && $claseNoRealizada) {
                             // Si hay clase programada pero se detectó que no fue realizada
                             $estado = 'Clase no registrada';

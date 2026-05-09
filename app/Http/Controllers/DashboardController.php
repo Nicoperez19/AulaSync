@@ -160,17 +160,11 @@ class DashboardController extends Controller
 
         // Total de reservas hoy y sala más utilizada (solo queries ligeras)
         $totalReservasHoy = Reserva::whereDate('fecha_reserva', today())
-            ->whereHas('espacio', function ($query) {
-                $query->where('tipo_espacio', 'Sala de Clases');
-            })
             ->count();
 
         // Sala con más reservas hoy
         $salaMasReservas = Reserva::select('id_espacio', DB::raw('count(*) as total'))
             ->whereDate('fecha_reserva', today())
-            ->whereHas('espacio', function ($query) {
-                $query->where('tipo_espacio', 'Sala de Clases');
-            })
             ->groupBy('id_espacio')
             ->orderByDesc('total')
             ->with('espacio:id_espacio,nombre_espacio')
@@ -179,9 +173,6 @@ class DashboardController extends Controller
         // Sala con mayor ocupación (módulos utilizados / 15)
         $salaMasUtilizada = Reserva::select('id_espacio', DB::raw('count(*) as total'))
             ->whereDate('fecha_reserva', today())
-            ->whereHas('espacio', function ($query) {
-                $query->where('tipo_espacio', 'Sala de Clases');
-            })
             ->groupBy('id_espacio')
             ->with('espacio:id_espacio,nombre_espacio')
             ->get()
@@ -660,10 +651,10 @@ class DashboardController extends Controller
 
     private function obtenerSalasOcupadas($facultad, $piso, $turno = null)
     {
-        // SOLO contar Salas de Clases para el KPI de % Ocupación
+        // Contar Salas de Clases, Laboratorios y Talleres para el KPI de % Ocupación
         $espaciosQuery = $this
             ->obtenerEspaciosQuery($facultad, $piso)
-            ->where('tipo_espacio', 'Sala de Clases');
+            ->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller']);
 
         $totalEspacios = (clone $espaciosQuery)->count();
 
@@ -1844,6 +1835,28 @@ class DashboardController extends Controller
         $piso = $request->session()->get('piso');
         $facultad = 'IT_' . $tenant->sede_id;
 
+        // Total de reservas hoy y sala más utilizada (mismo cálculo que en index)
+        $totalReservasHoy = Reserva::whereDate('fecha_reserva', today())->count();
+
+        $salaMasReservas = Reserva::select('id_espacio', DB::raw('count(*) as total'))
+            ->whereDate('fecha_reserva', today())
+            ->groupBy('id_espacio')
+            ->orderByDesc('total')
+            ->with('espacio:id_espacio,nombre_espacio')
+            ->first();
+
+        $salaMasUtilizada = Reserva::select('id_espacio', DB::raw('count(*) as total'))
+            ->whereDate('fecha_reserva', today())
+            ->groupBy('id_espacio')
+            ->with('espacio:id_espacio,nombre_espacio')
+            ->get()
+            ->map(function ($item) {
+                $item->ocupacion_modulos = ($item->total / 15) * 100;
+                return $item;
+            })
+            ->sortByDesc('ocupacion_modulos')
+            ->first();
+
         // Obtener datos para los KPIs - DIURNO Y VESPERTINO
         $ocupacionSemanal = [
             'diurno' => $this->calcularOcupacionSemanal($facultad, $piso, 'diurno'),
@@ -1885,6 +1898,11 @@ class DashboardController extends Controller
         $canceladasPorTipo = $this->obtenerCanceladasPorTipoSala($facultad, $piso);
 
         return response()->json([
+            'totalReservasHoy' => (int) $totalReservasHoy,
+            'salasUtilizadas' => [
+                'mas_reservas' => $salaMasReservas,
+                'mas_ocupada' => $salaMasUtilizada
+            ],
             'ocupacionSemanal' => [
                 'diurno' => (float) $ocupacionSemanal['diurno'],
                 'vespertino' => (float) $ocupacionSemanal['vespertino'],

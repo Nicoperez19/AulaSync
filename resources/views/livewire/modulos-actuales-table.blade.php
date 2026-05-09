@@ -288,20 +288,24 @@
                                             @elseif (($espacio['tiene_reserva_profesor'] ?? false) && !empty($espacio['datos_profesor']) && !empty($espacio['datos_profesor']['nombre']))
                                                 <div class="font-medium text-gray-900 text-sm flex items-start justify-between gap-2">
                                                     <div class="flex-1">
-                                                        <div>
-                                                            @if(!empty($espacio['datos_profesor']['nombre_actividad']))
-                                                                <span class="font-semibold text-blue-600">{{ $espacio['datos_profesor']['nombre_actividad'] }}</span>
-                                                            @elseif(!empty($espacio['datos_profesor']['codigo_asignatura']) && ($espacio['datos_profesor']['tipo_reserva'] ?? '') === 'clase')
-                                                                <span class="font-semibold">{{ $espacio['datos_profesor']['codigo_asignatura'] }} - </span>
-                                                                {{ $espacio['datos_profesor']['nombre_asignatura'] ?? $asignatura ?? 'Sin asignatura' }}
-                                                            @else
-                                                                {{ $espacio['datos_profesor']['nombre_asignatura'] ?? $asignatura ?? 'Sin asignatura' }}
-                                                            @endif
-                                                        </div>
-                                                        <div>Prof: {{ $espacio['datos_profesor']['nombre'] ?? 'N/A' }}</div>
-                                                        @if(!empty($espacio['datos_profesor']['descripcion_actividad']))
-                                                            <div class="text-xs text-gray-500 truncate" title="{{ $espacio['datos_profesor']['descripcion_actividad'] }}">{{ Str::limit($espacio['datos_profesor']['descripcion_actividad'], 50) }}</div>
-                                                        @endif
+                                                         <div>
+                                                             @if(!empty($espacio['datos_profesor']['nombre_actividad']))
+                                                                 <span class="font-semibold text-blue-600">{{ $espacio['datos_profesor']['nombre_actividad'] }}</span>
+                                                             @elseif(($espacio['datos_profesor']['tipo_reserva'] ?? '') === 'espontanea')
+                                                                 <span class="font-semibold text-gray-700">Reserva Espontánea</span>
+                                                             @elseif(!empty($espacio['datos_profesor']['codigo_asignatura']) && ($espacio['datos_profesor']['tipo_reserva'] ?? '') === 'clase')
+                                                                 <span class="font-semibold">{{ $espacio['datos_profesor']['codigo_asignatura'] }} - </span>
+                                                                 {{ $espacio['datos_profesor']['nombre_asignatura'] ?? $asignatura ?? 'Sin asignatura' }}
+                                                             @else
+                                                                 {{ $espacio['datos_profesor']['nombre_asignatura'] ?? $asignatura ?? 'Sin asignatura' }}
+                                                             @endif
+                                                         </div>
+                                                         <div class="text-xs text-gray-500">
+                                                             {{ ($espacio['datos_profesor']['tipo_reserva'] ?? '') === 'espontanea' ? 'Profesor' : 'Prof' }}: {{ $espacio['datos_profesor']['nombre'] ?? 'N/A' }}
+                                                         </div>
+                                                         @if(!empty($espacio['datos_profesor']['descripcion_actividad']))
+                                                             <div class="text-xs text-gray-500 truncate" title="{{ $espacio['datos_profesor']['descripcion_actividad'] }}">{{ Str::limit($espacio['datos_profesor']['descripcion_actividad'], 50) }}</div>
+                                                         @endif
                                                     </div>
                                                     @if(!empty($espacio['datos_profesor']['es_programada']))
                                                         <span class="px-2 py-0.5 bg-indigo-200 text-indigo-700 text-xs font-semibold rounded whitespace-nowrap">PROGRAMADO</span>
@@ -487,9 +491,17 @@
 
     <script>
         // Actualizar datos cada 60 segundos para evitar sobrecarga del servidor
-        setInterval(function() {
+        setInterval(() => {
             @this.actualizarAutomaticamente();
-        }, 60000); // Aumentado a 60 segundos
+        }, 60000); // 60 segundos
+
+        // [NUEVO] Escuchar cambios en localStorage para sincronizar entre pestañas
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'reserva_cambiada' || e.key === 'espacio_cambiado') {
+                console.log('🔄 Cambio detectado en localStorage, actualizando tablero...');
+                @this.actualizarDatos();
+            }
+        });
 
         // Refresh completo de página cada hora para limpiar caché
         setTimeout(function() {
