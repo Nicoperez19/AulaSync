@@ -44,8 +44,8 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
         $fechaInicio = $this->fechaInicio ?? Carbon::now()->startOfMonth();
         $fechaFin = $this->fechaFin ?? Carbon::now()->endOfMonth();
 
-        // Días de la semana para mapeo
-        $dias = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        // Días de la semana para mapeo (0=Domingo, 1=Lunes, etc. según Carbon)
+        $dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
         // Generar fechas en el rango (optimizado)
         $fechas = [];
@@ -136,7 +136,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                 // Para cada fecha en el rango
                 foreach ($fechas as $fechaStr) {
                     $fecha = Carbon::parse($fechaStr);
-                    $diaFecha = $dias[$fecha->dayOfWeek - 1];
+                    $diaFecha = $dias[$fecha->dayOfWeek];
                     
                     // Solo procesar si el día coincide con el módulo
                     if ($diaFecha === $diaModulo) {

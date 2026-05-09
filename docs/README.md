@@ -4,6 +4,35 @@ Este documento sirve como índice central para toda la documentación de la API 
 
 ---
 
+## 🆕 SISTEMA REFACTORIZADO - OCUPACIÓN COHERENTE
+
+**Actualizado**: 9 de mayo, 2026  
+**Estado**: ✅ COMPLETADO Y LISTO PARA PRUEBAS
+
+### Documentación Principal
+- **[RESUMEN_EJECUTIVO_REFACTORACION.md](RESUMEN_EJECUTIVO_REFACTORACION.md)** - Resumen de lo que se completó
+  - Cambios implementados
+  - Coherencia de datos garantizada
+  - Validación final
+
+- **[GUIA_RAPIDA_PRUEBAS.md](GUIA_RAPIDA_PRUEBAS.md)** - ¡Comienza aquí para probar!
+  - Cómo acceder al Control Docente
+  - Pruebas rápidas en 2 minutos
+  - Criterios de éxito
+
+- **[CHECKLIST_PRUEBAS_SISTEMA.md](CHECKLIST_PRUEBAS_SISTEMA.md)** - Checklist completo
+  - Todas las pruebas manuales a realizar
+  - Validación de coherencia
+  - Solución de problemas
+
+### Documentación Técnica
+- **[DIAGNOSTICO_CONTROL_DOCENTE.md](DIAGNOSTICO_CONTROL_DOCENTE.md)** - Análisis técnico
+  - Estructura de Control Docente
+  - Análisis de filtros
+  - Matriz de validación
+
+---
+
 ## 📚 Documentación de APIs
 
 ### Cálculos y Estadísticas

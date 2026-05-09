@@ -14,6 +14,7 @@ use App\Models\PlanificacionProfesorColaborador;
 use App\Models\ProfesorColaborador;
 use App\Models\Reserva;
 use App\Models\Tenant;
+use App\Services\OccupancyService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Livewire\Component;
@@ -48,6 +49,9 @@ class ModulosActualesTable extends Component
     public $tenantsDisponibles = [];
 
     public $mostrarSelectorSedes = false;
+
+    // Inyección de servicio
+    public $occupancyService;
 
     // Horarios de módulos basados en la referencia JavaScript
     private $horariosModulos = [
@@ -140,6 +144,9 @@ class ModulosActualesTable extends Component
 
     public function mount()
     {
+        // Inyectar servicio de ocupación
+        $this->occupancyService = app(OccupancyService::class);
+
         set_time_limit(120);
         ini_set('max_execution_time', 120);
 

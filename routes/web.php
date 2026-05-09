@@ -451,6 +451,7 @@ Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-acti
     // API endpoints para quick actions
     Route::get('/dashboard-data', [QuickActionsController::class, 'getDashboardData'])->name('dashboard-data');
     Route::get('/api/espacios', [QuickActionsController::class, 'getEspacios'])->name('api.espacios');
+    Route::post('/api/espacios/liberacion-masiva', [QuickActionsController::class, 'liberacionMasiva'])->name('api.espacios.liberacion-masiva');
     Route::get('/api/reservas', [QuickActionsController::class, 'getReservas'])->name('api.reservas');
 
 

@@ -53,7 +53,7 @@ class ClasesNoRealizadasController extends Controller
             'fecha_inicio' => 'nullable|date',
             'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
             'periodo' => 'nullable|string|max:20',
-            'estado' => 'nullable|in:no_realizada,justificado,recuperada',
+            'estado' => 'nullable|in:no_realizada,justificado,recuperada,pendiente',
         ]);
 
         $fechaInicio = $request->input('fecha_inicio');

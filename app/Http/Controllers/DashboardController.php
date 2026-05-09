@@ -14,6 +14,7 @@ use App\Models\RecuperacionClase;
 use App\Models\Reserva;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\OccupancyService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,6 +22,13 @@ use Illuminate\Support\Facades\Log;
 
 class DashboardController extends Controller
 {
+    protected $occupancyService;
+
+    public function __construct(OccupancyService $occupancyService)
+    {
+        $this->occupancyService = $occupancyService;
+    }
+
     /**
      * Calcula los módulos reales de uso basado en hora de inicio y salida.
      * Considera:
@@ -137,26 +145,27 @@ class DashboardController extends Controller
             ->get();
 
         // SOLO CARGAR DATOS ESENCIALES PARA LOS KPIs
+        // Usar OccupancyService para garantizar coherencia
         $ocupacionSemanal = [
-            'diurno' => $this->calcularOcupacionSemanal($facultad, $piso, 'diurno'),
-            'vespertino' => $this->calcularOcupacionSemanal($facultad, $piso, 'vespertino'),
-            'total' => $this->calcularOcupacionSemanal($facultad, $piso)
+            'diurno' => $this->occupancyService->calcularOcupacionSemanal($facultad, $piso, 'diurno'),
+            'vespertino' => $this->occupancyService->calcularOcupacionSemanal($facultad, $piso, 'vespertino'),
+            'total' => $this->occupancyService->calcularOcupacionSemanal($facultad, $piso)
         ];
 
         $ocupacionMensual = [
-            'diurno' => $this->calcularOcupacionMensual($facultad, $piso, 'diurno'),
-            'vespertino' => $this->calcularOcupacionMensual($facultad, $piso, 'vespertino'),
-            'total' => $this->calcularOcupacionMensual($facultad, $piso)
+            'diurno' => $this->occupancyService->calcularOcupacionMensual($facultad, $piso, 'diurno'),
+            'vespertino' => $this->occupancyService->calcularOcupacionMensual($facultad, $piso, 'vespertino'),
+            'total' => $this->occupancyService->calcularOcupacionMensual($facultad, $piso)
         ];
 
         $salasOcupadas = [
-            'diurno' => $this->obtenerSalasOcupadas($facultad, $piso, 'diurno'),
-            'vespertino' => $this->obtenerSalasOcupadas($facultad, $piso, 'vespertino'),
-            'total' => $this->obtenerSalasOcupadas($facultad, $piso)
+            'diurno' => $this->occupancyService->obtenerSalasOcupadas($facultad, $piso, 'diurno'),
+            'vespertino' => $this->occupancyService->obtenerSalasOcupadas($facultad, $piso, 'vespertino'),
+            'total' => $this->occupancyService->obtenerSalasOcupadas($facultad, $piso)
         ];
 
         // Obtener TODOS los espacios ocupados (incluyendo laboratorios, talleres, etc.) para el gráfico de torta
-        $espaciosOcupadosTotal = $this->obtenerEspaciosOcupadosTotal($facultad, $piso);
+        $espaciosOcupadosTotal = $this->occupancyService->obtenerEspaciosOcupadosTotal($facultad, $piso);
 
         // Total de reservas hoy y sala más utilizada (solo queries ligeras)
         $totalReservasHoy = Reserva::whereDate('fecha_reserva', today())
@@ -184,11 +193,11 @@ class DashboardController extends Controller
             ->first();
 
         // Datos para gráficos de la primera pestaña (se cargan inicialmente)
-        $usoPorDia = $this->obtenerUsoPorDia($facultad, $piso);
-        $salasUtilizadasPorDia = $this->obtenerSalasUtilizadasPorDia($facultad, $piso);
-        $ocupacionPorDia = $this->obtenerOcupacionPorDia($facultad, $piso);
+        $usoPorDia = $this->occupancyService->obtenerUsoPorDia($facultad, $piso);
+        $salasUtilizadasPorDia = $this->occupancyService->obtenerSalasUtilizadasPorDia($facultad, $piso);
+        $ocupacionPorDia = $this->occupancyService->obtenerOcupacionPorDia($facultad, $piso);
         $salasPorTipoPorDia = $this->obtenerSalasPorTipoPorDia($facultad, $piso);
-        $ocupacionPorTurno = $this->obtenerOcupacionPorTurno($facultad, $piso);
+        $ocupacionPorTurno = $this->occupancyService->obtenerOcupacionPorTurno($facultad, $piso);
         $ocupacionPorTipo = $this->obtenerOcupacionPorTipo($facultad, $piso);
         $ocupacionPorSala = $this->obtenerOcupacionPorSala($facultad, $piso);
         $disponibilidadSalas = $this->obtenerDisponibilidadSalas($facultad, $piso);

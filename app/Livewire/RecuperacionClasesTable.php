@@ -163,11 +163,13 @@ class RecuperacionClasesTable extends Component
     {
         $query = RecuperacionClase::with(['profesor', 'asignatura', 'licencia', 'moduloOriginal', 'espacioReagendado'])
             ->when($this->search, function ($q) {
-                $q->whereHas('profesor', function ($query) {
-                    $query->where('name', 'like', '%' . $this->search . '%')
-                          ->orWhere('run_profesor', 'like', '%' . $this->search . '%');
-                })->orWhereHas('asignatura', function ($query) {
-                    $query->where('nombre_asignatura', 'like', '%' . $this->search . '%');
+                $q->where(function ($sub) {
+                    $sub->whereHas('profesor', function ($query) {
+                        $query->where('name', 'like', '%' . $this->search . '%')
+                              ->orWhere('run_profesor', 'like', '%' . $this->search . '%');
+                    })->orWhereHas('asignatura', function ($query) {
+                        $query->where('nombre_asignatura', 'like', '%' . $this->search . '%');
+                    });
                 });
             })
             ->when($this->estado, function ($q) {
@@ -176,7 +178,27 @@ class RecuperacionClasesTable extends Component
             ->orderBy($this->sortField, $this->sortDirection);
 
         $recuperaciones = $query->paginate(15);
-        $modulos = Modulo::orderBy('id_modulo')->get();
+        
+        // Ordenar módulos cronológicamente (Lunes a Sábado, luego por número)
+        $modulos = Modulo::all()->sort(function ($a, $b) {
+            $dias = ['LU' => 1, 'MA' => 2, 'MI' => 3, 'JU' => 4, 'VI' => 5, 'SA' => 6, 'DO' => 7];
+            
+            // Extraer día y número: "LU.1" -> "LU" y 1
+            $partsA = explode('.', $a->id_modulo);
+            $partsB = explode('.', $b->id_modulo);
+            
+            $diaA = $partsA[0];
+            $numA = isset($partsA[1]) ? (int)$partsA[1] : 0;
+            
+            $diaB = $partsB[0];
+            $numB = isset($partsB[1]) ? (int)$partsB[1] : 0;
+            
+            if ($diaA !== $diaB) {
+                return ($dias[$diaA] ?? 99) <=> ($dias[$diaB] ?? 99);
+            }
+            
+            return $numA <=> $numB;
+        });
         $espacios = Espacio::orderBy('nombre_espacio')->get();
 
         return view('livewire.recuperacion-clases-table', [

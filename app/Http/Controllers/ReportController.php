@@ -9,6 +9,7 @@ use App\Models\Piso;
 use App\Models\AreaAcademica;
 use App\Models\Asignatura;
 use App\Helpers\SemesterHelper;
+use App\Services\OccupancyService;
 use Maatwebsite\Excel\Facades\Excel;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -16,52 +17,13 @@ use App\Exports\AccesosExport;
 
 class ReportController extends Controller
 {
-    /**
-     * Determina si una hora está en el turno diurno o vespertino
-     * Diurno: 08:00 - 19:00
-     * Vespertino: 19:00 - 23:00
-     */
-    private function esTurno($hora, $turno = null)
-    {
-        if ($turno === null) {
-            return true;
-        }
+    protected $occupancyService;
 
-        $horaInt = (int) substr($hora, 0, 2);
-        
-        if ($turno === 'diurno') {
-            return $horaInt >= 8 && $horaInt < 19;
-        } elseif ($turno === 'vespertino') {
-            return $horaInt >= 19 && $horaInt < 23;
-        }
-        
-        return true;
+    public function __construct(OccupancyService $occupancyService)
+    {
+        $this->occupancyService = $occupancyService;
     }
 
-    /**
-     * Calcula las horas disponibles por turno
-     */
-    private function horasPorTurno($turno = null, $fecha = null)
-    {
-        // Si es sábado, solo hay clases hasta las 13:00 (5 horas en turno diurno)
-        if ($fecha && $fecha->isSaturday()) {
-            if ($turno === 'diurno') {
-                return 5; // 08:00 - 13:00 los sábados
-            } elseif ($turno === 'vespertino') {
-                return 0; // No hay clases vespertinas los sábados
-            }
-            return 5; // Total los sábados
-        }
-        
-        // Días normales (lunes a viernes)
-        if ($turno === 'diurno') {
-            return 11; // 08:00 - 19:00
-        } elseif ($turno === 'vespertino') {
-            return 4; // 19:00 - 23:00
-        }
-        
-        return 15; // Total
-    }
 
     public function tipoEspacio(Request $request)
     {
@@ -141,7 +103,7 @@ class ReportController extends Controller
         $horas_totales_disponibles = 0;
         for ($fecha = $inicioMes->copy(); $fecha->lte($finMes); $fecha->addDay()) {
             if ($fecha->isWeekday() || $fecha->isSaturday()) {
-                $horas_totales_disponibles += $total_espacios * $this->horasPorTurno(null, $fecha);
+                $horas_totales_disponibles += $total_espacios * $this->occupancyService->horasPorTurno(null, $fecha);
             }
         }
         $promedio_utilizacion = $horas_totales_disponibles > 0 ? 
@@ -208,7 +170,7 @@ class ReportController extends Controller
             $horas_disponibles_tipo = 0;
             for ($fecha = $inicioMes->copy(); $fecha->lte($finMes); $fecha->addDay()) {
                 if ($fecha->isWeekday() || $fecha->isSaturday()) {
-                    $horas_disponibles_tipo += $total_espacios_tipo * $this->horasPorTurno(null, $fecha);
+                    $horas_disponibles_tipo += $total_espacios_tipo * $this->occupancyService->horasPorTurno(null, $fecha);
                 }
             }
             
@@ -242,7 +204,7 @@ class ReportController extends Controller
                 $horas_disponibles_turno = 0;
                 for ($fecha = $inicioMes->copy(); $fecha->lte($finMes); $fecha->addDay()) {
                     if ($fecha->isWeekday() || $fecha->isSaturday()) {
-                        $horas_disponibles_turno += $total_espacios_tipo * $this->horasPorTurno($turno, $fecha);
+                        $horas_disponibles_turno += $total_espacios_tipo * $this->occupancyService->horasPorTurno($turno, $fecha);
                     }
                 }
                 
@@ -262,7 +224,7 @@ class ReportController extends Controller
                     
                     foreach ($planificacionesDia as $plan) {
                         if ($plan->modulo && $plan->modulo->hora_inicio && $plan->modulo->hora_termino) {
-                            if ($this->esTurno($plan->modulo->hora_inicio, $turno)) {
+                            if ($this->occupancyService->esTurno($plan->modulo->hora_inicio, $turno)) {
                                 $inicio = Carbon::parse($plan->modulo->hora_inicio);
                                 $fin = Carbon::parse($plan->modulo->hora_termino);
                                 $horas_plan_turno += $inicio->diffInHours($fin, true);
@@ -277,7 +239,7 @@ class ReportController extends Controller
                     ->whereYear('fecha_reserva', $anio)
                     ->get()
                     ->filter(function($r) use ($turno) {
-                        return $r->hora && $this->esTurno($r->hora, $turno);
+                        return $r->hora && $this->occupancyService->esTurno($r->hora, $turno);
                     });
                 
                 $horas_reservas_turno = $reservas_tipo_turno->sum(function($r) {

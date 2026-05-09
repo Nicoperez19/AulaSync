@@ -816,30 +816,66 @@ class QuickActionsController extends Controller
             $espacio = Espacio::where('id_espacio', $codigo)->first();
 
             if (!$espacio) {
+                Log::error("❌ Espacio {$codigo} no encontrado");
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'Espacio no encontrado'
                 ], 404);
             }
 
-            // Actualizar estado - verificamos qué campo usar
-            $estadoAnterior = $espacio->estado_espacio ?? $espacio->estado ?? 'Disponible';
-
-            if (Schema::hasColumn('espacios', 'estado_espacio')) {
-                $espacio->estado_espacio = $request->estado;
-            } else {
-                $espacio->estado = $request->estado;
+            // Obtener estado anterior
+            $estadoAnterior = $espacio->estado;
+            
+            // Si el nuevo estado es igual al anterior, no hacer nada
+            if ($estadoAnterior === $request->estado) {
+                Log::warning("⚠️ Espacio {$codigo} ya estaba en estado {$request->estado}");
+                return response()->json([
+                    'success' => true,
+                    'mensaje' => "Espacio ya se encontraba en estado {$request->estado}",
+                    'espacio' => [
+                        'codigo' => $espacio->id_espacio,
+                        'nombre' => $espacio->nombre_espacio,
+                        'estado_anterior' => $estadoAnterior,
+                        'estado_nuevo' => $request->estado,
+                        'reservas_finalizadas' => []
+                    ]
+                ]);
             }
 
-            $espacio->save();
+            // Actualizar estado - verificamos qué campo usar
+            // El campo 'estado' es el estándar definido en las migraciones
+            if (Schema::connection('tenant')->hasColumn('espacios', 'estado_espacio')) {
+                $espacio->estado_espacio = $request->estado;
+            }
+            
+            // Siempre actualizamos el campo 'estado' que es el principal
+            $espacio->estado = $request->estado;
+
+            // Guardar cambios
+            if (!$espacio->save()) {
+                Log::error("❌ Error al guardar cambios en espacio {$codigo}");
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Error al guardar los cambios del espacio'
+                ], 500);
+            }
+
+            Log::info("✅ Estado del espacio {$codigo} actualizado de {$estadoAnterior} a {$request->estado}");
 
             // [NUEVO] Limpiar el caché de estados
             $this->limpiarCachéEstados();
 
             // Si el espacio se libera (pasa a Disponible), verificar reservas activas actuales
             $reservasFinalizadas = [];
-            if ($request->estado === 'Disponible' && $estadoAnterior === 'Ocupado') {
+            if ($request->estado === 'Disponible' && in_array($estadoAnterior, ['Ocupado', 'Reservado'])) {
+                Log::info("🔄 Finalizando reservas activas para espacio {$codigo}");
                 $reservasFinalizadas = $this->finalizarReservasActivasActuales($codigo);
+                
+                if (!empty($reservasFinalizadas)) {
+                    Log::info("✅ Se finalizaron " . count($reservasFinalizadas) . " reservas para espacio {$codigo}: " . implode(', ', $reservasFinalizadas));
+                } else {
+                    Log::info("ℹ️ No había reservas activas para finalizar en espacio {$codigo}");
+                }
             }
 
             $mensaje = "Estado del espacio {$codigo} cambiado de {$estadoAnterior} a {$request->estado}";
@@ -865,10 +901,54 @@ class QuickActionsController extends Controller
                 'mensaje' => 'Estado inválido: ' . collect($e->errors())->flatten()->implode(', ')
             ], 422);
         } catch (\Exception $e) {
-            Log::error('❌ Error al cambiar estado de espacio: ' . $e->getMessage());
+            Log::error('❌ Error al cambiar estado de espacio: ' . $e->getMessage() . ' | Trace: ' . $e->getTraceAsString());
             return response()->json([
                 'success' => false,
                 'mensaje' => 'Error interno del servidor: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Liberar todos los espacios ocupados (Acción Masiva)
+     */
+    public function liberacionMasiva(Request $request)
+    {
+        try {
+            // 1. Obtener todos los espacios que no estén en mantenimiento
+            $espacios = Espacio::whereNotIn('estado', ['Mantención', 'Mantenimiento'])->get();
+            
+            $conteo = 0;
+            foreach ($espacios as $espacio) {
+                // Solo procesar si estaba ocupado o para asegurar estado disponible
+                $estadoAnterior = $espacio->estado;
+                
+                // Cambiar estado a Disponible
+                $espacio->estado = 'Disponible';
+                if (Schema::connection('tenant')->hasColumn('espacios', 'estado_espacio')) {
+                    $espacio->estado_espacio = 'Disponible';
+                }
+                $espacio->save();
+                
+                // Si estaba ocupado, finalizar reservas activas
+                if ($estadoAnterior === 'Ocupado') {
+                    $this->finalizarReservasActivasActuales($espacio->id_espacio);
+                }
+                $conteo++;
+            }
+            
+            // Limpiar caché de estados
+            $this->limpiarCachéEstados();
+            
+            return response()->json([
+                'success' => true,
+                'mensaje' => "Se han procesado {$conteo} espacios. Todos han sido marcados como Disponibles."
+            ]);
+        } catch (\Exception $e) {
+            Log::error("❌ Error en liberación masiva: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error al realizar la liberación masiva: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -1160,8 +1240,8 @@ class QuickActionsController extends Controller
             $fechaActual = now()->format('Y-m-d');
             $horaActual = now()->format('H:i:s');
 
-            // Buscar TODAS las reservas activas para este espacio desde hoy hacia adelante
-            // Ordenadas por fecha y hora para procesar en orden cronológico
+            // 🔧 FIX: Buscar TODAS las reservas activas para este espacio (no solo de hoy)
+            // Cuando se libera un espacio manualmente, se deben finalizar todas las reservas activas
             $reservasActivas = Reserva::where('id_espacio', $codigoEspacio)
                 ->where('estado', 'activa')
                 ->orderBy('fecha_reserva')
@@ -1172,66 +1252,43 @@ class QuickActionsController extends Controller
                 return [];
             }
 
-            // Encontrar la última reserva que ya comenzó (de hoy)
-            $reservasDeHoy = $reservasActivas->filter(function ($r) use ($fechaActual) {
-                $f = $r->fecha_reserva instanceof Carbon ? $r->fecha_reserva->format('Y-m-d') : substr($r->fecha_reserva, 0, 10);
-                return $f === $fechaActual;
-            });
-            $ultimaReservaIniciada = null;
-            $horaActualEnMinutos = $this->convertirHoraAMinutos($horaActual);
-
-            foreach ($reservasDeHoy as $reserva) {
-                $horaInicioReserva = $this->convertirHoraAMinutos($reserva->hora);
-
-                // Si la reserva ya comenzó (hora actual >= hora de inicio)
-                if ($horaActualEnMinutos >= $horaInicioReserva) {
-                    $ultimaReservaIniciada = $reserva;
-                } else {
-                    break;  // Las siguientes aún no han comenzado
-                }
-            }
-
             $reservasFinalizadas = [];
-            $esCascada = false;
-            $motivoFinalizacion = null;
-
-            // Si hay una reserva que ya comenzó hoy, esa es la principal a finalizar
-            if ($ultimaReservaIniciada) {
-                $motivoFinalizacion = 'FINALIZADA: El espacio fue liberado manualmente, indicando que la actividad terminó';
-
-                $ultimaReservaIniciada->estado = 'finalizada';
-                $ultimaReservaIniciada->hora_salida = $horaActual;
-                $ultimaReservaIniciada->observaciones .= " | {$motivoFinalizacion} el " . now()->format('d/m/Y H:i:s');
-                $ultimaReservaIniciada->save();
-
-                $reservasFinalizadas[] = $ultimaReservaIniciada->id_reserva;
-
-                $esCascada = true;
-            }
-
-            // Finalizar reservas ANTERIORES de hoy que aún estén activas
-            foreach ($reservasDeHoy as $reserva) {
-                // Saltar la reserva principal que ya procesamos
-                if ($ultimaReservaIniciada && $reserva->id === $ultimaReservaIniciada->id) {
-                    continue;
-                }
-
-                // Solo finalizar reservas que comenzaron ANTES de la hora actual
-                $esAnterior = $this->convertirHoraAMinutos($reserva->hora) < $horaActualEnMinutos;
-
-                if ($esAnterior) {
-                    $motivoAnterior = 'FINALIZADA EN CASCADA: Al liberar el espacio manualmente, esta reserva anterior que aún estaba activa fue finalizada automáticamente';
-
+            
+            // 🔧 FIX: Finalizar TODAS las reservas activas del espacio
+            // Ya que el espacio se está liberando manualmente, todas las reservas activas deben finalizarse
+            foreach ($reservasActivas as $reserva) {
+                try {
+                    $fechaReserva = $reserva->fecha_reserva instanceof Carbon 
+                        ? $reserva->fecha_reserva->format('Y-m-d') 
+                        : Carbon::parse($reserva->fecha_reserva)->format('Y-m-d');
+                    
+                    // Diferenciar el motivo según si la reserva es de hoy o futura
+                    if ($fechaReserva === $fechaActual) {
+                        // Reserva de hoy
+                        $horaInicioReserva = $this->convertirHoraAMinutos($reserva->hora);
+                        $horaActualEnMinutos = $this->convertirHoraAMinutos($horaActual);
+                        
+                        if ($horaActualEnMinutos >= $horaInicioReserva) {
+                            $motivo = 'FINALIZADA: El espacio fue liberado manualmente durante la clase';
+                        } else {
+                            $motivo = 'FINALIZADA: El espacio fue liberado manualmente (reserva futura no ejecutada)';
+                        }
+                    } else {
+                        // Reserva futura
+                        $motivo = 'FINALIZADA: El espacio fue liberado manualmente (reserva futura cancelada)';
+                    }
+                    
                     $reserva->estado = 'finalizada';
-                    $reserva->hora_salida = $horaActual;  // Usar la hora actual como hora de salida
-                    $reserva->observaciones .= " | {$motivoAnterior} el " . now()->format('d/m/Y H:i:s');
+                    $reserva->hora_salida = $horaActual;
+                    $reserva->observaciones = ($reserva->observaciones ?? '') . " | {$motivo} el " . now()->format('d/m/Y H:i:s');
                     $reserva->save();
 
                     $reservasFinalizadas[] = $reserva->id_reserva;
+                    
+                    Log::info("✅ Reserva {$reserva->id_reserva} finalizada al liberar espacio {$codigoEspacio}");
+                } catch (\Exception $e) {
+                    Log::error("❌ Error al finalizar reserva {$reserva->id_reserva}: " . $e->getMessage());
                 }
-            }
-
-            if (!empty($reservasFinalizadas)) {
             }
 
             return $reservasFinalizadas;
