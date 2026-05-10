@@ -501,15 +501,52 @@ document.addEventListener('DOMContentLoaded', function() {
                     modulosDisponibles = await response.json();
                     console.log('Módulos cargados:', modulosDisponibles);
                     
-                    // Llenar select de módulos iniciales
+                    // Llenar select de módulos iniciales inicialmente vacío
                     const selectModuloInicio = document.getElementById('swal-nuevo-modulo-inicio');
-                    selectModuloInicio.innerHTML = '<option value="">Seleccionar módulo</option>';
-                    
-                    modulosDisponibles.forEach(modulo => {
-                        const option = document.createElement('option');
-                        option.value = modulo.id_modulo;
-                        option.textContent = `Módulo ${modulo.id_modulo} (${modulo.hora_inicio} - ${modulo.hora_termino})`;
-                        selectModuloInicio.appendChild(option);
+                    selectModuloInicio.innerHTML = '<option value="">Selecciona fecha primero</option>';
+                    selectModuloInicio.disabled = true;
+
+                    // Función para filtrar módulos por día
+                    const filtrarModulosPorDia = (fechaStr) => {
+                        if (!fechaStr) {
+                            selectModuloInicio.innerHTML = '<option value="">Selecciona fecha primero</option>';
+                            selectModuloInicio.disabled = true;
+                            return;
+                        }
+
+                        const fecha = new Date(fechaStr + 'T12:00:00');
+                        const prefijos = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+                        const prefijo = prefijos[fecha.getDay()];
+
+                        // Filtrar y ordenar módulos
+                        const modulosFiltrados = modulosDisponibles
+                            .filter(m => m.id_modulo.startsWith(prefijo + '.'))
+                            .sort((a, b) => {
+                                const numA = parseInt(a.id_modulo.split('.')[1]);
+                                const numB = parseInt(b.id_modulo.split('.')[1]);
+                                return numA - numB;
+                            });
+
+                        if (modulosFiltrados.length === 0) {
+                            selectModuloInicio.innerHTML = '<option value="">No hay módulos para este día</option>';
+                            selectModuloInicio.disabled = true;
+                        } else {
+                            selectModuloInicio.innerHTML = '<option value="">Seleccionar módulo</option>';
+                            modulosFiltrados.forEach(modulo => {
+                                const option = document.createElement('option');
+                                option.value = modulo.id_modulo;
+                                option.textContent = `${modulo.id_modulo} (${modulo.hora_inicio} - ${modulo.hora_termino})`;
+                                selectModuloInicio.appendChild(option);
+                            });
+                            selectModuloInicio.disabled = false;
+                        }
+                    };
+
+                    // Listener para cambio de fecha
+                    dateInput.addEventListener('change', (e) => {
+                        filtrarModulosPorDia(e.target.value);
+                        // Limpiar espacio si cambia la fecha
+                        document.getElementById('swal-nuevo-espacio').innerHTML = '<option value="">Selecciona fecha y módulo primero</option>';
                     });
                 } catch (error) {
                     console.error('Error cargando módulos:', error);
@@ -544,12 +581,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
 
                     // Calcular módulo final
-                    const inicio = parseInt(modulo);
+                    const partesModulo = modulo.split('.');
+                    const inicio = parseInt(partesModulo[1] || partesModulo[0]);
+                    const prefijo = partesModulo[0];
                     const cantidad = parseInt(cantidadModulos.value) || clase.totalModulosProgramados;
-                    const fin = Math.min(inicio + cantidad - 1, modulosDisponibles.length);
+                    const fin = inicio + cantidad - 1;
+                    const moduloFinalId = prefijo + '.' + fin;
 
                     try {
-                        const url = '/api/espacios-disponibles/' + fecha + '/' + inicio + '/' + fin;
+                        const url = `/api/espacios-disponibles/${fecha}/${modulo}/${moduloFinalId}`;
                         const response = await fetch(url);
                         const data = await response.json();
                         
@@ -585,13 +625,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Función para recalcular el módulo final y mostrar horarios
                 const recalcularModuloFinal = () => {
                     if (moduloInicio.value && modulosDisponibles.length > 0) {
-                        const inicio = parseInt(moduloInicio.value);
+                        const partesModulo = moduloInicio.value.split('.');
+                        const inicio = parseInt(partesModulo[1] || partesModulo[0]);
+                        const prefijo = partesModulo[0];
                         const cantidad = parseInt(cantidadModulos.value) || clase.totalModulosProgramados;
-                        const fin = Math.min(inicio + cantidad - 1, modulosDisponibles.length);
+                        const fin = inicio + cantidad - 1;
+                        const moduloFinalId = prefijo + '.' + fin;
                         
                         // Buscar horarios de inicio y fin
-                        const moduloInicial = modulosDisponibles.find(m => m.id_modulo == inicio);
-                        const moduloFinal = modulosDisponibles.find(m => m.id_modulo == fin);
+                        const moduloInicial = modulosDisponibles.find(m => m.id_modulo == moduloInicio.value);
+                        const moduloFinal = modulosDisponibles.find(m => m.id_modulo == moduloFinalId);
                         
                         if (moduloInicial && moduloFinal) {
                             const texto = 'Módulos ' + inicio + ' - ' + fin + ' (' + moduloInicial.hora_inicio + ' - ' + moduloFinal.hora_termino + ')';

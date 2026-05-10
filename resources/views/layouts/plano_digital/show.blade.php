@@ -5400,6 +5400,11 @@
             return dias[new Date().getDay()];
         }
 
+        function obtenerPrefijoDiaActual() {
+            const prefijos = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+            return prefijos[new Date().getDay()];
+        }
+
         function moduloActualNum(hora) {
             const diaActual = obtenerDiaActual();
             const horariosDia = horariosModulos[diaActual];
@@ -5481,7 +5486,8 @@
             const moduloHorarioElement = document.getElementById('horario-actual');
 
             if (moduloActual && moduloActualElement && moduloHorarioElement) {
-                moduloActualElement.textContent = moduloActual;
+                const prefijo = obtenerPrefijoDiaActual();
+                moduloActualElement.textContent = `${prefijo}.${moduloActual}`;
 
                 // Obtener el horario del módulo actual
                 const diaActual = obtenerDiaActual();
@@ -5494,7 +5500,8 @@
                 // Estamos en un break entre módulos
                 if (moduloActualElement) {
                     if (moduloParaReserva) {
-                        moduloActualElement.textContent = `Break (Próximo: ${moduloParaReserva})`;
+                        const prefijo = obtenerPrefijoDiaActual();
+                        moduloActualElement.textContent = `Break (Próximo: ${prefijo}.${moduloParaReserva})`;
                     } else {
                         moduloActualElement.textContent = 'Break entre módulos';
                     }

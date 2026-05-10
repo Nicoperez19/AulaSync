@@ -161,7 +161,7 @@ class OccupancyService
     public function obtenerSalasOcupadas($facultad, $piso = null, $turno = null)
     {
         $espacios = $this->getEspaciosQuery($facultad, $piso)
-            ->where('tipo_espacio', 'Sala de Clases')
+            ->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller', 'Auditorio', 'Sala de Estudio', 'Sala de Reuniones'])
             ->get();
 
         $ocupadas = 0;
@@ -214,7 +214,7 @@ class OccupancyService
         }
 
         $totalEspacios = $this->getEspaciosQuery($facultad, $piso)
-            ->where('tipo_espacio', 'Sala de Clases')
+            ->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller', 'Auditorio', 'Sala de Estudio', 'Sala de Reuniones'])
             ->count();
 
         if ($totalEspacios === 0) {
@@ -245,7 +245,7 @@ class OccupancyService
                         $subQ->where('id_facultad', $facultad);
                     });
                 }
-                $q->where('tipo_espacio', 'Sala de Clases');
+                $q->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller', 'Auditorio', 'Sala de Estudio', 'Sala de Reuniones']);
             })
             ->groupBy('fecha', 'hora_dia')
             ->get();
@@ -455,17 +455,20 @@ class OccupancyService
                             $subQ->where('id_facultad', $facultad);
                         });
                     }
-                    $q->where('tipo_espacio', 'Sala de Clases');
+                    $q->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller', 'Auditorio', 'Sala de Estudio', 'Sala de Reuniones']);
                 })
                 ->count();
 
-            $usoPorDia[] = [
-                'dia' => $diasSemana[$i],
-                'cantidad' => $cantidadReservas
-            ];
+            $usoPorDia[$diasSemana[$i]] = $cantidadReservas;
         }
 
-        return $usoPorDia;
+        return [
+            'datos' => $usoPorDia,
+            'rango_fechas' => [
+                'inicio' => $inicioSemana->format('d/m/Y'),
+                'fin' => $finSemana->format('d/m/Y')
+            ]
+        ];
     }
 
     /**
@@ -502,13 +505,16 @@ class OccupancyService
                 })
                 ->first();
 
-            $salasUtilizadas[] = [
-                'dia' => $diasSemana[$i],
-                'cantidad' => $salasCount?->cantidad ?? 0
-            ];
+            $salasUtilizadas[$diasSemana[$i]] = $salasCount?->cantidad ?? 0;
         }
 
-        return $salasUtilizadas;
+        return [
+            'datos' => $salasUtilizadas,
+            'rango_fechas' => [
+                'inicio' => $inicioSemana->format('d/m/Y'),
+                'fin' => $finSemana->format('d/m/Y')
+            ]
+        ];
     }
 
     /**
@@ -521,6 +527,7 @@ class OccupancyService
     public function obtenerOcupacionPorDia($facultad, $piso = null)
     {
         $inicioSemana = Carbon::now()->startOfWeek();
+        $finSemana = Carbon::now()->endOfWeek();
         $diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
         $ocupacionPorDia = [];
 
@@ -533,13 +540,16 @@ class OccupancyService
                 $piso
             );
 
-            $ocupacionPorDia[] = [
-                'dia' => $diasSemana[$i],
-                'ocupacion' => $ocupacion
-            ];
+            $ocupacionPorDia[$diasSemana[$i]] = $ocupacion;
         }
 
-        return $ocupacionPorDia;
+        return [
+            'datos' => $ocupacionPorDia,
+            'rango_fechas' => [
+                'inicio' => $inicioSemana->format('d/m/Y'),
+                'fin' => $finSemana->format('d/m/Y')
+            ]
+        ];
     }
 
     /**

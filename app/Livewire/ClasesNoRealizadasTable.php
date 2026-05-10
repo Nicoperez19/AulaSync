@@ -242,18 +242,26 @@ class ClasesNoRealizadasTable extends Component
             ];
             $prefijoDia = $diasMap[$nombreDia] ?? 'LU';
             
+            // Extraer el número del módulo si viene con el prefijo (ej: "LU.1" -> 1)
+            $moduloBase = $nuevoModulo;
+            if (is_string($nuevoModulo) && strpos($nuevoModulo, '.') !== false) {
+                $moduloBase = (int) explode('.', $nuevoModulo)[1];
+            } else {
+                $moduloBase = (int) $nuevoModulo;
+            }
+            
             // Construir el id_modulo completo con todos los módulos seleccionados
             if ($cantidadModulos > 1) {
                 // Múltiples módulos: construir array LU.1,LU.2,LU.3
                 $modulosNuevos = [];
                 for ($i = 0; $i < $cantidadModulos; $i++) {
-                    $numeroModulo = $nuevoModulo + $i;
+                    $numeroModulo = $moduloBase + $i;
                     $modulosNuevos[] = "{$prefijoDia}.{$numeroModulo}";
                 }
                 $nuevoModuloId = implode(',', $modulosNuevos);
             } else {
                 // Un solo módulo
-                $nuevoModuloId = "{$prefijoDia}.{$nuevoModulo}";
+                $nuevoModuloId = "{$prefijoDia}.{$moduloBase}";
             }
             
             // Crear observación completa indicando que debe recuperarse

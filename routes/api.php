@@ -485,22 +485,27 @@ Route::get('/verificar-solicitante/{run}', [App\Http\Controllers\SolicitanteCont
 
 // Obtener todos los módulos del sistema
 Route::get('/modulos', function () {
-    $modulos = \App\Models\Modulo::distinct()
-        ->select('id_modulo', 'hora_inicio', 'hora_termino')
-        ->orderBy('hora_inicio')
-        ->get()
+    $modulos = \App\Models\Modulo::all()
+        ->sort(function ($a, $b) {
+            $dias = ['LU' => 1, 'MA' => 2, 'MI' => 3, 'JU' => 4, 'VI' => 5, 'SA' => 6, 'DO' => 7];
+            $partsA = explode('.', $a->id_modulo);
+            $partsB = explode('.', $b->id_modulo);
+            $diaA = $partsA[0];
+            $numA = isset($partsA[1]) ? (int)$partsA[1] : 0;
+            $diaB = $partsB[0];
+            $numB = isset($partsB[1]) ? (int)$partsB[1] : 0;
+            if ($diaA !== $diaB) {
+                return ($dias[$diaA] ?? 99) <=> ($dias[$diaB] ?? 99);
+            }
+            return $numA <=> $numB;
+        })
         ->map(function ($modulo) {
-            // Extraer el número del módulo del id (ej: "JU.1" -> 1)
-            $partes = explode('.', $modulo->id_modulo);
-            $numeroModulo = isset($partes[1]) ? $partes[1] : 1;
-            
             return [
-                'id_modulo' => $numeroModulo,
+                'id_modulo' => $modulo->id_modulo,
                 'hora_inicio' => substr($modulo->hora_inicio, 0, 5),
                 'hora_termino' => substr($modulo->hora_termino, 0, 5)
             ];
         })
-        ->unique('id_modulo')
         ->values()
         ->toArray();
 

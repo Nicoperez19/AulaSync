@@ -179,8 +179,19 @@ class RecuperacionClasesTable extends Component
 
         $recuperaciones = $query->paginate(15);
         
-        // Ordenar módulos cronológicamente (Lunes a Sábado, luego por número)
-        $modulos = Modulo::all()->sort(function ($a, $b) {
+        // Filtrar módulos por el día de la fecha seleccionada
+        $modulosQuery = Modulo::query();
+        if ($this->fecha_reagendada) {
+            $prefijos = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+            $diaSemana = date('w', strtotime($this->fecha_reagendada));
+            $prefijo = $prefijos[$diaSemana];
+            $modulosQuery->where('id_modulo', 'like', $prefijo . '.%');
+        } else {
+            // Si no hay fecha, no mostrar módulos para forzar la selección de fecha primero
+            $modulosQuery->where('id', 0);
+        }
+
+        $modulos = $modulosQuery->get()->sort(function ($a, $b) {
             $dias = ['LU' => 1, 'MA' => 2, 'MI' => 3, 'JU' => 4, 'VI' => 5, 'SA' => 6, 'DO' => 7];
             
             // Extraer día y número: "LU.1" -> "LU" y 1

@@ -269,7 +269,7 @@
                         <!-- Nueva Fecha -->
                         <div>
                             <label class="block mb-2 text-sm font-medium text-gray-700">Nueva Fecha *</label>
-                            <input type="date" wire:model="fecha_reagendada" 
+                            <input type="date" wire:model.live="fecha_reagendada" 
                                 class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
                             @error('fecha_reagendada') <span class="text-sm text-red-600">{{ $message }}</span> @enderror
                         </div>
@@ -278,8 +278,9 @@
                         <div>
                             <label class="block mb-2 text-sm font-medium text-gray-700">Módulo *</label>
                             <select wire:model="id_modulo_reagendado" 
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg" required>
-                                <option value="">Seleccione módulo</option>
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg" 
+                                required {{ empty($fecha_reagendada) ? 'disabled' : '' }}>
+                                <option value="">{{ empty($fecha_reagendada) ? 'Seleccione fecha primero' : 'Seleccione módulo' }}</option>
                                 @foreach ($modulos as $modulo)
                                     <option value="{{ $modulo->id_modulo }}">
                                         {{ $modulo->nombre_modulo }}

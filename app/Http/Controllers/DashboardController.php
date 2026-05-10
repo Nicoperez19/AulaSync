@@ -597,7 +597,7 @@ class DashboardController extends Controller
         // Obtener los espacios de la facultad y piso especificados (solo Salas de Clases)
         $espacios = $this
             ->obtenerEspaciosQuery($facultad, $piso)
-            ->where('tipo_espacio', 'Sala de Clases')
+            ->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller', 'Auditorio', 'Sala de Estudio', 'Sala de Reuniones'])
             ->pluck('id_espacio');
 
         // Obtener profesores que no tienen reservas hoy en los espacios especificados
@@ -615,7 +615,7 @@ class DashboardController extends Controller
         // Obtener total de SALAS DE CLASES para calcular horas disponibles correctamente
         $totalEspacios = $this
             ->obtenerEspaciosQuery($facultad, $piso)
-            ->where('tipo_espacio', 'Sala de Clases')
+            ->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller', 'Auditorio', 'Sala de Estudio', 'Sala de Reuniones'])
             ->count();
         $horasPorDia = $this->horasPorTurno($turno, $hoy);
         $totalHorasDisponibles = $totalEspacios * $horasPorDia;
@@ -630,7 +630,7 @@ class DashboardController extends Controller
                     });
                 }
                 // Solo considerar Salas de Clases
-                $query->where('tipo_espacio', 'Sala de Clases');
+                $query->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller', 'Auditorio', 'Sala de Estudio', 'Sala de Reuniones']);
             })
             ->get();
 
@@ -663,7 +663,7 @@ class DashboardController extends Controller
         // Contar Salas de Clases, Laboratorios y Talleres para el KPI de % Ocupación
         $espaciosQuery = $this
             ->obtenerEspaciosQuery($facultad, $piso)
-            ->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller']);
+            ->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller', 'Auditorio', 'Sala de Estudio', 'Sala de Reuniones']);
 
         $totalEspacios = (clone $espaciosQuery)->count();
 
@@ -764,7 +764,7 @@ class DashboardController extends Controller
                         });
                     }
                     // Solo considerar Salas de Clases
-                    $query->where('tipo_espacio', 'Sala de Clases');
+                    $query->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller', 'Auditorio', 'Sala de Estudio', 'Sala de Reuniones']);
                 })
                 ->count();
 
@@ -1255,7 +1255,7 @@ class DashboardController extends Controller
                 $query->where('id_facultad', $facultad);
             }
         })
-            ->where('tipo_espacio', 'Sala de Clases')
+            ->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller'])
             ->orderBy('id_espacio')
             ->get();
 
@@ -1343,7 +1343,7 @@ class DashboardController extends Controller
                     $query->where('id_facultad', $facultad);
                 }
             })
-                ->where('tipo_espacio', 'Sala de Clases')
+                ->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller'])
                 ->count(),
             'rango_fechas' => [
                 'inicio' => $inicioSemana->format('d/m/Y'),
@@ -1356,7 +1356,7 @@ class DashboardController extends Controller
     {
         $totalEspacios = $this
             ->obtenerEspaciosQuery($facultad, $piso)
-            ->where('tipo_espacio', 'Sala de Clases')
+            ->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller'])
             ->count();
 
         if ($totalEspacios === 0) {
@@ -1393,7 +1393,7 @@ class DashboardController extends Controller
                             $q->where('id_facultad', $facultad);
                         });
                     }
-                    $query->where('tipo_espacio', 'Sala de Clases');
+                    $query->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller']);
                 })
                 ->count();
 
