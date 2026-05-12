@@ -242,29 +242,29 @@ class ProfesorController extends Controller
                 ], 400);
             }
 
-            // Obtener la programación del profesor para este espacio
+            // Obtener la programación del profesor para este espacio (usando Eloquent para respetar la conexión 'tenant')
             $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
             $horaConAnticipacion = now()->copy()->addMinutes(15)->format('H:i:s');
 
-            $programacion = DB::table('planificacion_asignaturas as pa')
-                ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
-                ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
-                ->where('pa.id_espacio', $idEspacio)
-                ->where(function($query) use ($profesor, $runLimpio) {
-                    $query->where('h.run_profesor', $profesor->run_profesor)
-                        ->orWhere('h.run_profesor', $runLimpio);
+            $programacion = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])
+                ->where('id_espacio', $idEspacio)
+                ->whereHas('asignatura', function ($q) use ($profesor, $runLimpio) {
+                    $q->where('run_profesor', $profesor->run_profesor)
+                      ->orWhere('run_profesor', $runLimpio)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                 })
-                ->where('m.dia', $diaActual)
-                ->where(function($query) use ($horaActual, $horaConAnticipacion) {
-                    $query->where(function($q) use ($horaActual) {
-                        $q->where('m.hora_inicio', '<=', $horaActual)
-                          ->where('m.hora_termino', '>=', $horaActual);
-                    })->orWhere(function($q) use ($horaActual, $horaConAnticipacion) {
-                        $q->where('m.hora_inicio', '>', $horaActual)
-                          ->where('m.hora_inicio', '<=', $horaConAnticipacion);
-                    });
+                ->whereHas('modulo', function ($q) use ($diaActual, $horaActual, $horaConAnticipacion) {
+                    $q->where('dia', $diaActual)
+                      ->where(function ($subQ) use ($horaActual, $horaConAnticipacion) {
+                          $subQ->where(function ($sq1) use ($horaActual) {
+                              $sq1->where('hora_inicio', '<=', $horaActual)
+                                  ->where('hora_termino', '>=', $horaActual);
+                          })->orWhere(function ($sq2) use ($horaActual, $horaConAnticipacion) {
+                              $sq2->where('hora_inicio', '>', $horaActual)
+                                  ->where('hora_inicio', '<=', $horaConAnticipacion);
+                          });
+                      });
                 })
-                ->select('pa.id_asignatura', 'm.id_modulo', 'm.hora_inicio', 'm.hora_termino')
                 ->first();
 
             if (!$programacion) {
@@ -282,8 +282,8 @@ class ProfesorController extends Controller
             $reserva->id_espacio = $espacio->id_espacio;
             $reserva->id_asignatura = $programacion->id_asignatura;
             $reserva->fecha_reserva = $fechaActual;
-            $reserva->hora = $programacion->hora_inicio;
-            $reserva->hora_salida = $programacion->hora_termino;
+            $reserva->hora = $programacion->modulo->hora_inicio ?? null;
+            $reserva->hora_salida = $programacion->modulo->hora_termino ?? null;
             $reserva->modulos = 1; // Calculado basado en la programación
             $reserva->estado = 'activa'; // Creada automáticamente pero activa
             $reserva->tipo_reserva = 'clase'; // Marcado como clase programada
@@ -297,7 +297,7 @@ class ProfesorController extends Controller
             \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
                 $espacio->id_espacio,
                 $fechaActual,
-                $programacion->hora_inicio,
+                $programacion->modulo->hora_inicio ?? null,
                 $profesor->run_profesor
             );
 
@@ -305,13 +305,13 @@ class ProfesorController extends Controller
                 'success' => true,
                 'mensaje' => 'Reserva creada automáticamente según programación',
                 'reserva' => [
-                    'id' => $reserva->id_reserva,
-                    'profesor' => $profesor->name,
-                    'run_profesor' => $profesor->run_profesor,
-                    'espacio' => $espacio->nombre_espacio,
-                    'fecha' => $fechaActual,
-                    'hora_inicio' => $programacion->hora_inicio,
-                    'hora_termino' => $programacion->hora_termino
+                    'id'          => $reserva->id_reserva,
+                    'profesor'    => $profesor->name,
+                    'run_profesor'=> $profesor->run_profesor,
+                    'espacio'     => $espacio->nombre_espacio,
+                    'fecha'       => $fechaActual,
+                    'hora_inicio' => $programacion->modulo->hora_inicio ?? null,
+                    'hora_termino'=> $programacion->modulo->hora_termino ?? null,
                 ]
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
