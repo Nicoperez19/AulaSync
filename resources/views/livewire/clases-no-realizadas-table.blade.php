@@ -26,37 +26,17 @@
         
         <!-- Botones de Exportación -->
         <div class="flex gap-3">
-            <a href="{{ route('clases-no-realizadas.export-excel', [
-                    'fecha_inicio' => $fecha_inicio,
-                    'fecha_fin' => $fecha_fin,
-                    'periodo' => $periodo,
-                    'estado' => $estado
-                ]) }}" 
-               class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
-                <i class="fas fa-file-excel mr-2"></i>
-                Exportar No Registradas
-            </a>
             <a href="{{ route('clases-no-realizadas.export-all-excel', [
+                    'search' => $search,
+                    'estado' => $estado,
                     'fecha_inicio' => $fecha_inicio,
                     'fecha_fin' => $fecha_fin,
                     'periodo' => $periodo
                 ]) }}" 
-               class="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
+               class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
                 <i class="fas fa-file-excel mr-2"></i>
                 Exportar Todas las Clases
             </a>
-            <button wire:click="exportarPDFSemanal" 
-                    class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
-                <i class="fas fa-file-pdf mr-2"></i>
-                Exportar Semanal
-            </button>
-            {{-- Botón Exportar Mensual temporalmente oculto
-            <button wire:click="exportarPDFMensual" 
-                    class="inline-flex items-center px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
-                <i class="fas fa-file-pdf mr-2"></i>
-                Exportar Mensual
-            </button>
-            --}}
         </div>
     </div>
 
@@ -98,7 +78,7 @@
                     <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
                     <div class="relative">
                         <input type="text" 
-                               wire:model="search" 
+                               wire:model.live.debounce.300ms="search" 
                                id="search"
                                class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                                placeholder="Profesor, Asignatura...">
@@ -109,7 +89,7 @@
                 <!-- Estado -->
                 <div class="mb-4">
                     <label for="estado" class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
-                    <select wire:model="estado" 
+                    <select wire:model.live.debounce.300ms="estado" 
                             id="estado"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         <option value="">Todos</option>
@@ -123,7 +103,7 @@
                 <div class="mb-4">
                     <label for="periodo" class="block text-sm font-medium text-gray-700 mb-2">Período</label>
                     <input type="text" 
-                           wire:model="periodo" 
+                           wire:model.live.debounce.300ms="periodo" 
                            id="periodo"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                            placeholder="2024-1">
@@ -133,7 +113,7 @@
                 <div class="mb-4">
                     <label for="fecha_inicio" class="block text-sm font-medium text-gray-700 mb-2">Fecha Inicio</label>
                     <input type="date" 
-                           wire:model="fecha_inicio" 
+                           wire:model.live.debounce.300ms="fecha_inicio" 
                            id="fecha_inicio"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 </div>
@@ -142,7 +122,7 @@
                 <div class="mb-4">
                     <label for="fecha_fin" class="block text-sm font-medium text-gray-700 mb-2">Fecha Fin</label>
                     <input type="date" 
-                           wire:model="fecha_fin" 
+                           wire:model.live.debounce.300ms="fecha_fin" 
                            id="fecha_fin"
                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                 </div>

@@ -150,7 +150,6 @@ Route::middleware(['auth', 'role:Administrador|Supervisor'])->group(function () 
 // Estadísticas de clases no realizadas - Administrador y Supervisor
 Route::middleware(['auth', 'permission:reportes'])->group(function () {
     Route::get('/clases-no-realizadas', [ClasesNoRealizadasController::class, 'index'])->name('clases-no-realizadas.index');
-    Route::get('/clases-no-realizadas/export-excel', [ClasesNoRealizadasController::class, 'exportExcel'])->name('clases-no-realizadas.export-excel');
     Route::get('/clases-no-realizadas/export-all-excel', [ClasesNoRealizadasController::class, 'exportAllExcel'])->name('clases-no-realizadas.export-all-excel');
 });
 

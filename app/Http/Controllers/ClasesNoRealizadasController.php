@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Exports\ClasesNoRealizadasExport;
 use App\Exports\TodasClasesExport;
 use App\Models\ProfesorAtraso;
 use App\Helpers\SemesterHelper;
@@ -39,49 +38,6 @@ class ClasesNoRealizadasController extends Controller
     }
 
     /**
-     * Exportar clases no realizadas a Excel
-     */
-    public function exportExcel(Request $request)
-    {
-        // Verificar si el periodo académico ha iniciado
-        $periodoActual = \App\Models\PeriodoAcademico::where('activo', true)->first();
-        if ($periodoActual && $periodoActual->noHaIniciado()) {
-            return back()->with('error', 'No se puede exportar porque el periodo académico aún no ha iniciado.');
-        }
-        
-        $request->validate([
-            'fecha_inicio' => 'nullable|date',
-            'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
-            'periodo' => 'nullable|string|max:20',
-            'estado' => 'nullable|in:no_realizada,justificado,recuperada,pendiente',
-        ]);
-
-        $fechaInicio = $request->input('fecha_inicio');
-        $fechaFin = $request->input('fecha_fin');
-        $periodo = $request->input('periodo');
-        $estado = $request->input('estado');
-
-        // Generar nombre de archivo descriptivo
-        $nombreArchivo = 'Clases_No_Realizadas';
-        
-        if ($fechaInicio && $fechaFin) {
-            $nombreArchivo .= '_' . Carbon::parse($fechaInicio)->format('d-m-Y');
-            $nombreArchivo .= '_a_' . Carbon::parse($fechaFin)->format('d-m-Y');
-        } elseif ($periodo) {
-            $nombreArchivo .= '_Periodo_' . str_replace('/', '-', $periodo);
-        } else {
-            $nombreArchivo .= '_' . Carbon::now()->format('d-m-Y');
-        }
-        
-        $nombreArchivo .= '.xlsx';
-
-        return Excel::download(
-            new ClasesNoRealizadasExport($fechaInicio, $fechaFin, $periodo, $estado),
-            $nombreArchivo
-        );
-    }
-
-    /**
      * Exportar todas las clases (realizadas y no realizadas) a Excel
      */
     public function exportAllExcel(Request $request)
@@ -93,11 +49,15 @@ class ClasesNoRealizadasController extends Controller
         }
         
         $request->validate([
+            'search' => 'nullable|string|max:255',
+            'estado' => 'nullable|in:no_realizada,justificado,recuperada,pendiente',
             'fecha_inicio' => 'nullable|date',
             'fecha_fin' => 'nullable|date|after_or_equal:fecha_inicio',
             'periodo' => 'nullable|string|max:20',
         ]);
 
+        $search = $request->input('search');
+        $estado = $request->input('estado');
         $fechaInicio = $request->input('fecha_inicio');
         $fechaFin = $request->input('fecha_fin');
         $periodo = $request->input('periodo');
@@ -117,7 +77,7 @@ class ClasesNoRealizadasController extends Controller
         $nombreArchivo .= '.xlsx';
 
         return Excel::download(
-            new TodasClasesExport($fechaInicio, $fechaFin, $periodo),
+            new TodasClasesExport($fechaInicio, $fechaFin, $periodo, $search, $estado),
             $nombreArchivo
         );
     }

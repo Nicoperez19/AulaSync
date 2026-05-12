@@ -48,49 +48,6 @@ class ClasesNoRealizadasTable extends Component
         'marcarComoRecuperada'
     ];
 
-    public function exportarPDFSemanal()
-    {
-        try {
-            $reportService = new ClasesNoRealizadasReportService();
-            
-            // Usar las fechas del filtro o la semana actual
-            $fechaInicio = $this->fecha_inicio ? Carbon::parse($this->fecha_inicio) : Carbon::now()->startOfWeek();
-            $fechaFin = $this->fecha_fin ? Carbon::parse($this->fecha_fin) : Carbon::now()->endOfWeek();
-            
-            $pdf = $reportService->generarPDFSemanal($fechaInicio, $fechaFin);
-            
-            return response()->streamDownload(function () use ($pdf) {
-                echo $pdf->output();
-            }, 'Reporte_Semanal_Clases_No_Registradas.pdf');
-            
-        } catch (\Exception $e) {
-            Log::error('Error al generar PDF semanal: ' . $e->getMessage());
-            $this->dispatch('show-error', ['message' => 'Error al generar el PDF: ' . $e->getMessage()]);
-        }
-    }
-
-    public function exportarPDFMensual()
-    {
-        try {
-            $reportService = new ClasesNoRealizadasReportService();
-            
-            // Usar el mes actual o el del filtro
-            $fecha = $this->fecha_inicio ? Carbon::parse($this->fecha_inicio) : Carbon::now();
-            $mes = $fecha->month;
-            $anio = $fecha->year;
-            
-            $pdf = $reportService->generarPDFMensual($mes, $anio);
-            
-            return response()->streamDownload(function () use ($pdf) {
-                echo $pdf->output();
-            }, 'Reporte_Mensual_Clases_No_Registradas.pdf');
-            
-        } catch (\Exception $e) {
-            Log::error('Error al generar PDF mensual: ' . $e->getMessage());
-            $this->dispatch('show-error', ['message' => 'Error al generar el PDF: ' . $e->getMessage()]);
-        }
-    }
-
     public function mount()
     {
         $this->periodo = SemesterHelper::getCurrentPeriod();
