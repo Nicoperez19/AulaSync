@@ -312,6 +312,7 @@ Route::get('/verificar-profesor/{run}', [PlanoDigitalController::class, 'verific
 
 Route::get('/verificar-espacio/{idEspacio}', [PlanoDigitalController::class, 'verificarEspacio']);
 Route::post('/crear-reserva-profesor', [App\Http\Controllers\ProfesorController::class, 'crearReservaProfesor']);
+Route::post('/crear-reserva-profesor-automatica', [App\Http\Controllers\ProfesorController::class, 'crearReservaProfesorAutomatica']);
 Route::get('/profesor/{run}/asignaturas', [App\Http\Controllers\ProfesorController::class, 'getAsignaturasProfesor']);
 Route::post('/verificar-estado-espacio-reserva', [PlanoDigitalController::class, 'verificarEstadoEspacioYReserva']);
 Route::post('/devolver-llaves', [PlanoDigitalController::class, 'devolverLlaves']);
@@ -358,12 +359,21 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
         // Margen de 15 minutos para anticipación
         $horaConAnticipacion = $horaActual->copy()->addMinutes(15)->format('H:i:s');
 
-        // Verificar si el usuario tiene clase programada en este espacio
-        $tieneProgramacion = DB::table('planificacion_asignaturas as pa')
+        // Limpiar el RUN (remover puntos y guiones) para búsqueda
+        $runLimpio = preg_replace('/[.-]/', '', $usuario);
+        $runLimpio = (int) $runLimpio;
+
+        // Buscar la clase programada en este espacio
+        $programacion = DB::table('planificacion_asignaturas as pa')
             ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
             ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
             ->where('pa.id_espacio', $espacio)
-            ->where('h.run', $usuario)
+            ->where(function($query) use ($usuario, $runLimpio) {
+                // Buscar por run con varios formatos posibles
+                $query->where('h.run_profesor', $usuario)
+                    ->orWhere('h.run_profesor', $runLimpio)
+                    ->orWhere(DB::raw('CAST(h.run_profesor AS CHAR)'), $usuario);
+            })
             ->where('m.dia', $diaActual)
             ->where(function($query) use ($horaActualStr, $horaConAnticipacion) {
                 // En curso ahora OR empieza en los próximos 15 minutos
@@ -375,13 +385,40 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
                       ->where('m.hora_inicio', '<=', $horaConAnticipacion);
                 });
             })
-            ->exists();
+            ->select('pa.id_modulo', 'm.hora_inicio', 'm.hora_termino', 'pa.id_asignatura')
+            ->first();
+
+        $tieneProgramacion = $programacion !== null;
+        $modulosInfo = null;
+
+        if ($tieneProgramacion && $programacion) {
+            // Obtener información completa de módulos
+            $modulosInfo = [
+                'id_modulo' => $programacion->id_modulo,
+                'hora_inicio' => $programacion->hora_inicio,
+                'hora_termino' => $programacion->hora_termino,
+                'id_asignatura' => $programacion->id_asignatura
+            ];
+        }
 
         return response()->json([
             'success' => true,
-            'tieneProgramacion' => $tieneProgramacion
+            'tieneProgramacion' => $tieneProgramacion,
+            'modulosInfo' => $modulosInfo,
+            'debug' => [
+                'dia_actual' => $diaActual,
+                'hora_actual' => $horaActualStr,
+                'espacio_id' => $espacio,
+                'usuario_original' => $usuario,
+                'usuario_limpio' => $runLimpio
+            ]
         ]);
     } catch (\Exception $e) {
+        \Log::error('Error en verificar-programacion: ' . $e->getMessage(), [
+            'espacio' => $espacio,
+            'usuario' => $usuario,
+            'trace' => $e->getTraceAsString()
+        ]);
         return response()->json([
             'success' => false,
             'message' => 'Error al verificar la programación: ' . $e->getMessage()

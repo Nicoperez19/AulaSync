@@ -161,6 +161,177 @@ class ProfesorController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Crear reserva automáticamente para profesor con clase programada
+     * Usa directamente los módulos de la programación del profesor
+     */
+    public function crearReservaProfesorAutomatica(Request $request)
+    {
+        try {
+            $this->establecerContextoTenant();
+
+            $request->validate([
+                'run_profesor' => 'required|string',
+                'id_espacio' => 'required|string'
+            ]);
+
+            $runProfesor = $request->input('run_profesor');
+            $idEspacio = $request->input('id_espacio');
+            $horaActual = now()->format('H:i:s');
+            $fechaActual = now()->format('Y-m-d');
+
+            // Limpiar el RUN para búsqueda
+            $runLimpio = preg_replace('/[.-]/', '', $runProfesor);
+            $runLimpio = (int) $runLimpio;
+
+            // Verificar que el espacio existe
+            $espacio = Espacio::where('id_espacio', $idEspacio)->first();
+            if (!$espacio) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Espacio no encontrado'
+                ], 404);
+            }
+
+            // Verificar que el espacio esté disponible
+            if ($espacio->estado !== 'Disponible') {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'El espacio no está disponible'
+                ], 400);
+            }
+
+            // Validar horario académico
+            $hora = (int)now()->format('H');
+            $minutos = (int)now()->format('i');
+            $horaEnMinutos = $hora * 60 + $minutos;
+
+            $inicioAcademico = 8 * 60 + 10; // 08:10
+            $finAcademico = 23 * 60; // 23:00
+
+            if ($horaEnMinutos < $inicioAcademico || $horaEnMinutos >= $finAcademico) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No se pueden crear reservas fuera del horario académico (08:10 - 23:00).'
+                ], 400);
+            }
+
+            // Verificar si el profesor existe
+            $profesor = Profesor::where('run_profesor', $runProfesor)
+                ->orWhere('run_profesor', $runLimpio)
+                ->first();
+            
+            if (!$profesor) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Profesor no encontrado'
+                ], 404);
+            }
+
+            // Verificar si ya tiene una reserva activa
+            $reservaExistente = Reserva::where('run_profesor', $profesor->run_profesor)
+                ->where('estado', 'activa')
+                ->whereNull('hora_salida')
+                ->first();
+
+            if ($reservaExistente) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Ya tienes una reserva activa en otro espacio'
+                ], 400);
+            }
+
+            // Obtener la programación del profesor para este espacio
+            $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
+            $horaConAnticipacion = now()->copy()->addMinutes(15)->format('H:i:s');
+
+            $programacion = DB::table('planificacion_asignaturas as pa')
+                ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
+                ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
+                ->where('pa.id_espacio', $idEspacio)
+                ->where(function($query) use ($profesor, $runLimpio) {
+                    $query->where('h.run_profesor', $profesor->run_profesor)
+                        ->orWhere('h.run_profesor', $runLimpio);
+                })
+                ->where('m.dia', $diaActual)
+                ->where(function($query) use ($horaActual, $horaConAnticipacion) {
+                    $query->where(function($q) use ($horaActual) {
+                        $q->where('m.hora_inicio', '<=', $horaActual)
+                          ->where('m.hora_termino', '>=', $horaActual);
+                    })->orWhere(function($q) use ($horaActual, $horaConAnticipacion) {
+                        $q->where('m.hora_inicio', '>', $horaActual)
+                          ->where('m.hora_inicio', '<=', $horaConAnticipacion);
+                    });
+                })
+                ->select('pa.id_asignatura', 'm.id_modulo', 'm.hora_inicio', 'm.hora_termino')
+                ->first();
+
+            if (!$programacion) {
+                // Si no encuentra programación, retornar error
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No se encontró programación para este profesor en este espacio'
+                ], 400);
+            }
+
+            // Crear la reserva con la programación encontrada
+            $reserva = new Reserva();
+            $reserva->id_reserva = Reserva::generarIdUnico();
+            $reserva->run_profesor = $profesor->run_profesor;
+            $reserva->id_espacio = $espacio->id_espacio;
+            $reserva->id_asignatura = $programacion->id_asignatura;
+            $reserva->fecha_reserva = $fechaActual;
+            $reserva->hora = $programacion->hora_inicio;
+            $reserva->hora_salida = $programacion->hora_termino;
+            $reserva->modulos = 1; // Calculado basado en la programación
+            $reserva->estado = 'activa'; // Creada automáticamente pero activa
+            $reserva->tipo_reserva = 'clase'; // Marcado como clase programada
+            $reserva->save();
+
+            // Cambiar estado del espacio
+            $espacio->estado = 'Ocupado';
+            $espacio->save();
+
+            // Limpiar registros incorrectos de clases no realizadas
+            \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
+                $espacio->id_espacio,
+                $fechaActual,
+                $programacion->hora_inicio,
+                $profesor->run_profesor
+            );
+
+            return response()->json([
+                'success' => true,
+                'mensaje' => 'Reserva creada automáticamente según programación',
+                'reserva' => [
+                    'id' => $reserva->id_reserva,
+                    'profesor' => $profesor->name,
+                    'run_profesor' => $profesor->run_profesor,
+                    'espacio' => $espacio->nombre_espacio,
+                    'fecha' => $fechaActual,
+                    'hora_inicio' => $programacion->hora_inicio,
+                    'hora_termino' => $programacion->hora_termino
+                ]
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Error de validación al crear reserva automática: ' . json_encode($e->errors()));
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error de validación en los datos enviados',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            Log::error('Error al crear reserva automática de profesor: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json([
+                'success' => false,
+                'mensaje' => 'Error al crear reserva: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     /**
      * Store a newly created resource in storage.
      */

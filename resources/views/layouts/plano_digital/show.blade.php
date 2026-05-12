@@ -1496,6 +1496,31 @@
             }
         }
 
+        /**
+         * Crea automáticamente una reserva para un profesor con clase programada
+         * Usa directamente los módulos de la programación sin preguntar al usuario
+         */
+        async function crearReservaAutomaticaProfesor(run, idEspacio) {
+            try {
+                const response = await fetch('/api/crear-reserva-profesor-automatica', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        run_profesor: run,
+                        id_espacio: idEspacio
+                    })
+                });
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error('Error al crear reserva automática:', error);
+                return null;
+            }
+        }
+
 
 
         async function registrarSolicitante(datosSolicitante) {
@@ -2324,11 +2349,12 @@
             const tieneClaseAqui = await verificarProgramacionEnEspacio(espacio, usuarioEscaneado);
 
             if (tieneClaseAqui === true) {
-                // CASO 1: Profesor TIENE CLASE AQUÍ - registrar asistencia usando endpoint específico
-                const resultado = await registrarAsistenciaProfesor(usuarioEscaneado, espacio);
+                // CASO 1: Profesor TIENE CLASE AQUÍ - crear automáticamente reserva con módulos de programación
+                // NO pedir confirmación de módulos - usar directamente la programación
+                const resultado = await crearReservaAutomaticaProfesor(usuarioEscaneado, espacio);
                 if (resultado && resultado.success) {
                     // Mostrar mensaje de proceso
-                    document.getElementById('qr-status').innerHTML = 'Registrando asistencia...';
+                    document.getElementById('qr-status').innerHTML = 'Reserva creada automáticamente...';
 
                     // Actualizar indicador en el mapa
                     const block = state.indicators.find(b => b.id === espacio);
@@ -2338,10 +2364,10 @@
                         drawIndicators();
                     }
 
-                    // Mostrar Sweet Alert de éxito para asistencia registrada
+                    // Mostrar Sweet Alert de éxito para reserva automática
                     Swal.fire({
-                        title: '¡Asistencia Registrada!',
-                        text: 'El profesor ha registrado su asistencia correctamente.',
+                        title: '¡Reserva Creada!',
+                        text: 'Se ha creado automáticamente la reserva según tu programación.',
                         icon: 'success',
                         confirmButtonText: 'Aceptar',
                         confirmButtonColor: '#059669',
@@ -2350,8 +2376,8 @@
                         showConfirmButton: false
                     });
 
-                    // Mostrar mensaje de asistencia registrada
-                    document.getElementById('qr-status').innerHTML = 'Asistencia registrada';
+                    // Mostrar mensaje de reserva creada
+                    document.getElementById('qr-status').innerHTML = 'Reserva creada';
                     document.getElementById('qr-status').classList.remove('parpadeo');
 
                     // Limpiar solo el estado de lectura después de un delay
@@ -2374,13 +2400,13 @@
                             qrStatus.innerHTML = 'Usuario verificado. Escanee el espacio.';
                         }
 
-                        // Restaurar autofocus del qr-input después de registrar asistencia
+                        // Restaurar autofocus del qr-input después de crear reserva
                         if (qrInputManager) {
                             qrInputManager.setActiveInput('main');
                         }
                     }, 2000);
                 } else {
-                    // Error en registro de asistencia - restaurar autofocus
+                    // Error en crear reserva automática - restaurar autofocus
                     setTimeout(() => {
                         if (qrInputManager) {
                             qrInputManager.setActiveInput('main');
