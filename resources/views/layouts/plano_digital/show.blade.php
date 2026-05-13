@@ -760,9 +760,9 @@
                         </div>
                     </div>
                     <div class="flex flex-col min-w-0">
-                        <h1 class="text-3xl font-bold text-white truncate">Seleccionar Módulos</h1>
+                        <h1 id="modal-modulos-titulo" class="text-3xl font-bold text-white truncate">Seleccionar Módulos</h1>
                         <div class="flex items-center gap-2 mt-1">
-                            <span class="text-lg truncate text-white/80">Reserva de Espacio</span>
+                            <span id="modal-modulos-subtitulo" class="text-lg truncate text-white/80">Reserva de Espacio</span>
                         </div>
                     </div>
                 </div>
@@ -779,9 +779,9 @@
             <div class="p-6 bg-gray-50 overflow-y-auto max-h-[70vh] flex-1">
               <!-- Selección de módulos -->
                 <div class="p-4 mb-6 bg-white rounded-lg shadow-sm">
-                    <h3 class="mb-4 text-lg font-semibold text-gray-800">Configuración de Reserva</h3>
+                    <h3 id="modal-modulos-seccion-titulo" class="mb-4 text-lg font-semibold text-gray-800">Configuración de Reserva</h3>
                     <div class="mb-4 text-center">
-                        <p class="mb-4 text-base text-gray-700">¿Por cuántos módulos desea reservar?</p>
+                        <p id="modal-modulos-lead" class="mb-4 text-base text-gray-700">¿Por cuántos módulos desea reservar?</p>
                         <div class="flex items-center justify-center gap-4">
                             <input type="number" id="input-cantidad-modulos" min="1" max="1" value="1"
                                 class="w-24 px-4 py-3 text-xl font-semibold text-center border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
@@ -798,7 +798,7 @@
                 <!-- Botones de acción -->
                 <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
                     <x-button id="btn-confirmar-modulos" variant='add'>
-                        Confirmar Reserva
+                        <span id="btn-confirmar-modulos-label">Confirmar Reserva</span>
                     </x-button>
                 </div>
             </div>
@@ -2341,6 +2341,14 @@
             return;
         }
 
+        // --- Reserva por QR con espacio disponible ---
+        // Roles que llegan aquí (usuario ya verificado en /api/verificar-usuario):
+        // - profesor (tabla profesors): clase regular o colaborador → si hay planificación en ESTE espacio
+        //   y horario, reserva automática + mensaje "sala lista"; si no, modal de módulos (uso espontáneo).
+        // - solicitante_registrado: siempre modal de módulos (no hay planificación académica en horarios).
+        // Los no registrados (solicitante_nuevo) tienen verificado=false y no entran a este bloque;
+        // su flujo es registro antes de escanear espacio (procesarUsuario / primera lectura).
+
         // Determinar el flujo según el tipo de usuario
         if (usuarioInfo.tipo_usuario === 'profesor') {
             // [CAMBIO] Verificar si tiene clase programada ESPECÍFICAMENTE en este espacio ahora
@@ -2349,12 +2357,10 @@
             const tieneClaseAqui = await verificarProgramacionEnEspacio(espacio, usuarioEscaneado);
 
             if (tieneClaseAqui === true) {
-                // CASO 1: Profesor TIENE CLASE AQUÍ - crear automáticamente reserva con módulos de programación
-                // NO pedir confirmación de módulos - usar directamente la programación
+                // CASO 1: Clase programada en esta sala → activar reserva y registrar uso (sin preguntar módulos)
                 const resultado = await crearReservaAutomaticaProfesor(usuarioEscaneado, espacio);
                 if (resultado && resultado.success) {
-                    // Mostrar mensaje de proceso
-                    document.getElementById('qr-status').innerHTML = 'Reserva creada automáticamente...';
+                    document.getElementById('qr-status').innerHTML = 'Sala lista: clase programada — uso registrado';
 
                     // Actualizar indicador en el mapa
                     const block = state.indicators.find(b => b.id === espacio);
@@ -2364,20 +2370,18 @@
                         drawIndicators();
                     }
 
-                    // Mostrar Sweet Alert de éxito para reserva automática
                     Swal.fire({
-                        title: '¡Reserva Creada!',
-                        text: 'Se ha creado automáticamente la reserva según tu programación.',
+                        title: 'Espacio listo para su clase',
+                        html: `<div class="text-left text-gray-700 text-base">
+                            <p class="mb-3">Tiene <strong>clase programada</strong> en esta sala. Se activó la reserva según su horario.</p>
+                            <p class="mb-0">La sala queda <strong>en uso por usted</strong> y queda <strong>registrado el ingreso</strong> (asistencia docente en el sistema).</p>
+                        </div>`,
                         icon: 'success',
-                        confirmButtonText: 'Aceptar',
-                        confirmButtonColor: '#059669',
-                        timer: 1500,
-                        timerProgressBar: true,
-                        showConfirmButton: false
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#059669'
                     });
 
-                    // Mostrar mensaje de reserva creada
-                    document.getElementById('qr-status').innerHTML = 'Reserva creada';
+                    document.getElementById('qr-status').innerHTML = 'Clase en curso: sala en uso (registro listo)';
                     document.getElementById('qr-status').classList.remove('parpadeo');
 
                     // Limpiar solo el estado de lectura después de un delay
@@ -2406,7 +2410,14 @@
                         }
                     }, 2000);
                 } else {
-                    // Error en crear reserva automática - restaurar autofocus
+                    const msg = (resultado && resultado.mensaje) ? resultado.mensaje : 'No se pudo activar la clase programada. Intente nuevamente o contacte a soporte.';
+                    Swal.fire({
+                        title: 'No se pudo completar el ingreso',
+                        text: msg,
+                        icon: 'error',
+                        confirmButtonText: 'Entendido',
+                        confirmButtonColor: '#dc2626'
+                    });
                     setTimeout(() => {
                         if (qrInputManager) {
                             qrInputManager.setActiveInput('main');
@@ -2414,8 +2425,8 @@
                     }, 100);
                 }
             } else {
-                // CASO 2: Profesor SIN clases - solicita con módulos (todos los disponibles)
-                await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado);
+                // CASO 2: Sin clase programada en este espacio → reserva espontánea: preguntar módulos
+                await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado, { reservaEspontaneaProfesor: true });
                 return; // No continuar, esperar selección de módulos
             }
         } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
@@ -2423,8 +2434,15 @@
             await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado);
             return; // No continuar, esperar selección de módulos
         } else {
+            // Cualquier otro tipo con verificado=true (no previsto hoy) no debe crear reserva por este flujo
             ordenEscaneo = 'usuario';
-            // Restaurar autofocus del qr-input después de error en tipo de usuario
+            Swal.fire({
+                title: 'Reserva no disponible',
+                text: 'Este tipo de cuenta no puede tomar la sala por este lector. Si cree que es un error, contacte a soporte.',
+                icon: 'info',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#4B5563'
+            });
             setTimeout(() => {
                 if (qrInputManager) {
                     qrInputManager.setActiveInput('main');
@@ -5122,6 +5140,19 @@
             state.originalCoordinates = [];
         }
 
+        function resetTextosModalSeleccionarModulos() {
+            const titulo = document.getElementById('modal-modulos-titulo');
+            const sub = document.getElementById('modal-modulos-subtitulo');
+            const seccion = document.getElementById('modal-modulos-seccion-titulo');
+            const lead = document.getElementById('modal-modulos-lead');
+            const btnLabel = document.getElementById('btn-confirmar-modulos-label');
+            if (titulo) titulo.textContent = 'Seleccionar Módulos';
+            if (sub) sub.textContent = 'Reserva de Espacio';
+            if (seccion) seccion.textContent = 'Configuración de Reserva';
+            if (lead) lead.textContent = '¿Por cuántos módulos desea reservar?';
+            if (btnLabel) btnLabel.textContent = 'Confirmar Reserva';
+        }
+
         function cerrarModalModulos() {
             // Ocultar directamente el modal
             const modal = document.getElementById('modal-seleccionar-modulos');
@@ -5134,6 +5165,8 @@
             if (modalAlt) {
                 modalAlt.classList.add('hidden');
             }
+
+            resetTextosModalSeleccionarModulos();
 
             // Restaurar el input QR activo usando el gestor
             setTimeout(() => {
@@ -5202,7 +5235,26 @@
             }
         }
 
-        async function mostrarModalSeleccionarModulos(idEspacio, run) {
+        async function mostrarModalSeleccionarModulos(idEspacio, run, opciones = {}) {
+            const esReservaEspontaneaProfesor = opciones.reservaEspontaneaProfesor === true;
+
+            resetTextosModalSeleccionarModulos();
+
+            if (esReservaEspontaneaProfesor) {
+                const titulo = document.getElementById('modal-modulos-titulo');
+                const sub = document.getElementById('modal-modulos-subtitulo');
+                const seccion = document.getElementById('modal-modulos-seccion-titulo');
+                const lead = document.getElementById('modal-modulos-lead');
+                const btnLabel = document.getElementById('btn-confirmar-modulos-label');
+                if (titulo) titulo.textContent = 'Uso del espacio sin clase programada';
+                if (sub) sub.textContent = 'Reserva espontánea (docente)';
+                if (seccion) seccion.textContent = 'Duración del uso';
+                if (lead) {
+                    lead.textContent = 'No tiene clase programada en esta sala en este horario. Indique por cuántos módulos consecutivos necesita el espacio.';
+                }
+                if (btnLabel) btnLabel.textContent = 'Confirmar uso del espacio';
+            }
+
                     const modulosDisponibles = await calcularModulosDisponibles(idEspacio);
 
         // Usar exactamente los módulos disponibles calculados por el servidor
