@@ -188,7 +188,7 @@ class RecuperacionClasesTable extends Component
             $modulosQuery->where('id_modulo', 'like', $prefijo . '.%');
         } else {
             // Si no hay fecha, no mostrar módulos para forzar la selección de fecha primero
-            $modulosQuery->where('id', 0);
+            $modulosQuery->whereRaw('1 = 0');
         }
 
         $modulos = $modulosQuery->get()->sort(function ($a, $b) {

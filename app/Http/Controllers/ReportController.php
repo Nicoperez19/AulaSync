@@ -2300,4 +2300,161 @@ class ReportController extends Controller
         // Para Excel, crear Export class más tarde
         return back()->with('error', 'Formato no soportado aún');
     }
+    public function usoAuditorio(Request $request)
+    {
+        $fechaInicio = $request->get('fecha_inicio', now()->startOfMonth()->format('Y-m-d'));
+        $fechaFin    = $request->get('fecha_fin',    now()->endOfMonth()->format('Y-m-d'));
+
+        $data = $this->prepareAuditorioReportData($fechaInicio, $fechaFin);
+
+        return view('reportes.uso-auditorio', array_merge($data, [
+            'fechaInicio' => $fechaInicio,
+            'fechaFin'    => $fechaFin,
+        ]));
+    }
+
+
+
+
+    public function exportUsoAuditorio(Request $request, $format)
+    {
+        try {
+            $fechaInicio = $request->get('fecha_inicio', now()->startOfMonth()->format('Y-m-d'));
+            $fechaFin    = $request->get('fecha_fin',    now()->endOfMonth()->format('Y-m-d'));
+
+            $dataReporte = $this->prepareAuditorioReportData($fechaInicio, $fechaFin);
+            $reservas    = $dataReporte['reservasRaw'];
+            $historico   = $dataReporte['historico'];
+
+            if ($format === 'excel') {
+                $filename = 'uso_auditorio_' . date('Y-m-d_H-i-s') . '.xlsx';
+                
+                // Formatear datos para Excel (usar estructura similar a la tabla pero con más info si se desea)
+                $excelData = $historico->map(function ($h) {
+                    return [
+                        'Usuario'      => $h['usuario'],
+                        'Auditorio'    => $h['espacio'],
+                        'Fecha'        => $h['fecha'],
+                        'Hora Entrada' => $h['hora_inicio'],
+                        'Hora Salida'  => $h['hora_fin'],
+                        'Duración'     => $h['duracion'],
+                        'Motivo/Asig'  => $h['asignatura'],
+                        'Estado'       => $h['estado'],
+                    ];
+                });
+
+                return Excel::download(new class($excelData) implements \Maatwebsite\Excel\Concerns\FromArray, \Maatwebsite\Excel\Concerns\WithHeadings, \Maatwebsite\Excel\Concerns\WithStyles {
+                    private $datos;
+                    public function __construct($datos) { $this->datos = $datos; }
+                    public function array(): array { return $this->datos->toArray(); }
+                    public function headings(): array {
+                        return ['Usuario', 'Auditorio', 'Fecha', 'Hora Entrada', 'Hora Salida', 'Duración', 'Motivo/Asignatura', 'Estado'];
+                    }
+                    public function styles(\PhpOffice\PhpSpreadsheet\Worksheet\Worksheet $sheet) {
+                        $sheet->getStyle('A1:H1')->getFont()->setBold(true);
+                        $sheet->getStyle('A1:H1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)->getStartColor()->setRGB('E2E8F0');
+                        foreach (range('A', 'H') as $col) { $sheet->getColumnDimension($col)->setAutoSize(true); }
+                        return $sheet;
+                    }
+                }, $filename);
+
+            } elseif ($format === 'pdf') {
+                $pdfData = [
+                    'datos'            => $historico,
+                    'fecha_inicio'     => Carbon::parse($fechaInicio)->format('d/m/Y'),
+                    'fecha_fin'        => Carbon::parse($fechaFin)->format('d/m/Y'),
+                    'fecha_generacion' => now()->format('d/m/Y H:i:s'),
+                    'total_reservas'   => $dataReporte['totalReservas'],
+                    'completadas'      => $reservas->where('estado', 'finalizada')->count(),
+                    'activas'          => $reservas->where('estado', 'activa')->count(),
+                    'horas_utilizadas' => $dataReporte['horasUtilizadas'],
+                ];
+
+                $filename = 'uso_auditorio_' . date('Y-m-d_H-i-s') . '.pdf';
+                return Pdf::loadView('reportes.pdf.uso-auditorio', $pdfData)->download($filename);
+            }
+
+            return redirect()->back()->with('error', 'Formato de exportación no válido');
+        } catch (\Exception $e) {
+            \Log::error('Error en exportUsoAuditorio: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Error al exportar: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Prepara los datos para el reporte de uso de auditorio (Web y Exportación)
+     */
+    private function prepareAuditorioReportData($fechaInicio, $fechaFin)
+    {
+        $inicio = Carbon::parse($fechaInicio)->startOfDay();
+        $fin    = Carbon::parse($fechaFin)->endOfDay();
+
+        $auditorios      = Espacio::where('tipo_espacio', 'Auditorio')->get();
+        $idsAuditorios   = $auditorios->pluck('id_espacio');
+        $totalAuditorios = $auditorios->count();
+
+        $totalOcupados = Espacio::where('tipo_espacio', 'Auditorio')->where('estado', 'Ocupado')->count();
+
+        $reservasRaw = Reserva::whereIn('id_espacio', $idsAuditorios)
+            ->whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
+            ->with(['espacio', 'profesor', 'solicitante', 'asignatura'])
+            ->orderBy('fecha_reserva', 'desc')
+            ->orderBy('hora', 'asc')
+            ->get();
+
+        // Cálculo de horas
+        $horasUtilizadas = $reservasRaw->sum(function ($r) {
+            if ($r->hora && $r->hora_salida) {
+                return Carbon::parse($r->hora)->diffInHours(Carbon::parse($r->hora_salida), true);
+            }
+            return 0;
+        });
+
+        $horasDisponibles = 0;
+        for ($fecha = $inicio->copy(); $fecha->lte($fin); $fecha->addDay()) {
+            if ($fecha->isWeekday() || $fecha->isSaturday()) {
+                $horasDisponibles += $totalAuditorios * $this->occupancyService->horasPorTurno(null, $fecha);
+            }
+        }
+
+        $promedioUtilizacion = $horasDisponibles > 0 ? round(($horasUtilizadas / $horasDisponibles) * 100) : 0;
+
+        $historico = $reservasRaw->map(function ($reserva) {
+            $usuario = $reserva->profesor->name ?? $reserva->solicitante->nombre ?? 'N/A';
+            $run     = $reserva->profesor->run_profesor ?? $reserva->solicitante->run_solicitante ?? 'N/A';
+            
+            $duracion = 'N/A';
+            if ($reserva->hora && $reserva->hora_salida) {
+                $diff = Carbon::parse($reserva->hora)->diffInMinutes(Carbon::parse($reserva->hora_salida));
+                $duracion = $diff >= 60 
+                    ? floor($diff / 60) . 'h ' . ($diff % 60 > 0 ? ($diff % 60) . 'min' : '')
+                    : $diff . ' min';
+            } elseif ($reserva->estado === 'activa') {
+                $duracion = 'En curso';
+            }
+
+            return [
+                'fecha'       => Carbon::parse($reserva->fecha_reserva)->format('d/m/Y'),
+                'espacio'     => $reserva->espacio->nombre_espacio ?? 'N/A',
+                'usuario'     => $usuario,
+                'run'         => $run,
+                'asignatura'  => $reserva->asignatura->nombre_asignatura ?? $reserva->motivo ?? '',
+                'hora_inicio' => $reserva->hora ? Carbon::parse($reserva->hora)->format('H:i') : 'N/A',
+                'hora_fin'    => $reserva->hora_salida ? Carbon::parse($reserva->hora_salida)->format('H:i') : ($reserva->estado === 'activa' ? 'En curso' : 'N/A'),
+                'duracion'    => $duracion,
+                'estado'      => ucfirst($reserva->estado)
+            ];
+        });
+
+        return [
+            'totalAuditorios'     => $totalAuditorios,
+            'totalOcupados'       => $totalOcupados,
+            'totalReservas'       => $reservasRaw->count(),
+            'promedioUtilizacion' => $promedioUtilizacion,
+            'horasUtilizadas'     => round($horasUtilizadas, 1),
+            'historico'           => $historico,
+            'reservasRaw'         => $reservasRaw
+        ];
+    }
 }
+

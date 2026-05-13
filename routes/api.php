@@ -134,6 +134,8 @@ Route::post('/registrar-salida-clase', [ApiReservaController::class, 'registrarS
 Route::post('/registrar-reserva-espontanea', [ApiReservaController::class, 'registrarReservaEspontanea']);
 Route::post('/registrar-entrada-clase', [ApiReservaController::class, 'registrarUsoEspacio']);
 Route::get('/reserva-activa/{id}', [App\Http\Controllers\Api\ApiReservaController::class, 'getReservaActiva']);
+// 🔑 Nuevo endpoint: Liberar sala bloqueada + registrar nuevo uso (cuando profesor anterior no devolvió llave)
+Route::post('/liberar-y-registrar-uso', [ApiReservaController::class, 'liberarYRegistrarUso']);
 
 Route::get('/user/{run}', function ($run) {
     try {

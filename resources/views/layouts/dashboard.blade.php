@@ -263,7 +263,7 @@
                     Reportes
                 </h4>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <a href="{{ route('reportes.accesos') }}"
                    class="flex items-center p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors border border-blue-200">
                     <div class="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center mr-3">
@@ -305,6 +305,17 @@
                     <div>
                         <p class="font-medium text-gray-900">Salas Estudio</p>
                         <p class="text-sm text-gray-600">Análisis de uso</p>
+                    </div>
+                </a>
+
+                <a href="{{ route('reportes.uso-auditorio') }}"
+                   class="flex items-center p-4 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors border border-amber-200">
+                    <div class="w-10 h-10 bg-amber-600 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-landmark text-white"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-gray-900">Uso del Auditorio</p>
+                        <p class="text-sm text-gray-600">Reporte de uso</p>
                     </div>
                 </a>
             </div>

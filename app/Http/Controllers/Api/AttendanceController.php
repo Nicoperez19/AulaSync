@@ -158,21 +158,12 @@ class AttendanceController extends Controller
             }
 
             // Determinar la asignatura asociada si existe
+            // IMPORTANTE: Usar directamente el id_asignatura de la reserva
+            // La reserva ya contiene la asignatura validada del profesor
+            // (antes se buscaba por espacio/hora, causando errores cuando múltiples clases coincidían)
             $asignaturaId = null;
-            if ($reserva->tipo_reserva === 'clase') {
-                // Buscar la planificación asociada a esta reserva
-                $planificacion = DB::connection('tenant')->table('planificacion_asignaturas as pa')
-                    ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
-                    ->where('pa.id_espacio', $roomId)
-                    ->where('m.dia', $now->dayOfWeek)
-                    ->where('m.hora_inicio', '<=', $now->format('H:i:s'))
-                    ->where('m.hora_termino', '>=', $now->format('H:i:s'))
-                    ->select('pa.id_asignatura')
-                    ->first();
-
-                if ($planificacion) {
-                    $asignaturaId = $planificacion->id_asignatura;
-                }
+            if ($reserva->tipo_reserva === 'clase' && $reserva->id_asignatura) {
+                $asignaturaId = $reserva->id_asignatura;
             }
 
             // Registrar la asistencia

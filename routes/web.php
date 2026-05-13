@@ -436,6 +436,11 @@ Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(fu
     // Reportes de Salas de Estudio
     Route::get('salas-estudio', [ReportController::class, 'salasEstudio'])->name('reportes.salas-estudio');
     Route::get('salas-estudio/export/{format}', [ReportController::class, 'exportSalasEstudio'])->name('reportes.salas-estudio.export');
+
+    // Reporte de Uso del Auditorio
+    Route::get('uso-auditorio', [ReportController::class, 'usoAuditorio'])->name('reportes.uso-auditorio');
+    Route::get('uso-auditorio/datos-historicos', [ReportController::class, 'getHistoricoAuditorio'])->name('reportes.uso-auditorio.historico');
+    Route::get('uso-auditorio/export/{format}', [ReportController::class, 'exportUsoAuditorio'])->name('reportes.uso-auditorio.export');
 });
 
 require __DIR__ . '/auth.php';

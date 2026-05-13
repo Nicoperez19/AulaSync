@@ -570,4 +570,174 @@ class ApiReservaController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Liberar espacio bloqueado + Registrar nuevo uso
+     * 
+     * Permite que un profesor con clase programada libere un espacio
+     * que está ocupado por un profesor anterior que no devolvió la llave.
+     * 
+     * Flujo:
+     * 1. Validar que el profesor tiene clase programada en ese espacio/horario
+     * 2. Finalizar la reserva anterior con anotación
+     * 3. Crear nueva reserva para el profesor actual
+     * 4. Cambiar estado del espacio a "Ocupado"
+     * 5. Registrar todo en logs y observaciones para auditoría
+     * 
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function liberarYRegistrarUso(Request $request)
+    {
+        try {
+            // Validar datos de entrada
+            $request->validate([
+                'run' => 'required',
+                'espacio_id' => 'required|exists:tenant.espacios,id_espacio'
+            ]);
+
+            $runNormalizado = $this->normalizeRun($request->run);
+            $horaActual = Carbon::now();
+            $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
+            $horaActualStr = $horaActual->format('H:i:s');
+
+            // 1️⃣ VALIDACIÓN: Verificar que hay clase programada en este espacio/horario
+            // Esto asegura que el profesor que llega tiene horario en ese espacio
+            $tieneClaseProgramada = DB::connection('tenant')->table('planificacion_asignaturas as pa')
+                ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
+                ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
+                ->where('pa.id_espacio', $request->espacio_id)
+                ->where('m.dia', $diaActual)
+                ->where('m.hora_inicio', '<=', $horaActual->copy()->addMinutes(10)->toTimeString())
+                ->where('m.hora_termino', '>=', $horaActualStr)
+                ->select('pa.id_asignatura', 'a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino')
+                ->first();
+
+            if (!$tieneClaseProgramada) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No tiene clase programada en este espacio a esta hora. No puede liberar la sala.',
+                    'error_code' => 'no_scheduled_class'
+                ], 403);
+            }
+
+            DB::connection('tenant')->beginTransaction();
+
+            try {
+                $espacio = Espacio::findOrFail($request->espacio_id);
+
+                // 2️⃣ BUSCAR Y FINALIZAR RESERVA ANTERIOR
+                $reservaAnterior = Reserva::where('id_espacio', $request->espacio_id)
+                    ->where('estado', 'activa')
+                    ->first();
+
+                $reservaAnteriorFinalizadaId = null;
+                $profesorAnterior = null;
+
+                if ($reservaAnterior) {
+                    $reservaAnteriorFinalizadaId = $reservaAnterior->id_reserva;
+                    $profesorAnterior = $reservaAnterior->profesor ? $reservaAnterior->profesor->name : 'Desconocido';
+
+                    // Anotar la causa de la finalización
+                    $motivoLiberacion = "LIBERADA: Profesor {$profesorAnterior} no devolvió la llave. " .
+                        "Liberada por profesor con clase programada ({$tieneClaseProgramada->nombre_asignatura}) " .
+                        "el " . $horaActual->format('d/m/Y H:i:s');
+
+                    $reservaAnterior->estado = 'finalizada';
+                    $reservaAnterior->hora_salida = $horaActualStr;
+                    $reservaAnterior->observaciones = ($reservaAnterior->observaciones ?? '') . " | {$motivoLiberacion}";
+                    $reservaAnterior->save();
+
+                    \Log::warning('🔑 LIBERACIÓN DE LLAVE', [
+                        'reserva_liberada' => $reservaAnteriorFinalizadaId,
+                        'profesor_anterior' => $profesorAnterior,
+                        'profesor_actual' => $runNormalizado,
+                        'espacio_id' => $request->espacio_id,
+                        'espacio_nombre' => $espacio->nombre_espacio,
+                        'motivo' => 'Llave no devuelta',
+                        'timestamp' => $horaActual->format('Y-m-d H:i:s')
+                    ]);
+                }
+
+                // 3️⃣ CREAR NUEVA RESERVA PARA PROFESOR ACTUAL
+                $nuevaReserva = new Reserva();
+                $nuevaReserva->id_reserva = Reserva::generarIdUnico();
+                $nuevaReserva->run_profesor = $runNormalizado;
+                $nuevaReserva->id_espacio = $request->espacio_id;
+                $nuevaReserva->id_asignatura = $tieneClaseProgramada->id_asignatura ?? null;
+                $nuevaReserva->fecha_reserva = $horaActual->format('Y-m-d');
+                $nuevaReserva->hora = $horaActualStr;
+                $nuevaReserva->tipo_reserva = 'clase';
+                $nuevaReserva->estado = 'activa';
+                $nuevaReserva->hora_salida = null;
+                $nuevaReserva->observaciones = "REGISTRADA CON LIBERACIÓN: El espacio fue liberado de la reserva anterior " .
+                    "por no devolución de llave. Profesor tiene clase programada: {$tieneClaseProgramada->nombre_asignatura}";
+                $nuevaReserva->created_at = $horaActual;
+                $nuevaReserva->updated_at = $horaActual;
+                $nuevaReserva->save();
+
+                // 4️⃣ ACTUALIZAR ESTADO DEL ESPACIO
+                $espacio->estado = 'Ocupado';
+                $espacio->save();
+
+                // 5️⃣ LIMPIAR REGISTROS DE CLASES NO REALIZADAS (si aplica)
+                if (method_exists(\App\Models\ClaseNoRealizada::class, 'limpiarRegistrosIncorrectos')) {
+                    \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
+                        $request->espacio_id,
+                        $horaActual->format('Y-m-d'),
+                        $horaActual->format('H:i:s'),
+                        $runNormalizado
+                    );
+                }
+
+                DB::connection('tenant')->commit();
+
+                \Log::info('✅ USO REGISTRADO CON LIBERACIÓN', [
+                    'reserva_nueva' => $nuevaReserva->id_reserva,
+                    'reserva_liberada' => $reservaAnteriorFinalizadaId,
+                    'profesor' => $runNormalizado,
+                    'espacio_id' => $request->espacio_id,
+                    'asignatura' => $tieneClaseProgramada->nombre_asignatura,
+                    'timestamp' => $horaActual->format('Y-m-d H:i:s')
+                ]);
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Sala liberada y uso registrado correctamente',
+                    'data' => [
+                        'accion' => 'liberar_y_registrar',
+                        'reserva_nueva' => [
+                            'id' => $nuevaReserva->id_reserva,
+                            'profesor' => $runNormalizado,
+                            'espacio' => $espacio->nombre_espacio,
+                            'asignatura' => $tieneClaseProgramada->nombre_asignatura,
+                            'hora_inicio' => $horaActualStr,
+                            'hora_termino' => $tieneClaseProgramada->hora_termino
+                        ],
+                        'reserva_liberada' => $reservaAnteriorFinalizadaId ? [
+                            'id' => $reservaAnteriorFinalizadaId,
+                            'profesor' => $profesorAnterior,
+                            'motivo' => 'Llave no devuelta'
+                        ] : null,
+                        'auditoria' => [
+                            'timestamp' => $horaActual->format('Y-m-d H:i:s'),
+                            'razon' => 'Profesor anterior no devolvió llave'
+                        ]
+                    ]
+                ], 201);
+
+            } catch (\Exception $e) {
+                DB::connection('tenant')->rollBack();
+                \Log::error('❌ Error al liberar y registrar uso: ' . $e->getMessage());
+                throw $e;
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Error en liberarYRegistrarUso: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al liberar y registrar el uso del espacio: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
