@@ -10,6 +10,7 @@ use App\Models\Reserva;
 use App\Models\Asignatura;
 use App\Models\AreaAcademica;
 use App\Models\Tenant;
+use App\Services\ReservaEspontaneaMallaService;
 use Illuminate\Http\Request;
 use App\Models\Espacio;
 use Illuminate\Support\Facades\Log;
@@ -66,6 +67,14 @@ class ProfesorController extends Controller
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'El espacio no está disponible'
+                ], 400);
+            }
+
+            $evalMalla = app(ReservaEspontaneaMallaService::class)->evaluarAntesNuevaReserva($runProfesor, $idEspacio);
+            if (!$evalMalla['permitida']) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => $evalMalla['mensaje'] ?? 'No es posible crear una reserva espontánea en este espacio en el horario actual.',
                 ], 400);
             }
 
