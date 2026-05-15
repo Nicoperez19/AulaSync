@@ -19,7 +19,6 @@ use App\Models\Reserva;
 use App\Models\Sede;
 use App\Models\Solicitante;
 use App\Models\Tenant;
-use App\Services\ReservaEspontaneaMallaService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -1476,17 +1475,6 @@ class PlanoDigitalController extends Controller
                             ]
                         ]);
                     }
-                }
-
-                // Malla académica: misma regla para cualquier id_espacio (salón, laboratorio, auditorio, etc.)
-                $evalMalla = app(ReservaEspontaneaMallaService::class)->evaluarAntesNuevaReserva($runUsuario, $idEspacio);
-                if (!$evalMalla['permitida']) {
-                    return response()->json([
-                        'tipo' => 'clase_academica_programada',
-                        'mensaje' => $evalMalla['mensaje'],
-                        'espacio_disponible' => false,
-                        'clase' => $evalMalla['clase'],
-                    ]);
                 }
 
                 // El espacio está disponible para crear una nueva reserva

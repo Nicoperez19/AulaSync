@@ -470,19 +470,6 @@ class EspacioController extends Controller
             }
         }
 
-        // No ofrecer reserva espontánea de un solo módulo si el siguiente ya tiene clase en malla
-        // (misma regla para todos los espacios; coherente con API modulos-disponibles).
-        if ($maxModulos === 1) {
-            $siguienteCodigo = $codigoDia . '.' . ($moduloActual + 1);
-            if (in_array($siguienteCodigo, $planificaciones)) {
-                $maxModulos = 0;
-                $modulosDisponibles = [];
-                if ($proximaClase === null) {
-                    $proximaClase = $this->obtenerInfoProximaClase($siguienteCodigo, $espacioId);
-                }
-            }
-        }
-
         // Construir detalle por módulo con horario inicio/fin
         $modulosDetalle = [];
         foreach ($modulosDisponibles as $m) {
