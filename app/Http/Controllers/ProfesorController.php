@@ -15,7 +15,6 @@ use App\Models\Espacio;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use App\Services\ProgramacionActualEnEspacioService;
 
 class ProfesorController extends Controller
 {
@@ -243,13 +242,30 @@ class ProfesorController extends Controller
                 ], 400);
             }
 
-            /** @var ProgramacionActualEnEspacioService $programacionSvc */
-            $programacionSvc = app(ProgramacionActualEnEspacioService::class);
-            $programacion = $programacionSvc->buscarProgramacionProfesor(
-                (string) $idEspacio,
-                (string) $runProfesor,
-                now()
-            );
+            // Obtener la programación del profesor para este espacio
+            $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
+            $horaConAnticipacion = now()->copy()->addMinutes(15)->format('H:i:s');
+
+            $programacion = DB::table('planificacion_asignaturas as pa')
+                ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
+                ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
+                ->where('pa.id_espacio', $idEspacio)
+                ->where(function($query) use ($profesor, $runLimpio) {
+                    $query->where('h.run_profesor', $profesor->run_profesor)
+                        ->orWhere('h.run_profesor', $runLimpio);
+                })
+                ->where('m.dia', $diaActual)
+                ->where(function($query) use ($horaActual, $horaConAnticipacion) {
+                    $query->where(function($q) use ($horaActual) {
+                        $q->where('m.hora_inicio', '<=', $horaActual)
+                          ->where('m.hora_termino', '>=', $horaActual);
+                    })->orWhere(function($q) use ($horaActual, $horaConAnticipacion) {
+                        $q->where('m.hora_inicio', '>', $horaActual)
+                          ->where('m.hora_inicio', '<=', $horaConAnticipacion);
+                    });
+                })
+                ->select('pa.id_asignatura', 'm.id_modulo', 'm.hora_inicio', 'm.hora_termino')
+                ->first();
 
             if (!$programacion) {
                 // Si no encuentra programación, retornar error
@@ -270,7 +286,7 @@ class ProfesorController extends Controller
             $reserva->hora_salida = $programacion->hora_termino;
             $reserva->modulos = 1; // Calculado basado en la programación
             $reserva->estado = 'activa'; // Creada automáticamente pero activa
-            $reserva->tipo_reserva = 'clase'; // Programación regular o colaborador (misma categoría en BD)
+            $reserva->tipo_reserva = 'clase'; // Marcado como clase programada
             $reserva->save();
 
             // Cambiar estado del espacio

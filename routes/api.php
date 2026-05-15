@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\PlanoDigitalController;
 use App\Http\Controllers\DashboardController;
-use App\Services\ProgramacionActualEnEspacioService;
 
 /*
 |--------------------------------------------------------------------------
@@ -354,39 +353,67 @@ Route::post('/registrar-asistencia-clase', [PlanoDigitalController::class, 'regi
 // Ruta para verificar la programación de un usuario en un espacio específico
 Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $usuario) {
     try {
+        // Obtener la hora actual
         $horaActual = \Carbon\Carbon::now();
+        $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
         $horaActualStr = $horaActual->format('H:i:s');
+        
+        // Margen de 15 minutos para anticipación
+        $horaConAnticipacion = $horaActual->copy()->addMinutes(15)->format('H:i:s');
 
-        /** @var ProgramacionActualEnEspacioService $svc */
-        $svc = app(ProgramacionActualEnEspacioService::class);
-        $programacion = $svc->buscarProgramacionProfesor((string) $espacio, (string) $usuario, $horaActual);
+        // Limpiar el RUN (remover puntos y guiones) para búsqueda
+        $runLimpio = preg_replace('/[.-]/', '', $usuario);
+        $runLimpio = (int) $runLimpio;
+
+        // Buscar la clase programada en este espacio
+        $programacion = DB::table('planificacion_asignaturas as pa')
+            ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
+            ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
+            ->where('pa.id_espacio', $espacio)
+            ->where(function($query) use ($usuario, $runLimpio) {
+                // Buscar por run con varios formatos posibles
+                $query->where('h.run_profesor', $usuario)
+                    ->orWhere('h.run_profesor', $runLimpio)
+                    ->orWhere(DB::raw('CAST(h.run_profesor AS CHAR)'), $usuario);
+            })
+            ->where('m.dia', $diaActual)
+            ->where(function($query) use ($horaActualStr, $horaConAnticipacion) {
+                // En curso ahora OR empieza en los próximos 15 minutos
+                $query->where(function($q) use ($horaActualStr) {
+                    $q->where('m.hora_inicio', '<=', $horaActualStr)
+                      ->where('m.hora_termino', '>=', $horaActualStr);
+                })->orWhere(function($q) use ($horaActualStr, $horaConAnticipacion) {
+                    $q->where('m.hora_inicio', '>', $horaActualStr)
+                      ->where('m.hora_inicio', '<=', $horaConAnticipacion);
+                });
+            })
+            ->select('pa.id_modulo', 'm.hora_inicio', 'm.hora_termino', 'pa.id_asignatura')
+            ->first();
 
         $tieneProgramacion = $programacion !== null;
         $modulosInfo = null;
 
         if ($tieneProgramacion && $programacion) {
+            // Obtener información completa de módulos
             $modulosInfo = [
                 'id_modulo' => $programacion->id_modulo,
                 'hora_inicio' => $programacion->hora_inicio,
                 'hora_termino' => $programacion->hora_termino,
-                'id_asignatura' => $programacion->id_asignatura,
-                'fuente_programacion' => $programacion->fuente_programacion ?? 'regular',
+                'id_asignatura' => $programacion->id_asignatura
             ];
         }
-
-        $runSoloDigitos = (int) preg_replace('/\D/', '', $usuario);
 
         return response()->json([
             'success' => true,
             'tieneProgramacion' => $tieneProgramacion,
             'modulosInfo' => $modulosInfo,
             'debug' => [
-                'dia_actual' => strtolower(\Illuminate\Support\Str::ascii($horaActual->locale('es')->isoFormat('dddd'))),
+                'dia_actual' => $diaActual,
                 'hora_actual' => $horaActualStr,
                 'espacio_id' => $espacio,
                 'usuario_original' => $usuario,
-                'usuario_limpio' => $runSoloDigitos,
-            ],
+                'usuario_limpio' => $runLimpio
+            ]
         ]);
     } catch (\Exception $e) {
         \Log::error('Error en verificar-programacion: ' . $e->getMessage(), [
