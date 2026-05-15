@@ -104,7 +104,7 @@ class DashboardController extends Controller
      * Obtener y configurar el tenant actual para operaciones AJAX
      * Garantiza que Reserva::on('tenant') apunte a la BD correcta
      */
-    private function ensureTenantContext()
+    private function ensureTenantContext(): ?Tenant
     {
         $tenant = null;
 
@@ -310,7 +310,7 @@ class DashboardController extends Controller
      * @param string $turno 'diurno' o 'vespertino' o null para todos
      * @return bool
      */
-    private function esTurno($hora, $turno = null)
+    private function esTurno($hora, $turno = null): bool
     {
         if ($turno === null) {
             return true;  // Sin filtro de turno
@@ -333,7 +333,7 @@ class DashboardController extends Controller
      * @param Carbon|null $fecha Fecha para determinar si es sábado
      * @return int|float Horas disponibles en el turno
      */
-    private function horasPorTurno($turno = null, $fecha = null)
+    private function horasPorTurno($turno = null, $fecha = null): float
     {
         // Verificar si es sábado (clases solo hasta 13:00)
         $esSabado = $fecha ? $fecha->isSaturday() : false;
@@ -366,7 +366,7 @@ class DashboardController extends Controller
      * @param string|null $turno Filtro opcional por turno ('diurno', 'vespertino' o null)
      * @return float Total de horas utilizadas
      */
-    private function calcularHorasDesdePlanificaciones($inicio, $fin, $piso = null, $tipoEspacio = null, $turno = null)
+    private function calcularHorasDesdePlanificaciones($inicio, $fin, $piso = null, $tipoEspacio = null, $turno = null): float
     {
         $periodo = SemesterHelper::getCurrentPeriod();
         $horasTotales = 0;
@@ -436,7 +436,7 @@ class DashboardController extends Controller
      * @param string|null $turno Filtro opcional por turno ('diurno', 'vespertino' o null)
      * @return float Promedio de ocupación en porcentaje
      */
-    private function calcularOcupacionPromedioHora($inicio, $fin, $facultad = null, $piso = null, $turno = null)
+    private function calcularOcupacionPromedioHora($inicio, $fin, $facultad = null, $piso = null, $turno = null): float
     {
         // Si turno es null, calcular como promedio de diurno + vespertino
         if ($turno === null) {
@@ -531,7 +531,7 @@ class DashboardController extends Controller
         return $resultado;
     }
 
-    private function calcularOcupacionSemanal($facultad, $piso, $turno = null)
+    private function calcularOcupacionSemanal($facultad, $piso, $turno = null): float
     {
         // Lunes a sábado de la semana actual
         $inicioSemana = Carbon::now()->startOfWeek();
@@ -542,7 +542,7 @@ class DashboardController extends Controller
         return $this->calcularOcupacionPromedioHora($inicioSemana, $finSemana, $facultad, $piso, $turno);
     }
 
-    private function calcularOcupacionDiaria($facultad, $piso)
+    private function calcularOcupacionDiaria($facultad, $piso): array
     {
         $hoy = Carbon::today();
         $diaSemana = $hoy->format('l');
@@ -582,7 +582,7 @@ class DashboardController extends Controller
         return $ocupacion;
     }
 
-    private function calcularOcupacionMensual($facultad, $piso, $turno = null)
+    private function calcularOcupacionMensual($facultad, $piso, $turno = null): float
     {
         $inicioMes = Carbon::now()->startOfMonth();
         $finMes = Carbon::now()->endOfMonth();
@@ -590,7 +590,7 @@ class DashboardController extends Controller
         return $this->calcularOcupacionPromedioHora($inicioMes, $finMes, $facultad, $piso, $turno);
     }
 
-    private function obtenerUsuariosSinEscaneo($facultad, $piso)
+    private function obtenerUsuariosSinEscaneo($facultad, $piso): int
     {
         $hoy = Carbon::today();
 
@@ -608,7 +608,7 @@ class DashboardController extends Controller
         })->count();
     }
 
-    private function calcularHorasUtilizadas($facultad, $piso, $turno = null)
+    private function calcularHorasUtilizadas($facultad, $piso, $turno = null): array
     {
         $hoy = Carbon::today();
 
@@ -658,7 +658,7 @@ class DashboardController extends Controller
         ];
     }
 
-    private function obtenerSalasOcupadas($facultad, $piso, $turno = null)
+    private function obtenerSalasOcupadas($facultad, $piso, $turno = null): array
     {
         // Contar Salas de Clases, Laboratorios y Talleres para el KPI de % Ocupación
         $espaciosQuery = $this
@@ -712,7 +712,7 @@ class DashboardController extends Controller
     /**
      * Obtener espacios ocupados/libres contando TODOS los tipos (para gráfico de torta)
      */
-    private function obtenerEspaciosOcupadosTotal($facultad, $piso)
+    private function obtenerEspaciosOcupadosTotal($facultad, $piso): array
     {
         // Obtener TODOS los espacios (incluyendo laboratorios, talleres, etc.)
         $espaciosQuery = $this->obtenerEspaciosQuery($facultad, $piso);
@@ -739,7 +739,7 @@ class DashboardController extends Controller
         ];
     }
 
-    private function obtenerUsoPorDia($facultad, $piso)
+    private function obtenerUsoPorDia($facultad, $piso): array
     {
         $inicioSemana = Carbon::now()->startOfWeek();
         $finSemana = Carbon::now()->endOfWeek();
@@ -780,7 +780,7 @@ class DashboardController extends Controller
         ];
     }
 
-    private function obtenerSalasUtilizadasPorDia($facultad, $piso, $fechaInicio = null, $fechaFin = null)
+    private function obtenerSalasUtilizadasPorDia($facultad, $piso, $fechaInicio = null, $fechaFin = null): array
     {
         // Si no se proporcionan fechas, usar la semana actual
         $inicioRango = $fechaInicio ? $fechaInicio->copy() : Carbon::now()->startOfWeek();
@@ -868,7 +868,7 @@ class DashboardController extends Controller
         ];
     }
 
-    private function obtenerOcupacionPorDia($facultad, $piso)
+    private function obtenerOcupacionPorDia($facultad, $piso): array
     {
         $inicioSemana = Carbon::now()->startOfWeek();
         $finSemana = Carbon::now()->endOfWeek();
@@ -895,7 +895,7 @@ class DashboardController extends Controller
         ];
     }
 
-    private function calcularOcupacionPromediosHoraPorDia($fecha, $facultad = null, $piso = null)
+    private function calcularOcupacionPromediosHoraPorDia($fecha, $facultad = null, $piso = null): float
     {
         $totalEspacios = $this
             ->obtenerEspaciosQuery($facultad, $piso)
@@ -954,7 +954,7 @@ class DashboardController extends Controller
         return round($promedioTotal, 2);
     }
 
-    private function obtenerSalasPorTipoPorDia($facultad, $piso, $fechaInicio = null, $fechaFin = null)
+    private function obtenerSalasPorTipoPorDia($facultad, $piso, $fechaInicio = null, $fechaFin = null): array
     {
         // Si no se proporcionan fechas, usar la semana actual
         $inicioRango = $fechaInicio ? $fechaInicio->copy() : Carbon::now()->startOfWeek();
@@ -1061,7 +1061,7 @@ class DashboardController extends Controller
         ];
     }
 
-    private function obtenerOcupacionPorTurno($facultad, $piso, $fechaInicio = null, $fechaFin = null)
+    private function obtenerOcupacionPorTurno($facultad, $piso, $fechaInicio = null, $fechaFin = null): array
     {
         // Si no se proporcionan fechas, usar la semana actual
         $inicioRango = $fechaInicio ? $fechaInicio->copy() : Carbon::now()->startOfWeek();
@@ -1116,7 +1116,7 @@ class DashboardController extends Controller
         ];
     }
 
-    private function obtenerOcupacionPorTipo($facultad, $piso, $fechaInicio = null, $fechaFin = null)
+    private function obtenerOcupacionPorTipo($facultad, $piso, $fechaInicio = null, $fechaFin = null): array
     {
         // Si no se proporcionan fechas, usar la semana actual
         $inicioRango = $fechaInicio ? $fechaInicio->copy() : Carbon::now()->startOfWeek();
@@ -1220,7 +1220,7 @@ class DashboardController extends Controller
         ];
     }
 
-    private function obtenerOcupacionPorSala($facultad, $piso, $fechaInicio = null, $fechaFin = null)
+    private function obtenerOcupacionPorSala($facultad, $piso, $fechaInicio = null, $fechaFin = null): array
     {
         // Si no se proporcionan fechas, usar la semana actual
         $inicioRango = $fechaInicio ? $fechaInicio->copy() : Carbon::now()->startOfWeek();
@@ -1313,7 +1313,7 @@ class DashboardController extends Controller
         ];
     }
 
-    private function obtenerDisponibilidadSalas($facultad, $piso)
+    private function obtenerDisponibilidadSalas($facultad, $piso): array
     {
         $inicioSemana = Carbon::now()->startOfWeek();
         $finSemana = Carbon::now()->endOfWeek();
@@ -1352,7 +1352,7 @@ class DashboardController extends Controller
         ];
     }
 
-    private function calcularDisponibilidadPromediosHoraPorDia($fecha, $facultad = null, $piso = null)
+    private function calcularDisponibilidadPromediosHoraPorDia($fecha, $facultad = null, $piso = null): float
     {
         $totalEspacios = $this
             ->obtenerEspaciosQuery($facultad, $piso)
@@ -1412,7 +1412,7 @@ class DashboardController extends Controller
         return round($promedioTotal, 2);
     }
 
-    private function obtenerComparativaTipos($facultad, $piso)
+    private function obtenerComparativaTipos($facultad, $piso): array
     {
         // Cambiar a período mensual en lugar de semanal
         $inicioMes = Carbon::now()->startOfMonth();
@@ -1523,7 +1523,7 @@ class DashboardController extends Controller
         return $result;
     }
 
-    private function obtenerReservasPorTipo($facultad, $piso)
+    private function obtenerReservasPorTipo($facultad, $piso): \Illuminate\Support\Collection
     {
         $inicioSemana = Carbon::now()->startOfWeek();
         $finSemana = Carbon::now()->endOfWeek();
@@ -1565,7 +1565,7 @@ class DashboardController extends Controller
         });
     }
 
-    private function obtenerEvolucionMensual($facultad, $piso)
+    private function obtenerEvolucionMensual($facultad, $piso): array
     {
         $inicioSemana = Carbon::now()->startOfWeek();
         $diasSemana = [];
@@ -1622,7 +1622,7 @@ class DashboardController extends Controller
         ];
     }
 
-    private function obtenerReservasCanceladas($facultad, $piso)
+    private function obtenerReservasCanceladas($facultad, $piso): \Illuminate\Support\Collection
     {
         $inicioSemana = Carbon::now()->startOfWeek();
         $finSemana = Carbon::now()->endOfWeek();
@@ -1649,7 +1649,7 @@ class DashboardController extends Controller
             });
     }
 
-    private function obtenerHorariosAgrupados($facultad, $piso)
+    private function obtenerHorariosAgrupados($facultad, $piso): \Illuminate\Support\Collection
     {
         // Día y módulo actual
         $diaActual = $this->getNombreDiaEspanol(now());
@@ -1827,7 +1827,7 @@ class DashboardController extends Controller
         return view('partials.accesos_tab_content', compact('reservasSinDevolucion', 'accesosActuales'))->render();
     }
 
-    public function getWidgetData(Request $request)
+    public function getWidgetData(Request $request): \Illuminate\Http\JsonResponse
     {
         $tenant = $this->ensureTenantContext();
         if (!$tenant) {
@@ -1943,7 +1943,7 @@ class DashboardController extends Controller
         ]);
     }
 
-    private function obtenerReservasActivasSinDevolucion($facultad, $piso)
+    private function obtenerReservasActivasSinDevolucion($facultad, $piso): \Illuminate\Support\Collection
     {
         $reservas = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad'])
             ->where('estado', 'activa')
@@ -2014,7 +2014,7 @@ class DashboardController extends Controller
         return response()->json($notifications);
     }
 
-    private function obtenerPromedioDuracionReserva($facultad, $piso)
+    private function obtenerPromedioDuracionReserva($facultad, $piso): int
     {
         $reservas = Reserva::where('estado', 'finalizada')
             ->whereNotNull('hora')
@@ -2045,7 +2045,7 @@ class DashboardController extends Controller
         return round($totalDuracion / $reservas->count());
     }
 
-    private function obtenerPorcentajeNoShow($facultad, $piso)
+    private function obtenerPorcentajeNoShow($facultad, $piso): int
     {
         $now = Carbon::now();
         $baseQuery = Reserva::query()  // ->whereBetween('fecha_reserva', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]) // Se comenta para pruebas
@@ -2082,7 +2082,7 @@ class DashboardController extends Controller
         return round(($noShowReservas / $totalReservas) * 100);
     }
 
-    private function obtenerCanceladasPorTipoSala($facultad, $piso)
+    private function obtenerCanceladasPorTipoSala($facultad, $piso): \Illuminate\Support\Collection
     {
         return Reserva::with('espacio')
             ->where('estado', 'finalizada')
@@ -3408,7 +3408,7 @@ class DashboardController extends Controller
      * Esto asegura que las consultas a la tabla Modulos funcionen correctamente
      * independientemente de la configuración local del sistema.
      */
-    private function getNombreDiaEspanol($date)
+    private function getNombreDiaEspanol($date): string
     {
         $dias = [
             0 => 'domingo',

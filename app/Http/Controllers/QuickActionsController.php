@@ -1549,7 +1549,7 @@ class QuickActionsController extends Controller
     private function limpiarCachéEstados()
     {
         try {
-            $tenantId = \App\Models\Tenant::current()?->id;
+            $tenantId = Tenant::current()?->id;
             if ($tenantId) {
                 Cache::forget("estados_espacios_{$tenantId}");
                 Log::info("Caché de estados de espacios limpiado para tenant: {$tenantId}");

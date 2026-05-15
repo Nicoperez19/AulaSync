@@ -1127,6 +1127,9 @@
         let espacioParaReserva = null;
         let runParaReserva = null;
         let usuarioInfo = null; // Variable global para almacenar la información del usuario
+        let isProcessingQR = false; // Bloqueo para evitar procesamiento múltiple
+        let watchdogTimer = null; // Temporizador para resetear el flujo por inactividad
+
         
         // Liberación forzada removida - la gestión de reservas se realiza únicamente mediante escaneo QR
         
@@ -1229,7 +1232,27 @@
             }
         }
 
+        function iniciarWatchdog() {
+            detenerWatchdog();
+            watchdogTimer = setTimeout(() => {
+                if (ordenEscaneo === 'espacio') {
+                    console.log('Watchdog: Reiniciando flujo por inactividad');
+                    limpiarEstadoLectura('Tiempo de espera agotado');
+                }
+            }, 60000); // 60 segundos de espera para el espacio
+        }
+
+        function detenerWatchdog() {
+            if (watchdogTimer) {
+                clearTimeout(watchdogTimer);
+                watchdogTimer = null;
+            }
+        }
+
         function limpiarEstadoCompleto() {
+            detenerWatchdog();
+            isProcessingQR = false;
+
             // Resetear variables globales
             ordenEscaneo = 'usuario';
             usuarioEscaneado = null;
@@ -1326,6 +1349,9 @@
         }
 
         function limpiarEstadoLectura(mensajeError = null) {
+            detenerWatchdog();
+            isProcessingQR = false;
+
             // Cerrar el modal de espera de llaves si estuviera abierto (sin recursión manual)
             cerrarModalEsperaLlaves(false);
 
@@ -1744,90 +1770,97 @@
         async function procesarQRCompleto() {
             // Validar que el buffer no esté vacío
             if (!bufferQR || bufferQR.trim() === '') {
-                // Buffer QR vacío - ignorando procesamiento
+                return;
+            }
+
+            // Evitar procesamiento múltiple si ya hay uno en curso
+            if (isProcessingQR) {
+                console.log('Procesamiento en curso, ignorando escaneo actual');
                 return;
             }
 
             // Validar que el buffer tenga un tamaño mínimo razonable
             if (bufferQR.length < 5) {
-                // Buffer QR muy corto - ignorando procesamiento
-                limpiarEstadoLectura(); // Solo limpiar lectura, no toda la interfaz
+                limpiarEstadoLectura();
                 return;
             }
 
-                    // Procesando QR completo
+            isProcessingQR = true;
 
-        // Validar orden de escaneo
-        if (ordenEscaneo === 'usuario') {
-            // PASO 1: Escanear usuario (obligatorio primero)
-            await procesarUsuario();
-        } else if (ordenEscaneo === 'espacio') {
-            // PASO 2: Escanear espacio (solo después del usuario)
-            const resultado = await procesarEspacio();
+            try {
+                // Validar orden de escaneo
+                if (ordenEscaneo === 'usuario') {
+                    // PASO 1: Escanear usuario (obligatorio primero)
+                    await procesarUsuario();
+                } else if (ordenEscaneo === 'espacio') {
+                    // PASO 2: Escanear espacio (solo después del usuario)
+                    const resultado = await procesarEspacio();
 
-            // Si la devolución fue exitosa, no continuar con más procesamiento
-            if (resultado === 'devolucion_exitosa') {
-                return;
-            }
-        } else {
-            // Error: orden incorrecto
-            limpiarEstadoLectura('Orden de escaneo incorrecto');
-        }
-
-            // NO limpiar el buffer aquí - dejarlo para que las funciones individuales lo manejen
-            // Solo limpiar timeouts
-            if (processingTimeout) {
-                clearTimeout(processingTimeout);
-                processingTimeout = null;
-            }
-            if (errorTimeout) {
-                clearTimeout(errorTimeout);
-                errorTimeout = null;
-            }
-
-            // Restaurar el input QR activo después de procesar
-            setTimeout(() => {
-                if (qrInputManager) {
-                    qrInputManager.restaurarInputActivo();
+                    // Si la devolución fue exitosa, no continuar con más procesamiento
+                    if (resultado === 'devolucion_exitosa') {
+                        return;
+                    }
+                } else {
+                    // Error: orden incorrecto
+                    limpiarEstadoLectura('Orden de escaneo incorrecto');
                 }
-            }, 100);
+            } catch (error) {
+                console.error('Error crítico en procesarQRCompleto:', error);
+                limpiarEstadoLectura('Error interno del sistema');
+            } finally {
+                // Liberar el bloqueo y limpiar timeouts
+                isProcessingQR = false;
+
+                if (processingTimeout) {
+                    clearTimeout(processingTimeout);
+                    processingTimeout = null;
+                }
+                if (errorTimeout) {
+                    clearTimeout(errorTimeout);
+                    errorTimeout = null;
+                }
+
+                // Restaurar el input QR activo después de procesar
+                setTimeout(() => {
+                    if (qrInputManager) {
+                        qrInputManager.restaurarInputActivo();
+                    }
+                }, 100);
+            }
         }
 
         async function procesarUsuario() {
+            // Capturar y limpiar el buffer inmediatamente para evitar lecturas duplicadas
+            const currentBuffer = bufferQR;
+            bufferQR = '';
+            lastBufferLength = 0;
+
             // Extraer RUN del QR - Soportar múltiples formatos
             let run = null;
 
             // 1. Intentar extraer de parámetros de URL (ej: Registro Civil que usa ?run=... o &run=...)
-            // Capturamos el contenido hasta el siguiente '&' o fin de cadena
-            const runUrlMatch = bufferQR.match(/[?&]run=([^&]+)/i);
+            const runUrlMatch = currentBuffer.match(/[?&]run=([^&]+)/i);
             
             if (runUrlMatch) {
                 run = runUrlMatch[1];
-                console.log('RUN bruto extraído de URL (Registro Civil):', run);
             } else {
                 // 2. Intentar formato con prefijo "RUN" (ej: RUN 12.345.678-9)
-                const runMatch = bufferQR.match(/RUN[^0-9]*([0-9.Kk-]+)/i);
+                const runMatch = currentBuffer.match(/RUN[^0-9]*([0-9.Kk-]+)/i);
                 if (runMatch) {
                     run = runMatch[1];
-                    console.log('RUN bruto extraído con prefijo:', run);
                 } else {
                     // 3. Fallback: buscar secuencia de 7 a 9 números, puntos o guiones
-                    // Buscamos algo que parezca un RUT (números con puntos/guion opcional)
-                    const runMatchAlt = bufferQR.match(/([0-9]{1,2}(?:\.[0-9]{3}){2}-?[0-9Kk]|[0-9]{7,9}-?[0-9Kk]?)/i);
+                    const runMatchAlt = currentBuffer.match(/([0-9]{1,2}(?:\.[0-9]{3}){2}-?[0-9Kk]|[0-9]{7,9}-?[0-9Kk]?)/i);
                     if (runMatchAlt) {
                         run = runMatchAlt[1];
-                        console.log('RUN bruto extraído por secuencia:', run);
                     }
                 }
             }
 
             if (!run) {
                 // Solo mostrar error si el buffer tiene contenido significativo
-                if (bufferQR.length > 8) {
+                if (currentBuffer.length > 8) {
                     limpiarEstadoLectura('QR de usuario inválido - No se detectó RUN');
-                    setTimeout(() => {
-                        if (qrInputManager) qrInputManager.setActiveInput('main');
-                    }, 100);
                 } else {
                     limpiarEstadoSilencioso();
                 }
@@ -1855,13 +1888,11 @@
                     
                     usuarioEscaneado = run;
                     ordenEscaneo = 'espacio';
+                    iniciarWatchdog(); // Iniciar temporizador de espera de espacio
 
-                    // Limpiar buffer
-                    bufferQR = '';
-                    lastBufferLength = 0;
-                    
                     const inputEscanner = document.getElementById('qr-input');
                     if (inputEscanner) inputEscanner.value = '';
+
                 } else {
                     // Si no está verificado, cerramos el modal de espera y manejamos el error
                     cerrarModalEsperaLlaves(false);
@@ -1889,50 +1920,57 @@
         }
 
         async function procesarEspacio() {
-                    // Extraer código de espacio - múltiples formatos posibles
-        let espacio = null;
+            // Capturar y limpiar el buffer inmediatamente
+            const currentBuffer = bufferQR;
+            bufferQR = '';
+            lastBufferLength = 0;
 
-        // Patrón 1: TH seguido de cualquier cosa (formato estándar)
-        const espacioMatch = bufferQR.match(/(TH[^A-Z0-9]*[A-Z0-9]+)/i);
-        if (espacioMatch) {
-            espacio = espacioMatch[1];
-        } else {
-            // Patrón 2: 2-3 letras + números (formato compacto)
-            const espacioMatchAlt = bufferQR.match(/([A-Z]{2,3}[0-9]+)/i);
-            if (espacioMatchAlt) {
-                espacio = espacioMatchAlt[1];
+            // Extraer código de espacio - múltiples formatos posibles
+            let espacio = null;
+
+            // Patrón 1: TH seguido de cualquier cosa (formato estándar)
+            const espacioMatch = currentBuffer.match(/(TH[^A-Z0-9]*[A-Z0-9]+)/i);
+            if (espacioMatch) {
+                espacio = espacioMatch[1];
             } else {
-                // Patrón 3: Letras + caracteres especiales + letras/números
-                const espacioMatchSpecial = bufferQR.match(/([A-Z]+['\-]?[A-Z0-9]+)/i);
-                if (espacioMatchSpecial) {
-                    espacio = espacioMatchSpecial[1];
+                // Patrón 2: 2-3 letras + números (formato compacto)
+                const espacioMatchAlt = currentBuffer.match(/([A-Z]{2,3}[0-9]+)/i);
+                if (espacioMatchAlt) {
+                    espacio = espacioMatchAlt[1];
                 } else {
-                    // Patrón 4: Formato simple letras + números
-                    const espacioMatchSimple = bufferQR.match(/([A-Z]+[0-9]+)/i);
-                    if (espacioMatchSimple) {
-                        espacio = espacioMatchSimple[1];
+                    // Patrón 3: Letras + caracteres especiales + letras/números
+                    const espacioMatchSpecial = currentBuffer.match(/([A-Z]+['\-]?[A-Z0-9]+)/i);
+                    if (espacioMatchSpecial) {
+                        espacio = espacioMatchSpecial[1];
                     } else {
-                        // Solo mostrar error si el buffer tiene contenido significativo
-                        if (bufferQR.length > 8) {
-                            limpiarEstadoLectura('QR de espacio inválido');
+                        // Patrón 4: Formato simple letras + números
+                        const espacioMatchSimple = currentBuffer.match(/([A-Z]+[0-9]+)/i);
+                        if (espacioMatchSimple) {
+                            espacio = espacioMatchSimple[1];
                         } else {
-                            limpiarEstadoSilencioso();
+                            // Solo mostrar error si el buffer tiene contenido significativo
+                            if (currentBuffer.length > 8) {
+                                limpiarEstadoLectura('QR de espacio inválido');
+                            } else {
+                                limpiarEstadoSilencioso();
+                            }
+                            return;
                         }
-                        return;
                     }
                 }
             }
-        }
+
 
         // Normalizar el formato del espacio para que coincida con la BD (TH-C1)
         if (espacio) {
             // Eliminar espacios y convertir a mayúsculas
             espacio = espacio.toUpperCase().trim().replace(/\s+/g, '');
-            // Si empieza por TH y no tiene guion, agregarlo (excepto si el código ya lo trae en otro formato)
-            if (espacio.startsWith('TH') && !espacio.includes('-') && espacio.length > 2) {
-                // Solo si el tercer caracter es una letra o número (ej: TH30 -> TH-30)
-                if (/[A-Z0-9]/.test(espacio[2])) {
-                    espacio = 'TH-' + espacio.substring(2);
+            // Normalizar: insertar guion entre el prefijo de sede (2-3 letras) y el resto del código.
+            // Aplica para TODAS las sedes: TH-30, CH-A1, LA-201, CT-5, CCP-10, etc.
+            if (!espacio.includes('-')) {
+                const prefixMatch = espacio.match(/^([A-Z]{2,3})([A-Z0-9].*)$/);
+                if (prefixMatch) {
+                    espacio = prefixMatch[1] + '-' + prefixMatch[2];
                 }
             }
             // Reemplazar comillas por guiones (formato heredado)
@@ -2074,8 +2112,10 @@
                 }, 2000);
             }
 
-            // IMPORTANTE: Detener completamente el procesamiento aquí
+            // IMPORTANTE: Detener completamente el procesamiento aquí y resetear flujo
             procesandoDevolucion = false;
+            ordenEscaneo = 'usuario';
+            detenerWatchdog();
             return 'devolucion_exitosa';
         } else {
             // Mostrar error específico de devolución
@@ -2168,6 +2208,7 @@
                 }, 3000);
 
                 ordenEscaneo = 'usuario';
+                detenerWatchdog();
                 return;
             }
 
@@ -2201,6 +2242,7 @@
                 }, 3500);
 
                 ordenEscaneo = 'usuario';
+                detenerWatchdog();
                 return;
             }
 
@@ -2407,6 +2449,7 @@
                     }, 2000);
                 } else {
                     // Error en crear reserva automática - restaurar autofocus
+                    detenerWatchdog();
                     setTimeout(() => {
                         if (qrInputManager) {
                             qrInputManager.setActiveInput('main');
@@ -2416,14 +2459,17 @@
             } else {
                 // CASO 2: Profesor SIN clases - solicita con módulos (todos los disponibles)
                 await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado);
+                detenerWatchdog();
                 return; // No continuar, esperar selección de módulos
             }
         } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
             // CASO 3: Solicitante registrado - solicita con módulos (todos los disponibles)
             await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado);
+            detenerWatchdog();
             return; // No continuar, esperar selección de módulos
         } else {
             ordenEscaneo = 'usuario';
+            detenerWatchdog();
             // Restaurar autofocus del qr-input después de error en tipo de usuario
             setTimeout(() => {
                 if (qrInputManager) {
