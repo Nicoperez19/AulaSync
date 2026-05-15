@@ -8,6 +8,7 @@ use App\Models\Reserva;
 use App\Models\Solicitante;
 use App\Models\Tenant;
 use App\Models\Visitante;
+use App\Services\ReservaEspontaneaMallaService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -267,6 +268,14 @@ class SolicitanteController extends Controller
                 return response()->json([
                     'success' => false,
                     'mensaje' => 'El espacio está ocupado actualmente'
+                ], 400);
+            }
+
+            $evalMalla = app(ReservaEspontaneaMallaService::class)->evaluarAntesNuevaReserva($request->run_solicitante, $request->id_espacio);
+            if (!$evalMalla['permitida']) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => $evalMalla['mensaje'] ?? 'No es posible reservar este espacio en el horario actual.',
                 ], 400);
             }
 

@@ -2204,6 +2204,34 @@
                 return;
             }
 
+            if (resultadoVerificacion.tipo === 'clase_academica_programada') {
+                Swal.fire({
+                    title: 'Clase académica programada',
+                    html: `<div class="text-left">
+                        <p class="mb-3">${resultadoVerificacion.mensaje || 'Este espacio no está disponible para reserva espontánea en este momento.'}</p>
+                        ${resultadoVerificacion.clase ? `
+                        <div class="p-3 text-sm bg-blue-50 border-l-4 border-blue-400 rounded">
+                            <p class="mb-1"><strong>Asignatura:</strong> ${resultadoVerificacion.clase.asignatura || '—'}</p>
+                            <p><strong>Profesor:</strong> ${resultadoVerificacion.clase.profesor || '—'}</p>
+                        </div>` : ''}
+                    </div>`,
+                    icon: 'info',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#2563eb',
+                    allowOutsideClick: false
+                });
+
+                setTimeout(() => {
+                    limpiarEstadoLectura();
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 500);
+
+                ordenEscaneo = 'usuario';
+                return;
+            }
+
             if (resultadoVerificacion.tipo === 'espacio_ocupado') {
                 // Procesando espacio ocupado...
                 // Si es el mismo usuario, permitimos que continúe para que pueda "forzar cierre" 
@@ -5174,9 +5202,10 @@
                     const data = await response.json();
 
                             if (data.success) {
+            const maxMod = Number.isFinite(data.max_modulos) ? data.max_modulos : 1;
             // Guardar información adicional para mostrar en el modal
             window.modulosInfo = {
-                max_modulos: data.max_modulos || 1,
+                max_modulos: maxMod,
                 modulo_actual: data.modulo_actual,
                 modulos_disponibles: data.modulos_disponibles || [],
                 proxima_clase: data.proxima_clase,
@@ -5184,7 +5213,7 @@
                 detalles: data.detalles
             };
 
-            return data.max_modulos || 1;
+            return maxMod;
         } else {
             // Mostrar información detallada del error
             if (data.detalles && data.detalles.razon === 'fuera_horario') {
@@ -5204,6 +5233,42 @@
 
         async function mostrarModalSeleccionarModulos(idEspacio, run) {
                     const modulosDisponibles = await calcularModulosDisponibles(idEspacio);
+
+        if (modulosDisponibles < 1) {
+            let texto = 'No hay módulos disponibles para reservar en este espacio en el horario actual.';
+            const info = window.modulosInfo;
+            if (info?.proxima_clase?.asignatura) {
+                texto += ` Próxima actividad en malla: ${info.proxima_clase.asignatura}`;
+                if (info.proxima_clase.profesor) {
+                    texto += ` (${info.proxima_clase.profesor}).`;
+                } else {
+                    texto += '.';
+                }
+            } else if (info?.clases_proximas?.length) {
+                const c = info.clases_proximas[0];
+                texto += ` Próxima clase: ${c.asignatura || '—'}`;
+                if (c.profesor) {
+                    texto += ` (${c.profesor}).`;
+                } else {
+                    texto += '.';
+                }
+            }
+            Swal.fire({
+                title: 'Espacio no disponible para reserva',
+                text: texto,
+                icon: 'info',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#2563eb'
+            });
+            setTimeout(() => {
+                limpiarEstadoLectura();
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }, 400);
+            ordenEscaneo = 'usuario';
+            return;
+        }
 
         // Usar exactamente los módulos disponibles calculados por el servidor
         maxModulosDisponibles = modulosDisponibles;
