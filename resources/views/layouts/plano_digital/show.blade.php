@@ -1838,8 +1838,8 @@
             // Extraer RUN del QR - Soportar múltiples formatos
             let run = null;
 
-            // 1. Intentar extraer de parámetros de URL (ej: Registro Civil que usa ?run=... o &run=...)
-            const runUrlMatch = currentBuffer.match(/[?&]run=([^&]+)/i);
+            // 1. Intentar extraer de parámetros de URL (ej: Registro Civil que usa ?run=... o &run=... o /type=...)
+            const runUrlMatch = currentBuffer.match(/[?&]run=([^&/]+)/i);
             
             if (runUrlMatch) {
                 run = runUrlMatch[1];

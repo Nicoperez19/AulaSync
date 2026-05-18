@@ -365,40 +365,37 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
         $runLimpio = preg_replace('/[.-]/', '', $usuario);
         $runLimpio = (int) $runLimpio;
 
-        // Buscar la clase programada en este espacio
-        $programacion = DB::table('planificacion_asignaturas as pa')
-            ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
-            ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
-            ->where('pa.id_espacio', $espacio)
-            ->where(function($query) use ($usuario, $runLimpio) {
-                // Buscar por run con varios formatos posibles
-                $query->where('h.run_profesor', $usuario)
-                    ->orWhere('h.run_profesor', $runLimpio)
-                    ->orWhere(DB::raw('CAST(h.run_profesor AS CHAR)'), $usuario);
+        // Buscar la clase programada en este espacio usando Eloquent
+        $programacion = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])
+            ->where('id_espacio', $espacio)
+            ->whereHas('asignatura', function ($q) use ($usuario, $runLimpio) {
+                $q->where('run_profesor', $usuario)
+                  ->orWhere('run_profesor', $runLimpio)
+                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
             })
-            ->where('m.dia', $diaActual)
-            ->where(function($query) use ($horaActualStr, $horaConAnticipacion) {
-                // En curso ahora OR empieza en los próximos 15 minutos
-                $query->where(function($q) use ($horaActualStr) {
-                    $q->where('m.hora_inicio', '<=', $horaActualStr)
-                      ->where('m.hora_termino', '>=', $horaActualStr);
-                })->orWhere(function($q) use ($horaActualStr, $horaConAnticipacion) {
-                    $q->where('m.hora_inicio', '>', $horaActualStr)
-                      ->where('m.hora_inicio', '<=', $horaConAnticipacion);
-                });
+            ->whereHas('modulo', function ($q) use ($diaActual, $horaActualStr, $horaConAnticipacion) {
+                $q->where('dia', $diaActual)
+                  ->where(function ($subQ) use ($horaActualStr, $horaConAnticipacion) {
+                      $subQ->where(function ($sq1) use ($horaActualStr) {
+                          $sq1->where('hora_inicio', '<=', $horaActualStr)
+                              ->where('hora_termino', '>=', $horaActualStr);
+                      })->orWhere(function ($sq2) use ($horaActualStr, $horaConAnticipacion) {
+                          $sq2->where('hora_inicio', '>', $horaActualStr)
+                              ->where('hora_inicio', '<=', $horaConAnticipacion);
+                      });
+                  });
             })
-            ->select('pa.id_modulo', 'm.hora_inicio', 'm.hora_termino', 'pa.id_asignatura')
             ->first();
 
         $tieneProgramacion = $programacion !== null;
         $modulosInfo = null;
 
-        if ($tieneProgramacion && $programacion) {
+        if ($tieneProgramacion && $programacion && $programacion->modulo) {
             // Obtener información completa de módulos
             $modulosInfo = [
                 'id_modulo' => $programacion->id_modulo,
-                'hora_inicio' => $programacion->hora_inicio,
-                'hora_termino' => $programacion->hora_termino,
+                'hora_inicio' => $programacion->modulo->hora_inicio,
+                'hora_termino' => $programacion->modulo->hora_termino,
                 'id_asignatura' => $programacion->id_asignatura
             ];
         }

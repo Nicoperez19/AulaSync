@@ -1559,7 +1559,7 @@ class PlanoDigitalController extends Controller
                 }
 
                 // 2. Buscar si el usuario que escanea tiene planificación en este bloque (margen de 15 min)
-                $planificacionScanner = Planificacion_Asignatura::where('id_espacio', $idEspacio)
+                $planificacionScanner = Planificacion_Asignatura::whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [str_replace(['-', ' '], '', $idEspacio)])
                     ->whereHas('asignatura', function ($q) use ($runUsuario) {
                         $q->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
                     })
@@ -1575,7 +1575,7 @@ class PlanoDigitalController extends Controller
                     $puedeForzarCierre = true;
                 } else {
                     // También verificar reservas programadas del scanner (margen de 15 min)
-                    $reservaProgramadaScanner = Reserva::where('id_espacio', $idEspacio)
+                    $reservaProgramadaScanner = Reserva::whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [str_replace(['-', ' '], '', $idEspacio)])
                         ->where(function ($q) use ($runUsuario) {
                             $q->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario])
                               ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
@@ -2025,7 +2025,8 @@ class PlanoDigitalController extends Controller
             'modulo:id_modulo,dia,hora_inicio,hora_termino'
         ])
             ->whereHas('asignatura', function ($query) use ($runUsuario) {
-                $query->where('run_profesor', $runUsuario);
+                $runLimpio = str_replace(['.', '-', ' '], '', $runUsuario);
+                $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
             })
             ->whereHas('modulo', function ($query) use ($diaActual, $horaActual) {
                 $query
@@ -2036,7 +2037,7 @@ class PlanoDigitalController extends Controller
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
             })
-            ->where('id_espacio', $espacio->id_espacio)
+            ->whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [str_replace(['-', ' '], '', $espacio->id_espacio)])
             ->first();
 
         // =====================================================
@@ -2057,7 +2058,8 @@ class PlanoDigitalController extends Controller
                 'modulo:id_modulo,dia,hora_inicio,hora_termino'
             ])
                 ->whereHas('asignatura', function ($query) use ($runUsuario) {
-                    $query->where('run_profesor', $runUsuario);
+                    $runLimpio = str_replace(['.', '-', ' '], '', $runUsuario);
+                    $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                 })
                 ->whereHas('modulo', function ($query) use ($diaActual, $horaActual, $horaLimiteAnticipada) {
                     $query
@@ -2068,7 +2070,7 @@ class PlanoDigitalController extends Controller
                 ->whereHas('horario', function ($query) use ($periodo) {
                     $query->where('periodo', $periodo);
                 })
-                ->where('id_espacio', $espacio->id_espacio)
+                ->whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [str_replace(['-', ' '], '', $espacio->id_espacio)])
                 ->orderBy('id_modulo')
                 ->first();
 
@@ -2083,7 +2085,8 @@ class PlanoDigitalController extends Controller
                     'espacio:id_espacio,nombre_espacio'
                 ])
                     ->whereHas('asignatura', function ($query) use ($runUsuario) {
-                        $query->where('run_profesor', $runUsuario);
+                        $runLimpio = str_replace(['.', '-', ' '], '', $runUsuario);
+                        $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                     })
                     ->whereHas('modulo', function ($query) use ($diaActual, $horaActual) {
                         $query
@@ -2094,7 +2097,7 @@ class PlanoDigitalController extends Controller
                     ->whereHas('horario', function ($query) use ($periodo) {
                         $query->where('periodo', $periodo);
                     })
-                    ->where('id_espacio', '!=', $espacio->id_espacio)
+                    ->whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') != ?", [str_replace(['-', ' '], '', $espacio->id_espacio)])
                     ->first();
 
                 if ($claseEnOtraSala) {
@@ -2531,7 +2534,8 @@ class PlanoDigitalController extends Controller
             // Buscar planificaciones del profesor para el día actual
             $planificaciones = Planificacion_Asignatura::with(['asignatura', 'modulo', 'espacio'])
                 ->whereHas('asignatura', function ($query) use ($run) {
-                    $query->where('run_profesor', $run);
+                    $runLimpio = str_replace(['.', '-', ' '], '', $run);
+                    $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                 })
                 ->whereHas('modulo', function ($query) use ($nombreDia) {
                     $query->where('dia', $nombreDia);

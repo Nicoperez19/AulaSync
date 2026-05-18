@@ -849,7 +849,9 @@ class EspacioController extends Controller
     public function downloadAllQRPdf()
     {
         try {
-            $espacios = Espacio::all();
+            // Obtener espacios ordenados y agrupados por piso
+            $espacios = Espacio::orderBy('piso_id')->orderBy('id_espacio')->get();
+            $espaciosPorPiso = $espacios->groupBy('piso_id');
             $qrService = new QRService();
 
             // HTML para el PDF
@@ -880,10 +882,24 @@ class EspacioController extends Controller
                         font-size: 11px;
                         color: #6b7280;
                     }
+                    .piso-header {
+                        background-color: #f3f4f6;
+                        padding: 10px;
+                        margin: 20px 0;
+                        border-radius: 5px;
+                        font-size: 18px;
+                        font-weight: bold;
+                        color: #1f2937;
+                        text-align: center;
+                    }
+                    .page-break {
+                        page-break-before: always;
+                    }
                     table {
                         width: 100%;
                         border-collapse: collapse;
                         margin-top: 15px;
+                        table-layout: fixed;
                     }
                     td {
                         border: 1px solid #e5e7eb;
@@ -891,6 +907,9 @@ class EspacioController extends Controller
                         padding: 8px;
                         vertical-align: top;
                         width: 20%;
+                    }
+                    .empty-td {
+                        border: none;
                     }
                     .qr-container {
                         height: auto;
@@ -920,48 +939,74 @@ class EspacioController extends Controller
                     }
                 </style>
             </head>
-            <body>
-                <div class="header">
-                    <h1>Códigos QR de Espacios</h1>
-                    <p>Códigos QR para todos los espacios del sistema</p>
-                    <p>Generado: ' . now()->format('d/m/Y H:i:s') . '</p>
-                </div>
-                <table>';
+            <body>';
 
-            $count = 0;
-            $itemsPerRow = 5;
+            $firstPiso = true;
 
-            foreach ($espacios as $espacio) {
-                // Iniciar nueva fila
-                if ($count % $itemsPerRow == 0) {
-                    if ($count > 0) {
-                        $html .= '</tr>';
+            foreach ($espaciosPorPiso as $pisoId => $espaciosDelPiso) {
+                if (!$firstPiso) {
+                    $html .= '<div class="page-break"></div>';
+                }
+                
+                $html .= '<div class="header">';
+                if ($firstPiso) {
+                    $html .= '<h1>Códigos QR de Espacios</h1>
+                              <p>Códigos QR generados por piso</p>
+                              <p>Generado: ' . now()->format('d/m/Y H:i:s') . '</p>';
+                }
+                $html .= '</div>';
+                
+                $nombrePiso = $pisoId ? 'Piso ' . $pisoId : 'Sin piso asignado';
+                $html .= '<div class="piso-header">' . htmlspecialchars($nombrePiso) . '</div>';
+                
+                $html .= '<table>';
+                $count = 0;
+                $itemsPerRow = 5;
+
+                foreach ($espaciosDelPiso as $espacio) {
+                    // Iniciar nueva fila
+                    if ($count % $itemsPerRow == 0) {
+                        if ($count > 0) {
+                            $html .= '</tr>';
+                        }
+                        $html .= '<tr>';
                     }
-                    $html .= '<tr>';
+
+                    // Generar QR para cada espacio
+                    $qrPath = $qrService->generateQRForEspacio($espacio->id_espacio);
+
+                    // Verificar si el archivo existe
+                    if (Storage::disk('public')->exists($qrPath)) {
+                        $qrContent = Storage::disk('public')->get($qrPath);
+                        $base64QR = base64_encode($qrContent);
+
+                        $html .= '<td class="qr-container">
+                            <img src="data:image/png;base64,' . $base64QR . '" class="qr-image" alt="QR ' . $espacio->id_espacio . '">
+                            <div class="qr-id">' . htmlspecialchars($espacio->id_espacio) . '</div>
+                            <div class="qr-name">' . htmlspecialchars($espacio->nombre_espacio ?? '') . '</div>
+                        </td>';
+
+                        $count++;
+                    }
                 }
 
-                // Generar QR para cada espacio
-                $qrPath = $qrService->generateQRForEspacio($espacio->id_espacio);
-
-                // Verificar si el archivo existe
-                if (Storage::disk('public')->exists($qrPath)) {
-                    $qrContent = Storage::disk('public')->get($qrPath);
-                    $base64QR = base64_encode($qrContent);
-
-                    $html .= '<td class="qr-container">
-                        <img src="data:image/png;base64,' . $base64QR . '" class="qr-image" alt="QR ' . $espacio->id_espacio . '">
-                        <div class="qr-id">' . htmlspecialchars($espacio->id_espacio) . '</div>
-                        <div class="qr-name">' . htmlspecialchars($espacio->nombre_espacio ?? '') . '</div>
-                    </td>';
-
-                    $count++;
+                // Rellenar las celdas vacías si la última fila no está completa
+                $remainder = $count % $itemsPerRow;
+                if ($remainder > 0 && $count > 0) {
+                    for ($i = 0; $i < ($itemsPerRow - $remainder); $i++) {
+                        $html .= '<td class="empty-td"></td>';
+                    }
                 }
+                
+                if ($count > 0) {
+                    $html .= '</tr>';
+                }
+
+                $html .= '</table>';
+                $firstPiso = false;
             }
 
-            // Cerrar la última fila y tabla
-            $html .= '</tr>
-                </table>
-            </body>
+            $html .= '</body>
             </html>';
 
             // Crear PDF

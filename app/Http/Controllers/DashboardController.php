@@ -1677,7 +1677,7 @@ class DashboardController extends Controller
         }
 
         if (!$moduloActual) {
-            return [];
+            return collect();
         }
 
         // Determinar el período actual usando el helper
@@ -1737,7 +1737,7 @@ class DashboardController extends Controller
             }
         }
 
-        return $horariosAgrupados;
+        return collect($horariosAgrupados);
     }
 
     private function obtenerEspaciosQuery($facultad, $piso)

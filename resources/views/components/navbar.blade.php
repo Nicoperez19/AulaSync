@@ -72,6 +72,7 @@
 
             <x-slot name="content">
                 <x-dropdown-link :href="route('profile.edit')">
+                    <x-heroicon-s-user class="w-4 h-4 mr-2 inline" aria-hidden="true" />
                     {{ __('Perfil') }}
                 </x-dropdown-link>
 

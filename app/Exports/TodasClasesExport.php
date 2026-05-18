@@ -5,6 +5,7 @@ namespace App\Exports;
 use App\Models\Planificacion_Asignatura;
 use App\Models\ClaseNoRealizada;
 use App\Models\Reserva;
+use App\Models\DiaFeriado;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
@@ -51,7 +52,23 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
         // Días de la semana para mapeo (0=Domingo, 1=Lunes, etc. según Carbon)
         $dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
-        // Generar fechas en el rango (optimizado)
+        // Pre-cargar todos los feriados del rango en un mapa de fecha => nombre
+        $feriadosEnRango = DiaFeriado::activos()
+            ->enRango($fechaInicio->toDateString(), $fechaFin->toDateString())
+            ->get();
+
+        // Construir un set de fechas que son feriado (iterando día a día)
+        $fechasFeriado = []; // ['Y-m-d' => 'Nombre del feriado']
+        foreach ($feriadosEnRango as $feriado) {
+            $cursor = Carbon::parse($feriado->fecha_inicio)->startOfDay();
+            $fin    = Carbon::parse($feriado->fecha_fin)->startOfDay();
+            while ($cursor <= $fin) {
+                $fechasFeriado[$cursor->format('Y-m-d')] = $feriado->nombre;
+                $cursor->addDay();
+            }
+        }
+
+        // Generar fechas en el rango (optimizado) — excluye domingos (se manejan igual)
         $fechas = [];
         $currentDate = $fechaInicio->copy();
         while ($currentDate <= $fechaFin) {
@@ -200,6 +217,39 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                         $horaSalida = null;
                         $motivo = null;
                         $observaciones = null;
+
+                        // ── Verificar primero si es día feriado ─────────────────────
+                        if (isset($fechasFeriado[$fechaStr])) {
+                            $estado = 'Feriado/Justificado';
+                            $motivo = $fechasFeriado[$fechaStr];
+                            $observaciones = 'Clase no realizada por día feriado o período sin actividades';
+
+                            // Aplicar filtro de estado si viene especificado
+                            if ($this->estado && $estado !== $this->transformEstado($this->estado)) {
+                                continue;
+                            }
+
+                            $clasesData->push([
+                                'fecha'             => $fechaStr,
+                                'dia'               => ucfirst($diaFecha),
+                                'periodo'           => $this->periodo ?? $planificacion->horario->periodo ?? 'N/A',
+                                'profesor'          => $planificacion->horario->profesor->name,
+                                'run_profesor'      => $runProfesor,
+                                'asignatura'        => $planificacion->asignatura->nombre_asignatura ?? 'N/A',
+                                'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? 'N/A',
+                                'espacio'           => $planificacion->id_espacio,
+                                'modulo'            => preg_replace('/^[A-Z]{2}\./', '', $planificacion->id_modulo),
+                                'hora_inicio'       => $planificacion->modulo->hora_inicio,
+                                'hora_fin'          => $planificacion->modulo->hora_termino,
+                                'estado'            => $estado,
+                                'hora_entrada'      => null,
+                                'hora_salida'       => null,
+                                'motivo'            => $motivo,
+                                'observaciones'     => $observaciones,
+                            ]);
+                            continue; // No seguir evaluando lógica de reservas
+                        }
+                        // ─────────────────────────────────────────────────────────────
                         
                         // Fecha y hora actual para comparar si la clase ya pasó
                         $ahora = Carbon::now();
@@ -215,10 +265,10 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                             $claseNoRealizada = $this->clasesNoRealizadasCache[$claveClase];
                             $estado = match($claseNoRealizada->estado) {
                                 'no_realizada' => 'No Registrada',
-                                'justificado' => 'Justificada',
-                                'recuperada' => 'Recuperada',
-                                'pendiente' => 'Pendiente de Recuperación',
-                                default => 'No Registrada',
+                                'justificado'  => 'Justificada',
+                                'recuperada'   => 'Recuperada',
+                                'pendiente'    => 'Pendiente de Recuperación',
+                                default        => 'No Registrada',
                             };
                             $motivo = $claseNoRealizada->motivo;
                             $observaciones = $claseNoRealizada->observaciones;
@@ -311,11 +361,12 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
     private function transformEstado($estado)
     {
         return match($estado) {
-            'no_realizada' => 'No Registrada',
-            'justificado' => 'Justificada',
-            'recuperada' => 'Recuperada',
-            'pendiente' => 'Pendiente de Recuperación',
-            default => $estado,
+            'no_realizada'      => 'No Registrada',
+            'justificado'       => 'Justificada',
+            'recuperada'        => 'Recuperada',
+            'pendiente'         => 'Pendiente de Recuperación',
+            'feriado'           => 'Feriado/Justificado',
+            default             => $estado,
         };
     }
 
@@ -377,11 +428,12 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
             $estado = $sheet->getCell('L' . $row)->getValue(); // Columna Estado
             
             $fillColor = match($estado) {
-                'Realizada' => 'D1FAE5', // Verde claro
-                'No Realizada' => 'FEE2E2', // Rojo claro
-                'Justificada' => 'FEF3C7', // Amarillo claro
-                'Recuperada' => 'DBEAFE', // Azul claro
-                default => 'FFFFFF', // Blanco
+                'Realizada'           => 'D1FAE5', // Verde claro
+                'No Registrada'       => 'FEE2E2', // Rojo claro
+                'Justificada'         => 'FEF3C7', // Amarillo claro
+                'Recuperada'          => 'DBEAFE', // Azul claro
+                'Feriado/Justificado' => 'EDE9FE', // Violeta claro
+                default               => 'FFFFFF', // Blanco
             };
             
             $sheet->getStyle('L' . $row)->applyFromArray([

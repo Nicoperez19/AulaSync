@@ -306,7 +306,9 @@ class HorariosController extends Controller
                         'hora_termino' => $plan->modulo->hora_termino ?? '',
                         'espacio' => $plan->espacio->nombre_espacio ?? '',
                     ];
-                });
+                })->unique(function ($item) {
+                    return json_encode($item);
+                })->values();
             });
 
             return response()->json([
@@ -400,7 +402,9 @@ class HorariosController extends Controller
                         'espacio' => $plan->espacio->nombre_espacio ?? '',
                         'periodo' => $plan->horario->periodo ?? '',
                     ];
-                });
+                })->unique(function ($item) {
+                    return json_encode($item);
+                })->values();
             });
         }
 
@@ -462,7 +466,9 @@ class HorariosController extends Controller
                         'espacio' => $plan->espacio->nombre_espacio ?? '',
                         'periodo' => $plan->horario->periodo ?? '',
                     ];
-                });
+                })->unique(function ($item) {
+                    return json_encode($item);
+                })->values();
             });
 
             return response()->json([
@@ -523,7 +529,9 @@ class HorariosController extends Controller
                     'hora_inicio' => $plan->modulo->hora_inicio ?? '',
                     'hora_termino' => $plan->modulo->hora_termino ?? '',
                 ];
-            })->toArray();
+            })->unique(function ($item) {
+                return json_encode($item);
+            })->values()->toArray();
 
             // Obtener TODOS los módulos disponibles desde las 8:10 hasta el último horario
             $todosLosModulos = Modulo::orderBy('hora_inicio')->get();
