@@ -1233,19 +1233,26 @@ class EspacioController extends Controller
             if ($response['tipo_ocupacion'] === 'libre') {
                 $fallback = $reservaHoy->first();
                 if ($fallback) {
-                    $response = [
-                        'success' => true,
-                        'tipo_ocupacion' => 'ocupado_sin_info',
-                        'nombre' => 'No especificado',
-                        'tipo_reserva' => $fallback->tipo_reserva,
-                        'asignatura' => null,
-                        'hora_inicio' => $fallback->hora,
-                        'hora_salida' => $fallback->hora_salida,
-                        'estado_reserva' => $fallback->estado,
-                        'run_profesor' => $fallback->run_profesor,
-                        'run_solicitante' => $fallback->run_solicitante,
-                        'id_reserva' => $fallback->id_reserva,
-                    ];
+                    if ($fallback->run_profesor) {
+                        $response = $this->obtenerInformacionProfesorConDatos($fallback, $horaActual, $codigoDia);
+                    } elseif ($fallback->run_solicitante) {
+                        $response = $this->obtenerInformacionSolicitanteConDatos($fallback);
+                    } else {
+                        $response = [
+                            'success' => true,
+                            'tipo_ocupacion' => 'ocupado_sin_info',
+                            'nombre' => 'No especificado',
+                            'tipo_reserva' => $fallback->tipo_reserva,
+                            'asignatura' => null,
+                            'hora_inicio' => $fallback->hora,
+                            'hora_salida' => $fallback->hora_salida,
+                            'run_profesor' => null,
+                            'run_solicitante' => null,
+                        ];
+                    }
+                    // Asegurar que se mantengan los campos adicionales de la reserva
+                    $response['estado_reserva'] = $fallback->estado;
+                    $response['id_reserva'] = $fallback->id_reserva;
                 }
             }
 
