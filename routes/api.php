@@ -353,6 +353,20 @@ Route::post('/registrar-asistencia-clase', [PlanoDigitalController::class, 'regi
 // Ruta para verificar la programación de un usuario en un espacio específico
 Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $usuario) {
     try {
+        // Normalizar el ID del espacio usando la lógica del tenant actual
+        if (!empty($espacio)) {
+            $espacio = strtoupper(trim(str_replace(' ', '', $espacio)));
+            $tenant = \App\Models\Tenant::current() ?? \App\Models\Tenant::find(tenant_id());
+            if ($tenant) {
+                $prefix = strtoupper($tenant->domain);
+                $normalizedInput = str_replace('-', '', $espacio);
+                if (strpos($normalizedInput, $prefix) === 0) {
+                    $normalizedInput = substr($normalizedInput, strlen($prefix));
+                }
+                $espacio = $prefix . '-' . $normalizedInput;
+            }
+        }
+
         // Obtener la hora actual
         $horaActual = \Carbon\Carbon::now();
         $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));

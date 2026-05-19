@@ -1441,34 +1441,7 @@
 
 
 
-        async function verificarEspacio(idEspacio) {
-            try {
-                const response = await fetch(`/api/verificar-espacio/${idEspacio}`);
-                if (!response.ok) {
-                    // Error en respuesta del servidor
-                    return null;
-                }
-                const result = await response.json();
-                return result;
-            } catch (error) {
-                // Error al verificar espacio
-                return null;
-            }
-        }
 
-        async function verificarClasesProfesor(run) {
-            try {
-                const response = await fetch(`/api/verificar-clases-programadas/${run}`);
-                const result = await response.json();
-
-                const data = result.original || result;
-                const tieneClases = data.success && data.tiene_clases;
-
-                return tieneClases;
-            } catch (error) {
-                return false;
-            }
-        }
 
         async function verificarProgramacionEnEspacio(espacio, run) {
             try {
@@ -1919,6 +1892,125 @@
             }
         }
 
+        async function continuarReserva(usuarioEscaneado, espacio) {
+            usuarioInfo = await verificarUsuario(usuarioEscaneado);
+
+            if (!usuarioInfo || !usuarioInfo.verificado) {
+                ordenEscaneo = 'usuario';
+                // Restaurar autofocus del qr-input después de error en verificación de usuario
+                setTimeout(() => {
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 100);
+                return;
+            }
+
+            // Determinar el flujo según el tipo de usuario
+            if (usuarioInfo.tipo_usuario === 'profesor') {
+                // Verificar si tiene clase programada ESPECÍFICAMENTE en este espacio ahora
+                const tieneClaseAqui = await verificarProgramacionEnEspacio(espacio, usuarioEscaneado);
+
+                if (tieneClaseAqui === true) {
+                    // CASO 1: Profesor TIENE CLASE AQUÍ - crear automáticamente reserva con módulos de programación
+                    const resultado = await crearReservaAutomaticaProfesor(usuarioEscaneado, espacio);
+                    if (resultado && resultado.success) {
+                        // Mostrar mensaje de proceso
+                        document.getElementById('qr-status').innerHTML = 'Reserva creada automáticamente...';
+
+                        // Actualizar indicador en el mapa
+                        const block = state.indicators.find(b => b.id === espacio);
+                        if (block) {
+                            block.estado = '#FF0000'; // Rojo = Ocupado
+                            state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                            drawIndicators();
+                        }
+
+                        // Mostrar Sweet Alert de éxito para reserva automática
+                        Swal.fire({
+                            title: '¡Reserva Creada!',
+                            text: 'Se ha creado automáticamente la reserva según tu programación.',
+                            icon: 'success',
+                            confirmButtonText: 'Aceptar',
+                            confirmButtonColor: '#059669',
+                            timer: 1500,
+                            timerProgressBar: true,
+                            showConfirmButton: false
+                        });
+
+                        // Mostrar mensaje de reserva creada
+                        document.getElementById('qr-status').innerHTML = 'Reserva creada';
+                        document.getElementById('qr-status').classList.remove('parpadeo');
+
+                        // Limpiar solo el estado de lectura después de un delay
+                        setTimeout(() => {
+                            ordenEscaneo = 'espacio'; // Ya escaneó usuario, ahora espera espacio
+                            espacioParaReserva = null;
+                            runParaReserva = null;
+                            bufferQR = '';
+                            limpiarEstadoLectura();
+
+                            // Mantener información del usuario visible
+                            const qrStatus = document.getElementById('qr-status');
+                            if (qrStatus) {
+                                qrStatus.classList.remove('parpadeo');
+                                qrStatus.innerHTML = 'Usuario verificado. Escanee el espacio.';
+                            }
+
+                            // Restaurar autofocus del qr-input después de crear reserva
+                            if (qrInputManager) {
+                                qrInputManager.setActiveInput('main');
+                            }
+                        }, 2000);
+                    } else {
+                        // Error en crear reserva automática - restaurar autofocus
+                        detenerWatchdog();
+                        setTimeout(() => {
+                            if (qrInputManager) {
+                                qrInputManager.setActiveInput('main');
+                            }
+                        }, 100);
+                    }
+                } else {
+                    // CASO 2: Profesor SIN clases - solicita con módulos (todos los disponibles)
+                    await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado);
+                    detenerWatchdog();
+                    return; // No continuar, esperar selección de módulos
+                }
+            } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
+                // CASO 3: Solicitante registrado - solicita con módulos (todos los disponibles)
+                await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado);
+                detenerWatchdog();
+                return; // No continuar, esperar selección de módulos
+            } else {
+                ordenEscaneo = 'usuario';
+                detenerWatchdog();
+                // Restaurar autofocus del qr-input después de error en tipo de usuario
+                setTimeout(() => {
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 100);
+                return;
+            }
+
+            // Limpiar buffer después de procesar espacio exitosamente
+            bufferQR = '';
+            lastBufferLength = 0;
+            const inputEscanner = document.getElementById('qr-input');
+            if (inputEscanner) {
+                inputEscanner.value = '';
+            }
+
+            // Resetear para siguiente usuario
+            setTimeout(() => {
+                limpiarEstadoLectura();
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }, 3000);
+        }
+
         async function procesarEspacio() {
             // Capturar y limpiar el buffer inmediatamente
             const currentBuffer = bufferQR;
@@ -2246,6 +2338,51 @@
                 return;
             }
 
+            if (resultadoVerificacion.tipo === 'clase_programada_otro_docente') {
+                // Cerrar el modal de espera de llaves inmediatamente
+                cerrarModalEsperaLlaves(false);
+
+                const clase = resultadoVerificacion.clase;
+
+                Swal.fire({
+                    title: 'Clase Programada',
+                    html: `
+                        <div class="text-left">
+                            <p class="mb-4 text-orange-600 font-semibold">Esta sala tiene una clase programada en este horario.</p>
+                            <div class="p-3 mb-4 bg-orange-50 border-l-4 border-orange-500 rounded text-sm">
+                                <p><strong>Docente:</strong> ${clase.docente}</p>
+                                <p><strong>Asignatura:</strong> ${clase.asignatura}</p>
+                                <p><strong>Horario:</strong> ${clase.hora_inicio} - ${clase.hora_termino}</p>
+                            </div>
+                            <p class="text-gray-700">El docente programado aún no ha asistido. ¿Deseas utilizar este espacio de todas formas?</p>
+                        </div>
+                    `,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, Reservar Espacio',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#D97706',
+                    cancelButtonColor: '#6B7280',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        // Proceder con la reserva
+                        await continuarReserva(usuarioEscaneado, espacio);
+                    } else {
+                        // Cancelado - resetear
+                        limpiarEstadoLectura();
+                        if (qrInputManager) {
+                            qrInputManager.setActiveInput('main');
+                        }
+                        ordenEscaneo = 'usuario';
+                    }
+                });
+
+                detenerWatchdog();
+                return;
+            }
+
             if (resultadoVerificacion.tipo === 'espacio_ocupado') {
                 // Procesando espacio ocupado...
                 // Si es el mismo usuario, permitimos que continúe para que pueda "forzar cierre" 
@@ -2368,116 +2505,8 @@
                 return;
             }
 
-                    // Si llegamos aquí, el espacio está disponible para crear una nueva reserva
-        // Verificar el tipo de usuario para determinar el flujo
-                    usuarioInfo = await verificarUsuario(usuarioEscaneado);
-
-        if (!usuarioInfo || !usuarioInfo.verificado) {
-            ordenEscaneo = 'usuario';
-            // Restaurar autofocus del qr-input después de error en verificación de usuario
-            setTimeout(() => {
-                if (qrInputManager) {
-                    qrInputManager.setActiveInput('main');
-                }
-            }, 100);
-            return;
-        }
-
-        // Determinar el flujo según el tipo de usuario
-        if (usuarioInfo.tipo_usuario === 'profesor') {
-            // [CAMBIO] Verificar si tiene clase programada ESPECÍFICAMENTE en este espacio ahora
-            // Esto corrige el problema donde si un profesor tiene clases en el día pero en otra sala,
-            // no se le preguntaba cuántos módulos utilizaría en una reserva espontánea.
-            const tieneClaseAqui = await verificarProgramacionEnEspacio(espacio, usuarioEscaneado);
-
-            if (tieneClaseAqui === true) {
-                // CASO 1: Profesor TIENE CLASE AQUÍ - crear automáticamente reserva con módulos de programación
-                // NO pedir confirmación de módulos - usar directamente la programación
-                const resultado = await crearReservaAutomaticaProfesor(usuarioEscaneado, espacio);
-                if (resultado && resultado.success) {
-                    // Mostrar mensaje de proceso
-                    document.getElementById('qr-status').innerHTML = 'Reserva creada automáticamente...';
-
-                    // Actualizar indicador en el mapa
-                    const block = state.indicators.find(b => b.id === espacio);
-                    if (block) {
-                        block.estado = '#FF0000'; // Rojo = Ocupado
-                        state.originalCoordinates = state.indicators.map(i => ({ ...i }));
-                        drawIndicators();
-                    }
-
-                    // Mostrar Sweet Alert de éxito para reserva automática
-                    Swal.fire({
-                        title: '¡Reserva Creada!',
-                        text: 'Se ha creado automáticamente la reserva según tu programación.',
-                        icon: 'success',
-                        confirmButtonText: 'Aceptar',
-                        confirmButtonColor: '#059669',
-                        timer: 1500,
-                        timerProgressBar: true,
-                        showConfirmButton: false
-                    });
-
-                    // Mostrar mensaje de reserva creada
-                    document.getElementById('qr-status').innerHTML = 'Reserva creada';
-                    document.getElementById('qr-status').classList.remove('parpadeo');
-
-                    // Limpiar solo el estado de lectura después de un delay
-                    setTimeout(() => {
-                        // Mantener usuarioEscaneado para continuar el flujo
-                        ordenEscaneo = 'espacio'; // Ya escaneó usuario, ahora espera espacio
-                        espacioParaReserva = null;
-                        runParaReserva = null;
-
-                        // Limpiar solo buffers de lectura
-                        bufferQR = '';
-
-                        // Resetear solo interfaz de lectura
-                        limpiarEstadoLectura();
-
-                        // Mantener información del usuario visible
-                        const qrStatus = document.getElementById('qr-status');
-                        if (qrStatus) {
-                            qrStatus.classList.remove('parpadeo');
-                            qrStatus.innerHTML = 'Usuario verificado. Escanee el espacio.';
-                        }
-
-                        // Restaurar autofocus del qr-input después de crear reserva
-                        if (qrInputManager) {
-                            qrInputManager.setActiveInput('main');
-                        }
-                    }, 2000);
-                } else {
-                    // Error en crear reserva automática - restaurar autofocus
-                    detenerWatchdog();
-                    setTimeout(() => {
-                        if (qrInputManager) {
-                            qrInputManager.setActiveInput('main');
-                        }
-                    }, 100);
-                }
-            } else {
-                // CASO 2: Profesor SIN clases - solicita con módulos (todos los disponibles)
-                await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado);
-                detenerWatchdog();
-                return; // No continuar, esperar selección de módulos
-            }
-        } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
-            // CASO 3: Solicitante registrado - solicita con módulos (todos los disponibles)
-            await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado);
-            detenerWatchdog();
-            return; // No continuar, esperar selección de módulos
-        } else {
-            ordenEscaneo = 'usuario';
-            detenerWatchdog();
-            // Restaurar autofocus del qr-input después de error en tipo de usuario
-            setTimeout(() => {
-                if (qrInputManager) {
-                    qrInputManager.setActiveInput('main');
-                }
-            }, 100);
-            return;
-        }
+            // Si llegamos aquí, el espacio está disponible para crear una nueva reserva
+            await continuarReserva(usuarioEscaneado, espacio);
 
         // Limpiar buffer después de procesar espacio exitosamente
         bufferQR = '';

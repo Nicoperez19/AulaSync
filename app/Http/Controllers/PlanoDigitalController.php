@@ -781,13 +781,10 @@ class PlanoDigitalController extends Controller
                 'run_administrador' => 'required_if:tipo_desocupacion,forzosa|string'
             ]);
 
-            $idEspacio = $request->input('id_espacio');
+            $idEspacio = $this->normalizeEspacioId($request->input('id_espacio'));
             $runUsuario = $request->input('run_usuario');
             $tipoDesocupacion = $request->input('tipo_desocupacion', 'normal');
             $runAdministrador = $request->input('run_administrador');
-
-            // Log para debugging
-
 
             // Buscar el espacio
             $espacio = Espacio::where('id_espacio', $idEspacio)->first();
@@ -1139,7 +1136,7 @@ class PlanoDigitalController extends Controller
                 ]);
 
                 $runNuevo = $this->normalizeRun($request->input('run_usuario'));
-                $idEspacio = $request->input('id_espacio');
+                $idEspacio = $this->normalizeEspacioId($request->input('id_espacio'));
                 $idReservaAnterior = $request->input('id_reserva_anterior');
 
                 // 1. Obtener datos de los involucrados
@@ -1294,7 +1291,7 @@ class PlanoDigitalController extends Controller
             ]);
 
             $runUsuario = $this->normalizeRun($request->input('run'));
-            $idEspacio = $request->input('id_espacio');
+            $idEspacio = $this->normalizeEspacioId($request->input('id_espacio'));
 
 
             // Verificar que el espacio existe (ignorar scopes globales para evitar problemas de filtrado por sede/tenant)
@@ -1475,6 +1472,60 @@ class PlanoDigitalController extends Controller
                             ]
                         ]);
                     }
+                }
+
+                // [NUEVO] Verificar si hay una clase programada (Planificacion_Asignatura) de otro docente
+                // que cubra el horario actual o que inicie en los próximos 15 minutos.
+                $horaActual = Carbon::now();
+                $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
+                $horaActualStr = $horaActual->format('H:i:s');
+                $runUsuarioLimpio = str_replace(['.', '-', ' '], '', $runUsuario);
+
+                $claseProgramadaOtro = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo'])
+                    ->where('id_espacio', $idEspacio)
+                    ->whereHas('asignatura', function ($query) use ($runUsuarioLimpio) {
+                        $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') != ?", [$runUsuarioLimpio]);
+                    })
+                    ->whereHas('modulo', function ($query) use ($diaActual, $horaActualStr) {
+                        $query->where('dia', $diaActual)
+                              ->where('hora_inicio', '<=', $horaActualStr)
+                              ->where('hora_termino', '>', $horaActualStr);
+                    })
+                    ->first();
+
+                if (!$claseProgramadaOtro) {
+                    // Si no hay clase en curso, buscar si hay una clase que empiece en los próximos 15 minutos
+                    $horaLimiteAnticipada = $horaActual->copy()->addMinutes(15)->format('H:i:s');
+                    $claseProgramadaOtro = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo'])
+                        ->where('id_espacio', $idEspacio)
+                        ->whereHas('asignatura', function ($query) use ($runUsuarioLimpio) {
+                            $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') != ?", [$runUsuarioLimpio]);
+                        })
+                        ->whereHas('modulo', function ($query) use ($diaActual, $horaActualStr, $horaLimiteAnticipada) {
+                            $query->where('dia', $diaActual)
+                                  ->where('hora_inicio', '>', $horaActualStr)
+                                  ->where('hora_inicio', '<=', $horaLimiteAnticipada);
+                        })
+                        ->first();
+                }
+
+                if ($claseProgramadaOtro) {
+                    $nombreDocente = $claseProgramadaOtro->asignatura->profesor->name ?? 'Docente programado';
+                    $nombreAsignatura = $claseProgramadaOtro->asignatura->nombre_asignatura ?? 'Clase regular';
+                    $horaInicio = $claseProgramadaOtro->modulo->hora_inicio ?? '-';
+                    $horaTermino = $claseProgramadaOtro->modulo->hora_termino ?? '-';
+
+                    return response()->json([
+                        'tipo' => 'clase_programada_otro_docente',
+                        'mensaje' => "Esta sala tiene una clase programada de {$nombreDocente} ({$nombreAsignatura}) en el bloque {$horaInicio} - {$horaTermino}, pero el docente aún no ha asistido.",
+                        'espacio_disponible' => false,
+                        'clase' => [
+                            'docente' => $nombreDocente,
+                            'asignatura' => $nombreAsignatura,
+                            'hora_inicio' => $horaInicio,
+                            'hora_termino' => $horaTermino
+                        ]
+                    ]);
                 }
 
                 // El espacio está disponible para crear una nueva reserva
@@ -1811,701 +1862,14 @@ class PlanoDigitalController extends Controller
     }
 
     /**
-     * Crear reserva (método principal)
+     * Crear reserva (método principal) - OBSOLETO, usar ProfesorController/SolicitanteController
      */
     public function crearReserva(Request $request)
     {
-        // Usar transacción para prevenir race conditions
-        return DB::transaction(function () use ($request) {
-            try {
-                $request->validate([
-                    'run_usuario' => 'required|string',
-                    'id_espacio' => 'required|string',
-                    'tipo_usuario' => 'required|in:profesor,solicitante,solicitante_registrado'
-                ]);
-
-                $runUsuario = $request->input('run_usuario');
-                $idEspacio = $request->input('id_espacio');
-                $tipoUsuario = $request->input('tipo_usuario');
-
-                // VALIDACIÓN GLOBAL ANTI-MÚLTIPLES RESERVAS
-                // Verificar si ya tiene reservas activas ANTES de continuar
-                $reservasActivasExistentes = null;
-
-                if ($tipoUsuario === 'profesor') {
-                    $reservasActivasExistentes = Reserva::where('run_profesor', $runUsuario)
-                        ->where('estado', 'activa')
-                        ->where(function ($query) {
-                            $query
-                                ->whereNull('hora_salida')
-                                ->orWhere('hora_salida', '');
-                        })
-                        ->lockForUpdate()  // Bloquear para prevenir race conditions
-                        ->get();
-                } else {
-                    $reservasActivasExistentes = Reserva::where('run_solicitante', $runUsuario)
-                        ->where('estado', 'activa')
-                        ->where(function ($query) {
-                            $query
-                                ->whereNull('hora_salida')
-                                ->orWhere('hora_salida', '');
-                        })
-                        ->lockForUpdate()  // Bloquear para prevenir race conditions
-                        ->get();
-                }
-
-                if ($reservasActivasExistentes && $reservasActivasExistentes->count() > 0) {
-                    $espaciosOcupados = $reservasActivasExistentes->pluck('id_espacio')->toArray();
-                    \Log::warning('Intento de crear múltiples reservas detectado', [
-                        'run_usuario' => $runUsuario,
-                        'tipo_usuario' => $tipoUsuario,
-                        'espacios_ya_ocupados' => $espaciosOcupados,
-                        'espacio_solicitado' => $idEspacio
-                    ]);
-
-                    return response()->json([
-                        'success' => false,
-                        'mensaje' => '⚠️ ACCESO DENEGADO: Ya tienes ' . $reservasActivasExistentes->count() . ' reserva(s) activa(s) en: ' . implode(', ', $espaciosOcupados) . '. Solo se permite una reserva activa por usuario.',
-                        'reservas_activas' => $reservasActivasExistentes->map(function ($r) {
-                            return [
-                                'id_reserva' => $r->id_reserva,
-                                'espacio' => $r->id_espacio,
-                                'hora_inicio' => $r->hora,
-                                'fecha' => $r->fecha_reserva
-                            ];
-                        })
-                    ], 400);
-                }
-
-                // Verificar que el espacio existe
-                $espacio = Espacio::where('id_espacio', $idEspacio)->lockForUpdate()->first();
-                if (!$espacio) {
-                    return response()->json([
-                        'success' => false,
-                        'mensaje' => 'Espacio no encontrado'
-                    ], 404);
-                }
-
-                // Verificar que el espacio esté disponible
-                if ($espacio->estado !== 'Disponible') {
-                    return response()->json([
-                        'success' => false,
-                        'mensaje' => 'El espacio no está disponible'
-                    ], 400);
-                }
-
-                $horaActual = now()->format('H:i:s');
-                $fechaActual = now()->format('Y-m-d');
-                $ahora = now();
-
-                // Validar horario académico
-                $hora = (int) now()->format('H');
-                $minutos = (int) now()->format('i');
-                $horaEnMinutos = $hora * 60 + $minutos;
-
-                $inicioAcademico = 8 * 60 + 10;  // 08:10
-                $finAcademico = 23 * 60;  // 23:00
-
-                if ($horaEnMinutos < $inicioAcademico || $horaEnMinutos >= $finAcademico) {
-                    return response()->json([
-                        'success' => false,
-                        'mensaje' => 'No se pueden crear reservas fuera del horario académico (08:10 - 23:00).'
-                    ], 400);
-                }
-
-                // Crear reserva según el tipo de usuario
-                // [OPTIMIZACIÓN] Invalidar caché del plano y del espacio al crear reserva
-                $tenantId = Tenant::current()?->id ?? 'default';
-                \Illuminate\Support\Facades\Cache::forget("estados_espacios_{$tenantId}");
-                \Illuminate\Support\Facades\Cache::forget("espacio_info_{$idEspacio}");
-                \Illuminate\Support\Facades\Cache::forget("espacio_info_{$idEspacio}_time");
-
-                if ($tipoUsuario === 'profesor') {
-                    return $this->crearReservaProfesor($request, $espacio, $horaActual, $fechaActual, $ahora);
-                } elseif ($tipoUsuario === 'solicitante' || $tipoUsuario === 'solicitante_registrado') {
-                    return $this->crearReservaSolicitante($request, $espacio, $horaActual, $fechaActual, $ahora);
-                } else {
-                    return response()->json([
-                        'success' => false,
-                        'mensaje' => 'Tipo de usuario no válido'
-                    ], 400);
-                }
-            } catch (\Illuminate\Validation\ValidationException $e) {
-                \Log::error('Error de validación al crear reserva: ' . json_encode($e->errors()));
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'Error de validación en los datos enviados',
-                    'errors' => $e->errors()
-                ], 422);
-            } catch (\Exception $e) {
-                \Log::error('Error al crear reserva: ' . $e->getMessage());
-                return response()->json([
-                    'success' => false,
-                    'mensaje' => 'Error al crear reserva: ' . $e->getMessage()
-                ], 500);
-            }
-        });  // Cierre de la transacción
-    }
-
-    /**
-     * Crear reserva para profesor
-     */
-    private function crearReservaProfesor($request, $espacio, $horaActual, $fechaActual, $ahora)
-    {
-        $runUsuario = $request->input('run_usuario');
-
-        // Verificar si el profesor existe
-        $profesor = Profesor::where('run_profesor', $runUsuario)->first();
-        if (!$profesor) {
-            return response()->json([
-                'success' => false,
-                'mensaje' => 'Profesor no encontrado'
-            ], 404);
-        }
-
-        // Verificar si ya tiene una reserva activa (más robusta)
-        $reservaExistente = Reserva::where('run_profesor', $runUsuario)
-            ->where('estado', 'activa')
-            ->where(function ($query) {
-                $query
-                    ->whereNull('hora_salida')
-                    ->orWhere('hora_salida', '');
-            })
-            ->first();
-
-        // Log para debug
-
-
-        if ($reservaExistente) {
-            return response()->json([
-                'success' => false,
-                'mensaje' => "Ya tienes una reserva activa en el espacio {$reservaExistente->id_espacio}. Debes finalizarla antes de crear una nueva.",
-                'reserva_existente' => [
-                    'id_reserva' => $reservaExistente->id_reserva,
-                    'espacio' => $reservaExistente->id_espacio,
-                    'hora_inicio' => $reservaExistente->hora,
-                    'fecha' => $reservaExistente->fecha_reserva
-                ]
-            ], 400);
-        }
-
-        // Validación adicional: verificar todas las reservas activas en el sistema para este profesor
-        $todasReservasActivas = Reserva::where('run_profesor', $runUsuario)
-            ->where('estado', 'activa')
-            ->get();
-
-
-
-        if ($todasReservasActivas->count() > 0) {
-            $espaciosOcupados = $todasReservasActivas->pluck('id_espacio')->toArray();
-            return response()->json([
-                'success' => false,
-                'mensaje' => 'Tienes ' . $todasReservasActivas->count() . ' reserva(s) activa(s) en: ' . implode(', ', $espaciosOcupados) . '. Debes finalizarlas antes de crear una nueva.',
-                'reservas_activas' => $todasReservasActivas->map(function ($r) {
-                    return [
-                        'id_reserva' => $r->id_reserva,
-                        'espacio' => $r->id_espacio,
-                        'hora_inicio' => $r->hora,
-                        'fecha' => $r->fecha_reserva
-                    ];
-                })
-            ], 400);
-        }
-
-        // Verificar si el profesor tiene una clase programada en este espacio y momento
-        $diaActual = strtolower($ahora->locale('es')->isoFormat('dddd'));
-        $periodo = SemesterHelper::getCurrentPeriod();
-
-        // Log para debug
-
-
-        // Buscar la clase programada actual (en curso)
-        $claseProgramadaActual = Planificacion_Asignatura::with([
-            'asignatura:id_asignatura,nombre_asignatura,run_profesor',
-            'modulo:id_modulo,dia,hora_inicio,hora_termino'
-        ])
-            ->whereHas('asignatura', function ($query) use ($runUsuario) {
-                $runLimpio = str_replace(['.', '-', ' '], '', $runUsuario);
-                $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
-            })
-            ->whereHas('modulo', function ($query) use ($diaActual, $horaActual) {
-                $query
-                    ->where('dia', $diaActual)
-                    ->where('hora_inicio', '<=', $horaActual)
-                    ->where('hora_termino', '>', $horaActual);
-            })
-            ->whereHas('horario', function ($query) use ($periodo) {
-                $query->where('periodo', $periodo);
-            })
-            ->whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [str_replace(['-', ' '], '', $espacio->id_espacio)])
-            ->first();
-
-        // =====================================================
-        // BÚSQUEDA DE CLASE ASOCIADA A LA RESERVA
-        // Prioridad: 1) En curso aquí → 2) Próxima aquí (15min) → 3) En curso en otra sala (cambio) → 4) Espontánea
-        // =====================================================
-        $siguienteClaseProgramada = null;
-        $claseEnOtraSala = null;
-        $esCambioDeSala = false;
-
-        if (!$claseProgramadaActual) {
-            // Buscar siguiente clase que INICIA en los próximos 15 minutos en ESTA sala
-            // (evita asociar clases que empiezan horas después)
-            $horaLimiteAnticipada = Carbon::createFromFormat('H:i:s', $horaActual)->addMinutes(15)->format('H:i:s');
-
-            $siguienteClaseProgramada = Planificacion_Asignatura::with([
-                'asignatura:id_asignatura,nombre_asignatura,run_profesor',
-                'modulo:id_modulo,dia,hora_inicio,hora_termino'
-            ])
-                ->whereHas('asignatura', function ($query) use ($runUsuario) {
-                    $runLimpio = str_replace(['.', '-', ' '], '', $runUsuario);
-                    $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
-                })
-                ->whereHas('modulo', function ($query) use ($diaActual, $horaActual, $horaLimiteAnticipada) {
-                    $query
-                        ->where('dia', $diaActual)
-                        ->where('hora_inicio', '>', $horaActual)
-                        ->where('hora_inicio', '<=', $horaLimiteAnticipada);
-                })
-                ->whereHas('horario', function ($query) use ($periodo) {
-                    $query->where('periodo', $periodo);
-                })
-                ->whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [str_replace(['-', ' '], '', $espacio->id_espacio)])
-                ->orderBy('id_modulo')
-                ->first();
-
-            // CAMBIO DE SALA: Si no hay clase en esta sala (ni en curso ni próxima),
-            // verificar si el profesor tiene una clase EN CURSO en otra sala.
-            // Esto permite que el profesor realice su clase programada en una sala diferente
-            // y quede registro correcto de que SÍ realizó la clase.
-            if (!$siguienteClaseProgramada) {
-                $claseEnOtraSala = Planificacion_Asignatura::with([
-                    'asignatura:id_asignatura,nombre_asignatura,run_profesor',
-                    'modulo:id_modulo,dia,hora_inicio,hora_termino',
-                    'espacio:id_espacio,nombre_espacio'
-                ])
-                    ->whereHas('asignatura', function ($query) use ($runUsuario) {
-                        $runLimpio = str_replace(['.', '-', ' '], '', $runUsuario);
-                        $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
-                    })
-                    ->whereHas('modulo', function ($query) use ($diaActual, $horaActual) {
-                        $query
-                            ->where('dia', $diaActual)
-                            ->where('hora_inicio', '<=', $horaActual)
-                            ->where('hora_termino', '>', $horaActual);
-                    })
-                    ->whereHas('horario', function ($query) use ($periodo) {
-                        $query->where('periodo', $periodo);
-                    })
-                    ->whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') != ?", [str_replace(['-', ' '], '', $espacio->id_espacio)])
-                    ->first();
-
-                if ($claseEnOtraSala) {
-                    $esCambioDeSala = true;
-
-                }
-            }
-        }
-
-        // Determinar la clase encontrada según prioridad:
-        // 1) Clase en curso en esta sala, 2) Clase próxima en esta sala, 3) Clase en curso en otra sala (cambio)
-        $claseEncontrada = $claseProgramadaActual ?? $siguienteClaseProgramada ?? $claseEnOtraSala;
-        $esClaseAnticipada = !$claseProgramadaActual && $siguienteClaseProgramada !== null;
-
-        $todosLosModulosClase = null;
-        $horaInicioCompleta = $horaActual;
-        $horaFinCompleta = null;
-
-        if ($claseEncontrada) {
-            // Para cambio de sala, buscar módulos en la sala ORIGINAL (donde está programada la clase)
-            $espacioBusquedaModulos = $esCambioDeSala ? $claseEnOtraSala->id_espacio : $espacio->id_espacio;
-
-            $todosLosModulosClase = Planificacion_Asignatura::with([
-                'asignatura:id_asignatura,nombre_asignatura,run_profesor',
-                'modulo:id_modulo,dia,hora_inicio,hora_termino'
-            ])
-                ->where('id_asignatura', $claseEncontrada->id_asignatura)
-                ->where('id_espacio', $espacioBusquedaModulos)
-                ->whereHas('modulo', function ($query) use ($diaActual) {
-                    $query->where('dia', $diaActual);
-                })
-                ->whereHas('horario', function ($query) use ($periodo) {
-                    $query->where('periodo', $periodo);
-                })
-                ->orderBy('id_modulo')
-                ->get();
-
-            // Detectar módulos consecutivos
-            $modulosConsecutivos = [];
-            $moduloObjetivoIndex = null;
-
-            // Encontrar el índice del módulo objetivo (actual o siguiente clase)
-            foreach ($todosLosModulosClase as $index => $planificacion) {
-                if ($claseProgramadaActual || $esCambioDeSala) {
-                    // Para clase en curso o cambio de sala, buscar módulo actual por hora
-                    if (
-                        $planificacion->modulo->hora_inicio <= $horaActual &&
-                        $planificacion->modulo->hora_termino > $horaActual
-                    ) {
-                        $moduloObjetivoIndex = $index;
-                        break;
-                    }
-                } else {
-                    // Para siguiente clase (anticipada), buscar el módulo de la siguiente clase
-                    if ($siguienteClaseProgramada && $planificacion->id_modulo === $siguienteClaseProgramada->id_modulo) {
-                        $moduloObjetivoIndex = $index;
-                        break;
-                    }
-                }
-            }
-
-            if ($moduloObjetivoIndex !== null) {
-                // Agregar el módulo objetivo
-                $modulosConsecutivos[] = $todosLosModulosClase[$moduloObjetivoIndex];
-
-                // Buscar módulos anteriores consecutivos
-                for ($i = $moduloObjetivoIndex - 1; $i >= 0; $i--) {
-                    $moduloAnterior = $todosLosModulosClase[$i];
-                    $siguienteModulo = $todosLosModulosClase[$i + 1];
-
-                    if ($moduloAnterior->modulo->hora_termino === $siguienteModulo->modulo->hora_inicio) {
-                        array_unshift($modulosConsecutivos, $moduloAnterior);
-                    } else {
-                        break;
-                    }
-                }
-
-                // Buscar módulos posteriores consecutivos
-                for ($i = $moduloObjetivoIndex + 1; $i < count($todosLosModulosClase); $i++) {
-                    $moduloActual = $todosLosModulosClase[$i - 1];
-                    $moduloSiguiente = $todosLosModulosClase[$i];
-
-                    if ($moduloActual->modulo->hora_termino === $moduloSiguiente->modulo->hora_inicio) {
-                        $modulosConsecutivos[] = $moduloSiguiente;
-                    } else {
-                        break;
-                    }
-                }
-
-                // Determinar horas de inicio y fin de toda la secuencia
-                if (!empty($modulosConsecutivos)) {
-                    $horaInicioCompleta = $modulosConsecutivos[0]->modulo->hora_inicio;
-                    $horaFinCompleta = end($modulosConsecutivos)->modulo->hora_termino;
-                }
-            }
-        }
-
-        // Log del resultado final de la búsqueda
-
-
-        // Log adicional para debuggear el problema de "asignatura no especificada"
-        if ($claseEncontrada) {
-
-        }
-
-        // Crear la reserva
-        $reserva = new Reserva();
-        $reserva->id_reserva = Reserva::generarIdUnico();
-        $reserva->run_profesor = $runUsuario;
-        $reserva->id_espacio = $espacio->id_espacio;
-        $reserva->fecha_reserva = $fechaActual;
-
-        $reserva->estado = 'activa';
-
-        // Si tiene clase programada (actual o siguiente), asignar automáticamente como clase programada
-        if ($claseEncontrada && !empty($modulosConsecutivos)) {
-            // Validar que la clase encontrada tenga asignatura antes de usarla
-            if (!$claseEncontrada->asignatura) {
-                \Log::error('Clase encontrada sin asignatura válida', [
-                    'id_planificacion' => $claseEncontrada->id_planificacion,
-                    'id_asignatura' => $claseEncontrada->id_asignatura
-                ]);
-
-                // Intentar recargar la asignatura manualmente
-                $claseEncontrada->load('asignatura');
-
-                if (!$claseEncontrada->asignatura) {
-                    // Si aún no hay asignatura, crear una reserva espontánea en su lugar
-                    \Log::warning('No se pudo cargar la asignatura, creando reserva espontánea');
-                    $reserva->tipo_reserva = 'espontanea';
-                    $reserva->hora = $horaActual;
-                    $mensaje = 'Reserva espontánea creada (problema con datos de asignatura)';
-                    $informacionModulos = null;
-                } else {
-
-                }
-            }
-
-            // Proceder solo si tenemos una asignatura válida
-            if ($claseEncontrada->asignatura) {
-                $reserva->tipo_reserva = 'programada';
-                $reserva->id_planificacion = $claseEncontrada->id_planificacion ?? null;
-                $reserva->id_asignatura = $claseEncontrada->id_asignatura;
-
-                // Guardar la hora REAL de llegada del profesor (no la hora programada del módulo).
-                // Esto permite calcular atrasos en informes comparando hora vs. hora_inicio del módulo.
-                $reserva->hora = $horaActual;
-
-                // Calcular duración total en módulos
-                $totalModulos = count($modulosConsecutivos);
-                $modulosInfo = [];
-                foreach ($modulosConsecutivos as $modulo) {
-                    $modulosInfo[] = explode('.', $modulo->modulo->id_modulo)[1] ?? 'N/A';
-                }
-
-                // Detectar atraso: el profesor llegó después del inicio programado del módulo.
-                // Solo aplica cuando la clase ya estaba en curso ($claseProgramadaActual) y no es cambio de sala.
-                $esAtraso = false;
-                $minutosAtraso = 0;
-                $infoAtraso = '';
-                if ($claseProgramadaActual !== null && !$esCambioDeSala) {
-                    $horaInicioClaseCarbon = Carbon::createFromFormat('H:i:s', $horaInicioCompleta);
-                    $horaActualCarbon = Carbon::createFromFormat('H:i:s', $horaActual);
-                    if ($horaActualCarbon->gt($horaInicioClaseCarbon)) {
-                        $esAtraso = true;
-                        $minutosAtraso = $horaInicioClaseCarbon->diffInMinutes($horaActualCarbon);
-                        $infoAtraso = " (atraso: {$minutosAtraso} min desde las " . substr($horaInicioCompleta, 0, 5) . ')';
-                    }
-                }
-
-                // Determinar el tipo de asignación (prioridad: cambio de sala > anticipada > atraso > en horario)
-                $tipoAsignacion = $esCambioDeSala ? 'cambio de sala' : ($esClaseAnticipada ? 'anticipada' : ($esAtraso ? 'con atraso' : 'en horario'));
-                $tiempoAnticipacion = '';
-                $infoCambioDeSala = '';
-
-                if ($esCambioDeSala) {
-                    $salaOriginal = $claseEnOtraSala->id_espacio;
-                    $infoCambioDeSala = " (sala original: {$salaOriginal})";
-                }
-
-                if ($esClaseAnticipada) {
-                    $horaInicioClase = Carbon::createFromFormat('H:i:s', $horaInicioCompleta);
-                    $horaActualCarbon = Carbon::createFromFormat('H:i:s', $horaActual);
-                    $minutosAnticipacion = $horaInicioClase->diffInMinutes($horaActualCarbon);
-                    $tiempoAnticipacion = " ({$minutosAnticipacion} min antes)";
-                }
-
-                $nombreAsignatura = $claseEncontrada->asignatura->nombre_asignatura ?? 'Error al cargar asignatura';
-
-                $reserva->observaciones = sprintf(
-                    'Reserva asignada automáticamente %s%s%s%s - Clase programada: %s | Módulos: %s (%s - %s) | Duración: %d módulos',
-                    $tipoAsignacion,
-                    $tiempoAnticipacion,
-                    $infoAtraso,
-                    $infoCambioDeSala,
-                    $nombreAsignatura,
-                    implode(', ', $modulosInfo),
-                    substr($horaInicioCompleta, 0, 5),
-                    substr($horaFinCompleta, 0, 5),
-                    $totalModulos
-                );
-
-                $mensaje = sprintf(
-                    'Reserva de clase programada asignada automáticamente %s por %d módulos (%s - %s)%s%s%s',
-                    $tipoAsignacion,
-                    $totalModulos,
-                    substr($horaInicioCompleta, 0, 5),
-                    substr($horaFinCompleta, 0, 5),
-                    $tiempoAnticipacion,
-                    $infoAtraso,
-                    $infoCambioDeSala
-                );
-
-                $informacionModulos = [
-                    'total_modulos' => $totalModulos,
-                    'modulos' => $modulosInfo,
-                    'hora_inicio_completa' => substr($horaInicioCompleta, 0, 5),
-                    'hora_fin_completa' => substr($horaFinCompleta, 0, 5),
-                    'asignatura' => $nombreAsignatura,
-                    'es_anticipada' => $esClaseAnticipada,
-                    'es_atraso' => $esAtraso,
-                    'minutos_atraso' => $minutosAtraso,
-                    'es_cambio_sala' => $esCambioDeSala,
-                    'sala_original' => $esCambioDeSala ? ($claseEnOtraSala->id_espacio ?? null) : null,
-                    'minutos_anticipacion' => $esClaseAnticipada ? $minutosAnticipacion : 0
-                ];
-            }
-        } else {
-            // No hay clase programada: crear reserva espontánea
-            // Calcular el módulo actual automáticamente para persistir modulo_inicio / modulo_fin
-            $horariosModulosMap = $this->obtenerMapaHorariosModulos();
-            $moduloInicioEsp = null;
-            $moduloFinEsp    = null;
-            $horaFinEsp      = null;
-            foreach ($horariosModulosMap as $numMod => $franjas) {
-                if ($horaActual >= $franjas['inicio'] && $horaActual <= $franjas['fin']) {
-                    $moduloInicioEsp = $numMod;
-                    $moduloFinEsp    = $numMod;   // Por defecto 1 módulo; el admin puede extenderlo
-                    $horaFinEsp      = $franjas['fin'];
-                    break;
-                }
-            }
-
-            $reserva->tipo_reserva  = 'espontanea';
-            $reserva->id_asignatura = null;  // Sin clase asociada
-            $reserva->hora          = $horaActual;
-            if ($moduloInicioEsp) {
-                $reserva->modulo_inicio = $moduloInicioEsp;
-                $reserva->modulo_fin    = $moduloFinEsp;
-                $reserva->hora_salida   = $horaFinEsp;   // Fin del módulo como salida estimada
-                $reserva->modulos       = 1;
-            }
-            $mensaje = 'Reserva espontánea creada exitosamente';
-            $informacionModulos = $moduloInicioEsp ? [
-                'total_modulos' => 1,
-                'modulos' => [$moduloInicioEsp],
-                'hora_inicio_completa' => substr($horaActual, 0, 5),
-                'hora_fin_completa' => $horaFinEsp ? substr($horaFinEsp, 0, 5) : '--:--',
-                'asignatura' => 'Reserva Espontánea',
-                'es_anticipada' => false,
-                'es_atraso' => false,
-            ] : null;
-        }
-
-        $reserva->save();
-
-        // Enviar correo de confirmación de reserva al profesor
-        $this->enviarCorreoReserva($reserva);
-
-        // Cambiar estado del espacio
-        $espacio->estado = 'Ocupado';
-        $espacio->save();
-
-        // Invalidar caché de estados para reflejar cambio en tiempo real
-        $this->limpiarCacheEstadosEspacios();
-
         return response()->json([
-            'success' => true,
-            'mensaje' => $mensaje,
-            'es_clase_programada' => $claseEncontrada !== null,
-            'es_clase_anticipada' => $esClaseAnticipada,
-            'es_atraso' => $esAtraso,
-            'minutos_atraso' => $minutosAtraso,
-            'es_cambio_sala' => $esCambioDeSala,
-            'reserva' => [
-                'id' => $reserva->id_reserva,
-                'espacio' => $espacio->nombre_espacio,
-                'fecha' => $fechaActual,
-                'hora_inicio' => substr($reserva->hora, 0, 5),
-                'tipo_reserva' => $reserva->tipo_reserva,
-                'informacion_modulos' => $informacionModulos
-            ]
-        ]);
-    }
-
-    /**
-     * Crear reserva para solicitante
-     */
-    private function crearReservaSolicitante($request, $espacio, $horaActual, $fechaActual, $ahora)
-    {
-        $runUsuario = $request->input('run_usuario');
-
-        // Verificar si el solicitante existe
-        $solicitante = Solicitante::on('tenant')
-            ->where('run_solicitante', $runUsuario)
-            ->where('activo', true)
-            ->first();
-
-        if (!$solicitante) {
-            return response()->json([
-                'success' => false,
-                'mensaje' => 'Solicitante no encontrado'
-            ], 404);
-        }
-
-        // Verificar si ya tiene una reserva activa (más robusta)
-        $reservaExistente = Reserva::where('run_solicitante', $runUsuario)
-            ->where('estado', 'activa')
-            ->where(function ($query) {
-                $query
-                    ->whereNull('hora_salida')
-                    ->orWhere('hora_salida', '');
-            })
-            ->first();
-
-        // Log para debug
-
-
-        if ($reservaExistente) {
-            return response()->json([
-                'success' => false,
-                'mensaje' => "Ya tienes una reserva activa en el espacio {$reservaExistente->id_espacio}. Debes finalizarla antes de crear una nueva.",
-                'reserva_existente' => [
-                    'id_reserva' => $reservaExistente->id_reserva,
-                    'espacio' => $reservaExistente->id_espacio,
-                    'hora_inicio' => $reservaExistente->hora,
-                    'fecha' => $reservaExistente->fecha_reserva
-                ]
-            ], 400);
-        }
-
-        // Validación adicional: verificar todas las reservas activas en el sistema para este solicitante
-        $todasReservasActivas = Reserva::where('run_solicitante', $runUsuario)
-            ->where('estado', 'activa')
-            ->get();
-
-
-
-        if ($todasReservasActivas->count() > 0) {
-            $espaciosOcupados = $todasReservasActivas->pluck('id_espacio')->toArray();
-            return response()->json([
-                'success' => false,
-                'mensaje' => 'Tienes ' . $todasReservasActivas->count() . ' reserva(s) activa(s) en: ' . implode(', ', $espaciosOcupados) . '. Debes finalizarlas antes de crear una nueva.',
-                'reservas_activas' => $todasReservasActivas->map(function ($r) {
-                    return [
-                        'id_reserva' => $r->id_reserva,
-                        'espacio' => $r->id_espacio,
-                        'hora_inicio' => $r->hora,
-                        'fecha' => $r->fecha_reserva
-                    ];
-                })
-            ], 400);
-        }
-
-        // Crear la reserva
-        $reserva = new Reserva();
-        $reserva->id_reserva = Reserva::generarIdUnico();
-        $reserva->run_solicitante = $runUsuario;
-        $reserva->id_espacio = $espacio->id_espacio;
-        $reserva->fecha_reserva = $fechaActual;
-        $reserva->hora = $horaActual;
-        $reserva->run_profesor = null;  // explícito: reserva creada por solicitante
-        $reserva->tipo_reserva = 'espontanea';
-        $reserva->estado = 'activa';
-
-        // Calcular módulo actual para persistir modulo_inicio / modulo_fin
-        $horariosModulosMapSol = $this->obtenerMapaHorariosModulos();
-        foreach ($horariosModulosMapSol as $numMod => $franjas) {
-            if ($horaActual >= $franjas['inicio'] && $horaActual <= $franjas['fin']) {
-                $reserva->modulo_inicio = $numMod;
-                $reserva->modulo_fin    = $numMod;
-                $reserva->hora_salida   = $franjas['fin'];
-                $reserva->modulos       = 1;
-                break;
-            }
-        }
-        $reserva->save();
-
-        // Enviar correo de confirmación de reserva al solicitante
-        $this->enviarCorreoReserva($reserva);
-
-        // Cambiar estado del espacio
-        $espacio->estado = 'Ocupado';
-        $espacio->save();
-
-        // Invalidar caché de estados para reflejar cambio en tiempo real
-        $this->limpiarCacheEstadosEspacios();
-
-        return response()->json([
-            'success' => true,
-            'mensaje' => 'Reserva creada exitosamente',
-            'reserva' => [
-                'id' => $reserva->id_reserva,
-                'espacio' => $espacio->nombre_espacio,
-                'fecha' => $fechaActual,
-                'hora_inicio' => $horaActual
-            ]
-        ]);
+            'success' => false,
+            'mensaje' => 'Este endpoint está en desuso y ha sido unificado en los controladores específicos.'
+        ], 410);
     }
 
     /**
@@ -3089,5 +2453,37 @@ class PlanoDigitalController extends Controller
         } catch (\Exception $e) {
             Log::error('Error al limpiar caché de estados: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Normalizar el ID del espacio para soportar diferentes formatos de escaneo.
+     * Ej: "LA-1" o "LA1" en la sede "CH" se normalizará a "CH-LA1"
+     */
+    private function normalizeEspacioId(?string $idEspacio): ?string
+    {
+        if (empty($idEspacio)) {
+            return $idEspacio;
+        }
+
+        // Convertir a mayúsculas y quitar espacios
+        $idEspacio = strtoupper(trim(str_replace(' ', '', $idEspacio)));
+
+        // Obtener el prefijo del tenant actual (ej: "CH", "LA", "CT", "TH")
+        $tenant = Tenant::current();
+        if (!$tenant) {
+            return $idEspacio;
+        }
+        $prefix = strtoupper($tenant->domain);
+
+        // Remover todos los guiones temporalmente para unificar el formato
+        $normalizedInput = str_replace('-', '', $idEspacio);
+
+        // Si el código normalizado comienza con el prefijo del tenant, lo removemos para obtener el "core"
+        if (strpos($normalizedInput, $prefix) === 0) {
+            $normalizedInput = substr($normalizedInput, strlen($prefix));
+        }
+
+        // El ID final en base de datos tiene la estructura: PREFIX-CORE
+        return $prefix . '-' . $normalizedInput;
     }
 }

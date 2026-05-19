@@ -160,9 +160,7 @@ class OccupancyService
      */
     public function obtenerSalasOcupadas($facultad, $piso = null, $turno = null)
     {
-        $espacios = $this->getEspaciosQuery($facultad, $piso)
-            ->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller', 'Auditorio', 'Sala de Estudio', 'Sala de Reuniones'])
-            ->get();
+        $espacios = $this->getEspaciosQuery($facultad, $piso)->get();
 
         $ocupadas = 0;
         $libres = 0;
@@ -213,9 +211,7 @@ class OccupancyService
             return round(($diurno + $vespertino) / 2, 2);
         }
 
-        $totalEspacios = $this->getEspaciosQuery($facultad, $piso)
-            ->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller', 'Auditorio', 'Sala de Estudio', 'Sala de Reuniones'])
-            ->count();
+        $totalEspacios = $this->getEspaciosQuery($facultad, $piso)->count();
 
         if ($totalEspacios === 0) {
             return 0;
@@ -245,7 +241,6 @@ class OccupancyService
                         $subQ->where('id_facultad', $facultad);
                     });
                 }
-                $q->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller', 'Auditorio', 'Sala de Estudio', 'Sala de Reuniones']);
             })
             ->groupBy('fecha', 'hora_dia')
             ->get();
@@ -455,7 +450,6 @@ class OccupancyService
                             $subQ->where('id_facultad', $facultad);
                         });
                     }
-                    $q->whereIn('tipo_espacio', ['Sala de Clases', 'Laboratorio', 'Taller', 'Auditorio', 'Sala de Estudio', 'Sala de Reuniones']);
                 })
                 ->count();
 

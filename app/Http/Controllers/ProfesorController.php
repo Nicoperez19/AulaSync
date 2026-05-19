@@ -51,6 +51,20 @@ class ProfesorController extends Controller
             $runProfesor = $request->input('run_profesor');
             $idEspacio = $request->input('id_espacio');
 
+            // Normalizar el ID del espacio usando la lógica del tenant actual
+            if (!empty($idEspacio)) {
+                $idEspacio = strtoupper(trim(str_replace(' ', '', $idEspacio)));
+                $tenant = Tenant::current() ?? Tenant::find(tenant_id());
+                if ($tenant) {
+                    $prefix = strtoupper($tenant->domain);
+                    $normalizedInput = str_replace('-', '', $idEspacio);
+                    if (strpos($normalizedInput, $prefix) === 0) {
+                        $normalizedInput = substr($normalizedInput, strlen($prefix));
+                    }
+                    $idEspacio = $prefix . '-' . $normalizedInput;
+                }
+            }
+
             // Verificar que el espacio existe
             $espacio = Espacio::where('id_espacio', $idEspacio)->first();
             if (!$espacio) {
@@ -178,6 +192,21 @@ class ProfesorController extends Controller
 
             $runProfesor = $request->input('run_profesor');
             $idEspacio = $request->input('id_espacio');
+
+            // Normalizar el ID del espacio usando la lógica del tenant actual
+            if (!empty($idEspacio)) {
+                $idEspacio = strtoupper(trim(str_replace(' ', '', $idEspacio)));
+                $tenant = Tenant::current() ?? Tenant::find(tenant_id());
+                if ($tenant) {
+                    $prefix = strtoupper($tenant->domain);
+                    $normalizedInput = str_replace('-', '', $idEspacio);
+                    if (strpos($normalizedInput, $prefix) === 0) {
+                        $normalizedInput = substr($normalizedInput, strlen($prefix));
+                    }
+                    $idEspacio = $prefix . '-' . $normalizedInput;
+                }
+            }
+
             $horaActual = now()->format('H:i:s');
             $fechaActual = now()->format('Y-m-d');
 

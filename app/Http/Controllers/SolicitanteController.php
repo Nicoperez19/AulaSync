@@ -233,6 +233,22 @@ class SolicitanteController extends Controller
                 'modulos' => 'required|integer|min:1|max:15'
             ]);
 
+            // Normalizar id_espacio usando la lógica del tenant actual
+            $idEspacio = $request->id_espacio;
+            if (!empty($idEspacio)) {
+                $idEspacio = strtoupper(trim(str_replace(' ', '', $idEspacio)));
+                $tenant = Tenant::find(tenant_id());
+                if ($tenant) {
+                    $prefix = strtoupper($tenant->domain);
+                    $normalizedInput = str_replace('-', '', $idEspacio);
+                    if (strpos($normalizedInput, $prefix) === 0) {
+                        $normalizedInput = substr($normalizedInput, strlen($prefix));
+                    }
+                    $idEspacio = $prefix . '-' . $normalizedInput;
+                }
+                $request->merge(['id_espacio' => $idEspacio]);
+            }
+
             $ahora = Carbon::now();
             $horaActual = $ahora->format('H:i:s');
             $fechaActual = $ahora->toDateString();
