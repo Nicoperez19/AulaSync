@@ -1659,6 +1659,12 @@ class PlanoDigitalController extends Controller
                     'id_reserva_anterior' => $idReservaAnterior
                 ]);
             }
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'tipo' => 'error',
+                'mensaje' => 'Error de validación: ' . implode(', ', \Illuminate\Support\Arr::flatten($e->errors())),
+                'errores' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
             \Log::error('Error al verificar estado del espacio y reserva: ' . $e->getMessage());
             return response()->json([

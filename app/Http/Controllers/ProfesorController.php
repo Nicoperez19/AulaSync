@@ -122,18 +122,16 @@ class ProfesorController extends Controller
                 ], 400);
             }
 
-            // Obtener la asignatura principal del profesor (primera asignatura activa)
-            $asignatura = $profesor->asignaturas()->first();
-
-            // Crear la reserva
+            // Crear la reserva espontánea (sin vincular a una asignatura programada)
             $reserva = new Reserva();
             $reserva->id_reserva = Reserva::generarIdUnico();
             $reserva->run_profesor = $runProfesor;
             $reserva->id_espacio = $espacio->id_espacio;
-            $reserva->id_asignatura = $asignatura ? $asignatura->id_asignatura : null;
+            $reserva->id_asignatura = null;
             $reserva->fecha_reserva = $fechaActual;
             $reserva->hora = $horaActual;
             $reserva->estado = 'activa';
+            $reserva->tipo_reserva = 'espontanea';
             $reserva->save();
 
             // Cambiar estado del espacio
