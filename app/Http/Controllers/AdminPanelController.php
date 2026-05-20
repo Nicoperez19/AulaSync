@@ -21,18 +21,29 @@ class AdminPanelController extends Controller
     {
         try {
             $usuario = null;
-            $userService = new \App\Services\UserService();
-            $datosUsuario = $userService->buscarPorRun($run);
 
-            if ($datosUsuario) {
-                // Mapear al formato que espera el frontend del panel de administración
+            // Buscar en profesores
+            $profesor = Profesor::where('run', $run)->first();
+            if ($profesor) {
                 $usuario = [
-                    'nombre' => $datosUsuario['usuario']['nombre'],
-                    'run' => $datosUsuario['usuario']['run'],
-                    'correo' => $datosUsuario['usuario']['email'],
-                    'telefono' => $datosUsuario['usuario']['telefono'] ?? '',
-                    'tipo_usuario' => str_replace('_registrado', '', $datosUsuario['tipo_usuario'])
+                    'nombre' => $profesor->nombre,
+                    'run' => $profesor->run,
+                    'correo' => $profesor->correo,
+                    'telefono' => $profesor->telefono ?? '',
+                    'tipo_usuario' => 'profesor'
                 ];
+            } else {
+                // Buscar en solicitantes
+                $solicitante = Solicitante::on('tenant')->where('run_solicitante', $run)->first();
+                if ($solicitante) {
+                    $usuario = [
+                        'nombre' => $solicitante->nombre,
+                        'run' => $solicitante->run,
+                        'correo' => $solicitante->correo,
+                        'telefono' => $solicitante->telefono ?? '',
+                        'tipo_usuario' => 'solicitante'
+                    ];
+                }
             }
 
             if ($usuario) {
