@@ -1179,7 +1179,7 @@
             return document.getElementById('mensaje-inicial');
         }
 
-        function mostrarInfo(tipo, nombre, run = null) {
+        function mostrarInfo(tipo, nombre, run = null, conPausa = false) {
             // Ocultar mensaje inicial
             const mensajeInicial = getMensajeInicial();
             if (mensajeInicial) {
@@ -1188,7 +1188,13 @@
 
             if (tipo === 'usuario') {
                 // Ya no mostramos info en el sidebar, ahora usamos el modal
-                abrirModalEsperaLlaves(nombre);
+                if (conPausa) {
+                    setTimeout(() => {
+                        abrirModalEsperaLlaves(nombre);
+                    }, 1500); // Pausa de 1.5 segundos
+                } else {
+                    abrirModalEsperaLlaves(nombre);
+                }
             }
         }
 
@@ -1906,10 +1912,10 @@
                             drawIndicators();
                         }
 
-                        // Mostrar Sweet Alert de éxito para reserva automática
+                        // Mostrar Sweet Alert de éxito para reserva automática (Clase programada)
                         Swal.fire({
-                            title: '¡Reserva Creada!',
-                            text: 'Se ha creado automáticamente la reserva según tu programación.',
+                            title: '¡Clase registrada!',
+                            text: 'Se ha registrado la clase automáticamente según tu programación.',
                             icon: 'success',
                             confirmButtonText: 'Aceptar',
                             confirmButtonColor: '#059669',
@@ -5072,18 +5078,19 @@
 
                         // Restaurar el input QR activo
                         qrInputManager.setActiveInput('main');
+
+                        // Actualizar información en la interfaz
+                        document.getElementById('qr-status').innerHTML = 'Solicitante registrado. Escanee el QR del espacio.';
+                        // Llamar con el booleano en true para que tenga una pausa y luego aparezca el modal
+                        mostrarInfo('usuario', datosSolicitante.nombre, runSolicitantePendiente, true);
+
+                        // Continuar con el flujo - solo necesita escanear espacio
+                        usuarioEscaneado = runSolicitantePendiente;
+                        ordenEscaneo = 'espacio'; // Ya no necesita escanear usuario
+
+                        // Limpiar variables
+                        runSolicitantePendiente = null;
                     });
-
-                    // Actualizar información en la interfaz
-                    document.getElementById('qr-status').innerHTML = 'Solicitante registrado. Escanee el QR del espacio.';
-                    mostrarInfo('usuario', datosSolicitante.nombre, runSolicitantePendiente);
-
-                    // Continuar con el flujo - solo necesita escanear espacio
-                    usuarioEscaneado = runSolicitantePendiente;
-                    ordenEscaneo = 'espacio'; // Ya no necesita escanear usuario
-
-                    // Limpiar variables
-                    runSolicitantePendiente = null;
 
                 } else {
                     // Error al registrar solicitante
@@ -5427,9 +5434,9 @@
             // Cerrar el modal inmediatamente
             cerrarModalModulos();
 
-            // Mostrar Sweet Alert de éxito para reserva creada
+            // Mostrar Sweet Alert de éxito para reserva creada (Sin programación)
             Swal.fire({
-                title: '¡Reserva Creada!',
+                title: '¡Reserva registrada!',
                 text: 'La reserva ha sido creada exitosamente.',
                 icon: 'success',
                 confirmButtonText: 'Aceptar',

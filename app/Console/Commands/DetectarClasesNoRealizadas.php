@@ -274,7 +274,7 @@ class DetectarClasesNoRealizadas extends Command
                     ->where('id_espacio', $primerModulo->id_espacio)
                     ->where(function($q) use ($runProfesor) {
                         $q->where('run_profesor', $runProfesor)
-                          ->orWhere('rut_usuario', $runProfesor);
+                          ->orWhere('run_solicitante', $runProfesor);
                     })
                     ->whereIn('estado', ['activa', 'finalizada'])
                     ->whereNotNull('hora')

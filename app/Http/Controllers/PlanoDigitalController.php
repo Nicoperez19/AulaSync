@@ -191,7 +191,13 @@ class PlanoDigitalController extends Controller
             ->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'))
             ->get();
 
-        return $mapa->bloques->map(function ($bloque) use ($planificacionesActivas, $planificacionesProximas, $reservasProximas, $mapa, $horaActualStr, $fechaActual, $moduloActual) {
+        $reservasFinalizadasAnticipadamente = Reserva::where('fecha_reserva', $fechaActual)
+            ->where('estado', 'finalizada')
+            ->where('clase_finalizada_anticipadamente', true)
+            ->whereIn('id_espacio', $mapa->bloques->pluck('id_espacio'))
+            ->get();
+
+        return $mapa->bloques->map(function ($bloque) use ($planificacionesActivas, $planificacionesProximas, $reservasProximas, $reservasFinalizadasAnticipadamente, $mapa, $horaActualStr, $fechaActual, $moduloActual) {
             $idEspacio = $bloque->id_espacio;
             $espacio = $bloque->espacio;
 
@@ -271,6 +277,24 @@ class PlanoDigitalController extends Controller
                 $planificacionActiva = $planificacionesActivas->firstWhere('id_espacio', $idEspacio);
                 $planificacionProxima = $planificacionesProximas->firstWhere('id_espacio', $idEspacio);
                 $reservaProxima = $reservasProximas->firstWhere('id_espacio', $idEspacio);
+
+                // Filtrar planificaciones si la clase fue finalizada anticipadamente
+                if ($planificacionActiva) {
+                    $claseFinalizada = $reservasFinalizadasAnticipadamente->where('id_espacio', $idEspacio)
+                        ->where('id_asignatura', $planificacionActiva->id_asignatura)
+                        ->first();
+                    if ($claseFinalizada) {
+                        $planificacionActiva = null;
+                    }
+                }
+                if ($planificacionProxima) {
+                    $claseFinalizada = $reservasFinalizadasAnticipadamente->where('id_espacio', $idEspacio)
+                        ->where('id_asignatura', $planificacionProxima->id_asignatura)
+                        ->first();
+                    if ($claseFinalizada) {
+                        $planificacionProxima = null;
+                    }
+                }
 
                 // Verificar que la planificación próxima realmente esté en rango (validación EXTRA agresiva)
                 if ($planificacionProxima && isset($planificacionProxima->modulo->hora_inicio)) {
@@ -648,9 +672,14 @@ class PlanoDigitalController extends Controller
                 ->get()
                 ->groupBy('id_espacio');
 
+            $reservasFinalizadasAnticipadamente = Reserva::where('fecha_reserva', $fechaActual)
+                ->where('estado', 'finalizada')
+                ->where('clase_finalizada_anticipadamente', true)
+                ->get();
+
             return [
                 'success' => true,
-                'espacios' => $espacios->map(function ($espacio) use ($horaActual, $horaActualStr, $diaActual, $planificacionesActivasYProximas, $reservasActivas, $reservasProgramadas, $reservasProximas, $moduloActual, $horaLimite, $clasesNoRealizadasGlobal) {
+                'espacios' => $espacios->map(function ($espacio) use ($horaActual, $horaActualStr, $diaActual, $planificacionesActivasYProximas, $reservasActivas, $reservasProgramadas, $reservasProximas, $moduloActual, $horaLimite, $clasesNoRealizadasGlobal, $reservasFinalizadasAnticipadamente) {
 
                 $estadoTabla = $espacio->estado;
 
@@ -669,14 +698,26 @@ class PlanoDigitalController extends Controller
 
                 $claseEnCurso = $planificacionesActivasYProximas
                     ->where('id_espacio', $espacio->id_espacio)
-                    ->filter(function ($p) use ($horaActualStr) {
-                        return $p->modulo->hora_inicio <= $horaActualStr && $p->modulo->hora_termino > $horaActualStr;
+                    ->filter(function ($p) use ($horaActualStr, $reservasFinalizadasAnticipadamente, $espacio) {
+                        if ($p->modulo->hora_inicio <= $horaActualStr && $p->modulo->hora_termino > $horaActualStr) {
+                            $claseFinalizada = $reservasFinalizadasAnticipadamente->where('id_espacio', $espacio->id_espacio)
+                                ->where('id_asignatura', $p->id_asignatura)
+                                ->first();
+                            return !$claseFinalizada;
+                        }
+                        return false;
                     })->first();
 
                 $claseProxima = $planificacionesActivasYProximas
                     ->where('id_espacio', $espacio->id_espacio)
-                    ->filter(function ($p) use ($horaActualStr, $horaLimite) {
-                        return $p->modulo->hora_inicio > $horaActualStr && $p->modulo->hora_inicio <= $horaLimite;
+                    ->filter(function ($p) use ($horaActualStr, $horaLimite, $reservasFinalizadasAnticipadamente, $espacio) {
+                        if ($p->modulo->hora_inicio > $horaActualStr && $p->modulo->hora_inicio <= $horaLimite) {
+                            $claseFinalizada = $reservasFinalizadasAnticipadamente->where('id_espacio', $espacio->id_espacio)
+                                ->where('id_asignatura', $p->id_asignatura)
+                                ->first();
+                            return !$claseFinalizada;
+                        }
+                        return false;
                     })->first();
 
                 $tieneClaseEnCurso = $claseEnCurso !== null;
@@ -917,6 +958,7 @@ class PlanoDigitalController extends Controller
             if ($reservaActiva) {
                 $reservaActiva->hora_salida = now()->format('H:i:s');
                 $reservaActiva->estado = 'finalizada';
+                $reservaActiva->clase_finalizada_anticipadamente = true;
 
                 // Si es una desocupación forzosa, agregar información adicional
                 if ($tipoDesocupacion === 'forzosa') {

@@ -1103,6 +1103,12 @@ class EspacioController extends Controller
             ];
             $codigoDia = $diasEnEspanol[$diaActual] ?? 'lunes';
 
+            $reservasFinalizadasAnticipadamente = Reserva::where('fecha_reserva', $fechaActual)
+                ->where('estado', 'finalizada')
+                ->where('clase_finalizada_anticipadamente', true)
+                ->where('id_espacio', $idEspacio)
+                ->get();
+
             // ─── BATCH: todas las consultas necesarias en una sola carga ───────────────
             // 1. Reserva activa + vencida del día (una sola query con orWhere)
             $reservaHoy = Reserva::select('id_reserva', 'run_profesor', 'run_solicitante', 'hora', 'hora_salida', 'estado', 'tipo_reserva', 'id_asignatura')
@@ -1134,6 +1140,20 @@ class EspacioController extends Controller
                 ->orderBy('modulos.hora_inicio', 'asc')
                 ->select('planificacion_asignaturas.*')
                 ->first();
+
+            if ($planActual) {
+                $claseFinalizada = $reservasFinalizadasAnticipadamente->where('id_asignatura', $planActual->id_asignatura)->first();
+                if ($claseFinalizada) {
+                    $planActual = null;
+                }
+            }
+
+            if ($planProxima) {
+                $claseFinalizada = $reservasFinalizadasAnticipadamente->where('id_asignatura', $planProxima->id_asignatura)->first();
+                if ($claseFinalizada) {
+                    $planProxima = null;
+                }
+            }
 
             // 4. Planificación anterior (una query)
             $planAnterior = Planificacion_Asignatura::with(['asignatura:id_asignatura,nombre_asignatura', 'modulo', 'horario.profesor'])

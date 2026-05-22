@@ -36,12 +36,14 @@ class Reserva extends Model
         'descripcion_actividad',
         'modulo_inicio',
         'modulo_fin',
+        'clase_finalizada_anticipadamente',
         'created_at',
         'updated_at'
     ];
 
     protected $casts = [
         'hubo_asistentes' => 'boolean',
+        'clase_finalizada_anticipadamente' => 'boolean',
         'fecha_reserva' => 'date',
     ];
 
