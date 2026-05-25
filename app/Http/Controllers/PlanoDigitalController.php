@@ -817,9 +817,9 @@ class PlanoDigitalController extends Controller
 
             $request->validate([
                 'id_espacio' => 'required|string',
-                'run_usuario' => 'required|string',
+                'run_usuario' => 'required|numeric',
                 'tipo_desocupacion' => 'sometimes|string|in:normal,forzosa',
-                'run_administrador' => 'required_if:tipo_desocupacion,forzosa|string'
+                'run_administrador' => 'required_if:tipo_desocupacion,forzosa'
             ]);
 
             $idEspacio = $this->normalizeEspacioId($request->input('id_espacio'));
@@ -1172,7 +1172,7 @@ class PlanoDigitalController extends Controller
                 $this->establecerContextoTenant();
 
                 $request->validate([
-                    'run_usuario' => 'required|string',
+                    'run_usuario' => 'required|numeric',
                     'id_espacio' => 'required|string',
                     'id_reserva_anterior' => 'required|string'
                 ]);
@@ -1327,8 +1327,19 @@ class PlanoDigitalController extends Controller
 
             // Registro de diagnóstico: confirmar que la función fue invocada (opcional)
 
+            // Log raw request payload before validating, to capture malformed scans
+            try {
+                \Log::info('verificarEstadoEspacioYReserva raw payload', [
+                    'raw_run' => $request->input('run'),
+                    'raw_id_espacio' => $request->input('id_espacio'),
+                    'content_type' => $request->header('Content-Type')
+                ]);
+            } catch (\Exception $e) {
+                \Log::warning('Error logging raw payload in verificarEstadoEspacioYReserva: ' . $e->getMessage());
+            }
+
             $request->validate([
-                'run' => 'required|string',
+                'run' => 'required|numeric',
                 'id_espacio' => 'required|string'
             ]);
 
