@@ -47,7 +47,7 @@ class ProfesorController extends Controller
             $this->establecerContextoTenant();
 
             $request->validate([
-                'run_profesor' => 'required|string',
+                'run_profesor' => 'required',
                 'id_espacio' => 'required|string'
             ]);
 
@@ -187,7 +187,7 @@ class ProfesorController extends Controller
             $this->establecerContextoTenant();
 
             $request->validate([
-                'run_profesor' => 'required|string',
+                'run_profesor' => 'required',
                 'id_espacio' => 'required|string'
             ]);
 
