@@ -1335,6 +1335,21 @@ class PlanoDigitalController extends Controller
             $runUsuario = $this->normalizeRun($request->input('run'));
             $idEspacio = $this->normalizeEspacioId($request->input('id_espacio'));
 
+            // Diagnostic logging for Chillán issue: log raw input, normalized id and tenant info
+            try {
+                $rawId = $request->input('id_espacio');
+                $tenantCur = Tenant::current();
+                \Log::info('verificarEstadoEspacioYReserva diagnostic', [
+                    'raw_id_espacio' => $rawId,
+                    'normalized_id_espacio' => $idEspacio,
+                    'tenant_id' => $tenantCur?->id ?? null,
+                    'tenant_domain' => $tenantCur?->domain ?? null,
+                    'connection_db' => \DB::connection('tenant')->getDatabaseName()
+                ]);
+            } catch (\Exception $e) {
+                \Log::warning('Error logging diagnostic in verificarEstadoEspacioYReserva: ' . $e->getMessage());
+            }
+
 
             // Verificar que el espacio existe (ignorar scopes globales para evitar problemas de filtrado por sede/tenant)
             $espacio = Espacio::withoutGlobalScopes()->where('id_espacio', $idEspacio)->first();
