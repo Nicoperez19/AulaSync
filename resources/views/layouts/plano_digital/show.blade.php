@@ -1453,7 +1453,7 @@
             try {
                 const response = await fetch(`/api/verificar-programacion/${espacio}/${run}`);
                 const result = await response.json();
-                return result.success && result.tieneProgramacion;
+                return result.success && (result.tieneProgramacion === true || result.tiene_clase === true);
             } catch (error) {
                 console.error('Error al verificar programación en espacio:', error);
                 return false;
@@ -1845,7 +1845,7 @@
                     const nombreTxt = document.getElementById('espera-llaves-nombre');
                     if (nombreTxt) nombreTxt.textContent = `¡Hola, ${result.usuario.nombre}!`;
                     
-                    usuarioEscaneado = run;
+                    usuarioEscaneado = result.usuario.run || run;
                     ordenEscaneo = 'espacio';
                     iniciarWatchdog(); // Iniciar temporizador de espera de espacio
 

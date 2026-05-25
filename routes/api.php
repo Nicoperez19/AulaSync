@@ -103,6 +103,8 @@ Route::get('/verificar-espacio/{profesorId}/{espacioId}', function ($profesorId,
         if ($planificacion) {
             return response()->json([
                 'esValido' => true,
+                'tiene_clase' => true,
+                'tieneProgramacion' => true,
                 'mensaje' => 'El profesor tiene clase asignada en este espacio',
                 'detalles' => [
                     'asignatura' => $planificacion->asignatura->nombre_asignatura,
@@ -116,6 +118,8 @@ Route::get('/verificar-espacio/{profesorId}/{espacioId}', function ($profesorId,
 
         return response()->json([
             'esValido' => false,
+            'tiene_clase' => false,
+            'tieneProgramacion' => false,
             'mensaje' => 'El profesor no tiene clases asignadas en este espacio en el horario actual'
         ]);
 
@@ -375,9 +379,8 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
         // Margen de 15 minutos para anticipación
         $horaConAnticipacion = $horaActual->copy()->addMinutes(15)->format('H:i:s');
 
-        // Limpiar el RUN (remover puntos y guiones) para búsqueda
-        $runLimpio = preg_replace('/[.-]/', '', $usuario);
-        $runLimpio = (int) $runLimpio;
+        // Limpiar el RUN para búsqueda
+        $runLimpio = preg_replace('/[^0-9]/', '', $usuario);
 
         // Buscar la clase programada en este espacio usando Eloquent
         $programacion = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])

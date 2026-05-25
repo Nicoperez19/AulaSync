@@ -12,12 +12,15 @@ use App\Models\AreaAcademica;
 use App\Models\Tenant;
 use Illuminate\Http\Request;
 use App\Models\Espacio;
+use App\Traits\RunNormalizer;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class ProfesorController extends Controller
 {
+    use RunNormalizer;
+
     /**
      * Crear reserva para profesor
      */
@@ -48,7 +51,7 @@ class ProfesorController extends Controller
                 'id_espacio' => 'required|string'
             ]);
 
-            $runProfesor = $request->input('run_profesor');
+            $runProfesor = $this->normalizeRun($request->input('run_profesor'));
             $idEspacio = $request->input('id_espacio');
 
             // Normalizar el ID del espacio usando la lógica del tenant actual
@@ -188,7 +191,7 @@ class ProfesorController extends Controller
                 'id_espacio' => 'required|string'
             ]);
 
-            $runProfesor = $request->input('run_profesor');
+            $runProfesor = $this->normalizeRun($request->input('run_profesor'));
             $idEspacio = $request->input('id_espacio');
 
             // Normalizar el ID del espacio usando la lógica del tenant actual
@@ -208,9 +211,8 @@ class ProfesorController extends Controller
             $horaActual = now()->format('H:i:s');
             $fechaActual = now()->format('Y-m-d');
 
-            // Limpiar el RUN para búsqueda
-            $runLimpio = preg_replace('/[.-]/', '', $runProfesor);
-            $runLimpio = (int) $runLimpio;
+            // Normalizar el RUN para búsqueda
+            $runLimpio = preg_replace('/[^0-9]/', '', $runProfesor);
 
             // Verificar que el espacio existe
             $espacio = Espacio::where('id_espacio', $idEspacio)->first();
