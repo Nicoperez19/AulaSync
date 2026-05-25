@@ -362,7 +362,7 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
             $espacio = strtoupper(trim(str_replace(' ', '', $espacio)));
             $tenant = \App\Models\Tenant::current() ?? \App\Models\Tenant::find(tenant_id());
             if ($tenant) {
-                $prefix = strtoupper($tenant->domain);
+                $prefix = strtoupper($tenant->prefijo_espacios ?: $tenant->domain);
                 $normalizedInput = str_replace('-', '', $espacio);
                 if (strpos($normalizedInput, $prefix) === 0) {
                     $normalizedInput = substr($normalizedInput, strlen($prefix));

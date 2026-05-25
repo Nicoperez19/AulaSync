@@ -2547,7 +2547,7 @@ class PlanoDigitalController extends Controller
         if (!$tenant) {
             return $idEspacio;
         }
-        $prefix = strtoupper($tenant->domain);
+        $prefix = strtoupper($tenant->prefijo_espacios ?: $tenant->domain);
 
         // Remover todos los guiones temporalmente para unificar el formato
         $normalizedInput = str_replace('-', '', $idEspacio);

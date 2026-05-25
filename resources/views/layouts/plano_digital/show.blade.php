@@ -911,6 +911,8 @@
     </x-modal>
 
     <script>
+        window.tenantPrefix = '{{ strtoupper(tenant_prefijo() ?: tenant_domain() ?: "") }}';
+
         // Escuchar cuando se abra el modal de registro para establecer el foco correcto
         document.addEventListener('open-modal', (event) => {
             if (event.detail === 'registro-solicitante') {
@@ -1494,8 +1496,8 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
                     body: JSON.stringify({
-                        run_profesor: run,
-                        id_espacio: idEspacio
+                        run_profesor: String(run),
+                        id_espacio: String(idEspacio)
                     })
                 });
                 const result = await response.json();
@@ -1882,6 +1884,7 @@
             usuarioInfo = await verificarUsuario(usuarioEscaneado);
 
             if (!usuarioInfo || !usuarioInfo.verificado) {
+                Swal.close();
                 ordenEscaneo = 'usuario';
                 // Restaurar autofocus del qr-input después de error en verificación de usuario
                 setTimeout(() => {
@@ -1898,6 +1901,18 @@
                 const tieneClaseAqui = await verificarProgramacionEnEspacio(espacio, usuarioEscaneado);
 
                 if (tieneClaseAqui === true) {
+                    // Mostrar SweetAlert indicando que se está creando el registro de clase
+                    Swal.fire({
+                        title: 'Creando registro de clase...',
+                        text: 'Por favor, espera un momento mientras registramos tu clase.',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
                     // CASO 1: Profesor TIENE CLASE AQUÍ - crear automáticamente reserva con módulos de programación
                     const resultado = await crearReservaAutomaticaProfesor(usuarioEscaneado, espacio);
                     if (resultado && resultado.success) {
@@ -1928,20 +1943,12 @@
                         document.getElementById('qr-status').innerHTML = 'Reserva creada';
                         document.getElementById('qr-status').classList.remove('parpadeo');
 
-                        // Limpiar solo el estado de lectura después de un delay
+                        // Limpiar el estado después de un delay para el próximo escaneo
                         setTimeout(() => {
-                            ordenEscaneo = 'espacio'; // Ya escaneó usuario, ahora espera espacio
                             espacioParaReserva = null;
                             runParaReserva = null;
                             bufferQR = '';
-                            limpiarEstadoLectura();
-
-                            // Mantener información del usuario visible
-                            const qrStatus = document.getElementById('qr-status');
-                            if (qrStatus) {
-                                qrStatus.classList.remove('parpadeo');
-                                qrStatus.innerHTML = 'Usuario verificado. Escanee el espacio.';
-                            }
+                            limpiarEstadoLectura(); // Esto ya setea ordenEscaneo = 'usuario' y limpia la UI
 
                             // Restaurar autofocus del qr-input después de crear reserva
                             if (qrInputManager) {
@@ -1949,13 +1956,22 @@
                             }
                         }, 2000);
                     } else {
-                        // Error en crear reserva automática - restaurar autofocus
+                        // Error en crear reserva automática - mostrar mensaje en vez de fallar silenciosamente
+                        Swal.fire({
+                            title: 'Error',
+                            text: resultado?.mensaje || 'No se pudo crear la reserva automáticamente.',
+                            icon: 'error',
+                            timer: 3000,
+                            showConfirmButton: false
+                        });
+
+                        limpiarEstadoLectura();
                         detenerWatchdog();
                         setTimeout(() => {
                             if (qrInputManager) {
                                 qrInputManager.setActiveInput('main');
                             }
-                        }, 100);
+                        }, 3000);
                     }
                 } else {
                     // CASO 2: Profesor SIN clases - solicita con módulos (todos los disponibles)
@@ -1969,6 +1985,7 @@
                 detenerWatchdog();
                 return; // No continuar, esperar selección de módulos
             } else {
+                Swal.close();
                 ordenEscaneo = 'usuario';
                 detenerWatchdog();
                 // Restaurar autofocus del qr-input después de error en tipo de usuario
@@ -2057,6 +2074,18 @@
             // CERRAR MODAL DE ESPERA DE LLAVES INMEDIATAMENTE
             // Ya tenemos un código de espacio válido, el flujo de espera terminó
             cerrarModalEsperaLlaves(false);
+
+            // Mostrar SweetAlert de procesamiento de lectura para que no quede silencioso
+            Swal.fire({
+                title: 'Verificando...',
+                text: 'Procesando lectura del espacio.',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
         }
 
                     // Verificar estado del espacio y reservas del usuario
@@ -2084,15 +2113,25 @@
         });
 
                     if (resultadoVerificacion.tipo === 'error') {
-            // Error al verificar estado - resetear flujo
-            // Error al verificar estado del espacio
-            limpiarEstadoLectura(resultadoVerificacion.mensaje || 'Error al verificar el estado del espacio');
+            // Error al verificar estado - mostrar SweetAlert prominente
+            Swal.fire({
+                title: '❌ Error',
+                text: resultadoVerificacion.mensaje || 'Error al verificar el estado del espacio',
+                icon: 'error',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#dc2626',
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            });
+            
+            // Resetear flujo y limpiar estado
+            limpiarEstadoLectura();
             // Restaurar autofocus del qr-input después de error en verificación de espacio
             setTimeout(() => {
                 if (qrInputManager) {
                     qrInputManager.setActiveInput('main');
                 }
-            }, 100);
+            }, 500);
             return;
         }
 
@@ -5305,6 +5344,7 @@
         // Mostrar el modal directamente
         const modal = document.getElementById('modal-seleccionar-modulos');
         if (modal) {
+            Swal.close(); // Cerrar SweetAlert de verificación antes de mostrar modal
             modal.classList.remove('hidden');
             // Desactivar todos los inputs QR cuando se abre el modal
             qrInputManager.desactivarTodosLosInputs();
@@ -5417,6 +5457,20 @@
 
             // Mostrar mensaje de proceso
             document.getElementById('qr-status').innerHTML = 'Creando reserva...';
+
+            // Mostrar SweetAlert indicando que se está creando el registro o reserva
+            const loadingTitle = (tipoUsuario === 'profesor') ? 'Creando registro de clase...' : 'Creando reserva...';
+            const loadingText = (tipoUsuario === 'profesor') ? 'Por favor, espera un momento mientras registramos tu clase.' : 'Por favor, espera un momento mientras registramos tu reserva.';
+            Swal.fire({
+                title: loadingTitle,
+                text: loadingText,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
 
             const response = await fetch(apiEndpoint, {
                 method: 'POST',

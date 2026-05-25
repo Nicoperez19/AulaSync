@@ -59,7 +59,7 @@ class ProfesorController extends Controller
                 $idEspacio = strtoupper(trim(str_replace(' ', '', $idEspacio)));
                 $tenant = Tenant::current() ?? Tenant::find(tenant_id());
                 if ($tenant) {
-                    $prefix = strtoupper($tenant->domain);
+                    $prefix = strtoupper($tenant->prefijo_espacios ?: $tenant->domain);
                     $normalizedInput = str_replace('-', '', $idEspacio);
                     if (strpos($normalizedInput, $prefix) === 0) {
                         $normalizedInput = substr($normalizedInput, strlen($prefix));
@@ -199,7 +199,7 @@ class ProfesorController extends Controller
                 $idEspacio = strtoupper(trim(str_replace(' ', '', $idEspacio)));
                 $tenant = Tenant::current() ?? Tenant::find(tenant_id());
                 if ($tenant) {
-                    $prefix = strtoupper($tenant->domain);
+                    $prefix = strtoupper($tenant->prefijo_espacios ?: $tenant->domain);
                     $normalizedInput = str_replace('-', '', $idEspacio);
                     if (strpos($normalizedInput, $prefix) === 0) {
                         $normalizedInput = substr($normalizedInput, strlen($prefix));
