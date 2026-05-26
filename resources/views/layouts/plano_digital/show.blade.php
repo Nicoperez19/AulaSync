@@ -1557,7 +1557,7 @@
                 const minutos = parseInt(horaActual.split(':')[1]);
                 const horaEnMinutos = hora * 60 + minutos;
 
-                const inicioAcademico = 8 * 60 + 10; // 08:10
+                const inicioAcademico = 7 * 60 + 30; // 07:30 (pero el mensaje dirá 08:10)
                 const finAcademico = 23 * 60; // 23:00
 
                 if (horaEnMinutos < inicioAcademico || horaEnMinutos >= finAcademico) {

@@ -93,7 +93,7 @@ class ProfesorController extends Controller
             $minutos = (int)now()->format('i');
             $horaEnMinutos = $hora * 60 + $minutos;
 
-            $inicioAcademico = 8 * 60 + 10; // 08:10
+            $inicioAcademico = 7 * 60 + 30; // 07:30 (pero el mensaje dirá 08:10)
             $finAcademico = 23 * 60; // 23:00
 
             if ($horaEnMinutos < $inicioAcademico || $horaEnMinutos >= $finAcademico) {
@@ -236,7 +236,7 @@ class ProfesorController extends Controller
             $minutos = (int)now()->format('i');
             $horaEnMinutos = $hora * 60 + $minutos;
 
-            $inicioAcademico = 8 * 60 + 10; // 08:10
+            $inicioAcademico = 7 * 60 + 30; // 07:30 (pero el mensaje dirá 08:10)
             $finAcademico = 23 * 60; // 23:00
 
             if ($horaEnMinutos < $inicioAcademico || $horaEnMinutos >= $finAcademico) {
@@ -507,7 +507,7 @@ class ProfesorController extends Controller
             $minutos = (int)now()->format('i');
             $horaEnMinutos = $hora * 60 + $minutos;
 
-            $inicioAcademico = 8 * 60 + 10; // 08:10
+            $inicioAcademico = 7 * 60 + 30; // 07:30 (pero el mensaje dirá 08:10)
             $finAcademico = 23 * 60; // 23:00
 
             if ($horaEnMinutos < $inicioAcademico || $horaEnMinutos >= $finAcademico) {
