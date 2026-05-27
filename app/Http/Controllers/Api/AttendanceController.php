@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
+use App\Traits\RunNormalizer;
 
 /**
  * Controlador para registro de asistencia de estudiantes
@@ -23,6 +24,8 @@ use Carbon\Carbon;
  */
 class AttendanceController extends Controller
 {
+    use RunNormalizer;
+
     /**
      * Registrar la asistencia de un estudiante
      * 
@@ -59,10 +62,11 @@ class AttendanceController extends Controller
         try {
             DB::beginTransaction();
 
-            $studentId = $request->student_id;
+            $studentId = $this->normalizeRun($request->student_id);
             $roomId = $request->room_id;
             $reservationId = $request->reservation_id;
             $now = Carbon::now();
+
 
             // Log para debugging
             Log::info('Registro de asistencia iniciado', [
@@ -154,21 +158,12 @@ class AttendanceController extends Controller
             }
 
             // Determinar la asignatura asociada si existe
+            // IMPORTANTE: Usar directamente el id_asignatura de la reserva
+            // La reserva ya contiene la asignatura validada del profesor
+            // (antes se buscaba por espacio/hora, causando errores cuando múltiples clases coincidían)
             $asignaturaId = null;
-            if ($reserva->tipo_reserva === 'clase') {
-                // Buscar la planificación asociada a esta reserva
-                $planificacion = DB::connection('tenant')->table('planificacion_asignaturas as pa')
-                    ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
-                    ->where('pa.id_espacio', $roomId)
-                    ->where('m.dia', $now->dayOfWeek)
-                    ->where('m.hora_inicio', '<=', $now->format('H:i:s'))
-                    ->where('m.hora_termino', '>=', $now->format('H:i:s'))
-                    ->select('pa.id_asignatura')
-                    ->first();
-
-                if ($planificacion) {
-                    $asignaturaId = $planificacion->id_asignatura;
-                }
+            if ($reserva->tipo_reserva === 'clase' && $reserva->id_asignatura) {
+                $asignaturaId = $reserva->id_asignatura;
             }
 
             // Registrar la asistencia

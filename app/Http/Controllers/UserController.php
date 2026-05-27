@@ -13,6 +13,7 @@ use Illuminate\Validation\Rules;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use App\Models\Sede;
 
 class UserController extends Controller
 {
@@ -20,13 +21,17 @@ class UserController extends Controller
     {
         $users = User::all();
         $years = range(2010, date('Y'));
-        return view('layouts.user.user_index', compact('users', 'years'));
+        $sedes = Sede::all();
+        return view('layouts.user.user_index', compact('users', 'years', 'sedes'));
     }
 
     public function create()
     {
         $years = range(2010, date('Y'));
-        return view('layouts.user.user_update', compact('years'));
+        $roles = Role::all();
+        $permissions = Permission::all();
+        $sedes = Sede::all();
+        return view('layouts.user.user_update', compact('years', 'roles', 'permissions', 'sedes'));
     }
 
     public function store(Request $request)
@@ -46,7 +51,9 @@ class UserController extends Controller
                 'year_of_graduation' => 'nullable|integer|min:2010|max:' . (date('Y') + 5),
                 'career' => 'nullable|string|max:255',
                 'current_semester' => 'nullable|integer|min:1|max:20',
-                'is_active' => 'boolean'
+                'is_active' => 'boolean',
+                'is_superuser' => 'boolean',
+                'id_sede' => 'nullable|exists:sedes,id_sede'
             ]);
 
             // Verificar si el RUN ya existe
@@ -70,8 +77,12 @@ class UserController extends Controller
                 'year_of_graduation' => $validated['year_of_graduation'] ?? null,
                 'career' => $validated['career'] ?? null,
                 'current_semester' => $validated['current_semester'] ?? null,
-                'is_active' => $validated['is_active'] ?? true
+                'is_active' => $validated['is_active'] ?? true,
+                'is_superuser' => $validated['is_superuser'] ?? false,
+                'id_sede' => $validated['id_sede'] ?? null
             ]);
+
+
 
             $user->roles()->sync($validated['roles']);
             if (!empty($validated['permissions'])) {
@@ -118,48 +129,93 @@ class UserController extends Controller
             $years = range(2010, date('Y'));
             $roles = Role::all();
             $permissions = Permission::all();
-            return view('layouts.user.user_update', compact('user', 'years', 'roles', 'permissions'));
+            $sedes = Sede::all();
+            return view('layouts.user.user_update', compact('user', 'years', 'roles', 'permissions', 'sedes'));
         } catch (\Exception $e) {
             Log::error('Error al cargar la vista de edición de usuario: ' . $e->getMessage());
             return redirect()->route('users.index')->withErrors(['error' => 'Hubo un problema al cargar los datos del usuario.']);
         }
     }
 
-    public function update(Request $request, User $user)
+    public function update(Request $request, $run)
     {
         try {
-            // Convertir el RUN a entero antes de la validación
-            if ($request->has('run')) {
-                $request->merge(['run' => (int) $request->run]);
-            }
-
+            // Buscar el usuario por RUN
+            $user = User::where('run', $run)->firstOrFail();
+            
+            // Validación condicional: wizard_password es obligatorio si se marca como superusuario
+            $isMarkingAsSuperuser = $request->has('is_superuser') && $request->input('is_superuser') && !$user->is_superuser;
+            
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
-                'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-                'run' => 'required|integer|digits_between:7,8|unique:users,run,' . $user->id,
+                'email' => ['required', 'string', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users', 'email')->ignore($user->run, 'run')],
+                'run' => ['required', 'integer', 'digits_between:7,8', \Illuminate\Validation\Rule::unique('users', 'run')->ignore($user->run, 'run')],
                 'celular' => 'nullable|string|regex:/^9\d{8}$/',
                 'password' => 'nullable|string|min:8',
+                'wizard_password' => $isMarkingAsSuperuser ? 'required|string' : 'nullable|string',
                 'roles' => 'required|array',
                 'roles.*' => 'exists:roles,id',
                 'permissions' => 'nullable|array',
                 'permissions.*' => 'exists:permissions,id',
-                'year_of_entry' => 'nullable|integer|min:2010|max:' . date('Y'),
-                'year_of_graduation' => 'nullable|integer|min:2010|max:' . (date('Y') + 5),
-                'career' => 'nullable|string|max:255',
-                'current_semester' => 'nullable|integer|min:1|max:20',
-                'is_active' => 'boolean'
+                'direccion' => 'nullable|string|max:255',
+                'fecha_nacimiento' => 'nullable|date',
+                'is_superuser' => 'boolean',
+                'id_sede' => 'nullable|exists:sedes,id_sede'
+            ], [
+                'email.unique' => 'Este correo electrónico ya está registrado en el sistema.',
+                'run.unique' => 'Este RUN ya está registrado en el sistema.',
+                'run.required' => 'El RUN es obligatorio.',
+                'run.integer' => 'El RUN debe ser un número válido.',
+                'run.digits_between' => 'El RUN debe tener entre 7 y 8 dígitos.',
+                'email.required' => 'El correo electrónico es obligatorio.',
+                'email.email' => 'Debe ingresar un correo electrónico válido.',
+                'name.required' => 'El nombre es obligatorio.',
+                'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+                'roles.required' => 'Debe seleccionar al menos un rol.',
+                'celular.regex' => 'El celular debe comenzar con 9 y tener 9 dígitos.',
             ]);
+
+            // Validar contraseña del wizard si fue proporcionada
+            if (!empty($validated['wizard_password'])) {
+                $expectedPassword = config('app.tenant_init_password', env('TENANT_INIT_PASSWORD'));
+                $providedPassword = trim($validated['wizard_password']);
+                
+
+                
+                if ($providedPassword !== $expectedPassword) {
+                    Log::warning('Intento de edición de usuario con contraseña de wizard incorrecta', [
+                        'run' => $user->run,
+                        'ip' => $request->ip(),
+                    ]);
+
+                    if ($request->ajax()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Contraseña admin incorrecta.'
+                        ], 422);
+                    }
+                    return back()->withErrors(['wizard_password' => 'Contraseña admin incorrecta.'])->withInput();
+                }
+            } elseif ($isMarkingAsSuperuser) {
+                // Si está intentando marcar como superusuario pero no proporcionó contraseña
+                if ($request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'La contraseña admin es obligatoria para otorgar permisos de superusuario.'
+                    ], 422);
+                }
+                return back()->withErrors(['wizard_password' => 'La contraseña admin es obligatoria para otorgar permisos de superusuario.'])->withInput();
+            }
 
             $user->update([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
                 'run' => $validated['run'],
                 'celular' => $validated['celular'] ?? null,
-                'year_of_entry' => $validated['year_of_entry'] ?? null,
-                'year_of_graduation' => $validated['year_of_graduation'] ?? null,
-                'career' => $validated['career'] ?? null,
-                'current_semester' => $validated['current_semester'] ?? null,
-                'is_active' => $validated['is_active'] ?? true
+                'direccion' => $validated['direccion'] ?? null,
+                'fecha_nacimiento' => $validated['fecha_nacimiento'] ?? null,
+                'is_superuser' => $validated['is_superuser'] ?? false,
+                'id_sede' => $validated['id_sede'] ?? null
             ]);
 
             if (!empty($validated['password'])) {
@@ -170,6 +226,8 @@ class UserController extends Controller
             if (!empty($validated['permissions'])) {
                 $user->permissions()->sync($validated['permissions']);
             }
+
+
 
             if ($request->ajax()) {
                 return response()->json([
@@ -227,10 +285,8 @@ class UserController extends Controller
             ->map(function($u) {
                 return ['id' => $u->run, 'nombre' => $u->name, 'email' => $u->email, 'fuente' => 'usuario'];
             })->toArray();
-        Log::info('Autocomplete users count: ' . count($users));
-        if (count($users) > 0) {
-            Log::info('Autocomplete users sample: ' . json_encode(array_slice($users, 0, 3)));
-        }
+
+
 
         // Buscar en profesores
         $profesores = [];
@@ -244,10 +300,8 @@ class UserController extends Controller
                     ->map(function($p) {
                         return ['id' => $p->run, 'nombre' => $p->nombre, 'email' => $p->email, 'fuente' => 'profesor'];
                     })->toArray();
-                Log::info('Autocomplete profesores count: ' . count($profesores));
-                if (count($profesores) > 0) {
-                    Log::info('Autocomplete profesores sample: ' . json_encode(array_slice($profesores, 0, 3)));
-                }
+
+
             }
         } catch (\Throwable $e) {
             // No bloquear si modelo no existe o falla la consulta
@@ -266,10 +320,8 @@ class UserController extends Controller
                     ->map(function($s) {
                         return ['id' => $s->run, 'nombre' => $s->nombre, 'email' => $s->correo, 'fuente' => 'solicitante'];
                     })->toArray();
-                Log::info('Autocomplete solicitantes count: ' . count($solicitantes));
-                if (count($solicitantes) > 0) {
-                    Log::info('Autocomplete solicitantes sample: ' . json_encode(array_slice($solicitantes, 0, 3)));
-                }
+
+
             }
         } catch (\Throwable $e) {
             Log::warning('Autocomplete solicitantes error: ' . $e->getMessage());

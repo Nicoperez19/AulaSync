@@ -26,18 +26,24 @@ class Reserva extends Model
         'id_asignatura',
         'run_profesor',
         'run_solicitante',
-    'modulos',
+        'modulos',
         'tipo_reserva',
         'estado',
         'hora_salida',
         'observaciones',
         'hubo_asistentes',
+        'nombre_actividad',
+        'descripcion_actividad',
+        'modulo_inicio',
+        'modulo_fin',
+        'clase_finalizada_anticipadamente',
         'created_at',
         'updated_at'
     ];
 
     protected $casts = [
         'hubo_asistentes' => 'boolean',
+        'clase_finalizada_anticipadamente' => 'boolean',
         'fecha_reserva' => 'date',
     ];
 
@@ -156,16 +162,82 @@ class Reserva extends Model
 
     /**
      * Scope para obtener reservas futuras desde un momento dado
-     * Incluye reservas activas que comienzan después de la hora especificada
+     * Incluye reservas activas o programadas que comienzan después de la hora especificada
      */
     public function scopeFuturas($query, $fecha = null, $hora = null)
     {
         $fecha = $fecha ?? now()->toDateString();
         $hora = $hora ?? now()->format('H:i:s');
 
-        return $query->where('estado', 'activa')
+        return $query->whereIn('estado', ['activa', 'programada'])
                      ->where('fecha_reserva', $fecha)
                      ->where('hora', '>', $hora)
                      ->orderBy('hora', 'asc');
+    }
+
+    /**
+     * Scope para obtener reservas programadas (con antelación, aún no activas)
+     */
+    public function scopeProgramadas($query, $fecha = null)
+    {
+        $fecha = $fecha ?? now()->toDateString();
+
+        return $query->where('estado', 'programada')
+                     ->where('fecha_reserva', $fecha);
+    }
+
+    /**
+     * Verificar si la reserva corresponde al módulo/hora actual y debe activarse
+     */
+    public function debeActivarse(): bool
+    {
+        $ahora = now();
+        $fechaHoy = $ahora->toDateString();
+        $horaActual = $ahora->format('H:i:s');
+
+        // Solo para reservas programadas del día actual
+        if ($this->estado !== 'programada') {
+            return false;
+        }
+
+        $fechaReserva = $this->fecha_reserva instanceof \Carbon\Carbon
+            ? $this->fecha_reserva->format('Y-m-d')
+            : $this->fecha_reserva;
+
+        if ($fechaReserva !== $fechaHoy) {
+            return false;
+        }
+
+        // Verificar si la hora actual está dentro del rango de módulos de la reserva
+        $horariosModulos = [
+            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+        ];
+
+        $moduloInicio = $this->modulo_inicio;
+        $moduloFin = $this->modulo_fin;
+
+        if (!$moduloInicio || !$moduloFin) {
+            return false;
+        }
+
+        $horaInicioReserva = $horariosModulos[$moduloInicio]['inicio'] ?? null;
+        $horaFinReserva = $horariosModulos[$moduloFin]['fin'] ?? null;
+
+        if (!$horaInicioReserva || !$horaFinReserva) {
+            return false;
+        }
+
+        return $horaActual >= $horaInicioReserva && $horaActual <= $horaFinReserva;
     }
 }

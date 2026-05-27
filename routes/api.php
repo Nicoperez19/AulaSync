@@ -103,6 +103,8 @@ Route::get('/verificar-espacio/{profesorId}/{espacioId}', function ($profesorId,
         if ($planificacion) {
             return response()->json([
                 'esValido' => true,
+                'tiene_clase' => true,
+                'tieneProgramacion' => true,
                 'mensaje' => 'El profesor tiene clase asignada en este espacio',
                 'detalles' => [
                     'asignatura' => $planificacion->asignatura->nombre_asignatura,
@@ -116,6 +118,8 @@ Route::get('/verificar-espacio/{profesorId}/{espacioId}', function ($profesorId,
 
         return response()->json([
             'esValido' => false,
+            'tiene_clase' => false,
+            'tieneProgramacion' => false,
             'mensaje' => 'El profesor no tiene clases asignadas en este espacio en el horario actual'
         ]);
 
@@ -134,6 +138,8 @@ Route::post('/registrar-salida-clase', [ApiReservaController::class, 'registrarS
 Route::post('/registrar-reserva-espontanea', [ApiReservaController::class, 'registrarReservaEspontanea']);
 Route::post('/registrar-entrada-clase', [ApiReservaController::class, 'registrarUsoEspacio']);
 Route::get('/reserva-activa/{id}', [App\Http\Controllers\Api\ApiReservaController::class, 'getReservaActiva']);
+// 🔑 Nuevo endpoint: Liberar sala bloqueada + registrar nuevo uso (cuando profesor anterior no devolvió llave)
+Route::post('/liberar-y-registrar-uso', [ApiReservaController::class, 'liberarYRegistrarUso']);
 
 Route::get('/user/{run}', function ($run) {
     try {
@@ -303,38 +309,16 @@ Route::get('/verificar-planificacion-multiple', function (Request $request) {
 });
 
 
-// Ruta para obtener pisos de la sede TH y facultad IT_TH
-Route::get('/pisos/th/it', function () {
-    try {
-        $pisos = \App\Models\Piso::with(['facultad.sede'])
-            ->whereHas('facultad', function ($query) {
-                $query->where('id_facultad', 'IT_TH');
-            })
-            ->whereHas('facultad.sede', function ($query) {
-                $query->where('id_sede', 'TH');
-            })
-            ->orderBy('numero_piso')
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'pisos' => $pisos
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Error al obtener los pisos: ' . $e->getMessage()
-        ], 500);
-    }
-});
 
 Route::get('/verificar-horario/{run}', [PlanoDigitalController::class, 'verificarHorario']);
 
+Route::get('/procesar-primera-lectura/{run}', [PlanoDigitalController::class, 'procesarPrimeraLectura']);
 Route::get('/verificar-usuario/{run}', [PlanoDigitalController::class, 'verificarUsuario']);
 Route::get('/verificar-profesor/{run}', [PlanoDigitalController::class, 'verificarProfesor']);
 
 Route::get('/verificar-espacio/{idEspacio}', [PlanoDigitalController::class, 'verificarEspacio']);
 Route::post('/crear-reserva-profesor', [App\Http\Controllers\ProfesorController::class, 'crearReservaProfesor']);
+Route::post('/crear-reserva-profesor-automatica', [App\Http\Controllers\ProfesorController::class, 'crearReservaProfesorAutomatica']);
 Route::get('/profesor/{run}/asignaturas', [App\Http\Controllers\ProfesorController::class, 'getAsignaturasProfesor']);
 Route::post('/verificar-estado-espacio-reserva', [PlanoDigitalController::class, 'verificarEstadoEspacioYReserva']);
 Route::post('/devolver-llaves', [PlanoDigitalController::class, 'devolverLlaves']);
@@ -373,29 +357,84 @@ Route::post('/registrar-asistencia-clase', [PlanoDigitalController::class, 'regi
 // Ruta para verificar la programación de un usuario en un espacio específico
 Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $usuario) {
     try {
+        // Normalizar el ID del espacio usando la lógica del tenant actual
+        if (!empty($espacio)) {
+            $espacio = strtoupper(trim(str_replace(' ', '', $espacio)));
+            $tenant = \App\Models\Tenant::current() ?? \App\Models\Tenant::find(tenant_id());
+            if ($tenant) {
+                $prefix = strtoupper($tenant->prefijo_espacios ?: $tenant->domain);
+                $normalizedInput = str_replace('-', '', $espacio);
+                if (strpos($normalizedInput, $prefix) === 0) {
+                    $normalizedInput = substr($normalizedInput, strlen($prefix));
+                }
+                $espacio = $prefix . '-' . $normalizedInput;
+            }
+        }
+
         // Obtener la hora actual
         $horaActual = \Carbon\Carbon::now();
         $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
         $horaActualStr = $horaActual->format('H:i:s');
+        
+        // Margen de 15 minutos para anticipación
+        $horaConAnticipacion = $horaActual->copy()->addMinutes(15)->format('H:i:s');
 
-        // Verificar si el usuario tiene clase programada en este espacio
-        $tieneProgramacion = DB::table('planificacion_asignaturas as pa')
-            ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
-            ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
-            ->where('pa.id_espacio', $espacio)
-            ->where('h.run', $usuario)
-            ->where('m.dia', $diaActual)
-            ->where(function($query) use ($horaActualStr) {
-                $query->where('m.hora_inicio', '<=', $horaActualStr)
-                      ->where('m.hora_termino', '>=', $horaActualStr);
+        // Limpiar el RUN para búsqueda
+        $runLimpio = preg_replace('/[^0-9]/', '', $usuario);
+
+        // Buscar la clase programada en este espacio usando Eloquent
+        $programacion = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])
+            ->where('id_espacio', $espacio)
+            ->whereHas('asignatura', function ($q) use ($usuario, $runLimpio) {
+                $q->where('run_profesor', $usuario)
+                  ->orWhere('run_profesor', $runLimpio)
+                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
             })
-            ->exists();
+            ->whereHas('modulo', function ($q) use ($diaActual, $horaActualStr, $horaConAnticipacion) {
+                $q->where('dia', $diaActual)
+                  ->where(function ($subQ) use ($horaActualStr, $horaConAnticipacion) {
+                      $subQ->where(function ($sq1) use ($horaActualStr) {
+                          $sq1->where('hora_inicio', '<=', $horaActualStr)
+                              ->where('hora_termino', '>=', $horaActualStr);
+                      })->orWhere(function ($sq2) use ($horaActualStr, $horaConAnticipacion) {
+                          $sq2->where('hora_inicio', '>', $horaActualStr)
+                              ->where('hora_inicio', '<=', $horaConAnticipacion);
+                      });
+                  });
+            })
+            ->first();
+
+        $tieneProgramacion = $programacion !== null;
+        $modulosInfo = null;
+
+        if ($tieneProgramacion && $programacion && $programacion->modulo) {
+            // Obtener información completa de módulos
+            $modulosInfo = [
+                'id_modulo' => $programacion->id_modulo,
+                'hora_inicio' => $programacion->modulo->hora_inicio,
+                'hora_termino' => $programacion->modulo->hora_termino,
+                'id_asignatura' => $programacion->id_asignatura
+            ];
+        }
 
         return response()->json([
             'success' => true,
-            'tieneProgramacion' => $tieneProgramacion
+            'tieneProgramacion' => $tieneProgramacion,
+            'modulosInfo' => $modulosInfo,
+            'debug' => [
+                'dia_actual' => $diaActual,
+                'hora_actual' => $horaActualStr,
+                'espacio_id' => $espacio,
+                'usuario_original' => $usuario,
+                'usuario_limpio' => $runLimpio
+            ]
         ]);
     } catch (\Exception $e) {
+        \Log::error('Error en verificar-programacion: ' . $e->getMessage(), [
+            'espacio' => $espacio,
+            'usuario' => $usuario,
+            'trace' => $e->getTraceAsString()
+        ]);
         return response()->json([
             'success' => false,
             'message' => 'Error al verificar la programación: ' . $e->getMessage()
@@ -477,6 +516,9 @@ Route::get('/espacios/resumen', [EspacioApiController::class, 'resumenEspacios']
 
 use App\Http\Controllers\SalaEstudioController;
 
+// Registrar asistencia grupal en sala de estudio (primer carnet = responsable)
+Route::post('/sala-estudio/registrar-asistencia', [PlanoDigitalController::class, 'registrarAsistenciaSalaEstudio']);
+
 // Registrar acceso a sala de estudio
 Route::post('/sala-estudio/registrar-acceso', [SalaEstudioController::class, 'registrarAcceso']);
 
@@ -496,22 +538,27 @@ Route::get('/verificar-solicitante/{run}', [App\Http\Controllers\SolicitanteCont
 
 // Obtener todos los módulos del sistema
 Route::get('/modulos', function () {
-    $modulos = \App\Models\Modulo::distinct()
-        ->select('id_modulo', 'hora_inicio', 'hora_termino')
-        ->orderBy('hora_inicio')
-        ->get()
+    $modulos = \App\Models\Modulo::all()
+        ->sort(function ($a, $b) {
+            $dias = ['LU' => 1, 'MA' => 2, 'MI' => 3, 'JU' => 4, 'VI' => 5, 'SA' => 6, 'DO' => 7];
+            $partsA = explode('.', $a->id_modulo);
+            $partsB = explode('.', $b->id_modulo);
+            $diaA = $partsA[0];
+            $numA = isset($partsA[1]) ? (int)$partsA[1] : 0;
+            $diaB = $partsB[0];
+            $numB = isset($partsB[1]) ? (int)$partsB[1] : 0;
+            if ($diaA !== $diaB) {
+                return ($dias[$diaA] ?? 99) <=> ($dias[$diaB] ?? 99);
+            }
+            return $numA <=> $numB;
+        })
         ->map(function ($modulo) {
-            // Extraer el número del módulo del id (ej: "JU.1" -> 1)
-            $partes = explode('.', $modulo->id_modulo);
-            $numeroModulo = isset($partes[1]) ? $partes[1] : 1;
-            
             return [
-                'id_modulo' => $numeroModulo,
+                'id_modulo' => $modulo->id_modulo,
                 'hora_inicio' => substr($modulo->hora_inicio, 0, 5),
                 'hora_termino' => substr($modulo->hora_termino, 0, 5)
             ];
         })
-        ->unique('id_modulo')
         ->values()
         ->toArray();
 

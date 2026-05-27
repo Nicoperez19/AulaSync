@@ -114,14 +114,12 @@ class ProfesorColaboradorController extends Controller
             'nombre_asignatura_temporal' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'cantidad_inscritos' => 'required|integer|min:1',
-            'tipo_clase' => 'required|in:temporal,reforzamiento,recuperacion',
+            'tipo_clase' => 'required|in:temporal,reforzamiento,recuperacion,actividad_externa,actividad_interna',
             'fecha_inicio' => 'required|date',
             'fecha_termino' => 'required|date|after_or_equal:fecha_inicio',
             'id_asignatura' => [
                 'nullable',
-                Rule::exists('asignaturas', 'id_asignatura')->using(function ($query) {
-                    return $query->connection('tenant');
-                })
+                Rule::exists('tenant.asignaturas', 'id_asignatura')
             ],
             'planificaciones' => 'required|json',
         ];
@@ -129,25 +127,19 @@ class ProfesorColaboradorController extends Controller
         if ($request->profesor_option === 'nuevo') {
             $validationRules['nuevo_run'] = [
                 'required',
-                Rule::unique('profesors', 'run_profesor')->using(function ($query) {
-                    return $query->connection('tenant');
-                })
+                Rule::unique('tenant.profesors', 'run_profesor')
             ];
             $validationRules['nuevo_nombre'] = 'required|string|max:255';
             $validationRules['nuevo_email'] = [
                 'required',
                 'email',
-                Rule::unique('profesors', 'email')->using(function ($query) {
-                    return $query->connection('tenant');
-                })
+                Rule::unique('tenant.profesors', 'email')
             ];
             $validationRules['nuevo_celular'] = 'nullable|string|max:20';
         } else {
             $validationRules['run_profesor_colaborador'] = [
                 'required',
-                Rule::exists('profesors', 'run_profesor')->using(function ($query) {
-                    return $query->connection('tenant');
-                })
+                Rule::exists('tenant.profesors', 'run_profesor')
             ];
         }
 
@@ -264,34 +256,26 @@ class ProfesorColaboradorController extends Controller
         $request->validate([
             'run_profesor_colaborador' => [
                 'required',
-                Rule::exists('profesors', 'run_profesor')->using(function ($query) {
-                    return $query->connection('tenant');
-                })
+                Rule::exists('tenant.profesors', 'run_profesor')
             ],
             'nombre_asignatura_temporal' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
-            'tipo_clase' => 'required|in:temporal,reforzamiento,recuperacion',
+            'tipo_clase' => 'required|in:temporal,reforzamiento,recuperacion,actividad_externa,actividad_interna',
             'fecha_inicio' => 'required|date',
             'fecha_termino' => 'required|date|after_or_equal:fecha_inicio',
             'id_asignatura' => [
                 'nullable',
-                Rule::exists('asignaturas', 'id_asignatura')->using(function ($query) {
-                    return $query->connection('tenant');
-                })
+                Rule::exists('tenant.asignaturas', 'id_asignatura')
             ],
             'estado' => 'required|in:activo,inactivo',
             'planificaciones' => 'required|array|min:1',
             'planificaciones.*.id_modulo' => [
                 'required',
-                Rule::exists('modulos', 'id_modulo')->using(function ($query) {
-                    return $query->connection('tenant');
-                })
+                Rule::exists('tenant.modulos', 'id_modulo')
             ],
             'planificaciones.*.id_espacio' => [
                 'required',
-                Rule::exists('espacios', 'id_espacio')->using(function ($query) {
-                    return $query->connection('tenant');
-                })
+                Rule::exists('tenant.espacios', 'id_espacio')
             ],
         ]);
 

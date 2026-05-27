@@ -111,154 +111,166 @@ class FinalizarReservasExpiradas extends Command
     public function handle()
     {
         $this->info('=== FINALIZANDO RESERVAS EXPIRADAS ===');
-        
-        $ahora = Carbon::now();
-        $fechaHoy = $ahora->toDateString();
-        $horaActual = $ahora->format('H:i:s');
-        $diaActual = strtolower($ahora->locale('es')->isoFormat('dddd'));
 
-        // Normalizar día (miércoles puede venir con o sin tilde)
-        $mapaDias = [
-            'lunes' => 'lunes',
-            'martes' => 'martes', 
-            'miércoles' => 'miercoles',
-            'miercoles' => 'miercoles',
-            'jueves' => 'jueves',
-            'viernes' => 'viernes'
-        ];
-        
-        $diaKey = $mapaDias[$diaActual] ?? $diaActual;
-        
-        // Si es fin de semana, no hay nada que hacer
-        if (!isset($this->horariosModulos[$diaKey])) {
-            $this->info('No hay módulos programados para hoy.');
+        $tenants = Tenant::all();
+        if ($tenants->isEmpty()) {
+            $this->warn('No se encontraron tenants.');
             return 0;
         }
 
-        $periodo = SemesterHelper::getCurrentPeriod();
-        $this->info("Fecha: {$fechaHoy}, Hora: {$horaActual}, Día: {$diaKey}, Período: {$periodo}");
-
-        // Buscar reservas activas de hoy que son de tipo 'clase' (clases con horario)
-        $reservasActivas = Reserva::where('estado', 'activa')
-            ->where('fecha_reserva', $fechaHoy)
-            ->where('tipo_reserva', 'clase')
-            ->whereNotNull('id_asignatura')
-            ->get();
-
-        $this->info("Total de reservas activas de clase: " . $reservasActivas->count());
-
-        $finalizadas = 0;
-        $sinFinalizar = 0;
-
-        foreach ($reservasActivas as $reserva) {
-            try {
-                // Obtener todas las planificaciones para esta asignatura, espacio y período
-                if (!$reserva->id_asignatura) {
-                    $this->warn("Reserva {$reserva->id_reserva} no tiene asignatura asociada. Saltando...");
-                    $sinFinalizar++;
-                    continue;
-                }
-
-                $planificaciones = Planificacion_Asignatura::where('id_asignatura', $reserva->id_asignatura)
-                    ->where('id_espacio', $reserva->id_espacio)
-                    ->whereHas('horario', function($q) use ($periodo) {
-                        $q->where('periodo', $periodo);
-                    })
-                    ->with('modulo')
-                    ->get();
-
-                if ($planificaciones->isEmpty()) {
-                    $this->warn("No se encontró planificación para la reserva {$reserva->id_reserva}");
-                    $sinFinalizar++;
-                    continue;
-                }
-
-                // Obtener el módulo de fin de la clase (el último módulo planificado)
-                $planificacionesOrdenadas = $planificaciones->sortBy(function($planificacion) {
-                    $moduloParts = explode('.', $planificacion->id_modulo);
-                    return isset($moduloParts[1]) ? (int)$moduloParts[1] : 0;
-                });
-
-                $ultimaPlanificacion = $planificacionesOrdenadas->last();
-                
-                if (!$ultimaPlanificacion || !$ultimaPlanificacion->modulo) {
-                    $this->warn("No se encontró módulo final para la reserva {$reserva->id_reserva}");
-                    $sinFinalizar++;
-                    continue;
-                }
-
-                // Extraer el número de módulo
-                $moduloParts = explode('.', $ultimaPlanificacion->id_modulo);
-                $numeroModuloFin = isset($moduloParts[1]) ? (int)$moduloParts[1] : null;
-
-                if (!$numeroModuloFin) {
-                    $this->warn("No se pudo extraer número de módulo para {$reserva->id_reserva}");
-                    $sinFinalizar++;
-                    continue;
-                }
-
-                // Obtener la hora de fin del último módulo
-                $horariosDelDia = $this->horariosModulos[$diaKey];
-                if (!isset($horariosDelDia[$numeroModuloFin])) {
-                    $this->warn("No se encontró horario para módulo {$numeroModuloFin}");
-                    $sinFinalizar++;
-                    continue;
-                }
-
-                $horaFinModulo = $horariosDelDia[$numeroModuloFin]['fin'];
-                
-                // Calcular tiempo transcurrido desde el fin del módulo
-                $finModulo = Carbon::createFromTimeString($horaFinModulo);
-                $ahora = Carbon::createFromTimeString($horaActual);
-                $minutosDesdeFinModulo = $finModulo->diffInMinutes($ahora, false);
-
-                // Finalizar la reserva exactamente cuando termina la clase (sin tiempo de gracia)
-                if ($minutosDesdeFinModulo >= 0) {
-                    DB::beginTransaction();
-                    try {
-                        // Finalizar la reserva
-                        $reserva->estado = 'finalizada';
-                        $reserva->hora_salida = $horaFinModulo; // Usar la hora de fin de la clase
-                        
-                        // Agregar observación
-                        $observacionActual = $reserva->observaciones ?? '';
-                        $nuevaObservacion = "Reserva finalizada automáticamente al término del módulo de clase a las {$horaFinModulo}.";
-                        
-                        $reserva->observaciones = $observacionActual 
-                            ? $observacionActual . "\n" . $nuevaObservacion 
-                            : $nuevaObservacion;
-                        
-                        $reserva->save();
-
-                        DB::commit();
-                        
-                        $this->info("✅ Reserva {$reserva->id_reserva} finalizada automáticamente al término de clase");
-                        $finalizadas++;
-                    } catch (\Exception $e) {
-                        DB::rollBack();
-                        Log::error("Error al finalizar reserva {$reserva->id_reserva}: " . $e->getMessage());
-                        $this->error("❌ Error al finalizar reserva {$reserva->id_reserva}: " . $e->getMessage());
-                        $sinFinalizar++;
-                    }
-                } else {
-                    // La clase aún no ha terminado
-                    $minutosRestantes = abs($minutosDesdeFinModulo);
-                    $this->info("⏱️  Reserva {$reserva->id_reserva} terminará en {$minutosRestantes} minutos (a las {$horaFinModulo})");
-                    $sinFinalizar++;
-                }
-
-            } catch (\Exception $e) {
-                Log::error("Error procesando reserva {$reserva->id_reserva}: " . $e->getMessage());
-                $this->error("Error procesando reserva {$reserva->id_reserva}: " . $e->getMessage());
-                $sinFinalizar++;
-            }
+        foreach ($tenants as $tenant) {
+            $this->processTenant($tenant);
         }
-
-        $this->info("\n=== RESUMEN ===");
-        $this->info("Reservas finalizadas: {$finalizadas}");
-        $this->info("Reservas sin finalizar: {$sinFinalizar}");
-        $this->info("Total procesadas: " . ($finalizadas + $sinFinalizar));
 
         return 0;
     }
+
+    protected function processTenant($tenant)
+    {
+        $this->info("\nProcesando tenant: {$tenant->name} ({$tenant->domain})");
+
+        try {
+            // Establecer este tenant como el actual
+            $tenant->makeCurrent();
+
+            $ahora = Carbon::now();
+            $fechaHoy = $ahora->toDateString();
+            $horaActual = $ahora->format('H:i:s');
+            $diaActual = strtolower($ahora->locale('es')->isoFormat('dddd'));
+
+            // Normalizar día
+            $mapaDias = [
+                'lunes' => 'lunes',
+                'martes' => 'martes',
+                'miércoles' => 'miercoles',
+                'miercoles' => 'miercoles',
+                'jueves' => 'jueves',
+                'viernes' => 'viernes',
+                'sábado' => 'sabado',
+                'sabado' => 'sabado'
+            ];
+            $diaKey = $mapaDias[$diaActual] ?? $diaActual;
+
+            // Buscar TODAS las reservas activas de hoy
+            // Usamos withoutGlobalScopes() para asegurar que procesamos todo el tenant
+            $reservasActivas = Reserva::withoutGlobalScopes()
+                ->where('estado', 'activa')
+                ->where('fecha_reserva', $fechaHoy)
+                ->get();
+
+            $this->info("  Total de reservas activas encontradas: " . $reservasActivas->count());
+
+            $finalizadas = 0;
+
+            foreach ($reservasActivas as $reserva) {
+                $debeFinalizar = false;
+                $motivo = '';
+
+                // 1. Verificar por hora_salida (Prioridad)
+                if (!empty($reserva->hora_salida)) {
+                    if ($reserva->hora_salida <= $horaActual) {
+                        $debeFinalizar = true;
+                        $motivo = "Hora de salida alcanzada ({$reserva->hora_salida})";
+                    }
+                }
+                // 2. Fallback para clases sin hora_salida (usando módulos)
+                elseif ($reserva->tipo_reserva === 'clase' && !empty($reserva->id_asignatura)) {
+                    $horaFinModulo = $this->obtenerHoraFinClase($reserva, $diaKey);
+                    if ($horaFinModulo && $horaFinModulo <= $horaActual) {
+                        $debeFinalizar = true;
+                        $motivo = "Término de módulo de clase ({$horaFinModulo})";
+                    }
+                }
+                // 3. Fallback para reservas manuales antiguas (1 hora de duración por defecto)
+                else {
+                    $horaLimite = Carbon::parse($reserva->hora)->addHour()->format('H:i:s');
+                    if ($horaLimite <= $horaActual) {
+                        $debeFinalizar = true;
+                        $motivo = "Tiempo límite excedido (1h desde inicio a las {$reserva->hora})";
+                    }
+                }
+
+                if ($debeFinalizar) {
+                    $this->finalizarReserva($reserva, $motivo);
+                    $finalizadas++;
+                }
+            }
+
+            $this->info("  Reservas finalizadas en este tenant: {$finalizadas}");
+
+        } catch (\Exception $e) {
+            $this->error("  Error procesando tenant {$tenant->name}: " . $e->getMessage());
+            Log::error("Error en FinalizarReservasExpiradas para tenant {$tenant->name}: " . $e->getMessage());
+        }
+    }
+
+    protected function obtenerHoraFinClase($reserva, $diaKey)
+    {
+        try {
+            $periodo = SemesterHelper::getCurrentPeriod();
+            $planificaciones = Planificacion_Asignatura::on('tenant')
+                ->where('id_asignatura', $reserva->id_asignatura)
+                ->where('id_espacio', $reserva->id_espacio)
+                ->whereHas('horario', function ($q) use ($periodo) {
+                    $q->where('periodo', $periodo);
+                })
+                ->get();
+
+            if ($planificaciones->isEmpty())
+                return null;
+
+            $numMaxModulo = 0;
+            foreach ($planificaciones as $plan) {
+                $parts = explode('.', $plan->id_modulo);
+                $num = isset($parts[1]) ? (int) $parts[1] : 0;
+                if ($num > $numMaxModulo)
+                    $numMaxModulo = $num;
+            }
+
+            return $this->horariosModulos[$diaKey][$numMaxModulo]['fin'] ?? null;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    protected function finalizarReserva($reserva, $motivo)
+    {
+        DB::connection('tenant')->beginTransaction();
+        try {
+            $reserva->estado = 'finalizada';
+            if (empty($reserva->hora_salida)) {
+                $reserva->hora_salida = Carbon::now()->format('H:i:s');
+            }
+
+            $obs = $reserva->observaciones ?? '';
+            $nuevaObs = "Finalizada automáticamente: {$motivo}.";
+            $reserva->observaciones = $obs ? $obs . "\n" . $nuevaObs : $nuevaObs;
+            $reserva->save();
+
+            // Liberar el espacio inmediatamente
+            $espacio = Espacio::on('tenant')->find($reserva->id_espacio);
+            if ($espacio && $espacio->estado === 'Ocupado') {
+                // Verificar si no hay otras reservas activas AHORA para este espacio
+                $otraReserva = Reserva::on('tenant')
+                    ->where('id_espacio', $espacio->id_espacio)
+                    ->where('estado', 'activa')
+                    ->where('id_reserva', '!=', $reserva->id_reserva)
+                    ->exists();
+
+                if (!$otraReserva) {
+                    $espacio->estado = 'Disponible';
+                    $espacio->save();
+                    $this->info("    Espacio {$espacio->nombre_espacio} liberado.");
+                }
+            }
+
+            DB::connection('tenant')->commit();
+            $this->info("  ✅ Reserva {$reserva->id_reserva} finalizada. Motivo: {$motivo}");
+        } catch (\Exception $e) {
+            DB::connection('tenant')->rollBack();
+            Log::error("Error al finalizar reserva {$reserva->id_reserva}: " . $e->getMessage());
+            $this->error("  ❌ Error al finalizar reserva {$reserva->id_reserva}: " . $e->getMessage());
+        }
+    }
 }
+

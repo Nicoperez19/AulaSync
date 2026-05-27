@@ -57,15 +57,17 @@ trait BelongsToTenant
             };
             
             // Filtrar por prefijo de espacio si el modelo tiene id_espacio
+            // Usar LOWER para comparación case-insensitive (prefijo puede estar en minúsculas)
             if ($hasColumn('id_espacio')) {
                 if ($tenant->prefijo_espacios) {
-                    $builder->where($table . '.id_espacio', 'like', $tenant->prefijo_espacios . '%');
+                    $builder->whereRaw('LOWER(' . $table . '.id_espacio) LIKE ?', [strtolower($tenant->prefijo_espacios) . '%']);
                 }
             }
-            // Filtrar por sede directamente si el modelo tiene sede_id (pero no id_espacio)
-            elseif ($hasColumn('sede_id')) {
+            // Filtrar por sede directamente si el modelo tiene sede_id o id_sede (pero no id_espacio)
+            elseif ($hasColumn('sede_id') || $hasColumn('id_sede')) {
                 if ($tenant->sede_id) {
-                    $builder->where($table . '.sede_id', $tenant->sede_id);
+                    $column = $hasColumn('sede_id') ? 'sede_id' : 'id_sede';
+                    $builder->where($table . '.' . $column, $tenant->sede_id);
                 }
             }
             // Filtrar a través de profesor si el modelo tiene relación con profesor y run_profesor (pero no id_espacio o sede_id)
@@ -119,14 +121,17 @@ trait BelongsToTenant
                 return static::hasColumnCached($model, $table, $column);
             };
             
-            // Si el modelo tiene sede_id, asignarla
+            // Si el modelo tiene sede_id o id_sede, asignarla
             if ($hasColumn('sede_id') && !$model->sede_id) {
                 $model->sede_id = $tenant->sede_id;
+            } elseif ($hasColumn('id_sede') && !$model->id_sede) {
+                $model->id_sede = $tenant->sede_id;
             }
             
             // Si el modelo tiene id_espacio y prefijo, asegurarse de que comience con el prefijo
+            // Comparación case-insensitive para evitar duplicar prefijos (ej: 'th' vs 'TH')
             if ($hasColumn('id_espacio') && $tenant->prefijo_espacios) {
-                if (isset($model->id_espacio) && !str_starts_with($model->id_espacio, $tenant->prefijo_espacios)) {
+                if (isset($model->id_espacio) && !str_starts_with(strtolower($model->id_espacio), strtolower($tenant->prefijo_espacios))) {
                     $model->id_espacio = $tenant->prefijo_espacios . $model->id_espacio;
                 }
             }

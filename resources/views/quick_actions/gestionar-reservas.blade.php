@@ -20,7 +20,7 @@
                         <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full">
                             <i class="fa-solid fa-circle-check text-green-600 text-sm"></i>
                             <div class="flex items-center gap-1">
-                                <span class="text-xs font-medium text-green-700">Activas:</span>
+                                <span class="text-xs font-medium text-green-700">Vigentes:</span>
                                 <span class="text-sm font-bold text-green-900" id="stats-activas-header">0</span>
                             </div>
                         </div>
@@ -47,7 +47,7 @@
         <div class="p-3">
             <div class="flex items-center justify-center gap-2">
                 <i class="fa-solid fa-circle-check text-green-600 text-lg"></i>
-                <span class="text-sm font-medium text-green-700">Activas:</span>
+                <span class="text-sm font-medium text-green-700">Vigentes:</span>
                 <span class="text-xl font-bold text-green-900" id="stats-activas-mobile">0</span>
             </div>
         </div>
@@ -56,7 +56,7 @@
     <!-- Filtros -->
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
         <div class="p-4 sm:p-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                     <select 
@@ -65,10 +65,31 @@
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
                         <option value="">Todos los estados</option>
                         <option value="activa">Activas</option>
+                        <option value="programada">Programadas</option>
                         <option value="finalizada">Finalizadas</option>
                     </select>
                 </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Espacio</label>
+                    <select 
+                        id="filtro-espacio-reserva"
+                        onchange="filtrarReservas()"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
+                        <option value="">Todos los espacios</option>
+                    </select>
+                </div>
                 
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Módulo</label>
+                    <select 
+                        id="filtro-modulo-reserva"
+                        onchange="filtrarReservas()"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
+                        <option value="">Todos los módulos</option>
+                    </select>
+                </div>
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
                     <input 
@@ -122,22 +143,23 @@
                                     </th>
                                     <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 w-20" onclick="ordenarPor('estado')">
                                         Estado
-                                        <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                                        <i id="sort-icon-estado" class="fa-solid fa-sort ml-1 text-xs"></i>
                                     </th>
                                     <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 w-24" onclick="ordenarPor('espacio')">
                                         Espacio
-                                        <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                                        <i id="sort-icon-espacio" class="fa-solid fa-sort ml-1 text-xs"></i>
                                     </th>
                                     <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700" onclick="ordenarPor('responsable')">
                                         Responsable
-                                        <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                                        <i id="sort-icon-responsable" class="fa-solid fa-sort ml-1 text-xs"></i>
                                     </th>
                                     <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 w-28" onclick="ordenarPor('fecha')">
                                         Fecha
-                                        <i class="fa-solid fa-sort ml-1 text-xs"></i>
+                                        <i id="sort-icon-fecha" class="fa-solid fa-sort ml-1 text-xs"></i>
                                     </th>
-                                    <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase w-32">
+                                    <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:text-gray-700 w-32" onclick="ordenarPor('modulo')">
                                         Módulos
+                                        <i id="sort-icon-modulo" class="fa-solid fa-sort ml-1 text-xs"></i>
                                     </th>
                                     <th class="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase w-32">
                                         Acciones
@@ -369,11 +391,11 @@ window.editarReserva = async function(idReserva) {
         return;
     }
     
-    if (reserva.estado !== 'activa') {
+    if (reserva.estado !== 'activa' && reserva.estado !== 'programada') {
         Swal.fire({
             icon: 'warning',
             title: 'Advertencia',
-            text: 'Solo se pueden editar reservas activas'
+            text: 'Solo se pueden editar reservas activas o programadas'
         });
         return;
     }
@@ -465,10 +487,18 @@ async function cargarModulosParaModal() {
     }
     
     try {
-        // Obtener módulos únicos ordenados por hora
-        const response = await fetch('/api/modulos'); // Necesitarás crear esta ruta
+        // Intentar obtener módulos únicos de la API
+        const response = await fetch('/api/modulos');
         
-        // Fallback: crear módulos por defecto si la API no existe
+        if (response.ok) {
+            const data = await response.json();
+            modulosCargados = Array.isArray(data) ? data : (data.data || []);
+        } else {
+            throw new Error('Ruta /api/modulos no encontrada');
+        }
+    } catch (error) {
+        console.log('ℹ️ Usando módulos por defecto para el modal');
+        // Fallback: crear módulos por defecto si la API no existe o falla
         modulosCargados = [
             {id_modulo: '1', hora_inicio: '08:10:00', hora_termino: '09:00:00'},
             {id_modulo: '2', hora_inicio: '09:10:00', hora_termino: '10:00:00'},
@@ -486,15 +516,14 @@ async function cargarModulosParaModal() {
             {id_modulo: '14', hora_inicio: '21:10:00', hora_termino: '22:00:00'},
             {id_modulo: '15', hora_inicio: '22:10:00', hora_termino: '23:00:00'}
         ];
-        
-        const selectInicial = document.getElementById('edit-modulo-inicial');
+    }
+    
+    const selectInicial = document.getElementById('edit-modulo-inicial');
+    if (selectInicial) {
         selectInicial.innerHTML = '<option value="">Seleccione módulo inicial</option>' +
             modulosCargados.map(modulo => 
                 `<option value="${modulo.id_modulo}">Módulo ${modulo.id_modulo} (${modulo.hora_inicio.substring(0,5)} - ${modulo.hora_termino.substring(0,5)})</option>`
             ).join('');
-        
-    } catch (error) {
-        console.error('Error al cargar módulos:', error);
     }
 }
 
@@ -606,6 +635,8 @@ window.guardarEdicionReserva = async function(event) {
                 fecha: fecha,
                 hora: hora,
                 modulos: cantidadModulos,
+                modulo_inicio: parseInt(moduloInicialId),
+                modulo_fin: parseInt(moduloFinalId),
                 observaciones: observacionesFinales
             })
         });
@@ -623,6 +654,9 @@ window.guardarEdicionReserva = async function(event) {
             
             // Cerrar modal
             cerrarModalEditar();
+            
+            // [NUEVO] Notificar a otras pestañas
+            localStorage.setItem('reserva_cambiada', Date.now());
             
             // Recargar tabla
             await cargarReservas();
@@ -659,8 +693,41 @@ function ordenarPor(campo) {
         ordenActual.direccion = 'asc';
     }
     
+    // Sincronizar con el select de ordenamiento si existe la opción
+    const select = document.getElementById('ordenar-reservas');
+    if (select) {
+        const opcionValor = `${campo}-${ordenActual.direccion}`;
+        const existeOpcion = Array.from(select.options).some(opt => opt.value === opcionValor);
+        if (existeOpcion) {
+            select.value = opcionValor;
+        } else {
+            // Si no existe exactamente, podemos ponerlo en blanco o dejarlo como está
+            // pero lo importante es que ordenActual ya cambió
+        }
+    }
+
     console.log('🔄 Nuevo estado:', ordenActual);
-    aplicarOrdenamiento();
+    actualizarIconosOrden();
+    filtrarReservas();
+}
+
+function actualizarIconosOrden() {
+    const campos = ['estado', 'espacio', 'responsable', 'fecha', 'modulo'];
+    campos.forEach(campo => {
+        const icon = document.getElementById(`sort-icon-${campo}`);
+        if (!icon) return;
+        
+        // Reset a estado neutral
+        icon.className = 'fa-solid fa-sort ml-1 text-xs';
+        
+        if (ordenActual.campo === campo) {
+            if (ordenActual.direccion === 'asc') {
+                icon.className = 'fa-solid fa-sort-up ml-1 text-xs text-blue-600';
+            } else {
+                icon.className = 'fa-solid fa-sort-down ml-1 text-xs text-blue-600';
+            }
+        }
+    });
 }
 
 function aplicarOrdenamiento() {
@@ -673,11 +740,59 @@ function aplicarOrdenamiento() {
         }
     }
     
-    if (!reservasOriginales || reservasOriginales.length === 0) return;
+    // En lugar de mostrar directamente, llamamos a filtrar que ahora centraliza todo
+    filtrarReservas();
+}
+
+function procesarReservas() {
+    // Si no hay reservas cargadas aún (undefined o null), no hacemos nada
+    if (!reservasOriginales) return;
+
+    // Si el arreglo está vacío, mostramos el estado vacío directamente
+    if (reservasOriginales.length === 0) {
+        mostrarReservasEnTabla([]);
+        actualizarEstadisticas([]);
+        return;
+    }
+
+    const estadoFiltro = document.getElementById('filtro-estado-reserva').value;
+    const espacioFiltro = document.getElementById('filtro-espacio-reserva').value;
+    const moduloFiltro = document.getElementById('filtro-modulo-reserva').value;
+    const fechaFiltro = document.getElementById('filtro-fecha-reserva').value;
     
-    console.log('📊 Aplicando ordenamiento:', ordenActual);
+    console.log('🔍 Procesando reservas con filtros:', { estadoFiltro, espacioFiltro, moduloFiltro, fechaFiltro, orden: ordenActual });
+
+    // 1. Aplicar filtros
+    let reservasProcesadas = [...reservasOriginales];
     
-    const reservasOrdenadas = [...reservasOriginales].sort((a, b) => {
+    if (estadoFiltro) {
+        reservasProcesadas = reservasProcesadas.filter(r => r.estado === estadoFiltro);
+    }
+
+    if (espacioFiltro) {
+        reservasProcesadas = reservasProcesadas.filter(r => r.id_espacio === espacioFiltro);
+    }
+
+    if (moduloFiltro) {
+        const mSelect = parseInt(moduloFiltro);
+        reservasProcesadas = reservasProcesadas.filter(r => {
+            if (!r.modulos_info) return false;
+            const mInicio = parseInt(r.modulos_info.modulo_inicial);
+            const mFin = parseInt(r.modulos_info.modulo_final);
+            return mSelect >= mInicio && mSelect <= mFin;
+        });
+    }
+    
+    if (fechaFiltro) {
+        reservasProcesadas = reservasProcesadas.filter(r => {
+            // Normalizar fecha (quitar parte de tiempo si existe)
+            const fechaReserva = r.fecha && r.fecha.includes('T') ? r.fecha.split('T')[0] : r.fecha;
+            return fechaReserva === fechaFiltro;
+        });
+    }
+
+    // 2. Aplicar ordenamiento
+    reservasProcesadas.sort((a, b) => {
         let valorA, valorB;
         
         switch (ordenActual.campo) {
@@ -698,6 +813,7 @@ function aplicarOrdenamiento() {
                 valorB = b.estado;
                 break;
             case 'hora':
+            case 'modulo':
                 valorA = extraerPrimeraHora(a);
                 valorB = extraerPrimeraHora(b);
                 break;
@@ -710,8 +826,9 @@ function aplicarOrdenamiento() {
         return 0;
     });
     
-    mostrarReservasEnTabla(reservasOrdenadas);
-    actualizarEstadisticas(reservasOrdenadas);
+    // 3. Mostrar resultados
+    mostrarReservasEnTabla(reservasProcesadas);
+    actualizarEstadisticas(reservasProcesadas);
 }
 
 function extraerPrimeraHora(reserva) {
@@ -764,7 +881,7 @@ function actualizarContadorSeleccionadas() {
         const reservasSeleccionadas = Array.from(checkboxes).map(cb => cb.value);
         const todasActivas = reservasSeleccionadas.every(id => {
             const reserva = reservasOriginales.find(r => r.id == id);
-            return reserva && reserva.estado === 'activa';
+            return reserva && (reserva.estado === 'activa' || reserva.estado === 'programada');
         });
         
         btnFinalizarLote.disabled = !todasActivas;
@@ -795,15 +912,15 @@ async function finalizarReservasEnLote() {
         return;
     }
     
-    // Verificar que todas estén activas
+    // Verificar que todas estén activas o programadas
     const reservasSeleccionadas = reservasIds.map(id => reservasOriginales.find(r => r.id == id));
-    const reservasInactivas = reservasSeleccionadas.filter(r => r.estado !== 'activa');
+    const reservasInactivas = reservasSeleccionadas.filter(r => r.estado !== 'activa' && r.estado !== 'programada');
     
     if (reservasInactivas.length > 0) {
         Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Solo se pueden finalizar reservas que estén activas'
+            text: 'Solo se pueden finalizar reservas que estén activas o programadas'
         });
         return;
     }
@@ -852,25 +969,25 @@ async function finalizarReservasEnLote() {
                     })
                 });
                 
-                console.log('📡 Response status para reserva', reservaId, ':', response.status);
+
                 
                 if (!response.ok) {
-                    console.error('❌ Error HTTP:', response.status, response.statusText);
+
                     errores++;
                     continue;
                 }
                 
                 const data = await response.json();
-                console.log('📡 Response data para reserva', reservaId, ':', data);
+
                 if (data.success) {
                     exitosas++;
                 } else {
                     errores++;
-                    console.error(`Error finalizando reserva ${reservaId}:`, data.message);
+
                 }
             } catch (error) {
                 errores++;
-                console.error(`Error finalizando reserva ${reservaId}:`, error);
+
             }
         }
         
@@ -897,7 +1014,7 @@ async function finalizarReservasEnLote() {
         
     } catch (error) {
         Swal.close();
-        console.error('Error en proceso de finalización en lote:', error);
+
         Swal.fire({
             icon: 'error',
             title: 'Error',
@@ -910,7 +1027,7 @@ function verDetalleReserva(reservaId) {
     const reserva = reservasOriginales.find(r => r.id == reservaId);
     if (!reserva) return;
     
-    console.log('👁️ Mostrando detalle de reserva:', reserva);
+
     
     // Formatear mejor la información de módulos para el modal
     let infoModulos = 'Sin información de módulos';
@@ -929,7 +1046,7 @@ function verDetalleReserva(reservaId) {
         title: `Reserva #${reserva.id}`,
         html: `
             <div class="text-left space-y-3">
-                <div><strong>Estado:</strong> <span class="px-2 py-1 rounded text-sm ${reserva.estado === 'activa' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">${reserva.estado === 'activa' ? 'Activa' : 'Finalizada'}</span></div>
+                <div><strong>Estado:</strong> <span class="px-2 py-1 rounded text-sm ${reserva.estado === 'activa' ? 'bg-green-100 text-green-800' : reserva.estado === 'programada' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">${reserva.estado === 'activa' ? 'Activa' : reserva.estado === 'programada' ? 'Programada' : 'Finalizada'}</span></div>
                 <div><strong>Espacio:</strong> ${reserva.id_espacio}</div>
                 <div><strong>Responsable:</strong> ${reserva.nombre_responsable || 'Sin nombre'} <br><small class="text-gray-600">${reserva.tipo_responsable || 'N/A'} - RUN: ${reserva.run_responsable}</small></div>
                 <div><strong>Fecha:</strong> ${formatearFecha(reserva.fecha)}</div>
@@ -945,18 +1062,17 @@ function verDetalleReserva(reservaId) {
 // Cargar reservas al inicializar
 document.addEventListener('DOMContentLoaded', function() {
     cargarReservas();
+    cargarEspaciosParaFiltro();
+    cargarModulosParaFiltro();
     
-    // Event listener para el selector de ordenamiento
-    const selectOrdenar = document.getElementById('ordenar-reservas');
-    if (selectOrdenar) {
-        selectOrdenar.addEventListener('change', aplicarOrdenamiento);
-    }
+    // Inicializar iconos de orden
+    actualizarIconosOrden();
     
-    // Verificar que las funciones estén disponibles globalmente
-    console.log('🔧 Funciones globales verificación:');
-    console.log('🔧 ordenarPor disponible:', typeof window.ordenarPor);
-    console.log('🔧 aplicarOrdenamiento disponible:', typeof window.aplicarOrdenamiento);
-    console.log('🔧 toggleSelectAllReservas disponible:', typeof window.toggleSelectAllReservas);
+    // Los event listeners se manejan vía onchange en el HTML para mayor claridad
+    // o se pueden agregar aquí si se desea centralizar.
+    // El onchange ya llama a filtrarReservas() o aplicarOrdenamiento()
+    
+
     
     // Asegurar que estén en el scope global
     window.ordenarPor = ordenarPor;
@@ -968,55 +1084,113 @@ document.addEventListener('DOMContentLoaded', function() {
     window.finalizarReservasEnLote = finalizarReservasEnLote;
     
     // La función cambiarEstadoReserva ya está definida globalmente arriba
-    console.log('✅ Funciones asignadas al scope global');
+
 });
+
+// Cargar espacios para el filtro
+async function cargarEspaciosParaFiltro() {
+    try {
+        const response = await fetch('/quick-actions/api/espacios');
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+            const select = document.getElementById('filtro-espacio-reserva');
+            if (select) {
+                const opcionesHtml = data.data.map(espacio => {
+                    const nombre = espacio.nombre_espacio || espacio.nombre_tipo_espacio || 'Sin nombre';
+                    return `<option value="${espacio.id_espacio}">${espacio.id_espacio} - ${nombre}</option>`;
+                }).join('');
+                select.innerHTML = '<option value="">Todos los espacios</option>' + opcionesHtml;
+            }
+        }
+    } catch (error) {
+
+    }
+}
+
+// Cargar módulos para el filtro
+async function cargarModulosParaFiltro() {
+    try {
+        // Intentar obtener de la API o usar los cargados para el modal
+        if (modulosCargados.length === 0) {
+            await cargarModulosParaModal();
+        }
+        
+        if (modulosCargados.length > 0) {
+            const select = document.getElementById('filtro-modulo-reserva');
+            if (select) {
+                const opcionesHtml = modulosCargados.map(modulo => {
+                    const hInicio = modulo.hora_inicio ? modulo.hora_inicio.substring(0, 5) : '?';
+                    const hFin = modulo.hora_termino ? modulo.hora_termino.substring(0, 5) : '?';
+                    return `<option value="${modulo.id_modulo}">Módulo ${modulo.id_modulo} (${hInicio} - ${hFin})</option>`;
+                }).join('');
+                select.innerHTML = '<option value="">Todos los módulos</option>' + opcionesHtml;
+            }
+        }
+    } catch (error) {
+
+    }
+}
 
 // Función específica para cargar reservas en el mantenedor
 async function cargarReservas() {
+    const tbody = document.getElementById('tabla-reservas-body');
+    const cardsContainer = document.getElementById('tabla-reservas-cards');
+    
     try {
-        const tbody = document.getElementById('tabla-reservas-body');
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="7" class="px-6 py-12 text-center text-gray-500">
-                    <div class="flex flex-col items-center">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-                        <p>Cargando reservas...</p>
-                    </div>
-                </td>
-            </tr>
-        `;
-
-        console.log('🔗 URL de reservas:', '/quick-actions/api/reservas');
-        const response = await fetch('/quick-actions/api/reservas');
-        console.log('📡 Respuesta del servidor:', response.status, response.statusText);
-        const data = await response.json();
-        console.log('📋 Datos recibidos:', data);
-
-        if (data.success && data.data) {
-            reservasOriginales = data.data;
-            console.log('🔍 Estructura de primera reserva:', data.data[0]);
-            console.log('🔍 IDs de reservas:', data.data.map(r => r.id));
-            if (data.data[0] && data.data[0].modulos_info) {
-                console.log('📋 modulos_info detalle:', data.data[0].modulos_info);
-                console.log('📋 tipo de modulos_info:', typeof data.data[0].modulos_info);
-            }
-            mostrarReservasEnTabla(data.data);
-            actualizarEstadisticas(data.data);
-        } else {
+        if (tbody) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="7" class="px-6 py-12 text-center text-gray-500">
                         <div class="flex flex-col items-center">
-                            <i class="fa-solid fa-triangle-exclamation text-6xl text-yellow-300 mb-4"></i>
-                            <p>No se encontraron reservas</p>
-                            <p class="text-xs text-red-500 mt-2">Respuesta: ${JSON.stringify(data)}</p>
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                            <p>Cargando reservas...</p>
                         </div>
                     </td>
                 </tr>
             `;
         }
+        
+        if (cardsContainer) {
+            cardsContainer.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12 text-gray-500">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+                    <p>Cargando reservas...</p>
+                </div>
+            `;
+        }
+
+
+        const response = await fetch('/quick-actions/api/reservas');
+
+        const data = await response.json();
+
+
+        if (data.success && data.data) {
+            reservasOriginales = data.data;
+
+            procesarReservas();
+        } else {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" class="px-6 py-12 text-center text-gray-500">
+                        <div class="flex flex-col items-center">
+                            <i class="fa-solid fa-calendar-xmark text-6xl text-gray-300 mb-4"></i>
+                            <p class="text-lg font-medium">No hay reservas</p>
+                            <p class="text-sm">No se pudieron cargar los datos o no existen registros.</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            cardsContainer.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-12 text-gray-500">
+                    <i class="fa-solid fa-calendar-xmark text-6xl text-gray-300 mb-4"></i>
+                    <p class="text-lg font-medium">No hay reservas</p>
+                </div>
+            `;
+        }
     } catch (error) {
-        console.error('Error al cargar reservas:', error);
+
         const tbody = document.getElementById('tabla-reservas-body');
         tbody.innerHTML = `
             <tr>
@@ -1044,8 +1218,8 @@ function mostrarReservasEnTabla(reservas) {
             <tr>
                 <td colspan="7" class="px-6 py-12 text-center text-gray-500">
                     <div class="flex flex-col items-center">
-                        <i class="fa-solid fa-folder-open text-6xl text-gray-300 mb-4"></i>
-                        <p>No hay reservas con los filtros aplicados</p>
+                        <i class="fa-solid fa-calendar-xmark text-6xl text-gray-300 mb-4"></i>
+                        <p class="text-lg font-medium">No hay reservas</p>
                     </div>
                 </td>
             </tr>
@@ -1054,8 +1228,8 @@ function mostrarReservasEnTabla(reservas) {
         // Vista mobile
         cardsContainer.innerHTML = `
             <div class="flex flex-col items-center justify-center py-12 text-gray-500">
-                <i class="fa-solid fa-folder-open text-6xl text-gray-300 mb-4"></i>
-                <p>No hay reservas con los filtros aplicados</p>
+                <i class="fa-solid fa-calendar-xmark text-6xl text-gray-300 mb-4"></i>
+                <p class="text-lg font-medium">No hay reservas</p>
             </div>
         `;
         return;
@@ -1072,9 +1246,11 @@ function mostrarReservasEnTabla(reservas) {
                     <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full ${
                         reserva.estado === 'activa' 
                             ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
+                            : reserva.estado === 'programada'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-gray-100 text-gray-800'
                     }">
-                        ${reserva.estado === 'activa' ? 'Activa' : 'Fin.'}
+                        ${reserva.estado === 'activa' ? 'Activa' : reserva.estado === 'programada' ? 'Programada' : 'Finalizada'}
                     </span>
                     ${reserva.editada ? '<span class="px-2 py-0.5 inline-flex text-xs font-medium rounded-full bg-blue-100 text-blue-700"><i class="fa-solid fa-pen-to-square text-xs mr-1"></i>Editada</span>' : ''}
                 </div>
@@ -1090,7 +1266,7 @@ function mostrarReservasEnTabla(reservas) {
             </td>
             <td class="px-2 py-2 text-right">
                 <div class="flex justify-end gap-1">
-                    ${reserva.estado === 'activa' 
+                    ${reserva.estado === 'activa' || reserva.estado === 'programada'
                         ? `<button 
                             type="button"
                             onclick="editarReserva('${reserva.id}')"
@@ -1130,10 +1306,12 @@ function mostrarReservasEnTabla(reservas) {
                         <div class="flex flex-wrap gap-1 mt-1">
                             <span class="px-2 py-1 inline-flex text-xs font-semibold rounded-full ${
                                 reserva.estado === 'activa' 
-                                    ? 'bg-green-100 text-green-800' 
-                                    : 'bg-gray-100 text-gray-800'
+                                    ? 'bg-green-100 text-green-800'
+                                    : reserva.estado === 'programada'
+                                        ? 'bg-blue-100 text-blue-800'
+                                        : 'bg-gray-100 text-gray-800'
                             }">
-                                ${reserva.estado === 'activa' ? 'Activa' : 'Finalizada'}
+                                ${reserva.estado === 'activa' ? 'Activa' : reserva.estado === 'programada' ? 'Programada' : 'Finalizada'}
                             </span>
                             ${reserva.editada ? '<span class="px-2 py-1 inline-flex text-xs font-medium rounded-full bg-blue-100 text-blue-700"><i class="fa-solid fa-pen-to-square text-xs mr-1"></i>Editada</span>' : ''}
                         </div>
@@ -1176,7 +1354,7 @@ function mostrarReservasEnTabla(reservas) {
             </div>
             
             <div class="mt-4 flex gap-2">
-                ${reserva.estado === 'activa' 
+                ${reserva.estado === 'activa' || reserva.estado === 'programada'
                     ? `<button 
                         type="button"
                         onclick="editarReserva('${reserva.id}')"
@@ -1242,7 +1420,7 @@ function formatearModulosInfoCompacto(modulosInfo) {
         return '<span class="text-gray-400 text-xs">-</span>';
         
     } catch (e) {
-        console.warn('🔧 Error al formatear módulos info compacto:', e);
+
         return '<span class="text-gray-400 text-xs">-</span>';
     }
 }
@@ -1305,7 +1483,7 @@ function formatearModulosInfo(modulosInfo) {
         return '<span class="text-gray-500 italic">Sin horarios definidos</span>';
         
     } catch (e) {
-        console.warn('🔧 Error al formatear módulos info:', e);
+
         return `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Error al procesar</span>`;
     }
 }
@@ -1314,7 +1492,7 @@ function formatearModulosInfo(modulosInfo) {
 
 // Actualizar estadísticas
 function actualizarEstadisticas(reservas) {
-    const activas = reservas.filter(r => r.estado === 'activa').length;
+    const activas = reservas.filter(r => r.estado === 'activa' || r.estado === 'programada').length;
     
     // Actualizar contador desktop
     const headerCounter = document.getElementById('stats-activas-header');
@@ -1331,34 +1509,20 @@ function actualizarEstadisticas(reservas) {
 
 // Filtrar reservas
 function filtrarReservas() {
-    const estadoFiltro = document.getElementById('filtro-estado-reserva').value;
-    const fechaFiltro = document.getElementById('filtro-fecha-reserva').value;
-    
-    let reservasFiltradas = [...reservasOriginales];
-    
-    if (estadoFiltro) {
-        reservasFiltradas = reservasFiltradas.filter(r => r.estado === estadoFiltro);
-    }
-    
-    if (fechaFiltro) {
-        reservasFiltradas = reservasFiltradas.filter(r => r.fecha === fechaFiltro);
-    }
-    
-    mostrarReservasEnTabla(reservasFiltradas);
-    actualizarEstadisticas(reservasFiltradas);
+    procesarReservas();
 }
 
 // Cambiar estado de reserva - Función global
 window.cambiarEstadoReserva = async function(idReserva, nuevoEstado) {
     // Verificar que SweetAlert esté disponible
     if (typeof Swal === 'undefined') {
-        console.error('❌ SweetAlert2 no está disponible');
+
         alert('Error: SweetAlert2 no está cargado');
         return;
     }
     
     try {
-        console.log('🔄 Iniciando cambio de estado:', { idReserva, nuevoEstado });
+
         
         const estadoTexto = nuevoEstado === 'activa' ? 'Activar' : 'Finalizar';
         const result = await Swal.fire({
@@ -1373,7 +1537,7 @@ window.cambiarEstadoReserva = async function(idReserva, nuevoEstado) {
         });
 
         if (result.isConfirmed) {
-            console.log('✅ Usuario confirmó el cambio');
+
             
             // Mostrar loading
             Swal.fire({
@@ -1384,7 +1548,7 @@ window.cambiarEstadoReserva = async function(idReserva, nuevoEstado) {
                 }
             });
 
-            console.log('📡 Enviando petición a:', `/quick-actions/api/reserva/${idReserva}/estado`);
+
 
             const response = await fetch(`/quick-actions/api/reserva/${idReserva}/estado`, {
                 method: 'PUT',
@@ -1397,12 +1561,12 @@ window.cambiarEstadoReserva = async function(idReserva, nuevoEstado) {
                 })
             });
 
-            console.log('📡 Response status:', response.status);
+
             const data = await response.json();
-            console.log('📡 Response data:', data);
+
 
             if (data.success) {
-                console.log('✅ Estado cambiado exitosamente');
+
                 Swal.fire({
                     title: '¡Éxito!',
                     text: data.mensaje || `Reserva ${estadoTexto.toLowerCase()}da correctamente`,
@@ -1411,11 +1575,14 @@ window.cambiarEstadoReserva = async function(idReserva, nuevoEstado) {
                     showConfirmButton: false
                 });
                 
+                // [NUEVO] Notificar a otras pestañas
+                localStorage.setItem('reserva_cambiada', Date.now());
+                
                 // Recargar la tabla
-                console.log('🔄 Recargando tabla de reservas...');
+
                 cargarReservas();
             } else {
-                console.error('❌ Error en la respuesta:', data);
+
                 Swal.fire({
                     title: 'Error',
                     text: data.mensaje || `Error al ${estadoTexto.toLowerCase()} la reserva`,
@@ -1423,10 +1590,10 @@ window.cambiarEstadoReserva = async function(idReserva, nuevoEstado) {
                 });
             }
         } else {
-            console.log('❌ Usuario canceló el cambio');
+
         }
     } catch (error) {
-        console.error(`❌ Error al ${estadoTexto.toLowerCase()} reserva:`, error);
+
         Swal.fire({
             title: 'Error de conexión',
             text: `No se pudo ${estadoTexto.toLowerCase()} la reserva. Intenta nuevamente.`,
@@ -1442,7 +1609,7 @@ function formatearFecha(fecha) {
         // Asegurarnos de que la fecha esté en formato correcto
         const date = new Date(fecha.includes('T') ? fecha : fecha + 'T00:00:00');
         if (isNaN(date.getTime())) {
-            console.warn('Fecha inválida:', fecha);
+
             return fecha; // Devolver la fecha original si no se puede parsear
         }
         return date.toLocaleDateString('es-ES', {
@@ -1452,37 +1619,14 @@ function formatearFecha(fecha) {
             day: 'numeric'
         });
     } catch (e) {
-        console.error('Error al formatear fecha:', e);
+
         return fecha;
     }
 }
 
-// Función de test para verificar funcionamiento
-window.testCambiarEstado = function() {
-    console.log('🧪 Testing cambiarEstadoReserva function...');
-    console.log('SweetAlert disponible:', typeof Swal !== 'undefined');
-    console.log('Función cambiarEstadoReserva disponible:', typeof window.cambiarEstadoReserva === 'function');
-    
-    if (typeof window.cambiarEstadoReserva === 'function') {
-        console.log('✅ Todo está listo para cambiar estados');
-        // Hacer un test con datos ficticios
-        Swal.fire({
-            title: 'Test',
-            text: 'La función está funcionando correctamente',
-            icon: 'success',
-            timer: 2000
-        });
-    }
-}
 
-// Verificar cuando el DOM está listo
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('✅ DOM Cargado - Funciones disponibles:');
-    console.log('- cambiarEstadoReserva:', typeof window.cambiarEstadoReserva);
-    console.log('- editarReserva:', typeof window.editarReserva);
-    console.log('- SweetAlert:', typeof Swal);
-    console.log('Para probar, ejecuta: testCambiarEstado()');
-});
+
+
 </script>
 @endpush
 @endsection

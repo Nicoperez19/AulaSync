@@ -18,7 +18,7 @@ class UniversidadController extends Controller
     public function store(Request $request)
     {
         try {
-            Log::info('Intentando validar datos de universidad:', $request->all());
+
     
             $validatedData = $request->validate([
                 'id_universidad' => 'required|string|max:255',
@@ -29,7 +29,7 @@ class UniversidadController extends Controller
                 'comunas_id' => 'required|exists:comunas,id',
             ]);
     
-            Log::info('Datos validados correctamente:', $validatedData);
+
     
             $imagenNombre = null;
     
@@ -37,7 +37,7 @@ class UniversidadController extends Controller
                 $file = $request->file('imagen_logo');
                 $imagenNombre = str_replace(' ', '_', strtolower($validatedData['nombre_universidad'])) . '.' . $file->getClientOriginalExtension();
                 $file->move(public_path('images/logo_universidad'), $imagenNombre);
-                Log::info("Imagen subida: " . $imagenNombre);
+
             }
     
             Universidad::create([
@@ -49,7 +49,7 @@ class UniversidadController extends Controller
                 'comunas_id' => $validatedData['comunas_id'],
             ]);
     
-            Log::info('Universidad creada correctamente.');
+
     
             return redirect()->route('universities.index')->with('success', 'Universidad creada exitosamente.');
         } catch (\Illuminate\Validation\ValidationException $ve) {

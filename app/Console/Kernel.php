@@ -20,10 +20,9 @@ class Kernel extends ConsoleKernel
                 ->withoutOverlapping()
                 ->runInBackground();
 
-        // Finalizar reservas al término de cada módulo (cada hora a las :00)
-        // Los módulos terminan a las 09:00, 10:00, 11:00, 12:00, 13:00, 14:00, 15:00, 16:00, 17:00, 18:00, 19:00, 20:00, 21:00, 22:00, 23:00
+        // Finalizar reservas al término de cada módulo (cada 5 minutos para mayor precisión)
         $schedule->command('reservas:finalizar-expiradas')
-                ->hourly()
+                ->everyFiveMinutes()
                 ->withoutOverlapping()
                 ->runInBackground();
 

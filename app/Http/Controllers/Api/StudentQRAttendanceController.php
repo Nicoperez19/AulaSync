@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
+use App\Traits\RunNormalizer;
 
 /**
  * Controlador para registro de asistencia de alumnos mediante escáner QR
@@ -29,6 +30,8 @@ use Carbon\Carbon;
  */
 class StudentQRAttendanceController extends Controller
 {
+    use RunNormalizer;
+
     /**
      * Marcar entrada de alumno mediante QR
      * 
@@ -529,8 +532,9 @@ class StudentQRAttendanceController extends Controller
      */
     private function limpiarRut(string $rut): string
     {
-        return preg_replace('/[^0-9kK]/', '', strtoupper($rut));
+        return $this->normalizeRun($rut);
     }
+
 
     /**
      * Buscar reserva activa en un espacio para el momento actual

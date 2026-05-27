@@ -55,13 +55,19 @@ class TenantMiddleware
 
         // Opción A: Obtener de sesión (Prioridad alta)
         if (session()->has('tenant_id')) {
-            $tenant = Tenant::find(session('tenant_id'));
+            $tenantId = session('tenant_id');
+            \Log::info('TenantMiddleware: Found tenant_id in session', ['tenant_id' => $tenantId]);
+            $tenant = Tenant::find($tenantId);
             if ($tenant && $tenant->is_active) {
+                \Log::info('TenantMiddleware: Setting current tenant from session', ['id' => $tenant->id, 'domain' => $tenant->domain]);
                 $tenant->makeCurrent();
                 $tenantSet = true;
             } else {
+                \Log::info('TenantMiddleware: Tenant from session not found or inactive', ['id' => $tenantId]);
                 session()->forget(['tenant_id', 'tenant']);
             }
+        } else {
+            \Log::info('TenantMiddleware: No tenant_id in session');
         }
 
         // Opción B: Obtener por subdominio (Si no hay sesión)

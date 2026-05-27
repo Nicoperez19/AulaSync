@@ -73,45 +73,29 @@
         </x-sidebar.link>
     @endcan
 
-    <!-- Reportería movido al Dashboard -->
-    <!-- Estadísticas Profesores - Solo Administrador y Supervisor -->
-    <!-- MOVIDO A MANTENEDOR DE PROFESORES -->
-    <!--
-    @role('Administrador|Supervisor')
-        <x-sidebar.link title="Clases no registradas" href="{{ route('clases-no-realizadas.index') }}"
-            :isActive="request()->routeIs('clases-no-realizadas.*')">
+    <!-- Control Docente - Dropdown con sublinks -->
+    @canany(['gestionar licencias profesores', 'gestionar recuperacion clases', 'reportes'])
+        <x-sidebar.dropdown title="Control Docente" :active="request()->routeIs('control-docente.*') || request()->routeIs('clases-no-realizadas.*') || request()->routeIs('clases-temporales.*')">
             <x-slot name="icon">
-                <x-icons.chart-bar class="flex-shrink-0 w-6 h-6" aria-hidden="true" />
+                <i class="flex-shrink-0 w-6 h-6 text-center fa-solid fa-clipboard-check" aria-hidden="true"></i>
             </x-slot>
-        </x-sidebar.link>
-    @endrole
-    -->
 
-    <!-- Gestión de Licencias - Protegido por permiso -->
-    <!-- MOVIDO A MANTENEDOR DE PROFESORES -->
-    <!--
-    @can('gestionar licencias profesores')
-        <x-sidebar.link title="Ausencias Profesores" href="{{ route('ausencias-profesores') }}"
-            :isActive="request()->routeIs('licencias.*')">
-            <x-slot name="icon">
-                <i class="flex-shrink-0 w-6 h-6 fa-solid fa-file-medical" aria-hidden="true"></i>
-            </x-slot>
-        </x-sidebar.link>
-    @endcan
-    -->
+            @canany(['gestionar licencias profesores', 'gestionar recuperacion clases'])
+                <x-sidebar.sublink title="Ausencias y Recuperación" href="{{ route('control-docente.ausencias-recuperacion') }}"
+                    :isActive="request()->routeIs('control-docente.ausencias-recuperacion')" />
+            @endcanany
 
-    <!-- Recuperación de Clases - Protegido por permiso -->
-    <!-- MOVIDO A MANTENEDOR DE PROFESORES -->
-    <!--
-    @can('gestionar recuperacion clases')
-        <x-sidebar.link title="Recuperación de Clases" href="{{ route('recuperacion-clases.index') }}"
-            :isActive="request()->routeIs('recuperacion-clases.*')">
-            <x-slot name="icon">
-                <i class="flex-shrink-0 w-6 h-6 fa-solid fa-calendar-check" aria-hidden="true"></i>
-            </x-slot>
-        </x-sidebar.link>
-    @endcan
-    -->
+            @can('reportes')
+                <x-sidebar.sublink title="Clases No Registradas" href="{{ route('clases-no-realizadas.index') }}"
+                    :isActive="request()->routeIs('clases-no-realizadas.*')" />
+            @endcan
+
+            @role('Administrador|Supervisor')
+                <x-sidebar.sublink title="Clases Temporales" href="{{ route('clases-temporales.index') }}"
+                    :isActive="request()->routeIs('clases-temporales.*')" />
+            @endrole
+        </x-sidebar.dropdown>
+    @endcanany
 
     <!-- Mantenedores - Solo Administrador -->
     @canany(['mantenedor de roles', 'mantenedor de permisos', 'mantenedor de universidades', 'mantenedor de facultades', 'mantenedor de areas academicas', 'mantenedor de carreras', 'mantenedor de pisos', 'mantenedor de espacios', 'mantenedor de reservas', 'mantenedor de asignaturas', 'mantenedor de mapas', 'mantenedor de campus', 'mantenedor de sedes', 'mantenedor de profesores', 'mantenedor de visitantes', 'mantenedor de feriados', 'mantenedor de configuracion', 'mantenedor de escuelas', 'mantenedor de jefes de carrera', 'mantenedor de asistentes academicos'])

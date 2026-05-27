@@ -129,7 +129,13 @@ class Profesor extends Model
     // Método para verificar si es Profesor Colaborador
     public function esColaborador()
     {
-        return $this->esTipo('Profesor Colaborador');
+        return $this->esTipo('Profesor Colaborador') || $this->esTipo('Colaborador');
+    }
+
+    // Método para verificar si es Invitado
+    public function esInvitado()
+    {
+        return $this->esTipo('Invitado');
     }
 
     // Método para verificar si es Ayudante

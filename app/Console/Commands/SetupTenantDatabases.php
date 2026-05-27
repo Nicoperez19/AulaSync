@@ -93,12 +93,23 @@ class SetupTenantDatabases extends Command
             // Purgar conexión para forzar reconexión con la nueva base de datos
             app('db')->purge('tenant');
 
-            // Verificar conexión a la base de datos
-            try {
-                DB::connection('tenant')->getPdo();
-                $this->line("  ✓ Conexión establecida a {$dbName}");
-            } catch (\Exception $e) {
-                throw new \Exception("No se pudo conectar a la base de datos '{$dbName}'. Asegúrate de que existe y las credenciales son correctas. Error: " . $e->getMessage());
+            if ($this->option('fresh') && $exists) {
+                $this->warn("  Eliminando database existente: {$dbName}");
+                $adminDB->statement("DROP DATABASE `{$dbName}`");
+                $exists = false;
+            }
+
+            if (!$exists) {
+                $this->line("  Creando database: {$dbName}");
+                $adminDB->statement("CREATE DATABASE `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+
+                // Otorgar permisos al usuario aulasync sobre la nueva base de datos
+                // $adminDB->statement("GRANT ALL PRIVILEGES ON `{$dbName}`.* TO 'aulasync'@'%'");
+                // Otorgar permisos al usuario gestoraulasit sobre la nueva base de datos
+                // $adminDB->statement("GRANT ALL PRIVILEGES ON `{$dbName}`.* TO 'gestoraulasit'@'%'");
+                // $adminDB->statement("FLUSH PRIVILEGES");
+            } else {
+                $this->line("  La database ya existe: {$dbName}");
             }
 
             // Ejecutar migraciones

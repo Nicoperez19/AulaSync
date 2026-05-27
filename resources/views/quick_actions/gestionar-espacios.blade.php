@@ -448,9 +448,40 @@ async function liberarTodosLosEspacios() {
     });
 
     if (result.isConfirmed) {
-        // Implementar lógica para liberar todos los espacios
-        Swal.fire('¡Liberados!', 'Todos los espacios han sido liberados', 'success');
-        cargarEspacios();
+        try {
+            Swal.fire({
+                title: 'Procesando...',
+                text: 'Liberando espacios, por favor espere.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            const response = await fetch('{{ route("quick-actions.api.espacios.liberacion-masiva") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                Swal.fire({
+                    title: '¡Liberados!',
+                    text: data.mensaje,
+                    icon: 'success'
+                });
+                cargarEspacios();
+            } else {
+                Swal.fire('Error', data.mensaje || 'Error al liberar los espacios', 'error');
+            }
+        } catch (error) {
+            console.error('Error en liberación masiva:', error);
+            Swal.fire('Error', 'Error de conexión al realizar la liberación masiva', 'error');
+        }
     }
 }
 

@@ -29,15 +29,14 @@
             @csrf
             @method('PUT')
 
-            <!-- Campos hidden con valores por defecto -->
-            <input type="hidden" name="estado" value="Disponible">
 
             <div class="grid gap-4 p-4">
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                         <x-form.label for="id_espacio" :value="__('ID del Espacio')" />
                         <x-form.input id="id_espacio" class="block w-full" type="text" name="id_espacio"
-                            value="{{ old('id_espacio', $espacio->id_espacio) }}" required />
+                            value="{{ old('id_espacio', $espacio->id_espacio) }}" required readonly />
+                        <p class="mt-1 text-xs text-gray-500">El identificador del espacio no se puede modificar en edición.</p>
                     </div>
 
                     <div>
@@ -116,15 +115,46 @@
                         <select name="tipo_espacio" id="tipo_espacio"
                             class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m"
                             required>
-                            @foreach (['Aula', 'Laboratorio', 'Biblioteca', 'Sala de Reuniones', 'Oficinas'] as $tipo)
-                                <option value="{{ $tipo }}"
-                                    {{ $espacio->tipo_espacio == $tipo ? 'selected' : '' }}>
-                                    {{ $tipo }}
+                            @php
+                                $tipos = [
+                                    'Sala de Clases' => 'Sala de Clases',
+                                    'Laboratorio' => 'Laboratorio',
+                                    'Laboratorio de Computación' => 'Laboratorio de Computación',
+                                    'Biblioteca' => 'Biblioteca',
+                                    'Sala de Reuniones' => 'Sala de Reuniones',
+                                    'Oficinas' => 'Oficinas',
+                                    'Taller' => 'Taller',
+                                    'Auditorio' => 'Auditorio',
+                                    'Sala de Estudio' => 'Sala de Estudio',
+                                    'Gimnasio' => 'Gimnasio',
+                                    'Sala Multiusos' => 'Sala Multiusos',
+                                ];
+                            @endphp
+                            @foreach ($tipos as $value => $label)
+                                <option value="{{ $value }}"
+                                    {{ old('tipo_espacio', $espacio->tipo_espacio) == $value ? 'selected' : '' }}>
+                                    {{ $label }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
 
+                    <div>
+                        <x-form.label for="estado" :value="__('Estado')" />
+                        <select name="estado" id="estado"
+                            class="block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-m"
+                            required>
+                            @foreach (['Disponible', 'Ocupado', 'Reservado', 'Mantenimiento'] as $estado)
+                                <option value="{{ $estado }}"
+                                    {{ old('estado', $espacio->estado) == $estado ? 'selected' : '' }}>
+                                    {{ $estado }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                         <x-form.label for="puestos_disponibles" :value="__('Puestos Disponibles')" />
                         <x-form.input id="puestos_disponibles" class="block w-full" type="number"

@@ -222,28 +222,32 @@
                         </h3>
                         <div class="flex flex-col items-start gap-1">
                             <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-red-500 border-2 border-white rounded-full"></div>
+                                <div class="w-3 h-3 bg-emerald-500 rounded-full shadow-sm"></div>
+                                <span class="flex-1 text-xs text-white">Disponible</span>
+                            </div>
+                            <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-red-500 rounded-full shadow-sm"></div>
                                 <span class="flex-1 text-xs text-white">Ocupado</span>
                             </div>
                             <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-orange-500 border-2 border-white rounded-full"></div>
+                                <div class="w-3 h-3 bg-amber-500 rounded-full shadow-sm"></div>
                                 <span class="flex-1 text-xs text-white">Reservado</span>
                             </div>
                             <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-blue-500 border-2 border-white rounded-full"></div>
+                                <div class="w-3 h-3 bg-indigo-500 rounded-full shadow-sm"></div>
+                                <span class="flex-1 text-xs text-white">Programado</span>
+                            </div>
+                            <div class="flex items-center w-full gap-1">
+                                <div class="w-3 h-3 bg-blue-500 rounded-full shadow-sm"></div>
                                 <span class="flex-1 text-xs text-white">Próximo</span>
                             </div>
                             <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-gray-700 border-2 border-white rounded-full"></div>
+                                <div class="w-3 h-3 bg-gray-700 rounded-full shadow-sm"></div>
                                 <span class="flex-1 text-xs text-white">Clase no realizada (20+ min)</span>
                             </div>
                             <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-gray-400 border-2 border-white rounded-full"></div>
+                                <div class="w-3 h-3 bg-gray-400 rounded-full shadow-sm"></div>
                                 <span class="flex-1 text-xs text-white">En Mantención</span>
-                            </div>
-                            <div class="flex items-center w-full gap-1">
-                                <div class="w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
-                                <span class="flex-1 text-xs text-white">Disponible</span>
                             </div>
                         </div>
                     </div>
@@ -252,7 +256,7 @@
                 <!-- Enlace Volver -->
                 <div class="w-full mt-4">
                     <a href="{{ auth()->user()->hasRole('Usuario') ? route('espacios.show') : route('dashboard') }}"
-                       class="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors duration-200 shadow-md"
+                       class="flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gray-600 rounded-lg hover:bg-gray-700 transition-colors duration-100 shadow-md"
                        onclick="qrInputManager.setActiveInput('main')">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
                             <path d="M11.47 3.841a.75.75 0 0 1 1.06 0l8.69 8.69a.75.75 0 1 0 1.06-1.061l-8.689-8.69a2.25 2.25 0 0 0-3.182 0l-8.69 8.69a.75.75 0 1 0 1.061 1.06l8.69-8.689Z" />
@@ -274,7 +278,7 @@
                                 @if ($piso['id_mapa'])
                                     <li role="presentation">
                                         <a href="{{ route('plano.show', $piso['id_mapa']) }}"
-                                            class="px-4 py-2 text-sm font-semibold transition-all duration-300 rounded-t-xl border border-b-0
+                                            class="px-4 py-2 text-sm font-semibold transition-all duration-150 rounded-t-xl border border-b-0
                                             {{ $piso['id_mapa'] === $mapa->id_mapa
                                                 ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
                                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}" role="tab"
@@ -314,15 +318,7 @@
         </div>
     </div>
 
-    <!-- Contenedor flotante para botones de acción (Desocupar) - Fuera del modal para evitar problemas de eventos -->
-    <div id="modal-action-buttons-container" class="fixed top-0 right-0 z-[10000] p-4 hidden pointer-events-none">
-        <button id="btn-desocupar-flotante" class="btn-desocupar px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded hover:bg-red-700 transition-all duration-200 pointer-events-auto hidden shadow-lg" data-tipo="espacio" title="Desocupar sala">
-            <div class="flex items-center space-x-2">
-                <x-heroicon-s-logout class="w-4 h-4" />
-                <span>Desocupar</span>
-            </div>
-        </button>
-    </div>
+    <!-- Botones de desocupación forzada removidos - la liberación se realiza únicamente mediante escaneo QR -->
 
     <!-- Modal para mostrar información del espacio -->
     <div id="modal-espacio-info" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
@@ -359,7 +355,7 @@
                     
                     <!-- Botón cerrar -->
                     <button onclick="cerrarModalEspacio(); qrInputManager.setActiveInput('main')"
-                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
+                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-100 cursor-pointer"
                         title="Cerrar modal (Esc)"
                         aria-label="Cerrar modal">&times;</button>
                 </div>
@@ -439,31 +435,10 @@
                     <div id="proximaClaseInfo" class="space-y-3">
                         <!-- La información se insertará dinámicamente -->
                     </div>
-                    <div class="mt-4 flex justify-end">
-                        <button class="btn-desocupar group relative px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded hover:bg-red-700 hidden transition-all duration-200" data-tipo="reserva" title="Desocupar reserva">
-                            <div class="flex items-center space-x-2">
-                                <x-heroicon-s-logout class="w-4 h-4" />
-                                <span>Desocupar reserva</span>
-                            </div>
-                            <!-- Tooltip -->
-                            <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap">
-                                Desocupar reserva
-                                <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                            </div>
-                        </button>
-                    </div>
+
                 </div>
 
-                <!-- Footer del modal (Barbilla) con botón Desocupar -->
-                <div id="modal-footer-actions" class="hidden border-t border-red-800 px-6 py-4 bg-gradient-to-r from-red-700 to-red-800 rounded-b-lg">
-                    <button id="btn-desocupar-footer" 
-                            class="btn-desocupar w-full px-6 py-3 text-base font-semibold text-white bg-red-900 rounded-lg hover:bg-red-950 shadow-lg transition-all duration-200 flex items-center justify-center gap-2"
-                            data-tipo="espacio" 
-                            title="Desocupar sala">
-                        <x-heroicon-s-logout class="w-5 h-5" />
-                        <span>Desocupar Espacio</span>
-                    </button>
-                </div>
+
             </div>
         </div>
     </div>
@@ -493,7 +468,7 @@
 
                 <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
                     <button onclick="cerrarModalSalaEstudio(); qrInputManager.setActiveInput('main')"
-                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
+                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-100 cursor-pointer"
                         title="Cerrar modal (Esc)"
                         aria-label="Cerrar modal">&times;</button>
                 </div>
@@ -517,7 +492,7 @@
                         </div>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-4">
-                        <div id="salaEstudioProgressBar" class="bg-red-600 h-4 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        <div id="salaEstudioProgressBar" class="bg-red-600 h-4 rounded-full transition-all duration-150" style="width: 0%"></div>
                     </div>
                 </div>
 
@@ -639,6 +614,76 @@
 
 
 
+    <!-- Modal de espera de llaves (Rediseñado con Estilo Banner) -->
+    <div id="modal-espera-llaves" class="fixed inset-0 z-[10000] flex items-center justify-center bg-black bg-opacity-50 hidden">
+        <div class="relative w-full max-w-lg mx-4 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all transform scale-95 duration-150 opacity-0" id="modal-espera-llaves-content">
+            
+            <!-- Encabezado Rojo tipo Banner (Igual a la imagen de referencia) -->
+            <div class="relative flex items-center justify-between p-6 bg-red-700">
+                <!-- Círculos decorativos -->
+                <span class="absolute top-0 left-0 w-24 h-24 -translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                <span class="absolute top-0 right-0 w-24 h-24 translate-x-1/2 -translate-y-1/2 bg-white rounded-full pointer-events-none bg-opacity-10"></span>
+                
+                <div class="flex items-center gap-4 relative z-10">
+                    <!-- Icono Circular Blanco con icono rojo -->
+                    <div class="flex items-center justify-center w-12 h-12 bg-white rounded-full shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-white tracking-tight">Escaneo de Llaves</h2>
+                </div>
+
+                <!-- Botón Cerrar Cuadrado Blanco con X Roja (Igual a la imagen) -->
+                <button onclick="cerrarModalEsperaLlaves()" class="flex items-center justify-center w-9 h-9 bg-white rounded-md shadow-lg hover:bg-gray-100 transition-all duration-100 group relative z-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-700 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Contenido del Cuerpo -->
+            <div class="p-8 flex flex-col items-center text-center space-y-8">
+                
+                <div class="space-y-3">
+                    <h3 class="text-3xl font-extrabold text-gray-800" id="espera-llaves-nombre">¡Hola!</h3>
+                    <p class="text-lg text-gray-500 font-medium">Por favor, acerca las llaves al lector para continuar.</p>
+                </div>
+
+                <!-- Animación de Escaneo mejorada -->
+                <div class="relative w-48 h-48 flex items-center justify-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200 group-hover:border-red-200 transition-colors">
+                    <!-- Marco de escaneo -->
+                    <div class="absolute top-4 left-4 w-10 h-10 border-t-4 border-l-4 border-red-600 rounded-tl-xl"></div>
+                    <div class="absolute top-4 right-4 w-10 h-10 border-t-4 border-r-4 border-red-600 rounded-tr-xl"></div>
+                    <div class="absolute bottom-4 left-4 w-10 h-10 border-b-4 border-l-4 border-red-600 rounded-bl-xl"></div>
+                    <div class="absolute bottom-4 right-4 w-10 h-10 border-b-4 border-r-4 border-red-600 rounded-br-xl"></div>
+
+                    <!-- Icono Llave Animado -->
+                    <div class="text-red-600 animate-pulse">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-28 w-28" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Banner Informativo Azul (estilo el de la imagen de referencia) -->
+                <div class="w-full bg-blue-50 border border-blue-200 p-4 rounded-xl flex items-start gap-4 text-left shadow-sm">
+                    <div class="bg-blue-600 p-2 rounded-lg shadow-md mt-0.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-bold text-blue-900 text-sm tracking-tight">Información de Escaneo</p>
+                        <p class="text-blue-700 text-xs leading-relaxed mt-1 font-medium">
+                            El sistema está esperando el código del llavero vinculado a este espacio. Acerque el sensor al lector para completar la operación.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal para confirmar si hubo asistentes -->
     <div id="modal-confirmar-asistentes" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50 hidden">
         <div class="flex flex-col w-full max-w-md mx-2 overflow-hidden bg-white rounded-lg shadow-lg md:mx-8">
@@ -681,14 +726,14 @@
                 <!-- Botones de acción -->
                 <div class="grid grid-cols-2 gap-3">
                     <button id="btn-sin-asistentes"
-                        class="flex items-center justify-center px-6 py-3 text-white transition-colors duration-200 bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
+                        class="flex items-center justify-center px-6 py-3 text-white transition-colors duration-100 bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                         <span class="font-semibold">Sin asistentes</span>
                     </button>
                     <button id="btn-con-asistentes"
-                        class="flex items-center justify-center px-6 py-3 text-white transition-colors duration-200 bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+                        class="flex items-center justify-center px-6 py-3 text-white transition-colors duration-100 bg-green-600 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                         </svg>
@@ -724,7 +769,7 @@
 
                 <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
                     <button onclick="cerrarModalModulos()"
-                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
+                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-100 cursor-pointer"
                         title="Cerrar modal (Esc)"
                         aria-label="Cerrar modal">&times;</button>
                 </div>
@@ -789,7 +834,7 @@
 
                 <div class="flex items-center self-start flex-shrink-0 gap-3 md:self-center">
                     <button onclick="cerrarModalRegistroSolicitante(); qrInputManager.setActiveInput('main')"
-                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-200 cursor-pointer"
+                        class="ml-2 text-3xl font-bold text-white hover:text-gray-200 transition-colors duration-100 cursor-pointer"
                         title="Cerrar modal (Esc)"
                         aria-label="Cerrar modal">&times;</button>
                 </div>
@@ -866,6 +911,8 @@
     </x-modal>
 
     <script>
+        window.tenantPrefix = '{{ strtoupper(tenant_prefijo() ?: tenant_domain() ?: "") }}';
+
         // Escuchar cuando se abra el modal de registro para establecer el foco correcto
         document.addEventListener('open-modal', (event) => {
             if (event.detail === 'registro-solicitante') {
@@ -1082,12 +1129,11 @@
         let espacioParaReserva = null;
         let runParaReserva = null;
         let usuarioInfo = null; // Variable global para almacenar la información del usuario
+        let isProcessingQR = false; // Bloqueo para evitar procesamiento múltiple
+        let watchdogTimer = null; // Temporizador para resetear el flujo por inactividad
+
         
-        // ========================================
-        // VARIABLES PARA LIBERACIÓN FORZADA CON QR PERSONAL
-        // ========================================
-        let modoLiberacionForzada = false;
-        let adminLiberacionForzada = null; // Datos del admin que escaneó su QR personal
+        // Liberación forzada removida - la gestión de reservas se realiza únicamente mediante escaneo QR
         
         const mapaId = @json($mapaIdValue);
 
@@ -1135,7 +1181,7 @@
             return document.getElementById('mensaje-inicial');
         }
 
-        function mostrarInfo(tipo, nombre, run = null) {
+        function mostrarInfo(tipo, nombre, run = null, conPausa = false) {
             // Ocultar mensaje inicial
             const mensajeInicial = getMensajeInicial();
             if (mensajeInicial) {
@@ -1143,25 +1189,78 @@
             }
 
             if (tipo === 'usuario') {
-                // Mostrar información del usuario
-                const infoUsuario = getInfoUsuario();
-                if (infoUsuario) {
-                    infoUsuario.classList.remove('hidden');
-                }
-
-                // Actualizar datos del usuario
-                document.getElementById('run-escaneado').textContent = run;
-                document.getElementById('nombre-usuario').textContent = nombre;
-
-                // Quitar parpadeo del estado QR cuando se procesa usuario
-                const qrStatus = getQrStatus();
-                if (qrStatus) {
-                    qrStatus.classList.remove('parpadeo');
+                // Ya no mostramos info en el sidebar, ahora usamos el modal
+                if (conPausa) {
+                    setTimeout(() => {
+                        abrirModalEsperaLlaves(nombre);
+                    }, 1500); // Pausa de 1.5 segundos
+                } else {
+                    abrirModalEsperaLlaves(nombre);
                 }
             }
         }
 
+        function abrirModalEsperaLlaves(nombre) {
+            const modal = document.getElementById('modal-espera-llaves');
+            const content = document.getElementById('modal-espera-llaves-content');
+            const nombreTxt = document.getElementById('espera-llaves-nombre');
+
+            if (modal && content && nombreTxt) {
+                nombreTxt.textContent = `¡Hola, ${nombre}!`;
+                modal.classList.remove('hidden');
+                
+                // Forzar reflow para animación
+                setTimeout(() => {
+                    content.classList.remove('scale-95', 'opacity-0');
+                    content.classList.add('scale-100', 'opacity-100');
+                }, 10);
+
+                // Desactivar otros inputs para asegurar que el principal siga capturando
+                if (qrInputManager) {
+                    qrInputManager.setActiveInput('main');
+                }
+            }
+        }
+
+        function cerrarModalEsperaLlaves(manual = true) {
+            const modal = document.getElementById('modal-espera-llaves');
+            const content = document.getElementById('modal-espera-llaves-content');
+
+            if (modal && content && !modal.classList.contains('hidden')) {
+                content.classList.remove('scale-100', 'opacity-100');
+                content.classList.add('scale-95', 'opacity-0');
+                
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    // Si es manual (botón X), limpiamos todo el estado para permitir nuevo escaneo de RUN
+                    if (manual) {
+                        limpiarEstadoLectura();
+                    }
+                }, 150);
+            }
+        }
+
+        function iniciarWatchdog() {
+            detenerWatchdog();
+            watchdogTimer = setTimeout(() => {
+                if (ordenEscaneo === 'espacio') {
+                    console.log('Watchdog: Reiniciando flujo por inactividad');
+                    limpiarEstadoLectura('Tiempo de espera agotado');
+                }
+            }, 60000); // 60 segundos de espera para el espacio
+        }
+
+        function detenerWatchdog() {
+            if (watchdogTimer) {
+                clearTimeout(watchdogTimer);
+                watchdogTimer = null;
+            }
+        }
+
         function limpiarEstadoCompleto() {
+            detenerWatchdog();
+            isProcessingQR = false;
+
             // Resetear variables globales
             ordenEscaneo = 'usuario';
             usuarioEscaneado = null;
@@ -1258,6 +1357,12 @@
         }
 
         function limpiarEstadoLectura(mensajeError = null) {
+            detenerWatchdog();
+            isProcessingQR = false;
+
+            // Cerrar el modal de espera de llaves si estuviera abierto (sin recursión manual)
+            cerrarModalEsperaLlaves(false);
+
             // Solo limpiar el estado de lectura del QR, NO toda la interfaz
 
             // Limpiar buffer y timeouts
@@ -1344,55 +1449,19 @@
 
 
 
-        async function verificarEspacio(idEspacio) {
+
+
+        async function verificarProgramacionEnEspacio(espacio, run) {
             try {
-                const response = await fetch(`/api/verificar-espacio/${idEspacio}`);
-                if (!response.ok) {
-                    // Error en respuesta del servidor
-                    return null;
-                }
+                const response = await fetch(`/api/verificar-programacion/${espacio}/${run}`);
                 const result = await response.json();
-                return result;
+                return result.success && (result.tieneProgramacion === true || result.tiene_clase === true);
             } catch (error) {
-                // Error al verificar espacio
-                return null;
-            }
-        }
-
-        async function verificarClasesProfesor(run) {
-            try {
-                const response = await fetch(`/api/verificar-clases-programadas/${run}`);
-                const result = await response.json();
-
-                const data = result.original || result;
-                const tieneClases = data.success && data.tiene_clases;
-
-                return tieneClases;
-            } catch (error) {
+                console.error('Error al verificar programación en espacio:', error);
                 return false;
             }
         }
 
-        async function crearReserva(run, idEspacio, tipoUsuario = 'profesor') {
-            try {
-                const response = await fetch('/api/crear-reserva-profesor', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({
-                        run_usuario: run,
-                        id_espacio: idEspacio,
-                        tipo_usuario: tipoUsuario
-                    })
-                });
-                return await response.json();
-            } catch (error) {
-                // Error
-                return null;
-            }
-        }
 
         async function registrarAsistenciaProfesor(run, idEspacio) {
             try {
@@ -1410,6 +1479,31 @@
                 return await response.json();
             } catch (error) {
                 // Error al registrar asistencia
+                return null;
+            }
+        }
+
+        /**
+         * Crea automáticamente una reserva para un profesor con clase programada
+         * Usa directamente los módulos de la programación sin preguntar al usuario
+         */
+        async function crearReservaAutomaticaProfesor(run, idEspacio) {
+            try {
+                const response = await fetch('/api/crear-reserva-profesor-automatica', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        run_profesor: String(run),
+                        id_espacio: String(idEspacio)
+                    })
+                });
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error('Error al crear reserva automática:', error);
                 return null;
             }
         }
@@ -1463,7 +1557,7 @@
                 const minutos = parseInt(horaActual.split(':')[1]);
                 const horaEnMinutos = hora * 60 + minutos;
 
-                const inicioAcademico = 8 * 60 + 10; // 08:10
+                const inicioAcademico = 7 * 60 + 30; // 07:30 (pero el mensaje dirá 08:10)
                 const finAcademico = 23 * 60; // 23:00
 
                 if (horaEnMinutos < inicioAcademico || horaEnMinutos >= finAcademico) {
@@ -1555,6 +1649,30 @@
             }
         }
 
+        async function forzarCierreYTomarEspacio(runUsuario, idEspacio, idReservaAnterior) {
+            try {
+                const response = await fetch('/api/forzar-cierre-espacio', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    },
+                    body: JSON.stringify({
+                        run_usuario: runUsuario,
+                        id_espacio: idEspacio,
+                        id_reserva_anterior: idReservaAnterior
+                    })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error en forzarCierreYTomarEspacio:', error);
+                return {
+                    success: false,
+                    mensaje: 'Error de conexión con el servidor'
+                };
+            }
+        }
+
         let lastBufferLength = 0;
         let processingTimeout = null;
         let errorTimeout = null;
@@ -1575,10 +1693,10 @@
                             clearTimeout(processingTimeout);
                         }
 
-                        // Procesar automáticamente después de 500ms sin nuevos caracteres
+                        // Procesar automáticamente después de 100ms sin nuevos caracteres (Optimización para lectura rápida)
                         processingTimeout = setTimeout(async () => {
                             await procesarQRCompleto();
-                        }, 500);
+                        }, 100);
 
                         // Timeout de seguridad para detectar lecturas erróneas (60 segundos)
                         if (errorTimeout) {
@@ -1613,490 +1731,361 @@
         async function procesarQRCompleto() {
             // Validar que el buffer no esté vacío
             if (!bufferQR || bufferQR.trim() === '') {
-                // Buffer QR vacío - ignorando procesamiento
+                return;
+            }
+
+            // Evitar procesamiento múltiple si ya hay uno en curso
+            if (isProcessingQR) {
+                console.log('Procesamiento en curso, ignorando escaneo actual');
                 return;
             }
 
             // Validar que el buffer tenga un tamaño mínimo razonable
             if (bufferQR.length < 5) {
-                // Buffer QR muy corto - ignorando procesamiento
-                limpiarEstadoLectura(); // Solo limpiar lectura, no toda la interfaz
-                return;
-            }
-
-            // ========================================
-            // VERIFICAR SI ES UN QR PERSONAL (LIBERACIÓN FORZADA)
-            // ========================================
-            if (bufferQR.includes('qr_personal_aulasync')) {
-                await procesarQrPersonal();
-                return;
-            }
-
-            // Si estamos en modo liberación forzada, procesar sala a liberar
-            if (modoLiberacionForzada && adminLiberacionForzada) {
-                await procesarLiberacionForzadaSala();
-                return;
-            }
-
-                    // Procesando QR completo
-
-        // Validar orden de escaneo
-        if (ordenEscaneo === 'usuario') {
-            // PASO 1: Escanear usuario (obligatorio primero)
-            await procesarUsuario();
-        } else if (ordenEscaneo === 'espacio') {
-            // PASO 2: Escanear espacio (solo después del usuario)
-            const resultado = await procesarEspacio();
-
-            // Si la devolución fue exitosa, no continuar con más procesamiento
-            if (resultado === 'devolucion_exitosa') {
-                return;
-            }
-        } else {
-            // Error: orden incorrecto
-            limpiarEstadoLectura('Orden de escaneo incorrecto');
-        }
-
-            // NO limpiar el buffer aquí - dejarlo para que las funciones individuales lo manejen
-            // Solo limpiar timeouts
-            if (processingTimeout) {
-                clearTimeout(processingTimeout);
-                processingTimeout = null;
-            }
-            if (errorTimeout) {
-                clearTimeout(errorTimeout);
-                errorTimeout = null;
-            }
-
-            // Restaurar el input QR activo después de procesar
-            setTimeout(() => {
-                if (qrInputManager) {
-                    qrInputManager.restaurarInputActivo();
-                }
-            }, 100);
-        }
-
-        // ========================================
-        // FUNCIONES PARA LIBERACIÓN FORZADA CON QR PERSONAL
-        // ========================================
-        
-        async function procesarQrPersonal() {
-            try {
-                // Intentar parsear el QR como JSON
-                let qrData;
-                try {
-                    qrData = bufferQR;
-                } catch (e) {
-                    qrData = bufferQR;
-                }
-
-                // Verificar el QR personal con el servidor
-                const response = await fetch('/api/qr-personal/verificar-escaneado', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({ qr_data: qrData })
-                });
-
-                const resultado = await response.json();
-
-                if (resultado.success && resultado.puede_liberar) {
-                    // QR personal válido - activar modo liberación forzada
-                    modoLiberacionForzada = true;
-                    adminLiberacionForzada = resultado.usuario;
-
-                    // Mostrar indicación visual
-                    const qrStatus = document.getElementById('qr-status');
-                    if (qrStatus) {
-                        qrStatus.classList.remove('parpadeo');
-                        qrStatus.innerHTML = `<span class="text-red-400 font-bold">🔓 MODO ADMIN: ${resultado.usuario.nombre}</span><br><span class="text-sm">Escanee la sala a liberar</span>`;
-                    }
-
-                    // Mostrar la info del admin
-                    mostrarInfo('admin', resultado.usuario.nombre, resultado.usuario.run);
-
-                    // Mostrar Sweet Alert indicando el modo
-                    Swal.fire({
-                        title: '🔓 Modo Liberación Forzada',
-                        html: `
-                            <p class="text-gray-600">Bienvenido <strong>${resultado.usuario.nombre}</strong></p>
-                            <p class="mt-2 text-sm text-gray-500">Ahora escanee el QR de la sala que desea liberar.</p>
-                            <p class="mt-3 text-xs text-red-500"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Las reservas activas serán finalizadas.</p>
-                        `,
-                        icon: 'warning',
-                        confirmButtonText: 'Entendido',
-                        confirmButtonColor: '#dc2626',
-                        timer: 5000,
-                        timerProgressBar: true
-                    });
-
-                    // Limpiar buffer
-                    bufferQR = '';
-                    lastBufferLength = 0;
-                    const inputEscanner = document.getElementById('qr-input');
-                    if (inputEscanner) {
-                        inputEscanner.value = '';
-                    }
-
-                } else {
-                    // QR personal inválido o sin permiso
-                    Swal.fire({
-                        title: 'QR Personal Inválido',
-                        text: resultado.message || 'Este QR no tiene permisos de liberación.',
-                        icon: 'error',
-                        confirmButtonColor: '#dc2626'
-                    });
-                    limpiarEstadoLectura();
-                    modoLiberacionForzada = false;
-                    adminLiberacionForzada = null;
-                }
-
-            } catch (error) {
-                console.error('Error al procesar QR personal:', error);
-                Swal.fire({
-                    title: 'Error',
-                    text: 'Error al verificar el QR personal.',
-                    icon: 'error'
-                });
                 limpiarEstadoLectura();
-                modoLiberacionForzada = false;
-                adminLiberacionForzada = null;
-            }
-        }
-
-        async function procesarLiberacionForzadaSala() {
-            // Extraer código de espacio del buffer
-            let espacio = null;
-
-            // Patrón 1: TH seguido de cualquier cosa (formato estándar)
-            const espacioMatch = bufferQR.match(/(TH[^A-Z0-9]*[A-Z0-9]+)/i);
-            if (espacioMatch) {
-                espacio = espacioMatch[1];
-            } else {
-                // Patrón 2: 2-3 letras + números (formato compacto)
-                const espacioMatchAlt = bufferQR.match(/([A-Z]{2,3}[0-9]+)/i);
-                if (espacioMatchAlt) {
-                    espacio = espacioMatchAlt[1];
-                } else {
-                    // Patrón 3: Letras + caracteres especiales + letras/números
-                    const espacioMatchSpecial = bufferQR.match(/([A-Z]+['\-]?[A-Z0-9]+)/i);
-                    if (espacioMatchSpecial) {
-                        espacio = espacioMatchSpecial[1];
-                    }
-                }
-            }
-
-            if (!espacio) {
-                Swal.fire({
-                    title: 'QR Inválido',
-                    text: 'No se pudo identificar la sala. Escanee un QR de sala válido.',
-                    icon: 'error',
-                    confirmButtonColor: '#dc2626'
-                });
-                // No salir del modo liberación, permitir reintentar
-                bufferQR = '';
-                lastBufferLength = 0;
                 return;
             }
 
-            // Normalizar el formato del espacio
-            espacio = espacio.toUpperCase().replace(/'/g, '-');
+            isProcessingQR = true;
 
             try {
-                // Confirmar la liberación
-                const confirmResult = await Swal.fire({
-                    title: '¿Liberar sala forzadamente?',
-                    html: `
-                        <p class="text-lg font-semibold text-gray-800">Sala: <span class="text-red-600">${espacio}</span></p>
-                        <p class="mt-2 text-gray-600">Esta acción finalizará todas las reservas activas de esta sala.</p>
-                        <p class="mt-3 text-sm text-red-500"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Esta acción no se puede deshacer.</p>
-                    `,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: '<i class="fa-solid fa-unlock mr-2"></i> Liberar Sala',
-                    cancelButtonText: 'Cancelar',
-                    confirmButtonColor: '#dc2626',
-                    cancelButtonColor: '#6b7280'
-                });
+                // Validar orden de escaneo
+                if (ordenEscaneo === 'usuario') {
+                    // PASO 1: Escanear usuario (obligatorio primero)
+                    await procesarUsuario();
+                } else if (ordenEscaneo === 'espacio') {
+                    // PASO 2: Escanear espacio (solo después del usuario)
+                    const resultado = await procesarEspacio();
 
-                if (!confirmResult.isConfirmed) {
-                    // Cancelado - mantener modo liberación activo
-                    bufferQR = '';
-                    lastBufferLength = 0;
-                    return;
-                }
-
-                // Mostrar loading
-                Swal.fire({
-                    title: 'Liberando sala...',
-                    allowOutsideClick: false,
-                    didOpen: () => {
-                        Swal.showLoading();
+                    // Si la devolución fue exitosa, no continuar con más procesamiento
+                    if (resultado === 'devolucion_exitosa') {
+                        return;
                     }
-                });
-
-                // Llamar a la API para liberar la sala
-                const response = await fetch('/api/qr-personal/liberar-sala', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({
-                        run_administrador: adminLiberacionForzada.run,
-                        id_espacio: espacio
-                    })
-                });
-
-                const resultado = await response.json();
-
-                if (resultado.success) {
-                    // Actualizar indicador en el mapa
-                    const block = state.indicators.find(b => b.id === espacio);
-                    if (block) {
-                        block.estado = '#00FF00'; // Verde = Disponible
-                        state.originalCoordinates = state.indicators.map(i => ({ ...i }));
-                        drawIndicators();
-                    }
-
-                    // Mostrar éxito
-                    await Swal.fire({
-                        title: '🔓 Sala Liberada Forzosamente',
-                        html: `
-                            <div class="text-center">
-                                <p class="text-lg font-semibold text-green-600">Sala ${espacio} liberada</p>
-                                <p class="mt-2 text-gray-600">Liberada por: <strong>${adminLiberacionForzada.nombre}</strong></p>
-                                ${resultado.reservas_finalizadas && resultado.reservas_finalizadas.length > 0 
-                                    ? `<p class="mt-2 text-sm text-gray-500">Reservas finalizadas: ${resultado.reservas_finalizadas.length}</p>`
-                                    : '<p class="mt-2 text-sm text-gray-500">No había reservas activas</p>'
-                                }
-                            </div>
-                        `,
-                        icon: 'success',
-                        confirmButtonText: 'Aceptar',
-                        confirmButtonColor: '#10b981',
-                        timer: 4000,
-                        timerProgressBar: true
-                    });
-
-                    // Desactivar modo liberación forzada
-                    modoLiberacionForzada = false;
-                    adminLiberacionForzada = null;
-                    limpiarEstadoLectura();
-
                 } else {
-                    Swal.fire({
-                        title: 'Error',
-                        text: resultado.message || 'No se pudo liberar la sala.',
-                        icon: 'error',
-                        confirmButtonColor: '#dc2626'
-                    });
-                    // Mantener modo liberación activo para reintentar
+                    // Error: orden incorrecto
+                    limpiarEstadoLectura('Orden de escaneo incorrecto');
+                }
+            } catch (error) {
+                console.error('Error crítico en procesarQRCompleto:', error);
+                limpiarEstadoLectura('Error interno del sistema');
+            } finally {
+                // Liberar el bloqueo y limpiar timeouts
+                isProcessingQR = false;
+
+                if (processingTimeout) {
+                    clearTimeout(processingTimeout);
+                    processingTimeout = null;
+                }
+                if (errorTimeout) {
+                    clearTimeout(errorTimeout);
+                    errorTimeout = null;
                 }
 
-            } catch (error) {
-                console.error('Error al liberar sala forzadamente:', error);
-                Swal.fire({
-                    title: 'Error de Conexión',
-                    text: 'No se pudo conectar con el servidor.',
-                    icon: 'error',
-                    confirmButtonColor: '#dc2626'
-                });
+                // Restaurar el input QR activo después de procesar
+                setTimeout(() => {
+                    if (qrInputManager) {
+                        qrInputManager.restaurarInputActivo();
+                    }
+                }, 100);
+            }
+        }
+
+        async function procesarUsuario() {
+            // Capturar y limpiar el buffer inmediatamente para evitar lecturas duplicadas
+            const currentBuffer = bufferQR;
+            bufferQR = '';
+            lastBufferLength = 0;
+
+            // Extraer RUN del QR - Soportar múltiples formatos
+            let run = null;
+
+            // 1. Intentar extraer de parámetros de URL (ej: Registro Civil que usa ?run=... o &run=... o /type=...)
+            const runUrlMatch = currentBuffer.match(/[?&]run=([^&/]+)/i);
+            
+            if (runUrlMatch) {
+                run = runUrlMatch[1];
+            } else {
+                // 2. Intentar formato con prefijo "RUN" (ej: RUN 12.345.678-9)
+                const runMatch = currentBuffer.match(/RUN[^0-9]*([0-9.Kk-]+)/i);
+                if (runMatch) {
+                    run = runMatch[1];
+                } else {
+                    // 3. Fallback: buscar secuencia de 7 a 9 números, puntos o guiones
+                    const runMatchAlt = currentBuffer.match(/([0-9]{1,2}(?:\.[0-9]{3}){2}-?[0-9Kk]|[0-9]{7,9}-?[0-9Kk]?)/i);
+                    if (runMatchAlt) {
+                        run = runMatchAlt[1];
+                    }
+                }
             }
 
-            // Limpiar buffer
+            if (!run) {
+                // Solo mostrar error si el buffer tiene contenido significativo
+                if (currentBuffer.length > 8) {
+                    limpiarEstadoLectura('QR de usuario inválido - No se detectó RUN');
+                } else {
+                    limpiarEstadoSilencioso();
+                }
+                return;
+            }
+
+
+
+        // RUN extraído
+
+            // Mostrar modal de carga inmediatamente para mejorar la percepción de velocidad
+            abrirModalEsperaLlaves('Verificando...');
+
+            try {
+                const response = await fetch(`/api/procesar-primera-lectura/${run}`);
+                if (!response.ok) throw new Error('Error en la comunicación con el servidor');
+                
+                const result = await response.json();
+                
+                if (result.verificado) {
+                    // Usuario verificado exitosamente
+                    // Actualizar el nombre en el modal (ya está abierto)
+                    const nombreTxt = document.getElementById('espera-llaves-nombre');
+                    if (nombreTxt) nombreTxt.textContent = `¡Hola, ${result.usuario.nombre}!`;
+                    
+                    usuarioEscaneado = result.usuario.run || run;
+                    ordenEscaneo = 'espacio';
+                    iniciarWatchdog(); // Iniciar temporizador de espera de espacio
+
+                    const inputEscanner = document.getElementById('qr-input');
+                    if (inputEscanner) inputEscanner.value = '';
+
+                } else {
+                    // Si no está verificado, cerramos el modal de espera y manejamos el error
+                    cerrarModalEsperaLlaves(false);
+                    
+                    if (result.tipo_usuario === 'solicitante_nuevo') {
+                        // Flujo de registro de nuevo solicitante
+                        runSolicitantePendiente = run;
+                        document.getElementById('run-solicitante-no-registrado').textContent = run;
+                        
+                        window.dispatchEvent(new CustomEvent('close-modal', { detail: 'data-space' }));
+                        
+                        setTimeout(() => {
+                            if (qrInputManager) qrInputManager.desactivarTodosLosInputs();
+                            window.dispatchEvent(new CustomEvent('open-modal', { detail: 'registro-solicitante' }));
+                        }, 300);
+                    } else {
+                        limpiarEstadoLectura(result.mensaje || 'Usuario no autorizado');
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                cerrarModalEsperaLlaves(false);
+                limpiarEstadoLectura('Error de conexión al verificar usuario');
+            }
+        }
+
+        async function continuarReserva(usuarioEscaneado, espacio) {
+            usuarioInfo = await verificarUsuario(usuarioEscaneado);
+
+            if (!usuarioInfo || !usuarioInfo.verificado) {
+                Swal.close();
+                ordenEscaneo = 'usuario';
+                // Restaurar autofocus del qr-input después de error en verificación de usuario
+                setTimeout(() => {
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 100);
+                return;
+            }
+
+            // Determinar el flujo según el tipo de usuario
+            if (usuarioInfo.tipo_usuario === 'profesor') {
+                // Verificar si tiene clase programada ESPECÍFICAMENTE en este espacio ahora
+                const tieneClaseAqui = await verificarProgramacionEnEspacio(espacio, usuarioEscaneado);
+
+                if (tieneClaseAqui === true) {
+                    // Mostrar SweetAlert indicando que se está creando el registro de clase
+                    Swal.fire({
+                        title: 'Creando registro de clase...',
+                        text: 'Por favor, espera un momento mientras registramos tu clase.',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // CASO 1: Profesor TIENE CLASE AQUÍ - crear automáticamente reserva con módulos de programación
+                    const resultado = await crearReservaAutomaticaProfesor(usuarioEscaneado, espacio);
+                    if (resultado && resultado.success) {
+                        // Mostrar mensaje de proceso
+                        document.getElementById('qr-status').innerHTML = 'Reserva creada automáticamente...';
+
+                        // Actualizar indicador en el mapa
+                        const block = state.indicators.find(b => b.id === espacio);
+                        if (block) {
+                            block.estado = '#FF0000'; // Rojo = Ocupado
+                            state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                            drawIndicators();
+                        }
+
+                        // Mostrar Sweet Alert de éxito para reserva automática (Clase programada)
+                        Swal.fire({
+                            title: '¡Clase registrada!',
+                            text: 'Se ha registrado la clase automáticamente según tu programación.',
+                            icon: 'success',
+                            confirmButtonText: 'Aceptar',
+                            confirmButtonColor: '#059669',
+                            timer: 1500,
+                            timerProgressBar: true,
+                            showConfirmButton: false
+                        });
+
+                        // Mostrar mensaje de reserva creada
+                        document.getElementById('qr-status').innerHTML = 'Reserva creada';
+                        document.getElementById('qr-status').classList.remove('parpadeo');
+
+                        // Limpiar el estado después de un delay para el próximo escaneo
+                        setTimeout(() => {
+                            espacioParaReserva = null;
+                            runParaReserva = null;
+                            bufferQR = '';
+                            limpiarEstadoLectura(); // Esto ya setea ordenEscaneo = 'usuario' y limpia la UI
+
+                            // Restaurar autofocus del qr-input después de crear reserva
+                            if (qrInputManager) {
+                                qrInputManager.setActiveInput('main');
+                            }
+                        }, 2000);
+                    } else {
+                        // Error en crear reserva automática - mostrar mensaje en vez de fallar silenciosamente
+                        Swal.fire({
+                            title: 'Error',
+                            text: resultado?.mensaje || 'No se pudo crear la reserva automáticamente.',
+                            icon: 'error',
+                            timer: 3000,
+                            showConfirmButton: false
+                        });
+
+                        limpiarEstadoLectura();
+                        detenerWatchdog();
+                        setTimeout(() => {
+                            if (qrInputManager) {
+                                qrInputManager.setActiveInput('main');
+                            }
+                        }, 3000);
+                    }
+                } else {
+                    // CASO 2: Profesor SIN clases - solicita con módulos (todos los disponibles)
+                    await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado);
+                    detenerWatchdog();
+                    return; // No continuar, esperar selección de módulos
+                }
+            } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
+                // CASO 3: Solicitante registrado - solicita con módulos (todos los disponibles)
+                await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado);
+                detenerWatchdog();
+                return; // No continuar, esperar selección de módulos
+            } else {
+                Swal.close();
+                ordenEscaneo = 'usuario';
+                detenerWatchdog();
+                // Restaurar autofocus del qr-input después de error en tipo de usuario
+                setTimeout(() => {
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 100);
+                return;
+            }
+
+            // Limpiar buffer después de procesar espacio exitosamente
             bufferQR = '';
             lastBufferLength = 0;
             const inputEscanner = document.getElementById('qr-input');
             if (inputEscanner) {
                 inputEscanner.value = '';
             }
-        }
 
-        // Función para cancelar el modo liberación forzada
-        function cancelarModoLiberacionForzada() {
-            modoLiberacionForzada = false;
-            adminLiberacionForzada = null;
-            limpiarEstadoLectura();
-            Swal.fire({
-                title: 'Modo Cancelado',
-                text: 'Se ha cancelado el modo de liberación forzada.',
-                icon: 'info',
-                timer: 2000,
-                showConfirmButton: false
-            });
-        }
-
-        async function procesarUsuario() {
-                    // Extraer RUN del QR (buscar "RUN" seguido de números)
-        const runMatch = bufferQR.match(/RUN[^0-9]*(\d+)/);
-        let run = null;
-
-        if (!runMatch) {
-            // Intentar otros formatos de RUN
-            const runMatchAlt = bufferQR.match(/(\d{7,8})/);
-            if (!runMatchAlt) {
-                // Solo mostrar error si el buffer tiene contenido significativo y no es ruido
-                if (bufferQR.length > 8) {
-                    // Lectura errónea: No se pudo extraer RUN del QR
-                    limpiarEstadoLectura('QR de usuario inválido');
-                    // Restaurar autofocus del qr-input después de error de QR inválido
-                    setTimeout(() => {
-                        if (qrInputManager) {
-                            qrInputManager.setActiveInput('main');
-                        }
-                    }, 100);
-                } else {
-                    // Error silencioso para buffers cortos
-                    limpiarEstadoSilencioso();
-                }
-                return;
-            }
-            run = runMatchAlt[1];
-        } else {
-            run = runMatch[1];
-        }
-
-        // RUN extraído
-
-                    // Verificar usuario en la base de datos
-                    usuarioInfo = await verificarUsuario(run);
-
-        if (!usuarioInfo) {
-            // Error al verificar usuario - resetear flujo
-            limpiarEstadoLectura('Usuario no encontrado en el sistema');
-            // Restaurar autofocus del qr-input después de error de usuario no encontrado
+            // Resetear para siguiente usuario
             setTimeout(() => {
+                limpiarEstadoLectura();
                 if (qrInputManager) {
                     qrInputManager.setActiveInput('main');
                 }
-            }, 100);
-            return;
-        }
-
-            if (usuarioInfo.verificado) {
-                // Usuario verificado
-
-                if (usuarioInfo.tipo_usuario === 'profesor') {
-                            // Es profesor - verificar si tiene clases programadas
-        const tieneClases = await verificarClasesProfesor(run);
-
-        if (tieneClases === true) {
-            // Profesor CON clases - solo registra solicitud
-            document.getElementById('qr-status').innerHTML = 'Escanea el QR de la sala';
-            mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
-            usuarioEscaneado = run;
-            ordenEscaneo = 'espacio';
-        } else {
-            // Profesor SIN clases - solicita con módulos
-            document.getElementById('qr-status').innerHTML = 'Escanea el QR de la sala';
-            mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
-            usuarioEscaneado = run;
-            ordenEscaneo = 'espacio';
-        }
-                } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
-                            // Es solicitante registrado - solicita con módulos
-        document.getElementById('qr-status').innerHTML = 'Escanea el QR de la sala';
-        mostrarInfo('usuario', usuarioInfo.usuario.nombre, usuarioInfo.usuario.run);
-        usuarioEscaneado = run;
-        ordenEscaneo = 'espacio';
-                } else {
-                            // Otro tipo de usuario - mostrar error
-                }
-
-                // Limpiar buffer después de procesar usuario exitosamente
-                bufferQR = '';
-                lastBufferLength = 0;
-                const inputEscanner = document.getElementById('qr-input');
-                if (inputEscanner) {
-                    inputEscanner.value = '';
-                }
-
-                // Restaurar autofocus del qr-input después de procesar usuario exitosamente
-                setTimeout(() => {
-                    if (qrInputManager) {
-                        qrInputManager.setActiveInput('main');
-                    }
-                }, 100);
-
-            } else {
-                        // Usuario no encontrado - mostrar modal de registro de solicitante
-        runSolicitantePendiente = run;
-        document.getElementById('run-solicitante-no-registrado').textContent = run;
-
-        // Cerrar modal actual si está abierto
-        window.dispatchEvent(new CustomEvent('close-modal', {
-            detail: 'data-space'
-        }));
-
-        // Abrir modal de registro de solicitante
-        setTimeout(() => {
-            // Desactivar todos los inputs QR para permitir escribir cómodamente
-            qrInputManager.desactivarTodosLosInputs();
-
-            window.dispatchEvent(new CustomEvent('open-modal', {
-                detail: 'registro-solicitante'
-            }));
-
-            // Restaurar autofocus del qr-input después de abrir modal de registro
-            setTimeout(() => {
-                if (qrInputManager) {
-                    qrInputManager.setActiveInput('main');
-                }
-            }, 300);
-        }, 300);
-
-        // Limpiar buffer después de abrir modal
-        bufferQR = '';
-        lastBufferLength = 0;
-        const inputEscanner = document.getElementById('qr-input');
-        if (inputEscanner) {
-            inputEscanner.value = '';
-        }
-            }
+            }, 3000);
         }
 
         async function procesarEspacio() {
-                    // Extraer código de espacio - múltiples formatos posibles
-        let espacio = null;
+            // Capturar y limpiar el buffer inmediatamente
+            const currentBuffer = bufferQR;
+            bufferQR = '';
+            lastBufferLength = 0;
 
-        // Patrón 1: TH seguido de cualquier cosa (formato estándar)
-        const espacioMatch = bufferQR.match(/(TH[^A-Z0-9]*[A-Z0-9]+)/i);
-        if (espacioMatch) {
-            espacio = espacioMatch[1];
-        } else {
-            // Patrón 2: 2-3 letras + números (formato compacto)
-            const espacioMatchAlt = bufferQR.match(/([A-Z]{2,3}[0-9]+)/i);
-            if (espacioMatchAlt) {
-                espacio = espacioMatchAlt[1];
+            // Extraer código de espacio - múltiples formatos posibles
+            let espacio = null;
+
+            // Patrón 1: TH seguido de cualquier cosa (formato estándar)
+            const espacioMatch = currentBuffer.match(/(TH[^A-Z0-9]*[A-Z0-9]+)/i);
+            if (espacioMatch) {
+                espacio = espacioMatch[1];
             } else {
-                // Patrón 3: Letras + caracteres especiales + letras/números
-                const espacioMatchSpecial = bufferQR.match(/([A-Z]+['\-]?[A-Z0-9]+)/i);
-                if (espacioMatchSpecial) {
-                    espacio = espacioMatchSpecial[1];
+                // Patrón 2: 2-3 letras + números (formato compacto)
+                const espacioMatchAlt = currentBuffer.match(/([A-Z]{2,3}[0-9]+)/i);
+                if (espacioMatchAlt) {
+                    espacio = espacioMatchAlt[1];
                 } else {
-                    // Patrón 4: Formato simple letras + números
-                    const espacioMatchSimple = bufferQR.match(/([A-Z]+[0-9]+)/i);
-                    if (espacioMatchSimple) {
-                        espacio = espacioMatchSimple[1];
+                    // Patrón 3: Letras + caracteres especiales + letras/números
+                    const espacioMatchSpecial = currentBuffer.match(/([A-Z]+['\-]?[A-Z0-9]+)/i);
+                    if (espacioMatchSpecial) {
+                        espacio = espacioMatchSpecial[1];
                     } else {
-                        // Solo mostrar error si el buffer tiene contenido significativo
-                        if (bufferQR.length > 8) {
-                            limpiarEstadoLectura('QR de espacio inválido');
+                        // Patrón 4: Formato simple letras + números
+                        const espacioMatchSimple = currentBuffer.match(/([A-Z]+[0-9]+)/i);
+                        if (espacioMatchSimple) {
+                            espacio = espacioMatchSimple[1];
                         } else {
-                            limpiarEstadoSilencioso();
+                            // Solo mostrar error si el buffer tiene contenido significativo
+                            if (currentBuffer.length > 8) {
+                                limpiarEstadoLectura('QR de espacio inválido');
+                            } else {
+                                limpiarEstadoSilencioso();
+                            }
+                            return;
                         }
-                        return;
                     }
                 }
             }
-        }
+
 
         // Normalizar el formato del espacio para que coincida con la BD (TH-C1)
         if (espacio) {
-            espacio = espacio.toUpperCase().replace(/'/g, '-');
+            // Eliminar espacios y convertir a mayúsculas
+            espacio = espacio.toUpperCase().trim().replace(/\s+/g, '');
+            // Normalizar: insertar guion entre el prefijo de sede (2-3 letras) y el resto del código.
+            // Aplica para TODAS las sedes: TH-30, CH-A1, LA-201, CT-5, CCP-10, etc.
+            if (!espacio.includes('-')) {
+                const prefixMatch = espacio.match(/^([A-Z]{2,3})([A-Z0-9].*)$/);
+                if (prefixMatch) {
+                    espacio = prefixMatch[1] + '-' + prefixMatch[2];
+                }
+            }
+            // Reemplazar comillas por guiones (formato heredado)
+            espacio = espacio.replace(/'/g, '-');
+
+            // CERRAR MODAL DE ESPERA DE LLAVES INMEDIATAMENTE
+            // Ya tenemos un código de espacio válido, el flujo de espera terminó
+            cerrarModalEsperaLlaves(false);
+
+            // Mostrar SweetAlert de procesamiento de lectura para que no quede silencioso
+            Swal.fire({
+                title: 'Verificando...',
+                text: 'Procesando lectura del espacio.',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
         }
 
                     // Verificar estado del espacio y reservas del usuario
@@ -2124,15 +2113,25 @@
         });
 
                     if (resultadoVerificacion.tipo === 'error') {
-            // Error al verificar estado - resetear flujo
-            // Error al verificar estado del espacio
-            limpiarEstadoLectura('Error al verificar el estado del espacio');
+            // Error al verificar estado - mostrar SweetAlert prominente
+            Swal.fire({
+                title: '❌ Error',
+                text: resultadoVerificacion.mensaje || 'Error al verificar el estado del espacio',
+                icon: 'error',
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#dc2626',
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            });
+            
+            // Resetear flujo y limpiar estado
+            limpiarEstadoLectura();
             // Restaurar autofocus del qr-input después de error en verificación de espacio
             setTimeout(() => {
                 if (qrInputManager) {
                     qrInputManager.setActiveInput('main');
                 }
-            }, 100);
+            }, 500);
             return;
         }
 
@@ -2147,12 +2146,24 @@
 
         // El usuario tiene una reserva activa en este espacio - procesar devolución automáticamente
 
-        // Mostrar mensaje de devolución en proceso
-        document.getElementById('qr-status').innerHTML = 'Procesando devolución...';
+        // Mostrar modal de devolución en proceso
+        Swal.fire({
+            title: 'Procesando devolución...',
+            text: 'Liberando espacio y registrando salida.',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
 
         const devolucion = await devolverEspacio(usuarioEscaneado, espacio);
 
         if (devolucion && devolucion.success) {
+            // Cerrar el modal de espera de llaves inmediatamente al detectar éxito
+            cerrarModalEsperaLlaves(false);
+
             // Actualizar indicador en el mapa
             const block = state.indicators.find(b => b.id === espacio);
             if (block) {
@@ -2161,8 +2172,27 @@
                 drawIndicators();
             }
 
+            // INVALIDAR CACHE Y REFRESCAR MODAL SI ESTÁ ABIERTO
+            // Esto asegura que la UI se sincronice inmediatamente con el servidor
+            sessionStorage.removeItem(`espacio_${espacio}`);
+            sessionStorage.removeItem(`espacio_${espacio}_time`);
+            sessionStorage.removeItem(`solicitante_espacio_${espacio}`);
+            sessionStorage.removeItem(`solicitante_espacio_${espacio}_time`);
+            
+            // Al devolver exitosamente: CERRAR el modal del espacio si está abierto
+            // NO reabrirlo - solo mostrar el mensaje de éxito
+            if (state.currentIndicatorId === espacio) {
+                // Cerrar el modal del espacio para no confundir al usuario
+                const modal = document.getElementById('modal-espacio');
+                if (modal) {
+                    modal.classList.add('hidden');
+                    state.currentIndicatorId = null;
+                }
+            }
+
             // Verificar si es devolución en el primer módulo
             if (devolucion.devolucion_primer_modulo && devolucion.info_clase) {
+                Swal.close(); // Cerrar modal de carga
                 // Mostrar modal para preguntar si hubo asistentes
                 mostrarModalAsistentes(devolucion.info_clase, devolucion.id_reserva, espacio);
                 
@@ -2199,12 +2229,22 @@
                 }, 2000);
             }
 
-            // IMPORTANTE: Detener completamente el procesamiento aquí
+            // IMPORTANTE: Detener completamente el procesamiento aquí y resetear flujo
             procesandoDevolucion = false;
+            ordenEscaneo = 'usuario';
+            detenerWatchdog();
             return 'devolucion_exitosa';
         } else {
             // Mostrar error específico de devolución
             const mensajeError = devolucion?.mensaje || 'Error al devolver las llaves';
+            
+            Swal.fire({
+                title: 'Error',
+                text: mensajeError,
+                icon: 'error',
+                timer: 2500,
+                showConfirmButton: false
+            });
 
             // Resetear el estado para permitir nuevo escaneo
             procesandoDevolucion = false;
@@ -2220,6 +2260,9 @@
             }
 
             if (resultadoVerificacion.tipo === 'reserva_existente') {
+                // Cerrar el modal de espera de llaves inmediatamente
+                cerrarModalEsperaLlaves(false);
+
                 // Procesando reserva existente...
 
                 // Mostrar Sweet Alert de reserva existente
@@ -2247,12 +2290,200 @@
                 return;
             }
 
+            if (resultadoVerificacion.tipo === 'activacion_reserva') {
+                // Cerrar el modal de espera de llaves inmediatamente
+                cerrarModalEsperaLlaves(false);
+
+                // La reserva programada fue activada exitosamente por el escaneo
+                const block = state.indicators.find(b => b.id === espacio);
+                if (block) {
+                    block.estado = '#FF0000'; // Rojo = Ocupado
+                    state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                    drawIndicators();
+                }
+
+                const nombreActividad = resultadoVerificacion.reserva?.nombre_actividad 
+                    ? `<br><small class="text-gray-600">${resultadoVerificacion.reserva.nombre_actividad}</small>` 
+                    : '';
+
+                Swal.fire({
+                    title: '¡Reserva Activada!',
+                    html: `Tu reserva programada ha sido activada correctamente.${nombreActividad}`,
+                    icon: 'success',
+                    confirmButtonText: 'Aceptar',
+                    confirmButtonColor: '#059669',
+                    timer: 2500,
+                    timerProgressBar: true,
+                    showConfirmButton: false
+                });
+
+                setTimeout(() => {
+                    limpiarEstadoLectura();
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 3000);
+
+                ordenEscaneo = 'usuario';
+                detenerWatchdog();
+                return;
+            }
+
+            if (resultadoVerificacion.tipo === 'reserva_fuera_horario') {
+                // Cerrar el modal de espera de llaves inmediatamente
+                cerrarModalEsperaLlaves(false);
+
+                // El usuario tiene reserva programada pero no es el horario aún
+                Swal.fire({
+                    title: 'Reserva Programada',
+                    html: `<div class="text-left">
+                        <p class="mb-3">${resultadoVerificacion.mensaje}</p>
+                        ${resultadoVerificacion.reserva?.nombre_actividad 
+                            ? `<p class="mb-2"><strong>Actividad:</strong> ${resultadoVerificacion.reserva.nombre_actividad}</p>` 
+                            : ''}
+                        <p class="mb-2"><strong>Módulos:</strong> ${resultadoVerificacion.reserva?.modulo_inicio || '-'} - ${resultadoVerificacion.reserva?.modulo_fin || '-'}</p>
+                    </div>`,
+                    icon: 'info',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#818CF8',
+                    timer: 3000,
+                    timerProgressBar: true,
+                    showConfirmButton: false
+                });
+
+                setTimeout(() => {
+                    limpiarEstadoLectura();
+                    if (qrInputManager) {
+                        qrInputManager.setActiveInput('main');
+                    }
+                }, 3500);
+
+                ordenEscaneo = 'usuario';
+                detenerWatchdog();
+                return;
+            }
+
+            if (resultadoVerificacion.tipo === 'clase_programada_otro_docente') {
+                // Cerrar el modal de espera de llaves inmediatamente
+                cerrarModalEsperaLlaves(false);
+
+                const clase = resultadoVerificacion.clase;
+
+                Swal.fire({
+                    title: 'Clase Programada',
+                    html: `
+                        <div class="text-left">
+                            <p class="mb-4 text-orange-600 font-semibold">Esta sala tiene una clase programada en este horario.</p>
+                            <div class="p-3 mb-4 bg-orange-50 border-l-4 border-orange-500 rounded text-sm">
+                                <p><strong>Docente:</strong> ${clase.docente}</p>
+                                <p><strong>Asignatura:</strong> ${clase.asignatura}</p>
+                                <p><strong>Horario:</strong> ${clase.hora_inicio} - ${clase.hora_termino}</p>
+                            </div>
+                            <p class="text-gray-700">El docente programado aún no ha asistido. ¿Deseas utilizar este espacio de todas formas?</p>
+                        </div>
+                    `,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, Reservar Espacio',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#D97706',
+                    cancelButtonColor: '#6B7280',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        // Proceder con la reserva
+                        await continuarReserva(usuarioEscaneado, espacio);
+                    } else {
+                        // Cancelado - resetear
+                        limpiarEstadoLectura();
+                        if (qrInputManager) {
+                            qrInputManager.setActiveInput('main');
+                        }
+                        ordenEscaneo = 'usuario';
+                    }
+                });
+
+                detenerWatchdog();
+                return;
+            }
+
             if (resultadoVerificacion.tipo === 'espacio_ocupado') {
                 // Procesando espacio ocupado...
-                // Verificar si el ocupante es el mismo usuario que acaba de escanear
-                if (resultadoVerificacion.ocupante && resultadoVerificacion.ocupante.run === usuarioEscaneado) {
-                    // Es el mismo usuario, no mostrar mensaje de ocupado
-                    ordenEscaneo = 'usuario';
+                // Si es el mismo usuario, permitimos que continúe para que pueda "forzar cierre" 
+                // de su propia sesión si esta quedó abierta o tiene una discrepancia de horario.
+
+                // NUEVA LÓGICA: Si puede forzar cierre, mostrar modal con botón de acción
+                if (resultadoVerificacion.puede_forzar_cierre) {
+                    const ocupante = resultadoVerificacion.ocupante;
+                    const idReservaAnterior = resultadoVerificacion.id_reserva_anterior;
+                    
+                    Swal.fire({
+                        title: 'Sala Ocupada',
+                        html: `
+                            <div class="text-left">
+                                <p class="mb-4 text-orange-600 font-semibold">La sala aún figura ocupada por el docente anterior.</p>
+                                <div class="p-3 mb-4 bg-orange-50 border-l-4 border-orange-500 rounded text-sm">
+                                    <p><strong>Docente anterior:</strong> ${ocupante.nombre}</p>
+                                    <p><strong>Hora inicio:</strong> ${ocupante.hora_inicio}</p>
+                                </div>
+                                <p class="text-gray-700">Usted tiene una clase programada en este bloque. ¿Desea forzar el cierre de la sesión anterior e iniciar su clase?</p>
+                            </div>
+                        `,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, Forzar Cierre e Iniciar Clase',
+                        cancelButtonText: 'Cancelar',
+                        confirmButtonColor: '#059669',
+                        cancelButtonColor: '#6B7280',
+                    }).then(async (result) => {
+                        if (result.isConfirmed) {
+                            // Mostrar cargando
+                            Swal.fire({
+                                title: 'Procesando...',
+                                text: 'Realizando cierre forzado e iniciando su clase',
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                }
+                            });
+
+                            const forceResult = await forzarCierreYTomarEspacio(usuarioEscaneado, espacio, idReservaAnterior);
+                            
+                            if (forceResult && forceResult.success) {
+                                // Éxito
+                                Swal.fire({
+                                    title: '¡Éxito!',
+                                    text: forceResult.mensaje,
+                                    icon: 'success',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                });
+                                
+                                // Actualizar UI
+                                const block = state.indicators.find(b => b.id === espacio);
+                                if (block) {
+                                    block.estado = '#FF0000'; // Rojo = Ocupado
+                                    state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                                    drawIndicators();
+                                }
+                            } else {
+                                // Error
+                                Swal.fire({
+                                    title: 'Error',
+                                    text: forceResult.mensaje || 'No se pudo realizar el cierre forzado',
+                                    icon: 'error'
+                                });
+                            }
+                        }
+                        
+                        limpiarEstadoLectura();
+                        if (qrInputManager) {
+                            qrInputManager.setActiveInput('main');
+                        }
+                        ordenEscaneo = 'usuario';
+                    });
+                    
                     return;
                 }
 
@@ -2273,7 +2504,7 @@
                     `;
                 }
                 
-                htmlContent += `<p class="mt-4 text-sm text-gray-700 font-semibold">Debe desmarcar la reserva anterior antes de volver a solicitar esta sala.</p></div>`;
+                htmlContent += `<p class="mt-4 text-sm text-gray-700 font-semibold">Si tienes una clase programada próximamente, recuerda que puedes tomar la sala hasta 15 minutos antes del inicio del módulo.</p></div>`;
 
                 // Mostrar SweetAlert
                 Swal.fire({
@@ -2299,109 +2530,8 @@
                 return;
             }
 
-                    // Si llegamos aquí, el espacio está disponible para crear una nueva reserva
-        // Verificar el tipo de usuario para determinar el flujo
-                    usuarioInfo = await verificarUsuario(usuarioEscaneado);
-
-        if (!usuarioInfo || !usuarioInfo.verificado) {
-            ordenEscaneo = 'usuario';
-            // Restaurar autofocus del qr-input después de error en verificación de usuario
-            setTimeout(() => {
-                if (qrInputManager) {
-                    qrInputManager.setActiveInput('main');
-                }
-            }, 100);
-            return;
-        }
-
-        // Determinar el flujo según el tipo de usuario
-        if (usuarioInfo.tipo_usuario === 'profesor') {
-            // Verificar si tiene clases programadas
-            const tieneClases = await verificarClasesProfesor(usuarioEscaneado);
-
-            if (tieneClases === true) {
-                // CASO 1: Profesor CON clases - registrar asistencia usando endpoint específico
-                const resultado = await registrarAsistenciaProfesor(usuarioEscaneado, espacio);
-                if (resultado && resultado.success) {
-                    // Mostrar mensaje de proceso
-                    document.getElementById('qr-status').innerHTML = 'Registrando asistencia...';
-
-                    // Actualizar indicador en el mapa
-                    const block = state.indicators.find(b => b.id === espacio);
-                    if (block) {
-                        block.estado = '#FF0000'; // Rojo = Ocupado
-                        state.originalCoordinates = state.indicators.map(i => ({ ...i }));
-                        drawIndicators();
-                    }
-
-                    // Mostrar Sweet Alert de éxito para asistencia registrada
-                    Swal.fire({
-                        title: '¡Asistencia Registrada!',
-                        text: 'El profesor ha registrado su asistencia correctamente.',
-                        icon: 'success',
-                        confirmButtonText: 'Aceptar',
-                        confirmButtonColor: '#059669',
-                        timer: 1500,
-                        timerProgressBar: true,
-                        showConfirmButton: false
-                    });
-
-                    // Mostrar mensaje de asistencia registrada
-                    document.getElementById('qr-status').innerHTML = 'Asistencia registrada';
-                    document.getElementById('qr-status').classList.remove('parpadeo');
-
-                    // Limpiar solo el estado de lectura después de un delay
-                    setTimeout(() => {
-                        // Mantener usuarioEscaneado para continuar el flujo
-                        ordenEscaneo = 'espacio'; // Ya escaneó usuario, ahora espera espacio
-                        espacioParaReserva = null;
-                        runParaReserva = null;
-
-                        // Limpiar solo buffers de lectura
-                        bufferQR = '';
-
-                        // Resetear solo interfaz de lectura
-                        limpiarEstadoLectura();
-
-                        // Mantener información del usuario visible
-                        const qrStatus = document.getElementById('qr-status');
-                        if (qrStatus) {
-                            qrStatus.classList.remove('parpadeo');
-                            qrStatus.innerHTML = 'Usuario verificado. Escanee el espacio.';
-                        }
-
-                        // Restaurar autofocus del qr-input después de registrar asistencia
-                        if (qrInputManager) {
-                            qrInputManager.setActiveInput('main');
-                        }
-                    }, 2000);
-                } else {
-                    // Error en registro de asistencia - restaurar autofocus
-                    setTimeout(() => {
-                        if (qrInputManager) {
-                            qrInputManager.setActiveInput('main');
-                        }
-                    }, 100);
-                }
-            } else {
-                // CASO 2: Profesor SIN clases - solicita con módulos (máx 2)
-                await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado, 2); // Máximo 2 módulos
-                return; // No continuar, esperar selección de módulos
-            }
-        } else if (usuarioInfo.tipo_usuario === 'solicitante_registrado') {
-            // CASO 3: Solicitante registrado - solicita con módulos (máx 2)
-            await mostrarModalSeleccionarModulos(espacio, usuarioEscaneado, 2); // Máximo 2 módulos
-            return; // No continuar, esperar selección de módulos
-        } else {
-            ordenEscaneo = 'usuario';
-            // Restaurar autofocus del qr-input después de error en tipo de usuario
-            setTimeout(() => {
-                if (qrInputManager) {
-                    qrInputManager.setActiveInput('main');
-                }
-            }, 100);
-            return;
-        }
+            // Si llegamos aquí, el espacio está disponible para crear una nueva reserva
+            await continuarReserva(usuarioEscaneado, espacio);
 
         // Limpiar buffer después de procesar espacio exitosamente
         bufferQR = '';
@@ -2574,38 +2704,63 @@
         function dibujarIndicador(elements, position, finalWidth, finalHeight, color, id, isHovered, detalles,
             moduloActual) {
             // Calcular el factor de escala para el efecto hover
-            const scale = isHovered ? 1.2 : 1.0;
+            const scale = isHovered ? 1.15 : 1.0;
             const scaledWidth = finalWidth * scale;
             const scaledHeight = finalHeight * scale;
 
             // Calcular la posición para que el escalado sea desde el centro
-            const offsetX = (scaledWidth - finalWidth) / 2;
-            const offsetY = (scaledHeight - finalHeight) / 2;
             const drawX = position.x - scaledWidth / 2;
             const drawY = position.y - scaledHeight / 2;
+            const radius = 8;
 
-            // Dibujar el rectángulo del indicador
-            elements.indicatorsCtx.fillStyle = color;
-            elements.indicatorsCtx.fillRect(drawX, drawY, scaledWidth, scaledHeight);
+            // 1. Dibujar Sombra (Efecto Elevación)
+            elements.indicatorsCtx.save();
+            elements.indicatorsCtx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            elements.indicatorsCtx.shadowBlur = isHovered ? 15 : 8;
+            elements.indicatorsCtx.shadowOffsetX = 0;
+            elements.indicatorsCtx.shadowOffsetY = 4;
 
-            // Dibujar el borde del indicador
-            elements.indicatorsCtx.lineWidth = 2;
-            elements.indicatorsCtx.strokeStyle = config.indicatorBorder;
-            elements.indicatorsCtx.strokeRect(drawX, drawY, scaledWidth, scaledHeight);
+            // 2. Dibujar el rectángulo con bordes redondeados
+            elements.indicatorsCtx.beginPath();
+            elements.indicatorsCtx.roundRect(drawX, drawY, scaledWidth, scaledHeight, radius);
+            
+            // 3. Crear Gradiente Premium
+            const gradient = elements.indicatorsCtx.createLinearGradient(drawX, drawY, drawX, drawY + scaledHeight);
+            
+            // Función para aclarar color (ajustar brillo)
+            const lightenColor = (col, amt) => {
+                let usePound = false;
+                if (col[0] == "#") { col = col.slice(1); usePound = true; }
+                let num = parseInt(col, 16);
+                let r = (num >> 16) + amt;
+                if (r > 255) r = 255; else if (r < 0) r = 0;
+                let b = ((num >> 8) & 0x00FF) + amt;
+                if (b > 255) b = 255; else if (b < 0) b = 0;
+                let g = (num & 0x0000FF) + amt;
+                if (g > 255) g = 255; else if (g < 0) g = 0;
+                return (usePound ? "#" : "") + (g | (b << 8) | (r << 16)).toString(16).padStart(6, '0');
+            };
 
-            // Dibujar el texto del indicador (dividir por guion si existe)
-            elements.indicatorsCtx.font = `bold ${config.fontSize}px Arial`;
-            elements.indicatorsCtx.fillStyle = config.indicatorTextColor;
+            gradient.addColorStop(0, lightenColor(color, 30));
+            gradient.addColorStop(1, color);
+            
+            elements.indicatorsCtx.fillStyle = gradient;
+            elements.indicatorsCtx.fill();
+            elements.indicatorsCtx.restore();
+
+            // 4. Dibujar el texto del indicador (Sin borde blanco por solicitud)
+            elements.indicatorsCtx.font = `bold ${config.fontSize}px 'Inter', system-ui, sans-serif`;
+            elements.indicatorsCtx.fillStyle = '#FFFFFF';
             elements.indicatorsCtx.textAlign = 'center';
             elements.indicatorsCtx.textBaseline = 'middle';
+            
+            // Sombra de texto para legibilidad
+            elements.indicatorsCtx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            elements.indicatorsCtx.shadowBlur = 4;
+            elements.indicatorsCtx.shadowOffsetX = 1;
+            elements.indicatorsCtx.shadowOffsetY = 1;
 
-            let lines = [];
-            if (id.includes('-')) {
-                lines = id.split('-');
-            } else {
-                lines = [id];
-            }
-
+            let lines = id.includes('-') ? id.split('-') : [id];
             const lineHeight = config.fontSize + 2;
             const totalTextHeight = lines.length * lineHeight;
             const startY = position.y - (totalTextHeight / 2) + (lineHeight / 2);
@@ -2632,23 +2787,27 @@
                 // Determinar color basado en el estado
                 let color = indicator.estado;
 
-                // Convertir estado a minúsculas para comparación
-                const estadoLower = indicator.estado.toLowerCase();
+                // Normalizar estado para comparación robusta (quitar acentos y pasar a minúsculas)
+                const estadoLower = indicator.estado.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-                if (estadoLower === 'mantención' || estadoLower === 'mantenimiento') {
-                    color = '#6B7280'; // Gris - Mantenimiento
+                if (estadoLower === 'mantencion' || estadoLower === 'mantenimiento') {
+                    color = '#9ca3af'; // Gris 400 - Mantenimiento
                 } else if (estadoLower === 'disponible' || estadoLower === 'libre') {
-                    color = '#059669'; // Verde
-                } else if (estadoLower === 'ocupado') {
-                    color = '#FF0000'; // Rojo
-                } else if (estadoLower === 'reservado') {
-                    color = '#F59E0B'; // Naranja
+                    color = '#10b981'; // Esmeralda 500 - Disponible
+                } else if (estadoLower === 'ocupado' || estadoLower === 'reserva espontanea') {
+                    color = '#ef4444'; // Rojo 500 - Ocupado / Espontánea
+                } else if (estadoLower === 'programado' || estadoLower === 'reservado') {
+                    color = '#f59e0b'; // Amber 500 - Programado / Reservado
+                } else if (estadoLower === 'clase registrada') {
+                    color = '#ef4444'; // Rojo 500 - Clase Registrada
+                } else if (estadoLower === 'clase programada') {
+                    color = '#f59e0b'; // Amber 500 - Clase Programada (por iniciar)
                 } else if (estadoLower === 'proximo') {
-                    color = '#3B82F6'; // Azul
-                } else if (estadoLower === 'clasesinasistentes') {
-                    color = '#1F2937'; // Negro oscuro - Clase sin asistentes (después de 15 min)
+                    color = '#3b82f6'; // Azul 500 - Próximo
+                } else if (estadoLower === 'clasesinasistentes' || estadoLower === 'clase no registrada') {
+                    color = '#374151'; // Gris 700 - Clase no registrada
                 } else {
-                    color = '#059669'; // Verde por defecto
+                    color = '#10b981'; // Esmeralda por defecto
                 }
 
                 // Verificar si este indicador está siendo hover
@@ -2813,6 +2972,10 @@
                 '#FF0000': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
                 '#ef4444': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
                 '#dc2626': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                'reserva espontánea': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                'Reserva Espontánea': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                'clase registrada': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
+                'Clase registrada': { texto: 'Ocupado', pill: 'border-2 border-red-500 bg-red-100 text-red-700', icon: 'bg-red-500' },
                 'reservado': { texto: 'Reservado', pill: 'border-2 border-yellow-500 bg-yellow-100 text-yellow-700', icon: 'bg-yellow-500' },
                 'Reservado': { texto: 'Reservado', pill: 'border-2 border-yellow-500 bg-yellow-100 text-yellow-700', icon: 'bg-yellow-500' },
                 '#FFA500': { texto: 'Reservado', pill: 'border-2 border-yellow-500 bg-yellow-100 text-yellow-700', icon: 'bg-yellow-500' },
@@ -2828,7 +2991,10 @@
                 '#6B7280': { texto: 'En Mantención', pill: 'border-2 border-gray-500 bg-gray-100 text-gray-700', icon: 'bg-gray-500' },
                 'ClaseSinAsistentes': { texto: 'Clase no realizada (15+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' },
                 'clasesinasistentes': { texto: 'Clase no realizada (15+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' },
-                '#1F2937': { texto: 'Clase no realizada (15+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' }
+                '#1F2937': { texto: 'Clase no realizada (15+ min)', pill: 'border-2 border-gray-800 bg-gray-900 text-white', icon: 'bg-gray-800' },
+                'programado': { texto: 'Programado', pill: 'border-2 border-indigo-500 bg-indigo-100 text-indigo-700', icon: 'bg-indigo-400' },
+                'Programado': { texto: 'Programado', pill: 'border-2 border-indigo-500 bg-indigo-100 text-indigo-700', icon: 'bg-indigo-400' },
+                '#818CF8': { texto: 'Programado', pill: 'border-2 border-indigo-500 bg-indigo-100 text-indigo-700', icon: 'bg-indigo-400' }
             };
 
             const config = estadoConfig[estadoReal] || {
@@ -2890,7 +3056,10 @@
         }
 
         try {
-            const response = await fetch(`/api/espacio/${espacioId}/informacion-detallada`, {
+            const espacioIdEncoded = encodeURIComponent(String(espacioId));
+            const detalleUrl = `/api/espacio/${espacioIdEncoded}/informacion-detallada`;
+
+            const response = await fetch(detalleUrl, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -2899,7 +3068,12 @@
             });
 
             if (!response.ok) {
-                console.error('❌ Error HTTP:', response.status, response.statusText);
+                console.error('❌ Error HTTP al cargar detalle del espacio:', {
+                    espacioId,
+                    detalleUrl,
+                    status: response.status,
+                    statusText: response.statusText
+                });
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
@@ -2919,7 +3093,10 @@
 
             return data;
         } catch (error) {
-            console.error('❌ Error en fetch:', error);
+            console.error('❌ Error en fetch de detalle del espacio:', {
+                espacioId,
+                error: error?.message || error
+            });
             throw error;
         }
         }
@@ -3144,6 +3321,12 @@
                         showConfirmButton: false
                     });
 
+                    // Invalidar cache local
+                    sessionStorage.removeItem(`espacio_${espacioId}`);
+                    sessionStorage.removeItem(`espacio_${espacioId}_time`);
+                    sessionStorage.removeItem(`solicitante_espacio_${espacioId}`);
+                    sessionStorage.removeItem(`solicitante_espacio_${espacioId}_time`);
+
                     // Cerrar modal primero
                     cerrarModalEspacio();
 
@@ -3195,19 +3378,26 @@
             elements.pasoClasesContainer.style.display = 'block';
             
             // OCULTAR los contenedores antiguos
-            if (elements.ocupanteContainer) elements.ocupanteContainer.style.display = 'none';
+            // Para solicitantes, MOSTRAR el contenedor de ocupante con su info detallada
+            if (elements.ocupanteContainer) {
+                if (data.tipo_ocupacion === 'solicitante') {
+                    elements.ocupanteContainer.style.display = 'block';
+                } else {
+                    elements.ocupanteContainer.style.display = 'none';
+                }
+            }
             if (elements.proximaClaseContainer) elements.proximaClaseContainer.style.display = 'none';
             if (elements.claseActualContainer) elements.claseActualContainer.style.display = 'none';
             
             // Determinar si hay una reserva pendiente verificando la HORA
-            // Una reserva está "AHORA" solo si su hora_inicio está en los próximos 10 minutos
+            // Una reserva está "AHORA" solo si su hora_inicio está en los próximos 15 minutos
             let tieneReservaPendiente = false;
             let reservaEstaAhora = false;
             
             if (data.proxima_clase && data.proxima_clase.asignatura && !data.asignatura) {
                 tieneReservaPendiente = true;
                 
-                // Verificar si la próxima clase está en los próximos 10 minutos
+                // Verificar si la próxima clase está en los próximos 15 minutos
                 if (data.proxima_clase.hora_inicio) {
                     const ahora = new Date();
                     const horaActual = ahora.toLocaleTimeString('es-ES', {
@@ -3224,8 +3414,9 @@
                     const minutoProximo = horaProx * 60 + minProx;
                     const diferencia = minutoProximo - minutoActual;
                     
-                    // La clase está "AHORA" si comienza en los próximos 10 minutos (rango flexible)
-                    reservaEstaAhora = diferencia >= 0 && diferencia <= 10;
+                    // La clase está "AHORA" si comienza en los próximos 15 minutos 
+                    // O si ya debería haber comenzado (hasta 90 minutos de margen para cubrir el módulo)
+                    reservaEstaAhora = diferencia <= 15 && diferencia > -90;
                     
                     console.log('⏰ Análisis de hora:', {
                         hora_actual: horaActual,
@@ -3308,6 +3499,17 @@
                             ${horarioInicio ? `<div class="text-xs text-yellow-600">${horarioInicio}</div>` : ''}
                         </div>
                     `;
+                } else if (data.tipo_reserva === 'espontanea') {
+                    const horario = data.hora_inicio && data.hora_termino ? 
+                        `${data.hora_inicio.substring(0, 5)} - ${data.hora_termino.substring(0, 5)}` : 
+                        (data.hora_inicio ? data.hora_inicio.substring(0, 5) : '');
+                    elements.pasoEstadoActual.innerHTML = `
+                        <div class="text-center">
+                            <div class="font-semibold text-blue-700 mb-1">${data.nombre || 'Reserva espontánea'}</div>
+                            <div class="text-xs text-gray-500 mb-1">Reserva espontánea</div>
+                            ${horario ? `<div class="text-xs text-blue-600">${horario}</div>` : ''}
+                        </div>
+                    `;
                 } else if (data.asignatura) {
                     const horario = data.hora_inicio && data.hora_termino ? 
                         `${data.hora_inicio.substring(0, 5)} - ${data.hora_termino.substring(0, 5)}` : 
@@ -3319,11 +3521,29 @@
                             ${horario ? `<div class="text-xs text-blue-600">${horario}</div>` : ''}
                         </div>
                     `;
-                } else if (indicator?.estado === 'Ocupado' && data.nombre) {
+                } else if (data.tipo_ocupacion === 'solicitante' && (indicator?.estado === 'Ocupado' || indicator?.estado === 'Programado' || indicator?.estado === 'Reserva Espontánea' || indicator?.estado === 'Clase registrada')) {
+                    // Solicitante (persona externa, no profesor)
+                    elements.pasoEstadoActual.innerHTML = `
+                        <div class="text-center">
+                            <div class="font-semibold text-blue-700 mb-1">${data.nombre || 'Solicitante'}</div>
+                            <div class="text-xs text-gray-500">${data.tipo_solicitante || 'Solicitante externo'}</div>
+                            ${data.hora_inicio ? `<div class="text-xs text-blue-600">${data.hora_inicio.substring(0, 5)}</div>` : ''}
+                        </div>
+                    `;
+                } else if ((indicator?.estado === 'Ocupado' || indicator?.estado === 'Reservado' || indicator?.estado === 'Programado' || indicator?.estado === 'Reserva Espontánea' || indicator?.estado === 'Clase registrada') && data.nombre) {
+                    // Espacio ocupado sin asignatura → reserva espontánea o uso libre (profesor)
+                    let etiqueta = 'En uso';
+                    if (data.tipo_reserva === 'espontanea') etiqueta = 'Reserva espontánea';
+                    if (data.tipo_reserva === 'clase_regular') etiqueta = 'Clase programada';
+                    if (data.tipo_reserva === 'clase_colaborador') etiqueta = 'Clase temporal';
+                    if (data.tipo_reserva === 'programada') etiqueta = 'Reserva programada';
+                    if (data.tipo_reserva === 'programada_docente') etiqueta = 'Clase programada';
+
                     elements.pasoEstadoActual.innerHTML = `
                         <div class="text-center">
                             <div class="font-semibold text-blue-700 mb-1">${data.nombre}</div>
-                            <div class="text-xs text-gray-500">En uso</div>
+                            <div class="text-xs text-gray-500">${etiqueta}</div>
+                            ${data.hora_inicio ? `<div class="text-xs text-blue-600">${data.hora_inicio.substring(0, 5)}</div>` : ''}
                         </div>
                     `;
                 } else {
@@ -4017,7 +4237,7 @@
 
                         <!-- Botón de cerrar -->
                         <div class="flex justify-end px-8 py-4 bg-gray-50 border-t border-gray-200">
-                            <button onclick="cerrarModalMantención()" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                            <button onclick="cerrarModalMantención()" class="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors duration-100">
                                 Entendido
                             </button>
                         </div>
@@ -4330,7 +4550,7 @@
                             container: 'swal-veto-container',
                             popup: 'swal-veto-popup',
                             closeButton: 'swal-veto-close',
-                            confirmButton: 'bg-red-800 hover:bg-red-900 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg'
+                            confirmButton: 'bg-red-800 hover:bg-red-900 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-150 transform hover:scale-105 shadow-lg'
                         },
                         showCloseButton: true,
                         buttonsStyling: false,
@@ -4379,8 +4599,6 @@
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
                     },
                     body: JSON.stringify({
-                        id_reserva: idReserva,
-                        hubo_asistentes: huboAsistentes,
                         id_espacio: espacioId,
                         run: run
                     })
@@ -4391,8 +4609,10 @@
                 if (!data.success) {
                     console.error('Error al registrar asistencia:', data.mensaje);
                 }
+                return data;
             } catch (error) {
-                console.error('Error en registrarAsistencia:', error);
+                console.error('Error en registrarAccesoSalaEstudio:', error);
+                return { success: false, mensaje: 'Error de conexión' };
             }
         }
 
@@ -4497,11 +4717,11 @@
                 
                 // Cambiar color según ocupación
                 if (porcentaje >= 90) {
-                    progressBar.className = 'bg-red-600 h-4 rounded-full transition-all duration-300';
+                    progressBar.className = 'bg-red-600 h-4 rounded-full transition-all duration-150';
                 } else if (porcentaje >= 70) {
-                    progressBar.className = 'bg-yellow-500 h-4 rounded-full transition-all duration-300';
+                    progressBar.className = 'bg-yellow-500 h-4 rounded-full transition-all duration-150';
                 } else {
-                    progressBar.className = 'bg-pink-600 h-4 rounded-full transition-all duration-300';
+                    progressBar.className = 'bg-pink-600 h-4 rounded-full transition-all duration-150';
                 }
             }
         }
@@ -4522,7 +4742,7 @@
             };
 
             const toast = document.createElement('div');
-            toast.className = `fixed top-4 right-4 ${colores[tipo]} text-white px-6 py-3 rounded-lg shadow-lg z-[10000] transform transition-all duration-300 translate-x-full`;
+            toast.className = `fixed top-4 right-4 ${colores[tipo]} text-white px-6 py-3 rounded-lg shadow-lg z-[10000] transform transition-all duration-150 translate-x-full`;
             toast.innerHTML = `
                 <div class="flex items-center gap-2">
                     <i class="fas ${iconos[tipo]}"></i>
@@ -4617,6 +4837,11 @@
                 return;
             }
 
+            // No consultar mientras la pestaña esté en background.
+            if (!forzarActualizacion && document.hidden) {
+                return;
+            }
+
             try {
                 const response = await fetch(`/plano/${mapaId}/bloques?t=${Date.now()}`); // Cache busting
                 if (!response.ok) {
@@ -4663,47 +4888,7 @@
                     actualizarModuloYColores();
                 });
             }
-                // Iniciar polling para sincronizar estados entre máquinas
-                startEstadoPolling();
         });
-
-            // Polling que consulta el endpoint de estados cada 5s si la pestaña está visible
-            let estadoPollingInterval = null;
-            function startEstadoPolling(intervalMs = 5000) {
-                if (estadoPollingInterval) return;
-                estadoPollingInterval = setInterval(async () => {
-                    // No consultar si la pestaña está en background
-                    if (document.hidden) return;
-
-                    // Evitar consultar si hubo cambios locales recientes
-                    const tiempoTranscurrido = Date.now() - (state.ultimoCambioLocal || 0);
-                    if (tiempoTranscurrido < 5000) return;
-
-                    try {
-                        const res = await fetch('/api/espacios/estados');
-                        if (!res.ok) return;
-                        const json = await res.json();
-                        if (!json.success) return;
-
-                        // Actualizar state.indicators según respuesta
-                        const nuevos = json.espacios || [];
-                        let cambios = false;
-                        nuevos.forEach(item => {
-                            const indicador = state.indicators.find(i => i.id === item.id_espacio);
-                            if (indicador && indicador.estado !== item.estado) {
-                                indicador.estado = item.estado;
-                                cambios = true;
-                            }
-                        });
-
-                        if (cambios) {
-                            drawIndicators();
-                        }
-                    } catch (err) {
-                        // Silenciar errores de red
-                    }
-                }, intervalMs);
-            }
 
         document.addEventListener("DOMContentLoaded", function () {
 
@@ -4932,18 +5117,19 @@
 
                         // Restaurar el input QR activo
                         qrInputManager.setActiveInput('main');
+
+                        // Actualizar información en la interfaz
+                        document.getElementById('qr-status').innerHTML = 'Solicitante registrado. Escanee el QR del espacio.';
+                        // Llamar con el booleano en true para que tenga una pausa y luego aparezca el modal
+                        mostrarInfo('usuario', datosSolicitante.nombre, runSolicitantePendiente, true);
+
+                        // Continuar con el flujo - solo necesita escanear espacio
+                        usuarioEscaneado = runSolicitantePendiente;
+                        ordenEscaneo = 'espacio'; // Ya no necesita escanear usuario
+
+                        // Limpiar variables
+                        runSolicitantePendiente = null;
                     });
-
-                    // Actualizar información en la interfaz
-                    document.getElementById('qr-status').innerHTML = 'Solicitante registrado. Escanee el QR del espacio.';
-                    mostrarInfo('usuario', datosSolicitante.nombre, runSolicitantePendiente);
-
-                    // Continuar con el flujo - solo necesita escanear espacio
-                    usuarioEscaneado = runSolicitantePendiente;
-                    ordenEscaneo = 'espacio'; // Ya no necesita escanear usuario
-
-                    // Limpiar variables
-                    runSolicitantePendiente = null;
 
                 } else {
                     // Error al registrar solicitante
@@ -5087,9 +5273,14 @@
 
                 // Enviando parámetros al servidor, incluyendo información sobre si estamos en break
                 const moduloParaReserva = obtenerModuloParaReserva(horaActual);
-                const response = await fetch(
-                    `/api/espacio/${idEspacio}/modulos-disponibles?hora_actual=${horaActual}&dia_actual=${diaActual}&modulo_solicitado=${moduloParaReserva}&permitir_breaks=true`
-                );
+                const espacioIdEncoded = encodeURIComponent(String(idEspacio));
+                const query = new URLSearchParams({
+                    hora_actual: horaActual,
+                    dia_actual: diaActual,
+                    modulo_solicitado: String(moduloParaReserva),
+                    permitir_breaks: 'true'
+                });
+                const response = await fetch(`/api/espacio/${espacioIdEncoded}/modulos-disponibles?${query.toString()}`);
 
                 if (response.ok) {
                     const data = await response.json();
@@ -5123,11 +5314,11 @@
             }
         }
 
-        async function mostrarModalSeleccionarModulos(idEspacio, run, maxModulos = 2) {
+        async function mostrarModalSeleccionarModulos(idEspacio, run) {
                     const modulosDisponibles = await calcularModulosDisponibles(idEspacio);
 
-        // Limitar a máximo 2 módulos según la lógica del negocio
-        maxModulosDisponibles = Math.min(modulosDisponibles, maxModulos);
+        // Usar exactamente los módulos disponibles calculados por el servidor
+        maxModulosDisponibles = modulosDisponibles;
 
         // Actualizar elementos del modal si existen
         const maxModulosElement = document.getElementById('max-modulos-disponibles');
@@ -5153,6 +5344,7 @@
         // Mostrar el modal directamente
         const modal = document.getElementById('modal-seleccionar-modulos');
         if (modal) {
+            Swal.close(); // Cerrar SweetAlert de verificación antes de mostrar modal
             modal.classList.remove('hidden');
             // Desactivar todos los inputs QR cuando se abre el modal
             qrInputManager.desactivarTodosLosInputs();
@@ -5266,6 +5458,20 @@
             // Mostrar mensaje de proceso
             document.getElementById('qr-status').innerHTML = 'Creando reserva...';
 
+            // Mostrar SweetAlert indicando que se está creando el registro o reserva
+            const loadingTitle = (tipoUsuario === 'profesor') ? 'Creando registro de clase...' : 'Creando reserva...';
+            const loadingText = (tipoUsuario === 'profesor') ? 'Por favor, espera un momento mientras registramos tu clase.' : 'Por favor, espera un momento mientras registramos tu reserva.';
+            Swal.fire({
+                title: loadingTitle,
+                text: loadingText,
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
             const response = await fetch(apiEndpoint, {
                 method: 'POST',
                 headers: {
@@ -5282,9 +5488,9 @@
             // Cerrar el modal inmediatamente
             cerrarModalModulos();
 
-            // Mostrar Sweet Alert de éxito para reserva creada
+            // Mostrar Sweet Alert de éxito para reserva creada (Sin programación)
             Swal.fire({
-                title: '¡Reserva Creada!',
+                title: '¡Reserva registrada!',
                 text: 'La reserva ha sido creada exitosamente.',
                 icon: 'success',
                 confirmButtonText: 'Aceptar',
@@ -5345,6 +5551,11 @@
         function obtenerDiaActual() {
             const dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
             return dias[new Date().getDay()];
+        }
+
+        function obtenerPrefijoDiaActual() {
+            const prefijos = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+            return prefijos[new Date().getDay()];
         }
 
         function moduloActualNum(hora) {
@@ -5413,7 +5624,7 @@
             return horaCompleta.slice(0, 5);
         }
 
-        async function actualizarModuloYColores() {
+        function actualizarModuloYColores() {
             const ahora = new Date();
             const horaActual = ahora.toLocaleTimeString('es-ES', {
                 hour: '2-digit',
@@ -5428,7 +5639,8 @@
             const moduloHorarioElement = document.getElementById('horario-actual');
 
             if (moduloActual && moduloActualElement && moduloHorarioElement) {
-                moduloActualElement.textContent = moduloActual;
+                const prefijo = obtenerPrefijoDiaActual();
+                moduloActualElement.textContent = `${prefijo}.${moduloActual}`;
 
                 // Obtener el horario del módulo actual
                 const diaActual = obtenerDiaActual();
@@ -5441,7 +5653,8 @@
                 // Estamos en un break entre módulos
                 if (moduloActualElement) {
                     if (moduloParaReserva) {
-                        moduloActualElement.textContent = `Break (Próximo: ${moduloParaReserva})`;
+                        const prefijo = obtenerPrefijoDiaActual();
+                        moduloActualElement.textContent = `Break (Próximo: ${prefijo}.${moduloParaReserva})`;
                     } else {
                         moduloActualElement.textContent = 'Break entre módulos';
                     }
@@ -5450,10 +5663,7 @@
                     moduloHorarioElement.textContent = 'Reservas disponibles';
                 }
             }
-
-                    // Actualizar colores de los indicadores desde el servidor
-        await actualizarColoresEspacios();
-    }
+        }
 
     // Agregar funcionalidad para cerrar modales con la tecla Escape
     document.addEventListener('keydown', (event) => {
@@ -5479,6 +5689,12 @@
                 return;
             }
 
+            // Cerrar modal de sala de estudio si está abierto
+            if (typeof salaEstudioActual !== 'undefined' && salaEstudioActual.modalAbierto) {
+                cerrarModalSalaEstudio();
+                return;
+            }
+
             // Cerrar modales de Livewire si están abiertos
             const modalesLivewire = document.querySelectorAll('[data-modal]');
             modalesLivewire.forEach(modal => {
@@ -5495,12 +5711,15 @@
     // Escuchar cambios en localStorage para sincronizar mapa entre pestañas (p.ej. eliminación de reservas)
     window.addEventListener('storage', function (event) {
         if (!event.key) return;
+        
         if (event.key === 'reserva_eliminada') {
             try {
                 const payload = JSON.parse(event.newValue);
                 const espacioKey = `espacio_${payload.id_espacio}`;
                 sessionStorage.removeItem(espacioKey);
                 sessionStorage.removeItem(`${espacioKey}_time`);
+                sessionStorage.removeItem(`solicitante_${espacioKey}`);
+                sessionStorage.removeItem(`solicitante_${espacioKey}_time`);
 
                 if (typeof actualizarModuloYColores === 'function') {
                     actualizarModuloYColores();
@@ -5508,318 +5727,17 @@
             } catch (err) {
                 console.error('Error procesando evento storage reserva_eliminada', err);
             }
+        } else if (event.key === 'reserva_cambiada' || event.key === 'espacio_cambiado') {
+            console.log('🔄 Cambio detectado en localStorage, actualizando mapa...');
+            if (typeof actualizarColoresEspacios === 'function') {
+                actualizarColoresEspacios(true); // forzar
+            }
+            if (typeof actualizarModuloYColores === 'function') {
+                actualizarModuloYColores();
+            }
         }
     });
 
-    // ==========================================
-    // FUNCIONES PARA SALA DE ESTUDIO
-    // ==========================================
-
-    let salaEstudioState = {
-        espacioId: null,
-        espacioNombre: null,
-        capacidadMaxima: 0,
-        asistentes: [],
-        modalAbierto: false
-    };
-
-    /**
-     * Abre el modal para registrar asistentes de sala de estudio
-     */
-    function abrirModalSalaEstudio(espacio) {
-        console.log('🎯 Abriendo modal sala de estudio para:', espacio);
-        
-        // Resetear estado
-        salaEstudioState = {
-            espacioId: espacio.id,
-            espacioNombre: espacio.nombre || espacio.id,
-            capacidadMaxima: espacio.capacidad || 0,
-            asistentes: [],
-            modalAbierto: true
-        };
-
-        // Actualizar UI del modal
-        document.getElementById('modal-sala-estudio-titulo').textContent = salaEstudioState.espacioNombre;
-        document.getElementById('sala-capacidad-maxima').textContent = salaEstudioState.capacidadMaxima;
-        document.getElementById('sala-asistentes-count').textContent = '0';
-        document.getElementById('sala-progreso-bar').style.width = '0%';
-        
-        // Limpiar lista de asistentes
-        document.getElementById('lista-asistentes-sala').innerHTML = '<p class="text-sm text-gray-500 italic">No hay asistentes registrados aún</p>';
-        
-        // Deshabilitar botón de registro
-        document.getElementById('btn-registrar-asistencia-sala').disabled = true;
-
-        // Mostrar modal
-        const modal = document.getElementById('modal-sala-estudio');
-        if (modal) {
-            modal.classList.remove('hidden');
-            
-            // Enfocar input QR
-            setTimeout(() => {
-                const qrInput = document.getElementById('qr-input-sala-estudio');
-                if (qrInput) {
-                    qrInput.value = '';
-                    qrInput.focus();
-                }
-            }, 150);
-        }
-    }
-
-    /**
-     * Cierra el modal de sala de estudio
-     */
-    function cerrarModalSalaEstudio() {
-        const modal = document.getElementById('modal-sala-estudio');
-        if (modal) {
-            modal.classList.add('hidden');
-        }
-        
-        salaEstudioState.modalAbierto = false;
-        
-        // Volver a enfocar el input principal
-        setTimeout(() => {
-            const qrInput = document.getElementById('qr-input');
-            if (qrInput) {
-                qrInput.focus();
-            }
-        }, 100);
-    }
-
-    /**
-     * Agrega un asistente a la lista
-     */
-    function agregarAsistenteSalaEstudio(run, nombre) {
-        // Verificar si ya está registrado
-        if (salaEstudioState.asistentes.some(a => a.run === run)) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Asistente ya registrado',
-                text: `${nombre} ya fue registrado en esta sala`,
-                confirmButtonColor: '#ec4899'
-            });
-            return false;
-        }
-
-        // Verificar capacidad
-        if (salaEstudioState.asistentes.length >= salaEstudioState.capacidadMaxima) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Capacidad completa',
-                text: 'La sala ha alcanzado su capacidad máxima',
-                confirmButtonColor: '#ec4899'
-            });
-            return false;
-        }
-
-        // Agregar asistente
-        salaEstudioState.asistentes.push({ run, nombre });
-        
-        // Actualizar UI
-        actualizarListaAsistentes();
-        actualizarProgresoSala();
-        
-        // Mostrar confirmación
-        const qrStatus = document.getElementById('qr-sala-status');
-        if (qrStatus) {
-            qrStatus.textContent = `✓ ${nombre} agregado`;
-            qrStatus.classList.remove('parpadeo');
-            
-            setTimeout(() => {
-                qrStatus.textContent = 'Esperando escaneo';
-                qrStatus.classList.add('parpadeo');
-            }, 2000);
-        }
-
-        return true;
-    }
-
-    /**
-     * Actualiza la lista visual de asistentes
-     */
-    function actualizarListaAsistentes() {
-        const listaContainer = document.getElementById('lista-asistentes-sala');
-        
-        if (salaEstudioState.asistentes.length === 0) {
-            listaContainer.innerHTML = '<p class="text-sm text-gray-500 italic">No hay asistentes registrados aún</p>';
-            return;
-        }
-
-        listaContainer.innerHTML = salaEstudioState.asistentes.map((asistente, index) => `
-            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center">
-                        <span class="text-pink-600 font-semibold text-sm">${index + 1}</span>
-                    </div>
-                    <div>
-                        <p class="font-medium text-gray-900">${asistente.nombre}</p>
-                        <p class="text-xs text-gray-500">RUN: ${asistente.run}</p>
-                    </div>
-                </div>
-                <button onclick="eliminarAsistenteSalaEstudio('${asistente.run}')" 
-                    class="text-red-500 hover:text-red-700 transition-colors"
-                    title="Eliminar asistente">
-                    <i class="fas fa-times-circle"></i>
-                </button>
-            </div>
-        `).join('');
-
-        // Habilitar botón de registro si hay al menos un asistente
-        document.getElementById('btn-registrar-asistencia-sala').disabled = false;
-    }
-
-    /**
-     * Actualiza el progreso de ocupación de la sala
-     */
-    function actualizarProgresoSala() {
-        const count = salaEstudioState.asistentes.length;
-        const porcentaje = (count / salaEstudioState.capacidadMaxima) * 100;
-        
-        document.getElementById('sala-asistentes-count').textContent = count;
-        document.getElementById('sala-progreso-bar').style.width = `${porcentaje}%`;
-        
-        // Cambiar color de la barra según ocupación
-        const barra = document.getElementById('sala-progreso-bar');
-        if (porcentaje >= 90) {
-            barra.className = 'bg-red-500 h-2.5 rounded-full transition-all duration-300';
-        } else if (porcentaje >= 70) {
-            barra.className = 'bg-yellow-500 h-2.5 rounded-full transition-all duration-300';
-        } else {
-            barra.className = 'bg-pink-500 h-2.5 rounded-full transition-all duration-300';
-        }
-    }
-
-    /**
-     * Elimina un asistente de la lista
-     */
-    function eliminarAsistenteSalaEstudio(run) {
-        salaEstudioState.asistentes = salaEstudioState.asistentes.filter(a => a.run !== run);
-        actualizarListaAsistentes();
-        actualizarProgresoSala();
-    }
-
-    /**
-     * Registra la asistencia de todos los asistentes
-     */
-    async function registrarAsistenciaSalaEstudio() {
-        if (salaEstudioState.asistentes.length === 0) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Sin asistentes',
-                text: 'Debe registrar al menos un asistente',
-                confirmButtonColor: '#ec4899'
-            });
-            return;
-        }
-
-        try {
-            // Mostrar loading
-            Swal.fire({
-                title: 'Registrando asistencia...',
-                text: 'Por favor espere',
-                allowOutsideClick: false,
-                showConfirmButton: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-
-            const response = await fetch('/api/sala-estudio/registrar-asistencia', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                },
-                body: JSON.stringify({
-                    espacio_id: salaEstudioState.espacioId,
-                    asistentes: salaEstudioState.asistentes
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                Swal.fire({
-                    icon: 'success',
-                    title: '¡Asistencia registrada!',
-                    text: `Se registró la asistencia de ${salaEstudioState.asistentes.length} asistente(s)`,
-                    confirmButtonColor: '#ec4899'
-                });
-
-                cerrarModalSalaEstudio();
-                
-                // Actualizar colores del mapa
-                if (typeof actualizarColoresEspacios === 'function') {
-                    await actualizarColoresEspacios();
-                }
-            } else {
-                throw new Error(data.message || 'Error al registrar asistencia');
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.message || 'No se pudo registrar la asistencia',
-                confirmButtonColor: '#ec4899'
-            });
-        }
-    }
-
-    // Event listener para el input QR de sala de estudio
-    document.addEventListener('DOMContentLoaded', function() {
-        const qrInputSala = document.getElementById('qr-input-sala-estudio');
-        if (qrInputSala) {
-            qrInputSala.addEventListener('keypress', async function(e) {
-                if (e.key === 'Enter') {
-                    const qrCode = this.value.trim();
-                    if (!qrCode) return;
-
-                    this.value = '';
-
-                    try {
-                        // Buscar información del usuario
-                        const response = await fetch(`/api/usuario/buscar/${qrCode}`);
-                        const data = await response.json();
-
-                        if (data.success) {
-                            agregarAsistenteSalaEstudio(qrCode, data.nombre);
-                        } else {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'Usuario no encontrado',
-                                text: 'El código QR no corresponde a un usuario válido',
-                                confirmButtonColor: '#ec4899'
-                            });
-                        }
-                    } catch (error) {
-                        console.error('Error:', error);
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Error',
-                            text: 'No se pudo verificar el código QR',
-                            confirmButtonColor: '#ec4899'
-                        });
-                    }
-
-                    this.focus();
-                }
-            });
-        }
-
-        // Event listener para botón de registrar asistencia
-        const btnRegistrar = document.getElementById('btn-registrar-asistencia-sala');
-        if (btnRegistrar) {
-            btnRegistrar.addEventListener('click', registrarAsistenciaSalaEstudio);
-        }
-
-        // Cerrar modal con ESC
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && salaEstudioState.modalAbierto) {
-                cerrarModalSalaEstudio();
-            }
-        });
-    });
 
     </script>
 
@@ -5830,6 +5748,9 @@
     <x-modal-editar-espacios />
 
     <!-- JavaScript del Panel de Administración -->
+    <script>
+        window.horariosModulos = @json($horariosModulos ?? []);
+    </script>
     <script src="{{ asset('js/admin-panel.js') }}"></script>
 
 </x-show-layout>

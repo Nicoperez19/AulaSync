@@ -10,8 +10,6 @@ class Carrera extends Model
 {
     use HasFactory, BelongsToTenant;
 
-    protected $connection = 'tenant';
-
     protected $table = 'carreras';
     protected $primaryKey = 'id_carrera';
 

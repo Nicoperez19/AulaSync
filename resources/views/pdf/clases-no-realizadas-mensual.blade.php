@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte Mensual - Clases No Realizadas</title>
+    <title>Reporte Mensual - Clases No Registradas</title>
     <style>
         * {
             margin: 0;
@@ -280,6 +280,23 @@
             font-style: italic;
         }
         
+        .legend {
+            margin-bottom: 15px;
+            font-size: 8px;
+            color: #4B5563;
+            background: #F9FAFB;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #E5E7EB;
+        }
+
+        .legend strong {
+            color: #1F2937;
+            font-size: 9px;
+            display: block;
+            margin-bottom: 5px;
+        }
+
         .section-title {
             background: #374151;
             color: white;
@@ -299,7 +316,7 @@
     
     <!-- Header -->
     <div class="header">
-        <h1>REPORTE MENSUAL DE CLASES NO REALIZADAS</h1>
+        <h1>REPORTE MENSUAL DE CLASES NO REGISTRADAS</h1>
         <div class="subtitle">Gestor de Aulas IT - Sistema de Gestión Académica</div>
     </div>
 
@@ -310,10 +327,9 @@
         <p><strong>Generado:</strong> {{ now()->format('d/m/Y H:i') }}</p>
     </div>
 
-    <!-- Estadísticas Generales -->
     <div class="estadisticas-grid">
         <div class="stat-box danger">
-            <div class="label">Total No Realizadas</div>
+            <div class="label">Total No Registradas</div>
             <div class="value">{{ $estadisticas['total_clases_no_realizadas'] }}</div>
         </div>
         <div class="stat-box danger">
@@ -333,9 +349,17 @@
             <div class="value">{{ $estadisticas['profesores_afectados'] }}</div>
         </div>
         <div class="stat-box {{ $estadisticas['porcentaje_no_realizadas'] > 5 ? 'danger' : 'success' }}">
-            <div class="label">% No Realizadas</div>
+            <div class="label">% No Registradas</div>
             <div class="value">{{ $estadisticas['porcentaje_no_realizadas'] }}%</div>
         </div>
+    </div>
+
+    <!-- Glosario de Términos -->
+    <div class="legend">
+        <strong>Glosario de Términos:</strong>
+        • <strong>Clases Registradas:</strong> Clases programadas que sí se realizaron.<br>
+        • <strong>Clases No Registradas:</strong> Clases que estaban programadas, pero no se realizaron.<br>
+        • <strong>Reservas Espontáneas:</strong> Reservas generadas fuera del horario programado (dependiendo el caso, no se contabilizan como clases programadas).
     </div>
 
     @if(count($profesores) > 0)
@@ -347,7 +371,7 @@
                     <th style="width: 30%;">Profesor</th>
                     <th style="width: 12%;">RUN</th>
                     <th style="width: 10%;">Total</th>
-                    <th style="width: 12%;">No Realizadas</th>
+                    <th style="width: 12%;">No Registradas</th>
                     <th style="width: 12%;">Justificadas</th>
                     <th style="width: 12%;">Recuperadas</th>
                     <th style="width: 12%;">% Cumplimiento</th>
@@ -373,7 +397,7 @@
         </table>
 
         <!-- Detalle por Profesor -->
-        <div class="section-title">DETALLE DE CLASES NO REALIZADAS</div>
+        <div class="section-title">DETALLE DE CLASES NO REGISTRADAS</div>
         @foreach($profesores as $profesor)
             <div class="profesor-section">
                 <div class="profesor-header">
@@ -389,7 +413,7 @@
                         <span class="value">{{ $profesor['total_ausencias'] }}</span>
                     </div>
                     <div class="stat">
-                        <span class="label">No Realizadas</span>
+                        <span class="label">No Registradas</span>
                         <span class="value" style="color: #DC2626;">{{ $profesor['no_realizadas'] }}</span>
                     </div>
                     <div class="stat">
@@ -435,7 +459,7 @@
                                 <td style="text-align: center;">{{ $clase['modulo'] }}</td>
                                 <td>
                                     <span class="estado-badge estado-{{ $clase['estado'] === 'no_realizada' ? 'no-realizada' : 'justificado' }}">
-                                        {{ $clase['estado'] === 'no_realizada' ? 'No Realizada' : 'Justificado' }}
+                                        {{ $clase['estado'] === 'no_realizada' ? 'No Registrada' : 'Justificado' }}
                                     </span>
                                 </td>
                                 <td style="text-align: center;">
@@ -459,7 +483,7 @@
         @endforeach
     @else
         <div class="no-data">
-            <p>✓ No se registraron clases no realizadas durante este mes</p>
+            <p>✓ No se registraron clases no registradas durante este mes</p>
         </div>
     @endif
 

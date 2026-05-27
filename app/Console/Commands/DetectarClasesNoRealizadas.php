@@ -191,14 +191,19 @@ class DetectarClasesNoRealizadas extends Command
     private function procesarTenant($tenant, $diaKey, $prefijoDia, $periodo, $fechaActual)
     {
         try {
-            // Configurar la base de datos del tenant
-            Config::set('database.connections.tenant.database', $tenant->database);
-            DB::purge('tenant');
+            // Establecer este tenant como el actual
+            $tenant->makeCurrent();
 
             $this->info("Procesando tenant: {$tenant->name} ({$tenant->database})");
 
             $hoy = Carbon::now();
             $horaActual = $hoy->format('H:i:s');
+
+            // Verificar si hoy es feriado o día sin actividad para este tenant
+            if (\App\Models\DiaFeriado::esFeriado($fechaActual)) {
+                $this->info("  [{$tenant->database}] Hoy es feriado o día sin actividad. Se omiten detecciones automáticas.");
+                return;
+            }
 
             // Obtener módulos que ya pasaron el tiempo de gracia
             $modulosParaVerificar = $this->obtenerModulosParaVerificar($diaKey, $horaActual);
@@ -232,10 +237,14 @@ class DetectarClasesNoRealizadas extends Command
                     continue;
                 }
 
-                $runProfesor = $primerModulo->asignatura->run_profesor ?? null;
+                // Priorizar el profesor del HORARIO sobre el de la ASIGNATURA
+                // ya que el horario es específico para este bloque y espacio.
+                $runProfesor = $primerModulo->horario->run_profesor ?? $primerModulo->asignatura->run_profesor ?? null;
+
                 if (!$runProfesor) {
                     continue;
                 }
+
 
                 // Verificar si ya existe registro de clase no realizada para esta clase hoy
                 $yaRegistrada = ClaseNoRealizada::where('id_asignatura', $primerModulo->id_asignatura)
@@ -265,7 +274,7 @@ class DetectarClasesNoRealizadas extends Command
                     ->where('id_espacio', $primerModulo->id_espacio)
                     ->where(function($q) use ($runProfesor) {
                         $q->where('run_profesor', $runProfesor)
-                          ->orWhere('rut_usuario', $runProfesor);
+                          ->orWhere('run_solicitante', $runProfesor);
                     })
                     ->whereIn('estado', ['activa', 'finalizada'])
                     ->whereNotNull('hora')
@@ -372,12 +381,13 @@ class DetectarClasesNoRealizadas extends Command
             return $prefijoDia . '.' . $num;
         }, $modulosNumeros);
 
-        return Planificacion_Asignatura::with(['asignatura.profesor', 'espacio', 'modulo'])
+        return Planificacion_Asignatura::with(['asignatura.profesor', 'horario.profesor', 'espacio', 'modulo'])
             ->whereIn('id_modulo', $modulosIds)
             ->whereHas('horario', function ($q) use ($periodo) {
                 $q->where('periodo', $periodo);
             })
             ->get();
+
     }
 
     /**

@@ -10,8 +10,6 @@ class AreaAcademica extends Model
 {
     use HasFactory, BelongsToTenant;
 
-    protected $connection = 'tenant';
-
     protected $table = 'area_academicas';
     protected $primaryKey = 'id_area_academica';
 

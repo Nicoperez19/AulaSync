@@ -143,7 +143,7 @@ class Solicitante extends Model
             ->whereDate('fecha_reserva', now()->toDateString())
             ->count();
 
-        return $reservasHoy < 2; // Máximo 2 reservas por día
+        return $reservasHoy < 10; // Máximo 10 reservas por día (relajado de 2)
     }
 
     /**

@@ -77,10 +77,7 @@ class SalaEstudioController extends Controller
                         $usuario->celular = $solicitante->telefono;
                         $usuario->save();
 
-                        Log::info('Usuario creado desde solicitante para sala de estudio', [
-                            'run' => $solicitante->run_solicitante,
-                            'nombre' => $solicitante->nombre
-                        ]);
+
                     } catch (\Exception $e) {
                         Log::error('Error al crear usuario desde solicitante', [
                             'error' => $e->getMessage(),
@@ -143,13 +140,7 @@ class SalaEstudioController extends Controller
                     $espacio->save();
                 }
 
-                Log::info('Salida registrada en sala de estudio', [
-                    'espacio' => $idEspacio,
-                    'usuario' => $usuario->run,
-                    'nombre' => $usuario->name,
-                    'hora_entrada' => $reservaExistente->hora,
-                    'hora_salida' => Carbon::now()->format('H:i:s')
-                ]);
+
 
                 return response()->json([
                     'success' => true,
@@ -194,11 +185,7 @@ class SalaEstudioController extends Controller
                 $espacio->save();
             }
 
-            Log::info('Acceso registrado en sala de estudio', [
-                'espacio' => $idEspacio,
-                'usuario' => $usuario->run,
-                'nombre' => $usuario->name
-            ]);
+
 
             return response()->json([
                 'success' => true,

@@ -10,6 +10,8 @@ class PeriodoAcademico extends Model
 {
     use HasFactory;
 
+    protected $connection = 'mysql';
+
     protected $table = 'periodos_academicos';
 
     protected $primaryKey = 'id_periodo';

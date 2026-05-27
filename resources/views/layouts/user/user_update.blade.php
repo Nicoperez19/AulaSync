@@ -25,9 +25,11 @@
     </x-slot>
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
-        <form id="edit-user-form" method="POST" action="{{ route('users.update', $user->run) }}">
+        <form id="edit-user-form" method="POST" action="{{ isset($user) ? route('users.update', $user->run) : route('users.store') }}" x-data="{ isSuperuser: {{ old('is_superuser', $user->is_superuser ?? false) ? 'true' : 'false' }} }">
             @csrf
-            @method('PUT')
+            @if(isset($user))
+                @method('PUT')
+            @endif
 
             <div class="grid gap-4 p-4">
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -38,8 +40,11 @@
                                 <x-heroicon-o-user class="w-5 h-5" />
                             </x-slot>
                             <x-form.input withicon id="run" class="block w-full" type="text" name="run"
-                                value="{{ old('run', $user->run) }}" autofocus placeholder="{{ __('RUN') }}" />
+                                value="{{ old('run', $user->run ?? '') }}" autofocus placeholder="{{ __('RUN') }}" />
                         </x-form.input-with-icon-wrapper>
+                        @error('run')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div>
@@ -49,8 +54,11 @@
                                 <x-heroicon-o-user class="w-5 h-5" />
                             </x-slot>
                             <x-form.input withicon id="name" class="block w-full" type="text" name="name"
-                                value="{{ old('name', $user->name) }}" placeholder="{{ __('Nombre') }}" />
+                                value="{{ old('name', $user->name ?? '') }}" placeholder="{{ __('Nombre') }}" />
                         </x-form.input-with-icon-wrapper>
+                        @error('name')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
 
@@ -63,8 +71,11 @@
                                 <x-heroicon-o-mail class="w-5 h-5" />
                             </x-slot>
                             <x-form.input withicon id="email" class="block w-full" type="email" name="email"
-                                value="{{ old('email', $user->email) }}" placeholder="{{ __('Correo') }}" />
+                                value="{{ old('email', $user->email ?? '') }}" placeholder="{{ __('Correo') }}" />
                         </x-form.input-with-icon-wrapper>
+                        @error('email')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div>
@@ -74,8 +85,11 @@
                                 <x-heroicon-o-phone class="w-5 h-5" />
                             </x-slot>
                             <x-form.input withicon id="celular" class="block w-full" type="text" name="celular"
-                                value="{{ old('celular', $user->celular) }}" placeholder="{{ __('Celular') }}" />
+                                value="{{ old('celular', $user->celular ?? '') }}" placeholder="{{ __('Celular') }}" />
                         </x-form.input-with-icon-wrapper>
+                        @error('celular')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
 
@@ -88,9 +102,12 @@
                                 <x-heroicon-o-location-marker class="w-5 h-5" />
                             </x-slot>
                             <x-form.input withicon id="direccion" class="block w-full" type="text" name="direccion"
-                                value="{{ old('direccion', $user->direccion) }}"
+                                value="{{ old('direccion', $user->direccion ?? '') }}"
                                 placeholder="{{ __('Dirección') }}" />
                         </x-form.input-with-icon-wrapper>
+                        @error('direccion')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div>
@@ -101,40 +118,64 @@
                             </x-slot>
                             <x-form.input withicon id="fecha_nacimiento" class="block w-full" type="date"
                                 name="fecha_nacimiento"
-                                value="{{ old('fecha_nacimiento', $user->fecha_nacimiento) }}" />
+                                value="{{ old('fecha_nacimiento', $user->fecha_nacimiento ?? '') }}" />
                         </x-form.input-with-icon-wrapper>
-                    </div>
-                </div>
-
-                <!-- Año de Ingreso y Contraseña -->
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div class="space-y-2">
-                        <x-form.label for="anio_ingreso_add" :value="__('Año de Ingreso')" class="text-left" />
-                        <select id="anio_ingreso" name="anio_ingreso" class="block w-full sm:w-1/2" required>
-                            <option value="" disabled selected>Seleccione un año</option>
-                            @foreach ($years as $year)
-                                <option value="{{ $year }}"
-                                    {{ old('anio_ingreso', $user->anio_ingreso) == $year ? 'selected' : '' }}>
-                                    {{ $year }}
-                                </option>
-                            @endforeach
-                        </select>
-
-                        @error('anio_ingreso')
+                        @error('fecha_nacimiento')
                             <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
                         @enderror
                     </div>
+                </div>
 
-
+                <!-- Sede -->
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                        <x-form.label for="password" :value="__('Contraseña Nueva')" />
+                        <x-form.label for="id_sede" :value="__('Sede Asignada')" />
+                        <x-form.input-with-icon-wrapper>
+                            <x-slot name="icon">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                </svg>
+                            </x-slot>
+                            <select name="id_sede" id="id_sede" class="block w-full py-2 pl-10 pr-3 text-base border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                                <option value="">{{ __('Sin Sede Asignada') }}</option>
+                                @foreach($sedes as $sede)
+                                    <option value="{{ $sede->id_sede }}" {{ old('id_sede', $user->id_sede ?? '') == $sede->id_sede ? 'selected' : '' }}>
+                                        {{ $sede->nombre_sede }} ({{ $sede->id_sede }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        </x-form.input-with-icon-wrapper>
+                        @error('id_sede')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
+                        <p class="mt-1 text-xs text-gray-500 italic">
+                            {{ __('Si el usuario no es superusuario, solo podrá acceder a los datos de esta sede.') }}
+                        </p>
+                    </div>
+
+                <!-- Contraseña -->
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <!-- Contraseña del Usuario -->
+                    <div>
+                        <x-form.label for="password" :value="__('Contraseña' . (!isset($user) ? ' *' : ' Nueva'))" />
                         <x-form.input-with-icon-wrapper>
                             <x-slot name="icon">
                                 <x-heroicon-o-lock-closed class="w-5 h-5" />
                             </x-slot>
-                            <x-form.input withicon id="password" name="password" class="block w-full" type="password"
-                                placeholder="{{ __('Dejar en blanco si no desea cambiarla') }}" />
+                            <x-form.input 
+                                withicon 
+                                id="password" 
+                                name="password" 
+                                class="block w-full" 
+                                type="password"
+                                autocomplete="new-password"
+                                placeholder="{{ isset($user) ? __('Dejar en blanco si no desea cambiarla') : __('Mínimo 8 caracteres') }}"
+                                @if(!isset($user)) required @endif 
+                            />
                         </x-form.input-with-icon-wrapper>
+                        @error('password')
+                            <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
 
@@ -149,7 +190,7 @@
                                 @foreach ($roles as $role)
                                     <li class="flex items-center mb-2">
                                         <input type="checkbox" name="roles[]" value="{{ $role->id }}"
-                                            {{ $user->hasRole($role->name) ? 'checked' : '' }} class="mr-2" />
+                                            {{ isset($user) && $user->hasRole($role->name) ? 'checked' : '' }} class="mr-2" />
                                         <label for="role-{{ $role->id }}">{{ $role->name }}</label>
                                     </li>
                                 @endforeach
@@ -166,12 +207,67 @@
                                 @foreach ($permissions as $permission)
                                     <li class="flex items-center mb-2">
                                         <input type="checkbox" name="permissions[]" value="{{ $permission->id }}"
-                                            {{ $user->hasPermissionTo($permission->name) ? 'checked' : '' }}
+                                            {{ isset($user) && $user->hasPermissionTo($permission->name) ? 'checked' : '' }}
                                             class="mr-2" />
                                         <label for="permission-{{ $permission->id }}">{{ $permission->name }}</label>
                                     </li>
                                 @endforeach
                             </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Permisos Especiales -->
+                <div class="p-4 mt-6 border-2 border-yellow-400 rounded-lg bg-yellow-50">
+                    <div class="flex items-center gap-3 mb-4">
+                        <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        <h3 class="text-lg font-semibold text-yellow-800">{{ __('Permisos de Superusuario') }}</h3>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <input type="checkbox" 
+                               id="is_superuser" 
+                               name="is_superuser" 
+                               value="1"
+                               {{ old('is_superuser', $user->is_superuser ?? false) ? 'checked' : '' }}
+                               class="w-5 h-5 mt-1 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500"
+                               x-model="isSuperuser">
+                        <div>
+                            <label for="is_superuser" class="font-medium text-gray-900">
+                                {{ __('Superusuario') }}
+                            </label>
+                            <p class="text-sm text-gray-600">
+                                {{ __('Los superusuarios pueden seleccionar cualquier sede del sistema. Si está desactivado, el usuario solo podrá acceder a su sede asignada.') }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Contraseña del Wizard - Solo si es Superusuario -->
+                    <div x-show="isSuperuser" x-transition class="p-4 mt-4 border-2 border-red-400 rounded-lg bg-red-50">
+                        <div class="flex items-center gap-3 mb-3">
+                            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                            <h4 class="font-semibold text-red-800">{{ __('Seguridad Requerida') }}</h4>
+                        </div>
+                        <div>
+                            <x-form.label for="wizard_password" :value="__('Contraseña  *')" />
+                            <x-form.input-with-icon-wrapper>
+                                <x-slot name="icon">
+                                    <x-heroicon-o-lock-closed class="w-5 h-5" />
+                                </x-slot>
+                                <x-form.input withicon id="wizard_password" name="wizard_password" class="block w-full" type="password"
+                                    autocomplete="off"
+                                    placeholder="{{ __('Ingresa la contraseña para efectuar el cambio') }}"
+                                    x-bind:required="isSuperuser" />
+                            </x-form.input-with-icon-wrapper>
+                            @error('wizard_password')
+                                <div class="mt-1 text-xs text-red-500">{{ $message }}</div>
+                            @enderror
+                            <p class="text-sm text-red-700 mt-2">
+                                {{ __('Debes proporcionar la contraseña para efectuar el cambio para otorgar permisos de superusuario.') }}
+                            </p>
                         </div>
                     </div>
                 </div>

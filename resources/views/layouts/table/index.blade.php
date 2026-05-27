@@ -35,13 +35,24 @@
                      paginaActual: 1, 
                      totalPaginas: 1,
                      esFeriado: false,
-                     nombreFeriado: ''
+                     nombreFeriado: '',
+                     periodoNoIniciado: false,
+                     nombrePeriodo: ''
                  }" 
                  @actualizar-pagina.window="paginaActual = $event.detail.pagina; totalPaginas = $event.detail.total"
-                 @actualizar-feriado.window="esFeriado = $event.detail.esFeriado; nombreFeriado = $event.detail.nombreFeriado">
+                 @actualizar-feriado.window="esFeriado = $event.detail.esFeriado; nombreFeriado = $event.detail.nombreFeriado"
+                 @actualizar-periodo.window="periodoNoIniciado = $event.detail.periodoNoIniciado; nombrePeriodo = $event.detail.nombrePeriodo">
+                
+                <!-- Mensaje de Periodo No Iniciado -->
+                <div x-show="periodoNoIniciado" 
+                     x-transition
+                     class="flex items-center gap-2 px-4 py-2 bg-yellow-500 border-yellow-600 rounded-lg shadow-md">
+                    <i class="fas fa-hourglass-half text-xl text-white"></i>
+                    <span class="text-sm font-bold text-white">Periodo no iniciado: <span x-text="nombrePeriodo"></span></span>
+                </div>
                 
                 <!-- Mensaje de Feriado -->
-                <div x-show="esFeriado" 
+                <div x-show="esFeriado && !periodoNoIniciado" 
                      x-transition
                      class="flex items-center gap-2 px-4 py-2 bg-red-600  border-red-600 rounded-lg shadow-md">
                     <i class="fas fa-calendar-xmark text-xl text-white"></i>

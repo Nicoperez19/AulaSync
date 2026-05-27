@@ -48,8 +48,69 @@ class AuthenticatedSessionController extends Controller
             return redirect($formIntendedUrl);
         }
 
-        // Redirigir a selección de sede/tenant primero
-        return redirect()->route('sedes.selection');
+        // Obtener el usuario autenticado
+        $user = Auth::user();
+
+        // DEBUG: Log de valores del usuario para diagnosticar redirección
+        Log::info('🔐 Login - Datos del usuario', [
+            'run' => $user->run,
+            'name' => $user->name,
+            'is_superuser' => $user->is_superuser,
+            'is_superuser_type' => gettype($user->is_superuser),
+            'id_sede' => $user->id_sede,
+            'id_sede_type' => gettype($user->id_sede),
+        ]);
+
+        // Si el usuario es Control Docente, inicializar tenant antes de redirigir a Plano Digital
+        if ($user->hasRole('Control Docente')) {
+            Log::info('✅ Control Docente detectado, inicializando tenant y redirigiendo a Plano Digital', [
+                'run' => $user->run,
+                'id_sede' => $user->id_sede,
+            ]);
+
+            if ($user->id_sede) {
+                return redirect()->route('sedes.redirect', ['sede' => $user->id_sede]);
+            }
+
+            // Sin sede asignada: error de configuración
+            Log::warning('❌ Control Docente sin sede asignada', ['run' => $user->run]);
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+            return redirect()->route('login')->with('error', 'Tu cuenta no tiene una sede asignada. Por favor, contacta al administrador del sistema.');
+        }
+
+        // Si el usuario es superusuario, mostrar selección de sedes
+        if ($user->is_superuser) {
+            Log::info('✅ Superusuario detectado, mostrando selección de sedes', [
+                'run' => $user->run,
+            ]);
+            
+            return redirect()->route('sedes.selection');
+        }
+
+        // Si el usuario NO es superusuario pero tiene una sede asignada
+        if ($user->id_sede) {
+            Log::info('✅ Usuario con sede asignada, redirigiendo automáticamente', [
+                'run' => $user->run,
+                'id_sede' => $user->id_sede,
+            ]);
+            
+            // Redirigir directamente a la sede asignada
+            return redirect()->route('sedes.redirect', ['sede' => $user->id_sede]);
+        }
+
+        // Usuario NO es superusuario Y NO tiene sede asignada
+        // Esto es un error de configuración - debe contactar al administrador
+        Log::warning('❌ Usuario sin sede asignada y sin permisos de superusuario', [
+            'run' => $user->run,
+        ]);
+
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        
+        return redirect()->route('login')->with('error', 'Tu cuenta no tiene una sede asignada. Por favor, contacta al administrador del sistema.');
     }
 
     /**

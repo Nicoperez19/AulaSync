@@ -133,7 +133,7 @@ class PisoController extends Controller
     public function getPisos($facultadId)
     {
         try {
-            Log::info('getPisos llamado con facultadId: ' . $facultadId);
+
 
             // Usar DB directo para evitar problemas con global scopes en contexto tenant
             $pisos = \DB::connection('tenant')
@@ -142,7 +142,7 @@ class PisoController extends Controller
                 ->orderBy('numero_piso')
                 ->get(['id', 'numero_piso', 'nombre_piso']);
 
-            Log::info('Pisos encontrados: ' . count($pisos));
+
 
             return response()->json($pisos);
         } catch (\Exception $e) {
@@ -162,7 +162,7 @@ class PisoController extends Controller
     public function getEspaciosPorPiso($pisoId)
     {
         try {
-            Log::info('getEspaciosPorPiso llamado con pisoId: ' . $pisoId);
+
 
             // Usar DB directo para evitar problemas con global scopes en contexto tenant
             $espacios = \DB::connection('tenant')
@@ -171,7 +171,7 @@ class PisoController extends Controller
                 ->orderBy('nombre_espacio')
                 ->get(['id_espacio as id', 'nombre_espacio as nombre', 'tipo_espacio as tipo', 'puestos_disponibles as capacidad']);
 
-            Log::info('Espacios encontrados para piso ' . $pisoId . ': ' . count($espacios));
+
 
             // Retornar solo los espacios del piso seleccionado (sin fallback)
             // Si no hay espacios, retorna array vacío - el usuario verá mensaje apropiado

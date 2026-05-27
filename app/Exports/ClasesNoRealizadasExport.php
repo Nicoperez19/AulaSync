@@ -86,6 +86,7 @@ class ClasesNoRealizadasExport implements FromCollection, WithHeadings, WithMapp
             'no_realizada' => 'No Realizada',
             'justificado' => 'Justificada',
             'recuperada' => 'Recuperada',
+            'pendiente' => 'Pendiente de Recuperación',
             default => ucfirst($clase->estado),
         };
 

@@ -1,50 +1,52 @@
 <?php
 use App\Http\Controllers\AreaAcademicaController;
+use App\Http\Controllers\AsignaturaController;
+use App\Http\Controllers\CampusController;
+use App\Http\Controllers\CarreraController;
+use App\Http\Controllers\ClasesNoRealizadasController;
+use App\Http\Controllers\ConfiguracionController;
+use App\Http\Controllers\ControlDocenteController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DataLoadController;
+use App\Http\Controllers\DiaFeriadoController;
 use App\Http\Controllers\EspacioController;
 use App\Http\Controllers\FacultadController;
-use App\Http\Controllers\CarreraController;
 use App\Http\Controllers\HorariosController;
+use App\Http\Controllers\LicenciaProfesorController;
+use App\Http\Controllers\ManualController;
 use App\Http\Controllers\MapasController;
-use App\Http\Controllers\ReservasController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PermisionController;
 use App\Http\Controllers\PisoController;
-use App\Http\Controllers\RoleController;
-use App\Http\Controllers\UniversidadController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\AsignaturaController;
-use App\Http\Controllers\DataLoadController;
 use App\Http\Controllers\PlanoDigitalController;
-use App\Http\Controllers\ProfesorController;
 use App\Http\Controllers\ProfesorColaboradorController;
-use App\Http\Controllers\VisitanteController;
+use App\Http\Controllers\ProfesorController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\QuickActionsController;
+use App\Http\Controllers\RecuperacionClaseController;
 use App\Http\Controllers\ReportController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\CampusController;
+use App\Http\Controllers\ReservasController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SedeController;
 use App\Http\Controllers\SedeSelectionController;
+use App\Http\Controllers\SupportTicketController;
 use App\Http\Controllers\TenantInitializationController;
-use App\Http\Controllers\QuickActionsController;
-use App\Http\Controllers\ClasesNoRealizadasController;
-use App\Http\Controllers\LicenciaProfesorController;
-use App\Http\Controllers\RecuperacionClaseController;
-use App\Http\Controllers\DiaFeriadoController;
-
+use App\Http\Controllers\UniversidadController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\VisitanteController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\DashboardController;
-
 use Spatie\Permission\Middleware\RoleMiddleware;
 
 /*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
-*/
+ * |--------------------------------------------------------------------------
+ * | Web Routes
+ * |--------------------------------------------------------------------------
+ * |
+ * | Here is where you can register web routes for your application. These
+ * | routes are loaded by the RouteServiceProvider within a group which
+ * | contains the "web" middleware group. Now create something great!
+ * |
+ */
 
 // ===================================================
 // SEDE SELECTION ROUTES (Public - No subdomain)
@@ -65,7 +67,7 @@ Route::prefix('tenant/initialization')->name('tenant.initialization.')->group(fu
     Route::post('/store-logo', [TenantInitializationController::class, 'storeLogo'])->name('store-logo');
     Route::post('/confirm-sede', [TenantInitializationController::class, 'confirmSedeInfo'])->name('confirm-sede');
     Route::post('/upload-bulk', [TenantInitializationController::class, 'uploadBulkData'])->name('upload-bulk');
-    Route::post('/process-bulk', [\App\Http\Controllers\DataLoadController::class, 'upload'])->name('process-bulk');
+    Route::post('/process-bulk', [DataLoadController::class, 'upload'])->name('process-bulk');
     Route::post('/complete-bulk', [TenantInitializationController::class, 'completeBulkLoad'])->name('complete-bulk');
     Route::post('/skip-bulk', [TenantInitializationController::class, 'skipBulkLoad'])->name('skip-bulk');
     Route::post('/store-periods', [TenantInitializationController::class, 'storeAcademicPeriods'])->name('store-periods');
@@ -89,6 +91,27 @@ Route::get('/', function () {
 Route::middleware(['tenant', 'extend.execution:180'])->group(function () {
     Route::get('/modulos-actuales', [\App\Http\Controllers\TableController::class, 'index'])->name('modulos.actuales');
     Route::get('/modulos-actuales/actualizar-datos', [\App\Http\Controllers\TableController::class, 'actualizarDatos'])->name('modulos.actuales.datos');
+});
+
+// Manual de Usuario - accesible para cualquier usuario autenticado
+Route::middleware(['auth'])->group(function () {
+    Route::get('/ayuda', [ManualController::class, 'index'])->name('manual.index');
+    Route::get('/ayuda/images/{file}', [ManualController::class, 'serveImage'])
+        ->where('file', '[a-zA-Z0-9_\-\.]+')
+        ->name('manual.image');
+});
+
+// Soporte Técnico (sistema de tickets)
+Route::middleware(['auth', 'tenant.init'])->prefix('soporte')->name('soporte.')->group(function () {
+    Route::get('/', [SupportTicketController::class, 'index'])->name('index');
+    Route::get('/nuevo', [SupportTicketController::class, 'create'])->name('create');
+    Route::post('/', [SupportTicketController::class, 'store'])->name('store');
+    Route::get('/{ticket}', [SupportTicketController::class, 'show'])->name('show');
+    Route::post('/{ticket}/responder', [SupportTicketController::class, 'reply'])->name('reply');
+    Route::patch('/{ticket}/estado', [SupportTicketController::class, 'updateStatus'])->name('status');
+    Route::patch('/{ticket}/asignar', [SupportTicketController::class, 'assign'])->name('assign');
+    Route::post('/{ticket}/cerrar', [SupportTicketController::class, 'close'])->name('close');
+    Route::post('/{ticket}/reabrir', [SupportTicketController::class, 'reopen'])->name('reopen');
 });
 
 // Dashboard - Solo Administrador y Supervisor
@@ -126,9 +149,8 @@ Route::middleware(['auth', 'role:Administrador|Supervisor'])->group(function () 
 
 // Estadísticas de clases no realizadas - Administrador y Supervisor
 Route::middleware(['auth', 'permission:reportes'])->group(function () {
-    Route::get('/clases-no-realizadas', [\App\Http\Controllers\ClasesNoRealizadasController::class, 'index'])->name('clases-no-realizadas.index');
-    Route::get('/clases-no-realizadas/export-excel', [\App\Http\Controllers\ClasesNoRealizadasController::class, 'exportExcel'])->name('clases-no-realizadas.export-excel');
-    Route::get('/clases-no-realizadas/export-all-excel', [\App\Http\Controllers\ClasesNoRealizadasController::class, 'exportAllExcel'])->name('clases-no-realizadas.export-all-excel');
+    Route::get('/clases-no-realizadas', [ClasesNoRealizadasController::class, 'index'])->name('clases-no-realizadas.index');
+    Route::get('/clases-no-realizadas/export-all-excel', [ClasesNoRealizadasController::class, 'exportAllExcel'])->name('clases-no-realizadas.export-all-excel');
 });
 
 // Clases Temporales - Administrador y Supervisor
@@ -165,9 +187,9 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Autocomplete de usuarios (email)
-    Route::get('/api/usuarios/autocomplete', [\App\Http\Controllers\UserController::class, 'autocomplete'])->name('usuarios.autocomplete');
+    Route::get('/api/usuarios/autocomplete', [UserController::class, 'autocomplete'])->name('usuarios.autocomplete');
     // Endpoint para obtener módulos disponibles de un espacio (usado por reservas)
-    Route::get('/api/espacio/{idEspacio}/modulos-disponibles', [\App\Http\Controllers\EspacioController::class, 'modulosDisponibles'])->name('espacio.modulos.disponibles');
+    Route::get('/api/espacio/{idEspacio}/modulos-disponibles', [EspacioController::class, 'modulosDisponibles'])->name('espacio.modulos.disponibles');
 });
 
 // Horarios por espacios - Solo Administrador y Supervisor
@@ -195,14 +217,25 @@ Route::group(['middleware' => ['permission:mantenedor de permisos']], function (
     Route::post('/permission/permission_store', [PermisionController::class, 'store'])->name('permission.add');
 });
 
-// Ausencias de Profesores
-Route::group(['middleware' => ['auth', 'permission:gestionar licencias profesores']], function () {
-    Route::get('/ausencias-profesores', [LicenciaProfesorController::class, 'index'])->name('ausencias-profesores');
+// Control Docente - Vista combinada Ausencias + Recuperación
+Route::group(['middleware' => ['auth']], function () {
+    Route::get('/control-docente/ausencias-recuperacion', [ControlDocenteController::class, 'ausenciasRecuperacion'])
+        ->name('control-docente.ausencias-recuperacion')
+        ->middleware('permission:gestionar licencias profesores|gestionar recuperacion clases');
 });
 
-// Recuperación de Clases
+// Ausencias de Profesores (ruta legacy, redirige a la vista combinada)
+Route::group(['middleware' => ['auth', 'permission:gestionar licencias profesores']], function () {
+    Route::get('/ausencias-profesores', function () {
+        return redirect()->route('control-docente.ausencias-recuperacion', ['tab' => 'ausencias']);
+    })->name('ausencias-profesores');
+});
+
+// Recuperación de Clases (ruta legacy, redirige a la vista combinada)
 Route::group(['middleware' => ['auth', 'permission:gestionar recuperacion clases']], function () {
-    Route::get('/recuperacion-clases', [RecuperacionClaseController::class, 'index'])->name('recuperacion-clases.index');
+    Route::get('/recuperacion-clases', function () {
+        return redirect()->route('control-docente.ausencias-recuperacion', ['tab' => 'recuperacion']);
+    })->name('recuperacion-clases.index');
 });
 
 // Días Feriados
@@ -227,11 +260,11 @@ Route::group(['middleware' => ['permission:mantenedor de sedes']], function () {
 });
 
 Route::group(['middleware' => ['permission:mantenedor de configuracion']], function () {
-    Route::get('/configuracion', [\App\Http\Controllers\ConfiguracionController::class, 'index'])->name('configuracion.index');
-    Route::post('/configuracion', [\App\Http\Controllers\ConfiguracionController::class, 'store'])->name('configuracion.store');
-    Route::get('/configuracion/{id}/edit', [\App\Http\Controllers\ConfiguracionController::class, 'edit'])->name('configuracion.edit');
-    Route::put('/configuracion/{id}', [\App\Http\Controllers\ConfiguracionController::class, 'update'])->name('configuracion.update');
-    Route::delete('/configuracion/{id}', [\App\Http\Controllers\ConfiguracionController::class, 'destroy'])->name('configuracion.destroy');
+    Route::get('/configuracion', [ConfiguracionController::class, 'index'])->name('configuracion.index');
+    Route::post('/configuracion', [ConfiguracionController::class, 'store'])->name('configuracion.store');
+    Route::get('/configuracion/{id}/edit', [ConfiguracionController::class, 'edit'])->name('configuracion.edit');
+    Route::put('/configuracion/{id}', [ConfiguracionController::class, 'update'])->name('configuracion.update');
+    Route::delete('/configuracion/{id}', [ConfiguracionController::class, 'destroy'])->name('configuracion.destroy');
 });
 
 Route::group(['middleware' => ['permission:mantenedor de escuelas']], function () {
@@ -367,6 +400,7 @@ Route::group(['middleware' => ['permission:mantenedor de carga de datos']], func
     Route::get('/data/detalle/{id}', [DataLoadController::class, 'detalleJson'])->name('data.detalle');
     Route::get('/data/download/{id}', [DataLoadController::class, 'download'])->name('data.download');
     Route::get('/data/progress/{id}', [DataLoadController::class, 'progress'])->name('data.progress');
+    Route::post('/data/limpiar', [DataLoadController::class, 'limpiarPeriodo'])->name('data.limpiar');
 });
 
 Route::middleware('auth')->group(function () {
@@ -381,6 +415,7 @@ Route::group(['middleware' => ['auth', 'session.timeout', 'permission:monitoreo 
     Route::get('/plano/{id}/bloques', [PlanoDigitalController::class, 'bloques'])->name('plano.bloques');
     Route::get('/plano/{id}/modulo-actual', [PlanoDigitalController::class, 'getModuloActual'])->name('plano.modulo-actual');
     Route::get('/plano/{id}/data', [PlanoDigitalController::class, 'getPlanoData'])->name('plano.data');
+    Route::post('/api/forzar-cierre-espacio', [PlanoDigitalController::class, 'forzarCierreYTomarEspacio'])->name('api.forzar-cierre-espacio');
     Route::get('/api/profesor/{run}', [ProfesorController::class, 'getProfesor'])->name('profesor.get');
 });
 
@@ -401,6 +436,11 @@ Route::prefix('reportes')->middleware(['auth', 'permission:reportes'])->group(fu
     // Reportes de Salas de Estudio
     Route::get('salas-estudio', [ReportController::class, 'salasEstudio'])->name('reportes.salas-estudio');
     Route::get('salas-estudio/export/{format}', [ReportController::class, 'exportSalasEstudio'])->name('reportes.salas-estudio.export');
+
+    // Reporte de Uso del Auditorio
+    Route::get('uso-auditorio', [ReportController::class, 'usoAuditorio'])->name('reportes.uso-auditorio');
+    Route::get('uso-auditorio/datos-historicos', [ReportController::class, 'getHistoricoAuditorio'])->name('reportes.uso-auditorio.historico');
+    Route::get('uso-auditorio/export/{format}', [ReportController::class, 'exportUsoAuditorio'])->name('reportes.uso-auditorio.export');
 });
 
 require __DIR__ . '/auth.php';
@@ -415,39 +455,18 @@ Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-acti
     // API endpoints para quick actions
     Route::get('/dashboard-data', [QuickActionsController::class, 'getDashboardData'])->name('dashboard-data');
     Route::get('/api/espacios', [QuickActionsController::class, 'getEspacios'])->name('api.espacios');
+    Route::post('/api/espacios/liberacion-masiva', [QuickActionsController::class, 'liberacionMasiva'])->name('api.espacios.liberacion-masiva');
     Route::get('/api/reservas', [QuickActionsController::class, 'getReservas'])->name('api.reservas');
-    Route::get('/debug/test', function () {
-        return response()->json([
-            'message' => 'Quick Actions API funcionando',
-            'user' => auth()->user()->name ?? 'No autenticado',
-            'timestamp' => now()
-        ]);
-    })->name('debug.test');
 
-    Route::get('/debug/espacios', function () {
-        try {
-            $count = \App\Models\Espacio::count();
-            $first = \App\Models\Espacio::first();
-            return response()->json([
-                'message' => 'Debug espacios',
-                'count' => $count,
-                'first_espacio' => $first,
-                'columns' => $first ? array_keys($first->toArray()) : []
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => $e->getMessage(),
-                'line' => $e->getLine(),
-                'file' => $e->getFile()
-            ]);
-        }
-    })->name('debug.espacios');
 
     // API para buscar personas por RUN (autocompletado)
     Route::get('/api/buscar-personas', [QuickActionsController::class, 'buscarPersonas'])->name('api.buscar-personas');
 
     // API para buscar asignaturas (autocompletado)
     Route::get('/api/buscar-asignaturas', [QuickActionsController::class, 'buscarAsignaturas'])->name('api.buscar-asignaturas');
+
+    // API para verificar conflictos de planificación antes de crear reserva
+    Route::post('/api/verificar-conflictos', [QuickActionsController::class, 'verificarConflictos'])->name('api.verificar-conflictos');
 
     // API para crear reserva
     Route::post('/api/crear-reserva', [QuickActionsController::class, 'procesarCrearReserva'])->name('api.crear-reserva');
@@ -466,30 +485,6 @@ Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-acti
     Route::put('/api/reserva/{id}', [QuickActionsController::class, 'actualizarReserva'])->name('api.actualizar-reserva');
 
     // Debug para verificar estructura de personas
-    Route::get('/debug/personas', function () {
-        try {
-            $profesorCount = \App\Models\Profesor::count();
-            $solicitanteCount = \App\Models\Solicitante::count();
-            $firstProfesor = \App\Models\Profesor::first();
-            $firstSolicitante = \App\Models\Solicitante::first();
-
-            return response()->json([
-                'message' => 'Debug personas',
-                'profesores_count' => $profesorCount,
-                'solicitantes_count' => $solicitanteCount,
-                'first_profesor' => $firstProfesor,
-                'first_solicitante' => $firstSolicitante,
-                'profesor_columns' => $firstProfesor ? array_keys($firstProfesor->toArray()) : [],
-                'solicitante_columns' => $firstSolicitante ? array_keys($firstSolicitante->toArray()) : []
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => $e->getMessage(),
-                'line' => $e->getLine(),
-                'file' => $e->getFile()
-            ]);
-        }
-    })->name('debug.personas');
     Route::put('/api/espacio/{codigo}/estado', [QuickActionsController::class, 'cambiarEstadoEspacio'])->name('api.espacio.estado');
     Route::put('/api/reserva/{id}/estado', [QuickActionsController::class, 'cambiarEstadoReserva'])->name('api.reserva.estado');
 });
@@ -499,12 +494,3 @@ Route::get('/csrf-token', function () {
     return response()->json(['token' => csrf_token()]);
 });
 
-// ===================================================
-// RUTAS DE TEST - Plantillas PDF
-// ===================================================
-Route::prefix('test/plantillas-pdf')->name('test.plantillas.pdf.')->group(function () {
-    Route::get('/', [App\Http\Controllers\TestPlantillaPdfController::class, 'index'])->name('index');
-    Route::get('/preview/{id}', [App\Http\Controllers\TestPlantillaPdfController::class, 'vistaPrevia'])->name('preview');
-    Route::get('/generar/{id}', [App\Http\Controllers\TestPlantillaPdfController::class, 'generarPdf'])->name('generar');
-    Route::get('/todos', [App\Http\Controllers\TestPlantillaPdfController::class, 'generarTodos'])->name('todos');
-});

@@ -234,6 +234,7 @@
     </div>
 
     <script>
+        const currentYear = "{{ $anioFiltro ?? \App\Helpers\SemesterHelper::getCurrentAcademicYear() }}";
         let horariosPorEspacio = @json($horariosPorEspacio);
         let espacioActualId = null;
 
@@ -241,7 +242,7 @@
         const aplicarFiltroBtn = document.getElementById('aplicar-filtro-btn');
 
         function aplicarFiltros() {
-            const anioFiltro = new Date().getFullYear();
+            const anioFiltro = currentYear;
             const semestreFiltro = document.getElementById('semestre')?.value;
 
             if (!semestreFiltro) {

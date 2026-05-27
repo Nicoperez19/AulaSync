@@ -117,6 +117,7 @@ class TenantInitializationController extends Controller
             'password' => Hash::make($validated['password']),
             'id_facultad' => $facultad ? $facultad->id_facultad : null,
             'id_universidad' => $facultad ? $facultad->id_universidad : ($sede ? $sede->id_universidad : null),
+            'id_sede' => $sede ? $sede->id_sede : null, // ASIGNAR LA SEDE
         ]);
 
         // Asignar rol de administrador
@@ -179,6 +180,11 @@ class TenantInitializationController extends Controller
             return redirect()->back()
                 ->with('error', 'Este administrador no pertenece a esta sede.')
                 ->withInput(['email' => $validated['email']]);
+        }
+
+        // Asegurar que el usuario tenga la sede asignada
+        if (!$user->id_sede) {
+            $user->update(['id_sede' => $sede->id_sede]);
         }
 
         // Autenticar al usuario en la sesión para los pasos siguientes

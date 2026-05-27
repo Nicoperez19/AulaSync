@@ -35,7 +35,7 @@ class LicenciasProfesoresTable extends Component
     protected function rules()
     {
         return [
-            'run_profesor' => 'required|exists:profesors,run_profesor',
+            'run_profesor' => 'required|exists:tenant.profesors,run_profesor',
             'fecha_inicio' => 'required|date',
             'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
             'motivo' => 'nullable|string|max:255',

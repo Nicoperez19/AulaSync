@@ -48,49 +48,6 @@ class ClasesNoRealizadasTable extends Component
         'marcarComoRecuperada'
     ];
 
-    public function exportarPDFSemanal()
-    {
-        try {
-            $reportService = new ClasesNoRealizadasReportService();
-            
-            // Usar las fechas del filtro o la semana actual
-            $fechaInicio = $this->fecha_inicio ? Carbon::parse($this->fecha_inicio) : Carbon::now()->startOfWeek();
-            $fechaFin = $this->fecha_fin ? Carbon::parse($this->fecha_fin) : Carbon::now()->endOfWeek();
-            
-            $pdf = $reportService->generarPDFSemanal($fechaInicio, $fechaFin);
-            
-            return response()->streamDownload(function () use ($pdf) {
-                echo $pdf->output();
-            }, 'Reporte_Semanal_Clases_No_Realizadas.pdf');
-            
-        } catch (\Exception $e) {
-            Log::error('Error al generar PDF semanal: ' . $e->getMessage());
-            $this->dispatch('show-error', ['message' => 'Error al generar el PDF: ' . $e->getMessage()]);
-        }
-    }
-
-    public function exportarPDFMensual()
-    {
-        try {
-            $reportService = new ClasesNoRealizadasReportService();
-            
-            // Usar el mes actual o el del filtro
-            $fecha = $this->fecha_inicio ? Carbon::parse($this->fecha_inicio) : Carbon::now();
-            $mes = $fecha->month;
-            $anio = $fecha->year;
-            
-            $pdf = $reportService->generarPDFMensual($mes, $anio);
-            
-            return response()->streamDownload(function () use ($pdf) {
-                echo $pdf->output();
-            }, 'Reporte_Mensual_Clases_No_Realizadas.pdf');
-            
-        } catch (\Exception $e) {
-            Log::error('Error al generar PDF mensual: ' . $e->getMessage());
-            $this->dispatch('show-error', ['message' => 'Error al generar el PDF: ' . $e->getMessage()]);
-        }
-    }
-
     public function mount()
     {
         $this->periodo = SemesterHelper::getCurrentPeriod();
@@ -242,18 +199,26 @@ class ClasesNoRealizadasTable extends Component
             ];
             $prefijoDia = $diasMap[$nombreDia] ?? 'LU';
             
+            // Extraer el número del módulo si viene con el prefijo (ej: "LU.1" -> 1)
+            $moduloBase = $nuevoModulo;
+            if (is_string($nuevoModulo) && strpos($nuevoModulo, '.') !== false) {
+                $moduloBase = (int) explode('.', $nuevoModulo)[1];
+            } else {
+                $moduloBase = (int) $nuevoModulo;
+            }
+            
             // Construir el id_modulo completo con todos los módulos seleccionados
             if ($cantidadModulos > 1) {
                 // Múltiples módulos: construir array LU.1,LU.2,LU.3
                 $modulosNuevos = [];
                 for ($i = 0; $i < $cantidadModulos; $i++) {
-                    $numeroModulo = $nuevoModulo + $i;
+                    $numeroModulo = $moduloBase + $i;
                     $modulosNuevos[] = "{$prefijoDia}.{$numeroModulo}";
                 }
                 $nuevoModuloId = implode(',', $modulosNuevos);
             } else {
                 // Un solo módulo
-                $nuevoModuloId = "{$prefijoDia}.{$nuevoModulo}";
+                $nuevoModuloId = "{$prefijoDia}.{$moduloBase}";
             }
             
             // Crear observación completa indicando que debe recuperarse
@@ -351,7 +316,7 @@ class ClasesNoRealizadasTable extends Component
             
             $clase->update(['estado' => $nuevoEstado]);
             
-            session()->flash('message', "Estado cambiado a: " . ($nuevoEstado === 'no_realizada' ? 'Clase no realizada' : 'Justificado'));
+            session()->flash('message', "Estado cambiado a: " . ($nuevoEstado === 'no_realizada' ? 'Clase no registrada' : 'Justificado'));
         } catch (\Exception $e) {
             session()->flash('error', 'Error al cambiar el estado: ' . $e->getMessage());
         }
@@ -396,7 +361,6 @@ class ClasesNoRealizadasTable extends Component
                 DB::raw("SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) as pendientes"),
                 DB::raw("SUM(CASE WHEN estado = 'justificado' THEN 1 ELSE 0 END) as justificados"),
             ])
-            // Excluir registros que tienen un atraso correspondiente
             ->whereNotExists(function($subQuery) {
                 $subQuery->select(DB::raw(1))
                     ->from('profesor_atrasos')
@@ -404,6 +368,13 @@ class ClasesNoRealizadasTable extends Component
                     ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio')
                     ->whereColumn('profesor_atrasos.id_modulo', 'clases_no_realizadas.id_modulo')
                     ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase');
+            })
+            // Excluir registros que caen en feriados o periodos sin actividad
+            ->whereNotExists(function($subQuery) {
+                $subQuery->select(DB::raw(1))
+                    ->from('dias_feriados')
+                    ->whereColumn('clases_no_realizadas.fecha_clase', '>=', 'dias_feriados.fecha_inicio')
+                    ->whereColumn('clases_no_realizadas.fecha_clase', '<=', 'dias_feriados.fecha_fin');
             })
             ->when($this->periodo, function($q) {
                 $q->where('periodo', $this->periodo);
@@ -437,7 +408,6 @@ class ClasesNoRealizadasTable extends Component
         
         $query = ClaseNoRealizada::query()
             ->select('clases_no_realizadas.*')
-            // Excluir registros que tienen un atraso correspondiente
             ->whereNotExists(function($subQuery) {
                 $subQuery->select(DB::raw(1))
                     ->from('profesor_atrasos')
@@ -445,6 +415,13 @@ class ClasesNoRealizadasTable extends Component
                     ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio')
                     ->whereColumn('profesor_atrasos.id_modulo', 'clases_no_realizadas.id_modulo')
                     ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase');
+            })
+            // Excluir registros que caen en feriados o periodos sin actividad
+            ->whereNotExists(function($subQuery) {
+                $subQuery->select(DB::raw(1))
+                    ->from('dias_feriados')
+                    ->whereColumn('clases_no_realizadas.fecha_clase', '>=', 'dias_feriados.fecha_inicio')
+                    ->whereColumn('clases_no_realizadas.fecha_clase', '<=', 'dias_feriados.fecha_fin');
             })
             ->when($this->periodo, function($q) {
                 $q->where('clases_no_realizadas.periodo', $this->periodo);
@@ -477,6 +454,26 @@ class ClasesNoRealizadasTable extends Component
 
     public function render()
     {        
+        // Verificar si el periodo académico ha iniciado
+        $periodoActual = \App\Models\PeriodoAcademico::where('activo', true)->first();
+        $periodoNoIniciado = $periodoActual && $periodoActual->noHaIniciado();
+        
+        // Si el periodo no ha iniciado, no mostrar datos
+        if ($periodoNoIniciado) {
+            return view('livewire.clases-no-realizadas-table', [
+                'clasesNoRealizadas' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, $this->perPage),
+                'estadisticas' => [
+                    'total' => 0,
+                    'pendientes' => 0,
+                    'justificadas' => 0,
+                    'recuperadas' => 0,
+                    'porcentaje_recuperadas' => 0,
+                ],
+                'periodoNoIniciado' => true,
+                'nombrePeriodo' => $periodoActual->nombre_completo,
+            ]);
+        }
+        
         // Limpiar cache de estadísticas para este render
         $this->cachedEstadisticas = null;
         
@@ -504,7 +501,7 @@ class ClasesNoRealizadasTable extends Component
             if ($currentTotal > $this->lastRecordCount) {
                 $nuevos = $currentTotal - $this->lastRecordCount;
                 $this->dispatch('show-info', [
-                    'message' => "Se detectaron {$nuevos} nueva(s) clase(s) no realizada(s)"
+                    'message' => "Se detectaron {$nuevos} nueva(s) clase(s) no registrada(s)"
                 ]);
             }
         }
@@ -513,6 +510,8 @@ class ClasesNoRealizadasTable extends Component
         return view('livewire.clases-no-realizadas-table', [
             'clasesNoRealizadas' => $clasesNoRealizadas,
             'estadisticas' => $estadisticas,
+            'periodoNoIniciado' => false,
+            'nombrePeriodo' => '',
         ]);
     }
 
