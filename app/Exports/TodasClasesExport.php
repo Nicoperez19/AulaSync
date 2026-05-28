@@ -126,6 +126,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                 fecha_reserva, 
                 id_espacio, 
                 run_profesor, 
+                id_asignatura,
                 hora, 
                 hora_salida
             ')
@@ -133,11 +134,10 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
             ->whereNotNull('run_profesor')
             ->whereNotNull('hora')
             ->get()
-            ->mapWithKeys(function($reserva) {
-                $key = Carbon::parse($reserva->fecha_reserva)->format('Y-m-d') . '_' . 
+            ->groupBy(function($reserva) {
+                return Carbon::parse($reserva->fecha_reserva)->format('Y-m-d') . '_' . 
                        $reserva->id_espacio . '_' . 
                        $reserva->run_profesor;
-                return [$key => $reserva];
             })
             ->all();
 
@@ -237,6 +237,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                                 'run_profesor'      => $runProfesor,
                                 'asignatura'        => $planificacion->asignatura->nombre_asignatura ?? 'N/A',
                                 'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? 'N/A',
+                                'id_asignatura'     => $planificacion->id_asignatura,
                                 'espacio'           => $planificacion->id_espacio,
                                 'modulo'            => preg_replace('/^[A-Z]{2}\./', '', $planificacion->id_modulo),
                                 'hora_inicio'       => $planificacion->modulo->hora_inicio,
@@ -273,30 +274,67 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                             $motivo = $claseNoRealizada->motivo;
                             $observaciones = $claseNoRealizada->observaciones;
                         }
-                        // Verificar si hay acceso registrado (usando caché)
+                        // Verificar si hay acceso registrado (usando caché de reservas del día)
                         elseif (isset($this->reservasCache[$claveReserva])) {
-                            $reserva = $this->reservasCache[$claveReserva];
+                            $reservasDelDia = $this->reservasCache[$claveReserva];
+                            $reserva = null;
                             
-                            // Verificar si el acceso corresponde al horario del módulo
-                            $horaAcceso = Carbon::parse($reserva->hora);
-                            
-                            // Considerar un margen de 30 minutos antes del inicio y durante toda la clase
-                            $margenInicio = $horaInicioModulo->copy()->subMinutes(30);
-                            
-                            if ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFinModulo) {
-                                $estado = 'Realizada';
-                                $horaEntrada = $reserva->hora;
-                                $horaSalida = $reserva->hora_salida;
-                                
-                                // Calcular si hubo atraso
-                                $diferencia = $horaAcceso->diffInMinutes($horaInicioModulo, false);
-                                if ($diferencia > 15) {
-                                    $observaciones = "Atraso de {$diferencia} minutos";
+                            // 1. Intentar buscar por coincidencia exacta de asignatura
+                            foreach ($reservasDelDia as $r) {
+                                if ($r->id_asignatura == $planificacion->id_asignatura) {
+                                    $reserva = $r;
+                                    break;
                                 }
                             }
-                            // Si hay reserva pero el acceso no coincide con el horario del módulo
+                            
+                            // 2. Si no coincide por asignatura, buscar la que solape temporalmente con el módulo
+                            if (!$reserva) {
+                                foreach ($reservasDelDia as $r) {
+                                    $horaAcceso = Carbon::parse($r->hora);
+                                    $margenInicio = $horaInicioModulo->copy()->subMinutes(30);
+                                    if ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFinModulo) {
+                                        $reserva = $r;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            if ($reserva) {
+                                $horaInicioReserva = Carbon::parse($reserva->hora);
+                                $horaFinReserva = $reserva->hora_salida ? Carbon::parse($reserva->hora_salida) : null;
+                                
+                                // Margen de 30 minutos antes del inicio del módulo para el ingreso
+                                $margenInicio = $horaInicioModulo->copy()->subMinutes(30);
+                                
+                                // Caso 1: El ingreso ocurrió para este módulo directamente
+                                $ingresoDirecto = ($horaInicioReserva >= $margenInicio && $horaInicioReserva <= $horaFinModulo);
+                                
+                                // Caso 2: El módulo está completamente dentro del rango de una sesión que empezó antes
+                                $ingresoPrevio = ($horaInicioReserva < $margenInicio && 
+                                                 (!$horaFinReserva || $horaFinReserva >= $horaInicioModulo));
+                                
+                                if ($ingresoDirecto || $ingresoPrevio) {
+                                    $estado = 'Realizada';
+                                    $horaEntrada = $reserva->hora;
+                                    $horaSalida = $reserva->hora_salida;
+                                    
+                                    // Calcular si hubo atraso (solo aplica si es el ingreso directo del primer módulo)
+                                    if ($ingresoDirecto) {
+                                        $diferencia = $horaInicioReserva->diffInMinutes($horaInicioModulo, false);
+                                        if ($diferencia > 15) {
+                                            $observaciones = "Atraso de {$diferencia} minutos";
+                                        }
+                                    }
+                                }
+                                // Si la clase ya pasó y no hubo ingreso que la cubriera
+                                elseif ($fechaHoraFinClase < $ahora) {
+                                    $estado = 'No Registrada';
+                                    $motivo = 'Sin registro de acceso';
+                                    $observaciones = 'No se detectó ingreso durante el horario de clase';
+                                }
+                            }
+                            // Si hay reservas del día pero ninguna coincide ni por horario ni por asignatura
                             elseif ($fechaHoraFinClase < $ahora) {
-                                // La clase ya pasó y no hubo acceso válido en el horario
                                 $estado = 'No Registrada';
                                 $motivo = 'Sin registro de acceso';
                                 $observaciones = 'No se detectó ingreso durante el horario de clase';
@@ -324,6 +362,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                             'run_profesor' => $runProfesor,
                             'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'N/A',
                             'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? 'N/A',
+                            'id_asignatura' => $planificacion->id_asignatura,
                             'espacio' => $planificacion->id_espacio,
                             'modulo' => preg_replace('/^[A-Z]{2}\./', '', $planificacion->id_modulo),
                             'hora_inicio' => $planificacion->modulo->hora_inicio,
@@ -346,6 +385,50 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
         // Limpiar cachés
         $this->clasesNoRealizadasCache = [];
         $this->reservasCache = [];
+
+        // Agrupar clases para post-procesar entrada/salida de módulos consecutivos
+        $clasesAgrupadas = $clasesData->groupBy(function($item) {
+            return $item['fecha'] . '_' . $item['espacio'] . '_' . $item['run_profesor'] . '_' . ($item['id_asignatura'] ?? '');
+        });
+
+        $clasesProcesadas = new Collection();
+
+        foreach ($clasesAgrupadas as $grupoKey => $items) {
+            // Ordenar los módulos del grupo cronológicamente por hora de inicio
+            $itemsOrdenados = $items->sortBy('hora_inicio')->values();
+            
+            // Filtrar los que resultaron con estado "Realizada" y que tienen hora de entrada
+            $realizadas = $itemsOrdenados->filter(function($item) {
+                return $item['estado'] === 'Realizada' && !empty($item['hora_entrada']);
+            });
+
+            if ($realizadas->count() > 1) {
+                $firstIndex = $realizadas->keys()->first();
+                $lastIndex = $realizadas->keys()->last();
+
+                foreach ($itemsOrdenados as $index => $item) {
+                    if ($index === $firstIndex) {
+                        // Es el primer módulo realizado: mantener entrada, ocultar salida
+                        $item['hora_salida'] = null;
+                    } elseif ($index === $lastIndex) {
+                        // Es el último módulo realizado: ocultar entrada, mantener salida
+                        $item['hora_entrada'] = null;
+                    } elseif ($realizadas->has($index)) {
+                        // Es un módulo intermedio realizado: ocultar entrada y salida
+                        $item['hora_entrada'] = null;
+                        $item['hora_salida'] = null;
+                    }
+                    $clasesProcesadas->push($item);
+                }
+            } else {
+                // Si hay solo 1 o ninguno, se mantiene sin cambios
+                foreach ($itemsOrdenados as $item) {
+                    $clasesProcesadas->push($item);
+                }
+            }
+        }
+
+        $clasesData = $clasesProcesadas;
 
         // Ordenar por fecha, espacio y módulo
         return $clasesData->sortBy([
