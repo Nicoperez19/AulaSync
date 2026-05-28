@@ -275,6 +275,7 @@
                             id="edit-fecha"
                             required
                             min="{{ date('Y-m-d') }}"
+                            onchange="actualizarModulosPorFechaModal()"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                     </div>
@@ -412,6 +413,9 @@ window.editarReserva = async function(idReserva) {
     document.getElementById('edit-codigo-espacio').value = reserva.id_espacio;
     document.getElementById('edit-fecha').value = reserva.fecha;
     
+    // Filtrar los módulos disponibles para esta fecha inmediatamente
+    actualizarModulosPorFechaModal();
+    
     // Guardar el horario original FIJO como referencia
     const horarioOriginal = reserva.modulos_info && reserva.modulos_info.rango_horario 
         ? `Módulo ${reserva.modulos_info.modulo_inicial || '?'} a Módulo ${reserva.modulos_info.modulo_final || '?'} (${reserva.modulos_info.rango_horario})`
@@ -422,9 +426,18 @@ window.editarReserva = async function(idReserva) {
     const cantModulos = parseInt(reserva.modulos || 1);
     const horaInicio = reserva.hora ? reserva.hora.substring(0, 5) : '';
     
-    // Intentar determinar módulo inicial basado en la hora
+    // Intentar determinar módulo inicial basado en la hora y la fecha
     if (horaInicio && modulosCargados.length > 0) {
-        const moduloInicial = modulosCargados.find(m => m.hora_inicio === horaInicio + ':00');
+        const partesFecha = reserva.fecha.split('-');
+        const fechaObj = new Date(partesFecha[0], partesFecha[1] - 1, partesFecha[2]);
+        const prefijos = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+        const prefijo = prefijos[fechaObj.getDay()];
+        
+        const moduloInicial = modulosCargados.find(m => 
+            m.hora_inicio === horaInicio + ':00' && 
+            (m.id_modulo.toString().startsWith(prefijo + '.') || !isNaN(m.id_modulo))
+        );
+        
         if (moduloInicial) {
             document.getElementById('edit-modulo-inicial').value = moduloInicial.id_modulo;
             actualizarModulosFinalesModal();
@@ -527,11 +540,51 @@ async function cargarModulosParaModal() {
     }
 }
 
+// Actualizar módulos iniciales por fecha seleccionada
+window.actualizarModulosPorFechaModal = function() {
+    const selectInicial = document.getElementById('edit-modulo-inicial');
+    const selectFinal = document.getElementById('edit-modulo-final');
+    const preview = document.getElementById('preview-horario');
+    const fechaStr = document.getElementById('edit-fecha').value;
+    
+    if (!selectInicial) return;
+    
+    if (!fechaStr) {
+        selectInicial.innerHTML = '<option value="">Primero seleccione una fecha</option>';
+        if (selectFinal) selectFinal.innerHTML = '<option value="">Primero seleccione módulo inicial</option>';
+        if (preview) preview.textContent = 'Seleccione los módulos';
+        return;
+    }
+    
+    // Obtener prefijo del día
+    const partes = fechaStr.split('-');
+    const fecha = new Date(partes[0], partes[1] - 1, partes[2]);
+    const dia = fecha.getDay();
+    const prefijos = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+    const prefijo = prefijos[dia];
+    
+    // Filtrar módulos por prefijo del día (o mantener los genéricos)
+    const modulosFiltrados = modulosCargados.filter(m => {
+        return m.id_modulo.toString().startsWith(prefijo + '.') || !isNaN(m.id_modulo);
+    });
+    
+    selectInicial.innerHTML = '<option value="">Seleccione módulo inicial</option>' +
+        modulosFiltrados.map(modulo => {
+            const nombreModuloCorto = modulo.id_modulo.toString().replace(prefijo + '.', '');
+            return `<option value="${modulo.id_modulo}">Módulo ${nombreModuloCorto} (${modulo.hora_inicio.substring(0,5)} - ${modulo.hora_termino.substring(0,5)})</option>`;
+        }).join('');
+        
+    // Resetear el select final y el preview
+    if (selectFinal) selectFinal.innerHTML = '<option value="">Primero seleccione módulo inicial</option>';
+    if (preview) preview.textContent = 'Seleccione los módulos';
+}
+
 // Actualizar módulos finales disponibles
 window.actualizarModulosFinalesModal = function() {
     const moduloInicial = document.getElementById('edit-modulo-inicial').value;
     const selectFinal = document.getElementById('edit-modulo-final');
     const preview = document.getElementById('preview-horario');
+    const fechaStr = document.getElementById('edit-fecha')?.value;
     
     if (!moduloInicial) {
         selectFinal.innerHTML = '<option value="">Primero seleccione módulo inicial</option>';
@@ -539,13 +592,30 @@ window.actualizarModulosFinalesModal = function() {
         return;
     }
     
+    let prefijo = '';
+    if (fechaStr) {
+        const partes = fechaStr.split('-');
+        const fecha = new Date(partes[0], partes[1] - 1, partes[2]);
+        const dia = fecha.getDay();
+        const prefijos = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
+        prefijo = prefijos[dia];
+    }
+    
     const indexInicial = modulosCargados.findIndex(m => m.id_modulo === moduloInicial);
-    const modulosDisponibles = modulosCargados.slice(indexInicial);
+    let modulosDisponibles = modulosCargados.slice(indexInicial);
+    
+    if (prefijo) {
+        // Filtrar módulos por el mismo día y asegurar que no muestre días siguientes
+        modulosDisponibles = modulosDisponibles.filter(m => {
+            return m.id_modulo.toString().startsWith(prefijo + '.') || !isNaN(m.id_modulo);
+        });
+    }
     
     selectFinal.innerHTML = '<option value="">Seleccione módulo final</option>' +
-        modulosDisponibles.map(modulo => 
-            `<option value="${modulo.id_modulo}">Módulo ${modulo.id_modulo} (${modulo.hora_inicio.substring(0,5)} - ${modulo.hora_termino.substring(0,5)})</option>`
-        ).join('');
+        modulosDisponibles.map(modulo => {
+            const nombreModuloCorto = prefijo ? modulo.id_modulo.toString().replace(prefijo + '.', '') : modulo.id_modulo;
+            return `<option value="${modulo.id_modulo}">Módulo ${nombreModuloCorto} (${modulo.hora_inicio.substring(0,5)} - ${modulo.hora_termino.substring(0,5)})</option>`;
+        }).join('');
     
     actualizarPreviewHorario();
 }
@@ -635,8 +705,8 @@ window.guardarEdicionReserva = async function(event) {
                 fecha: fecha,
                 hora: hora,
                 modulos: cantidadModulos,
-                modulo_inicio: parseInt(moduloInicialId),
-                modulo_fin: parseInt(moduloFinalId),
+                modulo_inicio: parseInt(moduloInicialId.split('.').pop()) || parseInt(moduloInicialId),
+                modulo_fin: parseInt(moduloFinalId.split('.').pop()) || parseInt(moduloFinalId),
                 observaciones: observacionesFinales
             })
         });
