@@ -2,7 +2,7 @@
 
 ## Descripción
 
-Esta documentación describe las nuevas rutas de la API para listar espacios y tipos de espacios del sistema AulaSync.
+Esta documentación describe las nuevas rutas de la API para listar espacios y tipos de espacios del sistema SIA | Sistema de Informaci�n de Aulas.
 
 ## Rutas Disponibles
 

@@ -157,7 +157,7 @@ MULTITENANCY_SEPARATE_DATABASES=true
 |---------|-------|-------|
 | Motor BD | MySQL 8.0 | MariaDB 10.11 |
 | Contenedores BD | 1 (todas las BDs) | 5 (1 por BD) |
-| Usuarios BD | 3 (root, aulasync, gestoraulasit) | 1 (aulamanager) |
+| Usuarios BD | 3 (root, SIA | Sistema de Información de Aulas, gestoraulasit) | 1 (aulamanager) |
 | CreaciÃ³n de BDs | Por comando `tenants:setup` | Por Docker automÃ¡ticamente |
 | Nombre central | `gestoraulasit` | `aulamanager_central` |
-| Prefijo tenants | `aulasync_` | `aulamanager_` |
+| Prefijo tenants | `SIA | Sistema de Información de Aulas_` | `aulamanager_` |

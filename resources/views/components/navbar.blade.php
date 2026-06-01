@@ -311,7 +311,7 @@
 
         // Mostrar notificación del navegador si está permitido
         if (Notification.permission === 'granted') {
-            new Notification('Gestor de Aulas IT - Notificación', {
+            new Notification('SIA | Sistema de Informaci�n de Aulas - Notificación', {
                 body: mensaje,
                 icon: '/favicon.ico',
                 tag: 'modulo-notification'

@@ -29,16 +29,6 @@
 </style>
 
 <div>
-    <div class="flex items-center justify-between mb-6">
-        <div class="w-2/3">
-            <input type="text" wire:model.live="search" placeholder="Buscar por Nombre o ID"
-                class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white">
-        </div>
-        <x-button variant="add" class="max-w-xs gap-2" x-on:click.prevent="$dispatch('open-modal', 'add-university')">
-            <x-icons.add class="w-6 h-6" aria-hidden="true" />
-            Agregar Universidad
-        </x-button>
-    </div>
 
     <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md dark:border-gray-700">
         <table class="w-full text-sm text-center border-collapse table-auto min-w-max">

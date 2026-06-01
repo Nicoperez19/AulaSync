@@ -75,7 +75,7 @@ Reporte de Actividades - {{periodo}}
 <p>Si tienes alguna duda, no dudes en contactarnos.</p>
 
 <p>Saludos cordiales,<br>
-<strong>Equipo AulaSync</strong></p>
+<strong>Equipo SIA | Sistema de Información de Aulas</strong></p>
 ```
 
 ### Resultado para "Juan PÃ©rez"
@@ -103,7 +103,7 @@ Reporte de Actividades - 2025
 <p>Si tienes alguna duda, no dudes en contactarnos.</p>
 
 <p>Saludos cordiales,<br>
-<strong>Equipo AulaSync</strong></p>
+<strong>Equipo SIA | Sistema de Información de Aulas</strong></p>
 ```
 
 ---

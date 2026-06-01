@@ -1,4 +1,4 @@
-# Auto-Finalizaci贸n de Reservas en AulaSync
+# Auto-Finalizaci贸n de Reservas en SIA | Sistema de Informaci髇 de Aulas
 
 > **脷ltima actualizaci贸n:** 30 de octubre de 2025  
 > **Contexto:** Implementaci贸n de la finalizaci贸n autom谩tica de reservas cuando termina la clase
@@ -7,7 +7,7 @@
 
 ## 馃摉 Resumen Ejecutivo
 
-El sistema AulaSync ahora finaliza autom谩ticamente las reservas de clase cuando:
+El sistema SIA | Sistema de Informaci髇 de Aulas ahora finaliza autom谩ticamente las reservas de clase cuando:
 - Ha terminado el 煤ltimo m贸dulo programado para la clase
 - Han pasado 10 minutos adicionales de tiempo de gracia
 - El profesor no ha devuelto la llave del espacio

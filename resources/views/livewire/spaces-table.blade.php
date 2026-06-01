@@ -89,15 +89,16 @@
                                     <x-icons.edit class="w-5 h-5 mr-1" aria-hidden="true" />
 
                                 </x-button>
-                                <a href="{{ route('spaces.download-qr', $espacio->id_espacio) }}"
-                                    class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-orange-400 border border-transparent rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+                                <x-button variant="warning"
+                                    href="{{ route('spaces.download-qr', $espacio->id_espacio) }}"
+                                    class="inline-flex items-center px-4 py-2"
                                     title="Descargar QR">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M12 4v1m6 11h2m-6 0h-2v4m0-11v2m0 5h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z">
                                         </path>
                                     </svg>
-                                </a>
+                                </x-button>
                                 <form action="{{ route('spaces.delete', $espacio->id_espacio) }}" method="POST"
                                     style="display: inline;" id="delete-form-{{ $espacio->id_espacio }}">
                                     @csrf

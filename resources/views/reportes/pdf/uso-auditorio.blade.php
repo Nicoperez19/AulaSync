@@ -97,7 +97,7 @@
 <body>
     <div class="header">
         <h1>Reporte de Uso del Auditorio</h1>
-        <p>Instituto Tecnológico - Sistema AulaSync</p>
+        <p>Instituto Tecnológico - Sistema SIA | Sistema de Informaci�n de Aulas</p>
         <p>Período: {{ $fecha_inicio }} al {{ $fecha_fin }}</p>
         <p>Generado el: {{ $fecha_generacion }}</p>
     </div>

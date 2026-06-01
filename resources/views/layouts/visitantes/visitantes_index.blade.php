@@ -25,10 +25,10 @@
   <!-- Modal para agregar visitante -->
   <x-modal name="add-visitante" :show="$errors->any()" focusable>
         @slot('title')
-            <div class="relative flex items-center justify-between p-2 bg-blue-700">
+            <div class="relative flex items-center justify-between p-2 bg-red-700">
                 <div class="flex items-center gap-3">
-                    <div class="p-4 bg-blue-100 rounded-full">
-                        <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div class="p-4 bg-red-100 rounded-full">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
                     </div>

@@ -164,7 +164,7 @@
         @endif
 
         <div class="footer">
-            <p><strong>Gestor de Aulas IT - Sistema de Gestión Académica</strong></p>
+            <p><strong>SIA | Sistema de Informaci�n de Aulas - Sistema de Gestión Académica</strong></p>
             <p>Este es un correo automático, por favor no responder.</p>
             <p>Generado el {{ now()->format('d/m/Y H:i') }}</p>
         </div>

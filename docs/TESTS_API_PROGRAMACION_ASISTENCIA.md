@@ -328,7 +328,7 @@ echo -e "${CYAN}========================================${NC}"
 ```json
 {
   "info": {
-    "name": "AulaSync - Programación y Asistencia API",
+    "name": "SIA | Sistema de Informaci�n de Aulas - Programación y Asistencia API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [

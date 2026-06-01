@@ -336,4 +336,4 @@ Para reportar problemas o sugerencias de mejora, contacta al equipo de desarroll
 
 **VersiÃ³n:** 1.0  
 **Fecha:** Octubre 2025  
-**Autor:** Sistema AulaSync
+**Autor:** Sistema SIA | Sistema de Información de Aulas

@@ -1,5 +1,5 @@
 # Guía de Instalación Gestor Aulas
-1.- Clonar repositorio:  git clone https://github.com/Nicoperez19/AulaSync
+1.- Clonar repositorio:  git clone https://github.com/Nicoperez19/SIA | Sistema de Informaci�n de Aulas
 
 2.- Copiar .env desde .env.example:  cp .env.example .env
 
@@ -126,7 +126,7 @@ DB_TENANT_DATABASE=${DB_DATABASE}
 
 ### ¿Cómo funciona la multi-tenancy?
 
-**Arquitectura actual de AulaSync:**
+**Arquitectura actual de SIA | Sistema de Informaci�n de Aulas:**
 
 ```
 ┌─────────────────────────────────────────┐
@@ -214,7 +214,7 @@ TENANT_INIT_PASSWORD=gestoraulasit2024
 
 ```env
 # APP
-APP_NAME=AulaSync
+APP_NAME=SIA | Sistema de Informaci�n de Aulas
 APP_ENV=local
 APP_DEBUG=true
 APP_URL=http://localhost
@@ -254,7 +254,7 @@ MAIL_DRIVER=log
 
 1. **Administrador crea una sede** (desde panel de admin)
 2. **Sistema crea automáticamente:**
-   - Nueva BD: `aulasync_{nombre_sede}` (si SEPARATE_DATABASES=true)
+   - Nueva BD: `SIA | Sistema de Informaci�n de Aulas_{nombre_sede}` (si SEPARATE_DATABASES=true)
    - Registro en tabla `tenants`
    - Enlace con `sedes`
 3. **Usuario accede a la sede**

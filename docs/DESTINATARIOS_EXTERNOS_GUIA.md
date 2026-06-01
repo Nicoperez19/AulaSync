@@ -7,7 +7,7 @@ El sistema de correos masivos ahora soporta dos tipos de destinatarios:
 1. **Usuarios Registrados**: Usuarios existentes en el sistema (requieren tener cuenta)
 2. **Correos Externos**: Cualquier correo electrónico sin necesidad de registro en el sistema
 
-Esta funcionalidad permite enviar correos masivos a personas que no tienen cuenta en AulaSync, manteniendo la organización y control de los envíos.
+Esta funcionalidad permite enviar correos masivos a personas que no tienen cuenta en SIA | Sistema de Informaci�n de Aulas, manteniendo la organización y control de los envíos.
 
 ---
 

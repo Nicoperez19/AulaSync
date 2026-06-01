@@ -1,105 +1,104 @@
+<style>
+    .sort-icon {
+        display: none;
+        margin-left: 5px;
+        transition: transform 0.2s;
+    }
+
+    .asc .sort-icon,
+    .desc .sort-icon {
+        display: inline-block;
+    }
+
+    .asc .sort-icon {
+        transform: rotate(180deg);
+    }
+
+    .desc .sort-icon {
+        transform: rotate(0deg);
+    }
+
+    th {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    th:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+</style>
+
 <div>
-    <!-- Barra de búsqueda -->
-    <div class="flex items-center justify-between mb-6">
-        <div class="flex items-center gap-4">
-            <div class="relative">
-                <input type="text" wire:model.live="search" placeholder="Buscar visitantes..." 
-                       class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <i class="fas fa-search text-gray-400"></i>
-                </div>
-            </div>
-        </div>
+    <div class="mt-4 mb-4">
+        {{ $visitantes->links('vendor.pagination.tailwind') }}
     </div>
 
-    <!-- Tabla de visitantes -->
-    <div class="overflow-x-auto bg-white rounded-lg shadow">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+    <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md dark:border-gray-700">
+        <table id="visitantes-table" class="w-full text-sm text-center border-collapse table-auto min-w-max">
+            <thead class="text-white bg-light-cloud-blue dark:bg-black dark:text-white">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" 
-                        wire:click="sortBy('run_solicitante')">
-                        <div class="flex items-center gap-2">
-                            RUN Solicitante
-                            @if($sortField === 'run_solicitante')
-                                <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-500"></i>
-                            @else
-                                <i class="fas fa-sort text-gray-400"></i>
-                            @endif
-                        </div>
+                    <th class="p-3 cursor-pointer hover:bg-black hover:bg-opacity-10" wire:click="sortBy('run_solicitante')">
+                        RUN Solicitante
+                        @if($sortField === 'run_solicitante')
+                            <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                        @else
+                            <span class="ml-1 opacity-40">↕</span>
+                        @endif
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" 
-                        wire:click="sortBy('nombre')">
-                        <div class="flex items-center gap-2">
-                            Nombre
-                            @if($sortField === 'nombre')
-                                <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-500"></i>
-                            @else
-                                <i class="fas fa-sort text-gray-400"></i>
-                            @endif
-                        </div>
+                    <th class="p-3 cursor-pointer hover:bg-black hover:bg-opacity-10" wire:click="sortBy('nombre')">
+                        Nombre
+                        @if($sortField === 'nombre')
+                            <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                        @else
+                            <span class="ml-1 opacity-40">↕</span>
+                        @endif
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" 
-                        wire:click="sortBy('correo')">
-                        <div class="flex items-center gap-2">
-                            Correo
-                            @if($sortField === 'correo')
-                                <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-500"></i>
-                            @else
-                                <i class="fas fa-sort text-gray-400"></i>
-                            @endif
-                        </div>
+                    <th class="p-3 cursor-pointer hover:bg-black hover:bg-opacity-10" wire:click="sortBy('correo')">
+                        Correo
+                        @if($sortField === 'correo')
+                            <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                        @else
+                            <span class="ml-1 opacity-40">↕</span>
+                        @endif
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" 
-                        wire:click="sortBy('telefono')">
-                        <div class="flex items-center gap-2">
-                            Teléfono
-                            @if($sortField === 'telefono')
-                                <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-500"></i>
-                            @else
-                                <i class="fas fa-sort text-gray-400"></i>
-                            @endif
-                        </div>
+                    <th class="p-3 cursor-pointer hover:bg-black hover:bg-opacity-10" wire:click="sortBy('telefono')">
+                        Teléfono
+                        @if($sortField === 'telefono')
+                            <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                        @else
+                            <span class="ml-1 opacity-40">↕</span>
+                        @endif
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100" 
-                        wire:click="sortBy('tipo_solicitante')">
-                        <div class="flex items-center gap-2">
-                            Tipo
-                            @if($sortField === 'tipo_solicitante')
-                                <i class="fas fa-sort-{{ $sortDirection === 'asc' ? 'up' : 'down' }} text-blue-500"></i>
-                            @else
-                                <i class="fas fa-sort text-gray-400"></i>
-                            @endif
-                        </div>
+                    <th class="p-3 cursor-pointer hover:bg-black hover:bg-opacity-10" wire:click="sortBy('tipo_solicitante')">
+                        Tipo
+                        @if($sortField === 'tipo_solicitante')
+                            <span class="ml-1">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
+                        @else
+                            <span class="ml-1 opacity-40">↕</span>
+                        @endif
                     </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Estado
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Fecha Registro
-                    </th>
-                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Acciones
-                    </th>
+                    <th class="p-3">Estado</th>
+                    <th class="p-3">Fecha Registro</th>
+                    <th class="p-3">Acciones</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @forelse($visitantes as $visitante)
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+            <tbody>
+                @forelse($visitantes as $index => $visitante)
+                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
+                        <td class="p-3 text-sm font-semibold text-blue-600 border border-white dark:border-white dark:text-blue-400">
                             {{ $visitante->run_solicitante }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
                             {{ $visitante->nombre }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
                             {{ $visitante->correo }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {{ $visitante->telefono }}
+                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
+                            {{ $visitante->telefono ?? 'N/A' }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full
                                 @if($visitante->tipo_solicitante === 'estudiante') bg-blue-100 text-blue-800
                                 @elseif($visitante->tipo_solicitante === 'personal') bg-green-100 text-green-800
                                 @elseif($visitante->tipo_solicitante === 'visitante') bg-purple-100 text-purple-800
@@ -107,38 +106,50 @@
                                 {{ ucfirst($visitante->tipo_solicitante) }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full
                                 @if($visitante->activo) bg-green-100 text-green-800 @else bg-red-100 text-red-800 @endif">
                                 {{ $visitante->activo ? 'Activo' : 'Inactivo' }}
                             </span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
                             {{ \Carbon\Carbon::parse($visitante->fecha_registro)->format('d/m/Y H:i') }}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <div class="flex items-center gap-2">
-                                <button type="button" 
-                                        class="text-indigo-600 hover:text-indigo-900 transition-colors"
-                                        x-on:click.prevent="$dispatch('open-modal', 'edit-visitante-{{ $visitante->id }}')">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <form id="delete-form-{{ $visitante->id }}" action="{{ route('visitantes.delete', $visitante->id) }}" method="POST" style="display: none;">
+                        <td class="p-3 border border-white dark:border-white whitespace-nowrap">
+                            <div class="flex justify-center space-x-2">
+                                <x-button variant="view" type="button"
+                                    class="inline-flex items-center px-4 py-2"
+                                    x-on:click.prevent="$dispatch('open-modal', 'edit-visitante-{{ $visitante->id }}')">
+                                    <x-icons.edit class="w-5 h-5" aria-hidden="true" />
+                                </x-button>
+
+                                <form id="delete-form-{{ $visitante->id }}"
+                                    action="{{ route('visitantes.delete', $visitante->id) }}"
+                                    method="POST">
                                     @csrf
                                     @method('DELETE')
+                                    <x-button variant="danger" type="button"
+                                        onclick="deleteVisitante('{{ $visitante->id }}', '{{ $visitante->nombre }}')"
+                                        class="px-4 py-2">
+                                        <x-icons.delete class="w-5 h-5" aria-hidden="true" />
+                                    </x-button>
                                 </form>
-                                <button type="button" 
-                                        class="text-red-600 hover:text-red-900 transition-colors"
-                                        onclick="deleteVisitante('{{ $visitante->id }}', '{{ $visitante->nombre }}')">
-                                    <i class="fas fa-trash"></i>
-                                </button>
                             </div>
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="px-6 py-4 text-center text-gray-500">
-                            No se encontraron visitantes
+                        <td colspan="8" class="p-8 text-center text-gray-500">
+                            <div class="flex flex-col items-center">
+                                <svg class="w-12 h-12 mb-4 text-gray-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z">
+                                    </path>
+                                </svg>
+                                <p class="text-lg font-medium">No se encontraron visitantes</p>
+                                <p class="text-sm">Intenta ajustar los filtros de búsqueda</p>
+                            </div>
                         </td>
                     </tr>
                 @endforelse
@@ -146,8 +157,7 @@
         </table>
     </div>
 
-    <!-- Paginación -->
-    <div class="mt-6">
-        {{ $visitantes->links() }}
+    <div class="mt-4">
+        {{ $visitantes->links('vendor.pagination.tailwind') }}
     </div>
 </div>

@@ -1,6 +1,6 @@
 # Guía Técnica: Sincronización Real-Time y Soporte Multi-Lectores
 
-Esta guía documenta los pasos necesarios para implementar la sincronización en tiempo real y el soporte para múltiples estaciones de escaneo QR en el Plano Digital de AulaSync.
+Esta guía documenta los pasos necesarios para implementar la sincronización en tiempo real y el soporte para múltiples estaciones de escaneo QR en el Plano Digital de SIA | Sistema de Informaci�n de Aulas.
 
 ## 1. Descubrimiento Dinámico de Lectores (Frontend)
 

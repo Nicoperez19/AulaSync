@@ -4,7 +4,7 @@
 27 de octubre de 2025
 
 ## DescripciÃ³n General
-Se ha agregado funcionalidad a la API para listar todos los espacios (salas) y los tipos de espacios del sistema AulaSync.
+Se ha agregado funcionalidad a la API para listar todos los espacios (salas) y los tipos de espacios del sistema SIA | Sistema de Información de Aulas.
 
 ## Archivos Creados
 

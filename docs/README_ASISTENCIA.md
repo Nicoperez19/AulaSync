@@ -1,4 +1,4 @@
-# 🎓 Sistema de Asistencia en Tiempo Real - AulaSync
+# 🎓 Sistema de Asistencia en Tiempo Real - SIA | Sistema de Informaci�n de Aulas
 
 ## 📌 Resumen Ejecutivo
 
@@ -540,4 +540,4 @@ Sistema completo de asistencia en tiempo real implementado con:
 
 ---
 
-**Desarrollado para AulaSync** 📚✨
+**Desarrollado para SIA | Sistema de Informaci�n de Aulas** 📚✨

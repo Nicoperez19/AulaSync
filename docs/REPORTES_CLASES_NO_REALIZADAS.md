@@ -259,8 +259,8 @@ Los archivos de plantillas de correo están en:
    MAIL_USERNAME=tu-correo@gmail.com
    MAIL_PASSWORD=tu-password
    MAIL_ENCRYPTION=tls
-   MAIL_FROM_ADDRESS=noreply@aulasync.com
-   MAIL_FROM_NAME="AulaSync - Sistema Académico"
+   MAIL_FROM_ADDRESS=noreply@SIA | Sistema de Informaci�n de Aulas.com
+   MAIL_FROM_NAME="SIA | Sistema de Informaci�n de Aulas - Sistema Académico"
    ```
 
 ## 📝 Logs

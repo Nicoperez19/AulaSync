@@ -121,7 +121,7 @@
     <div class="email-container">
         <!-- Header -->
         <div class="email-header">
-            <div class="logo">Gestor de Aulas IT</div>
+            <div class="logo">SIA | Sistema de Informaci�n de Aulas</div>
             <div style="color: #6b7280; font-size: 14px;">Sistema de Gestión Académica</div>
         </div>
 
@@ -140,13 +140,13 @@
         <!-- Footer -->
         <div class="email-footer">
             <p style="margin: 5px 0;">
-                <strong>Gestor de Aulas IT</strong> - Sistema de Gestión Académica
+                <strong>SIA | Sistema de Informaci�n de Aulas</strong> - Sistema de Gestión Académica
             </p>
             <p style="margin: 5px 0; color: #9ca3af; font-size: 12px;">
                 Este es un correo automático, por favor no responder directamente a este mensaje.
             </p>
             <p style="margin: 10px 0; color: #9ca3af; font-size: 11px;">
-                © {{ date('Y') }} Gestor de Aulas IT. Todos los derechos reservados.
+                © {{ date('Y') }} SIA | Sistema de Informaci�n de Aulas. Todos los derechos reservados.
             </p>
         </div>
     </div>

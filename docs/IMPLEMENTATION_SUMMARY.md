@@ -2,7 +2,7 @@
 
 ## Overview
 
-This PR successfully implements 5 new CRUD maintainers for the AulaSync system as requested in the issue. All maintainers follow the existing application patterns and include complete CRUD operations, validations, permission controls, and consistent UI design.
+This PR successfully implements 5 new CRUD maintainers for the SIA | Sistema de Información de Aulas system as requested in the issue. All maintainers follow the existing application patterns and include complete CRUD operations, validations, permission controls, and consistent UI design.
 
 ## What Was Implemented
 

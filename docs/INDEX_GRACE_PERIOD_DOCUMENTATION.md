@@ -61,7 +61,7 @@ Documentación completa de la implementación de un **sistema automático** que 
 ### 1. **app/Console/Commands/FinalizarReservasNoDevueltas.php** (NUEVO)
 - **Líneas**: 107
 - **Descripción**: Comando de consola que ejecuta la lógica de finalización
-- **Ubicación**: `d:\Dev\AulaSync\app\Console\Commands\`
+- **Ubicación**: `d:\Dev\SIA | Sistema de Informaci�n de Aulas\app\Console\Commands\`
 - **Responsable de**:
   - Buscar reservas activas sin devolución
   - Validar relaciones con Planificacion_Asignatura y Modulo

@@ -75,7 +75,7 @@
             <button type="submit" 
                     class="inline-flex items-center px-8 py-4 bg-green-600 text-white font-bold text-lg rounded-lg hover:bg-green-700 transition shadow-lg">
                 <i class="fas fa-rocket mr-3"></i>
-                Finalizar y comenzar a usar AulaSync
+                Finalizar y comenzar a usar SIA | Sistema de Información de Aulas
             </button>
         </form>
     </div>

@@ -17,13 +17,13 @@ php artisan tenant:list
 ### Development Environment Setup
 Add to your `hosts` file:
 ```
-127.0.0.1 principal.aulasync.local
-127.0.0.1 campus-norte.aulasync.local
+127.0.0.1 principal.SIA | Sistema de Información de Aulas.local
+127.0.0.1 campus-norte.SIA | Sistema de Información de Aulas.local
 ```
 
 Update `.env`:
 ```env
-APP_URL=http://aulasync.local
+APP_URL=http://SIA | Sistema de Información de Aulas.local
 MULTITENANCY_ENABLED=true
 ```
 
@@ -195,14 +195,14 @@ foreach ($rows as $row) {
 
 ### Production
 ```
-https://principal.aulasync.com
-https://campus-norte.aulasync.com
+https://principal.SIA | Sistema de Información de Aulas.com
+https://campus-norte.SIA | Sistema de Información de Aulas.com
 ```
 
 ### Development
 ```
-http://principal.aulasync.local
-http://campus-norte.aulasync.local
+http://principal.SIA | Sistema de Información de Aulas.local
+http://campus-norte.SIA | Sistema de Información de Aulas.local
 ```
 
 ## Support

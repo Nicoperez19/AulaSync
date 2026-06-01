@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restablecer Contraseña - Gestor de Aulas IT</title>
+    <title>Restablecer Contraseña - SIA | Sistema de Informaci�n de Aulas</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -73,14 +73,14 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">Gestor de Aulas IT</div>
+            <div class="logo">SIA | Sistema de Informaci�n de Aulas</div>
             <h2>Restablecer Contraseña</h2>
         </div>
 
         <div class="content">
             <p>Hola,</p>
             
-            <p>Has recibido este correo porque recibimos una solicitud de restablecimiento de contraseña para tu cuenta en Gestor de Aulas IT.</p>
+            <p>Has recibido este correo porque recibimos una solicitud de restablecimiento de contraseña para tu cuenta en SIA | Sistema de Informaci�n de Aulas.</p>
             
             <p>Para restablecer tu contraseña, haz clic en el botón de abajo:</p>
             
@@ -103,7 +103,7 @@
 
         <div class="footer">
             <p>Este es un correo automático, por favor no respondas a este mensaje.</p>
-            <p>&copy; {{ date('Y') }} Gestor de Aulas IT. Todos los derechos reservados.</p>
+            <p>&copy; {{ date('Y') }} SIA | Sistema de Informaci�n de Aulas. Todos los derechos reservados.</p>
         </div>
     </div>
 </body>

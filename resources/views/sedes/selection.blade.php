@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Gestor de Aulas') }} - Selecci贸n de Sede</title>
+    <title>{{ config('app.name', 'SIA | Sistema de Informaci髇 de Aulas') }} - Selecci贸n de Sede</title>
 
     <!-- Fuentes -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;500;700;900&display=swap"
+        rel="stylesheet">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -38,18 +40,20 @@
         .sede-item {
             transition: all 0.2s ease;
         }
+
         .sede-item:hover {
             background-color: #f3f4f6;
         }
     </style>
 </head>
+
 <body class="font-sans min-h-screen">
     <div class="min-h-screen flex flex-col">
         <!-- Header
         <header class="shadow-md">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 <div class="flex items-center justify-center">
-                    <img src="" alt="AulaSync" class="h-12 sm:h-16">
+                    <img src="" alt="SIA | Sistema de Informaci髇 de Aulas" class="h-12 sm:h-16">
                 </div>
             </div>
         </header>
@@ -62,7 +66,8 @@
                     Seleccione su Sede
                 </h1>
                 <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-                    Elija la sede a la que desea acceder para continuar con su sesi贸n en el sistema Gestor de Aulas.
+                    Elija la sede a la que desea acceder para continuar con su sesi贸n en el Sistema de Informaci贸n de
+                    Aulas (SIA). 
                 </p>
             </div>
 
@@ -79,7 +84,8 @@
                 <div class="max-w-2xl mx-auto">
                     <div class="bg-white rounded-lg shadow-md overflow-hidden">
                         @foreach($sedes as $sede)
-                            <a href="{{ route('sedes.redirect', $sede->id_sede) }}" class="sede-item block border-b last:border-b-0 px-6 py-4 hover:no-underline">
+                            <a href="{{ route('sedes.redirect', $sede->id_sede) }}"
+                                class="sede-item block border-b last:border-b-0 px-6 py-4 hover:no-underline">
                                 <div class="flex items-center justify-between">
                                     <div class="flex-grow">
                                         <h2 class="text-lg font-semibold text-gray-800">
@@ -119,10 +125,11 @@
         <footer class="bg-gray-800 text-white py-6">
             <div class="container mx-auto px-4 text-center">
                 <p class="text-gray-400">
-                    &copy; {{ date('Y') }} Gestor de Aulas.
+                    &copy; {{ date('Y') }} SIA | Sistema de Informaci贸n de Aulas .
                 </p>
             </div>
         </footer>
     </div>
 </body>
+
 </html>

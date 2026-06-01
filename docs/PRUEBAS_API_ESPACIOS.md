@@ -98,7 +98,7 @@ http GET http://localhost:8000/api/espacios/resumen
 
 ## Pruebas con Postman
 
-1. Crear una nueva colección llamada "AulaSync - Espacios API"
+1. Crear una nueva colección llamada "SIA | Sistema de Informaci�n de Aulas - Espacios API"
 2. Agregar las siguientes requests:
 
 ### Request 1: Listar Todos los Espacios

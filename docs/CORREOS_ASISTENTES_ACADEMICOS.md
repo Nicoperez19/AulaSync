@@ -106,7 +106,7 @@ $correoData = CorreoAdministrativoService::getCorreoAreaAcademica('ING');
 // ['email' => 'asistente@ucsc.cl', 'name' => 'Nombre Formal']
 
 // Si NO existe asistente (fallback):
-// ['email' => 'noreply@aulasync.cl', 'name' => 'Sistema AulaSync']
+// ['email' => 'noreply@SIA | Sistema de Información de Aulas.cl', 'name' => 'Sistema SIA | Sistema de Información de Aulas']
 ```
 
 ---

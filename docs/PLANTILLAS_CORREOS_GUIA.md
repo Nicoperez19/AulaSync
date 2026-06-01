@@ -152,7 +152,7 @@ Le enviamos el resumen semanal de sus clases:
 - Porcentaje: {{porcentaje}}%
 
 Saludos,
-Equipo AulaSync
+Equipo SIA | Sistema de Informaci髇 de Aulas
 ```
 
 ## Soluci贸n de Problemas
@@ -197,4 +197,4 @@ En futuras versiones se agregar谩n:
 ---
 
 **脷ltima actualizaci贸n**: Enero 2025  
-**Versi贸n del sistema**: AulaSync 2.0
+**Versi贸n del sistema**: SIA | Sistema de Informaci髇 de Aulas 2.0

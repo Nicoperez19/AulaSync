@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Manual de Usuario — {{ config('app.name', 'Gestor de Aulas IT') }}</title>
+    <title>Manual de Usuario — {{ config('app.name', 'SIA | Sistema de Información de Aulas') }}</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -59,7 +59,7 @@
             <div class="flex items-center gap-2">
                 <i class="fas fa-book-open text-red-300 text-lg"></i>
                 <span class="text-white font-semibold text-lg">Manual de Usuario</span>
-                <span class="text-red-300 text-xs ml-1 hidden sm:inline">— Gestor de Aulas IT</span>
+                <span class="text-red-300 text-xs ml-1 hidden sm:inline">— SIA | Sistema de Información de Aulas</span>
             </div>
         </div>
         <div class="flex items-center gap-2">

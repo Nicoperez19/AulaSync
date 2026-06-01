@@ -2695,7 +2695,7 @@
             pdf.setTextColor(255, 255, 255);
             pdf.setFontSize(28);
             pdf.setFont('helvetica', 'bold');
-            pdf.text('Gestor de Aulas IT', pageWidth / 2, 25, { align: 'center' });
+            pdf.text('SIA | Sistema de Informaci�n de Aulas', pageWidth / 2, 25, { align: 'center' });
             
             pdf.setFontSize(16);
             pdf.setFont('helvetica', 'normal');
@@ -2819,7 +2819,7 @@
                 pdf.setFontSize(8);
                 pdf.setTextColor(150, 150, 150);
                 pdf.text(
-                    `Gestor de Aulas IT - Reporte generado el ${fechaGeneracion} - Página ${page} de ${totalPages}`,
+                    `SIA | Sistema de Informaci�n de Aulas - Reporte generado el ${fechaGeneracion} - Página ${page} de ${totalPages}`,
                     pageWidth / 2,
                     pageHeight - 10,
                     { align: 'center' }
@@ -2855,7 +2855,7 @@
             const datosCSV = [];
             
             // ========== Información General ==========
-            datosCSV.push(['REPORTE DE ESTADÍSTICAS - GESTOR DE AULAS IT']);
+            datosCSV.push(['REPORTE DE ESTADÍSTICAS - SIA | Sistema de Informaci�n de Aulas']);
             datosCSV.push(['']);
             datosCSV.push(['Información del Reporte']);
             datosCSV.push(['Período', `Del ${formatearFecha(fechaInicio)} al ${formatearFecha(fechaFin)}`]);

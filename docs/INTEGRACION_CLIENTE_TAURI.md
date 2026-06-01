@@ -28,7 +28,7 @@ Esta guía muestra cómo integrar el sistema de registro de asistencia con una a
 └─────────────────────────────────────┘
               ↓ HTTP
 ┌─────────────────────────────────────┐
-│    API Laravel (AulaSync)           │
+│    API Laravel (SIA | Sistema de Informaci�n de Aulas)           │
 │    POST /api/attendance             │
 └─────────────────────────────────────┘
 ```

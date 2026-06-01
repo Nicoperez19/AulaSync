@@ -2,7 +2,7 @@
 
 ## Descripci贸n General
 
-El sistema AulaSync ahora cuenta con un mecanismo de **finalizaci贸n autom谩tica de reservas** que libera las salas al t茅rmino exacto de las clases programadas, sin necesidad de que el profesor devuelva manualmente las llaves.
+El sistema SIA | Sistema de Informaci髇 de Aulas ahora cuenta con un mecanismo de **finalizaci贸n autom谩tica de reservas** que libera las salas al t茅rmino exacto de las clases programadas, sin necesidad de que el profesor devuelva manualmente las llaves.
 
 ## 驴C贸mo Funciona?
 

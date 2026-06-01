@@ -1,6 +1,6 @@
 # Mantenedores Implementados
 
-Este documento describe los nuevos mantenedores (CRUD modules) implementados en el sistema AulaSync.
+Este documento describe los nuevos mantenedores (CRUD modules) implementados en el sistema SIA | Sistema de Información de Aulas.
 
 ## Mantenedores Creados
 

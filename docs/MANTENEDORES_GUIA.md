@@ -1,7 +1,7 @@
 # Sistema de Mantenedores - Acciones Rápidas
 
 ## Descripción
-Los mantenedores de Acciones Rápidas proporcionan una interfaz dedicada para la administración eficiente de reservas y espacios en AulaSync. Esta nueva estructura reemplaza el sistema de modales anterior por páginas independientes que ofrecen mejor organización y usabilidad.
+Los mantenedores de Acciones Rápidas proporcionan una interfaz dedicada para la administración eficiente de reservas y espacios en SIA | Sistema de Informaci�n de Aulas. Esta nueva estructura reemplaza el sistema de modales anterior por páginas independientes que ofrecen mejor organización y usabilidad.
 
 ## Estructura del Sistema
 

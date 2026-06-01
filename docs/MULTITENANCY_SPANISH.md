@@ -1,18 +1,18 @@
 # Implementación de Multi-Tenancy (Multi-inquilino)
 
 ## Resumen
-Esta implementación proporciona soporte multi-tenant para AulaSync basado en la detección de subdominios. Cada tenant (sede) tiene sus propios datos aislados para espacios, mapas, pisos, planificaciones y profesores.
+Esta implementación proporciona soporte multi-tenant para SIA | Sistema de Informaci�n de Aulas basado en la detección de subdominios. Cada tenant (sede) tiene sus propios datos aislados para espacios, mapas, pisos, planificaciones y profesores.
 
 ## ¿Qué es Multi-Tenancy?
-Multi-tenancy es un patrón de arquitectura donde una única instancia de la aplicación sirve a múltiples clientes (tenants). En el contexto de AulaSync, cada sede funciona como un tenant separado con sus propios datos.
+Multi-tenancy es un patrón de arquitectura donde una única instancia de la aplicación sirve a múltiples clientes (tenants). En el contexto de SIA | Sistema de Informaci�n de Aulas, cada sede funciona como un tenant separado con sus propios datos.
 
 ## Características Principales
 
 ### 1. Identificación por Subdominio
 Cada sede se accede a través de su propio subdominio:
-- `principal.aulasync.com` → Sede Principal
-- `campus-norte.aulasync.com` → Campus Norte
-- `bellavista.aulasync.com` → Sede Bellavista
+- `principal.SIA | Sistema de Informaci�n de Aulas.com` → Sede Principal
+- `campus-norte.SIA | Sistema de Informaci�n de Aulas.com` → Campus Norte
+- `bellavista.SIA | Sistema de Informaci�n de Aulas.com` → Sede Bellavista
 
 ### 2. Aislamiento de Datos
 Los datos se filtran automáticamente según el tenant actual:
@@ -87,9 +87,9 @@ php artisan tenant:create campus-norte --sede=SEDE002 --prefix=CN
 Los usuarios acceden al sistema usando el subdominio correspondiente a su sede:
 
 ```
-http://principal.aulasync.local
-http://campus-norte.aulasync.local
-http://bellavista.aulasync.local
+http://principal.SIA | Sistema de Informaci�n de Aulas.local
+http://campus-norte.SIA | Sistema de Informaci�n de Aulas.local
+http://bellavista.SIA | Sistema de Informaci�n de Aulas.local
 ```
 
 ### Configuración de Hosts (Desarrollo Local)
@@ -99,9 +99,9 @@ Para desarrollo local, agregar al archivo `hosts`:
 **Linux/Mac**: `/etc/hosts`
 
 ```
-127.0.0.1 principal.aulasync.local
-127.0.0.1 campus-norte.aulasync.local
-127.0.0.1 bellavista.aulasync.local
+127.0.0.1 principal.SIA | Sistema de Informaci�n de Aulas.local
+127.0.0.1 campus-norte.SIA | Sistema de Informaci�n de Aulas.local
+127.0.0.1 bellavista.SIA | Sistema de Informaci�n de Aulas.local
 ```
 
 ### Carga Masiva de Planificación
@@ -113,7 +113,7 @@ Al realizar carga masiva de planificación semestral:
 4. Crea planificaciones solo para esa sede
 
 **Ejemplo**:
-- Si estás en `principal.aulasync.com`
+- Si estás en `principal.SIA | Sistema de Informaci�n de Aulas.com`
 - Y la Sede Principal tiene prefijo `SP`
 - Solo se cargarán espacios que comiencen con `SP`
 - Solo se asignarán profesores con `sede_id` de Sede Principal
@@ -217,7 +217,7 @@ Se agregó el campo `sede_id` para filtrado directo por sede.
 
 ### 1. Usuario Accede al Sistema
 ```
-Usuario → principal.aulasync.com
+Usuario → principal.SIA | Sistema de Informaci�n de Aulas.com
     ↓
 Middleware TenantMiddleware detecta subdominio "principal"
     ↓
@@ -230,7 +230,7 @@ Todas las consultas se filtran automáticamente
 
 ### 2. Carga Masiva de Datos
 ```
-Usuario sube archivo Excel desde campus-norte.aulasync.com
+Usuario sube archivo Excel desde campus-norte.SIA | Sistema de Informaci�n de Aulas.com
     ↓
 Sistema detecta tenant "campus-norte"
     ↓

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'AulaSync') }} - Configuración Exitosa</title>
+    <title>{{ config('app.name', 'SIA | Sistema de Informaci�n de Aulas') }} - Configuración Exitosa</title>
 
     <!-- Fuentes -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

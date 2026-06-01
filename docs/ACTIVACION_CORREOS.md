@@ -18,7 +18,7 @@ El sistema de correos masivos ahora está **COMPLETAMENTE FUNCIONAL** y listo pa
 ### 2. ✅ Vista de Email Creada
 **Archivo:** `resources/views/emails/correo-personalizado.blade.php`
 - Diseño profesional y responsive
-- Header con logo AulaSync
+- Header con logo SIA | Sistema de Informaci�n de Aulas
 - Soporte completo para HTML
 - Footer con información corporativa
 - Estilos para tablas, listas, enlaces, etc.
@@ -83,7 +83,7 @@ php artisan correo:test tu-email@gmail.com --nombre="Tu Nombre"
 1. Ve a: https://myaccount.google.com/security
 2. Activa **Verificación en dos pasos**
 3. Busca **Contraseñas de aplicaciones**
-4. Crea una para **Correo > Otro (AulaSync)**
+4. Crea una para **Correo > Otro (SIA | Sistema de Informaci�n de Aulas)**
 5. **Copia la contraseña de 16 caracteres**
 
 ### 2. Configurar `.env`
@@ -96,7 +96,7 @@ MAIL_USERNAME=tu-email@gmail.com
 MAIL_PASSWORD=contraseña-de-aplicacion-16-caracteres
 MAIL_ENCRYPTION=tls
 MAIL_FROM_ADDRESS=tu-email@gmail.com
-MAIL_FROM_NAME="AulaSync"
+MAIL_FROM_NAME="SIA | Sistema de Informaci�n de Aulas"
 ```
 
 ### 3. Limpiar Caché
@@ -171,7 +171,7 @@ Mail::to($email)->send(new CorreoPersonalizado(
 
 ### Diseño:
 - ✅ Responsive (se adapta a móviles)
-- ✅ Header con logo AulaSync
+- ✅ Header con logo SIA | Sistema de Informaci�n de Aulas
 - ✅ Saludo personalizado con nombre
 - ✅ Contenido HTML completo
 - ✅ Footer corporativo

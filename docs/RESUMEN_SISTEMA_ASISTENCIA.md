@@ -2,7 +2,7 @@
 
 ## 📋 Descripción General
 
-Se ha implementado un sistema completo de registro de asistencia con actualización en tiempo real para AulaSync. El sistema permite que un cliente externo (aplicación Tauri) escanee IDs de estudiantes y registre su asistencia, mientras el frontend de administración se actualiza automáticamente sin recargar la página.
+Se ha implementado un sistema completo de registro de asistencia con actualización en tiempo real para SIA | Sistema de Informaci�n de Aulas. El sistema permite que un cliente externo (aplicación Tauri) escanee IDs de estudiantes y registre su asistencia, mientras el frontend de administración se actualiza automáticamente sin recargar la página.
 
 ## ✅ Componentes Implementados
 

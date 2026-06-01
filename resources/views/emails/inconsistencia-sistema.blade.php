@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alerta de Inconsistencias - Gestor de Aulas IT</title>
+    <title>Alerta de Inconsistencias - SIA | Sistema de Informaci�n de Aulas</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -93,7 +93,7 @@
     <div class="container">
         <div class="header">
             <span class="alert-icon">🚨</span>
-            <strong>Alerta de Inconsistencias - Gestor de Aulas IT</strong>
+            <strong>Alerta de Inconsistencias - SIA | Sistema de Informaci�n de Aulas</strong>
             <br>
             <small>Fecha de verificación: {{ $datos['fecha_verificacion'] }}</small>
         </div>
@@ -178,7 +178,7 @@
         </ul>
 
         <div class="footer">
-            <p>Este correo fue generado automáticamente por el sistema de monitoreo de Gestor de Aulas IT.</p>
+            <p>Este correo fue generado automáticamente por el sistema de monitoreo de SIA | Sistema de Informaci�n de Aulas.</p>
             <p>Para más información, revise los logs del sistema o contacte al administrador.</p>
         </div>
     </div>

@@ -476,7 +476,7 @@ async function registrarAsistenciaConReintentos(data, maxReintentos = 3) {
 
 ### Test con Postman
 
-1. Crear nueva colección "AulaSync - Asistencia"
+1. Crear nueva colección "SIA | Sistema de Informaci�n de Aulas - Asistencia"
 2. Agregar request POST con la URL
 3. Configurar Headers
 4. Copiar el JSON de ejemplo en Body > raw > JSON

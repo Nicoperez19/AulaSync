@@ -1,10 +1,10 @@
 # Multi-Tenancy Implementation
 
 ## Overview
-This implementation provides multi-tenancy support for AulaSync based on subdomain detection. Each tenant (sede) has its own isolated data for spaces, maps, floors, schedules, and professors.
+This implementation provides multi-tenancy support for SIA | Sistema de Información de Aulas based on subdomain detection. Each tenant (sede) has its own isolated data for spaces, maps, floors, schedules, and professors.
 
 ## Features
-- **Subdomain-based tenant identification**: Each sede is accessed via its own subdomain (e.g., `principal.aulasync.com`)
+- **Subdomain-based tenant identification**: Each sede is accessed via its own subdomain (e.g., `principal.SIA | Sistema de Información de Aulas.com`)
 - **Data isolation**: Tenant data is automatically filtered using Laravel's global scopes
 - **Prefix-based space filtering**: Spaces are filtered by their prefix according to the tenant's configuration
 - **Flexible database architecture**: Supports both shared database (with scoped data) and separate databases per tenant
@@ -123,8 +123,8 @@ php artisan tenant:create campus-norte --sede=SEDE002 --prefix=CN
 
 ### Accessing Tenants
 Users access different tenants via subdomains:
-- `principal.aulasync.com` â†’ Tenant for "Sede Principal"
-- `campus-norte.aulasync.com` â†’ Tenant for "Campus Norte"
+- `principal.SIA | Sistema de Información de Aulas.com` â†’ Tenant for "Sede Principal"
+- `campus-norte.SIA | Sistema de Información de Aulas.com` â†’ Tenant for "Campus Norte"
 
 ### Getting Current Tenant
 ```php
@@ -167,7 +167,7 @@ All tenants share the same database, but data is filtered using:
 ### Separate Database Mode
 When `MULTITENANCY_SEPARATE_DATABASES=true`:
 - Each tenant has its own database
-- Database name follows pattern: `aulasync_{domain}`
+- Database name follows pattern: `SIA | Sistema de Información de Aulas_{domain}`
 - Connection switches automatically based on current tenant
 - Requires manual database creation for each tenant
 

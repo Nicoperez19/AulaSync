@@ -123,7 +123,7 @@
     <div class="header">
         <img src="{{ public_path('images/logo_instituto_tecnologico-01.png') }}" alt="Logo Instituto Tecnológico" style="height: 60px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
         <h1>Análisis de Espacios</h1>
-        <p>Gestor de Aulas IT - Instituto Tecnológico</p>
+        <p>SIA | Sistema de Informaci�n de Aulas - Instituto Tecnológico</p>
         <p>Período: {{ $periodo }}</p>
         <p>Generado el: {{ $fecha_generacion }}</p>
     </div>
@@ -251,7 +251,7 @@
         </table>
 
     <div class="footer">
-        <p>Este reporte fue generado automáticamente por el Gestor de Aulas IT</p>
+        <p>Este reporte fue generado automáticamente por el SIA | Sistema de Informaci�n de Aulas</p>
         <p>Página 1 de 1</p>
     </div>
 </body>

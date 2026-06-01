@@ -246,15 +246,8 @@ class DetectarClasesNoRealizadas extends Command
                 }
 
 
-                // Verificar si ya existe registro de clase no realizada para esta clase hoy
-                $yaRegistrada = ClaseNoRealizada::where('id_asignatura', $primerModulo->id_asignatura)
-                    ->where('id_espacio', $primerModulo->id_espacio)
-                    ->where('fecha_clase', $fechaActual)
-                    ->exists();
-
-                if ($yaRegistrada) {
-                    continue; // Ya fue procesada
-                }
+                // Variable $yaRegistrada global eliminada para permitir evaluación por módulo.
+                // Anteriormente, si un módulo estaba registrado, omitía todo el bloque.
 
                 // Obtener hora de inicio del primer módulo de esta clase
                 $primerModuloNum = $this->obtenerNumeroModulo($primerModulo->id_modulo);
@@ -301,11 +294,27 @@ class DetectarClasesNoRealizadas extends Command
                     } else {
                         $clasesRealizadas++;
                     }
+
+                    // Verificar retiros anticipados si la reserva está finalizada
+                    if ($reserva->estado === 'finalizada' && !empty($reserva->hora_salida)) {
+                        $this->verificarRetiroAnticipado($modulosClase, $reserva, $diaKey, $fechaActual, $periodo, $runProfesor);
+                    }
                 } else {
                     // El profesor NO hizo reserva y ya pasó el tiempo de gracia
                     if (!$this->option('dry-run')) {
                         // Registrar cada módulo de la clase como no realizado
                         foreach ($modulosClase as $modulo) {
+                            // Verificar si ya existe registro de clase no realizada para este módulo hoy
+                            $yaRegistrada = ClaseNoRealizada::where('id_asignatura', $modulo->id_asignatura)
+                                ->where('id_espacio', $modulo->id_espacio)
+                                ->where('id_modulo', $modulo->id_modulo)
+                                ->where('fecha_clase', $fechaActual)
+                                ->exists();
+
+                            if ($yaRegistrada) {
+                                continue; // Ya fue procesada
+                            }
+
                             $claseNoRealizada = ClaseNoRealizada::registrarClaseNoRealizada([
                                 'id_asignatura' => $modulo->id_asignatura,
                                 'id_espacio' => $modulo->id_espacio,
@@ -346,6 +355,67 @@ class DetectarClasesNoRealizadas extends Command
             Log::error("Error en DetectarClasesNoRealizadas para tenant {$tenant->database}: " . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
             ]);
+        }
+    }
+
+    /**
+     * Verifica retiros anticipados basado en la holgura permitida
+     */
+    private function verificarRetiroAnticipado($modulosClase, $reserva, $diaKey, $fechaActual, $periodo, $runProfesor)
+    {
+        if ($this->option('dry-run')) {
+            return;
+        }
+
+        // Ordenar módulos por número
+        $modulos = $modulosClase->sortBy(function($p) {
+            return $this->obtenerNumeroModulo($p->id_modulo);
+        })->values();
+
+        $horaSalida = $reserva->hora_salida;
+
+        foreach ($modulos as $index => $modulo) {
+            $n = $index + 1; // Número de módulo en la secuencia (1, 2, 3...)
+            $toleranciaMinutos = 10 * ($n - 1); // 10 min * (N-1)
+            
+            $numModulo = $this->obtenerNumeroModulo($modulo->id_modulo);
+            $horaFinModulo = $this->horariosModulos[$diaKey][$numModulo]['fin'] ?? null;
+            
+            if (!$horaFinModulo) continue;
+
+            $horaRequerida = Carbon::parse($horaFinModulo)->subMinutes($toleranciaMinutos)->format('H:i:s');
+
+            // Si la hora de salida es menor a la hora requerida, este módulo no se realizó completamente
+            if ($horaSalida < $horaRequerida) {
+                // Verificar si ya está registrado este módulo específico
+                $yaRegistrado = ClaseNoRealizada::where('id_asignatura', $modulo->id_asignatura)
+                    ->where('id_espacio', $modulo->id_espacio)
+                    ->where('id_modulo', $modulo->id_modulo)
+                    ->where('fecha_clase', $fechaActual)
+                    ->exists();
+
+                if (!$yaRegistrado) {
+                    $claseNoRealizada = ClaseNoRealizada::registrarClaseNoRealizada([
+                        'id_asignatura' => $modulo->id_asignatura,
+                        'id_espacio' => $modulo->id_espacio,
+                        'id_modulo' => $modulo->id_modulo,
+                        'run_profesor' => $runProfesor,
+                        'fecha_clase' => $fechaActual,
+                        'periodo' => $periodo,
+                        'motivo' => "Retiro anticipado: El profesor finalizó a las {$horaSalida}, antes del mínimo requerido ({$horaRequerida}) para el módulo {$n} del bloque.",
+                        'hora_deteccion' => now(),
+                    ]);
+                    
+                    $this->error(sprintf(
+                        '  ❌ RETIRO ANTICIPADO: %s - Profesor: %s - Módulo: %s - Salida: %s < Req: %s',
+                        $modulo->asignatura->nombre_asignatura ?? 'Desconocida',
+                        $modulo->asignatura->profesor->name ?? 'Desconocido',
+                        $modulo->id_modulo,
+                        $horaSalida,
+                        $horaRequerida
+                    ));
+                }
+            }
         }
     }
 

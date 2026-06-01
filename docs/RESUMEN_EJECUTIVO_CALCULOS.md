@@ -1,5 +1,5 @@
 ---
-title: Resumen Ejecutivo - C谩lculos del Sistema AulaSync
+title: Resumen Ejecutivo - C谩lculos del Sistema SIA | Sistema de Informaci髇 de Aulas
 author: Equipo de Desarrollo
 date: 5 de Noviembre de 2025
 ---
@@ -8,13 +8,13 @@ date: 5 de Noviembre de 2025
 
 **Instituci贸n:** Instituto Tecnol贸gico Universidad Cat贸lica de la Sant铆sima Concepci贸n  
 **Destinatario:** Subdirector del Instituto Tecnol贸gico - Sede Talcahuano  
-**Asunto:** Metodolog铆as de C谩lculo - Sistema AulaSync
+**Asunto:** Metodolog铆as de C谩lculo - Sistema SIA | Sistema de Informaci髇 de Aulas
 
 ---
 
 ## INDICADORES MONITOREADOS (14 M茅tricas)
 
-El sistema AulaSync calcula en tiempo real 14 indicadores para la gesti贸n de espacios acad茅micos:
+El sistema SIA | Sistema de Informaci髇 de Aulas calcula en tiempo real 14 indicadores para la gesti贸n de espacios acad茅micos:
 
 1. **Ocupaci贸n Semanal (%)**
    - Se divide el total de reservas activas de la semana entre la capacidad total disponible (todos los espacios por 5 d铆as considerando 8 horas diarias) para obtener un porcentaje de uso real de la infraestructura.
@@ -120,5 +120,5 @@ El sistema es operativo con 14 indicadores funcionales. Las recomendaciones se e
 
 ---
 
-**Documento Preparado por:** Equipo de Desarrollo AulaSync  
+**Documento Preparado por:** Equipo de Desarrollo SIA | Sistema de Informaci髇 de Aulas  
 **Fecha:** 5 de Noviembre de 2025

@@ -285,5 +285,5 @@ Ejemplo de log:
 
 ## Autor
 
-Implementación realizada para el sistema AulaSync
+Implementación realizada para el sistema SIA | Sistema de Informaci�n de Aulas
 Fecha: Noviembre 2025

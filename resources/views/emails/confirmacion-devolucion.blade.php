@@ -92,7 +92,7 @@
     <div class="email-wrapper">
         <div class="header">
             <h1>🔑 Devolución Registrada</h1>
-            <p>AulaSync – Sistema de Gestión de Espacios</p>
+            <p>SIA | Sistema de Informaci�n de Aulas – Sistema de Gestión de Espacios</p>
         </div>
 
         <div class="body">
@@ -140,12 +140,12 @@
 
             <p>El espacio ha sido liberado y está disponible para otras reservas.</p>
             <p>Si tiene alguna consulta, contacte con administración.</p>
-            <p>Saludos cordiales,<br><strong>Equipo AulaSync</strong></p>
+            <p>Saludos cordiales,<br><strong>Equipo SIA | Sistema de Informaci�n de Aulas</strong></p>
         </div>
 
         <div class="footer">
             <p>Este es un mensaje automático, por favor no responda a este correo.</p>
-            <p>© {{ date('Y') }} <strong>AulaSync</strong> – Sistema de Gestión de Espacios Académicos</p>
+            <p>© {{ date('Y') }} <strong>SIA | Sistema de Informaci�n de Aulas</strong> – Sistema de Gestión de Espacios Académicos</p>
         </div>
     </div>
 </body>

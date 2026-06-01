@@ -26,11 +26,11 @@ Se ha implementado con éxito un sistema automático que **finaliza automáticam
 
 ### 3. Verificación Terminal
 ```bash
-PS D:\Dev\AulaSync> php artisan schedule:list
+PS D:\Dev\SIA | Sistema de Informaci�n de Aulas> php artisan schedule:list
 ✅ */5  *    * * *    php artisan reservas:finalizar-no-devueltas
    Próxima ejecución: en 1 minuto
 
-PS D:\Dev\AulaSync> php artisan reservas:finalizar-no-devueltas
+PS D:\Dev\SIA | Sistema de Informaci�n de Aulas> php artisan reservas:finalizar-no-devueltas
 ✅ Iniciando búsqueda de reservas no devueltas...
 ✅ Se finalizaron 0 reservas por no devolución de llaves.
 ```

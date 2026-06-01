@@ -1,4 +1,4 @@
-# Test de Plantillas PDF - AulaSync
+# Test de Plantillas PDF - SIA | Sistema de Informaci�n de Aulas
 
 ## 📋 Descripción
 

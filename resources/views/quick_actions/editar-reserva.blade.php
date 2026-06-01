@@ -104,7 +104,7 @@
                             id="modulos"
                             required
                             min="1"
-                            max="12"
+                            max="15"
                             value="{{ $reserva->modulos ?? 1 }}"
                             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />

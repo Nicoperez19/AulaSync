@@ -213,7 +213,7 @@
     <!-- Header -->
     <div class="header">
         <h1>REPORTE SEMANAL DE CLASES NO REGISTRADAS</h1>
-        <div class="subtitle">Gestor de Aulas IT - Sistema de Gestión Académica</div>
+        <div class="subtitle">SIA | Sistema de Informaci�n de Aulas - Sistema de Gestión Académica</div>
     </div>
 
     <!-- Información del Período -->
@@ -307,7 +307,7 @@
 
     <!-- Footer -->
     <div class="footer">
-        <p>Este reporte fue generado automáticamente por el Gestor de Aulas IT</p>
+        <p>Este reporte fue generado automáticamente por el SIA | Sistema de Informaci�n de Aulas</p>
         <p>Documento confidencial - Uso interno exclusivo</p>
     </div>
 </body>

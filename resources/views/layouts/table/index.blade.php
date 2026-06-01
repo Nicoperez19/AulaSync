@@ -23,10 +23,14 @@
                 @endauth
 
                 <!-- Logo y título -->
-                <div class="flex items-center gap-4 justify-center flex-1">
-                   <img src='images/Logo-UCSC-Color-Horizontal.png' alt="Logo" class="h-16 w-auto" >
-                         <div class="text-2xl font-bold leading-tight text-gray-900" x-text="nombreSede"></div>
-                </div>
+            <div class="flex items-center gap-4 justify-center flex-1">
+               <img src='images/Logo-UCSC-Color-Horizontal.png' alt="Logo" class="h-16 w-auto" >
+               <div class="flex items-center px-4 py-2 bg-white rounded-lg shadow-sm border border-gray-200">
+                   <div class="text-center">
+                       <div class="text-lg font-bold text-gray-900" x-text="nombreSede.toLowerCase().startsWith('sede') ? nombreSede : 'Sede ' + nombreSede"></div>
+                   </div>
+               </div>
+            </div>
             </div>            
             
             <!-- Indicador de feriado y paginación -->

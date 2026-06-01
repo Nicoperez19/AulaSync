@@ -69,7 +69,7 @@
             </thead>
             <tbody>
                 @forelse ($profesores as $index => $profesor)
-                            <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
+                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
                                 <td
                                     class="p-3 text-sm font-semibold text-blue-600 border border-white dark:border-white dark:text-blue-400">
                                     {{ $profesor->run_profesor }}
@@ -118,7 +118,7 @@
                                 <svg class="w-12 h-12 mb-4 text-gray-400" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4">
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z">
                                     </path>
                                 </svg>
                                 <p class="text-lg font-medium">No se encontraron profesores</p>

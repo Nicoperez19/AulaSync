@@ -1,4 +1,4 @@
-# L贸gica de Ocupaci贸n de Espacios en AulaSync
+# L贸gica de Ocupaci贸n de Espacios en SIA | Sistema de Informaci髇 de Aulas
 
 > **脷ltima actualizaci贸n:** 29 de octubre de 2025  
 > **Contexto:** Implementaci贸n del endpoint `/api/reservas/activa/{id_espacio}`
@@ -7,7 +7,7 @@
 
 ## 馃摉 Resumen Ejecutivo
 
-En AulaSync, un espacio puede estar **OCUPADO** de **DOS formas diferentes**:
+En SIA | Sistema de Informaci髇 de Aulas, un espacio puede estar **OCUPADO** de **DOS formas diferentes**:
 
 1. **Ocupaci贸n Formal:** Tiene una reserva activa registrada en el sistema
 2. **Ocupaci贸n Manual:** El campo `estado` del espacio est谩 marcado como "Ocupado" sin una reserva

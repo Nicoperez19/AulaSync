@@ -2,7 +2,7 @@
 
 ## Arquitectura
 
-### Database Central (`aulasync`)
+### Database Central (`SIA | Sistema de Informaci�n de Aulas`)
 Contiene datos compartidos y de catálogo:
 - **Universidades** - Catálogo de instituciones
 - **Sedes** - Todas las sedes del sistema
@@ -19,11 +19,11 @@ Contiene datos compartidos y de catálogo:
 
 ### Databases por Tenant
 Cada sede tiene su propia database con datos operativos:
-- `aulasync_th` → Talcahuano
-- `aulasync_ct` → Cañete
-- `aulasync_ch` → Chillán
-- `aulasync_la` → Los Ángeles
-- `aulasync_ccp` → Concepción
+- `SIA | Sistema de Informaci�n de Aulas_th` → Talcahuano
+- `SIA | Sistema de Informaci�n de Aulas_ct` → Cañete
+- `SIA | Sistema de Informaci�n de Aulas_ch` → Chillán
+- `SIA | Sistema de Informaci�n de Aulas_la` → Los Ángeles
+- `SIA | Sistema de Informaci�n de Aulas_ccp` → Concepción
 
 **Contienen solo**:
 - **Pisos** - Específicos de la sede
@@ -69,7 +69,7 @@ php artisan tenants:setup --fresh --seed
 ## Estructura de Seeders
 
 ### Seeders Centralizados (CentralDatabaseSeeder)
-Ejecutar en la database principal `aulasync`:
+Ejecutar en la database principal `SIA | Sistema de Informaci�n de Aulas`:
 - `RoleSeeder` - Roles del sistema
 - `UserSeeder` - Usuarios administradores
 - `AdministracionChileSeeder` - Regiones, provincias, comunas

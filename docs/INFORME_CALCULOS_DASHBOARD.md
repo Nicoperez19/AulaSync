@@ -1,6 +1,6 @@
 ---
 title: Informe T茅cnico - C谩lculos del Sistema de Gesti贸n de Espacios Acad茅micos
-author: Equipo de Desarrollo - AulaSync
+author: Equipo de Desarrollo - SIA | Sistema de Informaci髇 de Aulas
 date: 5 de Noviembre de 2025
 ---
 
@@ -10,14 +10,14 @@ date: 5 de Noviembre de 2025
 **Sede:** Talcahuano  
 **Instituto:** Instituto Tecnol贸gico  
 **Destinatario:** Subdirector del Instituto Tecnol贸gico  
-**Asunto:** Descripci贸n de Metodolog铆as de C谩lculo - Sistema AulaSync  
+**Asunto:** Descripci贸n de Metodolog铆as de C谩lculo - Sistema SIA | Sistema de Informaci髇 de Aulas  
 **Fecha:** 5 de Noviembre de 2025
 
 ---
 
 ## 1. INTRODUCCI脫N
 
-El presente informe describe las metodolog铆as de c谩lculo implementadas en el sistema de gesti贸n de espacios acad茅micos AulaSync. Cada indicador ha sido dise帽ado para proporcionar informaci贸n precisa sobre la utilizaci贸n de infraestructura disponible en la sede Talcahuano.
+El presente informe describe las metodolog铆as de c谩lculo implementadas en el sistema de gesti贸n de espacios acad茅micos SIA | Sistema de Informaci髇 de Aulas. Cada indicador ha sido dise帽ado para proporcionar informaci贸n precisa sobre la utilizaci贸n de infraestructura disponible en la sede Talcahuano.
 
 ---
 
@@ -400,7 +400,7 @@ ALTER TABLE planificacion_asignaturas ADD INDEX idx_periodo (periodo);
 
 ## 6. CONCLUSIONES
 
-El sistema AulaSync implementa 14 indicadores de gesti贸n de espacios acad茅micos con funcionamiento operativo. Los c谩lculos actuales proporcionan visibilidad sobre la utilizaci贸n de infraestructura.
+El sistema SIA | Sistema de Informaci髇 de Aulas implementa 14 indicadores de gesti贸n de espacios acad茅micos con funcionamiento operativo. Los c谩lculos actuales proporcionan visibilidad sobre la utilizaci贸n de infraestructura.
 
 Las mejoras recomendadas est谩n orientadas exclusivamente a corregir y optimizar las metodolog铆as de c谩lculo existentes, mejorando la precisi贸n de los datos y la confiabilidad de los indicadores sin requerir nuevas funcionalidades.
 
@@ -427,7 +427,7 @@ La implementaci贸n de estas correcciones permitir谩:
 
 ---
 
-**Documento Preparado por:** Equipo de Desarrollo AulaSync  
+**Documento Preparado por:** Equipo de Desarrollo SIA | Sistema de Informaci髇 de Aulas  
 **Revisi贸n:** 2.0  
 **Fecha de Emisi贸n:** 5 de Noviembre de 2025  
 **脷ltima Actualizaci贸n:** 5 de Noviembre de 2025

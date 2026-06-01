@@ -19,7 +19,7 @@ El sistema ahora est√° configurado para enviar correos reales a trav√©s de Gmail
 3. Activa la **Verificaci√≥n en dos pasos** (si no est√° activada)
 4. Busca **Contrase√±as de aplicaciones**
 5. Selecciona **Correo** y **Otro (nombre personalizado)**
-6. Escribe: "AulaSync"
+6. Escribe: "SIA | Sistema de InformaciÛn de Aulas"
 7. Click en **Generar**
 8. **Copia la contrase√±a de 16 caracteres** (espacios incluidos o sin espacios)
 
@@ -35,7 +35,7 @@ MAIL_USERNAME=tu-email@gmail.com
 MAIL_PASSWORD=tu-contrase√±a-de-aplicacion-de-16-caracteres
 MAIL_ENCRYPTION=tls
 MAIL_FROM_ADDRESS=tu-email@gmail.com
-MAIL_FROM_NAME="AulaSync"
+MAIL_FROM_NAME="SIA | Sistema de InformaciÛn de Aulas"
 ```
 
 **Ejemplo:**
@@ -43,11 +43,11 @@ MAIL_FROM_NAME="AulaSync"
 MAIL_MAILER=smtp
 MAIL_HOST=smtp.gmail.com
 MAIL_PORT=587
-MAIL_USERNAME=soporteaulasync@gmail.com
+MAIL_USERNAME=soporteSIA | Sistema de InformaciÛn de Aulas@gmail.com
 MAIL_PASSWORD=abcd efgh ijkl mnop
 MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS=soporteaulasync@gmail.com
-MAIL_FROM_NAME="AulaSync"
+MAIL_FROM_ADDRESS=soporteSIA | Sistema de InformaciÛn de Aulas@gmail.com
+MAIL_FROM_NAME="SIA | Sistema de InformaciÛn de Aulas"
 ```
 
 ### 3. Limpiar Cach√©
