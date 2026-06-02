@@ -634,7 +634,7 @@
                 const prefijo = obtenerPrefijoDia(fechaSeleccionada);
 
                 // Agregar opciones de módulos con horarios
-                for (let i = 1; i <= 12; i++) {
+                for (let i = 1; i <= 15; i++) {
                     const horario = horariosModulosCrearReserva[i];
                     const optionTextInicial = `${prefijo}.${i} (${horario})`;
                     const optionTextFinal = `${prefijo}.${i} (${horario})`;
@@ -667,7 +667,7 @@
                         const prefijo = obtenerPrefijoDia(fechaSeleccionada);
 
                         // Solo mostrar módulos finales >= al inicial
-                        for (let i = moduloInicialSeleccionado; i <= 12; i++) {
+                        for (let i = moduloInicialSeleccionado; i <= 15; i++) {
                             const horario = horariosModulosCrearReserva[i];
                             const optionText = `${prefijo}.${i} (${horario})`;
 
