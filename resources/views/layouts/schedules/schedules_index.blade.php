@@ -91,7 +91,7 @@
                 @endphp
                 <p class="text-sm font-semibold text-light-cloud-blue">
                     <i class="mr-1 fa-solid fa-calendar-days"></i>
-                    Período: {{ $semestreMostrar }}er Semestre {{ $anioMostrar }}
+                    Período: {{ $semestreMostrar }}° Semestre {{ $anioMostrar }}
                 </p>
             </div>
             <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6">
@@ -131,7 +131,7 @@
                     <p class="mb-1 text-xs text-center text-gray-700" id="modalCorreoProfesor">Correo: </p>
                     <p class="mb-1 text-xs text-center text-gray-600" id="modalPeriodo">
                         <i class="mr-1 fa-solid fa-calendar-days"></i>
-                        Período: <span id="modalSemestre">{{ $semestreMostrar }}</span>er Semestre <span
+                        Período: <span id="modalSemestre">{{ $semestreMostrar }}</span>° Semestre <span
                             id="modalAnio">{{ $anioMostrar }}</span>
                     </p>
                 </div>

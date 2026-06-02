@@ -397,11 +397,11 @@
                 if (partesPeriodo.length === 2) {
                     const anio = partesPeriodo[0];
                     const semestre = partesPeriodo[1];
-                    periodoEspacio = `${semestre}er semestre - ${anio}`;
+                    periodoEspacio = `${semestre}° semestre - ${anio}`;
                 }
             }
 
-            const tituloFormateado = `Horario ${tipoEspacio.toLowerCase()} ${nombreCompleto} (${idEspacio})`;
+            const tituloFormateado = `Horario ${nombreCompleto} (${idEspacio})`;
             document.getElementById('modalEspacioTitle').textContent = tituloFormateado;
             document.getElementById('modalEspacioTipo').textContent = tipoEspacio;
 
@@ -418,23 +418,7 @@
             const tbody = document.getElementById('horarioEspacioBody');
             tbody.innerHTML = '';
 
-            const Modulos = [
-                { hora_inicio: '08:10:00', hora_termino: '09:00:00' },
-                { hora_inicio: '09:10:00', hora_termino: '10:00:00' },
-                { hora_inicio: '10:10:00', hora_termino: '11:00:00' },
-                { hora_inicio: '11:10:00', hora_termino: '12:00:00' },
-                { hora_inicio: '12:10:00', hora_termino: '13:00:00' },
-                { hora_inicio: '13:10:00', hora_termino: '14:00:00' },
-                { hora_inicio: '14:10:00', hora_termino: '15:00:00' },
-                { hora_inicio: '15:10:00', hora_termino: '16:00:00' },
-                { hora_inicio: '16:10:00', hora_termino: '17:00:00' },
-                { hora_inicio: '17:10:00', hora_termino: '18:00:00' },
-                { hora_inicio: '18:10:00', hora_termino: '19:00:00' },
-                { hora_inicio: '19:10:00', hora_termino: '20:00:00' },
-                { hora_inicio: '20:10:00', hora_termino: '21:00:00' },
-                { hora_inicio: '21:10:00', hora_termino: '22:00:00' },
-                { hora_inicio: '22:10:00', hora_termino: '23:00:00' }
-            ];
+            const Modulos = @json(\App\Helpers\ModulosHelper::getModulosSimples());
 
             const diasUnicos = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 

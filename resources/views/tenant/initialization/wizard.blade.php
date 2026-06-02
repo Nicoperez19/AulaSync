@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'SIA | Sistema de Informaci髇 de Aulas') }} - Configuraci贸n Inicial</title>
+    <title>{{ config('app.name', 'SIA | Sistema de Informaci贸n de Aulas') }} - Configuraci贸n Inicial</title>
 
     <!-- Fuentes -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -89,8 +89,8 @@
         <header class="">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 <div class="flex items-center justify-between">
-                   <!---- <img src="" alt="SIA | Sistema de Informaci髇 de Aulas" class="  h-10 sm:h-12 brightness-0">--->
-                   <div>SIA | Sistema de Informaci髇 de Aulas</div>
+                   <!---- <img src="" alt="SIA | Sistema de Informaci贸n de Aulas" class="  h-10 sm:h-12 brightness-0">--->
+                   <div>SIA | Sistema de Informaci贸n de Aulas</div>
                     <div class="text-black">
                         <span class="font-semibold">Asistente configuraci贸n sede {{ $sede->nombre_sede ?? 'Configuraci贸n de Sede' }}</span>
                     </div>
@@ -224,7 +224,7 @@
         <footer class="bg-gray-800 text-white py-4">
             <div class="container mx-auto px-4 text-center">
                 <p class="text-gray-400 text-sm">
-                    &copy; {{ date('Y') }} 漏 2026 SIA | Sistema de Informaci贸n de Aulas - Configuraci贸n Inicial de Sede
+                    &copy; {{ date('Y') }} SIA | Sistema de Informaci贸n de Aulas - Configuraci贸n Inicial de Sede
                 </p>
             </div>
         </footer>

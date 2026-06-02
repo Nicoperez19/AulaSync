@@ -43,3 +43,6 @@ Thumbs.db
 # Logs
 */logs
 *.log
+
+# Metadata files (generated locally, should not be tracked)
+manual-meta.json

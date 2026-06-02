@@ -356,7 +356,7 @@ class ClasesNoRealizadasTable extends Component
         // Usar conexión 'tenant' explícitamente para bases de datos multi-tenant
         $stats = DB::connection('tenant')->table('clases_no_realizadas')
             ->select([
-                DB::raw('COUNT(*) as total'),
+                DB::raw('COUNT(DISTINCT CONCAT(id_asignatura, "_", run_profesor, "_", id_espacio, "_", id_modulo, "_", fecha_clase)) as total'),
                 DB::raw("SUM(CASE WHEN estado = 'no_realizada' THEN 1 ELSE 0 END) as no_realizadas"),
                 DB::raw("SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) as pendientes"),
                 DB::raw("SUM(CASE WHEN estado = 'justificado' THEN 1 ELSE 0 END) as justificados"),
@@ -408,6 +408,7 @@ class ClasesNoRealizadasTable extends Component
         
         $query = ClaseNoRealizada::query()
             ->select('clases_no_realizadas.*')
+            ->distinct() // Eliminar duplicados exactos
             ->whereNotExists(function($subQuery) {
                 $subQuery->select(DB::raw(1))
                     ->from('profesor_atrasos')
@@ -438,15 +439,25 @@ class ClasesNoRealizadasTable extends Component
                     ->orWhereDate('clases_no_realizadas.fecha_clase', $hoy);
             });
 
-        // Optimizar búsqueda usando JOIN solo con asignaturas
+        // Búsqueda optimizada sin JOIN para evitar duplicados
         if ($this->search) {
             $searchTerm = '%' . $this->search . '%';
-            $query->leftJoin('asignaturas', 'clases_no_realizadas.id_asignatura', '=', 'asignaturas.id_asignatura')
-                  ->where(function($q) use ($searchTerm) {
-                      $q->where('asignaturas.nombre_asignatura', 'like', $searchTerm)
-                        ->orWhere('asignaturas.codigo_asignatura', 'like', $searchTerm)
-                        ->orWhere('clases_no_realizadas.run_profesor', 'like', $searchTerm);
-                  });
+            
+            // Subquery para obtener IDs de asignaturas que coincidan
+            $asignaturasIds = Asignatura::where('nombre_asignatura', 'like', $searchTerm)
+                ->orWhere('codigo_asignatura', 'like', $searchTerm)
+                ->pluck('id_asignatura')
+                ->toArray();
+            
+            // Aplicar búsqueda sin JOIN
+            $query->where(function($q) use ($searchTerm, $asignaturasIds) {
+                if (!empty($asignaturasIds)) {
+                    $q->whereIn('clases_no_realizadas.id_asignatura', $asignaturasIds)
+                      ->orWhere('clases_no_realizadas.run_profesor', 'like', $searchTerm);
+                } else {
+                    $q->where('clases_no_realizadas.run_profesor', 'like', $searchTerm);
+                }
+            });
         }
 
         return $query;

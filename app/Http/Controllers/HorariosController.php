@@ -89,7 +89,10 @@ class HorariosController extends Controller
             });
         }
 
-        $profesores = $query->orderBy('name')->paginate(27);
+        // Agregar distinct para evitar duplicados cuando un profesor tiene múltiples horarios
+        $profesores = $query->distinct()
+            ->orderBy('name')
+            ->paginate(27);
 
         // Determinar el período para los horarios (siempre usar año actual)
         if ($semestreFiltro) {
@@ -201,23 +204,24 @@ class HorariosController extends Controller
             if ($horario) {
                 $totalAntes = $horario->planificaciones->count();
 
-                // Filtrar planificaciones por período de la asignatura
-                $horario->planificaciones = $horario->planificaciones->filter(function ($planificacion) use ($periodo) {
-                    // Verificar que la asignatura tenga el período correcto
-                    if (!$planificacion->asignatura) {
-                        return false;
-                    }
+                // Filtrar planificaciones por período de la asignatura y eliminar duplicados
+                $horario->planificaciones = $horario->planificaciones
+                    ->filter(function ($planificacion) use ($periodo) {
+                        // Verificar que la asignatura tenga el período correcto
+                        if (!$planificacion->asignatura) {
+                            return false;
+                        }
 
-                    $asignaturaPeriodo = $planificacion->asignatura->periodo;
-                    $coincide = $asignaturaPeriodo === $periodo;
+                        $asignaturaPeriodo = $planificacion->asignatura->periodo;
+                        $coincide = $asignaturaPeriodo === $periodo;
 
-                    // Log para debugging específico
-                    if ($planificacion->asignatura->run_profesor == '10424736') {
-
-                    }
-
-                    return $coincide;
-                });
+                        return $coincide;
+                    })
+                    ->unique(function ($plan) {
+                        // Evitar duplicados usando combinación de id_modulo y asignatura
+                        return $plan->id_modulo . '_' . $plan->id_asignatura;
+                    })
+                    ->values();
 
                 $totalDespues = $horario->planificaciones->count();
 
