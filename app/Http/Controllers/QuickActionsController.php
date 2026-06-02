@@ -421,8 +421,8 @@ class QuickActionsController extends Controller
                 'id_asignatura' => 'nullable|string',
                 'espacio' => 'required|string',
                 'fecha' => 'required|date',
-                'modulo_inicial' => 'required|integer|min:1|max:12',
-                'modulo_final' => 'required|integer|min:1|max:12',
+                'modulo_inicial' => 'required|integer|min:1|max:16',
+                'modulo_final' => 'required|integer|min:1|max:16',
                 'observaciones' => 'nullable|string|max:500',
                 'nombre_actividad' => 'nullable|string|max:255',
                 'descripcion_actividad' => 'nullable|string|max:500',
@@ -734,8 +734,8 @@ class QuickActionsController extends Controller
             $request->validate([
                 'espacio' => 'required|string',
                 'fecha' => 'required|date',
-                'modulo_inicial' => 'required|integer|min:1|max:14',
-                'modulo_final' => 'required|integer|min:1|max:14',
+                'modulo_inicial' => 'required|integer|min:1|max:16',
+                'modulo_final' => 'required|integer|min:1|max:16',
             ]);
 
             $conflictos = [];
