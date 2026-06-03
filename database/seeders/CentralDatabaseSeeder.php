@@ -1,4 +1,4 @@
-        <?php
+<?php
 
 namespace Database\Seeders;
 
@@ -9,7 +9,7 @@ use Illuminate\Database\Seeder;
  * Contiene información compartida entre todos los tenants:
  * - Sedes
  * - Tenants
- * - Usuarios y roles centralizados
+ * - Usuarios y roles centralizados.
  */
 class CentralDatabaseSeeder extends Seeder
 {
