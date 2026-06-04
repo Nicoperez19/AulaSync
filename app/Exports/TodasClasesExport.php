@@ -18,6 +18,7 @@ use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use App\Helpers\ModulosHelper;
 
 class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, WithStyles, WithColumnWidths, WithTitle
 {
@@ -258,6 +259,11 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                         $horaFinModulo = Carbon::parse($planificacion->modulo->hora_termino);
                         $horaInicioModulo = Carbon::parse($planificacion->modulo->hora_inicio);
                         
+                        // Margen de ingreso diferenciado (según ModulosHelper — fuente de verdad):
+                        // - Módulo 1 (08:10): 40 min de tolerancia (puede ingresar desde 07:30)
+                        // - Todos los demás módulos: 10 min de tolerancia
+                        $minutosMargenIngreso = ModulosHelper::getMargenIngresoMinutos($planificacion->id_modulo);
+                        
                         // Crear datetime completo de cuando termina la clase
                         $fechaHoraFinClase = $fechaClase->copy()->setTimeFromTimeString($horaFinModulo->format('H:i:s'));
                         
@@ -291,7 +297,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                             if (!$reserva) {
                                 foreach ($reservasDelDia as $r) {
                                     $horaAcceso = Carbon::parse($r->hora);
-                                    $margenInicio = $horaInicioModulo->copy()->subMinutes(30);
+                                    $margenInicio = $horaInicioModulo->copy()->subMinutes($minutosMargenIngreso);
                                     if ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFinModulo) {
                                         $reserva = $r;
                                         break;
@@ -303,8 +309,8 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                                 $horaInicioReserva = Carbon::parse($reserva->hora);
                                 $horaFinReserva = $reserva->hora_salida ? Carbon::parse($reserva->hora_salida) : null;
                                 
-                                // Margen de 30 minutos antes del inicio del módulo para el ingreso
-                                $margenInicio = $horaInicioModulo->copy()->subMinutes(30);
+                                // Margen de ingreso: 40 min para 08:10, 10 min para el resto
+                                $margenInicio = $horaInicioModulo->copy()->subMinutes($minutosMargenIngreso);
                                 
                                 // Caso 1: El ingreso ocurrió para este módulo directamente
                                 $ingresoDirecto = ($horaInicioReserva >= $margenInicio && $horaInicioReserva <= $horaFinModulo);
@@ -386,6 +392,11 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
         $this->clasesNoRealizadasCache = [];
         $this->reservasCache = [];
 
+        // Eliminar duplicados exactos antes de procesar agrupaciones
+        $clasesData = $clasesData->unique(function($item) {
+            return $item['fecha'] . '_' . $item['espacio'] . '_' . $item['modulo'] . '_' . $item['run_profesor'] . '_' . ($item['id_asignatura'] ?? '');
+        });
+
         // Agrupar clases para post-procesar entrada/salida de módulos consecutivos
         $clasesAgrupadas = $clasesData->groupBy(function($item) {
             return $item['fecha'] . '_' . $item['espacio'] . '_' . $item['run_profesor'] . '_' . ($item['id_asignatura'] ?? '');
@@ -394,34 +405,87 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
         $clasesProcesadas = new Collection();
 
         foreach ($clasesAgrupadas as $grupoKey => $items) {
-            // Ordenar los módulos del grupo cronológicamente por hora de inicio
+            // Ordenar los m\u00f3dulos del grupo cronol\u00f3gicamente por hora de inicio
             $itemsOrdenados = $items->sortBy('hora_inicio')->values();
-            
-            // Filtrar los que resultaron con estado "Realizada" y que tienen hora de entrada
-            $realizadas = $itemsOrdenados->filter(function($item) {
+
+            // ── FASE 1: Obtener la hora de salida del bloque ──────────────────────────────────
+            // Todos los m\u00f3dulos de un mismo bloque comparten la misma reserva (y por tanto
+            // la misma hora_salida). La recuperamos antes de que la nullificaci\u00f3n de display
+            // la oculte en los m\u00f3dulos intermedios.
+            $horaSalidaBloque = null;
+            foreach ($itemsOrdenados as $item) {
+                if ($item['estado'] === 'Realizada' && !empty($item['hora_salida'])) {
+                    $horaSalidaBloque = $item['hora_salida'];
+                    break;
+                }
+            }
+
+            // ── FASE 2: Verificar retiro anticipado con f\u00f3rmula 10*(n-1) ─────────────────────
+            // Solo aplica cuando existe hora de salida (reserva finalizada).
+            // n = posici\u00f3n 1-based del m\u00f3dulo dentro del bloque (sobre el total de m\u00f3dulos,
+            // no solo los realizados, igual que en DetectarClasesNoRealizadas).
+            // Si la salida es anterior al m\u00ednimo requerido para el m\u00f3dulo n:
+            //   → ese m\u00f3dulo pasa a "No Registrada" con motivo de retiro anticipado.
+            //   → los m\u00f3dulos previos del bloque mantienen su estado "Realizada".
+            if ($horaSalidaBloque !== null) {
+                $horaSalidaReal = Carbon::parse($horaSalidaBloque);
+                $posicionN = 0;
+
+                $itemsActualizados = collect();
+                foreach ($itemsOrdenados as $item) {
+                    $posicionN++; // n comienza en 1
+
+                    if ($item['estado'] === 'Realizada' && !empty($item['hora_entrada'])) {
+                        $toleranciaMinutos = 10 * ($posicionN - 1); // fórmula: 10*(n-1)
+
+                        // Hora de fin canónica del módulo según ModulosHelper (fuente de verdad).
+                        // $item['modulo'] contiene el número puro (ej. '3'), $item['dia'] el nombre del día.
+                        $horarioCanon    = ModulosHelper::getHorarioModulo($item['dia'], (int) $item['modulo']);
+                        $horaFinCanonica = $horarioCanon ? $horarioCanon['fin'] : $item['hora_fin'];
+                        $horaMinimaSalida = Carbon::parse($horaFinCanonica)->subMinutes($toleranciaMinutos);
+
+                        if ($horaSalidaReal->lt($horaMinimaSalida)) {
+                            $minutosAntes = $horaSalidaReal->diffInMinutes($horaMinimaSalida);
+                            $item['estado']        = 'No Registrada';
+                            $item['motivo']        = 'Retiro anticipado del docente';
+                            $item['observaciones'] = "El docente se retir\u00f3 {$minutosAntes} min antes del m\u00ednimo requerido para el m\u00f3dulo {$posicionN}";
+                            $item['hora_entrada']  = null;
+                            $item['hora_salida']   = null;
+                        }
+                    }
+                    $itemsActualizados->push($item);
+                }
+                $itemsOrdenados = $itemsActualizados;
+            }
+
+            // ── FASE 3: Ajustar display de hora_entrada / hora_salida ─────────────────────────
+            // Re-filtrar realizadas tras los posibles cambios de estado de la fase 2.
+            // En bloques con m\u00fatiples m\u00f3dulos realizados:
+            //   - Primero: conserva hora_entrada, oculta hora_salida
+            //   - \u00daltimo:  oculta hora_entrada, conserva hora_salida
+            //   - Intermedios: ocultan ambas
+            $realizadas     = $itemsOrdenados->filter(function ($item) {
                 return $item['estado'] === 'Realizada' && !empty($item['hora_entrada']);
             });
+            $totalRealizadas = $realizadas->count();
 
-            if ($realizadas->count() > 1) {
+            if ($totalRealizadas > 1) {
                 $firstIndex = $realizadas->keys()->first();
-                $lastIndex = $realizadas->keys()->last();
+                $lastIndex  = $realizadas->keys()->last();
 
                 foreach ($itemsOrdenados as $index => $item) {
                     if ($index === $firstIndex) {
-                        // Es el primer módulo realizado: mantener entrada, ocultar salida
                         $item['hora_salida'] = null;
                     } elseif ($index === $lastIndex) {
-                        // Es el último módulo realizado: ocultar entrada, mantener salida
                         $item['hora_entrada'] = null;
                     } elseif ($realizadas->has($index)) {
-                        // Es un módulo intermedio realizado: ocultar entrada y salida
                         $item['hora_entrada'] = null;
-                        $item['hora_salida'] = null;
+                        $item['hora_salida']  = null;
                     }
                     $clasesProcesadas->push($item);
                 }
             } else {
-                // Si hay solo 1 o ninguno, se mantiene sin cambios
+                // 1 o ning\u00fan m\u00f3dulo realizado: sin cambios adicionales en display
                 foreach ($itemsOrdenados as $item) {
                     $clasesProcesadas->push($item);
                 }

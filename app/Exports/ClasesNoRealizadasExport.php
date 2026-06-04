@@ -55,7 +55,16 @@ class ClasesNoRealizadasExport implements FromCollection, WithHeadings, WithMapp
             $query->where('estado', $this->estado);
         }
 
-        return $query->get();
+        $results = $query->get();
+
+        // Eliminar duplicados exactos (misma fecha, módulo, espacio, asignatura)
+        return $results->unique(function($clase) {
+            return ($clase->fecha_clase ? $clase->fecha_clase->format('Y-m-d') : '') . '_' . 
+                   $clase->id_modulo . '_' . 
+                   $clase->id_espacio . '_' . 
+                   $clase->run_profesor . '_' . 
+                   $clase->id_asignatura;
+        });
     }
 
     public function headings(): array
