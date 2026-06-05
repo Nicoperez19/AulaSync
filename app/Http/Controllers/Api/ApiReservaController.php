@@ -102,8 +102,11 @@ class ApiReservaController extends Controller
 
                 ->where('m.dia', $diaActual)
                 ->where(function ($query) use ($horaActual, $horaActualStr) {
-                    $query->where('m.hora_inicio', '<=', $horaActual->copy()->addMinutes(10)->toTimeString())
-                        ->where('m.hora_termino', '>=', $horaActualStr);
+                    $tiempoMas10 = $horaActual->copy()->addMinutes(10)->toTimeString();
+                    $tiempoMas30 = $horaActual->copy()->addMinutes(30)->toTimeString();
+                    
+                    $query->whereRaw("m.hora_inicio <= CASE WHEN m.hora_inicio LIKE '08:10%' THEN ? ELSE ? END", [$tiempoMas30, $tiempoMas10])
+                          ->where('m.hora_termino', '>=', $horaActualStr);
                 })
                 ->select('a.id_asignatura', 'a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino')
                 ->first();
@@ -141,8 +144,11 @@ class ApiReservaController extends Controller
                 $asignaturaLibre = $profesor ? $profesor->asignaturas()->first() : null;
 
                 // Buscar el módulo actual según la hora
+                $tiempoMas10 = $horaActual->copy()->addMinutes(10)->toTimeString();
+                $tiempoMas30 = $horaActual->copy()->addMinutes(30)->toTimeString();
+
                 $moduloActual = Modulo::where('dia', $diaActual)
-                    ->where('hora_inicio', '<=', $horaActual->copy()->addMinutes(10)->toTimeString())
+                    ->whereRaw("hora_inicio <= CASE WHEN hora_inicio LIKE '08:10%' THEN ? ELSE ? END", [$tiempoMas30, $tiempoMas10])
                     ->where('hora_termino', '>=', $horaActualStr)
                     ->first();
 
@@ -621,8 +627,13 @@ class ApiReservaController extends Controller
                 ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
                 ->where('pa.id_espacio', $request->espacio_id)
                 ->where('m.dia', $diaActual)
-                ->where('m.hora_inicio', '<=', $horaActual->copy()->addMinutes(10)->toTimeString())
-                ->where('m.hora_termino', '>=', $horaActualStr)
+                ->where(function ($query) use ($horaActualStr, $horaActual) {
+                    $tiempoMas10 = $horaActual->copy()->addMinutes(10)->toTimeString();
+                    $tiempoMas30 = $horaActual->copy()->addMinutes(30)->toTimeString();
+                    
+                    $query->whereRaw("m.hora_inicio <= CASE WHEN m.hora_inicio LIKE '08:10%' THEN ? ELSE ? END", [$tiempoMas30, $tiempoMas10])
+                          ->where('m.hora_termino', '>=', $horaActualStr);
+                })
                 ->select('pa.id_asignatura', 'a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino')
                 ->first();
 
