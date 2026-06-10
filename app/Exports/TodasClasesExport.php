@@ -405,13 +405,13 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
         $clasesProcesadas = new Collection();
 
         foreach ($clasesAgrupadas as $grupoKey => $items) {
-            // Ordenar los m\u00f3dulos del grupo cronol\u00f3gicamente por hora de inicio
+            // Ordenar los módulos del grupo cronológicamente por hora de inicio
             $itemsOrdenados = $items->sortBy('hora_inicio')->values();
 
             // ── FASE 1: Obtener la hora de salida del bloque ──────────────────────────────────
-            // Todos los m\u00f3dulos de un mismo bloque comparten la misma reserva (y por tanto
-            // la misma hora_salida). La recuperamos antes de que la nullificaci\u00f3n de display
-            // la oculte en los m\u00f3dulos intermedios.
+            // Todos los módulos de un mismo bloque comparten la misma reserva (y por tanto
+            // la misma hora_salida). La recuperamos antes de que la nullificación de display
+            // la oculte en los módulos intermedios.
             $horaSalidaBloque = null;
             foreach ($itemsOrdenados as $item) {
                 if ($item['estado'] === 'Realizada' && !empty($item['hora_salida'])) {
@@ -420,13 +420,13 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                 }
             }
 
-            // ── FASE 2: Verificar retiro anticipado con f\u00f3rmula 10*(n-1) ─────────────────────
+            // ── FASE 2: Verificar retiro anticipado con fórmula 10*(n-1) ─────────────────────
             // Solo aplica cuando existe hora de salida (reserva finalizada).
-            // n = posici\u00f3n 1-based del m\u00f3dulo dentro del bloque (sobre el total de m\u00f3dulos,
+            // n = posición 1-based del módulo dentro del bloque (sobre el total de módulos,
             // no solo los realizados, igual que en DetectarClasesNoRealizadas).
-            // Si la salida es anterior al m\u00ednimo requerido para el m\u00f3dulo n:
-            //   → ese m\u00f3dulo pasa a "No Registrada" con motivo de retiro anticipado.
-            //   → los m\u00f3dulos previos del bloque mantienen su estado "Realizada".
+            // Si la salida es anterior al mínimo requerido para el módulo n:
+            //   → ese módulo pasa a "No Registrada" con motivo de retiro anticipado.
+            //   → los módulos previos del bloque mantienen su estado "Realizada".
             if ($horaSalidaBloque !== null) {
                 $horaSalidaReal = Carbon::parse($horaSalidaBloque);
                 $posicionN = 0;
@@ -446,11 +446,13 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
 
                         if ($horaSalidaReal->lt($horaMinimaSalida)) {
                             $minutosAntes = $horaSalidaReal->diffInMinutes($horaMinimaSalida);
-                            $item['estado']        = 'No Registrada';
-                            $item['motivo']        = 'Retiro anticipado del docente';
-                            $item['observaciones'] = "El docente se retir\u00f3 {$minutosAntes} min antes del m\u00ednimo requerido para el m\u00f3dulo {$posicionN}";
-                            $item['hora_entrada']  = null;
-                            $item['hora_salida']   = null;
+                            if ($minutosAntes >= 5) {
+                                $item['estado']        = 'No Registrada';
+                                $item['motivo']        = 'Retiro anticipado del docente';
+                                $item['observaciones'] = "El docente se retiró {$minutosAntes} min antes del mínimo requerido para el módulo {$posicionN}";
+                                $item['hora_entrada']  = null;
+                                $item['hora_salida']   = null;
+                            }
                         }
                     }
                     $itemsActualizados->push($item);
@@ -460,9 +462,9 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
 
             // ── FASE 3: Ajustar display de hora_entrada / hora_salida ─────────────────────────
             // Re-filtrar realizadas tras los posibles cambios de estado de la fase 2.
-            // En bloques con m\u00fatiples m\u00f3dulos realizados:
+            // En bloques con múltiples módulos realizados:
             //   - Primero: conserva hora_entrada, oculta hora_salida
-            //   - \u00daltimo:  oculta hora_entrada, conserva hora_salida
+            //   - Último:  oculta hora_entrada, conserva hora_salida
             //   - Intermedios: ocultan ambas
             $realizadas     = $itemsOrdenados->filter(function ($item) {
                 return $item['estado'] === 'Realizada' && !empty($item['hora_entrada']);
@@ -485,7 +487,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                     $clasesProcesadas->push($item);
                 }
             } else {
-                // 1 o ning\u00fan m\u00f3dulo realizado: sin cambios adicionales en display
+                // 1 o ningún módulo realizado: sin cambios adicionales en display
                 foreach ($itemsOrdenados as $item) {
                     $clasesProcesadas->push($item);
                 }

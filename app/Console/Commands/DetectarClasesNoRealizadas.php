@@ -386,7 +386,8 @@ class DetectarClasesNoRealizadas extends Command
             $horaRequerida = Carbon::parse($horaFinModulo)->subMinutes($toleranciaMinutos)->format('H:i:s');
 
             // Si la hora de salida es menor a la hora requerida, este módulo no se realizó completamente
-            if ($horaSalida < $horaRequerida) {
+            $minutosAntes = Carbon::parse($horaSalida)->diffInMinutes(Carbon::parse($horaRequerida));
+            if ($horaSalida < $horaRequerida && $minutosAntes >= 5) {
                 // Verificar si ya está registrado este módulo específico
                 $yaRegistrado = ClaseNoRealizada::where('id_asignatura', $modulo->id_asignatura)
                     ->where('id_espacio', $modulo->id_espacio)
