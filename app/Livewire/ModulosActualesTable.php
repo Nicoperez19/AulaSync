@@ -247,9 +247,10 @@ class ModulosActualesTable extends Component
             return false;  // Si no hay clase planificada, no hay nada que verificar
         }
 
-        // Obtener todas las planificaciones de esta asignatura para encontrar el primer y último módulo
+        // Obtener todas las planificaciones de esta asignatura y espacio para encontrar el primer y último módulo
         $todasLasPlanificaciones = Planificacion_Asignatura::with(['modulo'])
             ->where('id_asignatura', $planificacionActiva->id_asignatura)
+            ->where('id_espacio', $planificacionActiva->id_espacio)
             ->whereHas('horario', function ($q) use ($periodo) {
                 $q->where('periodo', $periodo);
             })
@@ -287,7 +288,7 @@ class ModulosActualesTable extends Component
         }
 
         // Verificar si el profesor registró entrada HOY en OTRO espacio (cambio de sala)
-        $runProfesor = $planificacionActiva->asignatura->run_profesor ?? null;
+        $runProfesor = $planificacionActiva->horario->run_profesor ?? $planificacionActiva->asignatura->run_profesor ?? null;
         if ($runProfesor) {
             $tuvoEntradaEnOtroEspacio = Reserva::where('id_espacio', '!=', $planificacionActiva->id_espacio)
                 ->where('fecha_reserva', Carbon::now()->toDateString())
@@ -309,6 +310,7 @@ class ModulosActualesTable extends Component
             $prefijoDia = explode('.', $primeraPlanificacion->id_modulo)[0] ?? '';
 
             $todosModulos = Planificacion_Asignatura::where('id_asignatura', $planificacionActiva->id_asignatura)
+                ->where('id_espacio', $planificacionActiva->id_espacio)
                 ->where('id_modulo', 'LIKE', $prefijoDia . '.%')
                 ->pluck('id_modulo')
                 ->sort()
@@ -324,7 +326,7 @@ class ModulosActualesTable extends Component
                 'id_asignatura' => $planificacionActiva->id_asignatura,
                 'id_espacio' => $planificacionActiva->id_espacio,
                 'id_modulo' => $idModuloCompleto,
-                'run_profesor' => $planificacionActiva->asignatura->run_profesor ?? '',
+                'run_profesor' => $runProfesor ?? '',
                 'fecha_clase' => Carbon::now()->toDateString(),
                 'periodo' => $periodo,
                 'motivo' => 'No se registró ingreso del profesor durante toda la clase',
@@ -382,6 +384,7 @@ class ModulosActualesTable extends Component
             $prefijoDia = explode('.', $primeraPlanificacion->id_modulo)[0] ?? '';
 
             $todosModulos = Planificacion_Asignatura::where('id_asignatura', $planificacionActiva->id_asignatura)
+                ->where('id_espacio', $planificacionActiva->id_espacio)
                 ->where('id_modulo', 'LIKE', $prefijoDia . '.%')
                 ->pluck('id_modulo')
                 ->sort()
@@ -397,7 +400,7 @@ class ModulosActualesTable extends Component
                 'id_asignatura' => $planificacionActiva->id_asignatura,
                 'id_espacio' => $planificacionActiva->id_espacio,
                 'id_modulo' => $idModuloCompleto,
-                'run_profesor' => $planificacionActiva->asignatura->run_profesor ?? '',
+                'run_profesor' => $runProfesor ?? '',
                 'fecha_clase' => Carbon::now()->toDateString(),
                 'periodo' => $periodo,
                 'motivo' => 'No se registró ingreso después de 20 minutos del primer módulo programado',
@@ -1124,8 +1127,9 @@ class ModulosActualesTable extends Component
                             $tieneReservaProfesor = true;
 
                             if ($reservaProfesor->asignatura && $reservaProfesor->tipo_reserva !== 'espontanea') {
-                                // Buscar las planificaciones de ESTA asignatura (no del espacio)
+                                // Buscar las planificaciones de ESTA asignatura en ESTE espacio
                                 $planificacionesReserva = Planificacion_Asignatura::where('id_asignatura', $reservaProfesor->asignatura->id_asignatura)
+                                    ->where('id_espacio', $reservaProfesor->id_espacio)
                                     ->whereHas('horario', function ($q) use ($periodo) {
                                         $q->where('periodo', $periodo);
                                     })
