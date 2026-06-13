@@ -274,12 +274,28 @@ class ModulosActualesTable extends Component
         $numeroPrimerModulo = isset($primerModuloParts[1]) ? (int) $primerModuloParts[1] : 0;
         $numeroUltimoModulo = isset($ultimoModuloParts[1]) ? (int) $ultimoModuloParts[1] : 0;
 
-        // Verificar si el profesor registró entrada HOY en este espacio (independiente del estado)
-        $tuvoEntradaHoy = Reserva::where('id_espacio', $planificacionActiva->id_espacio)
+        $primeraPlanificacion = $todasLasPlanificaciones->first();
+        $ultimaPlanificacion = $todasLasPlanificaciones->last();
+        $horaInicioClase = $primeraPlanificacion->modulo->hora_inicio ?? null;
+        $horaFinClase = $ultimaPlanificacion->modulo->hora_termino ?? null;
+
+        // Verificar si el profesor registró entrada HOY en este espacio
+        $queryReservaHoy = Reserva::where('id_espacio', $planificacionActiva->id_espacio)
             ->where('fecha_reserva', Carbon::now()->toDateString())
-            ->whereNotNull('run_profesor')
-            ->whereNotNull('hora')  // El profesor sí entró (hora es la hora de entrada)
-            ->exists();
+            ->where('run_profesor', $runProfesor)
+            ->whereIn('estado', ['activa', 'finalizada'])
+            ->whereNotNull('hora');
+
+        if ($horaInicioClase) {
+            $minutosMargen = ($horaInicioClase === '08:10:00') ? 40 : 15;
+            $horaInicioConMargen = Carbon::parse($horaInicioClase)->subMinutes($minutosMargen)->format('H:i:s');
+            $queryReservaHoy->where('hora', '>=', $horaInicioConMargen);
+            if ($horaFinClase) {
+                $queryReservaHoy->where('hora', '<=', $horaFinClase);
+            }
+        }
+
+        $tuvoEntradaHoy = $queryReservaHoy->exists();
 
         // Si el profesor SÍ registró entrada en este espacio, la clase SÍ se realizó
         if ($tuvoEntradaHoy) {
@@ -287,13 +303,23 @@ class ModulosActualesTable extends Component
         }
 
         // Verificar si el profesor registró entrada HOY en OTRO espacio (cambio de sala)
-        $runProfesor = $planificacionActiva->asignatura->run_profesor ?? null;
         if ($runProfesor) {
-            $tuvoEntradaEnOtroEspacio = Reserva::where('id_espacio', '!=', $planificacionActiva->id_espacio)
+            $queryReservaOtro = Reserva::where('id_espacio', '!=', $planificacionActiva->id_espacio)
                 ->where('fecha_reserva', Carbon::now()->toDateString())
                 ->where('run_profesor', $runProfesor)
-                ->whereNotNull('hora')  // El profesor sí entró
-                ->exists();
+                ->whereIn('estado', ['activa', 'finalizada'])
+                ->whereNotNull('hora');
+
+            if ($horaInicioClase) {
+                $minutosMargen = ($horaInicioClase === '08:10:00') ? 40 : 15;
+                $horaInicioConMargen = Carbon::parse($horaInicioClase)->subMinutes($minutosMargen)->format('H:i:s');
+                $queryReservaOtro->where('hora', '>=', $horaInicioConMargen);
+                if ($horaFinClase) {
+                    $queryReservaOtro->where('hora', '<=', $horaFinClase);
+                }
+            }
+
+            $tuvoEntradaEnOtroEspacio = $queryReservaOtro->exists();
 
             // Si el profesor registró entrada en otro espacio, la clase SÍ se realizó (solo en otro lugar)
             if ($tuvoEntradaEnOtroEspacio) {
@@ -368,11 +394,22 @@ class ModulosActualesTable extends Component
         // Verificar nuevamente si registró entrada en otro espacio
         $tuvoEntradaEnOtroEspacio = false;
         if ($runProfesor) {
-            $tuvoEntradaEnOtroEspacio = Reserva::where('id_espacio', '!=', $planificacionActiva->id_espacio)
+            $queryReservaOtroRep = Reserva::where('id_espacio', '!=', $planificacionActiva->id_espacio)
                 ->where('fecha_reserva', Carbon::now()->toDateString())
                 ->where('run_profesor', $runProfesor)
-                ->whereNotNull('hora')
-                ->exists();
+                ->whereIn('estado', ['activa', 'finalizada'])
+                ->whereNotNull('hora');
+
+            if ($horaInicioClase) {
+                $minutosMargen = ($horaInicioClase === '08:10:00') ? 40 : 15;
+                $horaInicioConMargen = Carbon::parse($horaInicioClase)->subMinutes($minutosMargen)->format('H:i:s');
+                $queryReservaOtroRep->where('hora', '>=', $horaInicioConMargen);
+                if ($horaFinClase) {
+                    $queryReservaOtroRep->where('hora', '<=', $horaFinClase);
+                }
+            }
+
+            $tuvoEntradaEnOtroEspacio = $queryReservaOtroRep->exists();
         }
 
         if ($moduloActual && !$tuvoEntradaHoy && !$tuvoEntradaEnOtroEspacio && $hasPasado20Minutos) {

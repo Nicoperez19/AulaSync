@@ -124,11 +124,37 @@ class ClaseNoRealizada extends Model
         }
 
         // Antes de crear, verificar si el profesor SÍ registró entrada
-        $tuvoEntrada = \App\Models\Reserva::where('id_espacio', $datosClase['id_espacio'])
+        $modulosIds = explode(',', $datosClase['id_modulo']);
+        $modulos = \App\Models\Modulo::whereIn('id_modulo', $modulosIds)->get();
+        $horaInicioClase = null;
+        $horaFinClase = null;
+        
+        if ($modulos->isNotEmpty()) {
+            $modulosOrdenados = $modulos->sortBy(function($m) {
+                $parts = explode('.', $m->id_modulo);
+                return isset($parts[1]) ? (int)$parts[1] : 0;
+            });
+            $horaInicioClase = $modulosOrdenados->first()->hora_inicio;
+            $horaFinClase = $modulosOrdenados->last()->hora_termino;
+        }
+
+        $queryReserva = \App\Models\Reserva::where('id_espacio', $datosClase['id_espacio'])
             ->where('fecha_reserva', $datosClase['fecha_clase'])
-            ->whereNotNull('run_profesor')
-            ->whereNotNull('hora') // hora es la hora de entrada en la tabla reservas
-            ->exists();
+            ->where('run_profesor', $datosClase['run_profesor'])
+            ->whereIn('estado', ['activa', 'finalizada'])
+            ->whereNotNull('hora');
+            
+        if ($horaInicioClase) {
+            $minutosMargen = ($horaInicioClase === '08:10:00') ? 40 : 15;
+            $horaInicioConMargen = Carbon::parse($horaInicioClase)->subMinutes($minutosMargen)->format('H:i:s');
+            
+            $queryReserva->where('hora', '>=', $horaInicioConMargen);
+            if ($horaFinClase) {
+                $queryReserva->where('hora', '<=', $horaFinClase);
+            }
+        }
+        
+        $tuvoEntrada = $queryReserva->exists();
 
         // Si el profesor SÍ entró, NO registrar como clase no realizada
         if ($tuvoEntrada) {

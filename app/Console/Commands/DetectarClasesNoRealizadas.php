@@ -262,15 +262,30 @@ class DetectarClasesNoRealizadas extends Command
                     ->addMinutes(self::TIEMPO_GRACIA_MINUTOS)
                     ->format('H:i:s');
 
+                // Obtener el último módulo de la clase para saber la hora de término
+                $ultimoModulo = $modulosClase->sortBy(function($p) {
+                    $parts = explode('.', $p->id_modulo);
+                    return isset($parts[1]) ? (int)$parts[1] : 0;
+                })->last();
+                $ultimoModuloNum = $this->obtenerNumeroModulo($ultimoModulo->id_modulo);
+                $horaFinClase = $this->horariosModulos[$diaKey][$ultimoModuloNum]['fin'] ?? null;
+                
+                // Margen de 40 minutos para el primer módulo del día (08:10), 15 minutos para los demás
+                $minutosMargen = ($horaInicioClase === '08:10:00') ? 40 : 15;
+                $horaInicioConMargen = Carbon::parse($horaInicioClase)->subMinutes($minutosMargen)->format('H:i:s');
+
                 // Verificar si el profesor tiene reserva activa en el espacio esperado
                 $reserva = Reserva::where('fecha_reserva', $fechaActual)
                     ->where('id_espacio', $primerModulo->id_espacio)
-                    ->where(function($q) use ($runProfesor) {
-                        $q->where('run_profesor', $runProfesor)
-                          ->orWhere('run_solicitante', $runProfesor);
-                    })
+                    ->where('run_profesor', $runProfesor)
                     ->whereIn('estado', ['activa', 'finalizada'])
                     ->whereNotNull('hora')
+                    ->where(function($q) use ($horaInicioConMargen, $horaFinClase) {
+                        $q->where('hora', '>=', $horaInicioConMargen);
+                        if ($horaFinClase) {
+                            $q->where('hora', '<=', $horaFinClase);
+                        }
+                    })
                     ->first();
 
                 if ($reserva) {

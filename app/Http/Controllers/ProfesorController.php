@@ -311,7 +311,7 @@ class ProfesorController extends Controller
             $reserva->id_espacio = $espacio->id_espacio;
             $reserva->id_asignatura = $programacion->id_asignatura;
             $reserva->fecha_reserva = $fechaActual;
-            $reserva->hora = $programacion->modulo->hora_inicio ?? null;
+            $reserva->hora = $horaActual;
             $reserva->hora_salida = $programacion->modulo->hora_termino ?? null;
             $reserva->modulos = 1; // Calculado basado en la programación
             $reserva->estado = 'activa'; // Creada automáticamente pero activa
@@ -326,7 +326,7 @@ class ProfesorController extends Controller
             \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
                 $espacio->id_espacio,
                 $fechaActual,
-                $programacion->modulo->hora_inicio ?? null,
+                $horaActual,
                 $profesor->run_profesor
             );
 
@@ -339,7 +339,7 @@ class ProfesorController extends Controller
                     'run_profesor'=> $profesor->run_profesor,
                     'espacio'     => $espacio->nombre_espacio,
                     'fecha'       => $fechaActual,
-                    'hora_inicio' => $programacion->modulo->hora_inicio ?? null,
+                    'hora_inicio' => $horaActual,
                     'hora_termino'=> $programacion->modulo->hora_termino ?? null,
                 ]
             ]);

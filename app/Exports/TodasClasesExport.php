@@ -132,6 +132,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                 hora_salida
             ')
             ->whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
+            ->whereIn('estado', ['activa', 'finalizada'])
             ->whereNotNull('run_profesor')
             ->whereNotNull('hora')
             ->get()

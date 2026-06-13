@@ -1235,6 +1235,13 @@ class PlanoDigitalController extends Controller
                         . "; Sesión iniciada forzosamente; el docente anterior ({$nombreAnterior} - {$runAnterior}) no liberó el espacio";
                     $reservaProgramada->save();
                     $nuevaReservaId = $reservaProgramada->id_reserva;
+
+                    \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
+                        $idEspacio,
+                        Carbon::today()->toDateString(),
+                        $horaActualStr,
+                        $runNuevo
+                    );
                 } else {
                     // Crear nueva reserva (como registrarAsistenciaProfesor)
                     $nuevaReserva = new Reserva();
@@ -1290,6 +1297,13 @@ class PlanoDigitalController extends Controller
                     $nuevaReserva->observaciones = "Sesión iniciada forzosamente; el docente anterior ({$nombreAnterior} - {$runAnterior}) no liberó el espacio";
                     $nuevaReserva->save();
                     $nuevaReservaId = $nuevaReserva->id_reserva;
+
+                    \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
+                        $idEspacio,
+                        Carbon::today()->toDateString(),
+                        $horaActualStr,
+                        $runNuevo
+                    );
                 }
 
                 // 4. Asegurar que el espacio esté como Ocupado
@@ -1463,6 +1477,13 @@ class PlanoDigitalController extends Controller
                     // Marcar espacio como Ocupado
                     $espacio->estado = 'Ocupado';
                     $espacio->save();
+
+                    \App\Models\ClaseNoRealizada::limpiarRegistrosIncorrectos(
+                        $idEspacio,
+                        Carbon::today()->toDateString(),
+                        $reservaProgramada->hora,
+                        $reservaProgramada->run_profesor ?? $runUsuario
+                    );
 
 
 
