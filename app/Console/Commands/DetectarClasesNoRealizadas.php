@@ -262,12 +262,24 @@ class DetectarClasesNoRealizadas extends Command
                     ->addMinutes(self::TIEMPO_GRACIA_MINUTOS)
                     ->format('H:i:s');
 
+                // Normalizar el RUN del profesor para la comparación
+                $runLimpio = $runProfesor;
+                if ($runProfesor && str_contains($runProfesor, '-')) {
+                    $parts = explode('-', $runProfesor);
+                    $runLimpio = $parts[0];
+                }
+                $runLimpio = preg_replace('/[^0-9]/', '', $runLimpio);
+
                 // Verificar si el profesor tiene reserva activa en el espacio esperado
                 $reserva = Reserva::where('fecha_reserva', $fechaActual)
                     ->where('id_espacio', $primerModulo->id_espacio)
-                    ->where(function($q) use ($runProfesor) {
+                    ->where(function($q) use ($runProfesor, $runLimpio) {
                         $q->where('run_profesor', $runProfesor)
-                          ->orWhere('run_solicitante', $runProfesor);
+                          ->orWhere('run_solicitante', $runProfesor)
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', ''), 'K', '') = ?", [$runLimpio])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', ''), 'K', '') = ?", [$runLimpio])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', ''), 'k', '') = ?", [$runLimpio])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(REPLACE(run_solicitante, '.', ''), '-', ''), ' ', ''), 'k', '') = ?", [$runLimpio]);
                     })
                     ->whereIn('estado', ['activa', 'finalizada'])
                     ->whereNotNull('hora')

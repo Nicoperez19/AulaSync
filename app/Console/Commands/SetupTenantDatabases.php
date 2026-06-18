@@ -87,11 +87,12 @@ class SetupTenantDatabases extends Command
         $this->line("  Usuario BD: " . config('database.connections.tenant.username'));
 
         try {
-            // Configurar la conexión tenant para usar esta base de datos
-            config(['database.connections.tenant.database' => $dbName]);
+            // Usar conexión mysql para operaciones DDL (crear/borrar bases de datos)
+            $adminDB = DB::connection('mysql');
 
-            // Purgar conexión para forzar reconexión con la nueva base de datos
-            app('db')->purge('tenant');
+            // Verificar si la database existe
+            $databases = $adminDB->select("SHOW DATABASES WHERE `Database` = '{$dbName}'");
+            $exists = !empty($databases);
 
             if ($this->option('fresh') && $exists) {
                 $this->warn("  Eliminando database existente: {$dbName}");
@@ -111,6 +112,12 @@ class SetupTenantDatabases extends Command
             } else {
                 $this->line("  La database ya existe: {$dbName}");
             }
+
+            // Configurar la conexión tenant para usar esta base de datos
+            config(['database.connections.tenant.database' => $dbName]);
+
+            // Purgar conexión para forzar reconexión con la nueva base de datos
+            app('db')->purge('tenant');
 
             // Ejecutar migraciones
             $migrateCommand = $this->option('fresh') ? 'migrate:fresh' : 'migrate';

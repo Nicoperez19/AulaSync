@@ -124,15 +124,21 @@ class ClaseNoRealizada extends Model
         }
 
         // Antes de crear, verificar si el profesor SÍ registró entrada
-        $tuvoEntrada = \App\Models\Reserva::where('id_espacio', $datosClase['id_espacio'])
-            ->where('fecha_reserva', $datosClase['fecha_clase'])
-            ->whereNotNull('run_profesor')
-            ->whereNotNull('hora') // hora es la hora de entrada en la tabla reservas
-            ->exists();
+        // Se puede omitir si el motivo indica un retiro anticipado o si se pasa ignorar_entrada
+        $esRetiroAnticipado = str_contains(strtolower($datosClase['motivo'] ?? ''), 'retiro anticipado');
+        $ignorarEntrada = $datosClase['ignorar_entrada'] ?? false;
 
-        // Si el profesor SÍ entró, NO registrar como clase no realizada
-        if ($tuvoEntrada) {
-            return null;
+        if (!$esRetiroAnticipado && !$ignorarEntrada) {
+            $tuvoEntrada = \App\Models\Reserva::where('id_espacio', $datosClase['id_espacio'])
+                ->where('fecha_reserva', $datosClase['fecha_clase'])
+                ->whereNotNull('run_profesor')
+                ->whereNotNull('hora') // hora es la hora de entrada en la tabla reservas
+                ->exists();
+
+            // Si el profesor SÍ entró, NO registrar como clase no realizada
+            if ($tuvoEntrada) {
+                return null;
+            }
         }
 
         // Crear el nuevo registro

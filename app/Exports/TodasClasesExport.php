@@ -46,9 +46,36 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
         
         $clasesData = new Collection();
 
-        // Si no hay rango de fechas, usar el período actual
-        $fechaInicio = $this->fechaInicio ?? Carbon::now()->startOfMonth();
-        $fechaFin = $this->fechaFin ?? Carbon::now()->endOfMonth();
+        // Si no hay rango de fechas, intentar obtener el rango del período especificado,
+        // o por defecto usar el mes actual.
+        $fechaInicio = $this->fechaInicio;
+        $fechaFin = $this->fechaFin;
+
+        if (!$fechaInicio || !$fechaFin) {
+            if ($this->periodo) {
+                $partes = explode('-', $this->periodo);
+                if (count($partes) === 2) {
+                    $anio = (int)$partes[0];
+                    $semestre = (int)$partes[1];
+                    
+                    $periodoModel = \App\Models\PeriodoAcademico::where('anio', $anio)
+                        ->where('semestre', $semestre)
+                        ->first();
+                        
+                    if ($periodoModel) {
+                        if (!$fechaInicio) {
+                            $fechaInicio = Carbon::parse($periodoModel->fecha_inicio);
+                        }
+                        if (!$fechaFin) {
+                            $fechaFin = Carbon::parse($periodoModel->fecha_fin);
+                        }
+                    }
+                }
+            }
+            
+            $fechaInicio = $fechaInicio ?? Carbon::now()->startOfMonth();
+            $fechaFin = $fechaFin ?? Carbon::now()->endOfMonth();
+        }
 
         // Días de la semana para mapeo (0=Domingo, 1=Lunes, etc. según Carbon)
         $dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
@@ -107,17 +134,17 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
             });
         }
         
-        // Aplicar filtro de estado
-        if ($this->estado) {
-            $clasesNoRealizadasQuery->where('estado', $this->estado);
-        }
+        // NOTA: No filtramos por estado aquí en la consulta de base de datos.
+        // Si lo hiciéramos, las clases justificadas o recuperadas no se cargarían en caché,
+        // y durante el bucle se resolverían erróneamente como 'No Registradas'.
+        // El filtro de estado se aplica correctamente a nivel de colección dentro del bucle.
 
         $this->clasesNoRealizadasCache = $clasesNoRealizadasQuery->get()
             ->mapWithKeys(function($clase) {
                 $key = Carbon::parse($clase->fecha_clase)->format('Y-m-d') . '_' . 
                        $clase->id_espacio . '_' . 
                        $clase->id_modulo . '_' . 
-                       $clase->run_profesor;
+                       $this->normalizeRun($clase->run_profesor);
                 return [$key => $clase];
             })
             ->all();
@@ -138,7 +165,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
             ->groupBy(function($reserva) {
                 return Carbon::parse($reserva->fecha_reserva)->format('Y-m-d') . '_' . 
                        $reserva->id_espacio . '_' . 
-                       $reserva->run_profesor;
+                       $this->normalizeRun($reserva->run_profesor);
             })
             ->all();
 
@@ -200,7 +227,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                     
                     // Solo procesar si el día coincide con el módulo
                     if ($diaFecha === $diaModulo) {
-                        $runProfesor = $planificacion->horario->profesor->run_profesor;
+                        $runProfesor = $this->normalizeRun($planificacion->horario->profesor->run_profesor);
                         
                         // Crear claves de búsqueda
                         $claveClase = $fechaStr . '_' . 
@@ -394,12 +421,12 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
 
         // Eliminar duplicados exactos antes de procesar agrupaciones
         $clasesData = $clasesData->unique(function($item) {
-            return $item['fecha'] . '_' . $item['espacio'] . '_' . $item['modulo'] . '_' . $item['run_profesor'] . '_' . ($item['id_asignatura'] ?? '');
+            return $item['fecha'] . '_' . $item['espacio'] . '_' . $item['modulo'] . '_' . $this->normalizeRun($item['run_profesor']) . '_' . ($item['id_asignatura'] ?? '');
         });
 
         // Agrupar clases para post-procesar entrada/salida de módulos consecutivos
         $clasesAgrupadas = $clasesData->groupBy(function($item) {
-            return $item['fecha'] . '_' . $item['espacio'] . '_' . $item['run_profesor'] . '_' . ($item['id_asignatura'] ?? '');
+            return $item['fecha'] . '_' . $item['espacio'] . '_' . $this->normalizeRun($item['run_profesor']) . '_' . ($item['id_asignatura'] ?? '');
         });
 
         $clasesProcesadas = new Collection();
@@ -528,6 +555,21 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
             'feriado'           => 'Feriado/Justificado',
             default             => $estado,
         };
+    }
+
+    /**
+     * Normalizar RUN/RUT
+     */
+    private function normalizeRun($run)
+    {
+        if (!$run) {
+            return '';
+        }
+        if (str_contains($run, '-')) {
+            $parts = explode('-', $run);
+            $run = $parts[0];
+        }
+        return preg_replace('/[^0-9]/', '', $run);
     }
 
     public function headings(): array

@@ -634,7 +634,7 @@ class ApiReservaController extends Controller
                     $query->whereRaw("m.hora_inicio <= CASE WHEN m.hora_inicio LIKE '08:10%' THEN ? ELSE ? END", [$tiempoMas30, $tiempoMas10])
                           ->where('m.hora_termino', '>=', $horaActualStr);
                 })
-                ->select('pa.id_asignatura', 'a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino')
+                ->select('pa.id_asignatura', 'a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino', 'pa.id_modulo')
                 ->first();
 
             if (!$tieneClaseProgramada) {
@@ -689,11 +689,56 @@ class ApiReservaController extends Controller
                 $nuevaReserva->run_profesor = $runNormalizado;
                 $nuevaReserva->id_espacio = $request->espacio_id;
                 $nuevaReserva->id_asignatura = $tieneClaseProgramada->id_asignatura ?? null;
+
+                // Encontrar bloques consecutivos de planificación
+                $numModuloActual = 1;
+                $moduloFin = 1;
+                $cantidadModulos = 1;
+                $horaSalidaBloque = $tieneClaseProgramada->hora_termino ?? null;
+
+                if ($tieneClaseProgramada && !empty($tieneClaseProgramada->id_modulo)) {
+                    $periodo = \App\Helpers\SemesterHelper::getCurrentPeriod();
+                    $planificacionesMismoBloque = \App\Models\Planificacion_Asignatura::with('modulo')
+                        ->where('id_espacio', $request->espacio_id)
+                        ->where('id_asignatura', $tieneClaseProgramada->id_asignatura)
+                        ->whereHas('horario', function ($q) use ($periodo) {
+                            $q->where('periodo', $periodo);
+                        })
+                        ->whereHas('modulo', function ($q) use ($diaActual) {
+                            $q->where('dia', $diaActual);
+                        })
+                        ->get();
+
+                    $numModuloActual = \App\Helpers\ModulosHelper::getNumeroModulo($tieneClaseProgramada->id_modulo);
+                    $moduloFin = $numModuloActual;
+                    
+                    $modulosAsociados = [];
+                    foreach ($planificacionesMismoBloque as $planItem) {
+                        if ($planItem->modulo) {
+                            $num = \App\Helpers\ModulosHelper::getNumeroModulo($planItem->id_modulo);
+                            $modulosAsociados[$num] = $planItem->modulo;
+                        }
+                    }
+                    
+                    while (isset($modulosAsociados[$moduloFin + 1])) {
+                        $moduloFin++;
+                        $cantidadModulos++;
+                    }
+                    
+                    $moduloFinalObj = $modulosAsociados[$moduloFin] ?? null;
+                    if ($moduloFinalObj) {
+                        $horaSalidaBloque = $moduloFinalObj->hora_termino;
+                    }
+                }
+
                 $nuevaReserva->fecha_reserva = $horaActual->format('Y-m-d');
                 $nuevaReserva->hora = $horaActualStr;
                 $nuevaReserva->tipo_reserva = 'clase';
                 $nuevaReserva->estado = 'activa';
-                $nuevaReserva->hora_salida = null;
+                $nuevaReserva->modulo_inicio = $numModuloActual;
+                $nuevaReserva->modulo_fin = $moduloFin;
+                $nuevaReserva->hora_salida = $horaSalidaBloque;
+                $nuevaReserva->modulos = $cantidadModulos;
                 $nuevaReserva->observaciones = "REGISTRADA CON LIBERACIÓN: El espacio fue liberado de la reserva anterior " .
                     "por no devolución de llave. Profesor tiene clase programada: {$tieneClaseProgramada->nombre_asignatura}";
                 $nuevaReserva->created_at = $horaActual;

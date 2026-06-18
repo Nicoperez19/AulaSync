@@ -304,6 +304,38 @@ class ProfesorController extends Controller
                 ], 400);
             }
 
+            // Encontrar bloques consecutivos de planificación
+            $periodo = \App\Helpers\SemesterHelper::getCurrentPeriod();
+            $planificacionesMismoBloque = \App\Models\Planificacion_Asignatura::with('modulo')
+                ->where('id_espacio', $espacio->id_espacio)
+                ->where('id_asignatura', $programacion->id_asignatura)
+                ->whereHas('horario', function ($q) use ($periodo) {
+                    $q->where('periodo', $periodo);
+                })
+                ->whereHas('modulo', function ($q) use ($diaActual) {
+                    $q->where('dia', $diaActual);
+                })
+                ->get();
+
+            $numModuloActual = \App\Helpers\ModulosHelper::getNumeroModulo($programacion->id_modulo);
+            $moduloFin = $numModuloActual;
+            
+            $modulosAsociados = [];
+            foreach ($planificacionesMismoBloque as $planItem) {
+                if ($planItem->modulo) {
+                    $num = \App\Helpers\ModulosHelper::getNumeroModulo($planItem->id_modulo);
+                    $modulosAsociados[$num] = $planItem->modulo;
+                }
+            }
+            
+            $cantidadModulos = 1;
+            while (isset($modulosAsociados[$moduloFin + 1])) {
+                $moduloFin++;
+                $cantidadModulos++;
+            }
+            
+            $moduloFinalObj = $modulosAsociados[$moduloFin] ?? $programacion->modulo;
+
             // Crear la reserva con la programación encontrada
             $reserva = new Reserva();
             $reserva->id_reserva = Reserva::generarIdUnico();
@@ -312,8 +344,10 @@ class ProfesorController extends Controller
             $reserva->id_asignatura = $programacion->id_asignatura;
             $reserva->fecha_reserva = $fechaActual;
             $reserva->hora = $programacion->modulo->hora_inicio ?? null;
-            $reserva->hora_salida = $programacion->modulo->hora_termino ?? null;
-            $reserva->modulos = 1; // Calculado basado en la programación
+            $reserva->hora_salida = $moduloFinalObj->hora_termino ?? null;
+            $reserva->modulo_inicio = $numModuloActual;
+            $reserva->modulo_fin = $moduloFin;
+            $reserva->modulos = $cantidadModulos; // Calculado basado en la programación consecuente
             $reserva->estado = 'activa'; // Creada automáticamente pero activa
             $reserva->tipo_reserva = 'clase'; // Marcado como clase programada
             $reserva->save();

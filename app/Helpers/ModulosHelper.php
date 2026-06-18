@@ -194,6 +194,6 @@ class ModulosHelper
      */
     public static function getMargenIngresoMinutos(string $idModulo): int
     {
-        return self::getNumeroModulo($idModulo) === 1 ? 40 : 10;
+        return self::getNumeroModulo($idModulo) === 1 ? 40 : 20;
     }
 }

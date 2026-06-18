@@ -1248,43 +1248,42 @@ class PlanoDigitalController extends Controller
 
                     if ($planificacion) {
                         $nuevaReserva->id_asignatura = $planificacion->id_asignatura;
-                        // Extraer el número de módulo del id_modulo (ej: "LU.5" -> 5)
-                        $numModulo = explode('.', $planificacion->id_modulo)[1] ?? null;
-                        $nuevaReserva->modulo_inicio = $numModulo;
-                        $nuevaReserva->modulo_fin = $numModulo;
+                        
+                        // Encontrar bloques consecutivos de planificación
+                        $periodo = \App\Helpers\SemesterHelper::getCurrentPeriod();
+                        $planificacionesMismoBloque = \App\Models\Planificacion_Asignatura::with('modulo')
+                            ->where('id_espacio', $idEspacio)
+                            ->where('id_asignatura', $planificacion->id_asignatura)
+                            ->whereHas('horario', function ($q) use ($periodo) {
+                                $q->where('periodo', $periodo);
+                            })
+                            ->whereHas('modulo', function ($q) use ($diaActual) {
+                                $q->where('dia', $diaActual);
+                            })
+                            ->get();
 
-                        // Si el objeto modulo está cargado, usar su hora de término
-                        if ($planificacion->modulo) {
-                            $nuevaReserva->hora_salida = $planificacion->modulo->hora_termino;
-                        } else {
-                            // Fallback: intentar cargar el módulo o usar el mapeo estándar
-                            $moduloObj = Modulo::find($planificacion->id_modulo);
-                            if ($moduloObj) {
-                                $nuevaReserva->hora_salida = $moduloObj->hora_termino;
-                            } else {
-                                // Mapeo estándar de horas de término por módulo
-                                $horariosFin = [
-                                    1 => '09:00:00',
-                                    2 => '10:00:00',
-                                    3 => '11:00:00',
-                                    4 => '12:00:00',
-                                    5 => '13:00:00',
-                                    6 => '14:00:00',
-                                    7 => '15:00:00',
-                                    8 => '16:00:00',
-                                    9 => '17:00:00',
-                                    10 => '18:00:00',
-                                    11 => '19:00:00',
-                                    12 => '20:00:00',
-                                    13 => '21:00:00',
-                                    14 => '22:00:00',
-                                    15 => '23:00:00'
-                                ];
-                                if ($numModulo && isset($horariosFin[(int) $numModulo])) {
-                                    $nuevaReserva->hora_salida = $horariosFin[(int) $numModulo];
-                                }
+                        $numModuloActual = \App\Helpers\ModulosHelper::getNumeroModulo($planificacion->id_modulo);
+                        $moduloFin = $numModuloActual;
+                        
+                        $modulosAsociados = [];
+                        foreach ($planificacionesMismoBloque as $planItem) {
+                            if ($planItem->modulo) {
+                                $num = \App\Helpers\ModulosHelper::getNumeroModulo($planItem->id_modulo);
+                                $modulosAsociados[$num] = $planItem->modulo;
                             }
                         }
+                        
+                        $cantidadModulos = 1;
+                        while (isset($modulosAsociados[$moduloFin + 1])) {
+                            $moduloFin++;
+                            $cantidadModulos++;
+                        }
+                        
+                        $moduloFinalObj = $modulosAsociados[$moduloFin] ?? $planificacion->modulo;
+                        $nuevaReserva->modulo_inicio = $numModuloActual;
+                        $nuevaReserva->modulo_fin = $moduloFin;
+                        $nuevaReserva->hora_salida = $moduloFinalObj->hora_termino ?? null;
+                        $nuevaReserva->modulos = $cantidadModulos;
                     }
 
                     $nuevaReserva->observaciones = "Sesión iniciada forzosamente; el docente anterior ({$nombreAnterior} - {$runAnterior}) no liberó el espacio";
