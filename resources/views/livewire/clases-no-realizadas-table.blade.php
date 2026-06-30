@@ -13,7 +13,7 @@
                 <p class="text-gray-600 mb-4">El periodo académico aún no ha comenzado</p>
                 <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded">
                     <p class="text-yellow-800 text-sm">
-                        No existen clases no registradas porque el periodo académico oficial no ha iniciado. 
+                        No existen registros en el Control de Clases porque el periodo académico oficial no ha iniciado. 
                         Los registros se generarán automáticamente una vez que comiencen las actividades académicas.
                     </p>
                 </div>
@@ -22,7 +22,7 @@
     @else
 
     <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">Estadísticas de Clases No Registradas</h1>
+        <h1 class="text-2xl font-bold text-gray-900">Estadísticas de Control de Clases</h1>
         
         <!-- Botones de Exportación -->
         <div class="flex gap-3">
@@ -286,7 +286,7 @@
                                         <div class="flex flex-col items-center">
                                             <i class="fas fa-calendar-times text-4xl text-gray-300 mb-4"></i>
                                             <p class="text-lg font-medium">No se encontraron registros</p>
-                                            <p class="text-sm">No hay clases no registradas con los filtros aplicados.</p>
+                                            <p class="text-sm">No hay registros con los filtros aplicados en el Control de Clases.</p>
                                         </div>
                                     </td>
                                 </tr>

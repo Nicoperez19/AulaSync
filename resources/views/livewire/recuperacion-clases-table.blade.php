@@ -84,7 +84,7 @@
                 </a>
                 <a href="{{ route('clases-no-realizadas.index') }}"
                     class="px-4 py-2 text-white transition-colors bg-orange-500 rounded hover:bg-orange-600">
-                    <i class="mr-2 fa-solid fa-exclamation-triangle"></i>Clases No Registradas
+                    <i class="mr-2 fa-solid fa-exclamation-triangle"></i>Control de Clases
                 </a>
             </div>
         </div>
@@ -237,7 +237,7 @@
                                     </a>
                                     <a href="{{ route('clases-no-realizadas.index') }}"
                                         class="px-4 py-2 text-white transition-colors bg-orange-500 rounded hover:bg-orange-600">
-                                        <i class="mr-2 fa-solid fa-exclamation-triangle"></i>Ir a Clases No Registradas
+                                        <i class="mr-2 fa-solid fa-exclamation-triangle"></i>Ir a Control de Clases
                                     </a>
                                 </div>
                             </div>

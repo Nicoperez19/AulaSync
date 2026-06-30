@@ -9,6 +9,8 @@ class VetoSalaEstudio extends Model
 {
     use HasFactory;
 
+    protected $connection = 'tenant';
+
     protected $table = 'vetos_sala_estudio';
 
     protected $fillable = [

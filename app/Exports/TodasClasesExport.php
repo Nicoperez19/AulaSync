@@ -154,18 +154,21 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                 fecha_reserva, 
                 id_espacio, 
                 run_profesor, 
+                run_solicitante,
                 id_asignatura,
                 hora, 
                 hora_salida
             ')
             ->whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
-            ->whereNotNull('run_profesor')
+            ->where(function($q) {
+                $q->whereNotNull('run_profesor')
+                  ->orWhereNotNull('run_solicitante');
+            })
             ->whereNotNull('hora')
             ->get()
             ->groupBy(function($reserva) {
                 return Carbon::parse($reserva->fecha_reserva)->format('Y-m-d') . '_' . 
-                       $reserva->id_espacio . '_' . 
-                       $this->normalizeRun($reserva->run_profesor);
+                       $reserva->id_espacio;
             })
             ->all();
 
@@ -235,9 +238,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                                       $planificacion->id_modulo . '_' . 
                                       $runProfesor;
                         
-                        $claveReserva = $fechaStr . '_' . 
-                                        $planificacion->id_espacio . '_' . 
-                                        $runProfesor;
+                        $claveReserva = $fechaStr . '_' . $planificacion->id_espacio;
                         
                         // Determinar el estado de la clase
                         $estado = 'Planificada';
@@ -309,25 +310,34 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                         }
                         // Verificar si hay acceso registrado (usando caché de reservas del día)
                         elseif (isset($this->reservasCache[$claveReserva])) {
-                            $reservasDelDia = $this->reservasCache[$claveReserva];
+                            // Filtrar reservas del día/espacio que pertenezcan a este profesor
+                            $reservasDelDia = collect($this->reservasCache[$claveReserva])->filter(function($r) use ($runProfesor) {
+                                $reservaRunProfesor = $this->normalizeRun($r->run_profesor);
+                                $reservaRunSolicitante = $this->normalizeRun($r->run_solicitante);
+                                return (!empty($reservaRunProfesor) && $reservaRunProfesor === $runProfesor) || 
+                                       (!empty($reservaRunSolicitante) && $reservaRunSolicitante === $runProfesor);
+                            });
+                            
                             $reserva = null;
                             
-                            // 1. Intentar buscar por coincidencia exacta de asignatura
-                            foreach ($reservasDelDia as $r) {
-                                if ($r->id_asignatura == $planificacion->id_asignatura) {
-                                    $reserva = $r;
-                                    break;
-                                }
-                            }
-                            
-                            // 2. Si no coincide por asignatura, buscar la que solape temporalmente con el módulo
-                            if (!$reserva) {
+                            if ($reservasDelDia->isNotEmpty()) {
+                                // 1. Intentar buscar por coincidencia exacta de asignatura
                                 foreach ($reservasDelDia as $r) {
-                                    $horaAcceso = Carbon::parse($r->hora);
-                                    $margenInicio = $horaInicioModulo->copy()->subMinutes($minutosMargenIngreso);
-                                    if ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFinModulo) {
+                                    if ($r->id_asignatura == $planificacion->id_asignatura) {
                                         $reserva = $r;
                                         break;
+                                    }
+                                }
+                                
+                                // 2. Si no coincide por asignatura, buscar la que solape temporalmente con el módulo
+                                if (!$reserva) {
+                                    foreach ($reservasDelDia as $r) {
+                                        $horaAcceso = Carbon::parse($r->hora);
+                                        $margenInicio = $horaInicioModulo->copy()->subMinutes($minutosMargenIngreso);
+                                        if ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFinModulo) {
+                                            $reserva = $r;
+                                            break;
+                                        }
                                     }
                                 }
                             }

@@ -9,6 +9,8 @@ class Visitante extends Model
 {
     use HasFactory;
 
+    protected $connection = 'tenant';
+
     protected $table = 'visitantes';
 
     protected $primaryKey = 'id';

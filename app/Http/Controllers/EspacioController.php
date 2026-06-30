@@ -1132,6 +1132,17 @@ class EspacioController extends Controller
                     ->where('hora_termino', '>', $horaActual))
                 ->first();
 
+            // 2.b. Planificación de colaborador actual
+            $planColaboradorActual = \App\Models\PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'profesorColaborador.asignatura', 'modulo'])
+                ->where('id_espacio', $idEspacio)
+                ->whereHas('modulo', fn($q) => $q->where('dia', $codigoDia)
+                    ->where('hora_inicio', '<=', $horaActual)
+                    ->where('hora_termino', '>', $horaActual))
+                ->whereHas('profesorColaborador', fn($q) => $q->where('estado', 'activo')
+                    ->where('fecha_inicio', '<=', $fechaActual)
+                    ->where('fecha_termino', '>=', $fechaActual))
+                ->first();
+
             // 3. Próxima planificación (una query)
             $planProxima = Planificacion_Asignatura::with(['asignatura:id_asignatura,nombre_asignatura', 'modulo', 'horario.profesor'])
                 ->where('id_espacio', $idEspacio)
@@ -1141,6 +1152,18 @@ class EspacioController extends Controller
                 ->select('planificacion_asignaturas.*')
                 ->first();
 
+            // 3.b. Próxima planificación de colaborador
+            $planColaboradorProxima = \App\Models\PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'profesorColaborador.asignatura', 'modulo'])
+                ->where('id_espacio', $idEspacio)
+                ->whereHas('modulo', fn($q) => $q->where('dia', $codigoDia)->where('hora_inicio', '>', $horaActual))
+                ->whereHas('profesorColaborador', fn($q) => $q->where('estado', 'activo')
+                    ->where('fecha_inicio', '<=', $fechaActual)
+                    ->where('fecha_termino', '>=', $fechaActual))
+                ->join('modulos', 'planificaciones_profesores_colaboradores.id_modulo', '=', 'modulos.id_modulo')
+                ->orderBy('modulos.hora_inicio', 'asc')
+                ->select('planificaciones_profesores_colaboradores.*')
+                ->first();
+
             if ($planActual) {
                 $claseFinalizada = $reservasFinalizadasAnticipadamente->where('id_asignatura', $planActual->id_asignatura)->first();
                 if ($claseFinalizada) {
@@ -1148,10 +1171,24 @@ class EspacioController extends Controller
                 }
             }
 
+            if ($planColaboradorActual && $planColaboradorActual->profesorColaborador->id_asignatura) {
+                $claseFinalizada = $reservasFinalizadasAnticipadamente->where('id_asignatura', $planColaboradorActual->profesorColaborador->id_asignatura)->first();
+                if ($claseFinalizada) {
+                    $planColaboradorActual = null;
+                }
+            }
+
             if ($planProxima) {
                 $claseFinalizada = $reservasFinalizadasAnticipadamente->where('id_asignatura', $planProxima->id_asignatura)->first();
                 if ($claseFinalizada) {
                     $planProxima = null;
+                }
+            }
+
+            if ($planColaboradorProxima && $planColaboradorProxima->profesorColaborador->id_asignatura) {
+                $claseFinalizada = $reservasFinalizadasAnticipadamente->where('id_asignatura', $planColaboradorProxima->profesorColaborador->id_asignatura)->first();
+                if ($claseFinalizada) {
+                    $planColaboradorProxima = null;
                 }
             }
 
@@ -1246,6 +1283,17 @@ class EspacioController extends Controller
                         'hora_salida' => $planActual->modulo->hora_termino,
                         'tipo_reserva' => 'clase_regular',
                     ];
+                } elseif ($planColaboradorActual) {
+                    $response = [
+                        'success' => true,
+                        'tipo_ocupacion' => 'profesor',
+                        'nombre' => $planColaboradorActual->profesorColaborador->profesor->name ?? 'Profesor no asignado',
+                        'run_profesor' => $planColaboradorActual->profesorColaborador->profesor->run_profesor ?? null,
+                        'asignatura' => $planColaboradorActual->profesorColaborador->nombre_asignatura ?? 'Sin asignatura',
+                        'hora_inicio' => $planColaboradorActual->modulo->hora_inicio,
+                        'hora_salida' => $planColaboradorActual->modulo->hora_termino,
+                        'tipo_reserva' => 'clase_colaborador',
+                    ];
                 }
             }
 
@@ -1293,6 +1341,14 @@ class EspacioController extends Controller
                     'profesor_run' => $planProxima->horario->profesor->run_profesor ?? null,
                     'hora_inicio' => $planProxima->modulo->hora_inicio ?? null,
                     'hora_termino' => $planProxima->modulo->hora_termino ?? null,
+                ];
+            } elseif ($planColaboradorProxima) {
+                $response['proxima_clase'] = [
+                    'asignatura' => $planColaboradorProxima->profesorColaborador->nombre_asignatura ?? 'Sin asignatura',
+                    'profesor' => $planColaboradorProxima->profesorColaborador->profesor->name ?? 'No especificado',
+                    'profesor_run' => $planColaboradorProxima->profesorColaborador->profesor->run_profesor ?? null,
+                    'hora_inicio' => $planColaboradorProxima->modulo->hora_inicio ?? null,
+                    'hora_termino' => $planColaboradorProxima->modulo->hora_termino ?? null,
                 ];
             }
 

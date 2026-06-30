@@ -124,7 +124,7 @@
                                 <i class="fas fa-door-open mr-2"></i>Cap. Sala
                             </th>
                             <th class="px-3 py-1 text-left text-sm font-semibold uppercase tracking-wider">
-                                <i class="fas fa-circle-info mr-2"></i>Status
+                                <i class="fas fa-circle-info mr-2"></i>Estado
                             </th>
                         </tr>
                     </thead>
@@ -490,10 +490,10 @@
     </div>
 
     <script>
-        // Actualizar datos cada 60 segundos para evitar sobrecarga del servidor
+        // Actualizar datos cada 15 segundos para mantenerlo sincronizado en tiempo real
         setInterval(() => {
             @this.actualizarAutomaticamente();
-        }, 60000); // 60 segundos
+        }, 15000); // 15 segundos
 
         // [NUEVO] Escuchar cambios en localStorage para sincronizar entre pestañas
         window.addEventListener('storage', (e) => {

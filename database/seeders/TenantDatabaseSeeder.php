@@ -34,6 +34,8 @@ class TenantDatabaseSeeder extends Seeder
         $this->call(FacultadSeeder::class);
         $this->call(AreaAcademicaSeeder::class);
         $this->call(CarreraSeeder::class);
+        $this->call(ModulosSeeder::class);
+        $this->call(TiposCorreosMasivosSeeder::class);
         
         // Pisos y espacios específicos de esta sede
         $this->call(PisoSeeder::class);

@@ -125,6 +125,19 @@ class ProfesorController extends Controller
                 ], 400);
             }
 
+            // Encontrar el módulo actual para asignar como inicio/fin
+            $diaSemanaStr = strtolower(\Carbon\Carbon::parse($fechaActual)->locale('es')->isoFormat('dddd'));
+            $diaNormalizado = \App\Helpers\ModulosHelper::normalizarDia($diaSemanaStr);
+            $horarios = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaNormalizado] ?? [];
+            $moduloActual = null;
+            
+            foreach ($horarios as $num => $h) {
+                if ($horaActual >= $h['inicio'] && $horaActual <= $h['fin']) {
+                    $moduloActual = $num;
+                    break;
+                }
+            }
+
             // Crear la reserva espontánea (sin vincular a una asignatura programada)
             $reserva = new Reserva();
             $reserva->id_reserva = Reserva::generarIdUnico();
@@ -133,6 +146,16 @@ class ProfesorController extends Controller
             $reserva->id_asignatura = null;
             $reserva->fecha_reserva = $fechaActual;
             $reserva->hora = $horaActual;
+            
+            if ($moduloActual) {
+                $reserva->modulo_inicio = $moduloActual;
+                $reserva->modulo_fin = $moduloActual;
+                $reserva->hora_salida = $horarios[$moduloActual]['fin'];
+                $reserva->modulos = 1;
+            } else {
+                $reserva->hora_salida = \Carbon\Carbon::parse($horaActual)->addHour()->format('H:i:s');
+            }
+            
             $reserva->estado = 'activa';
             $reserva->tipo_reserva = 'espontanea';
             $reserva->save();

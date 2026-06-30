@@ -279,8 +279,12 @@ class ReportController extends Controller
         $diasDisponibles = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
         $tiposEspacioDisponibles = $tipos;
         $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
-        if (!in_array($diaActual, $diasDisponibles))
+        $diaActualNormalizado = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+        if (!in_array($diaActualNormalizado, $diasDisponibles)) {
             $diaActual = 'lunes';
+        } else {
+            $diaActual = $diaActualNormalizado;
+        }
 
         $ocupacionHorarios = [];
         foreach ($tiposEspacioDisponibles as $tipo) {
@@ -291,7 +295,18 @@ class ReportController extends Controller
                         $ocupacionHorarios[$tipo][$dia][$moduloNum] = 0;
                         continue;
                     }
-                    $ocupados = Planificacion_Asignatura::where('id_modulo', $dia . '.' . $moduloNum)
+                    $prefijoDia = [
+                        'lunes' => 'LU',
+                        'martes' => 'MA',
+                        'miercoles' => 'MI',
+                        'miércoles' => 'MI',
+                        'jueves' => 'JU',
+                        'viernes' => 'VI',
+                        'sabado' => 'SA',
+                        'sábado' => 'SA',
+                    ][strtolower($dia)] ?? 'LU';
+
+                    $ocupados = Planificacion_Asignatura::where('id_modulo', $prefijoDia . '.' . $moduloNum)
                         ->whereHas('espacio', function ($q) use ($tipo) {
                             $q->where('tipo_espacio', $tipo);
                         })
@@ -449,8 +464,12 @@ class ReportController extends Controller
         // Configuración de horarios
         $diasDisponibles = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes'];
         $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
-        if (!in_array($diaActual, $diasDisponibles))
+        $diaActualNormalizado = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+        if (!in_array($diaActualNormalizado, $diasDisponibles)) {
             $diaActual = 'lunes';
+        } else {
+            $diaActual = $diaActualNormalizado;
+        }
 
         // Calcular ocupación por horarios de forma más precisa
         $ocupacionHorarios = $this->calcularOcupacionHorarios($espacios, $mes, $anio, $diasDisponibles);
@@ -612,7 +631,12 @@ class ReportController extends Controller
                     ->get()
                     ->filter(function ($reserva) use ($dia) {
                         $diaSemana = strtolower(Carbon::parse($reserva->fecha_reserva)->locale('es')->isoFormat('dddd'));
-                        return $diaSemana === $dia;
+                        $mapaAcentos = [
+                            'miércoles' => 'miercoles',
+                            'sábado'    => 'sabado',
+                        ];
+                        $diaSemanaNormalizado = $mapaAcentos[$diaSemana] ?? $diaSemana;
+                        return $diaSemanaNormalizado === $dia;
                     });
 
                 // Contar reservas por módulo
@@ -1657,6 +1681,15 @@ class ReportController extends Controller
                 10 => '18:10-19:00', 11 => '19:10-20:00', 12 => '20:10-21:00', 13 => '21:10-22:00', 14 => '22:10-23:00'
             ];
 
+            // Determinar el día de la semana de la fecha consultada para usar la ocupación de ese día
+            $fechaCarbon = Carbon::parse($fechaInicio);
+            $diaSemana = strtolower($fechaCarbon->locale('es')->isoFormat('dddd'));
+            $mapaAcentos = [
+                'miércoles' => 'miercoles',
+                'sábado'    => 'sabado',
+            ];
+            $diaKey = $mapaAcentos[$diaSemana] ?? $diaSemana;
+
             foreach ($espacios as $espacio) {
                 $fila = [
                     'espacio' => $espacio->nombre_espacio . ' (' . $espacio->id_espacio . ')',
@@ -1668,10 +1701,10 @@ class ReportController extends Controller
                 // Agregar columnas de módulos
                 for ($i = $moduloInicio; $i <= $moduloFin; $i++) {
                     $moduloReal = $i + 1;
-                    // Obtener ocupación del día específico (lunes por defecto)
+                    // Obtener ocupación del día específico
                     $ocupacion = 0;
-                    if (isset($ocupacionHorarios[$espacio->id_espacio]['lunes'][$moduloReal])) {
-                        $ocupacion = $ocupacionHorarios[$espacio->id_espacio]['lunes'][$moduloReal];
+                    if (isset($ocupacionHorarios[$espacio->id_espacio][$diaKey][$moduloReal])) {
+                        $ocupacion = $ocupacionHorarios[$espacio->id_espacio][$diaKey][$moduloReal];
                     }
                     $fila['modulo_' . $moduloReal] = $ocupacion . '%';
                 }
@@ -2104,21 +2137,45 @@ class ReportController extends Controller
     private function exportarHistoricoTipoEspacioPDF($datos, $fechaInicio, $fechaFin, $tipoEspacio, $total_reservas, $completadas, $canceladas, $en_progreso)
     {
         try {
+            $datosPDF = $datos->map(function ($registro) {
+                return [
+                    'fecha' => $registro['fecha'],
+                    'hora_inicio' => $registro['hora_inicio'],
+                    'hora_fin' => $registro['hora_termino'],
+                    'espacio' => $registro['espacio'],
+                    'tipo_espacio' => 'N/A',
+                    'piso' => 'N/A',
+                    'facultad' => $registro['facultad'],
+                    'usuario' => $registro['profesor_solicitante'],
+                    'tipo_usuario' => $registro['tipo_usuario'],
+                    'horas_utilizadas' => 0,
+                    'duracion' => $registro['duracion'],
+                    'estado' => $registro['estado']
+                ];
+            });
+
             $data = [
-                'datos' => $datos,
+                'titulo' => 'Histórico por Tipo de Espacio',
+                'datos' => $datosPDF,
                 'fecha_generacion' => Carbon::now()->format('d/m/Y H:i:s'),
                 'fecha_inicio' => Carbon::parse($fechaInicio)->format('d/m/Y'),
                 'fecha_fin' => Carbon::parse($fechaFin)->format('d/m/Y'),
-                'tipo_espacio' => $tipoEspacio ?: 'Todos',
-                'total_registros' => $total_reservas,
-                'total_reservas' => $total_reservas,
-                'completadas' => $completadas,
-                'canceladas' => $canceladas,
-                'en_progreso' => $en_progreso
+                'filtros_aplicados' => [
+                    'tipo_espacio' => $tipoEspacio ?: 'Todos',
+                    'piso' => '',
+                    'estado' => '',
+                    'busqueda' => ''
+                ],
+                'resumen' => [
+                    'Total Reservas' => $total_reservas,
+                    'Completadas' => $completadas,
+                    'Canceladas' => $canceladas,
+                    'En Progreso' => $en_progreso
+                ]
             ];
 
             $filename = 'historico_tipo_espacio_' . date('Y-m-d_H-i-s') . '.pdf';
-            $pdf = Pdf::loadView('reportes.pdf.historico-tipo-espacio', $data);
+            $pdf = Pdf::loadView('reportes.pdf.historico-espacios', $data);
             return $pdf->download($filename);
         } catch (\Exception $e) {
             \Log::error('Error al exportar a PDF: ' . $e->getMessage());
@@ -2331,7 +2388,7 @@ class ReportController extends Controller
             ->get();
 
         if ($format === 'pdf') {
-            $pdf = PDF::loadView('reportes.salas-estudio-pdf', compact('gruposPorSala', 'fechaInicio', 'fechaFin', 'vetosActivos'));
+            $pdf = PDF::loadView('reportes.pdf.salas-estudio', compact('gruposPorSala', 'fechaInicio', 'fechaFin', 'vetosActivos'));
             return $pdf->download('reporte-salas-estudio-' . now()->format('Y-m-d') . '.pdf');
         }
 
@@ -2408,19 +2465,67 @@ class ReportController extends Controller
                     }
                 }, $filename);
             } elseif ($format === 'pdf') {
+                $datosPDF = $reservas->map(function ($reserva) {
+                    $usuario = $reserva->profesor->name ?? $reserva->solicitante->nombre ?? 'N/A';
+                    $tipoUsuario = 'N/A';
+                    if ($reserva->profesor) {
+                        $tipoUsuario = 'Profesor';
+                    } elseif ($reserva->solicitante) {
+                        $tipoUsuario = ucfirst($reserva->solicitante->tipo_solicitante ?? 'Solicitante');
+                    }
+
+                    $duracion = 'N/A';
+                    $horasUtilizadas = 0;
+                    if ($reserva->hora && $reserva->hora_salida) {
+                        $inicio = Carbon::parse($reserva->hora);
+                        $fin = Carbon::parse($reserva->hora_salida);
+                        $diff = $inicio->diffInMinutes($fin);
+                        $horasUtilizadas = $diff / 60;
+                        $duracion = $diff >= 60
+                            ? floor($diff / 60) . 'h ' . ($diff % 60 > 0 ? ($diff % 60) . 'min' : '')
+                            : $diff . ' min';
+                    } elseif ($reserva->estado === 'activa') {
+                        $duracion = 'En curso';
+                    }
+
+                    return [
+                        'fecha' => Carbon::parse($reserva->fecha_reserva)->format('d/m/Y'),
+                        'hora_inicio' => $reserva->hora ? Carbon::parse($reserva->hora)->format('H:i') : 'N/A',
+                        'hora_fin' => $reserva->hora_salida ? Carbon::parse($reserva->hora_salida)->format('H:i') : ($reserva->estado === 'activa' ? 'En curso' : 'N/A'),
+                        'espacio' => $reserva->espacio->nombre_espacio ?? 'N/A',
+                        'tipo_espacio' => $reserva->espacio->tipo_espacio ?? 'Auditorio',
+                        'piso' => $reserva->espacio->piso->numero_piso ?? 'N/A',
+                        'facultad' => $reserva->espacio->piso->facultad->nombre_facultad ?? 'N/A',
+                        'usuario' => $usuario,
+                        'tipo_usuario' => $tipoUsuario,
+                        'horas_utilizadas' => round($horasUtilizadas, 1),
+                        'duracion' => $duracion,
+                        'estado' => ucfirst($reserva->estado)
+                    ];
+                });
+
                 $pdfData = [
-                    'datos' => $historico,
+                    'titulo' => 'Reporte de Uso del Auditorio',
+                    'datos' => $datosPDF,
                     'fecha_inicio' => Carbon::parse($fechaInicio)->format('d/m/Y'),
                     'fecha_fin' => Carbon::parse($fechaFin)->format('d/m/Y'),
                     'fecha_generacion' => now()->format('d/m/Y H:i:s'),
-                    'total_reservas' => $dataReporte['totalReservas'],
-                    'completadas' => $reservas->where('estado', 'finalizada')->count(),
-                    'activas' => $reservas->where('estado', 'activa')->count(),
-                    'horas_utilizadas' => $dataReporte['horasUtilizadas'],
+                    'filtros_aplicados' => [
+                        'tipo_espacio' => 'Auditorio',
+                        'piso' => '',
+                        'estado' => '',
+                        'busqueda' => ''
+                    ],
+                    'resumen' => [
+                        'Total Eventos' => $dataReporte['totalReservas'],
+                        'Finalizadas' => $reservas->where('estado', 'finalizada')->count(),
+                        'En Curso' => $reservas->where('estado', 'activa')->count(),
+                        'Horas Utilizadas' => $dataReporte['horasUtilizadas'] . 'h',
+                    ],
                 ];
 
                 $filename = 'uso_auditorio_' . date('Y-m-d_H-i-s') . '.pdf';
-                return Pdf::loadView('reportes.pdf.uso-auditorio', $pdfData)->download($filename);
+                return Pdf::loadView('reportes.pdf.historico-espacios', $pdfData)->download($filename);
             }
 
             return redirect()->back()->with('error', 'Formato de exportación no válido');

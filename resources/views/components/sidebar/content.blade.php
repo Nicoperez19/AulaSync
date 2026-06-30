@@ -84,16 +84,14 @@
                 <x-sidebar.sublink title="Ausencias y Recuperación" href="{{ route('control-docente.ausencias-recuperacion') }}"
                     :isActive="request()->routeIs('control-docente.ausencias-recuperacion')" />
             @endcanany
-
-            @can('reportes')
-                <x-sidebar.sublink title="Clases No Registradas" href="{{ route('clases-no-realizadas.index') }}"
-                    :isActive="request()->routeIs('clases-no-realizadas.*')" />
-            @endcan
-
             @role('Administrador|Supervisor')
                 <x-sidebar.sublink title="Clases Temporales" href="{{ route('clases-temporales.index') }}"
                     :isActive="request()->routeIs('clases-temporales.*')" />
             @endrole
+            @can('reportes')
+                <x-sidebar.sublink title="Control de Clases" href="{{ route('clases-no-realizadas.index') }}"
+                    :isActive="request()->routeIs('clases-no-realizadas.*')" />
+            @endcan
         </x-sidebar.dropdown>
     @endcanany
 

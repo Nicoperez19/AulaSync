@@ -7,13 +7,13 @@
                 </div>
 
                 <div>
-                    <h2 class="text-2xl font-bold leading-tight">Clases no realizadas y Atrasos</h2>
-                    <p class="text-sm text-gray-500">Administra los registros de clases no realizadas y atrasos de profesores - Período: {{ $periodo ?? 'N/A' }}</p>
+                    <h2 class="text-2xl font-bold leading-tight">Control de Clases y Atrasos</h2>
+                    <p class="text-sm text-gray-500">Administra los registros de asistencia de clases y atrasos de profesores - Período: {{ $periodo ?? 'N/A' }}</p>
                 </div>
             </div>
         </div>
     </x-slot>
-
+ 
     <!-- Toggle para cambiar entre tablas -->
     <div x-data="{ activeTab: 'no-realizadas' }" class="space-y-6">
         <!-- Tabs de navegación -->
@@ -24,7 +24,7 @@
                 class="px-4 py-2 rounded-md font-medium transition-all duration-200 flex items-center gap-2"
             >
                 <i class="fas fa-times-circle" :class="activeTab === 'no-realizadas' ? 'text-red-500' : ''"></i>
-                Clases No Realizadas
+                Control de Clases
             </button>
             <button 
                 @click="activeTab = 'atrasos'"

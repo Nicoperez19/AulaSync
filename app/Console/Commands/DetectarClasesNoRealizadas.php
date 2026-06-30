@@ -257,9 +257,10 @@ class DetectarClasesNoRealizadas extends Command
                     continue;
                 }
 
-                // Calcular hora límite (inicio + 15 minutos)
+                $margenMinutos = \App\Helpers\ModulosHelper::getMargenIngresoMinutos($primerModulo->id_modulo);
+                // Calcular hora límite (inicio + margen de ingreso)
                 $horaLimite = Carbon::parse($fechaActual . ' ' . $horaInicioClase)
-                    ->addMinutes(self::TIEMPO_GRACIA_MINUTOS)
+                    ->addMinutes($margenMinutos)
                     ->format('H:i:s');
 
                 // Normalizar el RUN del profesor para la comparación
@@ -440,10 +441,26 @@ class DetectarClasesNoRealizadas extends Command
         $modulos = [];
         $horariosDelDia = $this->horariosModulos[$diaKey] ?? [];
 
+        // Obtener prefijo del día a partir de diaKey
+        $mapaPrefijos = [
+            'lunes' => 'LU',
+            'martes' => 'MA',
+            'miercoles' => 'MI',
+            'miércoles' => 'MI',
+            'jueves' => 'JU',
+            'viernes' => 'VI',
+            'sabado' => 'SA',
+            'sábado' => 'SA',
+        ];
+        $prefijoDia = $mapaPrefijos[$diaKey] ?? 'LU';
+
         foreach ($horariosDelDia as $numModulo => $horario) {
-            // Calcular hora límite: inicio + tiempo de gracia
+            $idModulo = $prefijoDia . '.' . $numModulo;
+            $margenMinutos = \App\Helpers\ModulosHelper::getMargenIngresoMinutos($idModulo);
+
+            // Calcular hora límite: inicio + margen de ingreso
             $horaLimite = Carbon::parse($horario['inicio'])
-                ->addMinutes(self::TIEMPO_GRACIA_MINUTOS)
+                ->addMinutes($margenMinutos)
                 ->format('H:i:s');
 
             // Si la hora actual es mayor que la hora límite, incluir este módulo
@@ -545,17 +562,6 @@ class DetectarClasesNoRealizadas extends Command
      */
     private function normalizarDia($diaActual)
     {
-        $mapaDias = [
-            'lunes' => 'lunes',
-            'martes' => 'martes',
-            'miércoles' => 'miercoles',
-            'miercoles' => 'miercoles',
-            'jueves' => 'jueves',
-            'viernes' => 'viernes',
-            'sábado' => 'sabado',
-            'sabado' => 'sabado',
-        ];
-
-        return $mapaDias[strtolower($diaActual)] ?? strtolower($diaActual);
+        return \App\Helpers\ModulosHelper::normalizarDia($diaActual);
     }
 }

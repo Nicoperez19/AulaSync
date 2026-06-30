@@ -37,3 +37,32 @@ App\Models\Horario::where("periodo", $periodo)->delete();
 ## 3. Limpieza Automática durante la Carga
 
 El controlador `DataLoadController` realiza esta limpieza automáticamente cada vez que se inicia una carga masiva para un período seleccionado. Por lo tanto, **no es estrictamente necesario ejecutar estos comandos manualmente** antes de subir un nuevo archivo Excel, ya que el sistema lo hará por ti para garantizar una carga limpia.
+
+---
+
+## 4. Limpieza de Días Feriados (Multitenant)
+
+Si deseas vaciar por completo la tabla de feriados (`dias_feriados`) en todas las bases de datos de los tenants (por ejemplo, para realizar una carga limpia desde la API de feriados sin registros duplicados o antiguos), puedes ejecutar el siguiente script a través de Laravel Tinker.
+
+### Pasos:
+1. Abre la consola interactiva de Laravel:
+   ```bash
+   php artisan tinker
+   ```
+2. Pega y ejecuta el siguiente código:
+   ```php
+   foreach (\App\Models\Tenant::all() as $tenant) {
+       // Configurar la conexión para el tenant actual
+       config(['database.connections.tenant.database' => $tenant->database]);
+       app('db')->purge('tenant');
+       
+       // Vaciar la tabla dias_feriados
+       \DB::connection('tenant')->table('dias_feriados')->truncate();
+       
+       echo "✓ Tabla de feriados vaciada para: {$tenant->name}\n";
+   }
+   ```
+   
+> [!IMPORTANT]
+> Este proceso vacía por completo los feriados en todos los inquilinos de la aplicación. Una vez ejecutado, deberás ir al panel de administración o usar el botón de importación para recargar los días feriados correspondientes utilizando la API de feriados de Chile.
+

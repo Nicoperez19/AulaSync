@@ -41,12 +41,14 @@ class ModulosSeeder extends Seeder
                 $numeroModulo = $index + 1;
                 $idModulo = $codigoDia . '.' . $numeroModulo;
 
-                Modulo::create([
-                    'id_modulo'     => $idModulo,
-                    'dia'           => $nombreDia,
-                    'hora_inicio'   => $modulo['hora_inicio'],
-                    'hora_termino'  => $modulo['hora_termino'],
-                ]);
+                Modulo::withoutGlobalScopes()->updateOrCreate(
+                    ['id_modulo' => $idModulo],
+                    [
+                        'dia'           => $nombreDia,
+                        'hora_inicio'   => $modulo['hora_inicio'],
+                        'hora_termino'  => $modulo['hora_termino'],
+                    ]
+                );
             }
         }
     }

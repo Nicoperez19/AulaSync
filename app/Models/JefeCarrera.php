@@ -9,6 +9,8 @@ class JefeCarrera extends Model
 {
     use HasFactory;
 
+    protected $connection = 'tenant';
+
     protected $table = 'jefes_carrera';
 
     protected $fillable = [

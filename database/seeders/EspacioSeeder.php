@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Espacio;
 use App\Models\Tenant;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class EspacioSeeder extends Seeder
@@ -60,11 +61,11 @@ class EspacioSeeder extends Seeder
 
         foreach ($espacios as $data) {
             // Verificar si el espacio ya existe para evitar duplicados en seeds repetidos
-            $exists = \DB::connection('tenant')->table('espacios')->where('id_espacio', $data['id_espacio'])->exists();
+            $exists = DB::connection('tenant')->table('espacios')->where('id_espacio', $data['id_espacio'])->exists();
 
             if (!$exists) {
                 // Insertar directamente en la conexión tenant
-                $espacioId = \DB::connection('tenant')->table('espacios')->insertGetId($data);
+                $espacioId = DB::connection('tenant')->table('espacios')->insertGetId($data);
 
                 // Generar QR para el espacio recién creado
                 // Usamos el modelo para aprovechar la función generateQR
@@ -92,7 +93,7 @@ class EspacioSeeder extends Seeder
         }
 
         // Usar DB directo para evitar global scopes
-        $pisos = collect(\DB::connection('tenant')->table('pisos')->get());
+        $pisos = collect(DB::connection('tenant')->table('pisos')->get());
         $this->command->info("Pisos encontrados para tenant {$tenant->sede_id}: " . $pisos->count());
 
         $map = [];
@@ -101,8 +102,8 @@ class EspacioSeeder extends Seeder
         if ($tenant->sede_id === 'TH') {
             $piso1 = $pisos->where('numero_piso', 1)->first();
             $piso2 = $pisos->where('numero_piso', 2)->first();
-            $map[1] = $piso1 ? $piso1->id : null;
-            $map[2] = $piso2 ? $piso2->id : null;
+            $map[1] = data_get($piso1, 'id');
+            $map[2] = data_get($piso2, 'id');
         }
         // Mapeo para Cañete (CT)
         elseif ($tenant->sede_id === 'CT') {
@@ -113,18 +114,18 @@ class EspacioSeeder extends Seeder
             if (!$piso3)
                 $piso3 = $pisos->where('numero_piso', 3)->first();
 
-            $map[3] = $piso1 ? $piso1->id : null;
-            $map[4] = $piso2 ? $piso2->id : null;
-            $map[14] = $piso3 ? $piso3->id : null;
+            $map[3] = data_get($piso1, 'id');
+            $map[4] = data_get($piso2, 'id');
+            $map[14] = data_get($piso3, 'id');
         }
         // Mapeo para Chillán (CH)
         elseif ($tenant->sede_id === 'CH') {
             $piso1 = $pisos->where('numero_piso', 1)->first();
             $piso2 = $pisos->where('numero_piso', 2)->first();
             $piso3 = $pisos->where('numero_piso', 3)->first();
-            $map[5] = $piso1 ? $piso1->id : null;
-            $map[6] = $piso2 ? $piso2->id : null;
-            $map[7] = $piso3 ? $piso3->id : null;  // Gimnasio
+            $map[5] = data_get($piso1, 'id');
+            $map[6] = data_get($piso2, 'id');
+            $map[7] = data_get($piso3, 'id');  // Gimnasio
         }
         // Mapeo para Los Ángeles (LA) - 6 pisos por edificio/piso
         elseif ($tenant->sede_id === 'LA') {
@@ -135,12 +136,12 @@ class EspacioSeeder extends Seeder
             $piso12 = $pisos->where('nombre_piso', 'VILLAGRÁN 251 - 1er piso')->first();
             $piso13 = $pisos->where('nombre_piso', 'VILLAGRÁN 251 - 2do piso')->first();
 
-            $map[8] = $piso8 ? $piso8->id : null;
-            $map[9] = $piso9 ? $piso9->id : null;
-            $map[10] = $piso10 ? $piso10->id : null;
-            $map[11] = $piso11 ? $piso11->id : null;
-            $map[12] = $piso12 ? $piso12->id : null;
-            $map[13] = $piso13 ? $piso13->id : null;
+            $map[8] = data_get($piso8, 'id');
+            $map[9] = data_get($piso9, 'id');
+            $map[10] = data_get($piso10, 'id');
+            $map[11] = data_get($piso11, 'id');
+            $map[12] = data_get($piso12, 'id');
+            $map[13] = data_get($piso13, 'id');
         }
 
         return $map;

@@ -1,6 +1,21 @@
 <div>
+    <!-- Mensajes de estado -->
+    @if(session()->has('message'))
+        <div class="mb-4 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center gap-2 shadow-xs transition-all duration-300">
+            <i class="fa-solid fa-circle-check text-green-500"></i>
+            <span class="font-medium text-sm">{{ session('message') }}</span>
+        </div>
+    @endif
+
+    @if(session()->has('error'))
+        <div class="mb-4 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg flex items-center gap-2 shadow-xs transition-all duration-300">
+            <i class="fa-solid fa-circle-exclamation text-red-500"></i>
+            <span class="font-medium text-sm">{{ session('error') }}</span>
+        </div>
+    @endif
+
     <!-- Barra de herramientas principal -->
-    <div class="p-4 bg-gray-50 border-b">
+    <div class="mb-6 pb-4 border-b">
         <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <!-- Toggle Vista Tabla/Calendario -->
             <div class="flex items-center gap-2">
@@ -22,15 +37,15 @@
             <div class="flex items-center gap-2">
                 <div class="inline-flex rounded-lg border border-gray-300 bg-white p-1">
                     <button wire:click="cambiarTab('feriados')"
-                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tabActivo === 'feriados' ? 'bg-red-500 text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tabActivo === 'feriados' ? 'bg-light-cloud-blue text-white' : 'text-gray-600 hover:bg-gray-100' }}">
                         <i class="fa-solid fa-calendar-xmark mr-1"></i> Feriados
                     </button>
                     <button wire:click="cambiarTab('periodos')"
-                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tabActivo === 'periodos' ? 'bg-green-500 text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tabActivo === 'periodos' ? 'bg-light-cloud-blue text-white' : 'text-gray-600 hover:bg-gray-100' }}">
                         <i class="fa-solid fa-graduation-cap mr-1"></i> Períodos Académicos
                     </button>
                     <button wire:click="cambiarTab('cursos_verano')"
-                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tabActivo === 'cursos_verano' ? 'bg-orange-500 text-white' : 'text-gray-600 hover:bg-gray-100' }}">
+                        class="px-3 py-1.5 text-sm font-medium rounded-md transition-colors {{ $tabActivo === 'cursos_verano' ? 'bg-light-cloud-blue text-white' : 'text-gray-600 hover:bg-gray-100' }}">
                         <i class="fa-solid fa-sun mr-1"></i> Período de Verano
                     </button>
                 </div>
@@ -41,7 +56,7 @@
 
     <!-- Período Académico Actual (Banner informativo) -->
     @if($periodoActual)
-    <div class="mx-4 mt-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg">
+    <div class="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg">
         <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
                 <div class="p-2 rounded-full bg-green-500 text-white">
@@ -59,7 +74,7 @@
         </div>
     </div>
     @else
-    <div class="mx-4 mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+    <div class="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
         <div class="flex items-center gap-3">
             <div class="p-2 rounded-full bg-yellow-500 text-white">
                 <i class="fa-solid fa-exclamation-triangle"></i>
@@ -156,7 +171,7 @@
     
         <!-- TAB FERIADOS -->
         @if($tabActivo === 'feriados')
-        <div class="p-4 bg-gray-50">
+        <div class="mb-4">
             <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div class="flex flex-col gap-2 md:flex-row md:items-center md:gap-4">
                     <!-- Búsqueda -->
@@ -176,17 +191,28 @@
                     </select>
                 </div>
 
-                <!-- Botón agregar -->
-                <button wire:click="openCreateModal"
-                    class="px-4 py-2 text-white transition-colors rounded-lg bg-light-cloud-blue hover:bg-cloud-blue">
-                    <i class="mr-2 fa-solid fa-plus"></i>
-                    Agregar Feriado
-                </button>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <!-- Botón importar de la API -->
+                    <button wire:click="importarFeriadosAPI"
+                        wire:loading.attr="disabled"
+                        class="px-4 py-2 text-white transition-colors rounded-lg bg-purple-600 hover:bg-purple-700 flex items-center gap-2 shadow-sm font-medium text-sm">
+                        <i class="fa-solid fa-cloud-arrow-down" wire:loading.remove wire:target="importarFeriadosAPI"></i>
+                        <i class="fa-solid fa-spinner animate-spin" wire:loading wire:target="importarFeriadosAPI"></i>
+                        <span>Importar Feriados (API)</span>
+                    </button>
+
+                    <!-- Botón agregar -->
+                    <button wire:click="openCreateModal"
+                        class="px-4 py-2 text-white transition-colors rounded-lg bg-light-cloud-blue hover:bg-cloud-blue flex items-center gap-2 font-medium text-sm">
+                        <i class="fa-solid fa-plus"></i>
+                        Agregar Feriado
+                    </button>
+                </div>
             </div>
         </div>
 
         <!-- Tabla de feriados -->
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md">
             <table class="w-full text-sm text-left">
                 <thead class="text-xs text-white uppercase bg-light-cloud-blue">
                     <tr>
@@ -279,7 +305,7 @@
 
         <!-- TAB PERÍODOS ACADÉMICOS -->
         @if($tabActivo === 'periodos')
-        <div class="p-4 bg-gray-50">
+        <div class="mb-4">
             <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                     <h3 class="text-lg font-semibold text-gray-700">Configuración de Semestres</h3>
@@ -288,17 +314,17 @@
 
                 <div class="flex gap-2">
                     <button wire:click="openCreateModalPeriodo"
-                        class="px-4 py-2 text-white transition-colors rounded-lg bg-green-500 hover:bg-green-600">
-                        <i class="mr-2 fa-solid fa-plus"></i>
+                        class="px-4 py-2 text-white transition-colors rounded-lg bg-light-cloud-blue hover:bg-cloud-blue font-medium text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i>
                         Agregar Período
                     </button>
                 </div>
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md">
             <table class="w-full text-sm text-left">
-                <thead class="text-xs text-white uppercase bg-green-500">
+                <thead class="text-xs text-white uppercase bg-light-cloud-blue">
                     <tr>
                         <th class="px-6 py-3">Período</th>
                         <th class="px-6 py-3">Inicio Actividades</th>
@@ -354,7 +380,7 @@
 
         <!-- TAB PERÍODO DE VERANO -->
         @if($tabActivo === 'cursos_verano')
-        <div class="p-4 bg-gray-50">
+        <div class="mb-4">
             <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                     <h3 class="text-lg font-semibold text-gray-700">Período de Verano</h3>
@@ -362,16 +388,16 @@
                 </div>
 
                 <button wire:click="openModalAgregarVerano"
-                    class="px-4 py-2 text-white transition-colors rounded-lg bg-orange-500 hover:bg-orange-600">
-                    <i class="mr-2 fa-solid fa-plus"></i>
+                    class="px-4 py-2 text-white transition-colors rounded-lg bg-light-cloud-blue hover:bg-cloud-blue font-medium text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i>
                     Agregar Período Verano
                 </button>
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto border border-gray-200 rounded-lg shadow-md">
             <table class="w-full text-sm text-left">
-                <thead class="text-xs text-white uppercase bg-orange-500">
+                <thead class="text-xs text-white uppercase bg-light-cloud-blue">
                     <tr>
                         <th class="px-6 py-3">Año</th>
                         <th class="px-6 py-3">Inicio</th>
@@ -517,9 +543,9 @@
     @if ($showModalPeriodo)
         <div class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-gray-900 bg-opacity-50">
             <div class="relative w-full max-w-4xl p-4 mx-auto bg-white rounded-lg shadow-xl">
-                <div class="flex items-center justify-between p-4 border-b bg-green-50">
-                    <h3 class="text-lg font-semibold text-green-800">
-                        <i class="fa-solid fa-graduation-cap mr-2"></i>
+                <div class="flex items-center justify-between p-4 border-b">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        <i class="fa-solid fa-graduation-cap mr-2 text-light-cloud-blue"></i>
                         {{ $editModePeriodo ? 'Editar Períodos Académicos' : 'Nuevo Año Académico (Ambos Semestres)' }}
                     </h3>
                     <button wire:click="closeModalPeriodo" class="text-gray-400 hover:text-gray-600">
@@ -535,13 +561,13 @@
                                 Año <span class="text-red-500">*</span>
                             </label>
                             <input type="number" wire:model="periodo_anio" min="2020" max="2100"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-cloud-blue focus:border-transparent">
                             @error('periodo_anio') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                         </div>
 
                         <div class="border-t pt-6">
                             <h4 class="text-lg font-semibold text-gray-800 mb-4">
-                                <i class="fa-solid fa-calendar-days mr-2 text-blue-500"></i>
+                                <i class="fa-solid fa-calendar-days mr-2 text-light-cloud-blue"></i>
                                 Primer Semestre
                             </h4>
                             <div class="grid grid-cols-2 gap-4">
@@ -550,7 +576,7 @@
                                         Inicio de Actividades <span class="text-red-500">*</span>
                                     </label>
                                     <input type="date" wire:model="periodo_1_fecha_inicio"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-cloud-blue focus:border-transparent">
                                     @error('periodo_1_fecha_inicio') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
@@ -558,7 +584,7 @@
                                         Cierre de Actividades <span class="text-red-500">*</span>
                                     </label>
                                     <input type="date" wire:model="periodo_1_fecha_fin"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-cloud-blue focus:border-transparent">
                                     @error('periodo_1_fecha_fin') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                                 </div>
                             </div>
@@ -566,7 +592,7 @@
 
                         <div class="border-t pt-6">
                             <h4 class="text-lg font-semibold text-gray-800 mb-4">
-                                <i class="fa-solid fa-calendar-days mr-2 text-orange-500"></i>
+                                <i class="fa-solid fa-calendar-days mr-2 text-light-cloud-blue"></i>
                                 Segundo Semestre
                             </h4>
                             <div class="grid grid-cols-2 gap-4">
@@ -575,7 +601,7 @@
                                         Inicio de Actividades <span class="text-red-500">*</span>
                                     </label>
                                     <input type="date" wire:model="periodo_2_fecha_inicio"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-cloud-blue focus:border-transparent">
                                     @error('periodo_2_fecha_inicio') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
@@ -583,7 +609,7 @@
                                         Cierre de Actividades <span class="text-red-500">*</span>
                                     </label>
                                     <input type="date" wire:model="periodo_2_fecha_fin"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-cloud-blue focus:border-transparent">
                                     @error('periodo_2_fecha_fin') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                                 </div>
                             </div>
@@ -592,7 +618,7 @@
                         <div class="border-t pt-6">
                             <div class="flex items-center">
                                 <input type="checkbox" wire:model="periodo_activo" id="periodo_activo"
-                                    class="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-2 focus:ring-green-500">
+                                    class="w-4 h-4 text-light-cloud-blue border-gray-300 rounded focus:ring-2 focus:ring-light-cloud-blue">
                                 <label for="periodo_activo" class="ml-2 text-sm font-medium text-gray-700">Activar estos períodos</label>
                             </div>
                             <p class="mt-1 text-xs text-gray-500">
@@ -608,7 +634,7 @@
                             Cancelar
                         </button>
                         <button type="submit"
-                            class="px-4 py-2 text-white rounded-lg bg-green-500 hover:bg-green-600">
+                            class="px-4 py-2 text-white rounded-lg bg-light-cloud-blue hover:bg-cloud-blue">
                             {{ $editModePeriodo ? 'Actualizar Semestres' : 'Guardar Ambos Semestres' }}
                         </button>
                     </div>
@@ -622,9 +648,9 @@
     @if ($showModalVerano)
         <div class="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-gray-900 bg-opacity-50">
             <div class="relative w-full max-w-2xl p-4 mx-auto bg-white rounded-lg shadow-xl">
-                <div class="flex items-center justify-between p-4 border-b bg-orange-50">
-                    <h3 class="text-lg font-semibold text-orange-800">
-                        <i class="fa-solid fa-sun mr-2"></i>
+                <div class="flex items-center justify-between p-4 border-b">
+                    <h3 class="text-lg font-semibold text-gray-800">
+                        <i class="fa-solid fa-sun mr-2 text-light-cloud-blue"></i>
                         {{ $editModeVerano ? 'Editar Período de Verano' : 'Nuevo Período de Verano' }}
                     </h3>
                     <button wire:click="closeModalVerano" class="text-gray-400 hover:text-gray-600">
@@ -644,7 +670,7 @@
                                 Año <span class="text-red-500">*</span>
                             </label>
                             <input type="number" wire:model="verano_anio"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-cloud-blue focus:border-transparent"
                                 min="2000" :max="now()->year + 10">
                             @error('verano_anio') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                         </div>
@@ -655,7 +681,7 @@
                                     Fecha Inicio <span class="text-red-500">*</span>
                                 </label>
                                 <input type="date" wire:model="verano_inicio"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-cloud-blue focus:border-transparent">
                                 @error('verano_inicio') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                             </div>
                             <div>
@@ -663,7 +689,7 @@
                                     Fecha Fin <span class="text-red-500">*</span>
                                 </label>
                                 <input type="date" wire:model="verano_fin"
-                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-light-cloud-blue focus:border-transparent">
                                 @error('verano_fin') <span class="text-xs text-red-500">{{ $message }}</span> @enderror
                             </div>
                         </div>
@@ -671,7 +697,7 @@
                         <div>
                             <label class="flex items-center gap-3">
                                 <input type="checkbox" wire:model="verano_activo"
-                                    class="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                    class="w-4 h-4 rounded border-gray-300 text-light-cloud-blue focus:ring-light-cloud-blue">
                                 <span class="text-sm font-medium text-gray-700">Activar este período de verano</span>
                             </label>
                         </div>
@@ -693,7 +719,7 @@
                                 Cancelar
                             </button>
                             <button type="submit"
-                                class="px-4 py-2 text-white rounded-lg bg-orange-500 hover:bg-orange-600">
+                                class="px-4 py-2 text-white rounded-lg bg-light-cloud-blue hover:bg-cloud-blue">
                                 {{ $editModeVerano ? 'Actualizar' : 'Crear' }} Período de Verano
                             </button>
                         </div>

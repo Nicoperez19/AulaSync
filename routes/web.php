@@ -117,14 +117,8 @@ Route::middleware(['auth', 'tenant.init'])->prefix('soporte')->name('soporte.')-
 // Dashboard - Solo Administrador y Supervisor
 Route::middleware(['auth', 'tenant.init', 'permission:dashboard', 'extend.execution:300'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::get('/dashboard/widget-data', [DashboardController::class, 'getWidgetData'])->name('dashboard.widget-data');
-    Route::get('/dashboard/horarios-semana', [DashboardController::class, 'horariosSemana'])->name('dashboard.horarios-semana');
-    Route::get('/dashboard/utilizacion-data', [DashboardController::class, 'getUtilizacionData'])->name('dashboard.utilizacion-data');
-    Route::get('/dashboard/accesos-data', [DashboardController::class, 'getAccesosData'])->name('dashboard.accesos-data');
-    Route::get('/dashboard/clases-no-realizadas-data', [DashboardController::class, 'getClasesNoRealizadasData'])->name('dashboard.clases-no-realizadas-data');
-    Route::get('/dashboard/estadisticas-filtradas', [DashboardController::class, 'getEstadisticasFiltradas'])->name('dashboard.estadisticas-filtradas');
-    Route::get('/dashboard/graficos-ajax', [DashboardController::class, 'obtenerDatosGraficosAjax'])->name('dashboard.graficos-ajax');
-    Route::get('/dashboard/graficos-rango', [DashboardController::class, 'getGraficosRango'])->name('dashboard.graficos-rango');
+    Route::get('/dashboard/horarios-actual', [DashboardController::class, 'horariosActualAjax'])->name('dashboard.horarios-actual');
+    Route::get('/dashboard/ocupacion-datos', [DashboardController::class, 'ocupacionDatosAjax'])->name('dashboard.ocupacion-datos');
 });
 
 Route::middleware(['auth', 'tenant.init', 'role:Administrador'])->group(function () {

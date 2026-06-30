@@ -21,9 +21,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // Force HTTP in non-local environments when behind a proxy (Docker/Nginx)
+        // Force HTTPS in non-local environments if configured or accessed via HTTPS
         if (env('APP_ENV') !== 'local') {
-            URL::forceScheme('http');
+            if (str_starts_with(config('app.url'), 'https://') || 
+                (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ||
+                (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on')) {
+                URL::forceScheme('https');
+                config(['session.secure' => true]);
+            } else {
+                URL::forceScheme('http');
+            }
         }
 
         if ($this->app->runningUnitTests()) {

@@ -93,7 +93,7 @@
                                             d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
                                         </path>
                                     </svg>
-                                    Clases No Registradas
+                                    Control de Clases
                                     <span class="ml-2 text-sm font-normal text-gray-500"
                                         x-text="'(' + diaSeleccionado.clases_no_realizadas_detalle.length + ')'}"></span>
                                 </h4>
@@ -186,7 +186,7 @@
                                     d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14">
                                 </path>
                             </svg>
-                            Ver todas las clases no registradas
+                            Ver Control de Clases
                         </a>
                         <button @click="cerrarModal()"
                             class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium">
@@ -242,8 +242,8 @@
             <div class="p-4 bg-white rounded-lg shadow border border-gray-200">
                 <div class="flex items-center justify-between">
                     <div>
-                        <p class="text-sm text-gray-600" title="Clases que estaban programadas, pero no se realizaron">
-                            Clases No Registradas <i class="fas fa-info-circle text-gray-400 text-xs ml-1"></i></p>
+                        <p class="text-sm text-gray-600" title="Clases que estaban programadas, pero no se registraron">
+                            Control de Clases <i class="fas fa-info-circle text-gray-400 text-xs ml-1"></i></p>
                         <p class="text-2xl font-bold text-red-600">{{ $totalNoRealizadas }}</p>
                         <p class="text-xs text-gray-500">{{ $porcentajeNoRealizadas }}% del total</p>
                     </div>
@@ -286,7 +286,7 @@
                 <a href="{{ route('clases-no-realizadas.index') }}"
                     class="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
                     <i class="fas fa-tasks"></i>
-                    <span>Gestionar Clases No Registradas</span>
+                    <span>Gestionar Control de Clases</span>
                     <i class="fas fa-arrow-right"></i>
                 </a>
             </div>

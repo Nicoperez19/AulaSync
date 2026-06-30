@@ -30,6 +30,7 @@ class CentralDatabaseSeeder extends Seeder
         $this->call(FacultadSeeder::class);
         $this->call(AreaAcademicaSeeder::class);
         $this->call(CarreraSeeder::class);
+        $this->call(PeriodoAcademicoSeeder::class);
 
         // Los siguientes seeders usan conexión 'tenant', se ejecutan en TenantDatabaseSeeder:
         // - FacultadSeeder
@@ -41,8 +42,5 @@ class CentralDatabaseSeeder extends Seeder
 
         // Tipos de correos masivos - Ahora en tenant
         // $this->call(TiposCorreosMasivosSeeder::class);
-
-        // Días feriados de Chile - Ahora en tenant
-        // $this->call(DiasFeriadosSeeder::class);
     }
 }

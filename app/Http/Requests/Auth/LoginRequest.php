@@ -8,9 +8,23 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Traits\RunNormalizer;
 
 class LoginRequest extends FormRequest
 {
+    use RunNormalizer;
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        if ($this->has('run')) {
+            $this->merge([
+                'run' => $this->normalizeRun($this->run),
+            ]);
+        }
+    }
     /**
      * Determine if the user is authorized to make this request.
      */

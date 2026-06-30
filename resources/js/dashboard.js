@@ -1,378 +1,111 @@
-// ========================================
-// CONFIGURACIÓN Y VARIABLES GLOBALES
-// ========================================
-let autoRefreshInterval;
-let autoRefreshEnabled = true;
-let moduloActual = null;
-let moduloCheckInterval;
+let activeTabOcupacion = 'todos';
+window.carouselAutoplayInterval = null;
 
-// Configuración de horarios de módulos
-window.horariosModulos = window.horariosModulos || {
-    'lunes': {
-        1: { inicio: '08:10:00', fin: '09:00:00' },
-        2: { inicio: '09:10:00', fin: '10:00:00' },
-        3: { inicio: '10:10:00', fin: '11:00:00' },
-        4: { inicio: '11:10:00', fin: '12:00:00' },
-        5: { inicio: '12:10:00', fin: '13:00:00' },
-        6: { inicio: '13:10:00', fin: '14:00:00' },
-        7: { inicio: '14:10:00', fin: '15:00:00' },
-        8: { inicio: '15:10:00', fin: '16:00:00' },
-        9: { inicio: '16:10:00', fin: '17:00:00' },
-        10: { inicio: '17:10:00', fin: '18:00:00' },
-        11: { inicio: '18:10:00', fin: '19:00:00' },
-        12: { inicio: '19:10:00', fin: '20:00:00' },
-        13: { inicio: '20:10:00', fin: '21:00:00' },
-        14: { inicio: '21:10:00', fin: '22:00:00' },
-        15: { inicio: '22:10:00', fin: '23:00:00' }
-    },
-    'martes': {
-        1: { inicio: '08:10:00', fin: '09:00:00' },
-        2: { inicio: '09:10:00', fin: '10:00:00' },
-        3: { inicio: '10:10:00', fin: '11:00:00' },
-        4: { inicio: '11:10:00', fin: '12:00:00' },
-        5: { inicio: '12:10:00', fin: '13:00:00' },
-        6: { inicio: '13:10:00', fin: '14:00:00' },
-        7: { inicio: '14:10:00', fin: '15:00:00' },
-        8: { inicio: '15:10:00', fin: '16:00:00' },
-        9: { inicio: '16:10:00', fin: '17:00:00' },
-        10: { inicio: '17:10:00', fin: '18:00:00' },
-        11: { inicio: '18:10:00', fin: '19:00:00' },
-        12: { inicio: '19:10:00', fin: '20:00:00' },
-        13: { inicio: '20:10:00', fin: '21:00:00' },
-        14: { inicio: '21:10:00', fin: '22:00:00' },
-        15: { inicio: '22:10:00', fin: '23:00:00' }
-    },
-    'miercoles': {
-        1: { inicio: '08:10:00', fin: '09:00:00' },
-        2: { inicio: '09:10:00', fin: '10:00:00' },
-        3: { inicio: '10:10:00', fin: '11:00:00' },
-        4: { inicio: '11:10:00', fin: '12:00:00' },
-        5: { inicio: '12:10:00', fin: '13:00:00' },
-        6: { inicio: '13:10:00', fin: '14:00:00' },
-        7: { inicio: '14:10:00', fin: '15:00:00' },
-        8: { inicio: '15:10:00', fin: '16:00:00' },
-        9: { inicio: '16:10:00', fin: '17:00:00' },
-        10: { inicio: '17:10:00', fin: '18:00:00' },
-        11: { inicio: '18:10:00', fin: '19:00:00' },
-        12: { inicio: '19:10:00', fin: '20:00:00' },
-        13: { inicio: '20:10:00', fin: '21:00:00' },
-        14: { inicio: '21:10:00', fin: '22:00:00' },
-        15: { inicio: '22:10:00', fin: '23:00:00' }
-    },
-    'jueves': {
-        1: { inicio: '08:10:00', fin: '09:00:00' },
-        2: { inicio: '09:10:00', fin: '10:00:00' },
-        3: { inicio: '10:10:00', fin: '11:00:00' },
-        4: { inicio: '11:10:00', fin: '12:00:00' },
-        5: { inicio: '12:10:00', fin: '13:00:00' },
-        6: { inicio: '13:10:00', fin: '14:00:00' },
-        7: { inicio: '14:10:00', fin: '15:00:00' },
-        8: { inicio: '15:10:00', fin: '16:00:00' },
-        9: { inicio: '16:10:00', fin: '17:00:00' },
-        10: { inicio: '17:10:00', fin: '18:00:00' },
-        11: { inicio: '18:10:00', fin: '19:00:00' },
-        12: { inicio: '19:10:00', fin: '20:00:00' },
-        13: { inicio: '20:10:00', fin: '21:00:00' },
-        14: { inicio: '21:10:00', fin: '22:00:00' },
-        15: { inicio: '22:10:00', fin: '23:00:00' }
-    },
-    'viernes': {
-        1: { inicio: '08:10:00', fin: '09:00:00' },
-        2: { inicio: '09:10:00', fin: '10:00:00' },
-        3: { inicio: '10:10:00', fin: '11:00:00' },
-        4: { inicio: '11:10:00', fin: '12:00:00' },
-        5: { inicio: '12:10:00', fin: '13:00:00' },
-        6: { inicio: '13:10:00', fin: '14:00:00' },
-        7: { inicio: '14:10:00', fin: '15:00:00' },
-        8: { inicio: '15:10:00', fin: '16:00:00' },
-        9: { inicio: '16:10:00', fin: '17:00:00' },
-        10: { inicio: '17:10:00', fin: '18:00:00' },
-        11: { inicio: '18:10:00', fin: '19:00:00' },
-        12: { inicio: '19:10:00', fin: '20:00:00' },
-        13: { inicio: '20:10:00', fin: '21:00:00' },
-        14: { inicio: '21:10:00', fin: '22:00:00' },
-        15: { inicio: '22:10:00', fin: '23:00:00' }
-    }
-};
-
-// ========================================
-// FUNCIÓN DE NOTIFICACIONES
-// ========================================
-function mostrarNotificacion(mensaje, tipo = 'info', duracion = 3000) {
-    // Crear el elemento de notificación
-    const notificacion = document.createElement('div');
-    notificacion.className = `fixed top-4 right-4 z-50 px-6 py-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
-
-    // Configurar colores según el tipo
-    let bgColor, textColor, icon;
-    switch (tipo) {
-        case 'success':
-            bgColor = 'bg-green-500';
-            textColor = 'text-white';
-            icon = '✓';
-            break;
-        case 'error':
-            bgColor = 'bg-red-500';
-            textColor = 'text-white';
-            icon = '✗';
-            break;
-        case 'warning':
-            bgColor = 'bg-yellow-500';
-            textColor = 'text-white';
-            icon = '⚠';
-            break;
-        default:
-            bgColor = 'bg-blue-500';
-            textColor = 'text-white';
-            icon = 'ℹ';
+document.addEventListener('DOMContentLoaded', function() {
+    // Inicializar configuración del dashboard desde el DOM
+    const configEl = document.getElementById('dashboard-config');
+    if (configEl) {
+        window.DashboardConfig = {
+            horariosActualRoute: configEl.dataset.horariosActualRoute,
+            ocupacionDatosRoute: configEl.dataset.ocupacionDatosRoute,
+            horariosModulos: JSON.parse(configEl.dataset.horariosModulos)
+        };
     }
 
-    notificacion.className += ` ${bgColor} ${textColor}`;
-    notificacion.innerHTML = `
-        <div class="flex items-center gap-3">
-            <span class="text-lg font-bold">${icon}</span>
-            <span>${mensaje}</span>
-        </div>
-    `;
+    // Inicializar horarios de módulos desde la configuración
+    if (window.DashboardConfig) {
+        window.horariosModulos = window.DashboardConfig.horariosModulos;
+    }
 
-    // Agregar al DOM
-    document.body.appendChild(notificacion);
+    cargarHorarioActual();
+    // Actualizar automáticamente cada 15 segundos
+    setInterval(cargarHorarioActual, 15000);
+    
+    // Cargar grilla de ocupación inicial
+    cargarOcupacionGrid(activeTabOcupacion);
+    // Actualizar ocupación automáticamente cada 15 segundos de forma silenciosa en segundo plano
+    setInterval(() => {
+        cargarOcupacionGrid(activeTabOcupacion, true);
+    }, 15000);
 
-    // Animar entrada
-    setTimeout(() => {
-        notificacion.classList.remove('translate-x-full');
-    }, 100);
+    // Reloj digital y módulo actual
+    actualizarModalReloj();
+    setInterval(actualizarModalReloj, 1000);
+});
 
-    // Auto-remover después del tiempo especificado
-    setTimeout(() => {
-        notificacion.classList.add('translate-x-full');
-        setTimeout(() => {
-            if (notificacion.parentNode) {
-                notificacion.parentNode.removeChild(notificacion);
+function startCarouselAutoplay() {
+    stopCarouselAutoplay();
+    const container = document.getElementById('carousel-container');
+    if (!container) return;
+    
+    const total = parseInt(container.getAttribute('data-total-slides') || '1');
+    if (total <= 1) return;
+    
+    window.carouselAutoplayInterval = setInterval(nextSlide, 7500);
+}
+
+function stopCarouselAutoplay() {
+    if (window.carouselAutoplayInterval) {
+        clearInterval(window.carouselAutoplayInterval);
+        window.carouselAutoplayInterval = null;
+    }
+}
+
+function prevSlide() {
+    const container = document.getElementById('carousel-container');
+    if (!container) return;
+    
+    let current = parseInt(container.getAttribute('data-current-slide') || '0');
+    const total = parseInt(container.getAttribute('data-total-slides') || '1');
+    
+    current = current > 0 ? current - 1 : total - 1;
+    
+    container.setAttribute('data-current-slide', current);
+    updateCarouselState(container, current, total);
+    startCarouselAutoplay();
+}
+
+function nextSlide() {
+    const container = document.getElementById('carousel-container');
+    if (!container) return;
+    
+    let current = parseInt(container.getAttribute('data-current-slide') || '0');
+    const total = parseInt(container.getAttribute('data-total-slides') || '1');
+    
+    current = current < total - 1 ? current + 1 : 0;
+    
+    container.setAttribute('data-current-slide', current);
+    updateCarouselState(container, current, total);
+    startCarouselAutoplay();
+}
+
+function goToSlide(index) {
+    const container = document.getElementById('carousel-container');
+    if (!container) return;
+    
+    const total = parseInt(container.getAttribute('data-total-slides') || '1');
+    
+    container.setAttribute('data-current-slide', index);
+    updateCarouselState(container, index, total);
+    startCarouselAutoplay();
+}
+
+function updateCarouselState(container, current, total) {
+    const slides = document.getElementById('carousel-slides');
+    if (slides) {
+        slides.style.transform = `translateX(-${current * 100}%)`;
+    }
+    
+    // Actualizar pastillas indicadoras de paginación
+    for (let i = 0; i < total; i++) {
+        const ind = document.getElementById(`indicator-${i}`);
+        if (ind) {
+            if (i === current) {
+                ind.className = 'h-2 rounded-full transition-all duration-200 bg-blue-600 w-6';
+            } else {
+                ind.className = 'h-2 rounded-full transition-all duration-200 bg-gray-300 w-2 hover:bg-gray-400';
             }
-        }, 300);
-    }, duracion);
-}
-
-// ========================================
-// SISTEMA DE AUTO-REFRESH MEJORADO
-// ========================================
-
-function iniciarAutoRefresh() {
-    if (!autoRefreshEnabled) return;
-
-    if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-    }
-
-    autoRefreshInterval = setInterval(function () {
-        actualizarDashboard();
-    }, 30000);
-
-}
-
-function detenerAutoRefresh() {
-    if (autoRefreshInterval) {
-        clearInterval(autoRefreshInterval);
-        autoRefreshInterval = null;
-    }
-}
-
-function actualizarDashboard() {
-    mostrarIndicadorActualizacion();
-
-    return fetch('/dashboard/widget-data', {
-        method: 'GET',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json',
-        },
-        credentials: 'same-origin'
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
         }
-        return response.json();
-    })
-    .then(data => {
-        actualizarWidgets(data);
-        mostrarNotificacion('Dashboard actualizado', 'success', 2000);
-    })
-    .catch(error => {
-        console.error('Error actualizando dashboard:', error);
-        mostrarNotificacion('Error al actualizar el dashboard', 'error', 3000);
-    });
-}
-
-function mostrarIndicadorActualizacion() {
-    let indicador = document.getElementById('auto-refresh-indicator');
-    if (!indicador) {
-        indicador = document.createElement('div');
-        indicador.id = 'auto-refresh-indicator';
-        indicador.className = 'fixed top-4 left-4 bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-        indicador.textContent = 'Actualizando...';
-        document.body.appendChild(indicador);
-    }
-    if (indicador) indicador.style.display = 'block';
-    setTimeout(() => {
-        if (indicador) indicador.style.display = 'none';
-    }, 2000);
-}
-
-// ========================================
-// FUNCIONES DE ACTUALIZACIÓN DE WIDGETS
-// ========================================
-
-// Función principal de actualización de widgets
-function actualizarWidgets(data) {
-    const errores = [];
-
-    // Actualizar KPIs con manejo individual de errores
-    try {
-        actualizarKPIs(data);
-    } catch (error) {
-        errores.push('Error actualizando KPIs: ' + error.message);
-    }
-
-    // Actualizar gráficos con manejo individual
-    try {
-        if (window.graficoBarras && data.usoPorDia) {
-            actualizarGraficoBarras(data.usoPorDia);
-        }
-    } catch (error) {
-        errores.push('Error actualizando gráfico de barras: ' + error.message);
-    }
-
-    try {
-        if (window.graficoMensual && data.evolucionMensual) {
-            actualizarGraficoEvolucionMensual(data.evolucionMensual);
-        }
-    } catch (error) {
-        errores.push('Error actualizando gráfico mensual: ' + error.message);
-    }
-
-    try {
-        if (window.graficoCircularSalas && data.salasOcupadas) {
-            actualizarGraficoCircularSalas(data.salasOcupadas);
-        }
-    } catch (error) {
-        errores.push('Error actualizando gráfico circular: ' + error.message);
-    }
-
-    // Ocultar indicadores de carga
-    ocultarCargando();
-
-    // Mostrar errores si los hay
-    if (errores.length > 0) {
-        console.error('Errores durante la actualización:', errores);
-    }
-}
-
-// Función para actualizar todos los KPIs
-function actualizarKPIs(data) {
-    if (!data) return;
-
-    // KPIs are handled in the inline script in dashboard.blade.php
-    // This function is kept for compatibility but doesn't update any elements
-    // since ocupacionSemanal and ocupacionMensual are updated there
-}
-
-function actualizarKPI(id, valor) {
-    const elemento = document.getElementById(id);
-    if (elemento) {
-        elemento.textContent = valor;
-        // Agregar animación temporal
-        elemento.classList.add('kpi-value', 'updating');
-        setTimeout(() => {
-            elemento.classList.remove('updating');
-        }, 500);
-    }
-}
-
-function actualizarGraficoBarras(usoPorDia) {
-    if (window.graficoBarras && usoPorDia) {
-        window.graficoBarras.data.labels = Object.keys(usoPorDia.datos || {});
-        window.graficoBarras.data.datasets[0].data = Object.values(usoPorDia.datos || {});
-        window.graficoBarras.update();
-    }
-}
-
-function actualizarGraficoEvolucionMensual(evolucionMensual) {
-    if (window.graficoMensual && evolucionMensual) {
-        window.graficoMensual.data.labels = evolucionMensual.dias || [];
-        window.graficoMensual.data.datasets[0].data = evolucionMensual.ocupacion || [];
-        window.graficoMensual.update();
-    }
-}
-
-function actualizarGraficoCircularSalas(salasOcupadas) {
-    if (window.graficoCircularSalas && salasOcupadas) {
-        const ocupadas = salasOcupadas.ocupadas || 0;
-        const libres = salasOcupadas.libres || 0;
-
-        window.graficoCircularSalas.data.datasets[0].data = [ocupadas, libres];
-        window.graficoCircularSalas.update();
-
-        // Actualizar el texto de salas ocupadas
-        const elementoSalas = document.getElementById('salas-ocupadas');
-        if (elementoSalas) {
-            elementoSalas.textContent = `${ocupadas} de ${ocupadas + libres} ocupadas`;
-        }
-    }
-}
-
-// ========================================
-// FUNCIONES DE CARGA Y UTILIDADES
-// ========================================
-
-function mostrarCargando() {
-    const widgets = document.querySelectorAll('.bg-white.rounded-xl.shadow-lg');
-    widgets.forEach(widget => {
-        const loadingDiv = document.createElement('div');
-        loadingDiv.className = 'absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center rounded-xl';
-        loadingDiv.innerHTML = '<div class="w-8 h-8 border-b-2 border-blue-600 rounded-full animate-spin"></div>';
-        widget.style.position = 'relative';
-        widget.appendChild(loadingDiv);
-    });
-}
-
-function ocultarCargando() {
-    const widgets = document.querySelectorAll('.bg-white.rounded-xl.shadow-lg');
-    widgets.forEach(widget => {
-        const loading = widget.querySelector('.absolute.inset-0');
-        if (loading) {
-            loading.remove();
-        }
-    });
-}
-
-// ========================================
-// FUNCIONES DE DETECCIÓN DE MÓDULO
-// ========================================
-
-function verificarCambioModulo() {
-    const nuevoModulo = obtenerModuloActual();
-
-    if (nuevoModulo !== moduloActual) {
-        moduloActual = nuevoModulo;
-        actualizarIndicadorModuloInfo(nuevoModulo);
-    }
-}
-
-function actualizarIndicadorModuloInfo(modulo) {
-    const textoModulo = document.getElementById('modulo-actual-text');
-    if (!textoModulo) return;
-
-    const diaActual = obtenerDiaActual();
-    const horarios = window.horariosModulos && window.horariosModulos[diaActual];
-
-    if (modulo && horarios && horarios[modulo]) {
-        const inicio = horarios[modulo].inicio;
-        const fin = horarios[modulo].fin;
-        textoModulo.textContent = `Módulo ${modulo} (${inicio} - ${fin})`;
-    } else {
-        textoModulo.textContent = 'Sin módulo activo';
     }
 }
 
@@ -397,245 +130,129 @@ function obtenerModuloActual(hora = null) {
     return null;
 }
 
-function iniciarVerificacionModulo() {
-    // Verificar inmediatamente
-    verificarCambioModulo();
-
-    // Verificar cada 30 segundos
-    moduloCheckInterval = setInterval(verificarCambioModulo, 30000);
-}
-
-function detenerVerificacionModulo() {
-    if (moduloCheckInterval) {
-        clearInterval(moduloCheckInterval);
-        moduloCheckInterval = null;
-    }
-}
-
-// Modal fijo de reloj digital y módulo actual
 function actualizarModalReloj() {
     const ahora = new Date();
-    // Hora en formato 24h
     const hora = ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-    const elementoHora = document.getElementById('modal-hora-actual');
-    if (elementoHora) {
-        elementoHora.textContent = hora;
+    const clockEl = document.getElementById('modal-hora-actual');
+    if (clockEl) {
+        clockEl.textContent = hora;
     }
-
-    // Módulo actual
+    
     let modulo = '-';
-    if (typeof obtenerModuloActual === 'function') {
-        const moduloActual = obtenerModuloActual();
-        if (moduloActual) {
-            modulo = moduloActual;
-        }
+    const moduloNum = obtenerModuloActual();
+    if (moduloNum) {
+        modulo = moduloNum;
     }
-    const elementoModulo = document.getElementById('modal-modulo-actual');
-    if (elementoModulo) {
-        elementoModulo.textContent = 'Módulo actual: ' + modulo;
+    
+    const moduloEl = document.getElementById('modal-modulo-actual');
+    if (moduloEl) {
+        moduloEl.textContent = 'Módulo actual: ' + modulo;
     }
 }
 
-// Función para actualizar día actual
-function actualizarDiaActual() {
-    const ahora = new Date();
-    const diasSemana = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
-    const diaActual = diasSemana[ahora.getDay()];
+function cargarHorarioActual() {
+    const container = document.getElementById('horarios-actual-container');
+    const syncIcon = document.getElementById('btn-sync-icon');
+    
+    if (syncIcon) {
+        syncIcon.classList.add('animate-spin');
+    }
 
-    // Actualizar elementos que muestren el día actual si existen
-    const elementos = document.querySelectorAll('[data-dia-actual]');
-    elementos.forEach(elemento => {
-        elemento.textContent = diaActual;
-    });
-}
+    const route = window.DashboardConfig ? window.DashboardConfig.horariosActualRoute : '/dashboard/horarios-actual';
 
-// ========================================
-// INICIALIZACIÓN DE GRÁFICOS
-// ========================================
-
-// Función para inicializar gráficos con datos desde PHP
-function inicializarGraficos(data) {
-    // Gráfico de barras: Uso por Día
-    if (document.getElementById('grafico-barras')) {
-        window.graficoBarras = new Chart(document.getElementById('grafico-barras'), {
-            type: 'bar',
-            data: {
-                labels: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
-                datasets: [{
-                    label: 'Reservas',
-                    data: data.usoPorDia || [],
-                    backgroundColor: 'rgba(59,130,246,0.8)',
-                    borderColor: 'rgba(59,130,246,1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Cantidad de reservas'
-                        }
-                    }
-                }
+    fetch(route)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error al cargar la información');
+            }
+            return response.text();
+        })
+        .then(html => {
+            container.innerHTML = html;
+            startCarouselAutoplay();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            container.innerHTML = `
+                <div class="text-center py-8 text-red-500">
+                    <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                    <p class="font-medium">No se pudieron cargar los horarios del módulo actual.</p>
+                    <p class="text-xs text-gray-400 mt-1">${error.message}</p>
+                </div>
+            `;
+        })
+        .finally(() => {
+            if (syncIcon) {
+                setTimeout(() => {
+                    syncIcon.classList.remove('animate-spin');
+                }, 500);
             }
         });
-    }
-
-    // Gráfico de línea: Evolución mensual
-    if (document.getElementById('grafico-mensual')) {
-        window.graficoMensual = new Chart(document.getElementById('grafico-mensual'), {
-            type: 'line',
-            data: {
-                labels: data.evolucionMensual?.dias || [],
-                datasets: [{
-                    label: 'Ocupación %',
-                    data: data.evolucionMensual?.ocupacion || [],
-                    borderColor: 'rgba(59,130,246,1)',
-                    backgroundColor: 'rgba(59,130,246,0.2)',
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        max: 100,
-                        title: {
-                            display: true,
-                            text: 'Porcentaje de ocupación'
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    // Gráfico circular: Salas ocupadas/libres
-    if (document.getElementById('grafico-circular-salas')) {
-        const ocupadas = data.salasOcupadas?.ocupadas || 0;
-        const libres = data.salasOcupadas?.libres || 0;
-
-        window.graficoCircularSalas = new Chart(document.getElementById('grafico-circular-salas'), {
-            type: 'doughnut',
-            data: {
-                labels: ['Ocupadas', 'Libres'],
-                datasets: [{
-                    data: [ocupadas, libres],
-                    backgroundColor: [
-                        '#a21caf',
-                        '#f3f4f6'
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: true,
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                }
-            },
-            plugins: [{
-                beforeDraw: function(chart) {
-                    const width = chart.width;
-                    const height = chart.height;
-                    const ctx = chart.ctx;
-                    ctx.restore();
-                    const fontSize = (height / 114).toFixed(2);
-                    ctx.font = fontSize + "em Arial";
-                    ctx.textBaseline = "middle";
-                    const text = ocupadas.toString();
-                    const textX = Math.round((width - ctx.measureText(text).width) / 2);
-                    const textY = height / 2;
-                    ctx.fillText(text, textX, textY);
-                    ctx.save();
-                }
-            }]
-        });
-    }
 }
 
-// ========================================
-// INICIALIZACIÓN
-// ========================================
-
-document.addEventListener('DOMContentLoaded', function () {
-
-    // Inicializar gráficos con datos desde el servidor
-    if (window.dashboardData) {
-        inicializarGraficos(window.dashboardData);
-    }
-
-    // Iniciar auto-refresh
-    iniciarAutoRefresh();
-
-    // Iniciar verificación de módulos
-    iniciarVerificacionModulo();
-
-    // Inicializar indicador del módulo actual
-    const moduloInicial = obtenerModuloActual();
-    actualizarIndicadorModuloInfo(moduloInicial);
-    moduloActual = moduloInicial;
-
-    // Inicializar día actual
-    actualizarDiaActual();
-
-    // Inicializar reloj
-    actualizarModalReloj();
-    setInterval(actualizarModalReloj, 1000);
-
-    // Event listener para filtro de fecha
-    const input = document.getElementById('filtro_fecha_no_utilizadas');
-    if (input) {
-        input.addEventListener('change', function () {
-            const fecha = input.value;
-            fetch(`/dashboard/no-utilizadas-dia?fecha=${fecha}`)
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('tabla-no-utilizadas-dia').innerHTML = html;
-                })
-                .catch(error => {
-                    mostrarNotificacion('Error al cargar los datos de la tabla', 'error');
-                });
-        });
-    }
-
-    // Detener auto-refresh cuando la página no esté visible
-    document.addEventListener('visibilitychange', function () {
-        if (document.hidden) {
-            detenerAutoRefresh();
-            detenerVerificacionModulo();
-        } else if (autoRefreshEnabled) {
-            iniciarAutoRefresh();
-            iniciarVerificacionModulo();
-        }
+function cambiarTabOcupacion(tipo) {
+    if (activeTabOcupacion === tipo) return;
+    
+    // Cambiar clases activas/inactivas de los botones de pestañas
+    document.querySelectorAll('.tab-ocupacion-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
+        btn.classList.add('bg-gray-50', 'text-gray-600', 'hover:bg-gray-100');
     });
-});
+    
+    const selectedBtn = document.getElementById(`tab-ocupacion-${tipo}`);
+    if (selectedBtn) {
+        selectedBtn.classList.remove('bg-gray-50', 'text-gray-600', 'hover:bg-gray-100');
+        selectedBtn.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+    }
+    
+    activeTabOcupacion = tipo;
+    cargarOcupacionGrid(tipo, false);
+}
 
-// Exponer funciones globalmente si es necesario
-window.dashboardUtils = {
-    actualizarDashboard,
-    mostrarNotificacion,
-    iniciarAutoRefresh,
-    detenerAutoRefresh,
-    inicializarGraficos,
-    obtenerModuloActual,
-    actualizarModalReloj
-};
+function cargarOcupacionGrid(tipo, silencioso = false) {
+    const container = document.getElementById('ocupacion-grid-container');
+    if (!container) return;
+    
+    // Mostrar spinner de carga solo si no es actualización silenciosa
+    if (!silencioso) {
+        container.innerHTML = `
+            <div class="flex flex-col items-center justify-center py-20 text-gray-400">
+                <div class="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                <p class="text-sm">Cargando datos...</p>
+            </div>
+        `;
+    }
+    
+    const baseRoute = window.DashboardConfig ? window.DashboardConfig.ocupacionDatosRoute : '/dashboard/ocupacion-datos';
+    const url = `${baseRoute}?tipo=${tipo}`;
+    
+    fetch(url)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error al cargar ocupación');
+            }
+            return response.text();
+        })
+        .then(html => {
+            container.innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (!silencioso) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-red-500">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                        <p class="font-medium">No se pudieron cargar los datos de ocupación.</p>
+                        <p class="text-xs text-gray-400 mt-1">${error.message}</p>
+                    </div>
+                `;
+            }
+        });
+}
+
+// Exponer las funciones que se invocan desde eventos HTML onclick en Blade
+window.prevSlide = prevSlide;
+window.nextSlide = nextSlide;
+window.goToSlide = goToSlide;
+window.cambiarTabOcupacion = cambiarTabOcupacion;
+window.cargarHorarioActual = cargarHorarioActual;

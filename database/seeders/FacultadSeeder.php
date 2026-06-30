@@ -49,7 +49,7 @@ class FacultadSeeder extends Seeder
         ];
         
         foreach ($facultades as $facultad) {
-            Facultad::updateOrCreate(['id_facultad' => $facultad['id_facultad']], $facultad);
+            Facultad::withoutGlobalScopes()->updateOrCreate(['id_facultad' => $facultad['id_facultad']], $facultad);
         }
     }
 

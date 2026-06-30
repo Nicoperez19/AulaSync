@@ -105,6 +105,13 @@ class FinalizarReservasExpiradas extends Command
             13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
             14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
             15 => ['inicio' => '22:10:00', 'fin' => '23:00:00']
+        ],
+        'sabado' => [
+            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00']
         ]
     ];
 
@@ -137,19 +144,7 @@ class FinalizarReservasExpiradas extends Command
             $fechaHoy = $ahora->toDateString();
             $horaActual = $ahora->format('H:i:s');
             $diaActual = strtolower($ahora->locale('es')->isoFormat('dddd'));
-
-            // Normalizar día
-            $mapaDias = [
-                'lunes' => 'lunes',
-                'martes' => 'martes',
-                'miércoles' => 'miercoles',
-                'miercoles' => 'miercoles',
-                'jueves' => 'jueves',
-                'viernes' => 'viernes',
-                'sábado' => 'sabado',
-                'sabado' => 'sabado'
-            ];
-            $diaKey = $mapaDias[$diaActual] ?? $diaActual;
+            $diaKey = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
 
             // Buscar TODAS las reservas activas de hoy
             // Usamos withoutGlobalScopes() para asegurar que procesamos todo el tenant
@@ -191,7 +186,12 @@ class FinalizarReservasExpiradas extends Command
                 }
 
                 if ($debeFinalizar) {
-                    $this->finalizarReserva($reserva, $motivo);
+                    // Si se calculó una hora de fin para la clase, usarla para la salida
+                    $horaSalidaCalculada = null;
+                    if ($reserva->tipo_reserva === 'clase' && !empty($reserva->id_asignatura)) {
+                        $horaSalidaCalculada = $this->obtenerHoraFinClase($reserva, $diaKey);
+                    }
+                    $this->finalizarReserva($reserva, $motivo, $horaSalidaCalculada);
                     $finalizadas++;
                 }
             }
@@ -233,13 +233,13 @@ class FinalizarReservasExpiradas extends Command
         }
     }
 
-    protected function finalizarReserva($reserva, $motivo)
+    protected function finalizarReserva($reserva, $motivo, $horaSalida = null)
     {
         DB::connection('tenant')->beginTransaction();
         try {
             $reserva->estado = 'finalizada';
             if (empty($reserva->hora_salida)) {
-                $reserva->hora_salida = Carbon::now()->format('H:i:s');
+                $reserva->hora_salida = $horaSalida ?? Carbon::now()->format('H:i:s');
             }
 
             $obs = $reserva->observaciones ?? '';

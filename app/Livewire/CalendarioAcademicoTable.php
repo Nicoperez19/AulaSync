@@ -213,6 +213,57 @@ class CalendarioAcademicoTable extends Component
         $this->closeModal();
     }
 
+    public function importarFeriadosAPI()
+    {
+        try {
+            $year = $this->anioCalendario ?? Carbon::now()->year;
+            $url = "https://api.boostr.cl/holidays/{$year}.json";
+            
+            $response = \Illuminate\Support\Facades\Http::get($url);
+            
+            if (!$response->successful()) {
+                session()->flash('error', "No se pudo conectar a la API de feriados para el año {$year}.");
+                return;
+            }
+            
+            $data = $response->json();
+            
+            if (!isset($data['status']) || $data['status'] !== 'success' || !isset($data['data'])) {
+                session()->flash('error', 'La API de feriados retornó una respuesta con formato inválido.');
+                return;
+            }
+            
+            $importados = 0;
+            foreach ($data['data'] as $feriadoAPI) {
+                $fecha = $feriadoAPI['date'];
+                $nombre = $feriadoAPI['title'];
+                
+                DiaFeriado::withoutGlobalScopes()->updateOrCreate(
+                    [
+                        'fecha_inicio' => $fecha,
+                        'fecha_fin' => $fecha,
+                        'nombre' => $nombre,
+                    ],
+                    [
+                        'descripcion' => $feriadoAPI['extra'] ?? ($feriadoAPI['inalienable'] ? 'Feriado irrenunciable' : 'Feriado civil/religioso'),
+                        'tipo' => 'feriado',
+                        'activo' => true,
+                        'created_by' => Auth::user()->run ?? null,
+                    ]
+                );
+                $importados++;
+            }
+            
+            session()->flash('message', "Se importaron exitosamente {$importados} feriados de Chile para el año {$year}.");
+            $this->resetPage();
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error al importar feriados desde API:', [
+                'error' => $e->getMessage()
+            ]);
+            session()->flash('error', 'Error al importar feriados: ' . $e->getMessage());
+        }
+    }
+
     public function delete($id)
     {
         $feriado = DiaFeriado::findOrFail($id);

@@ -503,39 +503,66 @@ class PlanoDigitalController extends Controller
                 'es_reserva_activa' => true,  // Flag para identificar que viene de reserva
                 'modulos' => []  // No mostrar módulos ya que es la clase actual
             ];
-        } elseif ($planificacion && $planificacion->asignatura) {
-            // PRIORIDAD 2: Si NO hay reserva, mostrar la planificación del espacio
-            $detalles['planificacion'] = [
-                'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'Sin asignatura',
-                'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? '-',
-                'profesor' => ucwords($planificacion->horario->profesor->name ?? 'No asignado'),
-                'carrera' => $planificacion->asignatura->carrera->nombre ?? '-',
-                'es_reserva_activa' => false,
-                'modulos' => $planificacion
-                    ->asignatura
-                    ->planificaciones()
-                    ->where('id_espacio', $espacio->id_espacio)
-                    ->with('modulo')
-                    ->get()
-                    ->map(function ($plan) {
-                        return [
-                            'dia' => $plan->modulo->dia ?? 'No especificado',
-                            'hora_inicio' => $plan->modulo->hora_inicio ?? '00:00:00',
-                            'hora_termino' => $plan->modulo->hora_termino ?? '00:00:00'
-                        ];
-                    })
-                    ->toArray()
-            ];
+        } elseif ($planificacion) {
+            if ($planificacion instanceof \App\Models\PlanificacionProfesorColaborador) {
+                $detalles['planificacion'] = [
+                    'asignatura' => $planificacion->profesorColaborador->nombre_asignatura ?? 'Sin asignatura',
+                    'codigo_asignatura' => '-',
+                    'profesor' => ucwords($planificacion->profesorColaborador->profesor->name ?? 'No asignado'),
+                    'carrera' => '-',
+                    'es_reserva_activa' => false,
+                    'modulos' => [
+                        [
+                            'dia' => $planificacion->modulo->dia ?? 'No especificado',
+                            'hora_inicio' => $planificacion->modulo->hora_inicio ?? '00:00:00',
+                            'hora_termino' => $planificacion->modulo->hora_termino ?? '00:00:00'
+                        ]
+                    ]
+                ];
+            } elseif ($planificacion->asignatura) {
+                // PRIORIDAD 2: Si NO hay reserva, mostrar la planificación del espacio
+                $detalles['planificacion'] = [
+                    'asignatura' => $planificacion->asignatura->nombre_asignatura ?? 'Sin asignatura',
+                    'codigo_asignatura' => $planificacion->asignatura->codigo_asignatura ?? '-',
+                    'profesor' => ucwords($planificacion->horario->profesor->name ?? 'No asignado'),
+                    'carrera' => $planificacion->asignatura->carrera->nombre ?? '-',
+                    'es_reserva_activa' => false,
+                    'modulos' => $planificacion
+                        ->asignatura
+                        ->planificaciones()
+                        ->where('id_espacio', $espacio->id_espacio)
+                        ->with('modulo')
+                        ->get()
+                        ->map(function ($plan) {
+                            return [
+                                'dia' => $plan->modulo->dia ?? 'No especificado',
+                                'hora_inicio' => $plan->modulo->hora_inicio ?? '00:00:00',
+                                'hora_termino' => $plan->modulo->hora_termino ?? '00:00:00'
+                            ];
+                        })
+                        ->toArray()
+                ];
+            }
         }
 
-        if ($planificacionProxima && $planificacionProxima->asignatura) {
-            $detalles['planificacion_proxima'] = [
-                'asignatura' => $planificacionProxima->asignatura->nombre_asignatura ?? 'Sin asignatura',
-                'profesor' => ucwords($planificacionProxima->horario->profesor->name ?? 'No asignado'),
-                'hora_inicio' => substr($planificacionProxima->modulo->hora_inicio ?? '00:00', 0, 5),
-                'hora_termino' => substr($planificacionProxima->modulo->hora_termino ?? '00:00', 0, 5),
-                'modulo' => explode('.', $planificacionProxima->modulo->id_modulo ?? '')[1] ?? 'No especificado'
-            ];
+        if ($planificacionProxima) {
+            if ($planificacionProxima instanceof \App\Models\PlanificacionProfesorColaborador) {
+                $detalles['planificacion_proxima'] = [
+                    'asignatura' => $planificacionProxima->profesorColaborador->nombre_asignatura ?? 'Sin asignatura',
+                    'profesor' => ucwords($planificacionProxima->profesorColaborador->profesor->name ?? 'No asignado'),
+                    'hora_inicio' => substr($planificacionProxima->modulo->hora_inicio ?? '00:00', 0, 5),
+                    'hora_termino' => substr($planificacionProxima->modulo->hora_termino ?? '00:00', 0, 5),
+                    'modulo' => explode('.', $planificacionProxima->modulo->id_modulo ?? '')[1] ?? 'No especificado'
+                ];
+            } elseif ($planificacionProxima->asignatura) {
+                $detalles['planificacion_proxima'] = [
+                    'asignatura' => $planificacionProxima->asignatura->nombre_asignatura ?? 'Sin asignatura',
+                    'profesor' => ucwords($planificacionProxima->horario->profesor->name ?? 'No asignado'),
+                    'hora_inicio' => substr($planificacionProxima->modulo->hora_inicio ?? '00:00', 0, 5),
+                    'hora_termino' => substr($planificacionProxima->modulo->hora_termino ?? '00:00', 0, 5),
+                    'modulo' => explode('.', $planificacionProxima->modulo->id_modulo ?? '')[1] ?? 'No especificado'
+                ];
+            }
         }
 
         if ($reserva) {
@@ -650,6 +677,25 @@ class PlanoDigitalController extends Controller
                 })
                 ->get();
 
+            $colaboradoresActivosYProximos = \App\Models\PlanificacionProfesorColaborador::with(['modulo', 'espacio', 'profesorColaborador.profesor', 'profesorColaborador.asignatura'])
+                ->whereHas('modulo', function ($query) use ($diaActual, $horaActualStr, $horaLimite) {
+                    $query->where('dia', $diaActual)
+                        ->where(function($q) use ($horaActualStr, $horaLimite) {
+                            $q->where(function($q2) use ($horaActualStr) {
+                                $q2->where('hora_inicio', '<=', $horaActualStr)
+                                   ->where('hora_termino', '>', $horaActualStr);
+                            })
+                            ->orWhere(function($q2) use ($horaActualStr, $horaLimite) {
+                                $q2->where('hora_inicio', '>', $horaActualStr)
+                                   ->where('hora_inicio', '<=', $horaLimite);
+                            });
+                        });
+                })
+                ->whereHas('profesorColaborador', fn($q) => $q->where('estado', 'activo')
+                    ->where('fecha_inicio', '<=', $fechaActual)
+                    ->where('fecha_termino', '>=', $fechaActual))
+                ->get();
+
             $reservasActivas = Reserva::with(['asignatura', 'profesor', 'solicitante'])
                 ->where('fecha_reserva', $fechaActual)
                 ->where('estado', 'activa')
@@ -679,7 +725,7 @@ class PlanoDigitalController extends Controller
 
             return [
                 'success' => true,
-                'espacios' => $espacios->map(function ($espacio) use ($horaActual, $horaActualStr, $diaActual, $planificacionesActivasYProximas, $reservasActivas, $reservasProgramadas, $reservasProximas, $moduloActual, $horaLimite, $clasesNoRealizadasGlobal, $reservasFinalizadasAnticipadamente) {
+                'espacios' => $espacios->map(function ($espacio) use ($horaActual, $horaActualStr, $diaActual, $planificacionesActivasYProximas, $colaboradoresActivosYProximos, $reservasActivas, $reservasProgramadas, $reservasProximas, $moduloActual, $horaLimite, $clasesNoRealizadasGlobal, $reservasFinalizadasAnticipadamente) {
 
                 $estadoTabla = $espacio->estado;
 
@@ -708,6 +754,18 @@ class PlanoDigitalController extends Controller
                         return false;
                     })->first();
 
+                $colaboradorEnCurso = $colaboradoresActivosYProximos
+                    ->where('id_espacio', $espacio->id_espacio)
+                    ->filter(function ($p) use ($horaActualStr, $reservasFinalizadasAnticipadamente, $espacio) {
+                        if ($p->modulo->hora_inicio <= $horaActualStr && $p->modulo->hora_termino > $horaActualStr) {
+                            $claseFinalizada = $reservasFinalizadasAnticipadamente->where('id_espacio', $espacio->id_espacio)
+                                ->where('id_asignatura', $p->profesorColaborador->id_asignatura)
+                                ->first();
+                            return !$claseFinalizada;
+                        }
+                        return false;
+                    })->first();
+
                 $claseProxima = $planificacionesActivasYProximas
                     ->where('id_espacio', $espacio->id_espacio)
                     ->filter(function ($p) use ($horaActualStr, $horaLimite, $reservasFinalizadasAnticipadamente, $espacio) {
@@ -720,8 +778,20 @@ class PlanoDigitalController extends Controller
                         return false;
                     })->first();
 
-                $tieneClaseEnCurso = $claseEnCurso !== null;
-                $tieneClaseProxima = $claseProxima !== null;
+                $colaboradorProxima = $colaboradoresActivosYProximos
+                    ->where('id_espacio', $espacio->id_espacio)
+                    ->filter(function ($p) use ($horaActualStr, $horaLimite, $reservasFinalizadasAnticipadamente, $espacio) {
+                        if ($p->modulo->hora_inicio > $horaActualStr && $p->modulo->hora_inicio <= $horaLimite) {
+                            $claseFinalizada = $reservasFinalizadasAnticipadamente->where('id_espacio', $espacio->id_espacio)
+                                ->where('id_asignatura', $p->profesorColaborador->id_asignatura)
+                                ->first();
+                            return !$claseFinalizada;
+                        }
+                        return false;
+                    })->first();
+
+                $tieneClaseEnCurso = ($claseEnCurso !== null) || ($colaboradorEnCurso !== null);
+                $tieneClaseProxima = ($claseProxima !== null) || ($colaboradorProxima !== null);
 
                 if ($estadoTabla === 'Mantención' || $estadoTabla === 'Mantenimiento') {
                     $estado = 'Mantención';
@@ -760,14 +830,24 @@ class PlanoDigitalController extends Controller
                 }
 
                 $informacionAdicional = null;
-                if ($tieneClaseEnCurso && $claseEnCurso) {
-                    $informacionAdicional = [
-                        'asignatura' => $claseEnCurso->asignatura->nombre_asignatura ?? 'Sin asignatura',
-                        'profesor' => $claseEnCurso->horario->profesor->name ?? 'No especificado',
-                        'modulo' => explode('.', $claseEnCurso->modulo->id_modulo)[1] ?? 'No especificado',
-                        'hora_inicio' => substr($claseEnCurso->modulo->hora_inicio, 0, 5),
-                        'hora_termino' => substr($claseEnCurso->modulo->hora_termino, 0, 5)
-                    ];
+                if ($tieneClaseEnCurso) {
+                    $curso = $claseEnCurso ?? $colaboradorEnCurso;
+                    if ($curso) {
+                        $asignaturaNombre = ($curso instanceof \App\Models\Planificacion_Asignatura)
+                            ? ($curso->asignatura->nombre_asignatura ?? 'Sin asignatura')
+                            : ($curso->profesorColaborador->nombre_asignatura ?? 'Sin asignatura');
+                        $profesorNombre = ($curso instanceof \App\Models\Planificacion_Asignatura)
+                            ? ($curso->horario->profesor->name ?? 'No especificado')
+                            : ($curso->profesorColaborador->profesor->name ?? 'No especificado');
+
+                        $informacionAdicional = [
+                            'asignatura' => $asignaturaNombre,
+                            'profesor' => $profesorNombre,
+                            'modulo' => explode('.', $curso->modulo->id_modulo)[1] ?? 'No especificado',
+                            'hora_inicio' => substr($curso->modulo->hora_inicio, 0, 5),
+                            'hora_termino' => substr($curso->modulo->hora_termino, 0, 5)
+                        ];
+                    }
                 } elseif ($tieneReservaActiva) {
                     $reservaActiva = $reservasActivas->where('id_espacio', $espacio->id_espacio)->first();
                     if ($reservaActiva) {

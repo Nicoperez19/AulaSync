@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hist贸rico de Reservas de Espacios</title>
+    <title>{{ $titulo ?? 'Hist贸rico de Reservas de Espacios' }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -155,25 +155,38 @@
 <body>
     <div class="header">
         <img src="{{ public_path('images/logo_instituto_tecnologico-01.png') }}" alt="Logo Instituto Tecnol贸gico" style="height: 60px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
-        <h1>Hist贸rico de Reservas de Espacios</h1>
-        <p>SIA | Sistema de Informaci髇 de Aulas - Instituto Tecnol贸gico</p>
+        <h1>{{ $titulo ?? 'Hist贸rico de Reservas de Espacios' }}</h1>
+        <p>SIA | Sistema de Informaci贸n de Aulas - Instituto Tecnol贸gico</p>
         <p>Per铆odo: {{ $fecha_inicio }} - {{ $fecha_fin }}</p>
         <p>Generado el: {{ $fecha_generacion }}</p>
     </div>
 
-    @if($filtros_aplicados['tipo_espacio'] || $filtros_aplicados['piso'] || $filtros_aplicados['estado'] || $filtros_aplicados['busqueda'])
+    @if(isset($resumen) && is_array($resumen) && count($resumen) > 0)
+        <table style="width: 100%; margin-bottom: 20px; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #e5e7eb; padding: 10px; border-collapse: collapse;">
+            <tr>
+                @foreach($resumen as $label => $val)
+                    <td style="text-align: center; padding: 8px; border: none; width: {{ 100 / count($resumen) }}%;">
+                        <div style="font-size: 18px; font-weight: bold; color: #2c3e50;">{{ $val }}</div>
+                        <div style="font-size: 9px; color: #7f8c8d; text-transform: uppercase; margin-top: 3px;">{{ $label }}</div>
+                    </td>
+                @endforeach
+            </tr>
+        </table>
+    @endif
+
+    @if(isset($filtros_aplicados) && is_array($filtros_aplicados) && ($filtros_aplicados['tipo_espacio'] || $filtros_aplicados['piso'] || $filtros_aplicados['estado'] || $filtros_aplicados['busqueda']))
         <div class="filtros">
             <h3>Filtros Aplicados:</h3>
-            @if($filtros_aplicados['busqueda'])
+            @if(isset($filtros_aplicados['busqueda']) && $filtros_aplicados['busqueda'])
                 <span>B煤squeda: "{{ $filtros_aplicados['busqueda'] }}"</span>
             @endif
-            @if($filtros_aplicados['tipo_espacio'])
+            @if(isset($filtros_aplicados['tipo_espacio']) && $filtros_aplicados['tipo_espacio'])
                 <span>Tipo: {{ $filtros_aplicados['tipo_espacio'] }}</span>
             @endif
-            @if($filtros_aplicados['piso'])
+            @if(isset($filtros_aplicados['piso']) && $filtros_aplicados['piso'])
                 <span>Piso: {{ $filtros_aplicados['piso'] }}</span>
             @endif
-            @if($filtros_aplicados['estado'])
+            @if(isset($filtros_aplicados['estado']) && $filtros_aplicados['estado'])
                 <span>Estado: {{ $filtros_aplicados['estado'] }}</span>
             @endif
         </div>
@@ -203,20 +216,20 @@
                     <td>{{ $reserva['hora_inicio'] }}</td>
                     <td>{{ $reserva['hora_fin'] }}</td>
                     <td>{{ $reserva['espacio'] }}</td>
-                    <td>{{ $reserva['tipo_espacio'] }}</td>
-                    <td>{{ $reserva['piso'] }}</td>
-                    <td>{{ $reserva['facultad'] }}</td>
+                    <td>{{ $reserva['tipo_espacio'] ?? 'N/A' }}</td>
+                    <td>{{ $reserva['piso'] ?? 'N/A' }}</td>
+                    <td>{{ $reserva['facultad'] ?? 'N/A' }}</td>
                     <td>{{ $reserva['usuario'] }}</td>
                     <td>
-                        <span class="tipo-{{ strtolower($reserva['tipo_usuario']) }}">
-                            {{ $reserva['tipo_usuario'] }}
+                        <span class="tipo-{{ strtolower($reserva['tipo_usuario'] ?? 'N/A') }}">
+                            {{ $reserva['tipo_usuario'] ?? 'N/A' }}
                         </span>
                     </td>
-                    <td>{{ $reserva['horas_utilizadas'] }}h</td>
+                    <td>{{ $reserva['horas_utilizadas'] ?? '0' }}h</td>
                     <td>{{ $reserva['duracion'] }}</td>
                     <td>
-                        <span class="estado-{{ strtolower(str_replace(' ', '-', $reserva['estado'])) }}">
-                            {{ $reserva['estado'] }}
+                        <span class="estado-{{ strtolower(str_replace(' ', '-', $reserva['estado'] ?? 'N/A')) }}">
+                            {{ $reserva['estado'] ?? 'N/A' }}
                         </span>
                     </td>
                 </tr>
@@ -231,7 +244,7 @@
     </table>
 
     <div class="footer">
-        <p>Este reporte fue generado autom谩ticamente por el SIA | Sistema de Informaci髇 de Aulas</p>
+        <p>Este reporte fue generado autom谩ticamente por el SIA | Sistema de Informaci贸n de Aulas</p>
         <p>P谩gina 1 de 1</p>
     </div>
 </body>
