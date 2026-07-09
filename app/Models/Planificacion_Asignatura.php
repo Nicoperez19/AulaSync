@@ -21,6 +21,7 @@ class Planificacion_Asignatura extends Model
         'id_modulo',
         'id_espacio',
         'inscritos',
+        'data_load_id',
     ];
 
     protected $casts = [

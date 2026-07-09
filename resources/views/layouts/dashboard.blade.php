@@ -15,13 +15,13 @@
 
     <!-- Modal fijo de reloj digital y módulo actual -->
     <div id="modal-reloj"
-        class="fixed bottom-6 right-8 z-50 bg-gradient-to-br from-[#d2091e]/95 to-[#b10718]/95 backdrop-blur-md shadow-2xl shadow-red-950/20 rounded-2xl border border-white/20 px-5 py-3.5 flex items-center gap-4 min-w-[200px] transition-all duration-300 ease-out cursor-default group">
-        <div class="p-2.5 bg-white/15 text-white rounded-xl transition-all duration-300 shrink-0">
-            <i class="fa-solid fa-clock text-lg"></i>
+        class="fixed bottom-6 right-8 z-50 bg-gradient-to-br from-[#d2091e]/95 to-[#b10718]/95 backdrop-blur-md shadow-2xl shadow-red-950/20 rounded-2xl border border-white/20 px-6 py-4 flex items-center gap-4 min-w-[220px] transition-all duration-300 ease-out cursor-default group">
+        <div class="p-3 bg-white/15 text-white rounded-xl transition-all duration-300 shrink-0">
+            <i class="fa-solid fa-clock text-xl"></i>
         </div>
         <div class="flex flex-col">
-            <span class="font-mono text-xl font-extrabold text-white leading-none tracking-tight my-1" id="modal-hora-actual">--:--:--</span>
-            <span class="text-xs font-semibold text-red-200" id="modal-modulo-actual">Módulo actual: -</span>
+            <span class="font-mono text-2xl font-black text-white leading-none tracking-tight my-1" id="modal-hora-actual">--:--:--</span>
+            <span class="text-sm font-bold text-red-100" id="modal-modulo-actual">Módulo actual: -</span>
         </div>
     </div>
 
@@ -38,34 +38,34 @@
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                     <!-- Nav Pills -->
                     <div class="flex flex-wrap gap-2">
-                        <button onclick="cambiarTabOcupacion('todos')" id="tab-ocupacion-todos" class="px-4 py-2 text-xs font-semibold rounded-lg transition duration-150 tab-ocupacion-btn bg-blue-600 text-white shadow-sm">
+                        <button onclick="cambiarTabOcupacion('todos')" id="tab-ocupacion-todos" class="px-4 py-2 text-sm font-bold rounded-lg transition duration-150 tab-ocupacion-btn bg-blue-600 text-white shadow-sm">
                             Todos
                         </button>
-                        <button onclick="cambiarTabOcupacion('laboratorios')" id="tab-ocupacion-laboratorios" class="px-4 py-2 text-xs font-semibold rounded-lg transition duration-150 tab-ocupacion-btn bg-gray-50 text-gray-600 hover:bg-gray-100">
+                        <button onclick="cambiarTabOcupacion('laboratorios')" id="tab-ocupacion-laboratorios" class="px-4 py-2 text-sm font-bold rounded-lg transition duration-150 tab-ocupacion-btn bg-gray-50 text-gray-600 hover:bg-gray-100">
                             Laboratorios
                         </button>
-                        <button onclick="cambiarTabOcupacion('salas_clases')" id="tab-ocupacion-salas_clases" class="px-4 py-2 text-xs font-semibold rounded-lg transition duration-150 tab-ocupacion-btn bg-gray-50 text-gray-600 hover:bg-gray-100">
+                        <button onclick="cambiarTabOcupacion('salas_clases')" id="tab-ocupacion-salas_clases" class="px-4 py-2 text-sm font-bold rounded-lg transition duration-150 tab-ocupacion-btn bg-gray-50 text-gray-600 hover:bg-gray-100">
                             Salas de Clases
                         </button>
-                        <button onclick="cambiarTabOcupacion('salas_estudio')" id="tab-ocupacion-salas_estudio" class="px-4 py-2 text-xs font-semibold rounded-lg transition duration-150 tab-ocupacion-btn bg-gray-50 text-gray-600 hover:bg-gray-100">
+                        <button onclick="cambiarTabOcupacion('salas_estudio')" id="tab-ocupacion-salas_estudio" class="px-4 py-2 text-sm font-bold rounded-lg transition duration-150 tab-ocupacion-btn bg-gray-50 text-gray-600 hover:bg-gray-100">
                             Salas de Estudio
                         </button>
                     </div>
                     
                     <!-- Leyenda (Niveles de Ocupación) -->
-                    <div class="flex flex-wrap gap-3 items-center text-xs bg-slate-50 border border-slate-100 rounded-xl px-3 py-2 shadow-xs shrink-0">
-                        <span class="font-bold text-slate-500 mr-1">Ocupación:</span>
-                        <span class="flex items-center gap-1.5">
-                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-                            <span class="text-emerald-700 font-semibold">0% - 35%</span>
+                    <div class="flex flex-wrap gap-3.5 items-center text-sm bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 shadow-xs shrink-0">
+                        <span class="font-extrabold text-slate-500 mr-1">Ocupación:</span>
+                        <span class="flex items-center gap-2">
+                            <span class="inline-block w-3 h-3 rounded-full bg-emerald-500"></span>
+                            <span class="text-emerald-700 font-bold">0% - 35%</span>
                         </span>
-                        <span class="flex items-center gap-1.5">
-                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                            <span class="text-amber-700 font-semibold">35% - 75%</span>
+                        <span class="flex items-center gap-2">
+                            <span class="inline-block w-3 h-3 rounded-full bg-amber-500"></span>
+                            <span class="text-amber-700 font-bold">35% - 75%</span>
                         </span>
-                        <span class="flex items-center gap-1.5">
-                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-500"></span>
-                            <span class="text-red-700 font-semibold">75% - 100%</span>
+                        <span class="flex items-center gap-2">
+                            <span class="inline-block w-3 h-3 rounded-full bg-red-500"></span>
+                            <span class="text-red-700 font-bold">75% - 100%</span>
                         </span>
                     </div>
                 </div>

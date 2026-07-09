@@ -1,6 +1,6 @@
 <table class="w-full border-collapse table-fixed">
     <thead>
-        <tr class="text-xs font-bold text-slate-400 uppercase tracking-wider border-b border-gray-100 pb-2">
+        <tr class="text-sm font-extrabold text-slate-500 uppercase tracking-wider border-b border-gray-100 pb-2">
             <th class="py-3 px-1 text-center w-24">Módulo</th>
             <th class="py-3 px-1 text-center">Lunes</th>
             <th class="py-3 px-1 text-center">Martes</th>
@@ -15,9 +15,9 @@
             <tr class="hover:bg-slate-50/50 transition duration-150">
                 <!-- Información del Módulo -->
                 <td class="py-1.5 px-1 text-center">
-                    <div class="h-14 w-full bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center shadow-xs">
-                        <span class="text-xs font-bold text-slate-700">Mod.{{ $moduloNum }}</span>
-                        <span class="text-[9px] text-slate-400 mt-0.5">
+                    <div class="h-16 w-full bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center shadow-xs">
+                        <span class="text-sm md:text-base font-extrabold text-slate-700">Mod.{{ $moduloNum }}</span>
+                        <span class="text-[10px] md:text-xs font-semibold text-slate-400 mt-0.5">
                             {{ substr(\App\Helpers\ModulosHelper::getHorarioModulo('lunes', $moduloNum)['inicio'] ?? '00:00', 0, 5) }}-{{ substr(\App\Helpers\ModulosHelper::getHorarioModulo('lunes', $moduloNum)['fin'] ?? '00:00', 0, 5) }}
                         </span>
                     </div>
@@ -51,13 +51,13 @@
                     
                     <td class="py-1.5 px-1 text-center">
                         @if ($porcentaje === null)
-                            <div class="h-14 w-full border border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center bg-gray-50/50 text-gray-300">
-                                <span class="text-xs font-semibold">N/A</span>
+                            <div class="h-16 w-full border border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center bg-gray-50/50 text-gray-300">
+                                <span class="text-xs md:text-sm font-bold">N/A</span>
                             </div>
                         @else
-                            <div class="h-14 w-full border border-gray-200 rounded-xl flex flex-col items-center justify-center bg-white shadow-xs hover:border-blue-200 transition duration-150">
-                                <span class="text-[9px] font-bold text-gray-400 uppercase">{{ $prefijoDia }}.{{ $moduloNum }}</span>
-                                <span class="text-xs font-bold {{ $colorClass }} mt-0.5">{{ $porcentaje }}%</span>
+                            <div class="h-16 w-full border border-gray-200 rounded-xl flex flex-col items-center justify-center bg-white shadow-xs hover:border-blue-200 transition duration-150">
+                                <span class="text-[10px] md:text-xs font-bold text-gray-400 uppercase">{{ $prefijoDia }}.{{ $moduloNum }}</span>
+                                <span class="text-base md:text-xl font-extrabold {{ $colorClass }} mt-0.5">{{ $porcentaje }}%</span>
                             </div>
                         @endif
                     </td>

@@ -505,6 +505,7 @@ class DataLoadController extends Controller
                                     $planificacion->id_modulo = $idModulo;
                                     $planificacion->id_espacio = $espacioIdFinal;
                                     $planificacion->inscritos = $inscritos;
+                                    $planificacion->data_load_id = $dataLoad->id;
                                     $planificacion->save();
 
                                     $processedHorariosCount++;
@@ -600,15 +601,15 @@ class DataLoadController extends Controller
     public function destroy(DataLoad $dataLoad)
     {
         try {
-            if (Storage::exists($dataLoad->ruta_archivo)) {
-                Storage::delete($dataLoad->ruta_archivo);
+            if ($dataLoad->ruta_archivo && Storage::disk('public')->exists($dataLoad->ruta_archivo)) {
+                Storage::disk('public')->delete($dataLoad->ruta_archivo);
             }
 
             $dataLoad->delete();
 
             return redirect()
                 ->route('data.index')
-                ->with('success', 'Registro de carga eliminado exitosamente.');
+                ->with('success', 'Registro de carga y su información asociada fueron eliminados exitosamente.');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => 'Error al eliminar el registro de carga.']);
         }

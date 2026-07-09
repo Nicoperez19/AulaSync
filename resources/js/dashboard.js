@@ -17,16 +17,18 @@ document.addEventListener('DOMContentLoaded', function() {
         window.horariosModulos = window.DashboardConfig.horariosModulos;
     }
 
+    // Cargar datos por primera vez
     cargarHorarioActual();
-    // Actualizar automáticamente cada 15 segundos
-    setInterval(cargarHorarioActual, 15000);
-    
-    // Cargar grilla de ocupación inicial
     cargarOcupacionGrid(activeTabOcupacion);
-    // Actualizar ocupación automáticamente cada 15 segundos de forma silenciosa en segundo plano
-    setInterval(() => {
+    
+    // Función para actualizar todos los datos de forma sincronizada
+    function actualizarTodoElDashboard() {
+        cargarHorarioActual();
         cargarOcupacionGrid(activeTabOcupacion, true);
-    }, 15000);
+    }
+    
+    // Actualizar automáticamente todo junto cada 3 segundos en segundo plano
+    setInterval(actualizarTodoElDashboard, 3000);
 
     // Reloj digital y módulo actual
     actualizarModalReloj();

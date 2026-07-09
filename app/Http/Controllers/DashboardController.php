@@ -181,28 +181,10 @@ class DashboardController extends Controller
         $fechaInicioSemana = $fechasSemana['lunes'];
         $fechaFinSemana = $fechasSemana['sabado'];
 
-        // Pre-cargar planificaciones de la semana (clase regular)
-        $planificacionesSemana = Planificacion_Asignatura::whereIn('id_espacio', $espaciosIds)
-            ->whereHas('horario', function ($q) use ($periodo) {
-                $q->where('periodo', $periodo);
-            })
-            ->get()
-            ->groupBy('id_modulo');
-
-        // Pre-cargar planificaciones de profesores colaboradores activas en la semana
-        $colaboradoresSemana = PlanificacionProfesorColaborador::with('profesorColaborador')
-            ->whereIn('id_espacio', $espaciosIds)
-            ->whereHas('profesorColaborador', function ($q) use ($fechaInicioSemana, $fechaFinSemana) {
-                $q->where('estado', 'activo')
-                  ->where('fecha_inicio', '<=', $fechaFinSemana)
-                  ->where('fecha_termino', '>=', $fechaInicioSemana);
-            })
-            ->get();
-
-        // Pre-cargar reservas activas/asistidas en la semana (incluyendo espontáneas)
+        // Pre-cargar reservas activas/asistidas en la semana (incluyendo espontáneas) - Ocupación REAL por escaneos
         $reservasSemana = Reserva::whereBetween('fecha_reserva', [$fechaInicioSemana, $fechaFinSemana])
             ->whereIn('id_espacio', $espaciosIds)
-            ->where('estado', '!=', 'cancelada')
+            ->whereIn('estado', ['activa', 'finalizada'])
             ->where(function ($q) {
                 $q->whereNull('hubo_asistentes')
                   ->orWhere('hubo_asistentes', true);
@@ -214,6 +196,23 @@ class DashboardController extends Controller
                     ? $fecha->format('Y-m-d') 
                     : \Carbon\Carbon::parse($fecha)->format('Y-m-d');
             });
+
+        // Determinar el día de hoy y el módulo actual para el cálculo de estado en vivo
+        $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
+        $diaHoyNormalizado = ModulosHelper::normalizarDia($diaActual);
+        $horaAhora = date('H:i:s');
+        $moduloActualNum = null;
+
+        $horariosModulos = ModulosHelper::getHorariosModulos();
+
+        if (isset($horariosModulos[$diaHoyNormalizado])) {
+            foreach ($horariosModulos[$diaHoyNormalizado] as $num => $horario) {
+                if ($horaAhora >= $horario['inicio'] && $horaAhora < $horario['fin']) {
+                    $moduloActualNum = $num;
+                    break;
+                }
+            }
+        }
 
         // 3. Calcular la ocupación por día y módulo
         $ocupacion = [];
@@ -239,40 +238,42 @@ class DashboardController extends Controller
                     continue;
                 }
 
+                $fechaDelDia = $fechasSemana[$dia];
+                $fechaHoy = now()->format('Y-m-d');
+
+                // Verificar si el módulo y día aún no han ocurrido (futuro)
+                $isFuture = false;
+                if ($fechaDelDia > $fechaHoy) {
+                    $isFuture = true;
+                } elseif ($fechaDelDia === $fechaHoy) {
+                    $horarioModulo = ModulosHelper::getHorarioModulo($dia, $moduloNum);
+                    if ($horarioModulo) {
+                        $horaAhora = now()->format('H:i:s');
+                        if ($horaAhora < $horarioModulo['inicio']) {
+                            $isFuture = true;
+                        }
+                    }
+                }
+
+                if ($isFuture) {
+                    $ocupacion[$dia][$moduloNum] = 0;
+                    continue;
+                }
+
                 $idModulo = $prefijoDia . '.' . $moduloNum;
 
-                // 1. Espacios ocupados por planificación regular
-                $espaciosPlanificados = $planificacionesSemana->get($idModulo, collect())
-                    ->pluck('id_espacio')
-                    ->toArray();
-
-                // 2. Espacios ocupados por colaboradores activos en esta fecha
-                $espaciosColaboradores = $colaboradoresSemana->filter(function($colab) use ($idModulo, $fechaDelDia) {
-                    if (!$colab->profesorColaborador) {
-                        return false;
-                    }
-                    $fInicio = $colab->profesorColaborador->fecha_inicio;
-                    $fTermino = $colab->profesorColaborador->fecha_termino;
-                    
-                    $fInicioStr = $fInicio instanceof \Carbon\Carbon ? $fInicio->format('Y-m-d') : $fInicio;
-                    $fTerminoStr = $fTermino instanceof \Carbon\Carbon ? $fTermino->format('Y-m-d') : $fTermino;
-                    
-                    return $colab->id_modulo === $idModulo &&
-                           $fInicioStr <= $fechaDelDia &&
-                           $fTerminoStr >= $fechaDelDia;
-                })
-                ->pluck('id_espacio')
-                ->toArray();
-
-                // 3. Espacios ocupados por reservas de este día
+                // 1. Espacios ocupados por reservas de este día (escaneos/uso real)
                 $reservasDia = $reservasSemana->get($fechaDelDia, collect());
                 $espaciosReservas = [];
 
                 foreach ($reservasDia as $reserva) {
                     $overlap = false;
 
-                    if ($reserva->modulo_inicio && $reserva->modulo_fin) {
-                        if ($moduloNum >= $reserva->modulo_inicio && $moduloNum <= $reserva->modulo_fin) {
+                    $modInicio = $reserva->modulo_inicio ? (int) $reserva->modulo_inicio : null;
+                    $modFin = $reserva->modulo_fin ? (int) $reserva->modulo_fin : null;
+
+                    if ($modInicio !== null && $modFin !== null) {
+                        if ($moduloNum >= $modInicio && $moduloNum <= $modFin) {
                             $overlap = true;
                         }
                     } else {
@@ -283,12 +284,12 @@ class DashboardController extends Controller
                             // Si la reserva está activa (hora_salida es null), estimar el término en 1 hora (límite por defecto)
                             $resFin = $reserva->hora_salida ?: \Carbon\Carbon::parse($reserva->hora)->addHour()->format('H:i:s');
 
-                            $modInicio = $horarioModulo['inicio'];
-                            $modFin = $horarioModulo['fin'];
+                            $modInicioHorario = $horarioModulo['inicio'];
+                            $modFinHorario = $horarioModulo['fin'];
 
                             // Verificar si los rangos se traslapan
-                            $overlapStart = max($resInicio, $modInicio);
-                            $overlapEnd = min($resFin, $modFin);
+                            $overlapStart = max($resInicio, $modInicioHorario);
+                            $overlapEnd = min($resFin, $modFinHorario);
 
                             if ($overlapStart < $overlapEnd) {
                                 $overlap = true;
@@ -301,8 +302,17 @@ class DashboardController extends Controller
                     }
                 }
 
-                // Combinar todos los espacios ocupados de forma única
-                $todosOcupados = array_unique(array_merge($espaciosPlanificados, $espaciosColaboradores, $espaciosReservas));
+                // 2. Si es el día y módulo actual en vivo, incluir también los espacios que están actualmente marcados como 'Ocupado'
+                if ($dia === $diaHoyNormalizado && $moduloNum === $moduloActualNum) {
+                    $espaciosEstadoOcupado = \App\Models\Espacio::whereIn('id_espacio', $espaciosIds)
+                        ->where('estado', 'Ocupado')
+                        ->pluck('id_espacio')
+                        ->toArray();
+                    $todosOcupados = array_unique(array_merge($espaciosReservas, $espaciosEstadoOcupado));
+                } else {
+                    $todosOcupados = array_unique($espaciosReservas);
+                }
+
                 $totalOcupados = count($todosOcupados);
 
                 // Calcular el porcentaje de ocupación
