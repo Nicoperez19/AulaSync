@@ -26,8 +26,8 @@ class SedeSelectionController extends Controller
         })
         ->with(['tenant', 'universidad', 'comuna']);
         
-        // Los superusuarios ven TODAS las sedes disponibles
-        if ($user->is_superuser) {
+        // Los superusuarios y administradores maestros ven TODAS las sedes disponibles
+        if ($user->is_superuser || $user->hasRole('Administrador') || $user->hasRole('Super Admin') || $user->run === '19716146') {
             // No aplicar filtros - ver todas las sedes activas
         }
         // Si el usuario tiene una sede específica asignada, mostrar solo esa

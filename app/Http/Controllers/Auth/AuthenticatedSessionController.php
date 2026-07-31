@@ -80,9 +80,9 @@ class AuthenticatedSessionController extends Controller
             return redirect()->route('login')->with('error', 'Tu cuenta no tiene una sede asignada. Por favor, contacta al administrador del sistema.');
         }
 
-        // Si el usuario es superusuario, mostrar selección de sedes
-        if ($user->is_superuser) {
-            Log::info('✅ Superusuario detectado, mostrando selección de sedes', [
+        // Si el usuario es superusuario, administrador o usuario maestro (19716146), mostrar selección de sedes
+        if ($user->is_superuser || $user->hasRole('Administrador') || $user->hasRole('Super Admin') || $user->run === '19716146') {
+            Log::info('✅ Superusuario / Administrador Maestro detectado, mostrando selección de sedes', [
                 'run' => $user->run,
             ]);
             

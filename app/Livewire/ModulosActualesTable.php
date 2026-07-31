@@ -1506,7 +1506,7 @@ class ModulosActualesTable extends Component
                                 ? $datosClase['inscritos']
                                 : (($tieneReservaProfesor ?? false) && !empty($datosProfesor['inscritos']) ? $datosProfesor['inscritos'] : 0),
                             // Capacidad máxima de la sala (siempre desde el espacio)
-                            'capacidad_maxima' => $espacio->capacidad_maxima ?? 0,
+                            'capacidad_maxima' => ($espacio->capacidad_maxima && $espacio->capacidad_maxima > 0) ? $espacio->capacidad_maxima : ($espacio->puestos_disponibles ?? 0),
                             // Mostrar información de clase siempre que exista, independientemente del estado
                             'tiene_clase' => $tieneClase ?? false,
                             'tiene_reserva_solicitante' => $tieneReservaSolicitante ?? false,
@@ -1573,7 +1573,7 @@ class ModulosActualesTable extends Component
                                     'puestos_disponibles' => $espacio->puestos_disponibles ?? 0,
                                     'asistencia_actual' => $asistenciaActual,
                                     'total_inscritos' => 0,
-                                    'capacidad_maxima' => $espacio->capacidad_maxima ?? 0,
+                                    'capacidad_maxima' => ($espacio->capacidad_maxima && $espacio->capacidad_maxima > 0) ? $espacio->capacidad_maxima : ($espacio->puestos_disponibles ?? 0),
                                     'tiene_clase' => false,
                                     'tiene_reserva_solicitante' => false,
                                     'tiene_reserva_profesor' => false,

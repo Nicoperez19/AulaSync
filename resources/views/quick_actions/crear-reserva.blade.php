@@ -166,10 +166,38 @@
                             </div>
 
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-1">Fecha *</label>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Modalidad de Reserva *</label>
+                                <div class="grid grid-cols-2 gap-3 mb-3">
+                                    <label class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors bg-green-50 border-green-500" id="label-modalidad-puntual">
+                                        <input type="radio" name="tipo_frecuencia" value="puntual" checked onchange="toggleModalidadReserva('puntual')" class="text-green-600 focus:ring-green-500">
+                                        <div class="ml-2">
+                                            <span class="block text-xs font-bold text-gray-800">📌 Puntual / Espontánea</span>
+                                            <span class="block text-[11px] text-gray-500">Reserva para un único día</span>
+                                        </div>
+                                    </label>
+
+                                    <label class="flex items-center p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors" id="label-modalidad-recurrente">
+                                        <input type="radio" name="tipo_frecuencia" value="recurrente" onchange="toggleModalidadReserva('recurrente')" class="text-green-600 focus:ring-green-500">
+                                        <div class="ml-2">
+                                            <span class="block text-xs font-bold text-gray-800">🔁 Recurrente</span>
+                                            <span class="block text-[11px] text-gray-500">Repetir semanalmente</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1" id="label-fecha-inicio">Fecha de Inicio *</label>
                                 <input type="date" id="fecha-reserva" required min="{{ date('Y-m-d') }}"
-                                    value="{{ date('Y-m-d') }}" onchange="cargarModulosParaSeleccion()"
+                                    value="{{ date('Y-m-d') }}" onchange="cargarModulosParaSeleccion(); actualizarPrevisualizacionRecurrente();"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500" />
+                            </div>
+
+                            <div id="contenedor-fecha-fin" class="hidden p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                                <label class="block text-sm font-medium text-purple-900 mb-1">Fecha de Término *</label>
+                                <input type="date" id="fecha-fin-reserva" min="{{ date('Y-m-d') }}" onchange="actualizarPrevisualizacionRecurrente()"
+                                    class="w-full px-3 py-2 border border-purple-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white" />
+                                <p class="text-xs text-purple-700 mt-2 font-medium" id="resumen-recurrencia-texto"></p>
                             </div>
 
                             <div class="grid grid-cols-2 gap-4">
@@ -275,11 +303,78 @@
 
     @push('scripts')
         <script>
+            function toggleModalidadReserva(modalidad) {
+                const contenedorFin = document.getElementById('contenedor-fecha-fin');
+                const labelInicio = document.getElementById('label-fecha-inicio');
+                const labelPuntual = document.getElementById('label-modalidad-puntual');
+                const labelRecurrente = document.getElementById('label-modalidad-recurrente');
+                const inputFechaInicio = document.getElementById('fecha-reserva');
+                const inputFechaFin = document.getElementById('fecha-fin-reserva');
+
+                if (modalidad === 'recurrente') {
+                    contenedorFin.classList.remove('hidden');
+                    labelInicio.textContent = 'Fecha de Inicio (Primera reserva) *';
+                    labelPuntual.classList.remove('bg-green-50', 'border-green-500');
+                    labelRecurrente.classList.add('bg-purple-50', 'border-purple-500');
+                    
+                    // Si no tiene fecha fin, establecer 16 semanas después o fin del semestre
+                    if (!inputFechaFin.value && inputFechaInicio.value) {
+                        const inicio = new Date(inputFechaInicio.value + 'T12:00:00');
+                        const fin = new Date(inicio);
+                        fin.setDate(fin.getDate() + (15 * 7)); // 16 semanas
+                        inputFechaFin.value = fin.toISOString().split('T')[0];
+                    }
+                    actualizarPrevisualizacionRecurrente();
+                } else {
+                    contenedorFin.classList.add('hidden');
+                    labelInicio.textContent = 'Fecha *';
+                    labelRecurrente.classList.remove('bg-purple-50', 'border-purple-500');
+                    labelPuntual.classList.add('bg-green-50', 'border-green-500');
+                }
+            }
+
+            function actualizarPrevisualizacionRecurrente() {
+                const tipoFrecuencia = document.querySelector('input[name="tipo_frecuencia"]:checked')?.value;
+                if (tipoFrecuencia !== 'recurrente') return;
+
+                const fInicioStr = document.getElementById('fecha-reserva').value;
+                const fFinStr = document.getElementById('fecha-fin-reserva').value;
+                const resumenEl = document.getElementById('resumen-recurrencia-texto');
+
+                if (!fInicioStr || !fFinStr) {
+                    resumenEl.textContent = '';
+                    return;
+                }
+
+                const inicio = new Date(fInicioStr + 'T12:00:00');
+                const fin = new Date(fFinStr + 'T12:00:00');
+
+                if (fin < inicio) {
+                    resumenEl.textContent = '⚠️ La fecha de término debe ser posterior a la fecha de inicio.';
+                    return;
+                }
+
+                const diasSemana = ['Domingos', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábados'];
+                const nombreDia = diasSemana[inicio.getDay()];
+
+                let count = 0;
+                let actual = new Date(inicio);
+                while (actual <= fin) {
+                    count++;
+                    actual.setDate(actual.getDate() + 7);
+                }
+
+                resumenEl.textContent = `🗓️ Se crearán ${count} reservas semanales (los días ${nombreDia}) desde ${fInicioStr} hasta ${fFinStr}.`;
+            }
+
             // Función específica para el mantenedor
             async function procesarCrearReserva(event) {
                 event.preventDefault();
 
                 const forzarActivo = document.getElementById('forzar-reserva')?.value === '1';
+                const tipoFrecuencia = document.querySelector('input[name="tipo_frecuencia"]:checked')?.value || 'puntual';
+                const fechaFin = tipoFrecuencia === 'recurrente' ? document.getElementById('fecha-fin-reserva').value : null;
+
                 const formData = {
                     nombre: document.getElementById('nombre-responsable').value.trim(),
                     run: document.getElementById('run-responsable').value.trim(),
@@ -289,6 +384,8 @@
                     id_asignatura: document.getElementById('id-asignatura').value || null,
                     espacio: document.getElementById('espacio-reserva').value,
                     fecha: document.getElementById('fecha-reserva').value,
+                    tipo_frecuencia: tipoFrecuencia,
+                    fecha_fin: fechaFin,
                     modulo_inicial: parseInt(document.getElementById('modulo-inicial').value),
                     modulo_final: parseInt(document.getElementById('modulo-final').value),
                     observaciones: document.getElementById('observaciones-reserva').value.trim(),
@@ -901,8 +998,13 @@
                     if (data.success && data.data) {
                         espacioSelect.innerHTML = '<option value="">Seleccione un espacio</option>' +
                             data.data.map(espacio => {
-                                const nombre = espacio.nombre_espacio || espacio.nombre_tipo_espacio || 'Sin nombre';
-                                return `<option value="${espacio.id_espacio}">${espacio.id_espacio} - ${nombre}</option>`;
+                                const nombre = espacio.nombre_espacio || espacio.nombre || 'Sin nombre';
+                                const pisoStr = espacio.piso ? ` (Piso ${espacio.piso})` : '';
+                                const cap = espacio.capacidad || espacio.capacidad_maxima;
+                                const capacidadStr = cap ? ` | Cap: ${cap} pers.` : '';
+                                const estadoTag = espacio.estado && espacio.estado !== 'Disponible' ? ` [${espacio.estado.toUpperCase()}]` : '';
+
+                                return `<option value="${espacio.id_espacio}">${espacio.id_espacio} - ${nombre}${pisoStr}${capacidadStr}${estadoTag}</option>`;
                             }).join('');
 
                         console.log('✅ Espacios cargados:', data.data.length);

@@ -25,17 +25,14 @@
                                 <div class="font-semibold text-gray-800">
                                     {{ $reserva->profesor->name ?? 'Profesor no encontrado' }}
                                 </div>
-                                <div class="text-xs text-gray-500">RUN: {{ $reserva->profesor->run_profesor ?? 'N/A' }}</div>
                                 <div class="text-xs text-blue-600">Tipo: Profesor</div>
                             @elseif($reserva->run_solicitante)
                                 <div class="font-semibold text-gray-800">
                                     {{ $reserva->solicitante->nombre ?? 'Solicitante no encontrado' }}
                                 </div>
-                                <div class="text-xs text-gray-500">RUN: {{ $reserva->solicitante->run_solicitante ?? 'N/A' }}</div>
                                 <div class="text-xs text-green-600">Tipo: Solicitante</div>
                             @else
                                 <div class="font-semibold text-gray-800">Usuario no identificado</div>
-                                <div class="text-xs text-gray-500">RUN: N/A</div>
                             @endif
                         </div>
                     </div>

@@ -246,7 +246,7 @@
                                                     13 => '20:10 - 21:00', 14 => '21:10 - 22:00', 15 => '22:10 - 23:00',
                                                 ];
                                                 $dias = ['lunes' => 'LU', 'martes' => 'MA', 'miercoles' => 'MI', 'jueves' => 'JU', 'viernes' => 'VI', 'sabado' => 'SA'];
-                                                $sabado_modulos = [1, 2, 3, 4, 5];
+                                                $sabado_modulos = [1, 2, 3, 4, 5, 6];
                                                 $modulos_diurnos = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
                                                 $modulos_vespertinos = [12, 13, 14, 15];
 
@@ -262,7 +262,7 @@
                                                     @foreach($dias as $dia => $prefijo)
                                                         @if($dia === 'sabado' && !in_array($numModulo, $sabado_modulos))
                                                             <td class="border border-gray-300 p-0 bg-gray-400"></td>
-                                                        @elseif($dia === 'sabado' && $numModulo > 5)
+                                                        @elseif($dia === 'sabado' && $numModulo > 6)
                                                             <td class="border border-gray-300 p-0 bg-gray-600">
                                                                 <div class="modulo-cell h-8 cursor-not-allowed" data-dia="{{ $dia }}" data-modulo="{{ $numModulo }}" data-id-modulo="{{ $prefijo }}.{{ $numModulo }}" data-disabled="true"></div>
                                                             </td>

@@ -132,6 +132,7 @@ class DetectarClasesNoRealizadas extends Command
             3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
             4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
             5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
         ],
     ];
 

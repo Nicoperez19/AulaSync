@@ -245,10 +245,6 @@
                         <span class="text-gray-900" id="edit-responsable-nombre">-</span>
                     </div>
                     <div>
-                        <span class="font-medium text-gray-600">RUN:</span>
-                        <span class="text-gray-900" id="edit-responsable-run">-</span>
-                    </div>
-                    <div>
                         <span class="font-medium text-gray-600">Tipo:</span>
                         <span class="text-gray-900" id="edit-responsable-tipo">-</span>
                     </div>
@@ -1118,7 +1114,7 @@ function verDetalleReserva(reservaId) {
             <div class="text-left space-y-3">
                 <div><strong>Estado:</strong> <span class="px-2 py-1 rounded text-sm ${reserva.estado === 'activa' ? 'bg-green-100 text-green-800' : reserva.estado === 'programada' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}">${reserva.estado === 'activa' ? 'Activa' : reserva.estado === 'programada' ? 'Programada' : 'Finalizada'}</span></div>
                 <div><strong>Espacio:</strong> ${reserva.id_espacio}</div>
-                <div><strong>Responsable:</strong> ${reserva.nombre_responsable || 'Sin nombre'} <br><small class="text-gray-600">${reserva.tipo_responsable || 'N/A'} - RUN: ${reserva.run_responsable}</small></div>
+                <div><strong>Responsable:</strong> ${reserva.nombre_responsable || 'Sin nombre'} <br><small class="text-gray-600">${reserva.tipo_responsable || 'N/A'}</small></div>
                 <div><strong>Fecha:</strong> ${formatearFecha(reserva.fecha)}</div>
                 <div><strong>Módulos y Horario:</strong> ${infoModulos}</div>
                 <div><strong>Observaciones:</strong> ${reserva.observaciones || 'Sin observaciones'}</div>
@@ -1322,6 +1318,13 @@ function mostrarReservasEnTabla(reservas) {
                     }">
                         ${reserva.estado === 'activa' ? 'Activa' : reserva.estado === 'programada' ? 'Programada' : 'Finalizada'}
                     </span>
+                    ${reserva.tipo_reserva === 'recurrente' || reserva.tipo_reserva === 'semestral'
+                        ? '<span class="px-2 py-0.5 inline-flex text-xs font-semibold rounded-full bg-purple-100 text-purple-800 border border-purple-300"><i class="fa-solid fa-rotate-right text-xs mr-1 mt-0.5"></i>Recurrente</span>'
+                        : (reserva.tipo_reserva === 'clase'
+                            ? '<span class="px-2 py-0.5 inline-flex text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800 border border-indigo-300"><i class="fa-solid fa-graduation-cap text-xs mr-1 mt-0.5"></i>Clase</span>'
+                            : '<span class="px-2 py-0.5 inline-flex text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300"><i class="fa-solid fa-calendar-day text-xs mr-1 mt-0.5"></i>Puntual</span>'
+                        )
+                    }
                     ${reserva.editada ? '<span class="px-2 py-0.5 inline-flex text-xs font-medium rounded-full bg-blue-100 text-blue-700"><i class="fa-solid fa-pen-to-square text-xs mr-1"></i>Editada</span>' : ''}
                 </div>
             </td>
@@ -1383,6 +1386,13 @@ function mostrarReservasEnTabla(reservas) {
                             }">
                                 ${reserva.estado === 'activa' ? 'Activa' : reserva.estado === 'programada' ? 'Programada' : 'Finalizada'}
                             </span>
+                            ${reserva.tipo_reserva === 'recurrente' || reserva.tipo_reserva === 'semestral'
+                                ? '<span class="px-2 py-0.5 inline-flex text-xs font-semibold rounded-full bg-purple-100 text-purple-800 border border-purple-300"><i class="fa-solid fa-rotate-right text-xs mr-1 mt-0.5"></i>Recurrente</span>'
+                                : (reserva.tipo_reserva === 'clase'
+                                    ? '<span class="px-2 py-0.5 inline-flex text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800 border border-indigo-300"><i class="fa-solid fa-graduation-cap text-xs mr-1 mt-0.5"></i>Clase</span>'
+                                    : '<span class="px-2 py-0.5 inline-flex text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300"><i class="fa-solid fa-calendar-day text-xs mr-1 mt-0.5"></i>Puntual</span>'
+                                )
+                            }
                             ${reserva.editada ? '<span class="px-2 py-1 inline-flex text-xs font-medium rounded-full bg-blue-100 text-blue-700"><i class="fa-solid fa-pen-to-square text-xs mr-1"></i>Editada</span>' : ''}
                         </div>
                     </div>
@@ -1394,7 +1404,7 @@ function mostrarReservasEnTabla(reservas) {
                     <i class="fa-solid fa-user text-gray-400 w-5 mt-0.5"></i>
                     <div class="ml-2">
                         <p class="font-medium text-gray-900">${reserva.nombre_responsable || 'Sin nombre'}</p>
-                        <p class="text-gray-500 text-xs">${reserva.tipo_responsable || 'N/A'} - RUN: ${reserva.run_responsable}</p>
+                        <p class="text-gray-500 text-xs">${reserva.tipo_responsable || 'N/A'}</p>
                     </div>
                 </div>
                 

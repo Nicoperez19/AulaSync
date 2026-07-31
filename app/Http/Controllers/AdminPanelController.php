@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ConfirmacionReserva;
 use App\Models\Reserva;
 use App\Models\Espacio;
 use App\Models\Usuario;
@@ -10,6 +11,7 @@ use App\Models\Solicitante;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 
 class AdminPanelController extends Controller
@@ -178,8 +180,19 @@ class AdminPanelController extends Controller
                 'estado' => 'activa',
                 'observaciones' => $data['observaciones'] ?? null,
                 'created_at' => now(),
-                'updated_at' => now(),
             ]);
+
+            // Enviar correo de confirmación de reserva si el destinatario tiene email registrado
+            try {
+                $emailDestinatario = $data['correo'] ?? null;
+                if ($emailDestinatario) {
+                    $reserva->load(['profesor', 'solicitante', 'espacio', 'asignatura']);
+                    Mail::to($emailDestinatario)->send(new ConfirmacionReserva($reserva));
+                    Log::info("📧 Correo de confirmación enviado en AdminPanel a: {$emailDestinatario}");
+                }
+            } catch (\Exception $eMail) {
+                Log::error('Error al enviar correo en AdminPanel: ' . $eMail->getMessage());
+            }
 
             // Si la reserva es para hoy y estamos en el horario, ocupar el espacio
             $fechaReserva = Carbon::parse($data['fecha']);

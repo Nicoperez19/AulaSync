@@ -2503,7 +2503,6 @@
                     htmlContent += `
                         <div class="p-4 mb-4 bg-red-50 border-l-4 border-red-500 rounded">
                             <p class="mb-2"><strong>${tipoUsuario}:</strong> ${ocupante.nombre}</p>
-                            <p class="mb-2"><strong>RUN:</strong> ${ocupante.run}</p>
                             <p class="mb-2"><strong>Hora de inicio:</strong> ${ocupante.hora_inicio}</p>
                             <p class="mb-2"><strong>Fecha:</strong> ${ocupante.fecha}</p>
                         </div>
@@ -4642,7 +4641,6 @@
                         </div>
                         <div>
                             <p class="font-semibold text-gray-800">${alumno.nombre}</p>
-                            <p class="text-sm text-gray-500">RUN: ${alumno.run}</p>
                         </div>
                     </div>
                     <div class="text-right">

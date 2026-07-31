@@ -40,10 +40,6 @@
                     </span>
                 </div>
                 <div>
-                    <span class="font-medium text-gray-700">RUN:</span>
-                    <span class="text-gray-900">{{ $reserva->run_usuario }}</span>
-                </div>
-                <div>
                     <span class="font-medium text-gray-700">Tipo:</span>
                     <span class="text-gray-900">{{ $reserva->profesor ? 'Profesor' : 'Solicitante externo' }}</span>
                 </div>

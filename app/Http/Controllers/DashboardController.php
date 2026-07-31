@@ -226,7 +226,7 @@ class DashboardController extends Controller
         foreach ($diasDisponibles as $dia) {
             $fechaDelDia = $fechasSemana[$dia];
             $ocupacion[$dia] = [];
-            $maxModulos = ($dia === 'sabado') ? 5 : 15;
+            $maxModulos = ($dia === 'sabado') ? 6 : 15;
 
             $reservasDia = $reservasSemana->get($fechaDelDia, collect());
 

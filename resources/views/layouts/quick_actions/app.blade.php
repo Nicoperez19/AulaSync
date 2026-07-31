@@ -162,7 +162,13 @@
                             data.espacios.forEach(espacio => {
                                 const option = document.createElement('option');
                                 option.value = espacio.codigo;
-                                option.textContent = `${espacio.codigo} - ${espacio.nombre} (Piso ${espacio.piso})`;
+                                const cap = espacio.capacidad || espacio.capacidad_maxima;
+                                const capStr = cap ? ` | Cap: ${cap} pers.` : '';
+                                const estadoTag = espacio.estado && espacio.estado !== 'Disponible' ? ` [${espacio.estado.toUpperCase()}]` : '';
+                                if (espacio.estado === 'Mantenimiento') {
+                                    option.disabled = true;
+                                }
+                                option.textContent = `${espacio.codigo} - ${espacio.nombre} (Piso ${espacio.piso})${capStr}${estadoTag}`;
                                 select.appendChild(option);
                             });
                             

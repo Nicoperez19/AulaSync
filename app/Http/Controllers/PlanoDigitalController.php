@@ -1392,6 +1392,7 @@ class PlanoDigitalController extends Controller
 
                     $nuevaReserva->observaciones = "Sesión iniciada forzosamente; el docente anterior ({$nombreAnterior} - {$runAnterior}) no liberó el espacio";
                     $nuevaReserva->save();
+                    $this->enviarCorreoReserva($nuevaReserva);
                     $nuevaReservaId = $nuevaReserva->id_reserva;
                 }
 
@@ -2407,6 +2408,7 @@ class PlanoDigitalController extends Controller
                     $asistentes->count()
                 );
                 $reservaNueva->save();
+                $this->enviarCorreoReserva($reservaNueva);
 
                 // Registrar asistencia de todos los escaneados (incluye responsable)
                 foreach ($asistentes as $asistente) {

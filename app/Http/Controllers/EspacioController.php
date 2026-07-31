@@ -49,13 +49,16 @@ class EspacioController extends Controller
         try {
             $validated = $this->validarDatosEspacio($request);
 
+            $capacidad = $validated['capacidad_maxima'] ?? $validated['puestos_disponibles'] ?? 0;
+
             $espacio = Espacio::create([
                 'id_espacio' => $validated['id_espacio'],
                 'nombre_espacio' => $validated['nombre_espacio'],
                 'piso_id' => $validated['piso_id'],
                 'tipo_espacio' => $validated['tipo_espacio'],
                 'estado' => $validated['estado'],
-                'puestos_disponibles' => $validated['puestos_disponibles'],
+                'puestos_disponibles' => $validated['puestos_disponibles'] ?? $capacidad,
+                'capacidad_maxima' => $capacidad,
             ]);
 
             return redirect()
@@ -107,12 +110,15 @@ class EspacioController extends Controller
 
             $validated = $this->validarDatosEspacio($request, $id_espacio);
 
+            $capacidad = $validated['capacidad_maxima'] ?? $validated['puestos_disponibles'] ?? $espacio->capacidad_maxima ?? 0;
+
             $espacio->update([
                 'nombre_espacio' => $validated['nombre_espacio'],
                 'piso_id' => $validated['piso_id'],
                 'tipo_espacio' => $validated['tipo_espacio'],
                 'estado' => $validated['estado'],
-                'puestos_disponibles' => $validated['puestos_disponibles'],
+                'puestos_disponibles' => $validated['puestos_disponibles'] ?? $capacidad,
+                'capacidad_maxima' => $capacidad,
             ]);
 
             return redirect()
@@ -202,6 +208,7 @@ class EspacioController extends Controller
             ],
             'estado' => ['required', Rule::in(['Disponible', 'Ocupado', 'Reservado', 'Mantenimiento'])],
             'puestos_disponibles' => ['nullable', 'integer', 'min:1'],
+            'capacidad_maxima' => ['nullable', 'integer', 'min:1'],
         ], [
             'id_espacio.unique' => 'El identificador del espacio ya existe en esta sede.',
             'id_espacio.required' => 'Debes ingresar el identificador del espacio.',

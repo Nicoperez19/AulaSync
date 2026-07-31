@@ -26,7 +26,7 @@
                     <!-- Días de la semana -->
                     @foreach(['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'] as $dia)
                         @php
-                            $isSaturdayNA = ($dia === 'sabado' && $moduloNum > 5);
+                            $isSaturdayNA = ($dia === 'sabado' && $moduloNum > 6);
                             $porcentaje = $isSaturdayNA ? null : ($ocupacion[$dia][$moduloNum] ?? 0);
                             
                             if ($porcentaje !== null) {
