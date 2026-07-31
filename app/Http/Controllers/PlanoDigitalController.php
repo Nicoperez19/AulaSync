@@ -962,6 +962,22 @@ class PlanoDigitalController extends Controller
                 ], 400);
             }
 
+            // Protección contra escaneo doble rápido (debounce de 45 segundos)
+            $segundosDesdeActivacion = $reservaActiva->updated_at ? $reservaActiva->updated_at->diffInSeconds(now()) : 999;
+            if ($tipoDesocupacion !== 'forzosa' && $segundosDesdeActivacion < 45) {
+                \Log::warning("Devolución bloqueada por escaneo doble rápido en devolverEspacio - Usuario: {$runUsuario}, Espacio: {$idEspacio} (hace {$segundosDesdeActivacion}s)");
+                return response()->json([
+                    'success' => true,
+                    'devolucion_bloqueada' => true,
+                    'mensaje' => 'La sala ya fue registrada exitosamente hace unos instantes. No se realizó la devolución por seguridad de doble escaneo.',
+                    'espacio' => [
+                        'id' => $espacio->id_espacio,
+                        'nombre' => $espacio->nombre_espacio,
+                        'estado' => $espacio->estado
+                    ]
+                ]);
+            }
+
             // NUEVA LÓGICA: Verificar si es un profesor devolviendo durante el primer módulo de una clase
             $devolucionPrimerModulo = false;
             $infoClase = null;
@@ -1487,8 +1503,26 @@ class PlanoDigitalController extends Controller
             $espacioDisponible = $espacio->estado === 'Disponible';
 
             if ($reservaActiva) {
-                // El usuario tiene una reserva activa en este espacio
+                // Protección contra escaneo doble rápido (debounce de 45 segundos)
+                $segundosDesdeActivacion = $reservaActiva->updated_at ? $reservaActiva->updated_at->diffInSeconds(now()) : 999;
 
+                if ($segundosDesdeActivacion < 45) {
+                    \Log::info("Escaneo doble prevenido en verificarEstadoEspacioYReserva para la reserva activa {$reservaActiva->id_reserva} (activada hace {$segundosDesdeActivacion}s)");
+                    return response()->json([
+                        'tipo' => 'activacion_reciente',
+                        'success' => true,
+                        'mensaje' => 'La sala ya fue registrada exitosamente. Por seguridad, espere 45 segundos antes de realizar la devolución.',
+                        'reserva' => [
+                            'id_reserva' => $reservaActiva->id_reserva,
+                            'hora_inicio' => $reservaActiva->hora,
+                            'fecha' => $reservaActiva->fecha_reserva,
+                            'espacio' => $espacio->nombre_espacio
+                        ],
+                        'espacio_disponible' => false
+                    ]);
+                }
+
+                // El usuario tiene una reserva activa en este espacio (más de 45 segundos)
                 return response()->json([
                     'tipo' => 'devolucion',
                     'mensaje' => 'Tienes una reserva activa en este espacio. ¿Deseas devolver las llaves?',

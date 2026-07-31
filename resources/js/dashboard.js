@@ -1,39 +1,65 @@
 let activeTabOcupacion = 'todos';
+let activeMainTab = 'ocupacion';
+let statusClasesChartInstance = null;
 window.carouselAutoplayInterval = null;
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar configuración del dashboard desde el DOM
     const configEl = document.getElementById('dashboard-config');
     if (configEl) {
         window.DashboardConfig = {
             horariosActualRoute: configEl.dataset.horariosActualRoute,
             ocupacionDatosRoute: configEl.dataset.ocupacionDatosRoute,
+            statusClasesRoute: configEl.dataset.statusClasesRoute,
             horariosModulos: JSON.parse(configEl.dataset.horariosModulos)
         };
     }
 
-    // Inicializar horarios de módulos desde la configuración
     if (window.DashboardConfig) {
         window.horariosModulos = window.DashboardConfig.horariosModulos;
     }
 
-    // Cargar datos por primera vez
     cargarHorarioActual();
     cargarOcupacionGrid(activeTabOcupacion);
-    
-    // Función para actualizar todos los datos de forma sincronizada
-    function actualizarTodoElDashboard() {
+    cargarStatusClases('semana');
+
+    setInterval(function() {
         cargarHorarioActual();
         cargarOcupacionGrid(activeTabOcupacion, true);
-    }
-    
-    // Actualizar automáticamente todo junto cada 3 segundos en segundo plano
-    setInterval(actualizarTodoElDashboard, 3000);
+    }, 3000);
 
-    // Reloj digital y módulo actual
     actualizarModalReloj();
     setInterval(actualizarModalReloj, 1000);
 });
+
+function switchMainDashboardTab(tabName) {
+    if (activeMainTab === tabName) return;
+
+    document.querySelectorAll('.main-dashboard-tab-btn').forEach(btn => {
+        btn.classList.remove('bg-blue-600', 'text-white', 'shadow-xs');
+        btn.classList.add('bg-slate-50', 'text-slate-600', 'hover:bg-slate-100');
+    });
+
+    const activeBtn = document.getElementById(`main-tab-btn-${tabName}`);
+    if (activeBtn) {
+        activeBtn.classList.remove('bg-slate-50', 'text-slate-600', 'hover:bg-slate-100');
+        activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-xs');
+    }
+
+    document.querySelectorAll('.main-dashboard-tab-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+
+    const targetContent = document.getElementById(`main-tab-${tabName}-content`);
+    if (targetContent) {
+        targetContent.classList.remove('hidden');
+    }
+
+    activeMainTab = tabName;
+
+    if (tabName === 'status-clases') {
+        cargarStatusClases('semana');
+    }
+}
 
 function startCarouselAutoplay() {
     stopCarouselAutoplay();
@@ -98,7 +124,6 @@ function updateCarouselState(container, current, total) {
         slides.style.transform = `translateX(-${current * 100}%)`;
     }
     
-    // Actualizar pastillas indicadoras de paginación
     for (let i = 0; i < total; i++) {
         const ind = document.getElementById(`indicator-${i}`);
         if (ind) {
@@ -170,7 +195,18 @@ function cargarHorarioActual() {
             return response.text();
         })
         .then(html => {
+            const existingContainer = document.getElementById('carousel-container');
+            const currentSlide = existingContainer ? parseInt(existingContainer.getAttribute('data-current-slide') || '0') : 0;
+
             container.innerHTML = html;
+
+            const newContainer = document.getElementById('carousel-container');
+            if (newContainer) {
+                const total = parseInt(newContainer.getAttribute('data-total-slides') || '1');
+                const targetSlide = currentSlide < total ? currentSlide : 0;
+                newContainer.setAttribute('data-current-slide', targetSlide);
+                updateCarouselState(newContainer, targetSlide, total);
+            }
             startCarouselAutoplay();
         })
         .catch(error => {
@@ -195,7 +231,6 @@ function cargarHorarioActual() {
 function cambiarTabOcupacion(tipo) {
     if (activeTabOcupacion === tipo) return;
     
-    // Cambiar clases activas/inactivas de los botones de pestañas
     document.querySelectorAll('.tab-ocupacion-btn').forEach(btn => {
         btn.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
         btn.classList.add('bg-gray-50', 'text-gray-600', 'hover:bg-gray-100');
@@ -215,7 +250,6 @@ function cargarOcupacionGrid(tipo, silencioso = false) {
     const container = document.getElementById('ocupacion-grid-container');
     if (!container) return;
     
-    // Mostrar spinner de carga solo si no es actualización silenciosa
     if (!silencioso) {
         container.innerHTML = `
             <div class="flex flex-col items-center justify-center py-20 text-gray-400">
@@ -252,9 +286,117 @@ function cargarOcupacionGrid(tipo, silencioso = false) {
         });
 }
 
-// Exponer las funciones que se invocan desde eventos HTML onclick en Blade
+function cargarStatusClases(rango = 'semana', fechaInicio = '', fechaFin = '') {
+    const container = document.getElementById('status-clases-container');
+    if (!container) return;
+
+    let route = window.DashboardConfig ? window.DashboardConfig.statusClasesRoute : '/dashboard/status-clases';
+    let url = `${route}?rango=${rango}`;
+    if (fechaInicio && fechaFin) {
+        url += `&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
+    }
+
+    fetch(url)
+        .then(response => response.text())
+        .then(html => {
+            container.innerHTML = html;
+            setTimeout(initStatusClasesChart, 50);
+        })
+        .catch(err => {
+            console.error('Error cargando status clases:', err);
+            container.innerHTML = `<div class="text-center py-8 text-rose-500">Error al cargar el status de clases.</div>`;
+        });
+}
+
+function filtrarStatusClases(rango) {
+    cargarStatusClases(rango);
+}
+
+function filtrarStatusClasesPersonalizado() {
+    const inicio = document.getElementById('status-fecha-inicio')?.value;
+    const fin = document.getElementById('status-fecha-fin')?.value;
+    if (inicio && fin) {
+        cargarStatusClases('personalizado', inicio, fin);
+    }
+}
+
+function initStatusClasesChart() {
+    const canvas = document.getElementById('chart-status-clases-canvas');
+    if (!canvas || !window.Chart) return;
+
+    const realizadas = parseInt(canvas.dataset.realizadas || '0');
+    const recuperadas = parseInt(canvas.dataset.recuperadas || '0');
+    const noRegistradas = parseInt(canvas.dataset.noRegistradas || '0');
+    const pctImpartidas = parseFloat(canvas.dataset.pctImpartidas || '0');
+    const pctNoRegistradas = parseFloat(canvas.dataset.pctNoRegistradas || '0');
+    const totalClases = parseInt(canvas.dataset.totalClases || '0');
+
+    const impartidasTotal = realizadas + recuperadas;
+
+    if (statusClasesChartInstance) {
+        statusClasesChartInstance.destroy();
+    }
+
+    const ctx = canvas.getContext('2d');
+
+    const chartData = totalClases === 0 ? [1] : [impartidasTotal, noRegistradas];
+    const chartColors = totalClases === 0 ? ['#e2e8f0'] : ['#10b981', '#ef4444'];
+    const chartHoverColors = totalClases === 0 ? ['#cbd5e1'] : ['#059669', '#dc2626'];
+
+    statusClasesChartInstance = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: totalClases === 0 ? ['Sin Clases en Período'] : ['Clases Impartidas / Efectivas', 'No Registradas / No Realizadas'],
+            datasets: [{
+                data: chartData,
+                backgroundColor: chartColors,
+                hoverBackgroundColor: chartHoverColors,
+                borderWidth: 2,
+                borderColor: '#ffffff',
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '76%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    enabled: totalClases > 0,
+                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                    titleFont: { size: 13, weight: 'bold' },
+                    bodyFont: { size: 12 },
+                    padding: 12,
+                    cornerRadius: 12,
+                    callbacks: {
+                        label: function(context) {
+                            const index = context.dataIndex;
+                            if (index === 0) {
+                                return [
+                                    ` Realizadas Normales: ${realizadas} clases`,
+                                    ` Recuperadas: ${recuperadas} clases`,
+                                    ` Total Impartidas: ${impartidasTotal} (${pctImpartidas}%)`
+                                ];
+                            } else {
+                                return [
+                                    ` Sin Registro / Ausentes: ${noRegistradas} clases (${pctNoRegistradas}%)`
+                                ];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
 window.prevSlide = prevSlide;
 window.nextSlide = nextSlide;
 window.goToSlide = goToSlide;
 window.cambiarTabOcupacion = cambiarTabOcupacion;
+window.switchMainDashboardTab = switchMainDashboardTab;
+window.filtrarStatusClases = filtrarStatusClases;
+window.filtrarStatusClasesPersonalizado = filtrarStatusClasesPersonalizado;
 window.cargarHorarioActual = cargarHorarioActual;
+window.cargarOcupacionGrid = cargarOcupacionGrid;
+window.cargarStatusClases = cargarStatusClases;

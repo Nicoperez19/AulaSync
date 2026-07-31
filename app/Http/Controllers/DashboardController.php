@@ -146,25 +146,32 @@ class DashboardController extends Controller
 
     public function ocupacionDatosAjax(Request $request)
     {
-        $tipoFilter = $request->query('tipo', 'todos');
+        $tipoFilter = strtolower($request->query('tipo', 'todos'));
 
         $espaciosQuery = Espacio::query();
 
         if ($tipoFilter === 'laboratorios') {
-            $espaciosQuery->where('tipo_espacio', 'like', '%laboratorio%');
-        } elseif ($tipoFilter === 'aula') {
+            $espaciosQuery->where(function ($q) {
+                $q->where('tipo_espacio', 'like', '%laboratorio%')
+                  ->orWhere('tipo_espacio', 'like', '%lab%');
+            });
+        } elseif ($tipoFilter === 'salas_clases' || $tipoFilter === 'aula' || $tipoFilter === 'clases') {
             $espaciosQuery->where(function ($q) {
                 $q->where('tipo_espacio', 'like', '%clase%')
-                  ->orWhere('tipo_espacio', 'like', '%aula%');
+                  ->orWhere('tipo_espacio', 'like', '%aula%')
+                  ->orWhere('tipo_espacio', 'like', '%taller%');
             });
-        } elseif ($tipoFilter === 'salas_estudio') {
-            $espaciosQuery->where('tipo_espacio', 'like', '%estudio%');
+        } elseif ($tipoFilter === 'salas_estudio' || $tipoFilter === 'estudio') {
+            $espaciosQuery->where(function ($q) {
+                $q->where('tipo_espacio', 'like', '%estudio%')
+                  ->orWhere('tipo_espacio', 'like', '%biblioteca%');
+            });
         }
 
         $espaciosIds = $espaciosQuery->pluck('id_espacio');
         $totalEspacios = $espaciosIds->count();
 
-        // 2. Definir días y sus fechas para la semana actual
+        // Días y fechas para la semana actual (Lunes a Sábado)
         $diasDisponibles = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
         $lunesDate = now()->startOfWeek();
 
@@ -177,11 +184,10 @@ class DashboardController extends Controller
             'sabado' => $lunesDate->copy()->addDay(5)->format('Y-m-d'),
         ];
 
-        $periodo = SemesterHelper::getCurrentPeriod();
         $fechaInicioSemana = $fechasSemana['lunes'];
         $fechaFinSemana = $fechasSemana['sabado'];
 
-        // Pre-cargar reservas activas/asistidas en la semana (incluyendo espontáneas) - Ocupación REAL por escaneos
+        // Pre-cargar reservas de uso real en la semana (activas/finalizadas con asistentes)
         $reservasSemana = Reserva::whereBetween('fecha_reserva', [$fechaInicioSemana, $fechaFinSemana])
             ->whereIn('id_espacio', $espaciosIds)
             ->whereIn('estado', ['activa', 'finalizada'])
@@ -197,7 +203,7 @@ class DashboardController extends Controller
                     : \Carbon\Carbon::parse($fecha)->format('Y-m-d');
             });
 
-        // Determinar el día de hoy y el módulo actual para el cálculo de estado en vivo
+        // Determinar día y módulo actual en vivo
         $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
         $diaHoyNormalizado = ModulosHelper::normalizarDia($diaActual);
         $horaAhora = date('H:i:s');
@@ -214,23 +220,15 @@ class DashboardController extends Controller
             }
         }
 
-        // 3. Calcular la ocupación por día y módulo
+        // Calcular ocupación real (Espacios Usados / Espacios Totales) por día y módulo
         $ocupacion = [];
 
         foreach ($diasDisponibles as $dia) {
             $fechaDelDia = $fechasSemana[$dia];
             $ocupacion[$dia] = [];
-
             $maxModulos = ($dia === 'sabado') ? 5 : 15;
 
-            $prefijoDia = [
-                'lunes' => 'LU',
-                'martes' => 'MA',
-                'miercoles' => 'MI',
-                'jueves' => 'JU',
-                'viernes' => 'VI',
-                'sabado' => 'SA',
-            ][$dia];
+            $reservasDia = $reservasSemana->get($fechaDelDia, collect());
 
             for ($moduloNum = 1; $moduloNum <= 15; ++$moduloNum) {
                 if ($moduloNum > $maxModulos) {
@@ -238,37 +236,12 @@ class DashboardController extends Controller
                     continue;
                 }
 
-                $fechaDelDia = $fechasSemana[$dia];
-                $fechaHoy = now()->format('Y-m-d');
+                $horarioModulo = ModulosHelper::getHorarioModulo($dia, $moduloNum);
+                $espaciosUsados = [];
 
-                // Verificar si el módulo y día aún no han ocurrido (futuro)
-                $isFuture = false;
-                if ($fechaDelDia > $fechaHoy) {
-                    $isFuture = true;
-                } elseif ($fechaDelDia === $fechaHoy) {
-                    $horarioModulo = ModulosHelper::getHorarioModulo($dia, $moduloNum);
-                    if ($horarioModulo) {
-                        $horaAhora = now()->format('H:i:s');
-                        if ($horaAhora < $horarioModulo['inicio']) {
-                            $isFuture = true;
-                        }
-                    }
-                }
-
-                if ($isFuture) {
-                    $ocupacion[$dia][$moduloNum] = 0;
-                    continue;
-                }
-
-                $idModulo = $prefijoDia . '.' . $moduloNum;
-
-                // 1. Espacios ocupados por reservas de este día (escaneos/uso real)
-                $reservasDia = $reservasSemana->get($fechaDelDia, collect());
-                $espaciosReservas = [];
-
+                // Revisar reservas en este día que coincidan con el módulo
                 foreach ($reservasDia as $reserva) {
                     $overlap = false;
-
                     $modInicio = $reserva->modulo_inicio ? (int) $reserva->modulo_inicio : null;
                     $modFin = $reserva->modulo_fin ? (int) $reserva->modulo_fin : null;
 
@@ -277,20 +250,14 @@ class DashboardController extends Controller
                             $overlap = true;
                         }
                     } else {
-                        // Reserva directa o espontánea - verificar traslape de horario
-                        $horarioModulo = ModulosHelper::getHorarioModulo($dia, $moduloNum);
                         if ($horarioModulo && $reserva->hora) {
                             $resInicio = $reserva->hora;
-                            // Si la reserva está activa (hora_salida es null), estimar el término en 1 hora (límite por defecto)
                             $resFin = $reserva->hora_salida ?: \Carbon\Carbon::parse($reserva->hora)->addHour()->format('H:i:s');
-
                             $modInicioHorario = $horarioModulo['inicio'];
                             $modFinHorario = $horarioModulo['fin'];
 
-                            // Verificar si los rangos se traslapan
                             $overlapStart = max($resInicio, $modInicioHorario);
                             $overlapEnd = min($resFin, $modFinHorario);
-
                             if ($overlapStart < $overlapEnd) {
                                 $overlap = true;
                             }
@@ -298,27 +265,24 @@ class DashboardController extends Controller
                     }
 
                     if ($overlap) {
-                        $espaciosReservas[] = $reserva->id_espacio;
+                        $espaciosUsados[] = $reserva->id_espacio;
                     }
                 }
 
-                // 2. Si es el día y módulo actual en vivo, incluir también los espacios que están actualmente marcados como 'Ocupado'
+                // Para el módulo actual en vivo, incluir también los espacios marcados como 'Ocupado'
                 if ($dia === $diaHoyNormalizado && $moduloNum === $moduloActualNum) {
-                    $espaciosEstadoOcupado = \App\Models\Espacio::whereIn('id_espacio', $espaciosIds)
+                    $espaciosEstadoOcupado = Espacio::whereIn('id_espacio', $espaciosIds)
                         ->where('estado', 'Ocupado')
                         ->pluck('id_espacio')
                         ->toArray();
-                    $todosOcupados = array_unique(array_merge($espaciosReservas, $espaciosEstadoOcupado));
-                } else {
-                    $todosOcupados = array_unique($espaciosReservas);
+                    $espaciosUsados = array_merge($espaciosUsados, $espaciosEstadoOcupado);
                 }
 
-                $totalOcupados = count($todosOcupados);
+                $totalUsados = count(array_unique($espaciosUsados));
 
-                // Calcular el porcentaje de ocupación
-                $porcentaje = $totalEspacios > 0 ? round(($totalOcupados / $totalEspacios) * 100) : 0;
-
-                $ocupacion[$dia][$moduloNum] = $porcentaje;
+                // Porcentaje de uso real = (Espacios Usados / Espacios Totales) * 100
+                $porcentaje = $totalEspacios > 0 ? round(($totalUsados / $totalEspacios) * 100) : 0;
+                $ocupacion[$dia][$moduloNum] = min(100, max(0, $porcentaje));
             }
         }
 
@@ -326,5 +290,90 @@ class DashboardController extends Controller
             'ocupacion' => $ocupacion,
             'tipoFilter' => $tipoFilter,
         ])->render();
+    }
+
+    /**
+     * Endpoint AJAX para el Estado de Clases (Gráfico 2D y Métricas de Asistencia por Fechas)
+     */
+    public function statusClasesAjax(Request $request)
+    {
+        $rango = $request->query('rango', 'semana');
+        $fechaInicio = $request->query('fecha_inicio');
+        $fechaFin = $request->query('fecha_fin');
+
+        if (!$fechaInicio || !$fechaFin) {
+            if ($rango === 'hoy') {
+                $fechaInicio = now()->format('Y-m-d');
+                $fechaFin = now()->format('Y-m-d');
+            } elseif ($rango === 'mes') {
+                $fechaInicio = now()->startOfMonth()->format('Y-m-d');
+                $fechaFin = now()->endOfMonth()->format('Y-m-d');
+            } else { // 'semana' por defecto
+                $fechaInicio = now()->startOfWeek()->format('Y-m-d');
+                $fechaFin = now()->endOfWeek()->format('Y-m-d');
+            }
+        }
+
+        // 1. Clases Realizadas (Reservas activas/finalizadas normales)
+        $realizadas = Reserva::whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
+            ->whereIn('estado', ['activa', 'finalizada'])
+            ->where(function ($q) {
+                $q->whereNull('hubo_asistentes')
+                  ->orWhere('hubo_asistentes', true);
+            })
+            ->where('tipo_reserva', 'not like', '%recupera%')
+            ->count();
+
+        // 2. Clases Recuperadas (Reservas tipo recuperación o clases no realizadas recuperadas)
+        $recuperadasReservas = Reserva::whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
+            ->whereIn('estado', ['activa', 'finalizada'])
+            ->where('tipo_reserva', 'like', '%recupera%')
+            ->count();
+
+        $recuperadasRegistros = \App\Models\ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicio, $fechaFin])
+            ->where('estado', 'recuperada')
+            ->count();
+
+        $recuperadas = $recuperadasReservas + $recuperadasRegistros;
+
+        // 3. Clases No Registradas / No Realizadas
+        $noRealizadasClases = \App\Models\ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicio, $fechaFin])
+            ->whereIn('estado', ['no_realizada', 'justificado'])
+            ->count();
+
+        $reservasSinAsistencia = Reserva::whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
+            ->where('hubo_asistentes', false)
+            ->count();
+
+        $noRegistradas = max($noRealizadasClases, $reservasSinAsistencia);
+
+        $totalImpartidas = $realizadas + $recuperadas;
+        $totalClases = $totalImpartidas + $noRegistradas;
+
+        $pctImpartidas = $totalClases > 0 ? round(($totalImpartidas / $totalClases) * 100, 1) : 0;
+        $pctRealizadas = $totalClases > 0 ? round(($realizadas / $totalClases) * 100, 1) : 0;
+        $pctRecuperadas = $totalClases > 0 ? round(($recuperadas / $totalClases) * 100, 1) : 0;
+        $pctNoRegistradas = $totalClases > 0 ? round(($noRegistradas / $totalClases) * 100, 1) : 0;
+
+        $data = [
+            'rango' => $rango,
+            'fecha_inicio' => $fechaInicio,
+            'fecha_fin' => $fechaFin,
+            'total_clases' => $totalClases,
+            'total_impartidas' => $totalImpartidas,
+            'realizadas' => $realizadas,
+            'recuperadas' => $recuperadas,
+            'no_registradas' => $noRegistradas,
+            'pct_impartidas' => $pctImpartidas,
+            'pct_realizadas' => $pctRealizadas,
+            'pct_recuperadas' => $pctRecuperadas,
+            'pct_no_registradas' => $pctNoRegistradas,
+        ];
+
+        if ($request->wantsJson() || $request->has('json')) {
+            return response()->json($data);
+        }
+
+        return view('partials.dashboard.status_clases_chart', $data)->render();
     }
 }

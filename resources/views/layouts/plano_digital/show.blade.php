@@ -183,16 +183,6 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
-                                <span class="font-bold text-gray-800">RUN:</span>
-                                <span id="run-escaneado" class="ml-auto text-gray-700">--</span>
-                            </div>
-
-                            <div class="flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-600" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                </svg>
                                 <span class="font-bold text-gray-800">Usuario:</span>
                                 <span id="nombre-usuario" class="ml-auto text-gray-700">--</span>
                             </div>
@@ -845,8 +835,7 @@
                 <div class="text-center">
                     <h3 class="text-lg font-medium text-gray-900">Usuario No Registrado</h3>
                     <p class="mt-2 text-sm text-gray-600">
-                        El RUN <span id="run-solicitante-no-registrado" class="font-semibold"></span> no está registrado
-                        como profesor.
+                        El usuario no está registrado como profesor.
                         Complete los siguientes datos para continuar con la solicitud como solicitante.
                     </p>
                 </div>
@@ -1673,16 +1662,18 @@
             }
         }
 
+        let lastScannedBuffer = null;
+        let lastScannedTime = 0;
         let lastBufferLength = 0;
         let processingTimeout = null;
         let errorTimeout = null;
 
-    async function handleScan(event) {
-                    // Solo procesar cuando se presiona Enter
-        if (event.key !== 'Enter') {
-            // Acumular caracteres en el buffer
-            if (event.key.length === 1) {
-                bufferQR += event.key;
+        async function handleScan(event) {
+            // Solo procesar cuando se presiona Enter
+            if (event.key !== 'Enter') {
+                // Acumular caracteres en el buffer
+                if (event.key.length === 1) {
+                    bufferQR += event.key;
 
                     // Detectar cuando el escaneo se completó (buffer dejó de crecer)
                     if (bufferQR.length > lastBufferLength) {
@@ -1693,7 +1684,7 @@
                             clearTimeout(processingTimeout);
                         }
 
-                        // Procesar automáticamente después de 100ms sin nuevos caracteres (Optimización para lectura rápida)
+                        // Procesar automáticamente después de 100ms sin nuevos caracteres
                         processingTimeout = setTimeout(async () => {
                             await procesarQRCompleto();
                         }, 100);
@@ -1704,33 +1695,38 @@
                         }
                         errorTimeout = setTimeout(() => {
                             if (bufferQR && bufferQR.trim() !== '' && bufferQR.length > 10) {
-                                                        // Timeout de seguridad: Lectura errónea detectada
-                        limpiarEstadoLectura('Timeout de lectura - QR inválido');
-                        // Restaurar autofocus del qr-input después de timeout de lectura
-                        setTimeout(() => {
-                            if (qrInputManager) {
-                                qrInputManager.setActiveInput('main');
+                                limpiarEstadoLectura('Timeout de lectura - QR inválido');
+                                setTimeout(() => {
+                                    if (qrInputManager) {
+                                        qrInputManager.setActiveInput('main');
+                                    }
+                                }, 100);
                             }
-                        }, 100);
-                    }
-                }, 60000);
+                        }, 60000);
                     }
                 }
                 return;
             }
 
-                    // Validar que hay contenido en el buffer antes de procesar
-        if (!bufferQR || bufferQR.trim() === '') {
-            // Buffer vacío al presionar Enter - ignorando
-            return;
-        }
+            // Validar que hay contenido en el buffer antes de procesar
+            if (!bufferQR || bufferQR.trim() === '') {
+                return;
+            }
 
-        await procesarQRCompleto();
+            await procesarQRCompleto();
         }
 
         async function procesarQRCompleto() {
             // Validar que el buffer no esté vacío
             if (!bufferQR || bufferQR.trim() === '') {
+                return;
+            }
+
+            // Debounce cliente: ignorar escaneo idéntico dentro de 3 segundos (evita lecturas dobles de escáneres físicos)
+            const now = Date.now();
+            if (lastScannedBuffer === bufferQR.trim() && (now - lastScannedTime) < 3000) {
+                console.log('Escaneo idéntico ignorado por debounce de escáner (3s):', bufferQR);
+                bufferQR = '';
                 return;
             }
 
@@ -1746,6 +1742,8 @@
                 return;
             }
 
+            lastScannedBuffer = bufferQR.trim();
+            lastScannedTime = now;
             isProcessingQR = true;
 
             try {
@@ -1861,7 +1859,8 @@
                     if (result.tipo_usuario === 'solicitante_nuevo') {
                         // Flujo de registro de nuevo solicitante
                         runSolicitantePendiente = run;
-                        document.getElementById('run-solicitante-no-registrado').textContent = run;
+                        const runElem = document.getElementById('run-solicitante-no-registrado');
+                        if (runElem) runElem.textContent = run;
                         
                         window.dispatchEvent(new CustomEvent('close-modal', { detail: 'data-space' }));
                         
@@ -3178,23 +3177,6 @@
             // Guardar en el state como fuente de verdad principal
             state.currentOccupantRun = runParaDesocupar || null;
 
-            // También intentar actualizar el input como fallback (compatible con código antiguo)
-            const runInput = document.querySelector('#run-ocupante-modal');
-            if (runInput) {
-                runInput.value = runParaDesocupar || 'unknown';
-                console.log('🔍 Input RUN actualizado:', runInput.value);
-            } else {
-                // Crear el input si no existe
-                const newInput = document.createElement('input');
-                newInput.type = 'hidden';
-                newInput.id = 'run-ocupante-modal';
-                newInput.value = runParaDesocupar || 'unknown';
-                if (elements.ocupanteInfo) {
-                    elements.ocupanteInfo.appendChild(newInput);
-                    console.log('🔍 Input RUN creado:', newInput.value);
-                }
-            }
-
             // Mostrar vista de pasos (SIEMPRE)
             mostrarVistaPasos(elements, data, indicator);
 
@@ -3643,7 +3625,6 @@
                         <div class="flex items-center">
                             <i class="mr-3 text-green-500 fas fa-user-tie"></i>
                             <div>
-                                <input type="hidden" id="run-ocupante-modal" value="${data.run_profesor || data.run_solicitante || ''}">
                                 <div class="font-medium text-gray-800">${data.nombre || 'No especificado'}</div>
                                 <div class="text-sm text-gray-600">Profesor a cargo</div>
                             </div>
@@ -3691,20 +3672,12 @@
             if (elements.ocupanteContainer && elements.ocupanteInfo) {
                 // Crear HTML optimizado usando template literal
                 const html = `
-                    <input type="hidden" id="run-ocupante-modal" value="${data.run_solicitante || ''}">
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="flex items-center">
                             <i class="mr-3 text-green-500 fas fa-user"></i>
                             <div>
                                 <div class="font-medium text-gray-800">Solicitante</div>
                                 <div class="text-sm text-gray-600">${data.nombre || 'No especificado'}</div>
-                            </div>
-                        </div>
-                        <div class="flex items-center">
-                            <i class="mr-3 text-blue-500 fas fa-id-card"></i>
-                            <div>
-                                <div class="font-medium text-gray-800">RUN</div>
-                                <div class="text-sm text-gray-600">${data.run_solicitante || 'No especificado'}</div>
                             </div>
                         </div>
                         <div class="flex items-center">
@@ -3781,7 +3754,6 @@
                 // elements.ocupanteContainer.style.display = 'block';
 
                 elements.ocupanteInfo.innerHTML = `
-                    <input type="hidden" id="run-ocupante-modal" value="${data.run_profesor || data.run_solicitante || ''}">
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="flex items-center">
                             <i class="mr-3 text-gray-500 fas fa-user"></i>
@@ -3876,21 +3848,8 @@
 
             // Si el espacio está ocupado, manejar RUN para desocupación
             if (espacioOcupado) {
-                // Crear o actualizar el input RUN para desocupación
-                const runInput = document.querySelector('#run-ocupante-modal');
                 const runValue = data.run_profesor || data.run_solicitante || `FORCE_${indicator.id}`;
-                
-                if (runInput) {
-                    runInput.value = runValue;
-                } else {
-                    const newInput = document.createElement('input');
-                    newInput.type = 'hidden';
-                    newInput.id = 'run-ocupante-modal';
-                    newInput.value = runValue;
-                    if (elements.ocupanteInfo) {
-                        elements.ocupanteInfo.appendChild(newInput);
-                    }
-                }
+                state.currentOccupantRun = runValue;
                 console.log('🔍 RUN para desocupación configurado:', runValue);
                 
                 // Mostrar información del último ocupante
@@ -3901,7 +3860,6 @@
                     // NO mostrar - ahora se usa la cronología
                     // elements.ocupanteContainer.style.display = 'block';
                     const infoHtml = `
-                        <input type="hidden" id="run-ocupante-modal" value="${runValue}">
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div class="flex items-center">
                                 <i class="mr-3 text-orange-500 fas fa-exclamation-triangle"></i>
@@ -4018,7 +3976,6 @@
                     // elements.ocupanteContainer.style.display = 'block';
                     // Reutilizar la plantilla de "ocupado sin info" para mostrar detalles mínimos
                     elements.ocupanteInfo.innerHTML = `
-                        <input type="hidden" id="run-ocupante-modal" value="${data.run_profesor || data.run_solicitante || ''}">
                         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <div class="flex items-center">
                                 <i class="mr-3 text-gray-500 fas fa-user"></i>
@@ -4027,15 +3984,6 @@
                                     <div class="text-sm text-gray-600">Último registro</div>
                                 </div>
                             </div>
-                            ${data.run_solicitante ? `
-                            <div class="flex items-center">
-                                <i class="mr-3 text-blue-500 fas fa-id-card"></i>
-                                <div>
-                                    <div class="font-medium text-gray-800">${data.run_solicitante}</div>
-                                    <div class="text-sm text-gray-600">RUN</div>
-                                </div>
-                            </div>
-                            ` : ''}
                             ${data.hora_inicio ? `
                             <div class="flex items-center">
                                 <i class="mr-3 text-gray-500 fas fa-clock"></i>

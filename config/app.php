@@ -16,7 +16,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'AulaSync'),
+    'name' => env('APP_NAME', 'SIA (Sistema de Información de Aulas)'),
 
     /*
     |--------------------------------------------------------------------------

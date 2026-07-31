@@ -7,7 +7,7 @@
                 </div>
                 <div>
                     <h2 class="text-2xl font-bold leading-tight">Dashboard</h2>
-                    <p class="text-sm text-gray-500">Resumen y reportes rápidos del sistema</p>
+                    <p class="text-sm text-gray-500">Resumen y reportes integrados del sistema</p>
                 </div>
             </div>
         </div>
@@ -26,7 +26,7 @@
     </div>
 
     <div class="w-full px-8 py-6">
-        <!-- Sección: Porcentaje de Ocupación -->
+        <!-- Sección: Porcentaje de Ocupación Semanal -->
         <div class="mb-8">
             <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
                 <i class="fas fa-percent mr-2 text-blue-600"></i>
@@ -53,19 +53,19 @@
                     </div>
                     
                     <!-- Leyenda (Niveles de Ocupación) -->
-                    <div class="flex flex-wrap gap-3.5 items-center text-sm bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 shadow-xs shrink-0">
+                    <div class="flex flex-wrap gap-2.5 items-center text-xs md:text-sm bg-slate-50 border border-slate-200/80 rounded-xl px-4 py-2 shadow-xs shrink-0">
                         <span class="font-extrabold text-slate-500 mr-1">Ocupación:</span>
-                        <span class="flex items-center gap-2">
-                            <span class="inline-block w-3 h-3 rounded-full bg-emerald-500"></span>
-                            <span class="text-emerald-700 font-bold">0% - 35%</span>
+                        <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold">
+                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            <span>0% - 35%</span>
                         </span>
-                        <span class="flex items-center gap-2">
-                            <span class="inline-block w-3 h-3 rounded-full bg-amber-500"></span>
-                            <span class="text-amber-700 font-bold">35% - 75%</span>
+                        <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-100 border border-amber-200 text-amber-900 font-bold">
+                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                            <span>35% - 75%</span>
                         </span>
-                        <span class="flex items-center gap-2">
-                            <span class="inline-block w-3 h-3 rounded-full bg-red-500"></span>
-                            <span class="text-red-700 font-bold">75% - 100%</span>
+                        <span class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-100 border border-red-200 text-red-800 font-bold">
+                            <span class="inline-block w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                            <span>75% - 100%</span>
                         </span>
                     </div>
                 </div>
@@ -80,86 +80,103 @@
             </div>
         </div>
 
-        <!-- Sección de Reportes -->
-        @can('reportes')
-        <div class="mb-8">
-            <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
-                <i class="fas fa-chart-bar mr-2 text-blue-600"></i>
-                Reportes de Uso de Espacios
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <!-- Accesos registrados (QR) -->
-                <a href="{{ route('reportes.accesos') }}"
-                   class="flex items-center justify-between p-6 bg-white rounded-2xl border border-gray-100 shadow-md hover:shadow-lg transition duration-200 group">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition duration-200">
-                            <i class="fas fa-qrcode text-xl"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-gray-800 text-lg">Accesos registrados (QR)</h4>
-                            <p class="text-sm text-gray-500">Revisa los registros de acceso escaneados por código QR</p>
+        <!-- Sección de 2 Columnas: Estado de Clases a la Izquierda | Reportes a la Derecha -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+            <!-- Widget Izquierda: Estado de Clases (Control de Asistencia) -->
+            <div class="lg:col-span-7 flex flex-col">
+                <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+                    <i class="fas fa-chart-pie mr-2 text-blue-600"></i>
+                    Estado de Clases (Control de Asistencia)
+                </h3>
+                <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-6 flex-1">
+                    <div id="status-clases-container">
+                        <div class="flex flex-col items-center justify-center py-16 text-slate-400">
+                            <div class="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                            <p class="text-sm">Cargando estado de clases...</p>
                         </div>
                     </div>
-                    <div class="text-gray-400 group-hover:text-purple-600 transition duration-200 mr-2">
-                        <i class="fas fa-chevron-right text-lg"></i>
-                    </div>
-                </a>    
-            
-            <!-- Control de Clases -->
-                <a href="{{ route('clases-no-realizadas.index') }}"
-                   class="flex items-center justify-between p-6 bg-white rounded-2xl border border-gray-100 shadow-md hover:shadow-lg transition duration-200 group">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition duration-200">
-                            <i class="fas fa-clipboard-check text-xl"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-gray-800 text-lg">Control de Clases</h4>
-                            <p class="text-sm text-gray-500">Monitorea la asistencia, ausencias y recuperación de clases</p>
-                        </div>
-                    </div>
-                    <div class="text-gray-400 group-hover:text-blue-600 transition duration-200 mr-2">
-                        <i class="fas fa-chevron-right text-lg"></i>
-                    </div>
-                </a>
-
-                <!-- Salas de Estudio -->
-                <a href="{{ route('reportes.salas-estudio') }}"
-                   class="flex items-center justify-between p-6 bg-white rounded-2xl border border-gray-100 shadow-md hover:shadow-lg transition duration-200 group">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-green-600 group-hover:bg-green-600 group-hover:text-white transition duration-200">
-                            <i class="fas fa-book text-xl"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-gray-800 text-lg">Salas de Estudio</h4>
-                            <p class="text-sm text-gray-500">Analiza el uso y reservas de las salas de estudio</p>
-                        </div>
-                    </div>
-                    <div class="text-gray-400 group-hover:text-green-600 transition duration-200 mr-2">
-                        <i class="fas fa-chevron-right text-lg"></i>
-                    </div>
-                </a>
-                
-                <!-- Uso del Auditorio -->
-                <a href="{{ route('reportes.uso-auditorio') }}"
-                   class="flex items-center justify-between p-6 bg-white rounded-2xl border border-gray-100 shadow-md hover:shadow-lg transition duration-200 group">
-                    <div class="flex items-center gap-4">
-                        <div class="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition duration-200">
-                            <i class="fas fa-landmark text-xl"></i>
-                        </div>
-                        <div>
-                            <h4 class="font-bold text-gray-800 text-lg">Uso del Auditorio</h4>
-                            <p class="text-sm text-gray-500">Consulta el historial y estadísticas de uso del auditorio</p>
-                        </div>
-                    </div>
-                    <div class="text-gray-400 group-hover:text-amber-600 transition duration-200 mr-2">
-                        <i class="fas fa-chevron-right text-lg"></i>
-                    </div>
-                </a>
-
-                
+                </div>
             </div>
+
+            <!-- Widget Derecha: Reportes de Uso de Espacios -->
+            @can('reportes')
+            <div class="lg:col-span-5 flex flex-col">
+                <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+                    <i class="fas fa-chart-bar mr-2 text-blue-600"></i>
+                    Reportes de Uso de Espacios
+                </h3>
+                <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-6 flex-1 flex flex-col justify-between gap-4">
+                    <!-- Accesos registrados (QR) -->
+                    <a href="{{ route('reportes.accesos') }}"
+                       class="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 shadow-2xs transition duration-200 group">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center text-purple-600 group-hover:bg-purple-600 group-hover:text-white transition duration-200 shrink-0">
+                                <i class="fas fa-qrcode text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-sm">Accesos registrados (QR)</h4>
+                                <p class="text-xs text-gray-500">Registros de acceso escaneados por código QR</p>
+                            </div>
+                        </div>
+                        <div class="text-gray-400 group-hover:text-purple-600 transition duration-200 ml-2">
+                            <i class="fas fa-chevron-right text-sm"></i>
+                        </div>
+                    </a>    
+
+                    <!-- Control de Clases -->
+                    <a href="{{ route('clases-no-realizadas.index') }}"
+                       class="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 shadow-2xs transition duration-200 group">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition duration-200 shrink-0">
+                                <i class="fas fa-clipboard-check text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-sm">Control de Clases</h4>
+                                <p class="text-xs text-gray-500">Asistencia, ausencias y recuperación de clases</p>
+                            </div>
+                        </div>
+                        <div class="text-gray-400 group-hover:text-blue-600 transition duration-200 ml-2">
+                            <i class="fas fa-chevron-right text-sm"></i>
+                        </div>
+                    </a>
+
+                    <!-- Salas de Estudio -->
+                    <a href="{{ route('reportes.salas-estudio') }}"
+                       class="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 shadow-2xs transition duration-200 group">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition duration-200 shrink-0">
+                                <i class="fas fa-book text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-sm">Salas de Estudio</h4>
+                                <p class="text-xs text-gray-500">Uso y reservas de las salas de estudio</p>
+                            </div>
+                        </div>
+                        <div class="text-gray-400 group-hover:text-emerald-600 transition duration-200 ml-2">
+                            <i class="fas fa-chevron-right text-sm"></i>
+                        </div>
+                    </a>
+
+                    <!-- Uso del Auditorio -->
+                    <a href="{{ route('reportes.uso-auditorio') }}"
+                       class="flex items-center justify-between p-4 bg-slate-50 hover:bg-slate-100/80 rounded-xl border border-slate-200/80 shadow-2xs transition duration-200 group">
+                        <div class="flex items-center gap-3.5">
+                            <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center text-amber-600 group-hover:bg-amber-600 group-hover:text-white transition duration-200 shrink-0">
+                                <i class="fas fa-landmark text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-sm">Uso del Auditorio</h4>
+                                <p class="text-xs text-gray-500">Historial y estadísticas de uso del auditorio</p>
+                            </div>
+                        </div>
+                        <div class="text-gray-400 group-hover:text-amber-600 transition duration-200 ml-2">
+                            <i class="fas fa-chevron-right text-sm"></i>
+                        </div>
+                    </a>
+                </div>
+            </div>
+            @endcan
         </div>
-        @endcan
 
         <!-- Sección: Horarios del día actual - Módulos actuales -->
         <div class="mb-8">
@@ -179,10 +196,13 @@
         </div>
     </div>
 
+    <!-- Script de Chart.js -->
+    
     <!-- Configuración para el script JS externo -->
     <div id="dashboard-config"
          data-horarios-actual-route="{{ route('dashboard.horarios-actual') }}"
          data-ocupacion-datos-route="{{ route('dashboard.ocupacion-datos') }}"
+         data-status-clases-route="{{ route('dashboard.status-clases') }}"
          data-horarios-modulos="{{ json_encode(\App\Helpers\ModulosHelper::getHorariosModulos()) }}"
          class="hidden">
     </div>

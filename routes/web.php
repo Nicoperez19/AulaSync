@@ -119,6 +119,7 @@ Route::middleware(['auth', 'tenant.init', 'permission:dashboard', 'extend.execut
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/horarios-actual', [DashboardController::class, 'horariosActualAjax'])->name('dashboard.horarios-actual');
     Route::get('/dashboard/ocupacion-datos', [DashboardController::class, 'ocupacionDatosAjax'])->name('dashboard.ocupacion-datos');
+    Route::get('/dashboard/status-clases', [DashboardController::class, 'statusClasesAjax'])->name('dashboard.status-clases');
 });
 
 Route::middleware(['auth', 'tenant.init', 'role:Administrador'])->group(function () {
