@@ -46,3 +46,4 @@ Thumbs.db
 
 # Metadata files (generated locally, should not be tracked)
 manual-meta.json
+/public/manual-meta.json

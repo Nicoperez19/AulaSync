@@ -76,7 +76,7 @@
                     {{ __('Perfil') }}
                 </x-dropdown-link>
 
-                @if(Auth::user()->is_superuser)
+                @if(Auth::user()->is_superuser || Auth::user()->hasRole('Administrador'))
                     <x-dropdown-link :href="route('sedes.selection')">
                         <x-heroicon-s-office-building class="w-4 h-4 mr-2 inline" aria-hidden="true" />
                         {{ __('Cambiar Sede') }}
@@ -311,7 +311,7 @@
 
         // Mostrar notificaci贸n del navegador si est谩 permitido
         if (Notification.permission === 'granted') {
-            new Notification('SIA | Sistema de Informaci髇 de Aulas - Notificaci贸n', {
+            new Notification('SIA | Sistema de Informaci贸n de Aulas - Notificaci贸n', {
                 body: mensaje,
                 icon: '/favicon.ico',
                 tag: 'modulo-notification'

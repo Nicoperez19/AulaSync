@@ -93,9 +93,9 @@
                         <div class="space-y-2">
                             <x-form.label for="celular_add" value="Celular" />
                             <x-form.input id="celular_add" name="celular" type="text"
-                                class="w-full @error('celular') border-red-500 @enderror" maxlength="9"
-                                pattern="9[0-9]{8}" oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                                placeholder="Ej: 912345678" value="{{ old('celular', '') }}" />
+                                class="w-full @error('celular') border-red-500 @enderror" maxlength="15"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                                placeholder="Ej: 412345313 o 912345678" value="{{ old('celular', '') }}" />
                             @error('celular')
                                 <p class="text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -104,10 +104,8 @@
 
                     <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div class="space-y-2">
-                            <x-form.label for="password_add" value="Contraseña *" />
-                            <x-form.input id="password_add" name="password" type="password"
-                                class="w-full @error('password') border-red-500 @enderror" required minlength="8"
-                                placeholder="Mínimo 8 caracteres" />
+                            <x-form.label for="password_add" value="Contraseña (Opcional)" />
+                            <x-form.input id="password_add" name="password" type="password" class="w-full @error('password') border-red-500 @enderror" placeholder="Por defecto: RUN del usuario" />
                             @error('password')
                                 <p class="text-sm text-red-600">{{ $message }}</p>
                             @enderror

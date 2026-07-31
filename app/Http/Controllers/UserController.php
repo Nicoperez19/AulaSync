@@ -41,9 +41,9 @@ class UserController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|email|max:255|unique:users',
                 'run' => 'required|integer|digits_between:7,8|unique:users',
-                'celular' => 'nullable|string|regex:/^9\d{8}$/',
-                'password' => 'required|string|min:8',
-                'roles' => 'required|array',
+                'celular' => 'nullable|string|max:15',
+                'password' => 'nullable|string|min:6',
+                'roles' => 'nullable|array',
                 'roles.*' => 'exists:roles,id',
                 'permissions' => 'nullable|array',
                 'permissions.*' => 'exists:permissions,id',
@@ -54,6 +54,14 @@ class UserController extends Controller
                 'is_active' => 'boolean',
                 'is_superuser' => 'boolean',
                 'id_sede' => 'nullable|exists:sedes,id_sede'
+            ], [
+                'run.required' => 'El RUN es obligatorio.',
+                'run.unique' => 'El RUN ya está registrado en el sistema.',
+                'run.digits_between' => 'El RUN debe tener entre 7 y 8 dígitos (sin dígito verificador).',
+                'email.required' => 'El correo es obligatorio.',
+                'email.unique' => 'El correo electrónico ya está registrado.',
+                'celular.max' => 'El teléfono/celular no debe superar los 15 dígitos.',
+                'password.min' => 'La contraseña debe tener al menos 6 caracteres.',
             ]);
 
             // Verificar si el RUN ya existe
@@ -72,7 +80,7 @@ class UserController extends Controller
                 'email' => $validated['email'],
                 'run' => $validated['run'],
                 'celular' => $validated['celular'] ?? null,
-                'password' => Hash::make($validated['password']),
+                'password' => Hash::make(!empty($validated['password']) ? $validated['password'] : (string)$validated['run']),
                 'year_of_entry' => $validated['year_of_entry'] ?? null,
                 'year_of_graduation' => $validated['year_of_graduation'] ?? null,
                 'career' => $validated['career'] ?? null,
@@ -84,7 +92,7 @@ class UserController extends Controller
 
 
 
-            $user->roles()->sync($validated['roles']);
+            if (!empty($validated['roles'])) { $user->roles()->sync($validated['roles']); } else { $usuarioRole = Role::where('name', 'Usuario')->first(); if ($usuarioRole) { $user->assignRole($usuarioRole); } }
             if (!empty($validated['permissions'])) {
                 $user->permissions()->sync($validated['permissions']);
             }
@@ -150,10 +158,10 @@ class UserController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => ['required', 'string', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users', 'email')->ignore($user->run, 'run')],
                 'run' => ['required', 'integer', 'digits_between:7,8', \Illuminate\Validation\Rule::unique('users', 'run')->ignore($user->run, 'run')],
-                'celular' => 'nullable|string|regex:/^9\d{8}$/',
+                'celular' => 'nullable|string|max:15',
                 'password' => 'nullable|string|min:8',
                 'wizard_password' => $isMarkingAsSuperuser ? 'required|string' : 'nullable|string',
-                'roles' => 'required|array',
+                'roles' => 'nullable|array',
                 'roles.*' => 'exists:roles,id',
                 'permissions' => 'nullable|array',
                 'permissions.*' => 'exists:permissions,id',
@@ -219,10 +227,10 @@ class UserController extends Controller
             ]);
 
             if (!empty($validated['password'])) {
-                $user->update(['password' => Hash::make($validated['password'])]);
+                $user->update(['password' => Hash::make(!empty($validated['password']) ? $validated['password'] : (string)$validated['run'])]);
             }
 
-            $user->roles()->sync($validated['roles']);
+            if (!empty($validated['roles'])) { $user->roles()->sync($validated['roles']); } else { $usuarioRole = Role::where('name', 'Usuario')->first(); if ($usuarioRole) { $user->assignRole($usuarioRole); } }
             if (!empty($validated['permissions'])) {
                 $user->permissions()->sync($validated['permissions']);
             }
