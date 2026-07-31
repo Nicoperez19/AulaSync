@@ -817,7 +817,7 @@
                         <div class="flex items-center gap-2 mt-1">
                             <span class="text-lg truncate text-white/80">Usuario No Registrado</span>
                             <span class="text-lg text-white/80">•</span>
-                            <span class="text-lg font-semibold text-white/80">2025</span>
+                            <span class="text-lg font-semibold text-white/80">{{ date('Y') }}</span>
                         </div>
                     </div>
                 </div>
@@ -1272,8 +1272,11 @@
             }
 
             // Limpiar datos
-            document.getElementById('run-escaneado').textContent = '--';
-            document.getElementById('nombre-usuario').textContent = '--';
+            const runEsc = document.getElementById('run-escaneado');
+            if (runEsc) runEsc.textContent = '--';
+
+            const nomUser = document.getElementById('nombre-usuario');
+            if (nomUser) nomUser.textContent = '--';
 
             // Restaurar parpadeo del estado QR
             const qrStatus = getQrStatus();
@@ -1916,7 +1919,8 @@
                     const resultado = await crearReservaAutomaticaProfesor(usuarioEscaneado, espacio);
                     if (resultado && resultado.success) {
                         // Mostrar mensaje de proceso
-                        document.getElementById('qr-status').innerHTML = 'Reserva creada automáticamente...';
+                        const qrStatusEl = document.getElementById('qr-status');
+                        if (qrStatusEl) qrStatusEl.innerHTML = 'Reserva creada automáticamente...';
 
                         // Actualizar indicador en el mapa
                         const block = state.indicators.find(b => b.id === espacio);
@@ -1939,8 +1943,10 @@
                         });
 
                         // Mostrar mensaje de reserva creada
-                        document.getElementById('qr-status').innerHTML = 'Reserva creada';
-                        document.getElementById('qr-status').classList.remove('parpadeo');
+                        if (qrStatusEl) {
+                            qrStatusEl.innerHTML = 'Reserva creada';
+                            qrStatusEl.classList.remove('parpadeo');
+                        }
 
                         // Limpiar el estado después de un delay para el próximo escaneo
                         setTimeout(() => {
@@ -2216,7 +2222,8 @@
                 });
 
                 // Mostrar mensaje de éxito
-                document.getElementById('qr-status').innerHTML = 'Devolución exitosa';
+                const statusElem = document.getElementById('qr-status');
+                if (statusElem) statusElem.innerHTML = 'Devolución exitosa';
 
                 // Limpiar solo el estado de lectura después de un delay
                 setTimeout(() => {

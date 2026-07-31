@@ -987,9 +987,13 @@ class PlanoDigitalController extends Controller
                 $horaActual = now()->format('H:i:s');
                 $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
 
-                // Buscar planificaciones del profesor en este espacio para hoy
+                // Buscar planificaciones del profesor en este espacio para hoy en el período actual
+                $periodoActual = SemesterHelper::getCurrentPeriod();
                 $planificaciones = Planificacion_Asignatura::with(['asignatura', 'modulo'])
                     ->where('id_espacio', $idEspacio)
+                    ->whereHas('horario', function ($query) use ($periodoActual) {
+                        $query->where('periodo', $periodoActual);
+                    })
                     ->whereHas('asignatura', function ($query) use ($reservaActiva) {
                         $query->where('run_profesor', $reservaActiva->run_profesor);
                     })
@@ -1305,7 +1309,11 @@ class PlanoDigitalController extends Controller
                 $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
                 $horaActualStr = $horaActual->format('H:i:s');
 
+                $periodoActual = SemesterHelper::getCurrentPeriod();
                 $planificacion = Planificacion_Asignatura::where('id_espacio', $idEspacio)
+                    ->whereHas('horario', function ($q) use ($periodoActual) {
+                        $q->where('periodo', $periodoActual);
+                    })
                     ->whereHas('asignatura', function ($q) use ($runNuevo) {
                         $q->where('run_profesor', $runNuevo);
                     })
@@ -1662,8 +1670,12 @@ class PlanoDigitalController extends Controller
                 $horaActualStr = $horaActual->format('H:i:s');
                 $runUsuarioLimpio = str_replace(['.', '-', ' '], '', $runUsuario);
 
+                $periodoActual = SemesterHelper::getCurrentPeriod();
                 $claseProgramadaOtro = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo'])
                     ->where('id_espacio', $idEspacio)
+                    ->whereHas('horario', function ($query) use ($periodoActual) {
+                        $query->where('periodo', $periodoActual);
+                    })
                     ->whereHas('asignatura', function ($query) use ($runUsuarioLimpio) {
                         $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') != ?", [$runUsuarioLimpio]);
                     })
@@ -1679,6 +1691,9 @@ class PlanoDigitalController extends Controller
                     $horaLimiteAnticipada = $horaActual->copy()->addMinutes(15)->format('H:i:s');
                     $claseProgramadaOtro = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo'])
                         ->where('id_espacio', $idEspacio)
+                        ->whereHas('horario', function ($query) use ($periodoActual) {
+                            $query->where('periodo', $periodoActual);
+                        })
                         ->whereHas('asignatura', function ($query) use ($runUsuarioLimpio) {
                             $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') != ?", [$runUsuarioLimpio]);
                         })
@@ -1791,7 +1806,11 @@ class PlanoDigitalController extends Controller
                 }
 
                 // 2. Buscar si el usuario que escanea tiene planificación en este bloque (margen de 15 min)
+                $periodoScanner = SemesterHelper::getCurrentPeriod();
                 $planificacionScanner = Planificacion_Asignatura::whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [str_replace(['-', ' '], '', $idEspacio)])
+                    ->whereHas('horario', function ($q) use ($periodoScanner) {
+                        $q->where('periodo', $periodoScanner);
+                    })
                     ->whereHas('asignatura', function ($q) use ($runUsuario) {
                         $q->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runUsuario]);
                     })

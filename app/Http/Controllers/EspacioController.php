@@ -407,9 +407,13 @@ class EspacioController extends Controller
             ]);
         }
 
-        // Obtener todas las planificaciones para este espacio en este día
+        // Obtener todas las planificaciones para este espacio en este día en el período actual
+        $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
         $planificaciones = Planificacion_Asignatura::where('id_espacio', $espacioId)
             ->where('id_modulo', 'like', $codigoDia . '.%')
+            ->whereHas('horario', function ($q) use ($periodoActual) {
+                $q->where('periodo', $periodoActual);
+            })
             ->pluck('id_modulo')
             ->toArray();
 
@@ -741,9 +745,13 @@ class EspacioController extends Controller
      */
     private function obtenerInfoProximaClase($moduloCodigo, $espacioId)
     {
+        $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
         $planificacion = Planificacion_Asignatura::with(['asignatura', 'horario.profesor', 'modulo'])
             ->where('id_espacio', $espacioId)
             ->where('id_modulo', $moduloCodigo)
+            ->whereHas('horario', function ($q) use ($periodoActual) {
+                $q->where('periodo', $periodoActual);
+            })
             ->first();
 
         if ($planificacion) {
