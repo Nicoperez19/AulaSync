@@ -570,7 +570,7 @@ class ClasesNoRealizadasTable extends Component
         $horaActual = Carbon::now()->format('H:i:s');
 
         // Si es fin de semana, no hay módulos
-        if ($diaActual === 'domingo' || $diaActual === 'sabado') {
+        if ($diaActual === 'domingo') {
             return null;
         }
 

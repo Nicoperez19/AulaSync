@@ -173,6 +173,7 @@ class AdminPanelController extends Controller
             $reserva = Reserva::create([
                 'run_profesor' => $data['tipo'] === 'profesor' ? $data['run'] : null,
                 'run_solicitante' => $data['tipo'] === 'solicitante' ? $data['run'] : null,
+                'creado_por' => auth()->user() ? auth()->user()->name . ' (' . (auth()->user()->run ?? 'Admin') . ')' : 'Sistema',
                 'codigo_espacio' => $data['espacio'],
                 'fecha' => $data['fecha'],
                 'modulo_inicial' => $data['modulo_inicial'],

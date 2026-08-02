@@ -77,7 +77,8 @@ class ReservasController extends Controller
             'id_asignatura' => $request->input('id_asignatura'),
             'modulos' => $modulos,
             'estado' => 'activa',
-            'tipo_reserva' => 'directa', // Marcar como directa para diferenciarla de espontanea/clase
+            'tipo_reserva' => 'directa',
+            'creado_por' => auth()->user() ? auth()->user()->name . ' (' . (auth()->user()->run ?? 'Admin') . ')' : 'Sistema', // Marcar como directa para diferenciarla de espontanea/clase
         ];
 
         // Mapear run a la columna adecuada

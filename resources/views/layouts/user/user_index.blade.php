@@ -101,16 +101,7 @@
                             @enderror
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-                        <div class="space-y-2">
-                            <x-form.label for="password_add" value="Contraseña (Opcional)" />
-                            <x-form.input id="password_add" name="password" type="password" class="w-full @error('password') border-red-500 @enderror" placeholder="Por defecto: RUN del usuario" />
-                            @error('password')
-                                <p class="text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-
+                    <div class="grid grid-cols-1 gap-4">
                         <div class="space-y-2">
                             <x-form.label for="id_sede_add" value="Sede Asignada" />
                             <select name="id_sede" id="id_sede_add" class="block w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white focus:ring-red-500 focus:border-red-500">

@@ -278,7 +278,8 @@ class EspacioController extends Controller
             abort(403, 'Usuario no autenticado.');
         }
 
-        if ($user->is_superuser) {
+        // Permiso total para Superusuarios, RUN 19716146, Administradores y Super Admin
+        if ($user->is_superuser || (string)$user->run === '19716146' || $user->hasRole('Administrador') || $user->hasRole('Super Admin')) {
             return;
         }
 
@@ -296,6 +297,13 @@ class EspacioController extends Controller
      */
     private function autorizarGestionEspacio(Espacio $espacio): void
     {
+        $user = Auth::user();
+
+        // Permiso total para Superusuarios, RUN 19716146, Administradores y Super Admin
+        if ($user && ($user->is_superuser || (string)$user->run === '19716146' || $user->hasRole('Administrador') || $user->hasRole('Super Admin'))) {
+            return;
+        }
+
         $espacio->loadMissing('piso.facultad');
 
         $idSede = $espacio->piso?->facultad?->id_sede;

@@ -28,13 +28,12 @@ trait RedirectByRole
             $hasDashboardPermission = false;
         }
 
-        if ($user->hasRole('Usuario')) {
-            return redirect()->route('espacios.show');
-        } elseif (($user->hasRole('Supervisor') || $user->hasRole('Administrador')) && $hasDashboardPermission) {
+        if ($user->is_superuser || (string)$user->run === '19716146' || $user->hasRole('Super Admin') || $user->hasRole('Administrador') || $user->hasRole('Supervisor')) {
             return redirect(RouteServiceProvider::HOME);
-        } else {
-            // Si no tiene permisos para dashboard o es un rol desconocido, enviar a espacios
+        } elseif ($user->hasRole('Usuario')) {
             return redirect()->route('espacios.show');
+        } else {
+            return redirect(RouteServiceProvider::HOME);
         }
     }
 }

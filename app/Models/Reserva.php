@@ -26,6 +26,7 @@ class Reserva extends Model
         'id_asignatura',
         'run_profesor',
         'run_solicitante',
+        'creado_por',
         'modulos',
         'tipo_reserva',
         'estado',

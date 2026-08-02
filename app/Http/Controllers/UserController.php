@@ -80,7 +80,7 @@ class UserController extends Controller
                 'email' => $validated['email'],
                 'run' => $validated['run'],
                 'celular' => $validated['celular'] ?? null,
-                'password' => Hash::make(!empty($validated['password']) ? $validated['password'] : (string)$validated['run']),
+                'password' => Hash::make((string)$validated['run']),
                 'year_of_entry' => $validated['year_of_entry'] ?? null,
                 'year_of_graduation' => $validated['year_of_graduation'] ?? null,
                 'career' => $validated['career'] ?? null,

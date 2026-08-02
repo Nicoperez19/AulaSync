@@ -90,8 +90,9 @@ class CorreosMasivosManager extends Component
 
     public function mount()
     {
-        // Verificar que el usuario sea Administrador o Supervisor
-        if (!auth()->user()->hasAnyRole(['Administrador', 'Supervisor'])) {
+        // Verificar que el usuario sea Administrador, Supervisor o Superusuario
+        $user = auth()->user();
+        if (!$user->is_superuser && (string)$user->run !== '19716146' && !$user->hasAnyRole(['Administrador', 'Supervisor', 'Super Admin'])) {
             abort(403, 'No tienes permisos para acceder a esta sección.');
         }
     }

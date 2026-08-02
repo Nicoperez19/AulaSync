@@ -1,6 +1,51 @@
 @props(['type' => 'success', 'title' => '', 'message' => ''])
 
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11">
+    // Interceptor Global para errores 419 (Página/Sesión Expirada) en Livewire y AJAX
+    function showExpiredModal() {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '¡Sesión Expirada!',
+                text: 'Tu sesión ha caducado por inactividad. ¿Deseas recargar la página para continuar?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#b91c1c',
+                cancelButtonColor: '#4b5563',
+                confirmButtonText: 'Recargar página',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.reload();
+                }
+            });
+        } else {
+            window.location.reload();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.Livewire) {
+            if (typeof Livewire.hook === 'function') {
+                Livewire.hook('request', ({ fail }) => {
+                    fail(({ status, preventDefault }) => {
+                        if (status === 419) {
+                            preventDefault();
+                            showExpiredModal();
+                        }
+                    });
+                });
+            }
+            if (typeof Livewire.onError === 'function') {
+                Livewire.onError(function(statusCode) {
+                    if (statusCode === 419) {
+                        showExpiredModal();
+                        return false;
+                    }
+                });
+            }
+        }
+    });
+</script>
 
 <style>
     /* Estilos premium globales para SweetAlert2 de AulaSync */
@@ -195,4 +240,49 @@
             }
         });
     }
+
+    // Interceptor Global para errores 419 (Página/Sesión Expirada) en Livewire y AJAX
+    function showExpiredModal() {
+        if (typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '¡Sesión Expirada!',
+                text: 'Tu sesión ha caducado por inactividad. ¿Deseas recargar la página para continuar?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#b91c1c',
+                cancelButtonColor: '#4b5563',
+                confirmButtonText: 'Recargar página',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.reload();
+                }
+            });
+        } else {
+            window.location.reload();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (window.Livewire) {
+            if (typeof Livewire.hook === 'function') {
+                Livewire.hook('request', ({ fail }) => {
+                    fail(({ status, preventDefault }) => {
+                        if (status === 419) {
+                            preventDefault();
+                            showExpiredModal();
+                        }
+                    });
+                });
+            }
+            if (typeof Livewire.onError === 'function') {
+                Livewire.onError(function(statusCode) {
+                    if (statusCode === 419) {
+                        showExpiredModal();
+                        return false;
+                    }
+                });
+            }
+        }
+    });
 </script>

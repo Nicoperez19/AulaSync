@@ -142,6 +142,14 @@ class ModulosActualesTable extends Component
             14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
             15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
         ],
+        'sabado' => [
+            1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
+            2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
+            3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
+            4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
+            5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
+            6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+        ],
     ];
 
     public function mount()
@@ -347,6 +355,8 @@ class ModulosActualesTable extends Component
             'miercoles' => 'miercoles',
             'jueves' => 'jueves',
             'viernes' => 'viernes',
+            'sábado' => 'sabado',
+            'sabado' => 'sabado',
         ];
 
         $diaKey = $mapaDias[$diaKey] ?? $diaKey;
@@ -490,7 +500,7 @@ class ModulosActualesTable extends Component
         $horaActual = Carbon::now()->format('H:i:s');
 
         // Si es fin de semana, no hay módulos
-        if ($diaActual === 'domingo' || $diaActual === 'sabado') {
+        if ($diaActual === 'domingo') {
             return null;
         }
 
@@ -548,6 +558,8 @@ class ModulosActualesTable extends Component
             'miercoles' => 'miercoles',
             'jueves' => 'jueves',
             'viernes' => 'viernes',
+            'sábado' => 'sabado',
+            'sabado' => 'sabado',
         ];
 
         $diaKey = $mapaDias[$diaKey] ?? $diaKey;
@@ -679,6 +691,9 @@ class ModulosActualesTable extends Component
                         break;
                     case 'viernes':
                         $prefijoDia = 'VI';
+                        break;
+                    case 'sabado':
+                        $prefijoDia = 'SA';
                         break;
                 }
 

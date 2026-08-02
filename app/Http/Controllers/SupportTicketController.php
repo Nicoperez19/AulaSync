@@ -17,19 +17,23 @@ class SupportTicketController extends Controller
 
     private function isStaff(User $user): bool
     {
-        return $user->hasRole('Técnico')
+        return $user->is_superuser
+            || (string)$user->run === '19716146'
+            || $user->hasRole('Técnico')
             || $user->hasRole('Administrador')
+            || $user->hasRole('Super Admin')
             || $user->hasRole('Supervisor');
     }
 
     /**
      * Aplica scope de sede al query.
-     * - Superusuario: ve todos los tickets del sistema.
+     * - Superusuario / Admin Máster: ve todos los tickets del sistema.
      * - Resto: sólo los de su sede.
      */
     private function scopeBySede($query, User $user): void
     {
-        if (!$user->is_superuser && $user->id_sede) {
+        $isGlobalAdmin = $user->is_superuser || (string)$user->run === '19716146' || $user->hasRole('Super Admin') || $user->hasRole('Administrador');
+        if (!$isGlobalAdmin && $user->id_sede) {
             $query->where('id_sede', $user->id_sede);
         }
     }

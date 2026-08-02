@@ -102,8 +102,8 @@ class QrPersonalController extends Controller
             ], 200);
         }
 
-        // Criterio mínimo: permitir solo Administrador (ajustable si tu negocio requiere otros roles).
-        $puedeLiberar = method_exists($user, 'hasRole') ? $user->hasRole('Administrador') : false;
+        // Permitir a Administrador, Super Admin o Superusuario
+        $puedeLiberar = $user->is_superuser || (string)$user->run === '19716146' || (method_exists($user, 'hasRole') && ($user->hasRole('Administrador') || $user->hasRole('Super Admin')));
 
         return response()->json([
             'success' => true,
@@ -127,7 +127,8 @@ class QrPersonalController extends Controller
         $idEspacio = strtoupper(str_replace("'", '-', $request->input('id_espacio')));
 
         $admin = $this->findUserByRun($runAdministrador);
-        if (!$admin || !(method_exists($admin, 'hasRole') && $admin->hasRole('Administrador'))) {
+        $esAdminOValido = $admin && ($admin->is_superuser || (string)$admin->run === '19716146' || (method_exists($admin, 'hasRole') && ($admin->hasRole('Administrador') || $admin->hasRole('Super Admin'))));
+        if (!$esAdminOValido) {
             return response()->json([
                 'success' => false,
                 'message' => 'Administrador inválido o sin permisos.',

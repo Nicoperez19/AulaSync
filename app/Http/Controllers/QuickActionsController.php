@@ -687,6 +687,7 @@ class QuickActionsController extends Controller
                     'descripcion_actividad' => $request->descripcion_actividad,
                     'run_profesor' => $runProfesor,
                     'run_solicitante' => $runSolicitante,
+                    'creado_por' => $usuario ? $usuario->name . ' (' . ($usuario->run ?? 'Admin') . ')' : 'Sistema',
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];

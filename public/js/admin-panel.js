@@ -18,8 +18,9 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Inicializando Panel de Administración...');
     
     // Verificar que las funciones principales existan
+    // En vistas donde no se usa el lector de código QR, qrInputManager es opcional
     if (typeof qrInputManager === 'undefined') {
-        console.warn('⚠️ qrInputManager no está disponible');
+        window.qrInputManager = window.qrInputManager || null;
     }
     
     if (typeof Swal === 'undefined') {
@@ -48,7 +49,7 @@ function abrirModalAgregarReserva() {
     const modal = document.getElementById('modal-agregar-reserva');
     if (modal) {
         modal.classList.remove('hidden');
-        qrInputManager.desactivarTodosLosInputs();
+        if (typeof qrInputManager !== 'undefined' && qrInputManager) { qrInputManager.desactivarTodosLosInputs(); }
         
         // Cargar datos iniciales
         cargarEspaciosDisponibles();
@@ -84,7 +85,7 @@ function cerrarModalAgregarReserva() {
         limpiarFormularioAgregarReserva();
         
         setTimeout(() => {
-            qrInputManager.restaurarInputActivo();
+            if (typeof qrInputManager !== 'undefined' && qrInputManager) { qrInputManager.restaurarInputActivo(); }
         }, 200);
     }
 }
@@ -94,7 +95,7 @@ function abrirModalEditar() {
     const modal = document.getElementById('modal-editar');
     if (modal) {
         modal.classList.remove('hidden');
-        qrInputManager.desactivarTodosLosInputs();
+        if (typeof qrInputManager !== 'undefined' && qrInputManager) { qrInputManager.desactivarTodosLosInputs(); }
         
         console.log('✅ Modal editar abierto');
     }
@@ -107,7 +108,7 @@ function cerrarModalEditar() {
         modal.classList.add('hidden');
         
         setTimeout(() => {
-            qrInputManager.restaurarInputActivo();
+            if (typeof qrInputManager !== 'undefined' && qrInputManager) { qrInputManager.restaurarInputActivo(); }
         }, 200);
     }
 }
@@ -399,7 +400,7 @@ function abrirModalEditarReservas() {
     const modal = document.getElementById('modal-editar-reservas');
     if (modal) {
         modal.classList.remove('hidden');
-        qrInputManager.desactivarTodosLosInputs();
+        if (typeof qrInputManager !== 'undefined' && qrInputManager) { qrInputManager.desactivarTodosLosInputs(); }
         
         cargarReservas();
         console.log('✅ Modal editar reservas abierto');
@@ -413,7 +414,7 @@ function cerrarModalEditarReservas() {
         modal.classList.add('hidden');
         
         setTimeout(() => {
-            qrInputManager.restaurarInputActivo();
+            if (typeof qrInputManager !== 'undefined' && qrInputManager) { qrInputManager.restaurarInputActivo(); }
         }, 200);
     }
 }
@@ -540,7 +541,7 @@ function abrirModalEditarEspacios() {
     const modal = document.getElementById('modal-editar-espacios');
     if (modal) {
         modal.classList.remove('hidden');
-        qrInputManager.desactivarTodosLosInputs();
+        if (typeof qrInputManager !== 'undefined' && qrInputManager) { qrInputManager.desactivarTodosLosInputs(); }
         
         cargarEspacios();
         console.log('✅ Modal editar espacios abierto');
@@ -554,7 +555,7 @@ function cerrarModalEditarEspacios() {
         modal.classList.add('hidden');
         
         setTimeout(() => {
-            qrInputManager.restaurarInputActivo();
+            if (typeof qrInputManager !== 'undefined' && qrInputManager) { qrInputManager.restaurarInputActivo(); }
         }, 200);
     }
 }
