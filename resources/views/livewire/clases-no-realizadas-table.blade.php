@@ -41,7 +41,7 @@
     </div>
 
     <!-- Estadísticas Generales -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <div class="stat-card bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div class="text-blue-600 text-sm font-medium">Total</div>
             <div class="text-2xl font-bold text-blue-900">{{ $estadisticas['total'] }}</div>
@@ -49,6 +49,13 @@
         <div class="stat-card bg-red-50 border border-red-200 rounded-lg p-4">
             <div class="text-red-600 text-sm font-medium">No Registradas</div>
             <div class="text-2xl font-bold text-red-900">{{ $estadisticas['no_realizadas'] }}</div>
+        </div>
+        <div class="stat-card bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+            <div class="text-indigo-600 text-sm font-medium flex items-center gap-1">
+                <i class="fas fa-check-circle text-xs"></i>
+                Registradas
+            </div>
+            <div class="text-2xl font-bold text-indigo-900">{{ $estadisticas['realizadas'] ?? 0 }}</div>
         </div>
         <div class="stat-card bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div class="text-yellow-600 text-sm font-medium flex items-center gap-1">
@@ -94,6 +101,7 @@
                             class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
                         <option value="">Todos</option>
                         <option value="no_realizada">No registrada</option>
+                        <option value="realizada">Registrada (Clase realizada)</option>
                         <option value="pendiente">Pendiente de recuperación</option>
                         <option value="justificado">Justificado</option>
                     </select>
@@ -221,6 +229,11 @@
                                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
                                                     No Registrada
                                                 </span>
+                                            @elseif($clase->estado === 'realizada' || $clase->estado === 'registrada')
+                                                <span class="px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800 flex items-center gap-1">
+                                                    <i class="fas fa-check-circle text-[10px]"></i>
+                                                    Registrada
+                                                </span>
                                             @elseif($clase->estado === 'pendiente')
                                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 flex items-center gap-1">
                                                     <i class="fas fa-clock text-[10px]"></i>
@@ -338,10 +351,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         <label class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
                         <select id="swal-estado" class="w-full p-2 border border-gray-300 rounded-md">
                             <option value="no_realizada" ${clase.estado === 'no_realizada' ? 'selected' : ''}>No registrada</option>
+                            <option value="realizada" ${clase.estado === 'realizada' || clase.estado === 'registrada' ? 'selected' : ''}>Registrada (Docente realizó la clase)</option>
                             <option value="pendiente" ${clase.estado === 'pendiente' ? 'selected' : ''}>Pendiente de recuperación</option>
                             <option value="justificado" ${clase.estado === 'justificado' ? 'selected' : ''}>Justificado (sin recuperación)</option>
                         </select>
                         <p class="text-xs text-gray-500 mt-1">
+                            <strong>Registrada:</strong> Docente dictó la clase (asistencia regularizada)<br>
                             <strong>Pendiente:</strong> Clase reagendada esperando recuperación<br>
                             <strong>Justificado:</strong> Clase justificada sin necesidad de recuperación
                         </p>

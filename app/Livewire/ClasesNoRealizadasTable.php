@@ -122,7 +122,7 @@ class ClasesNoRealizadasTable extends Component
     public function updateClase($id, $estado, $observaciones)
     {
         // Validar los datos recibidos
-        if (empty($estado) || !in_array($estado, ['no_realizada', 'justificado'])) {
+        if (empty($estado) || !in_array($estado, ['no_realizada', 'justificado', 'pendiente', 'realizada', 'registrada'])) {
             $this->dispatch('show-error', ['message' => 'El estado seleccionado no es válido']);
             return;
         }
@@ -360,6 +360,7 @@ class ClasesNoRealizadasTable extends Component
                 DB::raw("SUM(CASE WHEN estado = 'no_realizada' THEN 1 ELSE 0 END) as no_realizadas"),
                 DB::raw("SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) as pendientes"),
                 DB::raw("SUM(CASE WHEN estado = 'justificado' THEN 1 ELSE 0 END) as justificados"),
+                DB::raw("SUM(CASE WHEN estado = 'realizada' OR estado = 'registrada' THEN 1 ELSE 0 END) as realizadas"),
             ])
             ->whereNotExists(function($subQuery) {
                 $subQuery->select(DB::raw(1))
@@ -394,6 +395,7 @@ class ClasesNoRealizadasTable extends Component
             'no_realizadas' => (int) ($stats->no_realizadas ?? 0),
             'pendientes' => (int) ($stats->pendientes ?? 0),
             'justificados' => (int) ($stats->justificados ?? 0),
+            'realizadas' => (int) ($stats->realizadas ?? 0),
         ];
 
         return $this->cachedEstadisticas;
