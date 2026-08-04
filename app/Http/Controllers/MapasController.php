@@ -308,15 +308,15 @@ class MapasController extends Controller
     public function getEspaciosPorPiso($pisoId)
     {
         try {
-            // Primero verificamos si el piso existe
-            $piso = Piso::find($pisoId);
-            if (!$piso) {
-                return response()->json([]);
-            }
+            $pisoIds = [$pisoId];
+            if ($pisoId == 8) $pisoIds = [8, 9];
+            elseif ($pisoId == 10) $pisoIds = [10, 11];
+            elseif ($pisoId == 12) $pisoIds = [12, 13];
 
-            // Obtenemos los espacios con las columnas que existen
-            $espacios = Espacio::select('id_espacio', 'nombre_espacio')
-                ->where('piso_id', $pisoId)
+            $espacios = Espacio::withoutGlobalScopes()
+                ->select('id_espacio', 'nombre_espacio')
+                ->whereIn('piso_id', $pisoIds)
+                ->orderBy('nombre_espacio')
                 ->get();
 
             if ($espacios->isEmpty()) {

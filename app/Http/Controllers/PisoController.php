@@ -162,19 +162,18 @@ class PisoController extends Controller
     public function getEspaciosPorPiso($pisoId)
     {
         try {
-
+            $pisoIds = [$pisoId];
+            if ($pisoId == 8) $pisoIds = [8, 9];
+            elseif ($pisoId == 10) $pisoIds = [10, 11];
+            elseif ($pisoId == 12) $pisoIds = [12, 13];
 
             // Usar DB directo para evitar problemas con global scopes en contexto tenant
             $espacios = \DB::connection('tenant')
                 ->table('espacios')
-                ->where('piso_id', $pisoId)
+                ->whereIn('piso_id', $pisoIds)
                 ->orderBy('nombre_espacio')
                 ->get(['id_espacio as id', 'nombre_espacio as nombre', 'tipo_espacio as tipo', 'puestos_disponibles as capacidad']);
 
-
-
-            // Retornar solo los espacios del piso seleccionado (sin fallback)
-            // Si no hay espacios, retorna array vacío - el usuario verá mensaje apropiado
             return response()->json($espacios);
         } catch (\Exception $e) {
             Log::error('Error en getEspaciosPorPiso: ' . $e->getMessage());

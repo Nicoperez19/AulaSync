@@ -82,11 +82,10 @@
             <div class="w-full md:w-1/4">
                 <div class="h-full p-4 bg-white rounded-lg shadow dark:bg-gray-800">
                     <h3 class="mb-3 text-lg font-semibold text-gray-900 dark:text-white">Espacios Disponibles</h3>
+                    <div class="py-10 text-center text-gray-500 dark:text-gray-400" id="emptySpacesMessage">
+                        Seleccione un piso para cargar los espacios
+                    </div>
                     <div id="espaciosList" class="space-y-2 max-h-[500px] overflow-y-auto">
-                        <!-- Los espacios se cargarán aquí -->
-                        <div class="py-10 text-center text-gray-500 dark:text-gray-400" id="emptySpacesMessage">
-                            Seleccione un piso para cargar los espacios
-                        </div>
                     </div>
                 </div>
             </div>
