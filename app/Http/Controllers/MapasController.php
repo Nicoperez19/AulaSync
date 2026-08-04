@@ -308,12 +308,10 @@ class MapasController extends Controller
     public function getEspaciosPorPiso($pisoId)
     {
         try {
-
-
             // Primero verificamos si el piso existe
             $piso = Piso::find($pisoId);
             if (!$piso) {
-                return response()->json(['error' => 'Piso no encontrado'], 404);
+                return response()->json([]);
             }
 
             // Obtenemos los espacios con las columnas que existen
@@ -321,13 +319,8 @@ class MapasController extends Controller
                 ->where('piso_id', $pisoId)
                 ->get();
 
-
-
             if ($espacios->isEmpty()) {
-                return response()->json([
-                    'message' => 'No hay espacios disponibles para este piso',
-                    'espacios' => []
-                ], 200);
+                return response()->json([]);
             }
 
             return response()->json($espacios);
@@ -337,7 +330,7 @@ class MapasController extends Controller
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
             ]);
-            return response()->json(['error' => 'Error al obtener los espacios: ' . $e->getMessage()], 500);
+            return response()->json([]);
         }
     }
 

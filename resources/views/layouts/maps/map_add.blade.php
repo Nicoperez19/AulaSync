@@ -299,18 +299,24 @@
                         elements.espaciosList.innerHTML = '';
                         elements.emptySpacesMessage.classList.add('hidden');
 
-                        if (data.length === 0) {
+                        const espacios = Array.isArray(data) ? data : (data.espacios || []);
+
+                        if (espacios.length === 0) {
+                            elements.emptySpacesMessage.textContent = 'No hay espacios disponibles para este piso';
                             elements.emptySpacesMessage.classList.remove('hidden');
                             return;
                         }
 
-                        data.forEach(espacio => {
+                        espacios.forEach(espacio => {
+                            const idEspacio = espacio.id_espacio || espacio.id;
+                            const nombreEspacio = espacio.nombre_espacio || espacio.nombre;
+
                             const espacioItem = document.createElement('div');
                             espacioItem.className = 'p-2 bg-gray-50 dark:bg-gray-700 rounded cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center gap-3';
-                            espacioItem.setAttribute('data-espacio-id', espacio.id_espacio);
+                            espacioItem.setAttribute('data-espacio-id', idEspacio);
                             espacioItem.innerHTML = `
-                                <div class="flex items-center justify-center flex-shrink-0 w-12 h-12 p-4 font-bold text-white bg-blue-600">${espacio.id_espacio}</div>
-                                <div class="text-sm font-medium truncate">${espacio.nombre_espacio}</div>
+                                <div class="flex items-center justify-center flex-shrink-0 w-12 h-12 p-4 font-bold text-white bg-blue-600">${idEspacio}</div>
+                                <div class="text-sm font-medium truncate">${nombreEspacio}</div>
                             `;
 
                             espacioItem.addEventListener('click', function() {
@@ -322,8 +328,8 @@
                                 // Seleccionar este
                                 this.classList.add('bg-green-200', 'dark:bg-green-900');
                                 state.selectedSpace = {
-                                    id: espacio.id_espacio,
-                                    nombre: espacio.nombre_espacio
+                                    id: idEspacio,
+                                    nombre: nombreEspacio
                                 };
 
                                 // Cambiar cursor
@@ -335,6 +341,12 @@
 
                         // Actualizar nombre del mapa
                         updateNombreMapa();
+                    })
+                    .catch(error => {
+                        console.error('Error al cargar espacios:', error);
+                        elements.espaciosList.innerHTML = '';
+                        elements.emptySpacesMessage.textContent = 'Error al cargar los espacios';
+                        elements.emptySpacesMessage.classList.remove('hidden');
                     });
                 }
             });
