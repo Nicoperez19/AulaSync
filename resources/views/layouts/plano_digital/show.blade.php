@@ -273,7 +273,7 @@
                                                 ? 'bg-light-cloud-blue text-white border-light-cloud-blue'
                                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-100 hover:text-light-cloud-blue' }}" role="tab"
                                             aria-selected="{{ $piso['id_mapa'] === $mapa->id_mapa ? 'true' : 'false' }}">
-                                            Piso {{ $piso['numero'] }}
+                                            {{ $piso['nombre'] }}
                                         </a>
                                     </li>
                                 @endif
@@ -283,7 +283,7 @@
                         <div class="flex flex-col h-full">
                             <div class="p-4">
                                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
-                                    Plano del Piso {{ $mapa->piso->numero_piso }},
+                                    Plano: {{ $mapa->piso->display_name }},
                                     {{ $mapa->piso->facultad->nombre_facultad }},
                                     Sede {{ $mapa->piso->facultad->sede->nombre_sede }}
                                 </h3>

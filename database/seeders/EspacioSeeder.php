@@ -127,21 +127,26 @@ class EspacioSeeder extends Seeder
             $map[6] = data_get($piso2, 'id');
             $map[7] = data_get($piso3, 'id');  // Gimnasio
         }
-        // Mapeo para Los Ángeles (LA) - 6 pisos por edificio/piso
+        // Mapeo para Los Ángeles (LA) - 3 edificios
         elseif ($tenant->sede_id === 'LA') {
-            $piso8 = $pisos->where('nombre_piso', 'CAUPOLICÁN 276 - 1er piso')->first();
-            $piso9 = $pisos->where('nombre_piso', 'CAUPOLICÁN 276 - 2do piso')->first();
-            $piso10 = $pisos->where('nombre_piso', 'VILLAGRÁN 220 - 1er piso')->first();
-            $piso11 = $pisos->where('nombre_piso', 'VILLAGRÁN 220 - 2do piso')->first();
-            $piso12 = $pisos->where('nombre_piso', 'VILLAGRÁN 251 - 1er piso')->first();
-            $piso13 = $pisos->where('nombre_piso', 'VILLAGRÁN 251 - 2do piso')->first();
+            $piso8 = $pisos->where('nombre_piso', 'CAUPOLICÁN 276')->first() 
+                  ?? $pisos->where('nombre_piso', 'CAUPOLICÁN 276 - 1er piso')->first()
+                  ?? $pisos->where('numero_piso', 1)->first();
+
+            $piso10 = $pisos->where('nombre_piso', 'VILLAGRÁN 220')->first()
+                   ?? $pisos->where('nombre_piso', 'VILLAGRÁN 220 - 1er piso')->first()
+                   ?? $pisos->where('numero_piso', 2)->first();
+
+            $piso12 = $pisos->where('nombre_piso', 'VILLAGRÁN 251')->first()
+                   ?? $pisos->where('nombre_piso', 'VILLAGRÁN 251 - 1er piso')->first()
+                   ?? $pisos->where('numero_piso', 3)->first();
 
             $map[8] = data_get($piso8, 'id');
-            $map[9] = data_get($piso9, 'id');
+            $map[9] = data_get($piso8, 'id');
             $map[10] = data_get($piso10, 'id');
-            $map[11] = data_get($piso11, 'id');
+            $map[11] = data_get($piso10, 'id');
             $map[12] = data_get($piso12, 'id');
-            $map[13] = data_get($piso13, 'id');
+            $map[13] = data_get($piso12, 'id');
         }
 
         return $map;

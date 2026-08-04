@@ -77,7 +77,7 @@
                                     :class="selectedPiso == '{{ $piso->id }}' 
                                                                     ? 'bg-red-700 text-white border-red-700 shadow-md'
                                                                     : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-red-700'">
-                                    Piso {{ $piso->numero_piso }}
+                                    {{ $piso->display_name }}
                                 </button>
                             </li>
                         @endforeach

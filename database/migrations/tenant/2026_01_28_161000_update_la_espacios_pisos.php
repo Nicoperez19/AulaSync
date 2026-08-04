@@ -10,11 +10,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Verificar que estamos en la base de datos correcta (aulasync_la)
-        $currentDb = \DB::connection()->getDatabaseName();
-        
-        // Solo ejecutar para la BD de Los Ángeles
-        if ($currentDb !== 'aulasync_la') {
+        // Verificar que estamos en la base de datos de Los Ángeles
+        $isLA = \DB::table('facultades')->where('id_facultad', 'IT_LA')->exists()
+            || \DB::table('espacios')->where('id_espacio', 'LIKE', 'LA-%')->exists()
+            || str_contains(strtolower(\DB::connection()->getDatabaseName()), 'la');
+
+        if (!$isLA) {
             return;
         }
 
