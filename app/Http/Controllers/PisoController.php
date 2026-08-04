@@ -162,16 +162,39 @@ class PisoController extends Controller
     public function getEspaciosPorPiso($pisoId)
     {
         try {
-            $pisoIds = [$pisoId];
-            if ($pisoId == 8) $pisoIds = [8, 9];
-            elseif ($pisoId == 10) $pisoIds = [10, 11];
-            elseif ($pisoId == 12) $pisoIds = [12, 13];
+            $piso = \DB::connection('tenant')->table('pisos')->where('id', $pisoId)->first();
+            $nombrePiso = strtoupper($piso->nombre_piso ?? '');
 
-            // Usar DB directo para evitar problemas con global scopes en contexto tenant
-            $espacios = \DB::connection('tenant')
-                ->table('espacios')
-                ->whereIn('piso_id', $pisoIds)
-                ->orderBy('nombre_espacio')
+            $query = \DB::connection('tenant')->table('espacios');
+
+            if (str_contains($nombrePiso, '251')) {
+                $query->where(function ($q) use ($pisoId) {
+                    $q->where('piso_id', $pisoId)
+                      ->orWhere('id_espacio', 'LIKE', 'LA-4%');
+                });
+            } elseif (str_contains($nombrePiso, '220')) {
+                $query->where(function ($q) use ($pisoId) {
+                    $q->where('piso_id', $pisoId)
+                      ->orWhere('id_espacio', 'LIKE', 'LA-2%')
+                      ->orWhere('id_espacio', 'LIKE', 'LA-C%');
+                });
+            } elseif (str_contains($nombrePiso, 'CAUPOLICÁN') || str_contains($nombrePiso, 'CAUPOLICAN')) {
+                $query->where(function ($q) use ($pisoId) {
+                    $q->where('piso_id', $pisoId)
+                      ->orWhere('id_espacio', 'LIKE', 'LA-0%')
+                      ->orWhere('id_espacio', 'LIKE', 'LA-1%')
+                      ->orWhere('id_espacio', 'LA-LAB');
+                });
+            } else {
+                $pisoIds = [$pisoId];
+                if ($pisoId == 8) $pisoIds = [8, 9];
+                elseif ($pisoId == 10) $pisoIds = [10, 11];
+                elseif ($pisoId == 12) $pisoIds = [12, 13];
+
+                $query->whereIn('piso_id', $pisoIds);
+            }
+
+            $espacios = $query->orderBy('nombre_espacio')
                 ->get(['id_espacio as id', 'nombre_espacio as nombre', 'tipo_espacio as tipo', 'puestos_disponibles as capacidad']);
 
             return response()->json($espacios);

@@ -308,16 +308,40 @@ class MapasController extends Controller
     public function getEspaciosPorPiso($pisoId)
     {
         try {
-            $pisoIds = [$pisoId];
-            if ($pisoId == 8) $pisoIds = [8, 9];
-            elseif ($pisoId == 10) $pisoIds = [10, 11];
-            elseif ($pisoId == 12) $pisoIds = [12, 13];
+            $piso = Piso::withoutGlobalScopes()->find($pisoId);
+            $nombrePiso = strtoupper($piso->nombre_piso ?? '');
 
-            $espacios = Espacio::withoutGlobalScopes()
-                ->select('id_espacio', 'nombre_espacio')
-                ->whereIn('piso_id', $pisoIds)
-                ->orderBy('nombre_espacio')
-                ->get();
+            $query = Espacio::withoutGlobalScopes()
+                ->select('id_espacio', 'nombre_espacio');
+
+            if (str_contains($nombrePiso, '251')) {
+                $query->where(function ($q) use ($pisoId) {
+                    $q->where('piso_id', $pisoId)
+                      ->orWhere('id_espacio', 'LIKE', 'LA-4%');
+                });
+            } elseif (str_contains($nombrePiso, '220')) {
+                $query->where(function ($q) use ($pisoId) {
+                    $q->where('piso_id', $pisoId)
+                      ->orWhere('id_espacio', 'LIKE', 'LA-2%')
+                      ->orWhere('id_espacio', 'LIKE', 'LA-C%');
+                });
+            } elseif (str_contains($nombrePiso, 'CAUPOLICÁN') || str_contains($nombrePiso, 'CAUPOLICAN')) {
+                $query->where(function ($q) use ($pisoId) {
+                    $q->where('piso_id', $pisoId)
+                      ->orWhere('id_espacio', 'LIKE', 'LA-0%')
+                      ->orWhere('id_espacio', 'LIKE', 'LA-1%')
+                      ->orWhere('id_espacio', 'LA-LAB');
+                });
+            } else {
+                $pisoIds = [$pisoId];
+                if ($pisoId == 8) $pisoIds = [8, 9];
+                elseif ($pisoId == 10) $pisoIds = [10, 11];
+                elseif ($pisoId == 12) $pisoIds = [12, 13];
+
+                $query->whereIn('piso_id', $pisoIds);
+            }
+
+            $espacios = $query->orderBy('nombre_espacio')->get();
 
             if ($espacios->isEmpty()) {
                 return response()->json([]);
