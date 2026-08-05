@@ -28,9 +28,11 @@ class ApiReservaController extends Controller
                 })
                 ->firstOrFail();
 
-            // Obtener la hora actual
+            // Obtener la hora actual y variantes del día
             $ahora = Carbon::now();
             $diaActual = strtolower($ahora->locale('es')->isoFormat('dddd'));
+            $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+            $diasPosibles = array_unique([$diaActual, $diaLimpio, 'miércoles', 'miercoles', 'sábado', 'sabado']);
 
             // Verificar si el espacio está ocupado
             $reservaActiva = Reserva::where('id_espacio', $espacioId)
@@ -48,14 +50,19 @@ class ApiReservaController extends Controller
             }
 
             $run = $usuario->run;
+            $runLimpio = preg_replace('/[^0-9kK]/', '', $run);
 
             $tieneClaseProgramada = DB::connection('tenant')
                 ->table('planificacion_asignaturas as pa')
                 ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
                 ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                 ->where('pa.id_espacio', $espacioId)
-                ->where('h.run_profesor', $run)
-                ->where('m.dia', $diaActual)
+                ->where(function ($q) use ($run, $runLimpio) {
+                    $q->where('h.run_profesor', $run)
+                      ->orWhere('h.run_profesor', $runLimpio)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(h.run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                })
+                ->whereIn('m.dia', $diasPosibles)
                 ->where('m.hora_inicio', '<=', $ahora->format('H:i:s'))
                 ->where('m.hora_termino', '>=', $ahora->format('H:i:s'))
                 ->exists();
@@ -84,10 +91,13 @@ class ApiReservaController extends Controller
             $runNormalizado = $this->normalizeRun($request->run);
 
 
-            // Obtener la hora actual
+            // Obtener la hora actual y normalizar día (soportando tildes y variantes)
             $horaActual = Carbon::now();
             $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
+            $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+            $diasPosibles = array_unique([$diaActual, $diaLimpio, 'miércoles', 'miercoles', 'sábado', 'sabado']);
             $horaActualStr = $horaActual->format('H:i:s');
+            $runLimpio = preg_replace('/[^0-9kK]/', '', $request->run);
 
             $espacio = Espacio::findOrFail($request->espacio_id);
 
@@ -98,9 +108,13 @@ class ApiReservaController extends Controller
                 ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                 ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
                 ->where('pa.id_espacio', $request->espacio_id)
-                ->where('h.run_profesor', $runNormalizado)
-
-                ->where('m.dia', $diaActual)
+                ->where(function ($q) use ($runNormalizado, $request, $runLimpio) {
+                    $q->where('h.run_profesor', $runNormalizado)
+                      ->orWhere('h.run_profesor', $request->run)
+                      ->orWhere('h.run_profesor', $runLimpio)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(h.run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                })
+                ->whereIn('m.dia', $diasPosibles)
                 ->where(function ($query) use ($horaActual, $horaActualStr) {
                     $tiempoMas20 = $horaActual->copy()->addMinutes(20)->toTimeString();
                     $tiempoMas40 = $horaActual->copy()->addMinutes(40)->toTimeString();

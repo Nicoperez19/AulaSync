@@ -102,7 +102,7 @@
                             @foreach ($pisos as $piso)
                                 <option value="{{ $piso->id }}"
                                     {{ $piso->id == $espacio->piso_id ? 'selected' : '' }}>
-                                    Piso {{ $piso->numero_piso }}
+                                    {{ $piso->nombre_piso ?: 'Piso ' . $piso->numero_piso }}
                                 </option>
                             @endforeach
                         </select>
@@ -325,7 +325,7 @@
                         data.forEach(piso => {
                             const option = document.createElement("option");
                             option.value = piso.id;
-                            option.textContent = `Piso ${piso.numero_piso}`;
+                            option.textContent = piso.nombre_piso ? piso.nombre_piso : `Piso ${piso.numero_piso}`;
                             pisoSelect.appendChild(option);
                         });
                         pisoSelect.disabled = false;

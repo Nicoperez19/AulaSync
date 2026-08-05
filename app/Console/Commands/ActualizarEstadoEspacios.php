@@ -47,6 +47,8 @@ class ActualizarEstadoEspacios extends Command
 
             $ahora = Carbon::now();
             $diaActual = strtolower($ahora->locale('es')->isoFormat('dddd'));
+            $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+            $diasPosibles = array_unique([$diaActual, $diaLimpio, 'miércoles', 'miercoles', 'sábado', 'sabado']);
             $horaActual = $ahora->format('H:i:s');
 
             // Determinar el período actual usando el helper
@@ -68,8 +70,8 @@ class ActualizarEstadoEspacios extends Command
                 ->whereHas('horario', function ($query) use ($periodo) {
                     $query->where('periodo', $periodo);
                 })
-                ->whereHas('modulo', function ($query) use ($diaActual) {
-                    $query->where('dia', $diaActual);
+                ->whereHas('modulo', function ($query) use ($diasPosibles) {
+                    $query->whereIn('dia', $diasPosibles);
                 })
                 ->get();
 

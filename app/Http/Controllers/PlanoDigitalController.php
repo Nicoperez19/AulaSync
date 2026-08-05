@@ -158,13 +158,14 @@ class PlanoDigitalController extends Controller
 
     private function obtenerCodigoDia(string $diaActual): ?string
     {
-        return match ($diaActual) {
+        $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+        return match ($diaLimpio) {
             'lunes' => 'LU',
             'martes' => 'MA',
-            'miércoles' => 'MI',
+            'miercoles' => 'MI',
             'jueves' => 'JU',
             'viernes' => 'VI',
-            'sábado' => 'SA',
+            'sabado' => 'SA',
             default => null
         };
     }
@@ -354,7 +355,10 @@ class PlanoDigitalController extends Controller
 
     private function obtenerModuloActual(array $estadoActual): ?Modulo
     {
-        $modulo = Modulo::where('dia', $estadoActual['dia'])
+        $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($estadoActual['dia']);
+        $diasPosibles = array_unique([$estadoActual['dia'], $diaLimpio, 'miércoles', 'miercoles', 'sábado', 'sabado']);
+
+        $modulo = Modulo::whereIn('dia', $diasPosibles)
             ->where('hora_inicio', '<=', $estadoActual['hora'])
             ->where('hora_termino', '>=', $estadoActual['hora'])
             ->first();
@@ -414,6 +418,8 @@ class PlanoDigitalController extends Controller
     {
         $horaActual = Carbon::parse($estadoActual['hora']);
         $diaActual = $estadoActual['dia'];
+        $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+        $diasPosibles = array_unique([$diaActual, $diaLimpio, 'miércoles', 'miercoles', 'sábado', 'sabado']);
 
         $periodo = SemesterHelper::getCurrentPeriod();
 
@@ -437,8 +443,8 @@ class PlanoDigitalController extends Controller
             ->whereHas('horario', function ($query) use ($periodo) {
                 $query->where('periodo', $periodo);
             })
-            ->whereHas('modulo', function ($query) use ($horaInicioBusqueda, $horaFinBusqueda, $diaActual, $esRangoEspecial) {
-                $query->where('dia', $diaActual);
+            ->whereHas('modulo', function ($query) use ($horaInicioBusqueda, $horaFinBusqueda, $diasPosibles, $esRangoEspecial) {
+                $query->whereIn('dia', $diasPosibles);
 
                 if ($esRangoEspecial) {
                     // Para el rango 05:00-05:10, buscar módulos que empiecen a las 05:10
@@ -458,8 +464,8 @@ class PlanoDigitalController extends Controller
 
         // Obtener planificaciones de profesores colaboradores próximas
         $planificacionesTemporalesProximas = PlanificacionProfesorColaborador::with(['profesorColaborador', 'modulo', 'espacio'])
-            ->whereHas('modulo', function ($query) use ($horaInicioBusqueda, $horaFinBusqueda, $diaActual, $esRangoEspecial) {
-                $query->where('dia', $diaActual);
+            ->whereHas('modulo', function ($query) use ($horaInicioBusqueda, $horaFinBusqueda, $diasPosibles, $esRangoEspecial) {
+                $query->whereIn('dia', $diasPosibles);
 
                 if ($esRangoEspecial) {
                     // Para el rango 05:00-05:10, buscar módulos que empiecen a las 05:10

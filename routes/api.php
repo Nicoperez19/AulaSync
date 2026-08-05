@@ -374,6 +374,8 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
         // Obtener la hora actual
         $horaActual = \Carbon\Carbon::now();
         $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
+        $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+        $diasPosibles = array_unique([$diaActual, $diaLimpio, 'miércoles', 'miercoles', 'sábado', 'sabado']);
         $horaActualStr = $horaActual->format('H:i:s');
         
         // Margen de 15 minutos para anticipación
@@ -390,8 +392,8 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
                   ->orWhere('run_profesor', $runLimpio)
                   ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
             })
-            ->whereHas('modulo', function ($q) use ($diaActual, $horaActualStr, $horaConAnticipacion) {
-                $q->where('dia', $diaActual)
+            ->whereHas('modulo', function ($q) use ($diasPosibles, $horaActualStr, $horaConAnticipacion) {
+                $q->whereIn('dia', $diasPosibles)
                   ->where(function ($subQ) use ($horaActualStr, $horaConAnticipacion) {
                       $subQ->where(function ($sq1) use ($horaActualStr) {
                           $sq1->where('hora_inicio', '<=', $horaActualStr)

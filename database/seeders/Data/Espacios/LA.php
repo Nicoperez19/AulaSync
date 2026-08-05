@@ -157,7 +157,7 @@ return [
     [
         'id_espacio' => 'LA-216',
         'nombre_espacio' => 'Taller de Construcción',
-        'piso_id' => 10,
+        'piso_id' => 9,
         'tipo_espacio' => 'Taller',
         'estado' => 'Disponible',
         'puestos_disponibles' => 20,
