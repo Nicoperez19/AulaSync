@@ -1,6 +1,6 @@
 @extends('layouts.quick_actions.app')
 
-@section('title', 'Acciones Rápidas - SIA | Sistema de Informaci�n de Aulas')
+@section('title', 'Acciones Rápidas - SIA | Sistema de Información de Aulas')
 
 @section('content')
 <div class="space-y-6">
@@ -94,7 +94,7 @@
     </div>
 
     <!-- Menu de Acciones Principales -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         
         <!-- Crear Reserva -->
         <div class="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
@@ -130,8 +130,8 @@
                 </p>
                 <a href="{{ route('quick-actions.gestionar-reservas') }}" 
                    class="w-full inline-flex items-center justify-center px-4 py-3 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors font-medium">
-                    <i class="fas fa-edit mr-2"></i>
-                    Administrar
+                    <i class="fas fa-list text-blue-600 mr-2"></i>
+                    Ver Lista
                 </a>
             </div>
         </div>
@@ -146,12 +146,32 @@
                 </div>
                 <h3 class="text-xl font-semibold text-center mb-2">Gestionar Espacios</h3>
                 <p class="text-purple-100 text-sm text-center mb-4">
-                    Administrar estados de espacios
+                    Cambiar estado y disponibilidad
                 </p>
                 <a href="{{ route('quick-actions.gestionar-espacios') }}" 
                    class="w-full inline-flex items-center justify-center px-4 py-3 bg-white text-purple-600 rounded-lg hover:bg-purple-50 transition-colors font-medium">
-                    <i class="fas fa-cogs mr-2"></i>
-                    Configurar
+                    <i class="fas fa-cog text-purple-600 mr-2"></i>
+                    Administrar
+                </a>
+            </div>
+        </div>
+
+        <!-- Gestionar Reservas de Salas de Estudio -->
+        <div class="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
+            <div class="p-6 text-white">
+                <div class="flex items-center justify-center mb-4">
+                    <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                        <i class="fas fa-book-reader text-2xl"></i>
+                    </div>
+                </div>
+                <h3 class="text-xl font-semibold text-center mb-2">Salas de Estudio</h3>
+                <p class="text-amber-100 text-sm text-center mb-4">
+                    Gestión de reservas y accesos
+                </p>
+                <a href="{{ route('quick-actions.gestionar-salas-estudio') }}" 
+                   class="w-full inline-flex items-center justify-center px-4 py-3 bg-white text-amber-600 rounded-lg hover:bg-amber-50 transition-colors font-medium">
+                    <i class="fas fa-book-open text-amber-600 mr-2"></i>
+                    Gestionar
                 </a>
             </div>
         </div>

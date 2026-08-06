@@ -446,6 +446,10 @@ Route::middleware(['auth', 'tenant'])->prefix('quick-actions')->name('quick-acti
     Route::get('/crear-reserva', [QuickActionsController::class, 'crearReserva'])->name('crear-reserva');
     Route::get('/gestionar-reservas', [QuickActionsController::class, 'gestionarReservas'])->name('gestionar-reservas');
     Route::get('/gestionar-espacios', [QuickActionsController::class, 'gestionarEspacios'])->name('gestionar-espacios');
+    Route::get('/gestionar-salas-estudio', [QuickActionsController::class, 'gestionarSalasEstudio'])->name('gestionar-salas-estudio');
+    Route::get('/api/reservas-salas-estudio', [QuickActionsController::class, 'getReservasSalasEstudio'])->name('api.reservas-salas-estudio');
+    Route::post('/api/sala-estudio/procesar-escaneo', [QuickActionsController::class, 'procesarEscaneoSalaEstudio'])->name('api.sala-estudio.procesar-escaneo');
+    Route::post('/api/sala-estudio/verificar-notificaciones', [QuickActionsController::class, 'verificarNotificacionesSalasEstudio'])->name('api.sala-estudio.verificar-notificaciones');
 
     // API endpoints para quick actions
     Route::get('/dashboard-data', [QuickActionsController::class, 'getDashboardData'])->name('dashboard-data');

@@ -198,11 +198,86 @@ class Notificacion extends Model
                     'id_asignatura' => $recuperacion->id_asignatura,
                     'run_profesor' => $recuperacion->run_profesor,
                     'fecha_reagendada' => $recuperacion->fecha_reagendada ? $recuperacion->fecha_reagendada->toDateString() : null,
-                    'id_espacio_reagendado' => $recuperacion->id_espacio_reagendado,
                 ],
             ]);
         }
     }
+
+    /**
+     * Crear notificación de advertencia (15 minutos antes de 2h) en sala de estudio
+     */
+    public static function crearNotificacionSalaEstudioAdvertencia($reserva, $nombreAlumno = 'Alumno')
+    {
+        try {
+            $usuarios = User::role(['Supervisor', 'Administrador'])->get();
+            $titulo = '⚠️ Reserva por Vencer (Salas de Estudio)';
+            $espacioId = $reserva->id_espacio ?? 'Sala de estudio';
+            $mensaje = sprintf('La reserva de la sala %s por %s vence en 15 minutos.', $espacioId, $nombreAlumno);
+
+            foreach ($usuarios as $usuario) {
+                // Evitar notificaciones duplicadas para la misma reserva y tipo
+                $existe = static::where('run_usuario', $usuario->run)
+                    ->where('tipo', 'sala_estudio_advertencia')
+                    ->whereJsonContains('datos_adicionales->id_reserva', $reserva->id_reserva)
+                    ->exists();
+
+                if (!$existe) {
+                    static::create([
+                        'run_usuario' => $usuario->run,
+                        'tipo' => 'sala_estudio_advertencia',
+                        'titulo' => $titulo,
+                        'mensaje' => $mensaje,
+                        'url' => route('quick-actions.gestionar-salas-estudio'),
+                        'datos_adicionales' => [
+                            'id_reserva' => $reserva->id_reserva,
+                            'id_espacio' => $espacioId,
+                            'nombre_alumno' => $nombreAlumno,
+                        ],
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error al crear notificación de advertencia en sala de estudio: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Crear notificación de vencimiento (2 horas cumplidas) en sala de estudio
+     */
+    public static function crearNotificacionSalaEstudioVencida($reserva, $nombreAlumno = 'Alumno')
+    {
+        try {
+            $usuarios = User::role(['Supervisor', 'Administrador'])->get();
+            $titulo = '🚨 Reserva Vencida (2 Horas Cumplidas)';
+            $espacioId = $reserva->id_espacio ?? 'Sala de estudio';
+            $mensaje = sprintf('Se han cumplido las 2 horas de la reserva en %s (%s). Por favor solicitar la devolución del espacio.', $espacioId, $nombreAlumno);
+
+            foreach ($usuarios as $usuario) {
+                $existe = static::where('run_usuario', $usuario->run)
+                    ->where('tipo', 'sala_estudio_vencida')
+                    ->whereJsonContains('datos_adicionales->id_reserva', $reserva->id_reserva)
+                    ->exists();
+
+                if (!$existe) {
+                    static::create([
+                        'run_usuario' => $usuario->run,
+                        'tipo' => 'sala_estudio_vencida',
+                        'titulo' => $titulo,
+                        'mensaje' => $mensaje,
+                        'url' => route('quick-actions.gestionar-salas-estudio'),
+                        'datos_adicionales' => [
+                            'id_reserva' => $reserva->id_reserva,
+                            'id_espacio' => $espacioId,
+                            'nombre_alumno' => $nombreAlumno,
+                        ],
+                    ]);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error al crear notificación de vencimiento en sala de estudio: ' . $e->getMessage());
+        }
+    }
+
 
     /**
      * Obtener contador de notificaciones no leídas para un usuario

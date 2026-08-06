@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Spatie\Permission\Models\Role;
+use App\Mail\BienvenidaUsuarioMail;
+use Illuminate\Support\Facades\Mail;
 
 class TenantInitializationController extends Controller
 {
@@ -124,6 +126,14 @@ class TenantInitializationController extends Controller
         $adminRole = Role::findByName('Administrador');
         if ($adminRole) {
             $user->assignRole($adminRole);
+        }
+
+        // Enviar correo de bienvenida al administrador
+        try {
+            $roleName = $adminRole ? $adminRole->name : 'Administrador';
+            Mail::to($user->email)->send(new BienvenidaUsuarioMail($user, $validated['password'], $roleName, route('login')));
+        } catch (\Exception $e) {
+            Log::error('Error al enviar correo de bienvenida al administrador en wizard: ' . $e->getMessage());
         }
 
         // Autenticar al usuario en la sesión para los pasos siguientes

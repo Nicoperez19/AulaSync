@@ -39,8 +39,12 @@ class NotificacionesDropdown extends Component
             ->take(10)
             ->get()
             ->map(function ($notificacion) {
-                // Regenerar URL dinámicamente para evitar localhost
-                $notificacion->url = route('recuperacion-clases.index');
+                // Regenerar URL dinámicamente según el tipo de notificación
+                if (in_array($notificacion->tipo, ['sala_estudio_advertencia', 'sala_estudio_vencida'])) {
+                    $notificacion->url = route('quick-actions.gestionar-salas-estudio');
+                } else {
+                    $notificacion->url = route('recuperacion-clases.index');
+                }
                 
                 // Reconstruir mensaje con ID de espacio si está disponible
                 if ($notificacion->tipo === 'clase_no_realizada' && isset($notificacion->datos_adicionales['id_espacio'])) {
@@ -58,6 +62,7 @@ class NotificacionesDropdown extends Component
                         $datos['id_espacio_reagendado'] ?? 'Espacio pendiente'
                     );
                 }
+
                 
                 return $notificacion;
             });

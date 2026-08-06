@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use App\Models\Sede;
+use App\Mail\BienvenidaUsuarioMail;
+use Illuminate\Support\Facades\Mail;
 
 class UserController extends Controller
 {
@@ -95,6 +97,16 @@ class UserController extends Controller
             if (!empty($validated['roles'])) { $user->roles()->sync($validated['roles']); } else { $usuarioRole = Role::where('name', 'Usuario')->first(); if ($usuarioRole) { $user->assignRole($usuarioRole); } }
             if (!empty($validated['permissions'])) {
                 $user->permissions()->sync($validated['permissions']);
+            }
+
+            // Enviar correo de bienvenida al usuario registrado
+            try {
+                $user->load('roles');
+                $roleName = $user->roles->pluck('name')->first() ?? 'Usuario';
+                $plainPassword = (string)$validated['run'];
+                Mail::to($user->email)->send(new BienvenidaUsuarioMail($user, $plainPassword, $roleName, route('login')));
+            } catch (\Exception $e) {
+                Log::error('Error al enviar correo de bienvenida al usuario ' . $user->email . ': ' . $e->getMessage());
             }
 
             if ($request->ajax()) {

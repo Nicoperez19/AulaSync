@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -101,7 +101,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>📊 Reporte Semanal</h1>
+        <h1>ðŸ“Š Reporte Semanal</h1>
         <p>Clases No Realizadas - Semana {{ $datos['periodo']['semana'] }}</p>
         <p>{{ $datos['periodo']['inicio'] }} - {{ $datos['periodo']['fin'] }}</p>
     </div>
@@ -130,7 +130,7 @@
 
         @if(count($datos['profesores']) > 0)
             <div class="info-section">
-                <h3>🎓 Profesores con Clases No Realizadas</h3>
+                <h3>ðŸŽ“ Profesores con Clases No Realizadas</h3>
                 <ul>
                     @foreach($datos['profesores'] as $profesor)
                         <li>
@@ -145,27 +145,27 @@
             </div>
 
             <div class="info-section">
-                <h3>📎 Archivo Adjunto</h3>
-                <p>Encontrará el reporte detallado completo en el archivo PDF adjunto a este correo.</p>
+                <h3>ðŸ“Ž Archivo Adjunto</h3>
+                <p>EncontrarÃ¡ el reporte detallado completo en el archivo PDF adjunto a este correo.</p>
                 <p>El reporte incluye:</p>
                 <ul>
                     <li>Detalle completo por profesor</li>
-                    <li>Fechas, horarios y espacios específicos</li>
+                    <li>Fechas, horarios y espacios especÃ­ficos</li>
                     <li>Motivos y observaciones de cada clase</li>
-                    <li>Estado de justificación</li>
+                    <li>Estado de justificaciÃ³n</li>
                 </ul>
             </div>
         @else
             <div class="info-section">
-                <h3>✅ Excelentes Noticias</h3>
+                <h3>âœ… Excelentes Noticias</h3>
                 <p>No se registraron clases no realizadas durante esta semana.</p>
-                <p>¡Felicitaciones por el 100% de cumplimiento!</p>
+                <p>Â¡Felicitaciones por el 100% de cumplimiento!</p>
             </div>
         @endif
 
         <div class="footer">
-            <p><strong>SIA | Sistema de Informaci�n de Aulas - Sistema de Gestión Académica</strong></p>
-            <p>Este es un correo automático, por favor no responder.</p>
+            <p><strong>SIA | Sistema de Información de Aulas - Sistema de GestiÃ³n AcadÃ©mica</strong></p>
+            <p>Este es un correo automÃ¡tico, por favor no responder.</p>
             <p>Generado el {{ now()->format('d/m/Y H:i') }}</p>
         </div>
     </div>

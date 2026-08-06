@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -134,7 +134,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>📊 Reporte Mensual</h1>
+        <h1>ðŸ“Š Reporte Mensual</h1>
         <p>Clases No Realizadas - {{ ucfirst($datos['periodo']['mes']) }} {{ $datos['periodo']['anio'] }}</p>
         <p>{{ $datos['periodo']['inicio'] }} - {{ $datos['periodo']['fin'] }}</p>
     </div>
@@ -180,7 +180,7 @@
 
         @if(count($datos['profesores']) > 0)
             <div class="top-professors">
-                <h3 style="color: #DC2626; margin-top: 0;">🎓 Top Profesores con Más Ausencias</h3>
+                <h3 style="color: #DC2626; margin-top: 0;">ðŸŽ“ Top Profesores con MÃ¡s Ausencias</h3>
                 <table>
                     <thead>
                         <tr>
@@ -210,7 +210,7 @@
             </div>
 
             <div class="info-section">
-                <h3>📈 Análisis del Mes</h3>
+                <h3>ðŸ“ˆ AnÃ¡lisis del Mes</h3>
                 <ul>
                     <li><strong>Clases Justificadas:</strong> {{ $datos['estadisticas']['total_justificadas'] }} 
                         ({{ round(($datos['estadisticas']['total_justificadas'] / max($datos['estadisticas']['total_clases_no_realizadas'], 1)) * 100, 1) }}%)
@@ -220,36 +220,36 @@
                     </li>
                     <li><strong>Profesores Afectados:</strong> {{ $datos['estadisticas']['profesores_afectados'] }} docentes</li>
                     @if($datos['estadisticas']['porcentaje_no_realizadas'] > 5)
-                        <li style="color: #DC2626;"><strong>⚠️ Alerta:</strong> El porcentaje de clases no realizadas supera el 5%</li>
+                        <li style="color: #DC2626;"><strong>âš ï¸ Alerta:</strong> El porcentaje de clases no realizadas supera el 5%</li>
                     @else
-                        <li style="color: #10B981;"><strong>✓ Buen Desempeño:</strong> El porcentaje de clases no realizadas está bajo control</li>
+                        <li style="color: #10B981;"><strong>âœ“ Buen DesempeÃ±o:</strong> El porcentaje de clases no realizadas estÃ¡ bajo control</li>
                     @endif
                 </ul>
             </div>
 
             <div class="info-section">
-                <h3>📎 Archivo Adjunto</h3>
-                <p>Encontrará el reporte detallado completo en el archivo PDF adjunto a este correo.</p>
+                <h3>ðŸ“Ž Archivo Adjunto</h3>
+                <p>EncontrarÃ¡ el reporte detallado completo en el archivo PDF adjunto a este correo.</p>
                 <p>El reporte mensual incluye:</p>
                 <ul>
-                    <li>Resumen ejecutivo por profesor con estadísticas de cumplimiento</li>
+                    <li>Resumen ejecutivo por profesor con estadÃ­sticas de cumplimiento</li>
                     <li>Detalle completo de cada clase no realizada</li>
-                    <li>Indicadores de recuperación y justificación</li>
-                    <li>Análisis de tendencias y porcentajes</li>
+                    <li>Indicadores de recuperaciÃ³n y justificaciÃ³n</li>
+                    <li>AnÃ¡lisis de tendencias y porcentajes</li>
                     <li>Recomendaciones basadas en datos</li>
                 </ul>
             </div>
         @else
             <div class="info-section">
-                <h3>✅ Excelente Desempeño</h3>
+                <h3>âœ… Excelente DesempeÃ±o</h3>
                 <p>No se registraron clases no realizadas durante este mes.</p>
-                <p>¡Felicitaciones por el 100% de cumplimiento académico!</p>
+                <p>Â¡Felicitaciones por el 100% de cumplimiento acadÃ©mico!</p>
             </div>
         @endif
 
         <div class="footer">
-            <p><strong>SIA | Sistema de Informaci�n de Aulas - Sistema de Gestión Académica</strong></p>
-            <p>Este es un correo automático, por favor no responder.</p>
+            <p><strong>SIA | Sistema de Información de Aulas - Sistema de GestiÃ³n AcadÃ©mica</strong></p>
+            <p>Este es un correo automÃ¡tico, por favor no responder.</p>
             <p>Generado el {{ now()->format('d/m/Y H:i') }}</p>
         </div>
     </div>

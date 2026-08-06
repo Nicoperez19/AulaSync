@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notificación de Recuperación de Clase</title>
+    <title>NotificaciÃ³n de RecuperaciÃ³n de Clase</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -64,7 +64,7 @@
 </head>
 <body>
     <div class="header">
-        <h2>📅 Notificación de Recuperación de Clase</h2>
+        <h2>ðŸ“… NotificaciÃ³n de RecuperaciÃ³n de Clase</h2>
     </div>
     
     <div class="content">
@@ -73,50 +73,50 @@
         <p>Le informamos sobre una clase que debe ser recuperada:</p>
         
         <div class="info-box">
-            <p><span class="info-label">📚 Asignatura:</span> {{ $recuperacion->asignatura->nombre_asignatura ?? 'N/A' }}</p>
-            <p><span class="info-label">📅 Fecha Original:</span> {{ $recuperacion->fecha_clase_original->format('d/m/Y') }}</p>
+            <p><span class="info-label">ðŸ“š Asignatura:</span> {{ $recuperacion->asignatura->nombre_asignatura ?? 'N/A' }}</p>
+            <p><span class="info-label">ðŸ“… Fecha Original:</span> {{ $recuperacion->fecha_clase_original->format('d/m/Y') }}</p>
             @if($recuperacion->moduloOriginal)
-                <p><span class="info-label">🕐 Módulo Original:</span> {{ $recuperacion->moduloOriginal->nombre_modulo }}</p>
+                <p><span class="info-label">ðŸ• MÃ³dulo Original:</span> {{ $recuperacion->moduloOriginal->nombre_modulo }}</p>
             @endif
             @if($recuperacion->espacio)
-                <p><span class="info-label">🏫 Espacio:</span> {{ $recuperacion->espacio->nombre_espacio }}</p>
+                <p><span class="info-label">ðŸ« Espacio:</span> {{ $recuperacion->espacio->nombre_espacio }}</p>
             @endif
         </div>
 
         @if($recuperacion->fecha_reagendada)
             <div class="info-box">
-                <p><strong>✅ La clase ha sido reagendada:</strong></p>
-                <p><span class="info-label">📅 Nueva Fecha:</span> {{ $recuperacion->fecha_reagendada->format('d/m/Y') }}</p>
+                <p><strong>âœ… La clase ha sido reagendada:</strong></p>
+                <p><span class="info-label">ðŸ“… Nueva Fecha:</span> {{ $recuperacion->fecha_reagendada->format('d/m/Y') }}</p>
                 @if($recuperacion->moduloReagendado)
-                    <p><span class="info-label">🕐 Nuevo Módulo:</span> {{ $recuperacion->moduloReagendado->nombre_modulo }}</p>
+                    <p><span class="info-label">ðŸ• Nuevo MÃ³dulo:</span> {{ $recuperacion->moduloReagendado->nombre_modulo }}</p>
                 @endif
                 @if($recuperacion->espacioReagendado)
-                    <p><span class="info-label">🏫 Nuevo Espacio:</span> {{ $recuperacion->espacioReagendado->nombre_espacio }}</p>
+                    <p><span class="info-label">ðŸ« Nuevo Espacio:</span> {{ $recuperacion->espacioReagendado->nombre_espacio }}</p>
                 @endif
             </div>
         @else
             <div class="info-box">
-                <p><strong>⏳ Estado:</strong> <span class="status-badge status-pendiente">Pendiente de Reagendar</span></p>
-                <p>La clase aún no ha sido reagendada. Se le notificará cuando se asigne una nueva fecha.</p>
+                <p><strong>â³ Estado:</strong> <span class="status-badge status-pendiente">Pendiente de Reagendar</span></p>
+                <p>La clase aÃºn no ha sido reagendada. Se le notificarÃ¡ cuando se asigne una nueva fecha.</p>
             </div>
         @endif
 
         @if($recuperacion->notas)
             <div class="info-box">
-                <p><span class="info-label">📝 Notas:</span></p>
+                <p><span class="info-label">ðŸ“ Notas:</span></p>
                 <p>{{ $recuperacion->notas }}</p>
             </div>
         @endif
 
-        <p>Si tiene alguna consulta o requiere mayor información, por favor contacte con el departamento correspondiente.</p>
+        <p>Si tiene alguna consulta o requiere mayor informaciÃ³n, por favor contacte con el departamento correspondiente.</p>
         
         <p>Atentamente,<br>
-        <strong>Sistema de Gestión Académica</strong></p>
+        <strong>Sistema de GestiÃ³n AcadÃ©mica</strong></p>
     </div>
     
     <div class="footer">
-        <p>Este es un correo automático, por favor no responder.</p>
-        <p>© {{ date('Y') }} Sistema de Gestión Académica</p>
+        <p>Este es un correo automÃ¡tico, por favor no responder.</p>
+        <p>Â© {{ date('Y') }} Sistema de GestiÃ³n AcadÃ©mica</p>
     </div>
 </body>
 </html>

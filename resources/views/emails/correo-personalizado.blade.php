@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -121,8 +121,8 @@
     <div class="email-container">
         <!-- Header -->
         <div class="email-header">
-            <div class="logo">SIA | Sistema de Informaci�n de Aulas</div>
-            <div style="color: #6b7280; font-size: 14px;">Sistema de Gestión Académica</div>
+            <div class="logo">SIA | Sistema de Información de Aulas</div>
+            <div style="color: #6b7280; font-size: 14px;">Sistema de GestiÃ³n AcadÃ©mica</div>
         </div>
 
         <!-- Saludo -->
@@ -140,13 +140,13 @@
         <!-- Footer -->
         <div class="email-footer">
             <p style="margin: 5px 0;">
-                <strong>SIA | Sistema de Informaci�n de Aulas</strong> - Sistema de Gestión Académica
+                <strong>SIA | Sistema de Información de Aulas</strong> - Sistema de GestiÃ³n AcadÃ©mica
             </p>
             <p style="margin: 5px 0; color: #9ca3af; font-size: 12px;">
-                Este es un correo automático, por favor no responder directamente a este mensaje.
+                Este es un correo automÃ¡tico, por favor no responder directamente a este mensaje.
             </p>
             <p style="margin: 10px 0; color: #9ca3af; font-size: 11px;">
-                © {{ date('Y') }} SIA | Sistema de Informaci�n de Aulas. Todos los derechos reservados.
+                Â© {{ date('Y') }} SIA | Sistema de Información de Aulas. Todos los derechos reservados.
             </p>
         </div>
     </div>

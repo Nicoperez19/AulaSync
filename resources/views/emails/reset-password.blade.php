@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restablecer Contraseña - SIA | Sistema de Informaci�n de Aulas</title>
+    <title>Restablecer ContraseÃ±a - SIA | Sistema de Información de Aulas</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -73,28 +73,28 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">SIA | Sistema de Informaci�n de Aulas</div>
-            <h2>Restablecer Contraseña</h2>
+            <div class="logo">SIA | Sistema de Información de Aulas</div>
+            <h2>Restablecer ContraseÃ±a</h2>
         </div>
 
         <div class="content">
             <p>Hola,</p>
             
-            <p>Has recibido este correo porque recibimos una solicitud de restablecimiento de contraseña para tu cuenta en SIA | Sistema de Informaci�n de Aulas.</p>
+            <p>Has recibido este correo porque recibimos una solicitud de restablecimiento de contraseÃ±a para tu cuenta en SIA | Sistema de Información de Aulas.</p>
             
-            <p>Para restablecer tu contraseña, haz clic en el botón de abajo:</p>
+            <p>Para restablecer tu contraseÃ±a, haz clic en el botÃ³n de abajo:</p>
             
             <div style="text-align: center;">
-                <a href="{{ $resetUrl }}" class="button" style="display: inline-block; background-color: #e74c3c !important; color: #ffffff !important; padding: 15px 30px; text-decoration: none !important; border-radius: 5px; font-weight: bold; margin: 20px 0; border: none !important; font-size: 16px; line-height: 1.5; text-align: center;">Restablecer Contraseña</a>
+                <a href="{{ $resetUrl }}" class="button" style="display: inline-block; background-color: #e74c3c !important; color: #ffffff !important; padding: 15px 30px; text-decoration: none !important; border-radius: 5px; font-weight: bold; margin: 20px 0; border: none !important; font-size: 16px; line-height: 1.5; text-align: center;">Restablecer ContraseÃ±a</a>
             </div>
             
-            <p>Si no solicitaste un restablecimiento de contraseña, no es necesario que hagas nada.</p>
+            <p>Si no solicitaste un restablecimiento de contraseÃ±a, no es necesario que hagas nada.</p>
             
             <div class="warning">
-                <strong>Importante:</strong> Este enlace expirará en 60 minutos por razones de seguridad.
+                <strong>Importante:</strong> Este enlace expirarÃ¡ en 60 minutos por razones de seguridad.
             </div>
             
-            <p>Si tienes problemas para hacer clic en el botón "Restablecer Contraseña", copia y pega la siguiente URL en tu navegador web:</p>
+            <p>Si tienes problemas para hacer clic en el botÃ³n "Restablecer ContraseÃ±a", copia y pega la siguiente URL en tu navegador web:</p>
             
             <p style="word-break: break-all; background-color: #f8f9fa; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 12px;">
                 {{ $resetUrl }}
@@ -102,8 +102,8 @@
         </div>
 
         <div class="footer">
-            <p>Este es un correo automático, por favor no respondas a este mensaje.</p>
-            <p>&copy; {{ date('Y') }} SIA | Sistema de Informaci�n de Aulas. Todos los derechos reservados.</p>
+            <p>Este es un correo automÃ¡tico, por favor no respondas a este mensaje.</p>
+            <p>&copy; {{ date('Y') }} SIA | Sistema de Información de Aulas. Todos los derechos reservados.</p>
         </div>
     </div>
 </body>

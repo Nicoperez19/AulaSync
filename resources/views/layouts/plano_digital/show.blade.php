@@ -486,23 +486,7 @@
                     </div>
                 </div>
 
-                <!-- Scanner QR -->
-                <div class="p-6 mb-6 bg-white border-l-4 border-blue-500 shadow-sm rounded-xl">
-                    <h3 class="mb-4 text-xl font-semibold text-gray-800">
-                        <i class="mr-2 text-blue-500 fas fa-qrcode"></i>
-                        Registrar Acceso
-                    </h3>
-                    <div class="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
-                        <div class="p-4 mb-4 bg-white rounded-full shadow-md">
-                            <i class="text-5xl text-blue-500 fa-solid fa-qrcode parpadeo"></i>
-                        </div>
-                        <p class="mb-2 text-lg font-semibold text-gray-700">Escanea tu carnet estudiantil</p>
-                        <p class="text-sm text-gray-500">El sistema registrará automáticamente tu acceso</p>
-                        <input type="text" id="qr-input-sala-estudio"
-                            class="absolute opacity-0 w-1 h-1"
-                            autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-                    </div>
-                </div>
+              
 
                 <!-- Alumnos registrados -->
                 <div class="p-6 bg-white border-l-4 border-green-500 shadow-sm rounded-xl">

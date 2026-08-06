@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Alerta de Inconsistencias - SIA | Sistema de Informaci�n de Aulas</title>
+    <title>Alerta de Inconsistencias - SIA | Sistema de Información de Aulas</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -92,19 +92,19 @@
 <body>
     <div class="container">
         <div class="header">
-            <span class="alert-icon">🚨</span>
-            <strong>Alerta de Inconsistencias - SIA | Sistema de Informaci�n de Aulas</strong>
+            <span class="alert-icon">ðŸš¨</span>
+            <strong>Alerta de Inconsistencias - SIA | Sistema de Información de Aulas</strong>
             <br>
-            <small>Fecha de verificación: {{ $datos['fecha_verificacion'] }}</small>
+            <small>Fecha de verificaciÃ³n: {{ $datos['fecha_verificacion'] }}</small>
         </div>
 
         <h2>Se han detectado inconsistencias en el sistema</h2>
-        <p>El sistema de verificación automática ha encontrado problemas que requieren atención inmediata.</p>
+        <p>El sistema de verificaciÃ³n automÃ¡tica ha encontrado problemas que requieren atenciÃ³n inmediata.</p>
 
         @if(count($datos['espacios_ocupados_sin_reserva']) > 0)
         <div class="section">
-            <h3>⚠️ Espacios Ocupados sin Reserva Activa</h3>
-            <p><strong>{{ count($datos['espacios_ocupados_sin_reserva']) }}</strong> espacios están marcados como ocupados pero no tienen una reserva activa correspondiente.</p>
+            <h3>âš ï¸ Espacios Ocupados sin Reserva Activa</h3>
+            <p><strong>{{ count($datos['espacios_ocupados_sin_reserva']) }}</strong> espacios estÃ¡n marcados como ocupados pero no tienen una reserva activa correspondiente.</p>
             @foreach($datos['espacios_ocupados_sin_reserva'] as $espacio)
             <div class="inconsistencia-item">
                 <strong>{{ $espacio['id_espacio'] }}</strong>: {{ $espacio['nombre_espacio'] }}
@@ -116,8 +116,8 @@
 
         @if(count($datos['reservas_activas_espacios_disponibles']) > 0)
         <div class="section">
-            <h3>⚠️ Reservas Activas en Espacios Disponibles</h3>
-            <p><strong>{{ count($datos['reservas_activas_espacios_disponibles']) }}</strong> reservas están activas pero sus espacios están marcados como disponibles.</p>
+            <h3>âš ï¸ Reservas Activas en Espacios Disponibles</h3>
+            <p><strong>{{ count($datos['reservas_activas_espacios_disponibles']) }}</strong> reservas estÃ¡n activas pero sus espacios estÃ¡n marcados como disponibles.</p>
             @foreach($datos['reservas_activas_espacios_disponibles'] as $reserva)
             <div class="inconsistencia-item">
                 <strong>Reserva:</strong> {{ $reserva['id_reserva'] }}
@@ -131,21 +131,21 @@
 
         @if(count($datos['reservas_antiguas']) > 0)
         <div class="section">
-            <h3>⚠️ Reservas Activas de Días Anteriores</h3>
-            <p><strong>{{ count($datos['reservas_antiguas']) }}</strong> reservas siguen activas desde días anteriores y no se han finalizado.</p>
+            <h3>âš ï¸ Reservas Activas de DÃ­as Anteriores</h3>
+            <p><strong>{{ count($datos['reservas_antiguas']) }}</strong> reservas siguen activas desde dÃ­as anteriores y no se han finalizado.</p>
             @foreach($datos['reservas_antiguas'] as $reserva)
             <div class="inconsistencia-item">
                 <strong>Reserva:</strong> {{ $reserva['id_reserva'] }}
                 <br><strong>Espacio:</strong> {{ $reserva['espacio_id'] }} - {{ $reserva['espacio_nombre'] }}
                 <br><strong>Usuario:</strong> {{ $reserva['tipo_usuario'] }} ({{ $reserva['usuario'] }})
                 <br><strong>Fecha:</strong> {{ $reserva['fecha_reserva'] }} {{ $reserva['hora'] }}
-                <br><small class="danger">⚠️ Reserva antigua que debería haberse finalizado</small>
+                <br><small class="danger">âš ï¸ Reserva antigua que deberÃ­a haberse finalizado</small>
             </div>
             @endforeach
         </div>
         @endif
 
-        <h3>📊 Estadísticas del Sistema</h3>
+        <h3>ðŸ“Š EstadÃ­sticas del Sistema</h3>
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-number">{{ $datos['estadisticas']['total_espacios'] }}</div>
@@ -169,17 +169,17 @@
             </div>
         </div>
 
-        <h3>🔧 Acciones Recomendadas</h3>
+        <h3>ðŸ”§ Acciones Recomendadas</h3>
         <ul>
             <li><strong>Revisar manualmente</strong> los espacios y reservas inconsistentes</li>
-            <li><strong>Ejecutar comando de liberación:</strong> <code>php artisan espacios:liberar</code></li>
-            <li><strong>Verificar estado después:</strong> <code>php artisan sistema:verificar-estado</code></li>
-            <li><strong>Contactar al equipo técnico</strong> si las inconsistencias persisten</li>
+            <li><strong>Ejecutar comando de liberaciÃ³n:</strong> <code>php artisan espacios:liberar</code></li>
+            <li><strong>Verificar estado despuÃ©s:</strong> <code>php artisan sistema:verificar-estado</code></li>
+            <li><strong>Contactar al equipo tÃ©cnico</strong> si las inconsistencias persisten</li>
         </ul>
 
         <div class="footer">
-            <p>Este correo fue generado automáticamente por el sistema de monitoreo de SIA | Sistema de Informaci�n de Aulas.</p>
-            <p>Para más información, revise los logs del sistema o contacte al administrador.</p>
+            <p>Este correo fue generado automÃ¡ticamente por el sistema de monitoreo de SIA | Sistema de Información de Aulas.</p>
+            <p>Para mÃ¡s informaciÃ³n, revise los logs del sistema o contacte al administrador.</p>
         </div>
     </div>
 </body>
