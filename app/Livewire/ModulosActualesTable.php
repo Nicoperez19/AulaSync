@@ -630,7 +630,7 @@ class ModulosActualesTable extends Component
             $this->fechaActual = Carbon::now()->locale('es')->isoFormat('dddd, D [de] MMMM [de] YYYY');
 
             // Verificar si el periodo académico ha iniciado
-            $periodoActual = \App\Models\PeriodoAcademico::where('activo', true)->first();
+            $periodoActual = SemesterHelper::getPeriodoActual();
             if ($periodoActual && $periodoActual->noHaIniciado()) {
                 $this->periodoNoIniciado = true;
                 $this->nombrePeriodo = $periodoActual->nombre_completo;

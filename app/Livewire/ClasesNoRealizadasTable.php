@@ -468,7 +468,7 @@ class ClasesNoRealizadasTable extends Component
     public function render()
     {        
         // Verificar si el periodo académico ha iniciado
-        $periodoActual = \App\Models\PeriodoAcademico::where('activo', true)->first();
+        $periodoActual = SemesterHelper::getPeriodoActual();
         $periodoNoIniciado = $periodoActual && $periodoActual->noHaIniciado();
         
         // Si el periodo no ha iniciado, no mostrar datos

@@ -95,10 +95,10 @@ class DataLoadController extends Controller
 
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
-            'semestre_selector' => 'required|in:1,2'
+            'semestre_selector' => 'nullable|in:1,2'
         ]);
 
-        $semestreSeleccionado = $request->input('semestre_selector');
+        $semestreSeleccionado = $request->input('semestre_selector') ?: \App\Helpers\SemesterHelper::getCurrentSemester();
         // Usar el año académico configurado en lugar de la fecha del sistema
         $anioActual = \App\Helpers\SemesterHelper::getCurrentAcademicYear();
         $periodoSeleccionado = $anioActual . '-' . $semestreSeleccionado;

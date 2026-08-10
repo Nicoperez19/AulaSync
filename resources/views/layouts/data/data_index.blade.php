@@ -128,11 +128,13 @@
                             class="block text-sm font-medium text-gray-700 dark:text-gray-300">
                             Semestre Académico
                         </label>
+                        @php
+                            $semestreActualDefecto = \App\Helpers\SemesterHelper::getCurrentSemester();
+                        @endphp
                         <select id="semestre_selector" name="semestre_selector"
                             class="block w-full px-3 py-2 mt-1 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                            <option value="">Seleccionar semestre...</option>
-                            <option value="1">Primer Semestre</option>
-                            <option value="2">Segundo Semestre</option>
+                            <option value="1" {{ $semestreActualDefecto == 1 ? 'selected' : '' }}>Primer Semestre</option>
+                            <option value="2" {{ $semestreActualDefecto == 2 ? 'selected' : '' }}>Segundo Semestre</option>
                         </select>
                         <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
                             Selecciona el semestre al que corresponden los datos del archivo. El año será

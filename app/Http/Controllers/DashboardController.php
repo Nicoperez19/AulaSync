@@ -187,6 +187,25 @@ class DashboardController extends Controller
         $fechaInicioSemana = $fechasSemana['lunes'];
         $fechaFinSemana = $fechasSemana['sabado'];
 
+        // Pre-cargar planificaciones de clases programadas para el período académico actual
+        $periodoActual = SemesterHelper::getCurrentPeriod();
+        $planificacionesSemana = Planificacion_Asignatura::whereIn('id_espacio', $espaciosIds)
+            ->whereHas('horario', function ($q) use ($periodoActual) {
+                $q->where('periodo', $periodoActual);
+            })
+            ->get(['id_espacio', 'id_modulo'])
+            ->groupBy('id_modulo');
+
+        // Mapeo de días a prefijos de módulo
+        $prefijosDias = [
+            'lunes' => 'LU',
+            'martes' => 'MA',
+            'miercoles' => 'MI',
+            'jueves' => 'JU',
+            'viernes' => 'VI',
+            'sabado' => 'SA',
+        ];
+
         // Pre-cargar reservas de uso real en la semana (activas/finalizadas con asistentes)
         $reservasSemana = Reserva::whereBetween('fecha_reserva', [$fechaInicioSemana, $fechaFinSemana])
             ->whereIn('id_espacio', $espaciosIds)
@@ -220,13 +239,14 @@ class DashboardController extends Controller
             }
         }
 
-        // Calcular ocupación real (Espacios Usados / Espacios Totales) por día y módulo
+        // Calcular ocupación (Programación de Clases + Reservas Espontáneas / Espacios Totales) por día y módulo
         $ocupacion = [];
 
         foreach ($diasDisponibles as $dia) {
             $fechaDelDia = $fechasSemana[$dia];
             $ocupacion[$dia] = [];
             $maxModulos = ($dia === 'sabado') ? 6 : 15;
+            $prefijo = $prefijosDias[$dia] ?? 'LU';
 
             $reservasDia = $reservasSemana->get($fechaDelDia, collect());
 
@@ -236,10 +256,17 @@ class DashboardController extends Controller
                     continue;
                 }
 
-                $horarioModulo = ModulosHelper::getHorarioModulo($dia, $moduloNum);
+                $idModuloStr = $prefijo . '.' . $moduloNum;
                 $espaciosUsados = [];
 
-                // Revisar reservas en este día que coincidan con el módulo
+                // 1. Obtener espacios ocupados según la PROGRAMACIÓN DE CLASES
+                if (isset($planificacionesSemana[$idModuloStr])) {
+                    $espaciosProgramados = $planificacionesSemana[$idModuloStr]->pluck('id_espacio')->toArray();
+                    $espaciosUsados = array_merge($espaciosUsados, $espaciosProgramados);
+                }
+
+                // 2. Sumar espacios ocupados por RESERVAS ESPONTÁNEAS/EVENTOS en este día y módulo
+                $horarioModulo = ModulosHelper::getHorarioModulo($dia, $moduloNum);
                 foreach ($reservasDia as $reserva) {
                     $overlap = false;
                     $modInicio = $reserva->modulo_inicio ? (int) $reserva->modulo_inicio : null;
@@ -269,7 +296,7 @@ class DashboardController extends Controller
                     }
                 }
 
-                // Para el módulo actual en vivo, incluir también los espacios marcados como 'Ocupado'
+                // 3. Para el módulo actual en vivo, incluir espacios con estado 'Ocupado'
                 if ($dia === $diaHoyNormalizado && $moduloNum === $moduloActualNum) {
                     $espaciosEstadoOcupado = Espacio::whereIn('id_espacio', $espaciosIds)
                         ->where('estado', 'Ocupado')
@@ -278,9 +305,10 @@ class DashboardController extends Controller
                     $espaciosUsados = array_merge($espaciosUsados, $espaciosEstadoOcupado);
                 }
 
+                // Calcular total único de espacios ocupados (programación + reservas sin duplicados)
                 $totalUsados = count(array_unique($espaciosUsados));
 
-                // Porcentaje de uso real = (Espacios Usados / Espacios Totales) * 100
+                // Porcentaje de ocupación = (Espacios Usados / Espacios Totales) * 100
                 $porcentaje = $totalEspacios > 0 ? round(($totalUsados / $totalEspacios) * 100) : 0;
                 $ocupacion[$dia][$moduloNum] = min(100, max(0, $porcentaje));
             }

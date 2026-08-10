@@ -55,6 +55,14 @@ class HorariosController extends Controller
             }
         }
 
+        // Asegurar que existan semestres 1 y 2 en las opciones del filtro
+        if (!in_array('1', $semestresDisponibles)) {
+            $semestresDisponibles[] = '1';
+        }
+        if (!in_array('2', $semestresDisponibles)) {
+            $semestresDisponibles[] = '2';
+        }
+
         // Ordenar arrays
         sort($aniosDisponibles);
         sort($semestresDisponibles);
@@ -358,6 +366,14 @@ class HorariosController extends Controller
                     $semestresDisponibles[] = $semestre;
                 }
             }
+        }
+
+        // Asegurar que existan semestres 1 y 2 en las opciones del filtro
+        if (!in_array('1', $semestresDisponibles)) {
+            $semestresDisponibles[] = '1';
+        }
+        if (!in_array('2', $semestresDisponibles)) {
+            $semestresDisponibles[] = '2';
         }
 
         // Ordenar arrays

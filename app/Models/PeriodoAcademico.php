@@ -52,10 +52,21 @@ class PeriodoAcademico extends Model
     {
         $fecha = $fecha ? Carbon::parse($fecha) : Carbon::now();
 
-        return static::where('activo', true)
+        $periodo = static::where('activo', true)
             ->where('fecha_inicio', '<=', $fecha)
             ->where('fecha_fin', '>=', $fecha)
+            ->orderBy('anio', 'desc')
+            ->orderBy('semestre', 'desc')
             ->first();
+
+        if (!$periodo) {
+            $periodo = static::where('activo', true)
+                ->where('fecha_inicio', '<=', $fecha)
+                ->orderBy('fecha_inicio', 'desc')
+                ->first();
+        }
+
+        return $periodo;
     }
 
     /**

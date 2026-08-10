@@ -16,7 +16,7 @@ class ClasesNoRealizadasController extends Controller
         $periodo = SemesterHelper::getCurrentPeriod();
         
         // Verificar si el periodo académico ha iniciado
-        $periodoActual = \App\Models\PeriodoAcademico::where('activo', true)->first();
+        $periodoActual = SemesterHelper::getPeriodoActual();
         $periodoNoIniciado = $periodoActual && $periodoActual->noHaIniciado();
         
         // Si el periodo no ha iniciado, las estadísticas son 0
@@ -43,7 +43,7 @@ class ClasesNoRealizadasController extends Controller
     public function exportAllExcel(Request $request)
     {
         // Verificar si el periodo académico ha iniciado
-        $periodoActual = \App\Models\PeriodoAcademico::where('activo', true)->first();
+        $periodoActual = SemesterHelper::getPeriodoActual();
         if ($periodoActual && $periodoActual->noHaIniciado()) {
             return back()->with('error', 'No se puede exportar porque el periodo académico aún no ha iniciado.');
         }
