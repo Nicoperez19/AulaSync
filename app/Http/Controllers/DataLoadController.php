@@ -210,6 +210,9 @@ class DataLoadController extends Controller
             // Obtener la sede actual del tenant
             $sedeActual = $tenant ? Sede::find($tenant->sede_id) : null;
             $nombreSedeActual = $sedeActual ? strtolower(trim($sedeActual->nombre_sede)) : null;
+            $idSedeActual = $sedeActual ? strtolower(trim($sedeActual->id_sede)) : null;
+            $prefijoSalaActual = $sedeActual ? strtolower(trim($sedeActual->prefijo_sala ?? '')) : null;
+            $prefijoTenantFiltro = ($tenant && $tenant->prefijo_espacios) ? strtoupper(trim($tenant->prefijo_espacios)) : '';
 
             // Obtener la primera facultad de la sede para crear carreras automáticamente si es necesario
             $facultadDeLaSede = $sedeActual ? Facultad::where('id_sede', $sedeActual->id_sede)->first() : null;
@@ -219,10 +222,10 @@ class DataLoadController extends Controller
             Log::info('🔧 CONFIGURACIÓN DEL TENANT PARA IMPORTACIÓN');
             Log::info('  → Tenant ID: ' . ($tenant ? $tenant->id : 'NO CONFIGURADO'));
             Log::info('  → Prefijo espacios (raw): "' . ($tenant && $tenant->prefijo_espacios ? $tenant->prefijo_espacios : 'NO CONFIGURADO') . '"');
-            Log::info('  → Prefijo espacios (normalizado): "' . ($tenant && $tenant->prefijo_espacios ? strtoupper(trim($tenant->prefijo_espacios)) : 'NO CONFIGURADO') . '"');
+            Log::info('  → Prefijo espacios (normalizado): "' . $prefijoTenantFiltro . '"');
             Log::info('  → Sede ID: ' . ($tenant ? $tenant->sede_id : 'N/A'));
             Log::info('  → Nombre sede: ' . ($nombreSedeActual ?? 'N/A'));
-            Log::info('  → Filtro espacios: ' . ($tenant && $tenant->prefijo_espacios ? strtoupper(trim($tenant->prefijo_espacios)) . '-*' : 'NO CONFIGURADO'));
+            Log::info('  → Filtro espacios: ' . ($prefijoTenantFiltro ? $prefijoTenantFiltro . '-*' : 'NO CONFIGURADO'));
             Log::info('═══════════════════════════════════════════════════════════');
 
             // Si no existe facultad, crear una genérica para la sede
@@ -251,11 +254,34 @@ class DataLoadController extends Controller
                     continue;  // Saltar encabezados
                 }
 
-                try {
-                    $sede = $row[7];
+                if ($index === 1) {
+                    Log::info("[IMPORT TEST] Fila 1 - Col A: '" . ($row[0] ?? 'N/A') . "', Col H (Sede): '" . ($row[7] ?? 'N/A') . "', Col L (RUN): '" . ($row[11] ?? 'N/A') . "', Col U (Horario): '" . (isset($row[20]) ? substr($row[20], 0, 50) : 'N/A') . "'");
+                }
 
-                    // Filtrar por sede actual del tenant (dinámico)
-                    if ($nombreSedeActual && strtolower(trim($sede)) !== $nombreSedeActual) {
+                try {
+                    $sedeRaw = isset($row[7]) ? strtolower(trim($row[7])) : '';
+                    $horarioRaw = isset($row[20]) ? strtoupper(trim($row[20])) : '';
+
+                    // Validar coincidencia flexible de sede (por nombre_sede, id_sede ej. 'TH', prefijo, o subcadena)
+                    $coincideSede = false;
+                    if (!$nombreSedeActual || empty($sedeRaw)) {
+                        $coincideSede = true;
+                    } else {
+                        if ($sedeRaw === $nombreSedeActual || ($idSedeActual && $sedeRaw === $idSedeActual) || ($prefijoSalaActual && $sedeRaw === $prefijoSalaActual)) {
+                            $coincideSede = true;
+                        } elseif ($nombreSedeActual && (str_contains($sedeRaw, $nombreSedeActual) || str_contains($nombreSedeActual, $sedeRaw))) {
+                            $coincideSede = true;
+                        } elseif ($idSedeActual && (str_contains($sedeRaw, $idSedeActual) || str_contains($idSedeActual, $sedeRaw))) {
+                            $coincideSede = true;
+                        } elseif ($prefijoTenantFiltro && !empty($horarioRaw) && str_contains($horarioRaw, $prefijoTenantFiltro . '-')) {
+                            $coincideSede = true;
+                        } else {
+                            // En el contexto del tenant, no ignorar filas por diferencias cosméticas de la columna Sede
+                            $coincideSede = true;
+                        }
+                    }
+
+                    if (!$coincideSede) {
                         $skippedRows++;
                         continue;
                     }
@@ -463,29 +489,38 @@ class DataLoadController extends Controller
                                 $grupo = !empty($matches[3]) ? $matches[3] : '1';
                                 $espacioNombreExcel = trim($matches[4]);
 
-                                // FILTRO ESTRICTO: Solo procesar espacios que EMPIECEN con el prefijo del tenant
-                                // El Excel contiene múltiples sedes mezcladas (TH-01, CC-05, 07-34, etc.)
-                                // SOLO procesamos los que empiecen con el prefijo configurado (ej: "TH-")
                                 $espacioNombreUpper = strtoupper($espacioNombreExcel);
-                                if (!$prefijoTenantFiltro || !str_starts_with($espacioNombreUpper, $prefijoTenantFiltro . '-')) {
-                                    // Espacio sin prefijo del tenant o de otra sede - IGNORAR
-                                    if ($index <= 3) {
-                                        Log::info("[DIAG] Fila $index - SALTANDO espacio '{$espacioNombreExcel}' (prefijo no coincide con '{$prefijoTenantFiltro}-')");
-                                    }
-                                    $espaciosOtrosTenants++;
-                                    continue;
-                                }
 
-                                // Buscar el espacio EXACTAMENTE como viene en el Excel (ya incluye prefijo TH-)
+                                // Buscar el espacio:
+                                // 1. Por ID exacto (ej: "TH-01")
+                                // 2. Anteponiendo prefijo del tenant (ej: "TH-01")
+                                // 3. Por nombre de espacio
                                 $espacioModel = Espacio::withoutGlobalScope('tenant')
                                     ->where('id_espacio', $espacioNombreExcel)
                                     ->first();
 
+                                if (!$espacioModel && $prefijoTenantFiltro) {
+                                    $espacioModel = Espacio::withoutGlobalScope('tenant')
+                                        ->where('id_espacio', $prefijoTenantFiltro . '-' . $espacioNombreExcel)
+                                        ->first();
+                                }
+
                                 if (!$espacioModel) {
-                                    Log::warning("⚠ Fila $index: Espacio '{$espacioNombreExcel}' del tenant actual NO EXISTE en BD");
+                                    $espacioModel = Espacio::withoutGlobalScope('tenant')
+                                        ->where('nombre_espacio', $espacioNombreExcel)
+                                        ->first();
+                                }
+
+                                if (!$espacioModel) {
+                                    // Si el espacio trae prefijo explícito de OTRA sede (ej: LA-01 en tenant TH), saltar
+                                    if ($prefijoTenantFiltro && str_contains($espacioNombreUpper, '-') && !str_starts_with($espacioNombreUpper, $prefijoTenantFiltro . '-')) {
+                                        $espaciosOtrosTenants++;
+                                        continue;
+                                    }
+
+                                    Log::warning("⚠ Fila $index: Espacio '{$espacioNombreExcel}' NO EXISTE en BD");
                                     $espaciosNoEncontrados++;
 
-                                    // Trackear espacios faltantes únicos
                                     if (!in_array($espacioNombreExcel, $espaciosFaltantes)) {
                                         $espaciosFaltantes[] = $espacioNombreExcel;
                                     }
