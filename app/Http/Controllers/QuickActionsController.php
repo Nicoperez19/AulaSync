@@ -668,7 +668,7 @@ class QuickActionsController extends Controller
                 }
 
                 $estadoReserva = ($esMismoDia && $estaEnFranjaActual) ? 'activa' : 'programada';
-                $tipoReserva = $esRecurrente ? 'recurrente' : ((($request->tipo === 'profesor' || $request->tipo === 'colaborador') && $idAsignatura) ? 'clase' : 'espontanea');
+                $tipoReserva = $esRecurrente ? 'recurrente' : ((($request->tipo === 'profesor' || $request->tipo === 'colaborador') && $idAsignatura) ? 'clase' : 'directa');
 
                 $datosReserva = [
                     'id_reserva' => $idReserva,
