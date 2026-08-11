@@ -95,10 +95,10 @@ class DataLoadController extends Controller
 
         $request->validate([
             'file' => 'required|file|mimes:xlsx,xls,csv|max:10240',
-            'semestre_selector' => 'nullable|in:1,2'
+            'semestre_selector' => 'required|in:1,2'
         ]);
 
-        $semestreSeleccionado = $request->input('semestre_selector') ?: \App\Helpers\SemesterHelper::getCurrentSemester();
+        $semestreSeleccionado = $request->input('semestre_selector');
         // Usar el año académico configurado en lugar de la fecha del sistema
         $anioActual = \App\Helpers\SemesterHelper::getCurrentAcademicYear();
         $periodoSeleccionado = $anioActual . '-' . $semestreSeleccionado;
@@ -136,11 +136,12 @@ class DataLoadController extends Controller
                 'registros_cargados' => 0
             ]);
 
-            // LIMPIEZA PREVIA: Eliminar planificaciones del período seleccionado
-            Log::info('Iniciando limpieza previa del período: ' . $periodoSeleccionado);
+            // LIMPIEZA PREVIA TOTAL: Eliminar planificaciones y horarios del período seleccionado
+            Log::info('Iniciando limpieza previa total del período: ' . $periodoSeleccionado);
             $horariosDelPeriodo = Horario::where('periodo', $periodoSeleccionado)->pluck('id_horario');
             $planificacionesEliminadas = Planificacion_Asignatura::whereIn('id_horario', $horariosDelPeriodo)->delete();
-            Log::info('Planificaciones eliminadas del período ' . $periodoSeleccionado . ': ' . $planificacionesEliminadas);
+            $horariosEliminados = Horario::where('periodo', $periodoSeleccionado)->delete();
+            Log::info("Limpieza previa del período {$periodoSeleccionado}: {$planificacionesEliminadas} planificaciones y {$horariosEliminados} horarios eliminados.");
 
             // GARANTIZAR QUE EXISTAN MÓDULOS: Sin ellos la FK falla y 0 planificaciones se crean
             $modulosExistentes = Modulo::count();

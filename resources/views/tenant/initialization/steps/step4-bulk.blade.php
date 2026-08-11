@@ -60,18 +60,16 @@
             <!-- Semestre Selection -->
             <div class="mt-4" id="semestre-section" style="display: none;">
                 <label for="semestre_selector" class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="fas fa-calendar mr-2"></i>Semestre Académico
+                    <i class="fas fa-calendar mr-2"></i>Semestre Académico <span class="text-red-500">*</span>
                 </label>
-                @php
-                    $semestreActualDefecto = \App\Helpers\SemesterHelper::getCurrentSemester();
-                @endphp
-                <select name="semestre_selector" id="semestre_selector" 
+                <select name="semestre_selector" id="semestre_selector" required
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
-                    <option value="1" {{ $semestreActualDefecto == 1 ? 'selected' : '' }}>Primer Semestre {{ date('Y') }}</option>
-                    <option value="2" {{ $semestreActualDefecto == 2 ? 'selected' : '' }}>Segundo Semestre {{ date('Y') }}</option>
+                    <option value="" disabled selected>-- Seleccione el Semestre Académico --</option>
+                    <option value="1">Primer Semestre {{ date('Y') }} ({{ date('Y') }}-1)</option>
+                    <option value="2">Segundo Semestre {{ date('Y') }} ({{ date('Y') }}-2)</option>
                 </select>
                 <p class="text-sm text-gray-500 mt-1">
-                    Seleccione el semestre al que corresponden los datos del archivo.
+                    Seleccione obligatoriamente el semestre al que corresponden los datos del archivo.
                 </p>
             </div>
             
