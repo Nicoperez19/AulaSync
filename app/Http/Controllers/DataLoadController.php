@@ -248,6 +248,61 @@ class DataLoadController extends Controller
             // No se crean espacios durante la importación, solo se usan los existentes
             Log::info('✓ Espacios existentes en BD del tenant: ' . Espacio::count() . ' (no se crearán nuevos)');
 
+            // Encabezados de la primera fila
+            $headers = isset($rows[0]) ? array_map(function($h) {
+                return strtoupper(trim(preg_replace('/[^A-Za-z0-9_]/', '', (string)$h)));
+            }, $rows[0]) : [];
+
+            // Detectar si la carga corresponde a Chillán (por tenant activo o por cabeceras del formato compacto)
+            $esChillan = ($tenant && (strtolower($tenant->domain) === 'ch' || strtoupper($tenant->sede_id) === 'CH')) 
+                || in_array('PROF_RESP', $headers) 
+                || in_array('ID_CURSO', $headers);
+
+            if ($esChillan) {
+                // FORMATO ESPECÍFICO Y EXCLUSIVO PARA CHILLÁN (11 Columnas: ID_CURSO, COD_RAMO, RAMO_NOMBRE, SEC, INSCRITOS, INSCRITOS_UA, PROF_RESP, NOM_PROF_RESP, UA, NOM_CARR, HORARIO)
+                $colMap = [
+                    'id_asignatura' => 0,     // ID_CURSO
+                    'codigo_asignatura' => 1, // COD_RAMO
+                    'nombre_asignatura' => 2, // RAMO_NOMBRE
+                    'seccion' => 3,           // SEC
+                    'inscritos' => 4,         // INSCRITOS
+                    'run_profesor' => 6,      // PROF_RESP
+                    'nombre_profesor' => 7,   // NOM_PROF_RESP
+                    'id_carrera' => 8,        // UA
+                    'nombre_carrera' => 9,    // NOM_CARR
+                    'horario' => 10,          // HORARIO
+                ];
+                Log::info('→ Carga de Chillán detectada: Aplicando estructura específica de 11 columnas.');
+            } else {
+                // FORMATO ESTÁNDAR PARA TODAS LAS DEMÁS SEDES (Talcahuano, Concepción, Los Ángeles, Cañete - 21 Columnas)
+                $colMap = [
+                    'id_asignatura' => 0,
+                    'codigo_asignatura' => 1,
+                    'nombre_asignatura' => 2,
+                    'seccion' => 3,
+                    'sede' => 7,
+                    'inscritos' => 9,
+                    'run_profesor' => 11,
+                    'nombre_profesor' => 12,
+                    'email_profesor' => 13,
+                    'tipo_profesor' => 16,
+                    'id_carrera' => 17,
+                    'nombre_carrera' => 18,
+                    'horario' => 20,
+                ];
+
+                // Ajustar dinámicamente si los encabezados varían ligeramente en el formato estándar
+                foreach ($headers as $colIdx => $headerName) {
+                    if (in_array($headerName, ['RUN_PROFESOR', 'RUN_PROF', 'RUT_PROFESOR'])) $colMap['run_profesor'] = $colIdx;
+                    if (in_array($headerName, ['NOMBRE_PROFESOR', 'NOMBRE_PROF'])) $colMap['nombre_profesor'] = $colIdx;
+                    if (in_array($headerName, ['HORARIO', 'HORARIOS', 'BLOQUES'])) $colMap['horario'] = $colIdx;
+                    if (in_array($headerName, ['SEDE', 'NOMBRE_SEDE'])) $colMap['sede'] = $colIdx;
+                }
+                Log::info('→ Carga estándar detectada para otras sedes: Aplicando mapa de 21 columnas.');
+            }
+
+            Log::info("→ Mapa de columnas activo: " . json_encode($colMap));
+
             Log::info('→ Iniciando procesamiento de ' . (count($rows) - 1) . ' filas de datos...');
 
             foreach ($rows as $index => $row) {
@@ -256,12 +311,12 @@ class DataLoadController extends Controller
                 }
 
                 if ($index === 1) {
-                    Log::info("[IMPORT TEST] Fila 1 - Col A: '" . ($row[0] ?? 'N/A') . "', Col H (Sede): '" . ($row[7] ?? 'N/A') . "', Col L (RUN): '" . ($row[11] ?? 'N/A') . "', Col U (Horario): '" . (isset($row[20]) ? substr($row[20], 0, 50) : 'N/A') . "'");
+                    Log::info("[IMPORT TEST] Fila 1 - Asig: '" . ($row[$colMap['id_asignatura']] ?? 'N/A') . "', Sede: '" . ($row[$colMap['sede']] ?? 'N/A') . "', RUN: '" . ($row[$colMap['run_profesor']] ?? 'N/A') . "', Horario: '" . (isset($row[$colMap['horario']]) ? substr($row[$colMap['horario']], 0, 50) : 'N/A') . "'");
                 }
 
                 try {
-                    $sedeRaw = isset($row[7]) ? strtolower(trim($row[7])) : '';
-                    $horarioRaw = isset($row[20]) ? strtoupper(trim($row[20])) : '';
+                    $sedeRaw = isset($colMap['sede']) && isset($row[$colMap['sede']]) ? strtolower(trim($row[$colMap['sede']])) : '';
+                    $horarioRaw = isset($row[$colMap['horario']]) ? strtoupper(trim($row[$colMap['horario']])) : '';
 
                     // Validar coincidencia flexible de sede (por nombre_sede, id_sede ej. 'TH', prefijo, o subcadena)
                     $coincideSede = false;
@@ -287,13 +342,15 @@ class DataLoadController extends Controller
                         continue;
                     }
 
-                    $idCarrera = $row[17];
+                    $idCarrera = isset($row[$colMap['id_carrera']]) ? trim($row[$colMap['id_carrera']]) : '';
 
                     // Durante la inicialización o si la carrera no existe, intentar crearla o usar una genérica
-                    $carrera = Carrera::withoutGlobalScope('tenant')->find($idCarrera);
-                    if (!$carrera) {
+                    $carrera = !empty($idCarrera) ? Carrera::withoutGlobalScope('tenant')->find($idCarrera) : null;
+                    if (!$carrera && !empty($idCarrera)) {
                         // Intentar crear una carrera genérica para esta sede
-                        $nombreCarrera = isset($row[18]) && !empty($row[18]) ? $row[18] : 'Carrera ' . $idCarrera;
+                        $nombreCarrera = (isset($colMap['nombre_carrera']) && isset($row[$colMap['nombre_carrera']]) && !empty($row[$colMap['nombre_carrera']]))
+                            ? trim($row[$colMap['nombre_carrera']])
+                            : 'Carrera ' . $idCarrera;
 
                         // Necesitamos un área académica genérica para esta facultad
                         if ($facultadDeLaSede) {
@@ -329,19 +386,34 @@ class DataLoadController extends Controller
                         }
                     }
 
-                    $run = $row[11];
-                    $name = $row[12];
-                    $email = $row[13];
-                    $tipoProfesor = $row[16];
+                    $runRaw = isset($row[$colMap['run_profesor']]) ? trim($row[$colMap['run_profesor']]) : '';
+                    $run = preg_replace('/[^0-9Kk]/', '', $runRaw);
+                    $run = strtoupper($run);
+
+                    if (empty($run)) {
+                        continue;
+                    }
+
+                    $name = isset($row[$colMap['nombre_profesor']]) ? trim($row[$colMap['nombre_profesor']]) : '';
+
+                    // Email del docente: si no viene en el Excel, construir un correo válido a partir del nombre o RUN
+                    $email = (isset($colMap['email_profesor']) && isset($row[$colMap['email_profesor']])) ? trim($row[$colMap['email_profesor']]) : '';
+                    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                        $nameClean = preg_replace('/[^a-zA-Z0-9]/', '', strtolower(explode(',', $name)[0] ?? $run));
+                        $email = !empty($nameClean) ? $nameClean . '@ucsc.cl' : $run . '@ucsc.cl';
+                    }
+
+                    $tipoProfesor = (isset($colMap['tipo_profesor']) && isset($row[$colMap['tipo_profesor']])) ? trim($row[$colMap['tipo_profesor']]) : 'Profesor Responsable';
+
                     $existingProfesor = Profesor::withoutGlobalScope('tenant')->where('run_profesor', $run)->first();
 
                     if ($existingProfesor) {
                         // ACTUALIZACIÓN COMPLETA del profesor
                         $existingProfesor->update([
-                            'name' => $name,
-                            'email' => $email,
-                            'id_carrera' => $idCarrera,
-                            'tipo_profesor' => $tipoProfesor,  // También actualizar tipo
+                            'name' => !empty($name) ? $name : $existingProfesor->name,
+                            'email' => !empty($email) ? $email : $existingProfesor->email,
+                            'id_carrera' => !empty($idCarrera) ? $idCarrera : $existingProfesor->id_carrera,
+                            'tipo_profesor' => !empty($tipoProfesor) ? $tipoProfesor : $existingProfesor->tipo_profesor,
                             'sede_id' => $sedeActual ? $sedeActual->id_sede : null,
                             'id_facultad' => $facultadDeLaSede ? $facultadDeLaSede->id_facultad : null
                         ]);
@@ -350,9 +422,9 @@ class DataLoadController extends Controller
                         // Crear nuevo profesor
                         $profesor = Profesor::create([
                             'run_profesor' => $run,
-                            'name' => $name,
+                            'name' => !empty($name) ? $name : 'Profesor ' . $run,
                             'email' => $email,
-                            'id_carrera' => $idCarrera,
+                            'id_carrera' => !empty($idCarrera) ? $idCarrera : null,
                             'tipo_profesor' => $tipoProfesor,
                             'sede_id' => $sedeActual ? $sedeActual->id_sede : null,
                             'id_facultad' => $facultadDeLaSede ? $facultadDeLaSede->id_facultad : null
@@ -360,12 +432,12 @@ class DataLoadController extends Controller
                         $processedUsersCount++;
                     }
 
-                    $idAsignatura = $row[0];
-                    $codigoAsignatura = $row[1];
-                    $nombreAsignatura = preg_replace('/^[a-z]{2}:\s*/i', '', $row[2]);
+                    $idAsignatura = isset($row[$colMap['id_asignatura']]) ? trim($row[$colMap['id_asignatura']]) : '';
+                    $codigoAsignatura = isset($row[$colMap['codigo_asignatura']]) ? trim($row[$colMap['codigo_asignatura']]) : '';
+                    $nombreAsignatura = isset($row[$colMap['nombre_asignatura']]) ? preg_replace('/^[a-z]{2}:\s*/i', '', trim($row[$colMap['nombre_asignatura']])) : '';
 
-                    $numeroSeccion = trim($row[3]);  // Columna D
-                    $inscritos = isset($row[9]) ? (int) $row[9] : null;  // Columna J - Inscritos
+                    $numeroSeccion = isset($row[$colMap['seccion']]) ? trim($row[$colMap['seccion']]) : '1';
+                    $inscritos = isset($row[$colMap['inscritos']]) ? (int) $row[$colMap['inscritos']] : null;
 
                     // Validar que la sección sea un número de hasta 4 dígitos
                     if (!empty($numeroSeccion) && !preg_match('/^\d{1,4}$/', $numeroSeccion)) {
@@ -388,23 +460,23 @@ class DataLoadController extends Controller
                             'nombre_asignatura' => $nombreAsignatura,
                             'seccion' => $numeroSeccion,
                             'run_profesor' => $run,
-                            'id_carrera' => $idCarrera
+                            'id_carrera' => !empty($idCarrera) ? $idCarrera : null
                         ]);
                     } else {
                         // ACTUALIZACIÓN COMPLETA de la asignatura
                         $existingAsignatura->update([
-                            'codigo_asignatura' => $codigoAsignatura,
-                            'nombre_asignatura' => $nombreAsignatura,
+                            'codigo_asignatura' => !empty($codigoAsignatura) ? $codigoAsignatura : $existingAsignatura->codigo_asignatura,
+                            'nombre_asignatura' => !empty($nombreAsignatura) ? $nombreAsignatura : $existingAsignatura->nombre_asignatura,
                             'seccion' => $numeroSeccion,
                             'run_profesor' => $run,
-                            'id_carrera' => $idCarrera
+                            'id_carrera' => !empty($idCarrera) ? $idCarrera : $existingAsignatura->id_carrera
                         ]);
                         $asignatura = $existingAsignatura;
                     }
 
                     $processedAsignaturasCount++;
 
-                    $horarioProfesor = $row[20] ?? null;
+                    $horarioProfesor = isset($row[$colMap['horario']]) ? trim($row[$colMap['horario']]) : null;
 
                     $periodo = $periodoSeleccionado;
 
@@ -531,21 +603,29 @@ class DataLoadController extends Controller
 
                                 $espacioIdFinal = $espacioModel->id_espacio;
 
-                                // CREAR planificación (ya se hizo limpieza previa)
+                                // CREAR planificación (verificando duplicados exactos)
                                 $idModulo = $dia . '.' . $modulo;
 
                                 try {
-                                    $planificacion = new Planificacion_Asignatura();
-                                    $planificacion->id_asignatura = $idAsignatura;
-                                    $planificacion->id_horario = $horario->id_horario;
-                                    $planificacion->id_modulo = $idModulo;
-                                    $planificacion->id_espacio = $espacioIdFinal;
-                                    $planificacion->inscritos = $inscritos;
-                                    $planificacion->data_load_id = $dataLoad->id;
-                                    $planificacion->save();
+                                    $existePlanificacion = Planificacion_Asignatura::where('id_asignatura', $idAsignatura)
+                                        ->where('id_horario', $horario->id_horario)
+                                        ->where('id_modulo', $idModulo)
+                                        ->where('id_espacio', $espacioIdFinal)
+                                        ->exists();
 
-                                    $processedHorariosCount++;
-                                    $planificacionesGuardadas++;
+                                    if (!$existePlanificacion) {
+                                        $planificacion = new Planificacion_Asignatura();
+                                        $planificacion->id_asignatura = $idAsignatura;
+                                        $planificacion->id_horario = $horario->id_horario;
+                                        $planificacion->id_modulo = $idModulo;
+                                        $planificacion->id_espacio = $espacioIdFinal;
+                                        $planificacion->inscritos = $inscritos;
+                                        $planificacion->data_load_id = $dataLoad->id;
+                                        $planificacion->save();
+
+                                        $processedHorariosCount++;
+                                        $planificacionesGuardadas++;
+                                    }
 
                                     // Log de éxito: primeras 5 y cada 100
                                     if ($planificacionesGuardadas <= 5 || $planificacionesGuardadas % 100 == 0) {
