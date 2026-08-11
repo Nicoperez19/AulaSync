@@ -271,6 +271,9 @@ class DataLoadController extends Controller
                     'id_carrera' => 8,        // UA
                     'nombre_carrera' => 9,    // NOM_CARR
                     'horario' => 10,          // HORARIO
+                    'sede' => null,
+                    'email_profesor' => null,
+                    'tipo_profesor' => null,
                 ];
                 Log::info('→ Carga de Chillán detectada: Aplicando estructura específica de 11 columnas.');
             } else {
@@ -311,7 +314,11 @@ class DataLoadController extends Controller
                 }
 
                 if ($index === 1) {
-                    Log::info("[IMPORT TEST] Fila 1 - Asig: '" . ($row[$colMap['id_asignatura']] ?? 'N/A') . "', Sede: '" . ($row[$colMap['sede']] ?? 'N/A') . "', RUN: '" . ($row[$colMap['run_profesor']] ?? 'N/A') . "', Horario: '" . (isset($row[$colMap['horario']]) ? substr($row[$colMap['horario']], 0, 50) : 'N/A') . "'");
+                    $asigTest = isset($colMap['id_asignatura']) && isset($row[$colMap['id_asignatura']]) ? $row[$colMap['id_asignatura']] : 'N/A';
+                    $sedeTest = isset($colMap['sede']) && isset($row[$colMap['sede']]) ? $row[$colMap['sede']] : 'N/A';
+                    $runTest = isset($colMap['run_profesor']) && isset($row[$colMap['run_profesor']]) ? $row[$colMap['run_profesor']] : 'N/A';
+                    $horarioTest = isset($colMap['horario']) && isset($row[$colMap['horario']]) ? substr($row[$colMap['horario']], 0, 50) : 'N/A';
+                    Log::info("[IMPORT TEST] Fila 1 - Asig: '{$asigTest}', Sede: '{$sedeTest}', RUN: '{$runTest}', Horario: '{$horarioTest}'");
                 }
 
                 try {
