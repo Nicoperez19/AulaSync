@@ -1,0 +1,74 @@
+================================================================================
+  AULASYNC - GUÍA DE MANTENIMIENTO Y REINICIO DE HORARIOS POR SEDE
+================================================================================
+
+DESCRIPCIÓN:
+Esta guía permite diagnosticar, limpiar y volver a cargar la programación académica
+(horarios y planificaciones) de cualquier sede en AulaSync sin afectar los datos
+históricos (asistencias, atrasos, clases no realizadas o reservas pasadas).
+
+--------------------------------------------------------------------------------
+1. LISTA DE SEDES / TENANTS REGISTRADOS EN EL SISTEMA
+--------------------------------------------------------------------------------
+ID | Sede          | Dominio | Sede ID | Base de Datos
+--------------------------------------------------------------------------------
+1  | Concepción    | ccp     | CCP     | aulasync_ccp
+2  | Chillán       | ch      | CH      | aulasync_ch
+3  | Cañete        | ct      | CT      | aulasync_ct
+4  | Los Ángeles   | la      | LA      | aulasync_la
+5  | Talcahuano    | th      | TH      | aulasync_th
+--------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------
+2. PASO 1: DIAGNÓSTICO DE LA SEDE (TINKER)
+--------------------------------------------------------------------------------
+Abre Tinker en la terminal del servidor:
+  php artisan tinker
+
+Para cambiar a la sede deseada, modifica el ID ($tenantId = X):
+(Ejemplo: $tenantId = 2 para Chillán, $tenantId = 1 para Concepción, etc.)
+
+-- Comando en 1 sola línea para ver Período Actual y Cargas de la Sede --
+$tenantId = 2; $t = \App\Models\Tenant::find($tenantId); $t->makeCurrent(); echo "Sede: {$t->name} | DB: {$t->database}\nPeríodo Activo: " . \App\Helpers\SemesterHelper::getCurrentPeriod() . "\n"; \App\Models\Horario::select('periodo', \DB::raw('count(*) as total'))->groupBy('periodo')->get();
+
+-- Comando para detectar si existen cruces de salas/módulos entre 2026-1 y 2026-2 --
+$tenantId = 2; $t = \App\Models\Tenant::find($tenantId); $t->makeCurrent(); $cruces = \DB::connection('tenant')->table('planificacion_asignaturas as pa')->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')->join('espacios as e', 'pa.id_espacio', '=', 'e.id_espacio')->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')->select('e.nombre_espacio', 'm.dia', 'm.hora_inicio', 'm.hora_termino', 'h.periodo', 'a.nombre_asignatura', 'a.codigo_asignatura')->whereIn('h.periodo', ['2026-1', '2026-2'])->get()->groupBy(fn($i)=>$i->nombre_espacio.' | '.$i->dia.' '.$i->hora_inicio)->filter(fn($g)=>$g->pluck('periodo')->unique()->count()>1); echo "Total cruces en la sede: " . $cruces->count() . "\n";
+
+--------------------------------------------------------------------------------
+3. PASO 2: OPCIONES DE LIMPIEZA EN LA SEDE (TINKER)
+--------------------------------------------------------------------------------
+
+-- OPCIÓN A: Borrar SOLO un período específico (Ejemplo: borrar solo 2026-1) --
+$tenantId = 2; $periodoABorrar = '2026-1'; $t = \App\Models\Tenant::find($tenantId); $t->makeCurrent(); $ids = \App\Models\Horario::where('periodo', $periodoABorrar)->pluck('id_horario'); $p = \App\Models\Planificacion_Asignatura::whereIn('id_horario', $ids)->delete(); $h = \App\Models\Horario::where('periodo', $periodoABorrar)->delete(); echo "✅ Eliminados de {$t->name} ({$periodoABorrar}):\n - Planificaciones: {$p}\n - Horarios: {$h}\n";
+
+-- OPCIÓN B: Vaciar TOTALMENTE las mallas (borrar 2026-1 y 2026-2 para re-cargar de cero) --
+$tenantId = 2; $t = \App\Models\Tenant::find($tenantId); $t->makeCurrent(); \App\Models\Planificacion_Asignatura::query()->delete(); \App\Models\Horario::query()->delete(); echo "✅ Mallas de horarios de {$t->name} vaciadas al 100%.\n";
+
+--------------------------------------------------------------------------------
+4. PASO 3: VERIFICACIÓN POST-LIMPIEZA (TINKER)
+--------------------------------------------------------------------------------
+$tenantId = 2; $t = \App\Models\Tenant::find($tenantId); $t->makeCurrent(); echo "Total Horarios vigentes: " . \App\Models\Horario::count() . "\n";
+
+Sal de Tinker escribiendo: exit
+
+--------------------------------------------------------------------------------
+5. PASO 4: RE-CARGA DE ARCHIVOS EXCEL (PANEL WEB)
+--------------------------------------------------------------------------------
+1. Entra al sistema web AulaSync con tu usuario administrador.
+2. Ve al menú "Carga de Datos".
+3. Carga de Primer Semestre:
+   - Selecciona "Semestre 1" en el selector.
+   - Sube el Excel correspondiente a la sede.
+4. Carga de Segundo Semestre:
+   - Selecciona "Semestre 2" en el selector.
+   - Sube el Excel correspondiente a la sede.
+
+--------------------------------------------------------------------------------
+6. PASO 5: ACTUALIZACIÓN FINAL DE ESPACIOS (TERMINAL BASH)
+--------------------------------------------------------------------------------
+Ejecuta el comando en tu consola Linux/Bash para actualizar en vivo el estado
+de ocupación de salas de todas las sedes:
+
+  php artisan espacios:actualizar-estado
+
+================================================================================
