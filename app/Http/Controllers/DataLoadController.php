@@ -253,56 +253,31 @@ class DataLoadController extends Controller
                 return strtoupper(trim(preg_replace('/[^A-Za-z0-9_]/', '', (string)$h)));
             }, $rows[0]) : [];
 
-            // Detectar si la carga corresponde a Chillán (por tenant activo o por cabeceras del formato compacto)
-            $esChillan = ($tenant && (strtolower($tenant->domain) === 'ch' || strtoupper($tenant->sede_id) === 'CH')) 
-                || in_array('PROF_RESP', $headers) 
-                || in_array('ID_CURSO', $headers);
+            // FORMATO ESTÁNDAR PARA TODAS LAS SEDES
+            $colMap = [
+                'id_asignatura' => 0,
+                'codigo_asignatura' => 1,
+                'nombre_asignatura' => 2,
+                'seccion' => 3,
+                'sede' => 7,
+                'inscritos' => 9,
+                'run_profesor' => 11,
+                'nombre_profesor' => 12,
+                'email_profesor' => 13,
+                'tipo_profesor' => 16,
+                'id_carrera' => 17,
+                'nombre_carrera' => 18,
+                'horario' => 20,
+            ];
 
-            if ($esChillan) {
-                // FORMATO ESPECÍFICO Y EXCLUSIVO PARA CHILLÁN (11 Columnas: ID_CURSO, COD_RAMO, RAMO_NOMBRE, SEC, INSCRITOS, INSCRITOS_UA, PROF_RESP, NOM_PROF_RESP, UA, NOM_CARR, HORARIO)
-                $colMap = [
-                    'id_asignatura' => 0,     // ID_CURSO
-                    'codigo_asignatura' => 1, // COD_RAMO
-                    'nombre_asignatura' => 2, // RAMO_NOMBRE
-                    'seccion' => 3,           // SEC
-                    'inscritos' => 4,         // INSCRITOS
-                    'run_profesor' => 6,      // PROF_RESP
-                    'nombre_profesor' => 7,   // NOM_PROF_RESP
-                    'id_carrera' => 8,        // UA
-                    'nombre_carrera' => 9,    // NOM_CARR
-                    'horario' => 10,          // HORARIO
-                    'sede' => null,
-                    'email_profesor' => null,
-                    'tipo_profesor' => null,
-                ];
-                Log::info('→ Carga de Chillán detectada: Aplicando estructura específica de 11 columnas.');
-            } else {
-                // FORMATO ESTÁNDAR PARA TODAS LAS DEMÁS SEDES (Talcahuano, Concepción, Los Ángeles, Cañete - 21 Columnas)
-                $colMap = [
-                    'id_asignatura' => 0,
-                    'codigo_asignatura' => 1,
-                    'nombre_asignatura' => 2,
-                    'seccion' => 3,
-                    'sede' => 7,
-                    'inscritos' => 9,
-                    'run_profesor' => 11,
-                    'nombre_profesor' => 12,
-                    'email_profesor' => 13,
-                    'tipo_profesor' => 16,
-                    'id_carrera' => 17,
-                    'nombre_carrera' => 18,
-                    'horario' => 20,
-                ];
-
-                // Ajustar dinámicamente si los encabezados varían ligeramente en el formato estándar
-                foreach ($headers as $colIdx => $headerName) {
-                    if (in_array($headerName, ['RUN_PROFESOR', 'RUN_PROF', 'RUT_PROFESOR'])) $colMap['run_profesor'] = $colIdx;
-                    if (in_array($headerName, ['NOMBRE_PROFESOR', 'NOMBRE_PROF'])) $colMap['nombre_profesor'] = $colIdx;
-                    if (in_array($headerName, ['HORARIO', 'HORARIOS', 'BLOQUES'])) $colMap['horario'] = $colIdx;
-                    if (in_array($headerName, ['SEDE', 'NOMBRE_SEDE'])) $colMap['sede'] = $colIdx;
-                }
-                Log::info('→ Carga estándar detectada para otras sedes: Aplicando mapa de 21 columnas.');
+            // Ajustar dinámicamente si los encabezados varían ligeramente en el formato estándar
+            foreach ($headers as $colIdx => $headerName) {
+                if (in_array($headerName, ['RUN_PROFESOR', 'RUN_PROF', 'RUT_PROFESOR'])) $colMap['run_profesor'] = $colIdx;
+                if (in_array($headerName, ['NOMBRE_PROFESOR', 'NOMBRE_PROF'])) $colMap['nombre_profesor'] = $colIdx;
+                if (in_array($headerName, ['HORARIO', 'HORARIOS', 'BLOQUES'])) $colMap['horario'] = $colIdx;
+                if (in_array($headerName, ['SEDE', 'NOMBRE_SEDE'])) $colMap['sede'] = $colIdx;
             }
+            Log::info('→ Carga estándar aplicada para todas las sedes.');
 
             Log::info("→ Mapa de columnas activo: " . json_encode($colMap));
 
