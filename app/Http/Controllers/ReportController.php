@@ -1577,23 +1577,18 @@ class ReportController extends Controller
      */
     private function getModulosHorarios(): array
     {
-        return [
-            1 => ['inicio' => '08:10', 'fin' => '09:00'],
-            2 => ['inicio' => '09:10', 'fin' => '10:00'],
-            3 => ['inicio' => '10:10', 'fin' => '11:00'],
-            4 => ['inicio' => '11:10', 'fin' => '12:00'],
-            5 => ['inicio' => '12:10', 'fin' => '13:00'],
-            6 => ['inicio' => '13:10', 'fin' => '14:00'],
-            7 => ['inicio' => '14:10', 'fin' => '15:00'],
-            8 => ['inicio' => '15:10', 'fin' => '16:00'],
-            9 => ['inicio' => '16:10', 'fin' => '17:00'],
-            10 => ['inicio' => '17:10', 'fin' => '18:00'],
-            11 => ['inicio' => '18:10', 'fin' => '19:00'],
-            12 => ['inicio' => '19:10', 'fin' => '20:00'],
-            13 => ['inicio' => '20:10', 'fin' => '21:00'],
-            14 => ['inicio' => '21:10', 'fin' => '22:00'],
-            15 => ['inicio' => '22:10', 'fin' => '23:00'],
-        ];
+        // Obtener horarios base (lunes por defecto ya que es estándar para reportes visuales)
+        $horarios = \App\Helpers\ModulosHelper::getHorariosModulos()['lunes'] ?? [];
+        
+        $formateados = [];
+        foreach ($horarios as $num => $horario) {
+            $formateados[$num] = [
+                'inicio' => substr($horario['inicio'], 0, 5),
+                'fin' => substr($horario['fin'], 0, 5)
+            ];
+        }
+        
+        return $formateados;
     }
 
     /**
@@ -1675,11 +1670,12 @@ class ReportController extends Controller
 
             // Preparar datos para exportación
             $datosExport = [];
-            $modulosDia = [
-                0 => '08:10-09:00', 1 => '09:10-10:00', 2 => '10:10-11:00', 3 => '11:10-12:00', 4 => '12:10-13:00',
-                5 => '13:10-14:00', 6 => '14:10-15:00', 7 => '15:10-16:00', 8 => '16:10-17:00', 9 => '17:10-18:00',
-                10 => '18:10-19:00', 11 => '19:10-20:00', 12 => '20:10-21:00', 13 => '21:10-22:00', 14 => '22:10-23:00'
-            ];
+            $modulosBase = $this->getModulosHorarios();
+            $modulosDia = [];
+            foreach ($modulosBase as $num => $horario) {
+                // array is 0-indexed for this specific logic
+                $modulosDia[$num - 1] = $horario['inicio'] . '-' . $horario['fin'];
+            }
 
             // Determinar el día de la semana de la fecha consultada para usar la ocupación de ese día
             $fechaCarbon = Carbon::parse($fechaInicio);

@@ -197,4 +197,39 @@ class ModulosHelper
     {
         return self::getNumeroModulo($idModulo) === 1 ? 40 : 20;
     }
+
+    /**
+     * Obtener el número de módulo actual según la hora y día, manejando los recesos.
+     */
+    public static function obtenerModuloActual(string $hora, string $diaNormalizado): ?int
+    {
+        $horarios = self::getHorariosModulos()[$diaNormalizado] ?? [];
+        
+        $moduloNumero = null;
+        
+        // 1. Verificar si estamos exactamente dentro de un módulo
+        foreach ($horarios as $numero => $horario) {
+            if ($hora >= $horario['inicio'] && $hora < $horario['fin']) {
+                $moduloNumero = $numero;
+                break;
+            }
+        }
+        
+        // 2. Si no estamos en un módulo, buscar el próximo módulo (estamos en break)
+        if (!$moduloNumero) {
+            foreach ($horarios as $numero => $horario) {
+                if ($hora < $horario['inicio']) {
+                    $moduloNumero = $numero;
+                    break;
+                }
+            }
+        }
+        
+        // 3. Si no hay módulo futuro hoy, asumir módulo 1 por defecto para fallback
+        if (!$moduloNumero) {
+            $moduloNumero = 1;
+        }
+
+        return $moduloNumero;
+    }
 }

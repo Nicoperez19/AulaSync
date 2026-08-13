@@ -103,11 +103,12 @@ class PlanoDigitalController extends Controller
                 ];
             });
 
+            $diaActualNormalizado = \App\Helpers\ModulosHelper::normalizarDia(\Carbon\Carbon::now()->locale('es')->isoFormat('dddd'));
             return view('layouts.plano_digital.show', [
                 'mapa' => $mapa,
                 'bloques' => $bloques,
                 'pisos' => $pisosFormateados,
-                'horariosModulos' => $this->obtenerMapaHorariosModulos()
+                'horariosModulos' => \App\Helpers\ModulosHelper::getHorariosModulos()[$diaActualNormalizado] ?? []
             ]);
         } catch (\Exception $e) {
             if (request()->wantsJson()) {
@@ -356,22 +357,39 @@ class PlanoDigitalController extends Controller
     private function obtenerModuloActual(array $estadoActual): ?Modulo
     {
         $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($estadoActual['dia']);
-        $diasPosibles = array_unique([$estadoActual['dia'], $diaLimpio, 'miércoles', 'miercoles', 'sábado', 'sabado']);
-
-        $modulo = Modulo::whereIn('dia', $diasPosibles)
-            ->where('hora_inicio', '<=', $estadoActual['hora'])
-            ->where('hora_termino', '>=', $estadoActual['hora'])
-            ->first();
-
-        // Si no hay módulo en curso (fuera de horario), asumir módulo 1 del día
-        if (!$modulo) {
-            $codigoDia = $this->obtenerCodigoDia($estadoActual['dia']);
-            if ($codigoDia) {
-                $modulo = Modulo::where('id_modulo', $codigoDia . '.1')->first();
+        $horarios = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaLimpio] ?? [];
+        $horaActual = $estadoActual['hora'];
+        
+        $moduloNumero = null;
+        
+        foreach ($horarios as $numero => $horario) {
+            if ($horaActual >= $horario['inicio'] && $horaActual < $horario['fin']) {
+                $moduloNumero = $numero;
+                break;
             }
         }
+        
+        // Si no estamos en un módulo, buscar el próximo módulo (estamos en break)
+        if (!$moduloNumero) {
+            foreach ($horarios as $numero => $horario) {
+                if ($horaActual < $horario['inicio']) {
+                    $moduloNumero = $numero;
+                    break;
+                }
+            }
+        }
+        
+        // Si no hay módulo en curso ni futuro hoy, asumir módulo 1 del día
+        if (!$moduloNumero) {
+            $moduloNumero = 1;
+        }
+        
+        $codigoDia = $this->obtenerCodigoDia($estadoActual['dia']);
+        if ($codigoDia) {
+            return Modulo::where('id_modulo', $codigoDia . '.' . $moduloNumero)->first();
+        }
 
-        return $modulo;
+        return null;
     }
 
     private function obtenerPlanificacionesActivas(Mapa $mapa, ?Modulo $moduloActual)
@@ -1570,7 +1588,8 @@ class PlanoDigitalController extends Controller
                 if ($reservaProgramada->modulo_inicio && $reservaProgramada->modulo_fin) {
                     // Verificar con la hora actual vs horarios de los módulos
                     $horaActualStr = $ahora->format('H:i:s');
-                    $horarioModulos = $this->obtenerMapaHorariosModulos();
+                    $diaActualNormalizado = \App\Helpers\ModulosHelper::normalizarDia($ahora->locale('es')->isoFormat('dddd'));
+                    $horarioModulos = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaActualNormalizado] ?? [];
 
                     $horaInicioModulo = $horarioModulos[$reservaProgramada->modulo_inicio]['inicio'] ?? null;
                     $horaFinModulo = $horarioModulos[$reservaProgramada->modulo_fin]['fin'] ?? null;
@@ -1645,7 +1664,8 @@ class PlanoDigitalController extends Controller
 
                 if ($reservaProgramadaOtro && $reservaProgramadaOtro->modulo_inicio && $reservaProgramadaOtro->modulo_fin) {
                     $horaActualStr = Carbon::now()->format('H:i:s');
-                    $horarioModulos = $this->obtenerMapaHorariosModulos();
+                    $diaActualNormalizado = \App\Helpers\ModulosHelper::normalizarDia(Carbon::now()->locale('es')->isoFormat('dddd'));
+                    $horarioModulos = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaActualNormalizado] ?? [];
                     $horaInicioMod = $horarioModulos[$reservaProgramadaOtro->modulo_inicio]['inicio'] ?? null;
                     $horaFinMod = $horarioModulos[$reservaProgramadaOtro->modulo_fin]['fin'] ?? null;
 
@@ -1844,7 +1864,8 @@ class PlanoDigitalController extends Controller
 
                     if ($reservaProgramadaScanner) {
                         // Verificar margen de 15 minutos para la reserva programada
-                        $horarioModulos = $this->obtenerMapaHorariosModulos();
+                        $diaActualNormalizado = \App\Helpers\ModulosHelper::normalizarDia(Carbon::now()->locale('es')->isoFormat('dddd'));
+                        $horarioModulos = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaActualNormalizado] ?? [];
                         $horaInicioMod = $horarioModulos[$reservaProgramadaScanner->modulo_inicio]['inicio'] ?? null;
                         
                         if ($horaInicioMod) {
@@ -2631,29 +2652,6 @@ class PlanoDigitalController extends Controller
         }
     }
 
-    /**
-     * Obtener mapa de horarios de módulos (número → inicio/fin)
-     * Horarios estándar de la institución.
-     */
-    private function obtenerMapaHorariosModulos(): array
-    {
-        return [
-            1 => ['inicio' => '08:10:00', 'fin' => '08:55:00'],
-            2 => ['inicio' => '08:55:00', 'fin' => '09:40:00'],
-            3 => ['inicio' => '09:55:00', 'fin' => '10:40:00'],
-            4 => ['inicio' => '10:40:00', 'fin' => '11:25:00'],
-            5 => ['inicio' => '11:35:00', 'fin' => '12:20:00'],
-            6 => ['inicio' => '12:20:00', 'fin' => '13:05:00'],
-            7 => ['inicio' => '13:30:00', 'fin' => '14:15:00'],
-            8 => ['inicio' => '14:15:00', 'fin' => '15:00:00'],
-            9 => ['inicio' => '15:15:00', 'fin' => '16:00:00'],
-            10 => ['inicio' => '16:00:00', 'fin' => '16:45:00'],
-            11 => ['inicio' => '16:55:00', 'fin' => '17:40:00'],
-            12 => ['inicio' => '17:40:00', 'fin' => '18:25:00'],
-            13 => ['inicio' => '18:30:00', 'fin' => '19:15:00'],
-            14 => ['inicio' => '19:15:00', 'fin' => '20:00:00'],
-        ];
-    }
 
     /**
      * Limpiar el caché de estados de espacios para el tenant actual

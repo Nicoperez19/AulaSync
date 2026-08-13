@@ -508,23 +508,13 @@ async function cargarModulosParaModal() {
     } catch (error) {
         console.log('ℹ️ Usando módulos por defecto para el modal');
         // Fallback: crear módulos por defecto si la API no existe o falla
-        modulosCargados = [
-            {id_modulo: '1', hora_inicio: '08:10:00', hora_termino: '09:00:00'},
-            {id_modulo: '2', hora_inicio: '09:10:00', hora_termino: '10:00:00'},
-            {id_modulo: '3', hora_inicio: '10:10:00', hora_termino: '11:00:00'},
-            {id_modulo: '4', hora_inicio: '11:10:00', hora_termino: '12:00:00'},
-            {id_modulo: '5', hora_inicio: '12:10:00', hora_termino: '13:00:00'},
-            {id_modulo: '6', hora_inicio: '13:10:00', hora_termino: '14:00:00'},
-            {id_modulo: '7', hora_inicio: '14:10:00', hora_termino: '15:00:00'},
-            {id_modulo: '8', hora_inicio: '15:10:00', hora_termino: '16:00:00'},
-            {id_modulo: '9', hora_inicio: '16:10:00', hora_termino: '17:00:00'},
-            {id_modulo: '10', hora_inicio: '17:10:00', hora_termino: '18:00:00'},
-            {id_modulo: '11', hora_inicio: '18:10:00', hora_termino: '19:00:00'},
-            {id_modulo: '12', hora_inicio: '19:10:00', hora_termino: '20:00:00'},
-            {id_modulo: '13', hora_inicio: '20:10:00', hora_termino: '21:00:00'},
-            {id_modulo: '14', hora_inicio: '21:10:00', hora_termino: '22:00:00'},
-            {id_modulo: '15', hora_inicio: '22:10:00', hora_termino: '23:00:00'}
-        ];
+        modulosCargados = [];
+        @php
+            $modulosBase = \App\Helpers\ModulosHelper::getHorariosModulos()['lunes'] ?? [];
+        @endphp
+        @foreach($modulosBase as $num => $horario)
+            modulosCargados.push({id_modulo: '{{ $num }}', hora_inicio: '{{ $horario["inicio"] }}', hora_termino: '{{ $horario["fin"] }}'});
+        @endforeach
     }
     
     const selectInicial = document.getElementById('edit-modulo-inicial');

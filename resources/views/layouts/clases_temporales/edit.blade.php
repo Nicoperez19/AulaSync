@@ -238,13 +238,10 @@
                                         </thead>
                                         <tbody id="horario-tbody">
                                             @php
-                                                $modulos = [
-                                                    1 => '08:10 - 09:00', 2 => '09:10 - 10:00', 3 => '10:10 - 11:00',
-                                                    4 => '11:10 - 12:00', 5 => '12:10 - 13:00', 6 => '13:10 - 14:00',
-                                                    7 => '14:10 - 15:00', 8 => '15:10 - 16:00', 9 => '16:10 - 17:00',
-                                                    10 => '17:10 - 18:00', 11 => '18:10 - 19:00', 12 => '19:10 - 20:00',
-                                                    13 => '20:10 - 21:00', 14 => '21:10 - 22:00', 15 => '22:10 - 23:00',
-                                                ];
+                                                $modulos = [];
+                                                foreach (\App\Helpers\ModulosHelper::getHorariosModulos()['lunes'] ?? [] as $num => $horario) {
+                                                    $modulos[$num] = substr($horario['inicio'], 0, 5) . ' - ' . substr($horario['fin'], 0, 5);
+                                                }
                                                 $dias = ['lunes' => 'LU', 'martes' => 'MA', 'miercoles' => 'MI', 'jueves' => 'JU', 'viernes' => 'VI', 'sabado' => 'SA'];
                                                 $sabado_modulos = [1, 2, 3, 4, 5, 6];
                                                 $modulos_diurnos = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];

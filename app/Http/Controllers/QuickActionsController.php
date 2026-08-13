@@ -509,25 +509,9 @@ class QuickActionsController extends Controller
             $idModuloInicial = $prefijoReserva.'.'.$request->modulo_inicial;
             $idModuloFinal = $prefijoReserva.'.'.$request->modulo_final;
 
-            // Horarios predefinidos para módulos (sin depender de la tabla Modulo)
-            // Esto permite crear reservas manuales sin que exista el módulo en la BD
-            $horariosModulos = [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
-            ];
+            // Obtener horarios predefinidos usando el Helper
+            $diaNormalizado = \App\Helpers\ModulosHelper::normalizarDia(\Carbon\Carbon::parse($request->fecha)->locale('es')->isoFormat('dddd'));
+            $horariosModulos = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaNormalizado] ?? [];
 
             // Obtener horas de los módulos inicial y final
             // Primero intentar obtener de la tabla Modulo (si existen registros)
@@ -1172,24 +1156,9 @@ class QuickActionsController extends Controller
                 return false;
             }
 
-            // Mapeo de módulos a horarios (mismo que el método de liberación)
-            $horariosModulos = [
-                1 => ['inicio' => '08:10:00', 'fin' => '09:00:00'],
-                2 => ['inicio' => '09:10:00', 'fin' => '10:00:00'],
-                3 => ['inicio' => '10:10:00', 'fin' => '11:00:00'],
-                4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
-                5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
-                6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
-                7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
-                8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
-                9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
-                10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
-                11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
-                12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
-                13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
-                14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
-                15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
-            ];
+            // Mapeo de módulos a horarios mediante Helper
+            $diaNormalizado = \App\Helpers\ModulosHelper::normalizarDia(\Carbon\Carbon::parse($fechaReserva)->locale('es')->isoFormat('dddd'));
+            $horariosModulos = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaNormalizado] ?? [];
 
             // Determinar módulo actual basado en la hora
             $moduloActual = null;
@@ -1354,23 +1323,11 @@ class QuickActionsController extends Controller
     private function procesarModulosYHorarios($reserva)
     {
         // Mapeo de módulos a horarios
-        $horariosModulos = [
-            1 => ['inicio' => '08:10', 'fin' => '09:00'],
-            2 => ['inicio' => '09:10', 'fin' => '10:00'],
-            3 => ['inicio' => '10:10', 'fin' => '11:00'],
-            4 => ['inicio' => '11:10', 'fin' => '12:00'],
-            5 => ['inicio' => '12:10', 'fin' => '13:00'],
-            6 => ['inicio' => '13:10', 'fin' => '14:00'],
-            7 => ['inicio' => '14:10', 'fin' => '15:00'],
-            8 => ['inicio' => '15:10', 'fin' => '16:00'],
-            9 => ['inicio' => '16:10', 'fin' => '17:00'],
-            10 => ['inicio' => '17:10', 'fin' => '18:00'],
-            11 => ['inicio' => '18:10', 'fin' => '19:00'],
-            12 => ['inicio' => '19:10', 'fin' => '20:00'],
-            13 => ['inicio' => '20:10', 'fin' => '21:00'],
-            14 => ['inicio' => '21:10', 'fin' => '22:00'],
-            15 => ['inicio' => '22:10', 'fin' => '23:00'],
-        ];
+        $fechaParseada = $reserva->fecha_reserva instanceof \Carbon\Carbon
+            ? $reserva->fecha_reserva
+            : \Carbon\Carbon::parse($reserva->fecha_reserva);
+        $diaNormalizado = \App\Helpers\ModulosHelper::normalizarDia($fechaParseada->locale('es')->isoFormat('dddd'));
+        $horariosModulos = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaNormalizado] ?? [];
 
         $moduloInicio = null;
         $moduloFin = null;
@@ -1388,7 +1345,7 @@ class QuickActionsController extends Controller
             $cantidadModulos = $moduloFin - $moduloInicio + 1;
         } else {
             // Determinar por hora de inicio y duración en módulos
-            $horaReserva = substr($reserva->hora, 0, 5);  // HH:MM
+            $horaReserva = strlen($reserva->hora) <= 5 ? $reserva->hora . ':00' : $reserva->hora;
             foreach ($horariosModulos as $modulo => $horario) {
                 if ($horaReserva >= $horario['inicio'] && $horaReserva <= $horario['fin']) {
                     $moduloInicio = $modulo;

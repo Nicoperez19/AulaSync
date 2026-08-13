@@ -157,14 +157,18 @@ class ApiReservaController extends Controller
 
                 $asignaturaLibre = $profesor ? $profesor->asignaturas()->first() : null;
 
-                // Buscar el módulo actual según la hora
-                $tiempoMas20 = $horaActual->copy()->addMinutes(20)->toTimeString();
-                $tiempoMas40 = $horaActual->copy()->addMinutes(40)->toTimeString();
-
-                $moduloActual = Modulo::where('dia', $diaActual)
-                    ->whereRaw("hora_inicio <= CASE WHEN hora_inicio LIKE '08:10%' THEN ? ELSE ? END", [$tiempoMas40, $tiempoMas20])
-                    ->where('hora_termino', '>=', $horaActualStr)
-                    ->first();
+                // Buscar el módulo actual usando ModulosHelper (maneja recesos automáticamente)
+                $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+                $moduloNum = \App\Helpers\ModulosHelper::obtenerModuloActual($horaActualStr, $diaLimpio);
+                
+                $moduloActual = null;
+                if ($moduloNum) {
+                    $horario = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaLimpio][$moduloNum];
+                    // Recuperar el modelo Modulo de la BD usando la hora exacta para evitar el gap
+                    $moduloActual = Modulo::where('dia', $diaActual)
+                        ->where('hora_inicio', $horario['inicio'])
+                        ->first();
+                }
 
                 // Si no hay módulo actual, usar horarios por defecto
                 $horaInicio = $moduloActual ? $moduloActual->hora_inicio : $horaActualStr;
