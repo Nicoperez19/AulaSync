@@ -37,17 +37,25 @@
                 <!-- Nav Pills + Leyenda -->
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                     <!-- Nav Pills -->
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="cambiarTabOcupacion('todos')" id="tab-ocupacion-todos" class="px-4 py-2 text-sm font-bold rounded-lg transition duration-150 tab-ocupacion-btn bg-blue-600 text-white shadow-sm">
+                    <div class="inline-flex items-center gap-1 bg-gray-100 p-1 rounded-xl border border-gray-200">
+                        <button onclick="cambiarTabOcupacion('todos')" id="tab-ocupacion-todos"
+                            class="tab-ocupacion-btn inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold rounded-lg transition-all duration-200 bg-[#D2091E] text-white shadow-sm">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
                             Todos
                         </button>
-                        <button onclick="cambiarTabOcupacion('laboratorios')" id="tab-ocupacion-laboratorios" class="px-4 py-2 text-sm font-bold rounded-lg transition duration-150 tab-ocupacion-btn bg-gray-50 text-gray-600 hover:bg-gray-100">
+                        <button onclick="cambiarTabOcupacion('laboratorios')" id="tab-ocupacion-laboratorios"
+                            class="tab-ocupacion-btn inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold rounded-lg transition-all duration-200 text-gray-600 hover:bg-white hover:text-[#D2091E] hover:shadow-sm">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
                             Laboratorios
                         </button>
-                        <button onclick="cambiarTabOcupacion('salas_clases')" id="tab-ocupacion-salas_clases" class="px-4 py-2 text-sm font-bold rounded-lg transition duration-150 tab-ocupacion-btn bg-gray-50 text-gray-600 hover:bg-gray-100">
+                        <button onclick="cambiarTabOcupacion('salas_clases')" id="tab-ocupacion-salas_clases"
+                            class="tab-ocupacion-btn inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold rounded-lg transition-all duration-200 text-gray-600 hover:bg-white hover:text-[#D2091E] hover:shadow-sm">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                             Salas de Clases
                         </button>
-                        <button onclick="cambiarTabOcupacion('salas_estudio')" id="tab-ocupacion-salas_estudio" class="px-4 py-2 text-sm font-bold rounded-lg transition duration-150 tab-ocupacion-btn bg-gray-50 text-gray-600 hover:bg-gray-100">
+                        <button onclick="cambiarTabOcupacion('salas_estudio')" id="tab-ocupacion-salas_estudio"
+                            class="tab-ocupacion-btn inline-flex items-center gap-1.5 px-4 py-1.5 text-sm font-semibold rounded-lg transition-all duration-200 text-gray-600 hover:bg-white hover:text-[#D2091E] hover:shadow-sm">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
                             Salas de Estudio
                         </button>
                     </div>

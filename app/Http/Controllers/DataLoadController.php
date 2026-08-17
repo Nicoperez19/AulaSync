@@ -12,6 +12,7 @@ use App\Models\Modulo;
 use App\Models\Piso;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Profesor;
+use App\Models\ProfesorColaborador;
 use App\Models\Sede;
 use App\Services\QRService;
 use Illuminate\Http\Request;
@@ -126,9 +127,11 @@ class DataLoadController extends Controller
             $processedHorariosCount = 0;
             $errors = [];
             $skippedRows = 0;
-            $espaciosOtrosTenants = 0;  // Espacios que no pertenecen a este tenant
-            $espaciosNoEncontrados = 0;  // Espacios del tenant que no existen en BD
-            $espaciosFaltantes = [];  // Lista de espacios TH- que no se encontraron en BD
+            $skippedBySede = 0;           // Filas rechazadas por no coincidir con la sede
+            $skippedByColaborador = 0;    // Filas saltadas porque el profesor es colaborador
+            $espaciosOtrosTenants = 0;    // Espacios que no pertenecen a este tenant
+            $espaciosNoEncontrados = 0;   // Espacios del tenant que no existen en BD
+            $espaciosFaltantes = [];      // Lista de espacios que no se encontraron en BD
 
             // Actualizar estado inicial
             $dataLoad->update([
@@ -303,24 +306,23 @@ class DataLoadController extends Controller
                     // Validar coincidencia flexible de sede (por nombre_sede, id_sede ej. 'TH', prefijo, o subcadena)
                     $coincideSede = false;
                     if (!$nombreSedeActual || empty($sedeRaw)) {
+                        // Sin configuración de sede → aceptar todas las filas
                         $coincideSede = true;
                     } else {
                         if ($sedeRaw === $nombreSedeActual || ($idSedeActual && $sedeRaw === $idSedeActual) || ($prefijoSalaActual && $sedeRaw === $prefijoSalaActual)) {
-                            $coincideSede = true;
+                            $coincideSede = true;  // Coincidencia exacta
                         } elseif ($nombreSedeActual && (str_contains($sedeRaw, $nombreSedeActual) || str_contains($nombreSedeActual, $sedeRaw))) {
-                            $coincideSede = true;
+                            $coincideSede = true;  // Coincidencia por nombre_sede
                         } elseif ($idSedeActual && (str_contains($sedeRaw, $idSedeActual) || str_contains($idSedeActual, $sedeRaw))) {
-                            $coincideSede = true;
+                            $coincideSede = true;  // Coincidencia por id_sede
                         } elseif ($prefijoTenantFiltro && !empty($horarioRaw) && str_contains($horarioRaw, $prefijoTenantFiltro . '-')) {
-                            $coincideSede = true;
-                        } else {
-                            // En el contexto del tenant, no ignorar filas por diferencias cosméticas de la columna Sede
-                            $coincideSede = true;
+                            $coincideSede = true;  // Coincidencia por prefijo en el campo horario
                         }
+                        // Si ninguna condición coincide → $coincideSede permanece false (fila rechazada)
                     }
 
                     if (!$coincideSede) {
-                        $skippedRows++;
+                        $skippedBySede++;
                         continue;
                     }
 
@@ -387,6 +389,7 @@ class DataLoadController extends Controller
 
                     $tipoProfesor = (isset($colMap['tipo_profesor']) && isset($row[$colMap['tipo_profesor']])) ? trim($row[$colMap['tipo_profesor']]) : 'Profesor Responsable';
 
+                    // Actualizar/crear el profesor en BD (independiente de si es responsable o colaborador)
                     $existingProfesor = Profesor::withoutGlobalScope('tenant')->where('run_profesor', $run)->first();
 
                     if ($existingProfesor) {
@@ -412,6 +415,35 @@ class DataLoadController extends Controller
                             'id_facultad' => $facultadDeLaSede ? $facultadDeLaSede->id_facultad : null
                         ]);
                         $processedUsersCount++;
+                    }
+
+                    // Los profesores colaboradores NO generan asignatura/horario/planificación propia.
+                    // Se registran en la tabla profesores_colaboradores vinculados a la asignatura.
+                    if (stripos($tipoProfesor, 'colaborador') !== false) {
+                        $idAsignaturaColaborador = isset($row[$colMap['id_asignatura']]) ? trim($row[$colMap['id_asignatura']]) : '';
+                        $nombreAsignaturaColaborador = isset($row[$colMap['nombre_asignatura']]) ? preg_replace('/^[a-z]{2}:\s*/i', '', trim($row[$colMap['nombre_asignatura']])) : '';
+                        $inscritosColaborador = isset($row[$colMap['inscritos']]) ? (int) $row[$colMap['inscritos']] : 0;
+
+                        try {
+                            ProfesorColaborador::updateOrCreate(
+                                [
+                                    'run_profesor_colaborador' => $run,
+                                    'id_asignatura'           => !empty($idAsignaturaColaborador) ? $idAsignaturaColaborador : null,
+                                ],
+                                [
+                                    'nombre_asignatura_temporal' => $nombreAsignaturaColaborador ?: null,
+                                    'cantidad_inscritos'        => $inscritosColaborador,
+                                    'fecha_inicio'              => now()->startOfYear(),
+                                    'fecha_termino'             => now()->endOfYear(),
+                                    'estado'                    => 'activo',
+                                ]
+                            );
+                        } catch (\Exception $e) {
+                            Log::warning("Fila {$index}: no se pudo registrar colaborador RUN={$run}: " . $e->getMessage());
+                        }
+
+                        $skippedByColaborador++;
+                        continue;
                     }
 
                     $idAsignatura = isset($row[$colMap['id_asignatura']]) ? trim($row[$colMap['id_asignatura']]) : '';
@@ -652,6 +684,8 @@ class DataLoadController extends Controller
 
             Log::info('═══════════════════════════════════════════════════════════');
             Log::info('✓ IMPORTACIÓN COMPLETADA - PERÍODO: ' . $periodoSeleccionado);
+            Log::info('  → Filas rechazadas por sede incorrecta: ' . $skippedBySede);
+            Log::info('  → Filas saltadas (profesor colaborador): ' . $skippedByColaborador);
             Log::info('  → Profesores procesados: ' . $processedUsersCount);
             Log::info('  → Asignaturas procesadas: ' . $processedAsignaturasCount);
             Log::info('  → Planificaciones creadas: ' . $processedHorariosCount);

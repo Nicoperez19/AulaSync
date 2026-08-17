@@ -231,15 +231,17 @@ function cargarHorarioActual() {
 function cambiarTabOcupacion(tipo) {
     if (activeTabOcupacion === tipo) return;
     
+    // Resetear todos los botones al estado inactivo
     document.querySelectorAll('.tab-ocupacion-btn').forEach(btn => {
-        btn.classList.remove('bg-blue-600', 'text-white', 'shadow-sm');
-        btn.classList.add('bg-gray-50', 'text-gray-600', 'hover:bg-gray-100');
+        btn.classList.remove('bg-[#D2091E]', 'text-white', 'shadow-sm');
+        btn.classList.add('text-gray-600', 'hover:bg-white', 'hover:text-[#D2091E]', 'hover:shadow-sm');
     });
     
+    // Activar el botón seleccionado
     const selectedBtn = document.getElementById(`tab-ocupacion-${tipo}`);
     if (selectedBtn) {
-        selectedBtn.classList.remove('bg-gray-50', 'text-gray-600', 'hover:bg-gray-100');
-        selectedBtn.classList.add('bg-blue-600', 'text-white', 'shadow-sm');
+        selectedBtn.classList.remove('text-gray-600', 'hover:bg-white', 'hover:text-[#D2091E]', 'hover:shadow-sm');
+        selectedBtn.classList.add('bg-[#D2091E]', 'text-white', 'shadow-sm');
     }
     
     activeTabOcupacion = tipo;
