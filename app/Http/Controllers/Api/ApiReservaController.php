@@ -838,4 +838,117 @@ class ApiReservaController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * ADMIN: Registrar entrada (activar reserva) en nombre de un docente.
+     * Solo accesible para usuarios con permiso 'mantenedor de reservas'.
+     */
+    public function registrarEntradaAdmin(Request $request, $id)
+    {
+        try {
+            $request->validate([
+                'hora_inicio_real' => 'nullable|date_format:H:i',
+            ]);
+
+            $reserva = Reserva::with(['profesor', 'solicitante', 'espacio'])->findOrFail($id);
+
+            if (!in_array($reserva->estado, ['programada', 'activa'])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Solo se puede registrar entrada para reservas programadas o activas.',
+                ], 422);
+            }
+
+            $admin = auth()->user();
+            $horaReal = $request->input('hora_inicio_real')
+                ? $request->input('hora_inicio_real') . ':00'
+                : Carbon::now()->format('H:i:s');
+
+            $observacionAdmin = "\n[ADMIN] Entrada registrada por {$admin->name} ({$admin->run}) "
+                . "el " . Carbon::now()->format('d/m/Y') . " a las " . Carbon::now()->format('H:i:s')
+                . ". Hora real de inicio indicada: " . substr($horaReal, 0, 5) . ".";
+
+            $reserva->estado = 'activa';
+            $reserva->hora = $horaReal;
+            $reserva->observaciones = ($reserva->observaciones ?? '') . $observacionAdmin;
+            $reserva->save();
+
+            // Marcar espacio como Ocupado
+            if ($reserva->espacio) {
+                $reserva->espacio->estado = 'Ocupado';
+                $reserva->espacio->save();
+            }
+
+            \Log::info('[ADMIN] Entrada registrada', [
+                'reserva' => $id,
+                'admin' => $admin->run,
+                'hora_registrada' => $horaReal,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Entrada registrada correctamente en nombre del docente.',
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('[ADMIN] Error al registrar entrada: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al registrar la entrada: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * ADMIN: Registrar salida (finalizar reserva) en nombre de un docente.
+     * Solo accesible para usuarios con permiso 'mantenedor de reservas'.
+     */
+    public function registrarSalidaAdmin(Request $request, $id)
+    {
+        try {
+            $reserva = Reserva::with(['espacio'])->findOrFail($id);
+
+            if ($reserva->estado !== 'activa') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Solo se puede registrar salida para reservas activas.',
+                ], 422);
+            }
+
+            $admin = auth()->user();
+            $horaSalida = Carbon::now()->format('H:i:s');
+
+            $observacionAdmin = "\n[ADMIN] Salida registrada por {$admin->name} ({$admin->run}) "
+                . "el " . Carbon::now()->format('d/m/Y') . " a las {$horaSalida}.";
+
+            $reserva->estado = 'finalizada';
+            $reserva->hora_salida = $horaSalida;
+            $reserva->observaciones = ($reserva->observaciones ?? '') . $observacionAdmin;
+            $reserva->save();
+
+            // Liberar espacio
+            if ($reserva->espacio) {
+                $reserva->espacio->estado = 'Disponible';
+                $reserva->espacio->save();
+            }
+
+            \Log::info('[ADMIN] Salida registrada', [
+                'reserva' => $id,
+                'admin' => $admin->run,
+                'hora_salida' => $horaSalida,
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Salida registrada correctamente en nombre del docente.',
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('[ADMIN] Error al registrar salida: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al registrar la salida: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 }

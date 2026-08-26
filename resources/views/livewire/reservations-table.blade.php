@@ -86,18 +86,51 @@
                             @endif
                         </td>
                         <td class="p-3 border border-white dark:border-gray-700 whitespace-nowrap">
-                            <div class="flex justify-center space-x-2">
+                            <div class="flex flex-wrap justify-center gap-1.5">
                                 <x-button variant="view" href="{{ route('reservas.edit', $reserva->id_reserva) }}"
-                                    class="inline-flex items-center px-4 py-2">
-                                    <x-icons.edit class="w-5 h-5 mr-1" aria-hidden="true" />
+                                    class="inline-flex items-center px-3 py-1.5">
+                                    <x-icons.edit class="w-4 h-4" aria-hidden="true" />
                                 </x-button>
                                 <form method="POST" action="{{ route('reservas.delete', $reserva->id_reserva) }}" class="reserva-delete-form inline-block">
                                     @csrf
                                     @method('DELETE')
-                                    <x-button variant="danger" type="submit" class="px-4 py-2 text-white bg-red-500 rounded dark:bg-red-700 btn-delete-reserva" data-espacio="{{ $reserva->id_espacio }}">
-                                        <x-icons.delete class="w-5 h-5" aria-hidden="true" />
+                                    <x-button variant="danger" type="submit" class="px-3 py-1.5 text-white bg-red-500 rounded dark:bg-red-700 btn-delete-reserva" data-espacio="{{ $reserva->id_espacio }}">
+                                        <x-icons.delete class="w-4 h-4" aria-hidden="true" />
                                     </x-button>
                                 </form>
+
+                                {{-- Botones Admin: solo para reservas de hoy que están programadas o activas --}}
+                                @php
+                                    $esHoy = $reserva->fecha_reserva && \Carbon\Carbon::parse($reserva->fecha_reserva)->isToday();
+                                    $docente = $reserva->nombre_usuario;
+                                    $sala = $reserva->id_espacio;
+                                    $fecha = $reserva->fecha_reserva ? \Carbon\Carbon::parse($reserva->fecha_reserva)->format('d/m/Y') : '—';
+                                    $horario = substr($reserva->hora, 0, 5) . ' - ' . substr($reserva->hora_salida ?? '', 0, 5);
+                                @endphp
+
+                                @if($esHoy && $reserva->estado === 'programada')
+                                    <button type="button"
+                                            onclick="abrirModalAdmin('entrada', '{{ $reserva->id_reserva }}', '{{ addslashes($docente) }}', '{{ addslashes($sala) }}', '{{ $fecha }}', '{{ $horario }}')"
+                                            title="Registrar entrada administrativamente"
+                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 rounded-lg border border-emerald-300 transition dark:bg-emerald-900/40 dark:text-emerald-300 dark:border-emerald-700">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/>
+                                        </svg>
+                                        Entrada
+                                    </button>
+                                @endif
+
+                                @if($esHoy && $reserva->estado === 'activa')
+                                    <button type="button"
+                                            onclick="abrirModalAdmin('salida', '{{ $reserva->id_reserva }}', '{{ addslashes($docente) }}', '{{ addslashes($sala) }}', '{{ $fecha }}', '{{ $horario }}')"
+                                            title="Registrar salida administrativamente"
+                                            class="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-rose-700 bg-rose-100 hover:bg-rose-200 rounded-lg border border-rose-300 transition dark:bg-rose-900/40 dark:text-rose-300 dark:border-rose-700">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                                        </svg>
+                                        Salida
+                                    </button>
+                                @endif
                             </div>
                         </td>
                     </tr>

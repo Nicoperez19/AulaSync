@@ -1448,9 +1448,10 @@ class QuickActionsController extends Controller
                 'fecha' => 'required|date',
                 'hora' => 'required',
                 'modulos' => 'required|integer|min:1',
-                'modulo_inicio' => 'required|integer',
-                'modulo_fin' => 'required|integer',
+                'modulo_inicio' => 'nullable|integer',
+                'modulo_fin' => 'nullable|integer',
                 'observaciones' => 'nullable|string',
+                'nuevo_run_profesor' => 'nullable|string',
             ]);
 
             // Buscar reserva
@@ -1487,9 +1488,10 @@ class QuickActionsController extends Controller
                 ->where('id_reserva', '!=', $id)
                 ->whereIn('estado', ['activa', 'programada'])
                 ->where(function ($q) use ($request) {
-                    $q
-                        ->where('modulo_inicio', '<=', $request->modulo_fin)
-                        ->where('modulo_fin', '>=', $request->modulo_inicio);
+                    $moduloInicio = $request->modulo_inicio ?? 1;
+                    $moduloFin = $request->modulo_fin ?? 1;
+                    $q->where('modulo_inicio', '<=', $moduloFin)
+                      ->where('modulo_fin', '>=', $moduloInicio);
                 })
                 ->exists();
 
@@ -1500,18 +1502,38 @@ class QuickActionsController extends Controller
                 ], 400);
             }
 
+            // Reasignación de docente (si se envió un nuevo RUN)
+            $adminNota = '';
+            if ($request->filled('nuevo_run_profesor')) {
+                $nuevoRun = $request->nuevo_run_profesor;
+                $nuevoProfesor = Profesor::where('run_profesor', $nuevoRun)->first()
+                    ?? \App\Models\User::where('run', $nuevoRun)->first();
+
+                if (!$nuevoProfesor) {
+                    return response()->json([
+                        'success' => false,
+                        'mensaje' => 'No se encontró un docente con el RUN indicado.',
+                    ], 422);
+                }
+
+                $anteriorRun = $reserva->run_profesor ?: $reserva->run_solicitante;
+                $reserva->run_profesor = $nuevoRun;
+                $reserva->run_solicitante = null;
+
+                $admin = auth()->user();
+                $adminNota = "\n[ADMIN] Docente reasignado de {$anteriorRun} a {$nuevoRun} por {$admin->name} ({$admin->run}) el " . now()->format('d/m/Y H:i') . ".";
+            }
+
             // Actualizar datos
             $reserva->id_espacio = $espacio->id_espacio;
             $reserva->fecha_reserva = $request->fecha;
             $reserva->hora = $request->hora;
             $reserva->modulos = $request->modulos;
-            $reserva->modulo_inicio = $request->modulo_inicio;
-            $reserva->modulo_fin = $request->modulo_fin;
-            $reserva->observaciones = $request->observaciones;
+            if ($request->filled('modulo_inicio')) $reserva->modulo_inicio = $request->modulo_inicio;
+            if ($request->filled('modulo_fin')) $reserva->modulo_fin = $request->modulo_fin;
+            $reserva->observaciones = ($request->observaciones ?? '') . $adminNota;
 
-            // Marcar como editada (se usa updated_at automáticamente por Laravel)
-            $reserva->touch();  // Esto actualiza el timestamp updated_at
-
+            $reserva->touch();
             $reserva->save();
 
             // [NUEVO] Limpiar el caché de estados
