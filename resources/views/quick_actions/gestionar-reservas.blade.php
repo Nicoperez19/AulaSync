@@ -1863,6 +1863,8 @@ function formatearFecha(fecha) {
 
         return fecha;
     }
+}
+
 // ── Autocomplete para reasignar docente en modal de edición ───────────────────
 (function () {
     const input = document.getElementById('edit-nuevo-docente-buscar');
