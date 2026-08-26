@@ -124,10 +124,6 @@
                                 </svg>
                                 <span id="hora-actual" class="text-2xl font-semibold">--:--:--</span>
                             </div>
-                            <div id="badge-sistema-estado" class="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-green-100 bg-green-800/60 border border-green-400/30 rounded-full">
-                                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                                <span id="texto-sistema-estado">En Línea</span>
-                            </div>
                         </div>
 
                         <div class="py-1">
@@ -5644,13 +5640,9 @@
                             metaCsrf.setAttribute('content', data.csrf_token);
                         }
                     }
-                    const badge = document.getElementById('texto-sistema-estado');
-                    if (badge) badge.textContent = 'En Línea';
                 }
             } catch (err) {
                 console.warn('Keep-Alive falló temporalmente:', err);
-                const badge = document.getElementById('texto-sistema-estado');
-                if (badge) badge.textContent = 'Reconectando...';
             }
         }
 
