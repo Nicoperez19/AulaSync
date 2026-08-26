@@ -357,35 +357,10 @@ class PlanoDigitalController extends Controller
     private function obtenerModuloActual(array $estadoActual): ?Modulo
     {
         $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($estadoActual['dia']);
-        $horarios = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaLimpio] ?? [];
-        $horaActual = $estadoActual['hora'];
-        
-        $moduloNumero = null;
-        
-        foreach ($horarios as $numero => $horario) {
-            if ($horaActual >= $horario['inicio'] && $horaActual < $horario['fin']) {
-                $moduloNumero = $numero;
-                break;
-            }
-        }
-        
-        // Si no estamos en un módulo, buscar el próximo módulo (estamos en break)
-        if (!$moduloNumero) {
-            foreach ($horarios as $numero => $horario) {
-                if ($horaActual < $horario['inicio']) {
-                    $moduloNumero = $numero;
-                    break;
-                }
-            }
-        }
-        
-        // Si no hay módulo en curso ni futuro hoy, asumir módulo 1 del día
-        if (!$moduloNumero) {
-            $moduloNumero = 1;
-        }
-        
+        $moduloNumero = \App\Helpers\ModulosHelper::obtenerModuloActual($estadoActual['hora'], $diaLimpio);
+
         $codigoDia = $this->obtenerCodigoDia($estadoActual['dia']);
-        if ($codigoDia) {
+        if ($codigoDia && $moduloNumero) {
             return Modulo::where('id_modulo', $codigoDia . '.' . $moduloNumero)->first();
         }
 

@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
+use App\Helpers\ModulosHelper;
 
 class DataLoadController extends Controller
 {
@@ -158,43 +159,22 @@ class DataLoadController extends Controller
                     'VI' => 'viernes',
                     'SA' => 'sábado',
                 ];
-                $modulosBase = [
-                    ['hora_inicio' => '08:10', 'hora_termino' => '09:00'],
-                    ['hora_inicio' => '09:10', 'hora_termino' => '10:00'],
-                    ['hora_inicio' => '10:10', 'hora_termino' => '11:00'],
-                    ['hora_inicio' => '11:10', 'hora_termino' => '12:00'],
-                    ['hora_inicio' => '12:10', 'hora_termino' => '13:00'],
-                    ['hora_inicio' => '13:10', 'hora_termino' => '14:00'],
-                    ['hora_inicio' => '14:10', 'hora_termino' => '15:00'],
-                    ['hora_inicio' => '15:10', 'hora_termino' => '16:00'],
-                    ['hora_inicio' => '16:10', 'hora_termino' => '17:00'],
-                    ['hora_inicio' => '17:10', 'hora_termino' => '18:00'],
-                    ['hora_inicio' => '18:10', 'hora_termino' => '19:00'],
-                    ['hora_inicio' => '19:10', 'hora_termino' => '20:00'],
-                    ['hora_inicio' => '20:10', 'hora_termino' => '21:00'],
-                    ['hora_inicio' => '21:10', 'hora_termino' => '22:00'],
-                    ['hora_inicio' => '22:10', 'hora_termino' => '23:00'],
-                ];
+                $horariosModulos = ModulosHelper::getHorariosModulos();
                 $modulosCreados = 0;
                 foreach ($dias as $codigoDia => $nombreDia) {
-                    // Sábado solo tiene módulos 1-5 (hasta 13:00hrs)
-                    $maxModulos = ($codigoDia === 'SA') ? 5 : 15;
+                    $claveDia = ModulosHelper::normalizarDia($nombreDia);
+                    $modulosDia = $horariosModulos[$claveDia] ?? [];
 
-                    foreach ($modulosBase as $idx => $mod) {
-                        $numeroModulo = $idx + 1;
-                        if ($numeroModulo > $maxModulos) {
-                            break;  // Skip módulos > 5 para sábado
-                        }
-
+                    foreach ($modulosDia as $numeroModulo => $horario) {
                         $idModulo = $codigoDia . '.' . $numeroModulo;
                         Modulo::firstOrCreate(
                             ['id_modulo' => $idModulo],
-                            ['dia' => $nombreDia, 'hora_inicio' => $mod['hora_inicio'], 'hora_termino' => $mod['hora_termino']]
+                            ['dia' => $nombreDia, 'hora_inicio' => $horario['inicio'], 'hora_termino' => $horario['fin']]
                         );
                         $modulosCreados++;
                     }
                 }
-                Log::info("✓ Módulos creados: {$modulosCreados} (LU-VI: 15 módulos, SA: 5 módulos)");
+                Log::info("✓ Módulos creados: {$modulosCreados} (LU-VI: 15 módulos, SA: 6 módulos)");
             } else {
                 Log::info("✓ Módulos existentes en BD: {$modulosExistentes}");
             }

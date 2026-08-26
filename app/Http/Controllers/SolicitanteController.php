@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 use App\Traits\RunNormalizer;
+use App\Helpers\ModulosHelper;
 
 /**
  * Controlador para manejar operaciones de solicitantes
@@ -593,60 +594,7 @@ class SolicitanteController extends Controller
      */
     private function determinarModuloActual($horaActual, $diaActual)
     {
-        // Prefijo del día
-        $prefijosDias = ['DO', 'LU', 'MA', 'MI', 'JU', 'VI', 'SA'];
-        $diasArray = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
-        $indexDia = array_search($diaActual, $diasArray);
-        $prefijo = $indexDia !== false ? $prefijosDias[$indexDia] : 'LU';
-
-
-
-        // Buscar un módulo que contenga la hora actual
-        // Probar módulos del 1 al 15
-        for ($i = 1; $i <= 15; $i++) {
-            try {
-                $idModulo = $prefijo . '.' . $i;
-
-
-                // Usar explícitamente la conexión 'tenant'
-                $modulo = \App\Models\Modulo::on('tenant')->where('id_modulo', $idModulo)->first();
-
-                if ($modulo) {
-
-
-                    if ($horaActual >= $modulo->hora_inicio && $horaActual < $modulo->hora_termino) {
-
-                        return $i;
-                    }
-                } else {
-
-                }
-            } catch (\Exception $e) {
-                Log::error('Error buscando módulo ' . $i, [
-                    'error' => $e->getMessage(),
-                    'idModulo' => $idModulo ?? 'unknown'
-                ]);
-            }
-        }
-
-        // Si no hay módulo activo, buscar el siguiente disponible
-        for ($i = 1; $i <= 15; $i++) {
-            try {
-                $idModulo = $prefijo . '.' . $i;
-                // Usar explícitamente la conexión 'tenant'
-                $modulo = \App\Models\Modulo::on('tenant')->where('id_modulo', $idModulo)->first();
-
-                if ($modulo && $horaActual < $modulo->hora_inicio) {
-
-                    return $i;
-                }
-            } catch (\Exception $e) {
-                Log::error('Error en búsqueda de siguiente módulo', ['error' => $e->getMessage()]);
-            }
-        }
-
-
-        return null;
+        return ModulosHelper::obtenerModuloActual($horaActual, $diaActual);
     }
 
     /**

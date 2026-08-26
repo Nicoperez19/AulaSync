@@ -128,15 +128,8 @@ class ProfesorController extends Controller
             // Encontrar el módulo actual para asignar como inicio/fin
             $diaSemanaStr = strtolower(\Carbon\Carbon::parse($fechaActual)->locale('es')->isoFormat('dddd'));
             $diaNormalizado = \App\Helpers\ModulosHelper::normalizarDia($diaSemanaStr);
+            $moduloActual = \App\Helpers\ModulosHelper::obtenerModuloActual($horaActual, $diaNormalizado);
             $horarios = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaNormalizado] ?? [];
-            $moduloActual = null;
-            
-            foreach ($horarios as $num => $h) {
-                if ($horaActual >= $h['inicio'] && $horaActual <= $h['fin']) {
-                    $moduloActual = $num;
-                    break;
-                }
-            }
 
             // Crear la reserva espontánea (sin vincular a una asignatura programada)
             $reserva = new Reserva();

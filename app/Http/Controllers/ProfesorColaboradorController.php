@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Carbon\Carbon;
+use App\Helpers\ModulosHelper;
 
 class ProfesorColaboradorController extends Controller
 {
@@ -226,13 +227,12 @@ class ProfesorColaboradorController extends Controller
         $espacios = Espacio::with('piso')->orderBy('nombre_espacio')->get();
         
         // Obtener módulos para pasar a la vista
-        $modulos = [
-            1 => '08:10 - 09:00', 2 => '09:10 - 10:00', 3 => '10:10 - 11:00',
-            4 => '11:10 - 12:00', 5 => '12:10 - 13:00', 6 => '13:10 - 14:00',
-            7 => '14:10 - 15:00', 8 => '15:10 - 16:00', 9 => '16:10 - 17:00',
-            10 => '17:10 - 18:00', 11 => '18:10 - 19:00', 12 => '19:10 - 20:00',
-            13 => '20:10 - 21:00', 14 => '21:10 - 22:00', 15 => '22:10 - 23:00',
-        ];
+        $modulos = collect(ModulosHelper::getModulosSimples())
+            ->mapWithKeys(function ($mod, $idx) {
+                $inicio = substr($mod['hora_inicio'], 0, 5);
+                $fin    = substr($mod['hora_termino'], 0, 5);
+                return [$idx + 1 => "{$inicio} - {$fin}"];
+            })->all();
 
         return view('layouts.clases_temporales.edit', compact('profesorColaborador', 'profesores', 'asignaturas', 'espacios', 'modulos'));
     }

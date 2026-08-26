@@ -3,6 +3,7 @@
 namespace App\Livewire;
 
 use App\Helpers\SemesterHelper;
+use App\Helpers\ModulosHelper;
 use App\Models\Asistencia;
 use App\Models\ClaseNoRealizada;
 use App\Models\DiaFeriado;
@@ -409,31 +410,31 @@ class ModulosActualesTable extends Component
             return null;
         }
 
-        $horariosDelDia = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaActual] ?? null;
+        $horariosDelDia = ModulosHelper::getHorariosModulos()[$diaActual] ?? null;
         if (!$horariosDelDia) {
             return null;
         }
 
-        // Buscar en qué módulo estamos
+        // Buscar si estamos dentro de un módulo
         foreach ($horariosDelDia as $numeroModulo => $modulo) {
             if ($horaActual >= $modulo['inicio'] && $horaActual < $modulo['fin']) {
                 return [
                     'numero' => $numeroModulo,
                     'inicio' => $modulo['inicio'],
-                    'fin' => $modulo['fin'],
-                    'tipo' => 'modulo',
+                    'fin'    => $modulo['fin'],
+                    'tipo'   => 'modulo',
                 ];
             }
         }
 
-        // Si no estamos en un módulo, buscar el próximo módulo (estamos en break)
+        // Estamos en break — retornar el próximo módulo
         foreach ($horariosDelDia as $numeroModulo => $modulo) {
             if ($horaActual < $modulo['inicio']) {
                 return [
-                    'numero' => $numeroModulo,
-                    'inicio' => $modulo['inicio'],
-                    'fin' => $modulo['fin'],
-                    'tipo' => 'break',
+                    'numero'  => $numeroModulo,
+                    'inicio'  => $modulo['inicio'],
+                    'fin'     => $modulo['fin'],
+                    'tipo'    => 'break',
                     'mensaje' => 'Próximo Módulo',
                 ];
             }
