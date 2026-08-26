@@ -234,8 +234,9 @@ class ProfesorController extends Controller
             $horaActual = now()->format('H:i:s');
             $fechaActual = now()->format('Y-m-d');
 
-            // Normalizar el RUN para búsqueda
-            $runLimpio = preg_replace('/[^0-9]/', '', $runProfesor);
+            // Normalizar el RUN para búsqueda (preservando K/k)
+            $runLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $runProfesor));
+            $runSinDv = strlen($runLimpio) > 1 ? substr($runLimpio, 0, -1) : $runLimpio;
 
             // Verificar que el espacio existe
             $espacio = Espacio::where('id_espacio', $idEspacio)->first();
@@ -272,6 +273,7 @@ class ProfesorController extends Controller
             // Verificar si el profesor existe
             $profesor = Profesor::where('run_profesor', $runProfesor)
                 ->orWhere('run_profesor', $runLimpio)
+                ->orWhere('run_profesor', $runSinDv)
                 ->first();
             
             if (!$profesor) {
@@ -296,17 +298,31 @@ class ProfesorController extends Controller
 
             // Obtener la programación del profesor para este espacio (usando Eloquent para respetar la conexión 'tenant')
             $diaActual = strtolower(now()->locale('es')->isoFormat('dddd'));
-            $horaConAnticipacion = now()->copy()->addMinutes(15)->format('H:i:s');
+            $diaNormalizado = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+            $diasPosibles = array_unique([$diaActual, $diaNormalizado, 'lunes', 'martes', 'miércoles', 'miercoles', 'jueves', 'viernes', 'sábado', 'sabado']);
+            $horaConAnticipacion = now()->copy()->addMinutes(30)->format('H:i:s');
 
             $programacion = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])
                 ->where('id_espacio', $idEspacio)
-                ->whereHas('asignatura', function ($q) use ($profesor, $runLimpio) {
-                    $q->where('run_profesor', $profesor->run_profesor)
-                      ->orWhere('run_profesor', $runLimpio)
-                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                ->where(function ($qPrincipal) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
+                    $qPrincipal->whereHas('asignatura', function ($q) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
+                        $q->where('run_profesor', $profesor->run_profesor)
+                          ->orWhere('run_profesor', $runProfesor)
+                          ->orWhere('run_profesor', $runLimpio)
+                          ->orWhere('run_profesor', $runSinDv)
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                    })->orWhereHas('horario', function ($q) use ($profesor, $runProfesor, $runLimpio, $runSinDv) {
+                        $q->where('run_profesor', $profesor->run_profesor)
+                          ->orWhere('run_profesor', $runProfesor)
+                          ->orWhere('run_profesor', $runLimpio)
+                          ->orWhere('run_profesor', $runSinDv)
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                    });
                 })
-                ->whereHas('modulo', function ($q) use ($diaActual, $horaActual, $horaConAnticipacion) {
-                    $q->where('dia', $diaActual)
+                ->whereHas('modulo', function ($q) use ($diasPosibles, $horaActual, $horaConAnticipacion) {
+                    $q->whereIn('dia', $diasPosibles)
                       ->where(function ($subQ) use ($horaActual, $horaConAnticipacion) {
                           $subQ->where(function ($sq1) use ($horaActual) {
                               $sq1->where('hora_inicio', '<=', $horaActual)
@@ -332,11 +348,14 @@ class ProfesorController extends Controller
             $planificacionesMismoBloque = \App\Models\Planificacion_Asignatura::with('modulo')
                 ->where('id_espacio', $espacio->id_espacio)
                 ->where('id_asignatura', $programacion->id_asignatura)
-                ->whereHas('horario', function ($q) use ($periodo) {
-                    $q->where('periodo', $periodo);
+                ->where(function ($q) use ($periodo, $programacion) {
+                    $q->where('id_horario', $programacion->id_horario)
+                      ->orWhereHas('horario', function ($hq) use ($periodo) {
+                          $hq->where('periodo', $periodo);
+                      });
                 })
-                ->whereHas('modulo', function ($q) use ($diaActual) {
-                    $q->where('dia', $diaActual);
+                ->whereHas('modulo', function ($q) use ($diasPosibles) {
+                    $q->whereIn('dia', $diasPosibles);
                 })
                 ->get();
 

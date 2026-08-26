@@ -1112,6 +1112,7 @@ class ReportController extends Controller
             'run_profesor',
             'run_solicitante',
             'id_espacio',
+            'id_asignatura',
             'fecha_reserva',
             'hora',
             'hora_salida',
@@ -1119,7 +1120,13 @@ class ReportController extends Controller
             'estado'
         ])
             ->with([
-                'profesor:run_profesor,name,email',
+                'profesor:run_profesor,name,email,id_area_academica,id_carrera,id_facultad',
+                'profesor.areaAcademica:id_area_academica,nombre_area_academica',
+                'profesor.carrera:id_carrera,nombre,id_area_academica',
+                'profesor.carrera.areaAcademica:id_area_academica,nombre_area_academica',
+                'asignatura:id_asignatura,codigo_asignatura,nombre_asignatura,seccion,id_carrera',
+                'asignatura.carrera:id_carrera,nombre,id_area_academica',
+                'asignatura.carrera.areaAcademica:id_area_academica,nombre_area_academica',
                 'solicitante:run_solicitante,nombre,correo,tipo_solicitante',
                 'espacio:id_espacio,nombre_espacio,piso_id',
                 'espacio.piso:id,numero_piso,id_facultad',
@@ -1191,12 +1198,55 @@ class ReportController extends Controller
                     $tipoUsuario = 'desconocido';
                 }
 
+                // Obtener Asignatura
+                $asignatura = 'N/A';
+                if ($reserva->asignatura) {
+                    $nombreAsig = $reserva->asignatura->nombre_asignatura;
+                    $codAsig = $reserva->asignatura->codigo_asignatura;
+                    $secAsig = $reserva->asignatura->seccion;
+                    if ($codAsig && $secAsig) {
+                        $asignatura = "{$nombreAsig} ({$codAsig}-{$secAsig})";
+                    } elseif ($codAsig) {
+                        $asignatura = "{$nombreAsig} ({$codAsig})";
+                    } else {
+                        $asignatura = $nombreAsig;
+                    }
+                } elseif (!empty($reserva->id_asignatura)) {
+                    $asignatura = $reserva->id_asignatura;
+                }
+
+                // Obtener UA (Unidad Académica / Área Académica / Carrera)
+                $ua = 'N/A';
+                if ($reserva->asignatura && $reserva->asignatura->carrera) {
+                    if ($reserva->asignatura->carrera->areaAcademica) {
+                        $ua = $reserva->asignatura->carrera->areaAcademica->nombre_area_academica;
+                    } else {
+                        $ua = $reserva->asignatura->carrera->nombre;
+                    }
+                } elseif ($esProfesor && $reserva->profesor) {
+                    if ($reserva->profesor->areaAcademica) {
+                        $ua = $reserva->profesor->areaAcademica->nombre_area_academica;
+                    } elseif ($reserva->profesor->carrera) {
+                        if ($reserva->profesor->carrera->areaAcademica) {
+                            $ua = $reserva->profesor->carrera->areaAcademica->nombre_area_academica;
+                        } else {
+                            $ua = $reserva->profesor->carrera->nombre;
+                        }
+                    }
+                }
+
+                if ($ua === 'N/A' && isset($reserva->espacio->piso->facultad->nombre_facultad)) {
+                    $ua = $reserva->espacio->piso->facultad->nombre_facultad;
+                }
+
                 $accesos->push([
                     'id' => $reserva->id_reserva,
                     'usuario' => $usuario ?? 'N/A',
                     'run' => $run ?? 'N/A',
                     'email' => $email ?? 'N/A',
                     'tipo_usuario' => $tipoUsuario,
+                    'ua' => $ua,
+                    'asignatura' => $asignatura,
                     'espacio' => $reserva->espacio->nombre_espacio ?? 'Espacio no encontrado',
                     'id_espacio' => $reserva->espacio->id_espacio ?? '',
                     'piso' => $reserva->espacio->piso->numero_piso ?? 'N/A',

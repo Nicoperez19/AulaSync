@@ -1304,11 +1304,31 @@
                     fechaInput.addEventListener('change', () => verificarConflictosReserva());
                 }
 
-                // Verificar conflictos cuando cambie el módulo final
-                const moduloFinal = document.getElementById('modulo-final');
-                if (moduloFinal) {
-                    moduloFinal.addEventListener('change', () => verificarConflictosReserva());
+                // Keep-Alive de sesión y refresco de CSRF cada 5 minutos
+                async function ejecutarKeepAlive() {
+                    try {
+                        const res = await fetch('/keep-alive?t=' + Date.now());
+                        if (res.ok) {
+                            const data = await res.json();
+                            if (data.csrf_token) {
+                                const metaCsrf = document.querySelector('meta[name="csrf-token"]');
+                                if (metaCsrf) metaCsrf.setAttribute('content', data.csrf_token);
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Keep-alive falló:', e);
+                    }
                 }
+                setInterval(ejecutarKeepAlive, 5 * 60 * 1000);
+                setTimeout(ejecutarKeepAlive, 2000);
+
+                // Refresco automático de espacios disponibles cada 30 segundos si el formulario está en reposo
+                setInterval(() => {
+                    const responsable = document.getElementById('nombre-responsable')?.value;
+                    if (!responsable) {
+                        cargarEspaciosDisponibles();
+                    }
+                }, 30000);
 
                 console.log('🔍 Autocompletado y verificación de conflictos configurados');
             });

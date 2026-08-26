@@ -15,11 +15,7 @@
     </x-slot>
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
-        <div class="flex items-center justify-between mb-6">
-            <div class="w-2/3">
-                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Buscar por RUN o Nombre"
-                    class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white">
-            </div>
+        <div class="flex items-center justify-end mb-6">
             <x-button variant="add" class="max-w-xs gap-2" x-on:click="$dispatch('open-modal', 'add-user')">
                 <x-icons.add class="w-6 h-6" aria-hidden="true" />
                 Agregar Usuario
@@ -125,27 +121,4 @@
             </form>
         </x-modal>
     </div>
-
-    <script>
-        function searchTable() {
-            var input = document.getElementById("searchInput").value.toLowerCase();
-            var table = document.getElementById("user-table");
-            var rows = table.getElementsByTagName("tr");
-
-            for (var i = 1; i < rows.length; i++) {
-                var cells = rows[i].getElementsByTagName("td");
-                var run = cells[0].textContent.toLowerCase();
-                var name = cells[1].textContent.toLowerCase();
-                var email = cells[2].textContent.toLowerCase();
-
-                if (run.includes(input) || name.includes(input) || email.includes(input)) {
-                    rows[i].style.display = "";
-                } else {
-                    rows[i].style.display = "none";
-                }
-            }
-        }
-
-
-    </script>
 </x-app-layout>

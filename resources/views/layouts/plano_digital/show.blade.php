@@ -124,6 +124,10 @@
                                 </svg>
                                 <span id="hora-actual" class="text-2xl font-semibold">--:--:--</span>
                             </div>
+                            <div id="badge-sistema-estado" class="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-medium text-green-100 bg-green-800/60 border border-green-400/30 rounded-full">
+                                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                                <span id="texto-sistema-estado">En Línea</span>
+                            </div>
                         </div>
 
                         <div class="py-1">
@@ -4989,6 +4993,11 @@
 
             setInterval(actualizarModuloYColores, 5000);
             actualizarModuloYColores();
+
+            // Iniciar Watchdog Anti-Bloqueo (cada 10s) y Keep-Alive (cada 5min)
+            setInterval(ejecutarWatchdogAntiBloqueo, 10000);
+            setInterval(ejecutarKeepAliveSesion, 5 * 60 * 1000);
+            setTimeout(ejecutarKeepAliveSesion, 1000); // Primer ping de verificación
         });
 
         async function procesarRegistroSolicitante(event) {
@@ -5561,6 +5570,90 @@
             return horaCompleta.slice(0, 5);
         }
 
+        let ultimaInteraccionUsuario = Date.now();
+        let timestampInicioProcesamiento = null;
+        let ultimoModuloDetectado = null;
+
+        function registrarActividadUsuario() {
+            ultimaInteraccionUsuario = Date.now();
+        }
+
+        // Registrar actividad en cualquier interacción física del usuario
+        ['mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
+            window.addEventListener(evt, registrarActividadUsuario, { passive: true });
+        });
+
+        // Watchdog de auto-recuperación y auto-refresco anti-bloqueo
+        function ejecutarWatchdogAntiBloqueo() {
+            const ahora = Date.now();
+            const tiempoInactivo = ahora - ultimaInteraccionUsuario;
+
+            // 1. Detectar y liberar isProcessingQR trabado (> 8 segundos)
+            if (isProcessingQR) {
+                if (!timestampInicioProcesamiento) {
+                    timestampInicioProcesamiento = ahora;
+                } else if (ahora - timestampInicioProcesamiento > 8000) {
+                    console.warn('⚠ Watchdog: Liberando isProcessingQR trabado (> 8s)');
+                    isProcessingQR = false;
+                    timestampInicioProcesamiento = null;
+                    limpiarEstadoCompleto();
+                }
+            } else {
+                timestampInicioProcesamiento = null;
+            }
+
+            // 2. Si no hay modales de formulario abiertos y lleva > 35s en espera de espacio, resetear a usuario
+            const hayModalesAbiertos = document.querySelectorAll('.swal2-container:not(.swal2-hidden), [data-modal]:not(.hidden), #modal-espacio-info:not(.hidden), #modal-seleccionar-modulos:not(.hidden)').length > 0;
+
+            if (!hayModalesAbiertos) {
+                if (ordenEscaneo === 'espacio' && tiempoInactivo > 35000) {
+                    console.log('Watchdog: Timeout de espera de espacio por inactividad (35s). Regresando a usuario.');
+                    limpiarEstadoCompleto();
+                }
+
+                // 3. Garantizar foco en el input QR si no hay modales ni campos de texto activos
+                const elementoActivo = document.activeElement;
+                const esCampoTexto = elementoActivo && (elementoActivo.tagName === 'INPUT' || elementoActivo.tagName === 'TEXTAREA' || elementoActivo.tagName === 'SELECT');
+                const esInputQR = elementoActivo && (elementoActivo.id === 'qr-input' || elementoActivo.id === 'qr-input-solicitud' || elementoActivo.id === 'qr-input-devolucion');
+
+                if (!esCampoTexto || esInputQR) {
+                    if (qrInputManager) {
+                        qrInputManager.restaurarInputActivo();
+                    }
+                }
+            }
+
+            // 4. Si el sistema lleva más de 20 minutos en inactividad total y sin modales abiertos, recargar suavemente la página
+            if (!hayModalesAbiertos && !isProcessingQR && ordenEscaneo === 'usuario' && tiempoInactivo > 20 * 60 * 1000) {
+                console.log('Auto-Refresco: Recarga preventiva por inactividad prolongada (20 min)');
+                window.location.reload();
+            }
+        }
+
+        // Keep-Alive y refresco de CSRF token
+        async function ejecutarKeepAliveSesion() {
+            try {
+                const response = await fetch('/keep-alive?t=' + Date.now(), {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.csrf_token) {
+                        const metaCsrf = document.querySelector('meta[name="csrf-token"]');
+                        if (metaCsrf) {
+                            metaCsrf.setAttribute('content', data.csrf_token);
+                        }
+                    }
+                    const badge = document.getElementById('texto-sistema-estado');
+                    if (badge) badge.textContent = 'En Línea';
+                }
+            } catch (err) {
+                console.warn('Keep-Alive falló temporalmente:', err);
+                const badge = document.getElementById('texto-sistema-estado');
+                if (badge) badge.textContent = 'Reconectando...';
+            }
+        }
+
         function actualizarModuloYColores() {
             const ahora = new Date();
             const horaActual = ahora.toLocaleTimeString('es-ES', {
@@ -5574,6 +5667,14 @@
             const moduloParaReserva = obtenerModuloParaReserva(horaActual);
             const moduloActualElement = document.getElementById('modulo-actual');
             const moduloHorarioElement = document.getElementById('horario-actual');
+
+            // Detectar cambio de módulo para sincronizar espacios inmediatamente
+            if (moduloActual !== ultimoModuloDetectado) {
+                ultimoModuloDetectado = moduloActual;
+                if (typeof actualizarColoresEspacios === 'function') {
+                    actualizarColoresEspacios(true);
+                }
+            }
 
             if (moduloActual && moduloActualElement && moduloHorarioElement) {
                 const prefijo = obtenerPrefijoDiaActual();

@@ -88,7 +88,7 @@
                                wire:model.live.debounce.300ms="search" 
                                id="search"
                                class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                               placeholder="Profesor, Asignatura...">
+                               placeholder="Profesor, Asignatura, RUN, Sala...">
                         <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
                     </div>
                 </div>

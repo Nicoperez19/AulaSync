@@ -51,10 +51,13 @@
                         <ul>
                             @foreach ($permissions as $permission)
                                 <li class="flex items-center mb-2">
-                                    <input type="checkbox" name="permissions[]" value="{{ $permission->id }}"
+                                    <input type="checkbox" 
+                                        id="permission-{{ $permission->id }}"
+                                        name="permissions[]" 
+                                        value="{{ $permission->id }}"
                                         {{ in_array($permission->id, $rolePermissions) ? 'checked' : '' }}
-                                        class="mr-2" />
-                                    <label for="permission-{{ $permission->id }}">{{ $permission->name }}</label>
+                                        class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                                    <label for="permission-{{ $permission->id }}" class="cursor-pointer select-none">{{ $permission->name }}</label>
                                 </li>
                             @endforeach
                         </ul>

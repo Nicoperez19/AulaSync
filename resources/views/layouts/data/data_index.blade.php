@@ -29,24 +29,7 @@
 
 
     <div class="px-6">
-        <div class="flex flex-col pt-1 mb-4 md:flex-row md:items-center md:justify-between">
-            <div class="flex items-center gap-2">
-                <input type="text" id="searchInput" placeholder="Buscar documentos..."
-                    class="px-3 py-2 text-sm border rounded" onkeydown="if(event.key==='Enter'){buscarArchivo();}">
-                <x-button
-                    class="flex items-center gap-2 px-3 py-2 text-sm font-medium text-white border rounded bg-light-cloud-blue hover:bg-light-red-800"
-                    onclick="buscarArchivo()">
-
-                    Buscar
-                </x-button>
-            </div>
-        </div>
-        <livewire:data-load-table :search="request()->get('search')" />
-        <div class="flex justify-end mt-4">
-            @if(isset($dataLoads))
-                {{ $dataLoads->links() }}
-            @endif
-        </div>
+        <livewire:data-load-table />
     </div>
 
     <x-modal name="add-data" :show="$errors->any()" focusable x-on:close="limpiarFormulario()">
@@ -434,11 +417,6 @@
 
             xhr.send(formData);
         });
-
-        function buscarArchivo() {
-            const search = document.getElementById('searchInput').value;
-            window.livewire.emit('buscarArchivo', search);
-        }
 
         // Inicialización cuando el DOM esté listo
         document.addEventListener('DOMContentLoaded', function () {

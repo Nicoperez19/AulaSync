@@ -16,11 +16,7 @@
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
 
-        <div class="flex items-center justify-between mb-6">
-            <div class="w-2/3">
-                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Buscar por Nombre, Email o Carrera"
-                    class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white">
-            </div>
+        <div class="flex items-center justify-end mb-6">
             <x-button variant="add" class="max-w-xs gap-2" x-on:click.prevent="$dispatch('open-modal', 'add-jefe-carrera')">
                 <x-icons.add class="w-6 h-6" aria-hidden="true" />
                 Agregar Jefe de Carrera
@@ -113,29 +109,4 @@
             </form>
         </x-modal>
     </div>
-
-    <script>
-        function searchTable() {
-            var input = document.getElementById("searchInput").value.toLowerCase();
-            var table = document.getElementById("jefes-carrera-table");
-            var rows = table.getElementsByTagName("tr");
-
-            for (var i = 1; i < rows.length; i++) {
-                var cells = rows[i].getElementsByTagName("td");
-                if (cells.length < 4) continue;
-                var nombre = cells[0].textContent.toLowerCase();
-                var email = cells[1].textContent.toLowerCase();
-                var telefono = cells[2].textContent.toLowerCase();
-                var carrera = cells[3].textContent.toLowerCase();
-
-                if (nombre.includes(input) || email.includes(input) || telefono.includes(input) || carrera.includes(input)) {
-                    rows[i].style.display = "";
-                } else {
-                    rows[i].style.display = "none";
-                }
-            }
-        }
-
-    </script>
-
 </x-app-layout>

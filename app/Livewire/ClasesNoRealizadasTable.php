@@ -5,6 +5,8 @@ namespace App\Livewire;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\ClaseNoRealizada;
+use App\Models\Asignatura;
+use App\Models\Profesor;
 use App\Helpers\SemesterHelper;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -61,6 +63,36 @@ class ClasesNoRealizadasTable extends Component
         if ($this->reagendar_id) {
             $this->dispatch('auto-open-reagendar', ['id' => $this->reagendar_id]);
         }
+    }
+
+    public function updatingSearch()
+    {
+        $this->cachedEstadisticas = null;
+        $this->resetPage();
+    }
+
+    public function updatingEstado()
+    {
+        $this->cachedEstadisticas = null;
+        $this->resetPage();
+    }
+
+    public function updatingPeriodo()
+    {
+        $this->cachedEstadisticas = null;
+        $this->resetPage();
+    }
+
+    public function updatingFechaInicio()
+    {
+        $this->cachedEstadisticas = null;
+        $this->resetPage();
+    }
+
+    public function updatingFechaFin()
+    {
+        $this->cachedEstadisticas = null;
+        $this->resetPage();
     }
 
     public function refresh()
@@ -441,23 +473,35 @@ class ClasesNoRealizadasTable extends Component
                     ->orWhereDate('clases_no_realizadas.fecha_clase', $hoy);
             });
 
-        // Búsqueda optimizada sin JOIN para evitar duplicados
+        // Búsqueda optimizada para Asignatura, Profesor, Espacio y Motivo
         if ($this->search) {
-            $searchTerm = '%' . $this->search . '%';
+            $searchTerm = '%' . trim($this->search) . '%';
             
             // Subquery para obtener IDs de asignaturas que coincidan
             $asignaturasIds = Asignatura::where('nombre_asignatura', 'like', $searchTerm)
                 ->orWhere('codigo_asignatura', 'like', $searchTerm)
                 ->pluck('id_asignatura')
                 ->toArray();
+
+            // Subquery para obtener RUNs de profesores que coincidan por nombre, rut o email
+            $profesoresRuns = Profesor::where('name', 'like', $searchTerm)
+                ->orWhere('run_profesor', 'like', $searchTerm)
+                ->orWhere('email', 'like', $searchTerm)
+                ->pluck('run_profesor')
+                ->toArray();
             
-            // Aplicar búsqueda sin JOIN
-            $query->where(function($q) use ($searchTerm, $asignaturasIds) {
+            // Aplicar búsqueda completa
+            $query->where(function($q) use ($searchTerm, $asignaturasIds, $profesoresRuns) {
+                $q->where('clases_no_realizadas.run_profesor', 'like', $searchTerm)
+                  ->orWhere('clases_no_realizadas.id_espacio', 'like', $searchTerm)
+                  ->orWhere('clases_no_realizadas.motivo', 'like', $searchTerm);
+
                 if (!empty($asignaturasIds)) {
-                    $q->whereIn('clases_no_realizadas.id_asignatura', $asignaturasIds)
-                      ->orWhere('clases_no_realizadas.run_profesor', 'like', $searchTerm);
-                } else {
-                    $q->where('clases_no_realizadas.run_profesor', 'like', $searchTerm);
+                    $q->orWhereIn('clases_no_realizadas.id_asignatura', $asignaturasIds);
+                }
+
+                if (!empty($profesoresRuns)) {
+                    $q->orWhereIn('clases_no_realizadas.run_profesor', $profesoresRuns);
                 }
             });
         }

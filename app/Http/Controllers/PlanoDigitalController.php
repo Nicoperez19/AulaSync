@@ -2124,22 +2124,38 @@ class PlanoDigitalController extends Controller
             ];
 
             $nombreDia = $diasSemana[$diaActual] ?? 'lunes';
+            $diaNormalizado = \App\Helpers\ModulosHelper::normalizarDia($nombreDia);
+            $diasPosibles = array_unique([$nombreDia, $diaNormalizado, 'lunes', 'martes', 'miércoles', 'miercoles', 'jueves', 'viernes', 'sábado', 'sabado']);
 
             // Obtener período actual
             $periodo = SemesterHelper::getCurrentPeriod();
-
+            $runLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $run));
+            $runSinDv = strlen($runLimpio) > 1 ? substr($runLimpio, 0, -1) : $runLimpio;
 
             // Buscar planificaciones del profesor para el día actual
             $planificaciones = Planificacion_Asignatura::with(['asignatura', 'modulo', 'espacio'])
-                ->whereHas('asignatura', function ($query) use ($run) {
-                    $runLimpio = str_replace(['.', '-', ' '], '', $run);
-                    $query->whereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                ->where(function ($qPrincipal) use ($run, $runLimpio, $runSinDv) {
+                    $qPrincipal->whereHas('asignatura', function ($query) use ($run, $runLimpio, $runSinDv) {
+                        $query->where('run_profesor', $run)
+                              ->orWhere('run_profesor', $runLimpio)
+                              ->orWhere('run_profesor', $runSinDv)
+                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                    })->orWhereHas('horario', function ($query) use ($run, $runLimpio, $runSinDv) {
+                        $query->where('run_profesor', $run)
+                              ->orWhere('run_profesor', $runLimpio)
+                              ->orWhere('run_profesor', $runSinDv)
+                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                    });
                 })
-                ->whereHas('modulo', function ($query) use ($nombreDia) {
-                    $query->where('dia', $nombreDia);
+                ->whereHas('modulo', function ($query) use ($diasPosibles) {
+                    $query->whereIn('dia', $diasPosibles);
                 })
-                ->whereHas('horario', function ($query) use ($periodo) {
-                    $query->where('periodo', $periodo);
+                ->where(function ($query) use ($periodo) {
+                    $query->whereHas('horario', function ($hq) use ($periodo) {
+                        $hq->where('periodo', $periodo);
+                    })->orDoesntHave('horario');
                 })
                 ->get();
 

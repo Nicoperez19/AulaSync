@@ -16,11 +16,7 @@
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
 
-        <div class="flex items-center justify-between mb-6">
-            <div class="w-2/3">
-                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Buscar por Clave o Descripción"
-                    class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white">
-            </div>
+        <div class="flex items-center justify-end mb-6">
             <x-button variant="add" class="max-w-xs gap-2" x-on:click.prevent="$dispatch('open-modal', 'add-configuracion')">
                 <x-icons.add class="w-6 h-6" aria-hidden="true" />
                 Agregar Configuración
@@ -168,25 +164,6 @@
                 sedeSelect.removeAttribute('required');
             }
         }
-
-        function searchTable() {
-            var input = document.getElementById("searchInput").value.toLowerCase();
-            var table = document.getElementById("configuracion-table");
-            var rows = table.getElementsByTagName("tr");
-
-            for (var i = 1; i < rows.length; i++) {
-                var cells = rows[i].getElementsByTagName("td");
-                if (cells.length < 3) continue;
-                var clave = cells[0].textContent.toLowerCase();
-                var descripcion = cells[2].textContent.toLowerCase();
-
-                if (clave.includes(input) || descripcion.includes(input)) {
-                    rows[i].style.display = "";
-                } else {
-                    rows[i].style.display = "none";
-                }
-            }
-        }
     </script>
-
+    </div>
 </x-app-layout>

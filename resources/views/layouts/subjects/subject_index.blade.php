@@ -16,13 +16,9 @@
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
 
-        <div class="flex items-center justify-between mt-4">
-            <div class="w-2/3">
-                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Buscar por Nombre o ID"
-                    class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white">
-            </div>
+        <div class="flex items-center justify-end mb-4">
             <x-button target="_blank" variant="add" class="max-w-xs gap-2"
-                x-on:click.prevent="$dispatch('open-modal', 'add-asignatura')" variant="add" class="max-w-xs gap-2">
+                x-on:click.prevent="$dispatch('open-modal', 'add-asignatura')">
                 <x-icons.add class="w-6 h-6" aria-hidden="true" />
                 Agregar Asignatura
             </x-button>
@@ -198,31 +194,4 @@
             </form>
         </x-modal>
     </div>
-
-    <script>
-        function searchTable() {
-            const input = document.getElementById('searchInput');
-            const filter = input.value.toUpperCase();
-            const table = document.querySelector('table');
-            const tr = table.getElementsByTagName('tr');
-
-            for (let i = 1; i < tr.length; i++) {
-                const td = tr[i].getElementsByTagName('td');
-                let found = false;
-
-                for (let j = 0; j < td.length; j++) {
-                    const cell = td[j];
-                    if (cell) {
-                        const txtValue = cell.textContent || cell.innerText;
-                        if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-
-                tr[i].style.display = found ? '' : 'none';
-            }
-        }
-    </script>
 </x-app-layout>

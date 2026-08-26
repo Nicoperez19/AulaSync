@@ -15,20 +15,15 @@
     </x-slot>
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
-     
 
-    <div class="flex items-center justify-between mb-6">
-        <div class="w-2/3">
-            <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Buscar por Nombre o ID"
-                class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white">
+        <div class="flex items-center justify-end mb-6">
+            <x-button variant="add" class="max-w-xs gap-2" x-on:click.prevent="$dispatch('open-modal', 'add-career')">
+                <x-icons.add class="w-6 h-6" aria-hidden="true" />
+                Agregar Carrera
+            </x-button>
         </div>
-        <x-button variant="add" class="max-w-xs gap-2" x-on:click.prevent="$dispatch('open-modal', 'add-career')">
-            <x-icons.add class="w-6 h-6" aria-hidden="true" />
-            Agregar Carrera
-        </x-button>
-    </div>
 
-    <livewire:careers-table />
+        <livewire:careers-table />
 
     <x-modal name="add-career" :show="$errors->any()" focusable>
         @slot('title')
@@ -98,32 +93,5 @@
             </div>
         </form>
     </x-modal>
-    </div>
-
-
-
-    <script>
-        function searchTable() {
-            var input = document.getElementById("searchInput").value.toLowerCase();
-            var table = document.getElementById("careers-table");
-            var rows = table.getElementsByTagName("tr");
-
-            for (var i = 1; i < rows.length; i++) {
-                var cells = rows[i].getElementsByTagName("td");
-                var id = cells[0].textContent.toLowerCase();
-                var name = cells[1].textContent.toLowerCase();
-                var areaAcademica = cells[2].textContent.toLowerCase();
-                var facultad = cells[3].textContent.toLowerCase();
-                var sede = cells[4].textContent.toLowerCase();
-                var universidad = cells[5].textContent.toLowerCase();
-
-                if (id.includes(input) || name.includes(input) || areaAcademica.includes(input) || facultad.includes(input) || sede.includes(input) || universidad.includes(input)) {
-                    rows[i].style.display = "";
-                } else {
-                    rows[i].style.display = "none";
-                }
-            }
-        }
-
-    </script>
+</div>
 </x-app-layout>

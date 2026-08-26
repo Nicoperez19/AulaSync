@@ -352,7 +352,14 @@ Route::post('/qr-personal/liberar-sala', [QrPersonalController::class, 'liberarS
 Route::post('/registrar-asistencia-clase', [PlanoDigitalController::class, 'registrarAsistenciaClase']);
 
 // Ruta para devolver llaves (duplicada - removida)
-// Route::post('/reserva/devolver', [ApiReservaController::class, 'devolverLlaves']);
+// Ruta de Keep-Alive / Heartbeat y refresco de CSRF
+Route::get('/keep-alive', function () {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now()->format('Y-m-d H:i:s'),
+        'csrf_token' => csrf_token()
+    ]);
+});
 
 // Ruta para verificar la programación de un usuario en un espacio específico
 Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $usuario) {
@@ -375,22 +382,33 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
         $horaActual = \Carbon\Carbon::now();
         $diaActual = strtolower($horaActual->locale('es')->isoFormat('dddd'));
         $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
-        $diasPosibles = array_unique([$diaActual, $diaLimpio, 'miércoles', 'miercoles', 'sábado', 'sabado']);
+        $diasPosibles = array_unique([$diaActual, $diaLimpio, 'lunes', 'martes', 'miércoles', 'miercoles', 'jueves', 'viernes', 'sábado', 'sabado']);
         $horaActualStr = $horaActual->format('H:i:s');
         
-        // Margen de 15 minutos para anticipación
-        $horaConAnticipacion = $horaActual->copy()->addMinutes(15)->format('H:i:s');
+        // Margen de 30 minutos para anticipación (docentes que llegan antes a su clase)
+        $horaConAnticipacion = $horaActual->copy()->addMinutes(30)->format('H:i:s');
 
-        // Limpiar el RUN para búsqueda
-        $runLimpio = preg_replace('/[^0-9]/', '', $usuario);
+        // Limpiar el RUN para búsqueda (preservando K/k)
+        $runLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $usuario));
+        $runSinDv = strlen($runLimpio) > 1 ? substr($runLimpio, 0, -1) : $runLimpio;
 
         // Buscar la clase programada en este espacio usando Eloquent
         $programacion = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])
             ->where('id_espacio', $espacio)
-            ->whereHas('asignatura', function ($q) use ($usuario, $runLimpio) {
-                $q->where('run_profesor', $usuario)
-                  ->orWhere('run_profesor', $runLimpio)
-                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+            ->where(function ($qPrincipal) use ($usuario, $runLimpio, $runSinDv) {
+                $qPrincipal->whereHas('asignatura', function ($q) use ($usuario, $runLimpio, $runSinDv) {
+                    $q->where('run_profesor', $usuario)
+                      ->orWhere('run_profesor', $runLimpio)
+                      ->orWhere('run_profesor', $runSinDv)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                })->orWhereHas('horario', function ($q) use ($usuario, $runLimpio, $runSinDv) {
+                    $q->where('run_profesor', $usuario)
+                      ->orWhere('run_profesor', $runLimpio)
+                      ->orWhere('run_profesor', $runSinDv)
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                      ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                });
             })
             ->whereHas('modulo', function ($q) use ($diasPosibles, $horaActualStr, $horaConAnticipacion) {
                 $q->whereIn('dia', $diasPosibles)
@@ -422,6 +440,7 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
         return response()->json([
             'success' => true,
             'tieneProgramacion' => $tieneProgramacion,
+            'tiene_clase' => $tieneProgramacion,
             'modulosInfo' => $modulosInfo,
             'debug' => [
                 'dia_actual' => $diaActual,
@@ -439,6 +458,8 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
         ]);
         return response()->json([
             'success' => false,
+            'tieneProgramacion' => false,
+            'tiene_clase' => false,
             'message' => 'Error al verificar la programación: ' . $e->getMessage()
         ], 500);
     }

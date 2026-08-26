@@ -33,6 +33,8 @@ class AccesosExport implements FromCollection, WithHeadings, WithMapping, WithSt
             'RUN',
             'Email',
             'Tipo Usuario',
+            'UA',
+            'Asignatura',
             'Espacio',
             'Piso',
             'Facultad',
@@ -53,6 +55,8 @@ class AccesosExport implements FromCollection, WithHeadings, WithMapping, WithSt
             $acceso['run'],
             $acceso['email'],
             ucfirst($acceso['tipo_usuario']),
+            $acceso['ua'] ?? 'N/A',
+            $acceso['asignatura'] ?? 'N/A',
             $acceso['espacio'] . ' (' . $acceso['id_espacio'] . ')',
             $acceso['piso'],
             $acceso['facultad'],
@@ -84,7 +88,7 @@ class AccesosExport implements FromCollection, WithHeadings, WithMapping, WithSt
                 ],
             ],
             // Estilo para las filas de datos
-            'A:N' => [
+            'A:P' => [
                 'alignment' => [
                     'horizontal' => Alignment::HORIZONTAL_LEFT,
                     'vertical' => Alignment::VERTICAL_CENTER,
@@ -96,20 +100,22 @@ class AccesosExport implements FromCollection, WithHeadings, WithMapping, WithSt
     public function columnWidths(): array
     {
         return [
-            'A' => 10,  // ID
-            'B' => 25,  // Usuario
+            'A' => 12,  // ID
+            'B' => 28,  // Usuario
             'C' => 15,  // RUN
-            'D' => 30,  // Email
+            'D' => 28,  // Email
             'E' => 15,  // Tipo Usuario
-            'F' => 25,  // Espacio
-            'G' => 10,  // Piso
-            'H' => 25,  // Facultad
-            'I' => 12,  // Fecha
-            'J' => 12,  // Hora Entrada
-            'K' => 12,  // Hora Salida
-            'L' => 15,  // Duración
-            'M' => 15,  // Tipo Reserva
-            'N' => 12,  // Estado
+            'F' => 25,  // UA
+            'G' => 30,  // Asignatura
+            'H' => 25,  // Espacio
+            'I' => 10,  // Piso
+            'J' => 25,  // Facultad
+            'K' => 14,  // Fecha
+            'L' => 14,  // Hora Entrada
+            'M' => 14,  // Hora Salida
+            'N' => 15,  // Duración
+            'O' => 15,  // Tipo Reserva
+            'P' => 12,  // Estado
         ];
     }
 } 

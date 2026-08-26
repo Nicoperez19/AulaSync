@@ -8,6 +8,9 @@ use App\Models\Espacio;
 use App\Models\Planificacion_Asignatura;
 use App\Models\PlanificacionProfesorColaborador;
 use App\Models\Reserva;
+use App\Models\ClaseNoRealizada;
+use App\Models\DiaFeriado;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Traits\RunNormalizer;
 
@@ -322,76 +325,213 @@ class DashboardController extends Controller
 
     /**
      * Endpoint AJAX para el Estado de Clases (Gráfico 2D y Métricas de Asistencia por Fechas)
+     * Basado en la planificación académica real (Planificacion_Asignatura) y asistencia verificada.
      */
     public function statusClasesAjax(Request $request)
     {
         $rango = $request->query('rango', 'semana');
-        $fechaInicio = $request->query('fecha_inicio');
-        $fechaFin = $request->query('fecha_fin');
+        $fechaInicioStr = $request->query('fecha_inicio');
+        $fechaFinStr = $request->query('fecha_fin');
 
-        if (!$fechaInicio || !$fechaFin) {
+        if (!$fechaInicioStr || !$fechaFinStr) {
             if ($rango === 'hoy') {
-                $fechaInicio = now()->format('Y-m-d');
-                $fechaFin = now()->format('Y-m-d');
+                $fechaInicio = now()->startOfDay();
+                $fechaFin = now()->endOfDay();
             } elseif ($rango === 'mes') {
-                $fechaInicio = now()->startOfMonth()->format('Y-m-d');
-                $fechaFin = now()->endOfMonth()->format('Y-m-d');
+                $fechaInicio = now()->startOfMonth();
+                $fechaFin = now()->endOfMonth();
             } else { // 'semana' por defecto
-                $fechaInicio = now()->startOfWeek()->format('Y-m-d');
-                $fechaFin = now()->endOfWeek()->format('Y-m-d');
+                $fechaInicio = now()->startOfWeek();
+                $fechaFin = now()->endOfWeek();
+            }
+        } else {
+            $fechaInicio = Carbon::parse($fechaInicioStr)->startOfDay();
+            $fechaFin = Carbon::parse($fechaFinStr)->endOfDay();
+        }
+
+        $fechaInicioYmd = $fechaInicio->format('Y-m-d');
+        $fechaFinYmd = $fechaFin->format('Y-m-d');
+
+        $ahora = Carbon::now();
+        $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+
+        // 1. Pre-cargar feriados en el rango
+        $feriadosEnRango = DiaFeriado::activos()
+            ->enRango($fechaInicioYmd, $fechaFinYmd)
+            ->get();
+        $fechasFeriado = [];
+        foreach ($feriadosEnRango as $feriado) {
+            $cursor = Carbon::parse($feriado->fecha_inicio)->startOfDay();
+            $fin = Carbon::parse($feriado->fecha_fin)->startOfDay();
+            while ($cursor <= $fin) {
+                $fechasFeriado[$cursor->format('Y-m-d')] = true;
+                $cursor->addDay();
             }
         }
 
-        // 1. Clases Realizadas (Reservas activas/finalizadas normales)
-        $realizadas = Reserva::whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
+        // 2. Pre-cargar clases no realizadas en mapa rápido
+        $clasesNoRealizadasCache = ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicioYmd, $fechaFinYmd])
+            ->get()
+            ->keyBy(function ($clase) {
+                $fecha = Carbon::parse($clase->fecha_clase)->format('Y-m-d');
+                $runNorm = $this->normalizeRun($clase->run_profesor);
+                return "{$fecha}_{$clase->id_espacio}_{$clase->id_modulo}_{$runNorm}";
+            });
+
+        // 3. Pre-cargar reservas efectivas de clase en el rango
+        $reservasCache = Reserva::whereBetween('fecha_reserva', [$fechaInicioYmd, $fechaFinYmd])
             ->whereIn('estado', ['activa', 'finalizada'])
             ->where(function ($q) {
                 $q->whereNull('hubo_asistentes')
                   ->orWhere('hubo_asistentes', true);
             })
-            ->where('tipo_reserva', 'not like', '%recupera%')
-            ->count();
+            ->where(function ($q) {
+                $q->whereNotNull('run_profesor')
+                  ->orWhereNotNull('run_solicitante');
+            })
+            ->get()
+            ->groupBy(function ($reserva) {
+                return Carbon::parse($reserva->fecha_reserva)->format('Y-m-d') . '_' . $reserva->id_espacio;
+            });
 
-        // 2. Clases Recuperadas (Reservas tipo recuperación o clases no realizadas recuperadas)
-        $recuperadasReservas = Reserva::whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
-            ->whereIn('estado', ['activa', 'finalizada'])
-            ->where('tipo_reserva', 'like', '%recupera%')
-            ->count();
+        // 4. Pre-cargar planificaciones vigentes
+        $periodo = SemesterHelper::getCurrentPeriod();
+        $planificaciones = Planificacion_Asignatura::with([
+                'modulo:id_modulo,dia,hora_inicio,hora_termino',
+                'horario:id_horario,run_profesor,periodo',
+                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura'
+            ])
+            ->whereHas('modulo')
+            ->whereHas('horario')
+            ->when($periodo, function ($q) use ($periodo) {
+                $q->whereHas('horario', function ($hq) use ($periodo) {
+                    $hq->where('periodo', $periodo);
+                });
+            })
+            ->get();
 
-        $recuperadasRegistros = \App\Models\ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicio, $fechaFin])
-            ->where('estado', 'recuperada')
-            ->count();
+        // 5. Generar lista de días válidos (lunes a sábado) dentro del rango
+        $fechasAEvaluar = [];
+        $currentDate = $fechaInicio->copy();
+        while ($currentDate <= $fechaFin) {
+            if ($currentDate->dayOfWeek >= 1 && $currentDate->dayOfWeek <= 6) {
+                $fechasAEvaluar[] = $currentDate->copy();
+            }
+            $currentDate->addDay();
+        }
 
-        $recuperadas = $recuperadasReservas + $recuperadasRegistros;
+        $realizadas = 0;
+        $recuperadas = 0;
+        $justificadas = 0;
+        $noRegistradas = 0;
+        $futurasPendientes = 0;
 
-        // 3. Clases No Registradas / No Realizadas
-        $noRealizadasClases = \App\Models\ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicio, $fechaFin])
-            ->whereIn('estado', ['no_realizada', 'justificado'])
-            ->count();
+        foreach ($fechasAEvaluar as $fechaObj) {
+            $fechaYmd = $fechaObj->format('Y-m-d');
+            $diaNombre = $diasSemana[$fechaObj->dayOfWeek];
 
-        $reservasSinAsistencia = Reserva::whereBetween('fecha_reserva', [$fechaInicio, $fechaFin])
-            ->where('hubo_asistentes', false)
-            ->count();
+            // Si es día feriado, no cuenta como clase fallida
+            if (isset($fechasFeriado[$fechaYmd])) {
+                continue;
+            }
 
-        $noRegistradas = max($noRealizadasClases, $reservasSinAsistencia);
+            foreach ($planificaciones as $plan) {
+                if (!$plan->modulo || !$plan->horario) {
+                    continue;
+                }
+
+                $diaModuloNorm = ModulosHelper::normalizarDia($plan->modulo->dia);
+                if ($diaModuloNorm !== $diaNombre) {
+                    continue;
+                }
+
+                $runProfesor = $this->normalizeRun($plan->horario->run_profesor);
+                $claveClase = "{$fechaYmd}_{$plan->id_espacio}_{$plan->id_modulo}_{$runProfesor}";
+                $claveReserva = "{$fechaYmd}_{$plan->id_espacio}";
+
+                $horaFin = Carbon::parse($plan->modulo->hora_termino);
+                $horaInicio = Carbon::parse($plan->modulo->hora_inicio);
+                $fechaHoraFinClase = $fechaObj->copy()->setTimeFromTimeString($horaFin->format('H:i:s'));
+
+                // Verificar si hay registro formal en ClaseNoRealizada
+                if (isset($clasesNoRealizadasCache[$claveClase])) {
+                    $registroCNR = $clasesNoRealizadasCache[$claveClase];
+                    if ($registroCNR->estado === 'recuperada') {
+                        $recuperadas++;
+                    } elseif ($registroCNR->estado === 'justificado') {
+                        $justificadas++;
+                    } else {
+                        $noRegistradas++;
+                    }
+                    continue;
+                }
+
+                // Verificar si hay reserva/asistencia en el espacio
+                $reservaEncontrada = null;
+                if (isset($reservasCache[$claveReserva])) {
+                    $reservasDelDia = $reservasCache[$claveReserva]->filter(function ($r) use ($runProfesor) {
+                        $rProf = $this->normalizeRun($r->run_profesor);
+                        $rSoli = $this->normalizeRun($r->run_solicitante);
+                        return (!empty($rProf) && $rProf === $runProfesor) || (!empty($rSoli) && $rSoli === $runProfesor);
+                    });
+
+                    if ($reservasDelDia->isNotEmpty()) {
+                        // Coincidencia por asignatura
+                        foreach ($reservasDelDia as $r) {
+                            if ($r->id_asignatura == $plan->id_asignatura) {
+                                $reservaEncontrada = $r;
+                                break;
+                            }
+                        }
+
+                        // Coincidencia por horario
+                        if (!$reservaEncontrada) {
+                            $minutosMargen = ModulosHelper::getMargenIngresoMinutos($plan->id_modulo);
+                            $margenInicio = $horaInicio->copy()->subMinutes($minutosMargen);
+                            foreach ($reservasDelDia as $r) {
+                                $horaAcceso = Carbon::parse($r->hora);
+                                if ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFin) {
+                                    $reservaEncontrada = $r;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if ($reservaEncontrada) {
+                    $realizadas++;
+                } else {
+                    // Si ya pasó el horario de término de la clase
+                    if ($fechaHoraFinClase < $ahora) {
+                        $noRegistradas++;
+                    } else {
+                        // Es una clase programada que aún no ocurre
+                        $futurasPendientes++;
+                    }
+                }
+            }
+        }
 
         $totalImpartidas = $realizadas + $recuperadas;
-        $totalClases = $totalImpartidas + $noRegistradas;
+        $totalClasesEvaluadas = $totalImpartidas + $noRegistradas + $justificadas;
 
-        $pctImpartidas = $totalClases > 0 ? round(($totalImpartidas / $totalClases) * 100, 1) : 0;
-        $pctRealizadas = $totalClases > 0 ? round(($realizadas / $totalClases) * 100, 1) : 0;
-        $pctRecuperadas = $totalClases > 0 ? round(($recuperadas / $totalClases) * 100, 1) : 0;
-        $pctNoRegistradas = $totalClases > 0 ? round(($noRegistradas / $totalClases) * 100, 1) : 0;
+        $pctImpartidas = $totalClasesEvaluadas > 0 ? round(($totalImpartidas / $totalClasesEvaluadas) * 100, 1) : 0;
+        $pctRealizadas = $totalClasesEvaluadas > 0 ? round(($realizadas / $totalClasesEvaluadas) * 100, 1) : 0;
+        $pctRecuperadas = $totalClasesEvaluadas > 0 ? round(($recuperadas / $totalClasesEvaluadas) * 100, 1) : 0;
+        $pctNoRegistradas = $totalClasesEvaluadas > 0 ? round(($noRegistradas / $totalClasesEvaluadas) * 100, 1) : 0;
 
         $data = [
             'rango' => $rango,
-            'fecha_inicio' => $fechaInicio,
-            'fecha_fin' => $fechaFin,
-            'total_clases' => $totalClases,
+            'fecha_inicio' => $fechaInicioYmd,
+            'fecha_fin' => $fechaFinYmd,
+            'total_clases' => $totalClasesEvaluadas,
             'total_impartidas' => $totalImpartidas,
             'realizadas' => $realizadas,
             'recuperadas' => $recuperadas,
             'no_registradas' => $noRegistradas,
+            'justificadas' => $justificadas,
+            'futuras_pendientes' => $futurasPendientes,
             'pct_impartidas' => $pctImpartidas,
             'pct_realizadas' => $pctRealizadas,
             'pct_recuperadas' => $pctRecuperadas,

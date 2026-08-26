@@ -16,36 +16,30 @@
     </x-slot>
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
-        <div class="flex items-center justify-between mt-4">
-            <div class="w-2/3">
-                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Buscar por Nombre o ID"
-                    class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white">
-            </div>
-            <div class="flex gap-2">
-                <x-button variant="add" class="justify-end max-w-xs gap-2"
-                    x-on:click.prevent="$dispatch('open-modal', 'add-espacio')">
-                    <x-icons.add class="w-6 h-6" aria-hidden="true" />
-                    Agregar Espacio
-                </x-button>
-                <x-button variant="warning" href="{{ route('spaces.download-all-qr') }}"
-                    class="inline-flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-                        </path>
-                    </svg>
-                    QRs (ZIP)
-                </x-button>
-                <x-button variant="success" href="{{ route('spaces.download-all-qr-pdf') }}"
-                    class="inline-flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z">
-                        </path>
-                    </svg>
-                    QRs (PDF)
-                </x-button>
-            </div>
+        <div class="flex items-center justify-end gap-2 mb-4">
+            <x-button variant="add" class="justify-end max-w-xs gap-2"
+                x-on:click.prevent="$dispatch('open-modal', 'add-espacio')">
+                <x-icons.add class="w-6 h-6" aria-hidden="true" />
+                Agregar Espacio
+            </x-button>
+            <x-button variant="warning" href="{{ route('spaces.download-all-qr') }}"
+                class="inline-flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                    </path>
+                </svg>
+                QRs (ZIP)
+            </x-button>
+            <x-button variant="success" href="{{ route('spaces.download-all-qr-pdf') }}"
+                class="inline-flex items-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z">
+                    </path>
+                </svg>
+                QRs (PDF)
+            </x-button>
         </div>
         <livewire:spaces-table />
         <x-modal name="add-espacio" :show="$errors->any()" focusable>
@@ -229,24 +223,6 @@
         document.addEventListener('DOMContentLoaded', function () {
             // No cargar pisos automáticamente, se cargarán cuando se seleccione facultad
         });
-        function searchTable() {
-            var input = document.getElementById("searchInput").value.toLowerCase();
-            var table = document.getElementById("spaces-table");
-            var rows = table.getElementsByTagName("tr");
-
-            for (var i = 1; i < rows.length; i++) {
-                var cells = rows[i].getElementsByTagName("td");
-                var run = cells[0].textContent.toLowerCase();
-                var name = cells[1].textContent.toLowerCase();
-                var email = cells[2].textContent.toLowerCase();
-
-                if (run.includes(input) || name.includes(input) || email.includes(input)) {
-                    rows[i].style.display = "";
-                } else {
-                    rows[i].style.display = "none";
-                }
-            }
-        }
 
         function loadSedes() {
             const universidadId = document.getElementById('universidad').value;

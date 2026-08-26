@@ -93,6 +93,15 @@ Route::middleware(['tenant', 'extend.execution:180'])->group(function () {
     Route::get('/modulos-actuales/actualizar-datos', [\App\Http\Controllers\TableController::class, 'actualizarDatos'])->name('modulos.actuales.datos');
 });
 
+// Ruta Keep-Alive de sesión y refresco de CSRF token
+Route::middleware(['tenant'])->get('/keep-alive', function () {
+    return response()->json([
+        'status' => 'ok',
+        'timestamp' => now()->format('Y-m-d H:i:s'),
+        'csrf_token' => csrf_token()
+    ]);
+})->name('web.keep-alive');
+
 // Manual de Usuario - accesible para cualquier usuario autenticado
 Route::middleware(['auth'])->group(function () {
     Route::get('/ayuda', [ManualController::class, 'index'])->name('manual.index');

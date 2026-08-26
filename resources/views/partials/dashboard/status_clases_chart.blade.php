@@ -87,7 +87,19 @@
                 </div>
                 <span class="text-xs font-black px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-900">{{ $no_registradas }} ({{ $pct_no_registradas }}%)</span>
             </div>
-            <p class="text-[11px] text-rose-700/90 font-medium mt-2">Clases sin marca de asistencia QR o notificadas como ausentes.</p>
+            <p class="text-[11px] text-rose-700/90 font-medium mt-2">Clases del horario oficial sin marca de asistencia o notificadas como ausentes.</p>
         </div>
+
+        @if(!empty($futuras_pendientes) && $futuras_pendientes > 0)
+            <div class="px-3 py-2 rounded-xl bg-slate-100/90 border border-slate-200/80 text-[11px] text-slate-600 font-medium flex items-center justify-between">
+                <span class="flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Próximas clases programadas en el período:
+                </span>
+                <span class="font-bold text-slate-800">{{ $futuras_pendientes }} pendientes</span>
+            </div>
+        @endif
     </div>
 </div>

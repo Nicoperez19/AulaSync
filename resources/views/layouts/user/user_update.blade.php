@@ -126,7 +126,7 @@
                     </div>
                 </div>
 
-                <!-- Sede -->
+                <!-- Sede y Contraseña -->
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                         <x-form.label for="id_sede" :value="__('Sede Asignada')" />
@@ -153,8 +153,6 @@
                         </p>
                     </div>
 
-                <!-- Contraseña -->
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <!-- Contraseña del Usuario -->
                     <div>
                         <x-form.label for="password" :value="__('Contraseña' . (!isset($user) ? ' *' : ' Nueva'))" />
@@ -189,9 +187,13 @@
                             <ul>
                                 @foreach ($roles as $role)
                                     <li class="flex items-center mb-2">
-                                        <input type="checkbox" name="roles[]" value="{{ $role->id }}"
-                                            {{ isset($user) && $user->hasRole($role->name) ? 'checked' : '' }} class="mr-2" />
-                                        <label for="role-{{ $role->id }}">{{ $role->name }}</label>
+                                        <input type="checkbox" 
+                                            id="role-{{ $role->id }}" 
+                                            name="roles[]" 
+                                            value="{{ $role->id }}"
+                                            {{ isset($user) && $user->hasRole($role->name) ? 'checked' : '' }} 
+                                            class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                                        <label for="role-{{ $role->id }}" class="cursor-pointer select-none">{{ $role->name }}</label>
                                     </li>
                                 @endforeach
                             </ul>
@@ -206,10 +208,13 @@
                             <ul>
                                 @foreach ($permissions as $permission)
                                     <li class="flex items-center mb-2">
-                                        <input type="checkbox" name="permissions[]" value="{{ $permission->id }}"
+                                        <input type="checkbox" 
+                                            id="permission-{{ $permission->id }}" 
+                                            name="permissions[]" 
+                                            value="{{ $permission->id }}"
                                             {{ isset($user) && $user->hasPermissionTo($permission->name) ? 'checked' : '' }}
-                                            class="mr-2" />
-                                        <label for="permission-{{ $permission->id }}">{{ $permission->name }}</label>
+                                            class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                                        <label for="permission-{{ $permission->id }}" class="cursor-pointer select-none">{{ $permission->name }}</label>
                                     </li>
                                 @endforeach
                             </ul>

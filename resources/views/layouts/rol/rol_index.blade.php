@@ -15,11 +15,7 @@
     </x-slot>
 
     <div class="p-6 bg-white rounded-lg shadow-lg">
-        <div class="flex items-center justify-between mb-6">
-            <div class="w-2/3">
-                <input type="text" id="searchInput" onkeyup="searchTable()" placeholder="Buscar por Nombre o ID"
-                    class="w-full px-4 py-2 border rounded dark:bg-gray-700 dark:text-white">
-            </div>
+        <div class="flex items-center justify-end mb-6">
             <x-button variant="add" class="max-w-xs gap-2" x-on:click.prevent="$dispatch('open-modal', 'add-role')">
                 <x-icons.add class="w-6 h-6" aria-hidden="true" />
                 Agregar Rol
@@ -73,9 +69,12 @@
                             <ul>
                                 @foreach ($permissions as $permission)
                                     <li class="flex items-center mb-2">
-                                        <input type="checkbox" name="permissions[]" value="{{ $permission->id }}"
-                                            class="mr-2" />
-                                        <label for="permission-{{ $permission->id }}">{{ $permission->name }}</label>
+                                        <input type="checkbox" 
+                                            id="permission-{{ $permission->id }}"
+                                            name="permissions[]" 
+                                            value="{{ $permission->id }}"
+                                            class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
+                                        <label for="permission-{{ $permission->id }}" class="cursor-pointer select-none">{{ $permission->name }}</label>
                                     </li>
                                 @endforeach
                             </ul>
@@ -91,24 +90,6 @@
     </div>
 
     <script>
-        function searchTable() {
-            var input = document.getElementById("searchInput").value.toLowerCase();
-            var table = document.getElementById("role-table");
-            var rows = table.getElementsByTagName("tr");
-
-            for (var i = 1; i < rows.length; i++) {
-                var cells = rows[i].getElementsByTagName("td");
-                var id = cells[0].textContent.toLowerCase();
-                var name = cells[1].textContent.toLowerCase();
-
-                if (id.includes(input) || name.includes(input)) {
-                    rows[i].style.display = "";
-                } else {
-                    rows[i].style.display = "none";
-                }
-            }
-        }
-
         function confirmDelete(id) {
             Swal.fire({
                 title: '¿Estás seguro?',

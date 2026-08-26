@@ -11,34 +11,44 @@ class PermissionsTable extends Component
     use WithPagination;
 
     public $search = '';
+    public $sortField = 'name';
+    public $sortDirection = 'asc';
 
-    public function updatedSearch()
+    protected $queryString = [
+        'search' => ['except' => ''],
+        'sortField' => ['except' => 'name'],
+        'sortDirection' => ['except' => 'asc'],
+    ];
+
+    public function updatingSearch()
     {
         $this->resetPage();
-        \Log::info('Search updated to: "' . $this->search . '"');
     }
 
-    public function clearSearch()
+    public function sortBy($field)
     {
-        $this->search = '';
-        $this->resetPage();
-        \Log::info('Search cleared');
+        if ($this->sortField === $field) {
+            $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            $this->sortField = $field;
+            $this->sortDirection = 'asc';
+        }
     }
 
     public function render()
     {
-        \Log::info('Render called with search: "' . $this->search . '"');
-        
-        if (empty($this->search)) {
-            $permissions = Permission::paginate(10);
-            \Log::info('No search - showing all: ' . $permissions->total());
-        } else {
-            $permissions = Permission::where('name', 'like', '%' . $this->search . '%')
-                                   ->orWhere('id', 'like', '%' . $this->search . '%')
-                                   ->paginate(10);
-            \Log::info('With search "' . $this->search . '" - found: ' . $permissions->total());
-        }
-        
+        $searchTerm = trim($this->search);
+
+        $permissions = Permission::query()
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $query->where(function ($q) use ($searchTerm) {
+                    $q->where('name', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('id', 'like', '%' . $searchTerm . '%');
+                });
+            })
+            ->orderBy($this->sortField, $this->sortDirection)
+            ->paginate(10);
+
         $allPermissions = Permission::all();
 
         return view('livewire.permissions-table', compact('permissions', 'allPermissions'));

@@ -7,74 +7,49 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.4;
+            font-size: 11px;
+            line-height: 1.3;
             color: #333;
             margin: 0;
-            padding: 20px;
+            padding: 15px;
         }
         
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             border-bottom: 2px solid #333;
-            padding-bottom: 20px;
+            padding-bottom: 15px;
         }
         
         .header h1 {
             margin: 0;
             color: #2c3e50;
-            font-size: 24px;
+            font-size: 20px;
         }
         
         .header p {
-            margin: 5px 0;
+            margin: 4px 0;
             color: #7f8c8d;
-        }
-        
-        .stats {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            background-color: #f8f9fa;
-            padding: 15px;
-            border-radius: 5px;
-        }
-        
-        .stat-item {
-            text-align: center;
-            flex: 1;
-        }
-        
-        .stat-number {
-            font-size: 18px;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        
-        .stat-label {
-            font-size: 10px;
-            color: #7f8c8d;
-            margin-top: 5px;
+            font-size: 11px;
         }
         
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
-            font-size: 10px;
+            margin-top: 15px;
+            font-size: 9px;
         }
         
         th {
             background-color: #34495e;
             color: white;
-            padding: 8px;
+            padding: 6px 4px;
             text-align: left;
             font-weight: bold;
         }
         
         td {
-            padding: 6px 8px;
+            padding: 5px 4px;
             border-bottom: 1px solid #ddd;
         }
         
@@ -83,16 +58,12 @@
         }
         
         .footer {
-            margin-top: 30px;
+            margin-top: 25px;
             text-align: center;
-            font-size: 10px;
+            font-size: 9px;
             color: #7f8c8d;
             border-top: 1px solid #ddd;
             padding-top: 10px;
-        }
-        
-        .page-break {
-            page-break-before: always;
         }
         
         .status-active {
@@ -107,7 +78,7 @@
         .type-profesor {
             background-color: #3498db;
             color: white;
-            padding: 2px 6px;
+            padding: 2px 4px;
             border-radius: 3px;
             font-size: 8px;
         }
@@ -115,7 +86,7 @@
         .type-estudiante {
             background-color: #2ecc71;
             color: white;
-            padding: 2px 6px;
+            padding: 2px 4px;
             border-radius: 3px;
             font-size: 8px;
         }
@@ -123,7 +94,7 @@
         .type-administrativo {
             background-color: #9b59b6;
             color: white;
-            padding: 2px 6px;
+            padding: 2px 4px;
             border-radius: 3px;
             font-size: 8px;
         }
@@ -131,17 +102,16 @@
         .type-externo {
             background-color: #95a5a6;
             color: white;
-            padding: 2px 6px;
+            padding: 2px 4px;
             border-radius: 3px;
             font-size: 8px;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <img src="{{ public_path('images/logo_instituto_tecnologico-01.png') }}" alt="Logo Instituto Tecnológico" style="height: 60px; margin-bottom: 10px; display: block; margin-left: auto; margin-right: auto;">
-        <h1>Reporte de Accesos Registrados (QR)</h1>
-        <p>SIA | Sistema de Informaci�n de Aulas - Instituto Tecnológico</p>
+    <div class=header>
+        <h1>Reporte de Accesos Registrados</h1>
+        <p>AulaSync | Sistema de Información de Aulas</p>
         <p>Generado el: {{ $fecha_generacion }}</p>
     </div>
 
@@ -152,6 +122,8 @@
                 <th>Usuario</th>
                 <th>RUN</th>
                 <th>Tipo</th>
+                <th>UA</th>
+                <th>Asignatura</th>
                 <th>ID Sala</th>
                 <th>Piso</th>
                 <th>Fecha</th>
@@ -172,6 +144,8 @@
                             {{ ucfirst($acceso['tipo_usuario']) }}
                         </span>
                     </td>
+                    <td>{{ $acceso['ua'] ?? 'N/A' }}</td>
+                    <td>{{ $acceso['asignatura'] ?? 'N/A' }}</td>
                     <td>{{ $acceso['id_espacio'] }}</td>
                     <td>{{ $acceso['piso'] }}</td>
                     <td>{{ $acceso['fecha'] }}</td>
@@ -184,7 +158,7 @@
                 </tr>
             @empty
                 <tr>
-                    <td colspan="11" style="text-align: center; padding: 20px; color: #7f8c8d;">
+                    <td colspan="13" style="text-align: center; padding: 20px; color: #7f8c8d;">
                         No se encontraron accesos registrados
                     </td>
                 </tr>
@@ -193,8 +167,7 @@
     </table>
 
     <div class="footer">
-        <p>Este reporte fue generado automáticamente por el SIA | Sistema de Informaci�n de Aulas</p>
-        <p>Página 1 de 1</p>
+        <p>Este reporte fue generado automáticamente por AulaSync</p>
     </div>
 </body>
-</html> 
+</html>
