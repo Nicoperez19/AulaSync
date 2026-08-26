@@ -13,7 +13,7 @@ class ReservationsTable extends Component
     public $search = '';
     public $sortField = 'fecha_reserva';
     public $sortDirection = 'desc';
-    public $perPage = 10;
+    public $perPage = 20;
 
     protected $queryString = [
         'search' => ['except' => ''],

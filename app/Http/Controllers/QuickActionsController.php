@@ -214,42 +214,42 @@ class QuickActionsController extends Controller
                 app('db')->disconnect('tenant');
             }
 
-            // Construir la query DESPUÉS de configurar la conexión
+            // Construir la query DESPUÉS de configurar la conexión con carga ansiosa (elimina problema N+1)
             $query = Reserva::on('tenant')
+                ->with(['profesor', 'solicitante', 'espacio', 'asignatura'])
                 ->orderBy('fecha_reserva', 'desc')
                 ->orderBy('hora');
             $reservasRaw = $query->get();
 
             // Mejorado para incluir más información
             $reservas = $reservasRaw->map(function ($reserva) {
-                // Obtener información del responsable
+                // Obtener información del responsable sin consultas adicionales
                 $nombreResponsable = 'Sin asignar';
                 $runResponsable = 'N/A';
                 $tipoResponsable = 'desconocido';
 
                 if ($reserva->run_profesor) {
-                    $profesor = Profesor::on('tenant')->where('run_profesor', $reserva->run_profesor)->first();
-                    $nombreResponsable = $profesor ? $profesor->name : $reserva->run_profesor;
+                    $profesor = $reserva->profesor;
+                    $nombreResponsable = $profesor ? ($profesor->name ?? ($profesor->nombres . ' ' . $profesor->apellidos)) : $reserva->run_profesor;
                     $runResponsable = $reserva->run_profesor;
                     $tipoResponsable = 'profesor';
                 } elseif ($reserva->run_solicitante) {
-                    $solicitante = Solicitante::on('tenant')->where('run_solicitante', $reserva->run_solicitante)->first();
+                    $solicitante = $reserva->solicitante;
                     $nombreResponsable = $solicitante ? $solicitante->nombre : $reserva->run_solicitante;
                     $runResponsable = $reserva->run_solicitante;
                     $tipoResponsable = 'solicitante';
                 }
 
-                // Obtener información del espacio
-                $espacio = Espacio::on('tenant')->where('id_espacio', $reserva->id_espacio)->first();
+                // Obtener información del espacio sin consultas adicionales
+                $espacio = $reserva->espacio;
                 $nombreEspacio = $espacio ? $espacio->nombre_espacio : 'Espacio desconocido';
 
-                // Obtener información de la asignatura
+                // Obtener información de la asignatura sin consultas adicionales
                 $asignaturaInfo = 'Sin asignatura';
-                if ($reserva->id_asignatura) {
-                    $asignatura = Asignatura::on('tenant')->where('id_asignatura', $reserva->id_asignatura)->first();
-                    if ($asignatura) {
-                        $asignaturaInfo = $asignatura->codigo_asignatura.' - '.$asignatura->nombre_asignatura;
-                    }
+                if ($reserva->asignatura) {
+                    $asignaturaInfo = $reserva->asignatura->codigo_asignatura . ' - ' . $reserva->asignatura->nombre_asignatura;
+                } elseif ($reserva->id_asignatura) {
+                    $asignaturaInfo = $reserva->id_asignatura;
                 }
 
                 // Procesar módulos y horarios

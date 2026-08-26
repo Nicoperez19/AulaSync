@@ -188,6 +188,16 @@
                     <p>Cargando reservas...</p>
                 </div>
             </div>
+
+            <!-- Controles de paginación (20 por página) -->
+            <div id="paginacion-reservas" class="mt-4 border-t border-gray-200 pt-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-gray-700">
+                <div id="paginacion-info" class="text-xs sm:text-sm text-gray-500 font-medium">
+                    Mostrando <span id="pag-desde" class="font-bold text-gray-900">0</span> a <span id="pag-hasta" class="font-bold text-gray-900">0</span> de <span id="pag-total" class="font-bold text-gray-900">0</span> reservas
+                </div>
+                <div id="paginacion-botones" class="flex items-center gap-1.5 flex-wrap justify-center">
+                    <!-- Botones de página generados dinámicamente -->
+                </div>
+            </div>
             
             <!-- Controles de acciones en lote -->
             <div id="acciones-lote" class="border-t border-gray-200 bg-gray-50 px-4 py-3 sm:px-6 sm:py-4" style="display: none;">
@@ -239,14 +249,18 @@
             <!-- Información del responsable (solo lectura) -->
             <div class="mb-6 p-4 bg-gray-50 rounded-lg">
                 <h4 class="text-sm font-semibold text-gray-700 mb-3">Información del Responsable</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                     <div>
                         <span class="font-medium text-gray-600">Nombre:</span>
-                        <span class="text-gray-900" id="edit-responsable-nombre">-</span>
+                        <span class="text-gray-900 font-semibold" id="edit-responsable-nombre">-</span>
+                    </div>
+                    <div>
+                        <span class="font-medium text-gray-600">RUN:</span>
+                        <span class="text-gray-900 font-semibold" id="edit-responsable-run">-</span>
                     </div>
                     <div>
                         <span class="font-medium text-gray-600">Tipo:</span>
-                        <span class="text-gray-900" id="edit-responsable-tipo">-</span>
+                        <span class="text-gray-900 font-semibold" id="edit-responsable-tipo">-</span>
                     </div>
                 </div>
             </div>
@@ -370,6 +384,9 @@
 <script>
 // Variables específicas para gestión de reservas
 let reservasOriginales = [];
+let reservasFiltradas = [];
+let paginaActual = 1;
+const itemsPorPagina = 20;
 let ordenActual = {campo: 'fecha', direccion: 'desc'};
 
 // Función para editar reserva - Definida al inicio para estar disponible
@@ -401,13 +418,21 @@ window.editarReserva = async function(idReserva) {
     await cargarEspaciosParaModal();
     await cargarModulosParaModal();
     
-    // Llenar el modal con los datos de la reserva
-    document.getElementById('edit-reserva-id').value = reserva.id;
-    document.getElementById('edit-responsable-nombre').textContent = reserva.nombre_responsable || 'Sin nombre';
-    document.getElementById('edit-responsable-run').textContent = reserva.run_responsable || 'N/A';
-    document.getElementById('edit-responsable-tipo').textContent = reserva.tipo_responsable || 'N/A';
-    document.getElementById('edit-codigo-espacio').value = reserva.id_espacio;
-    document.getElementById('edit-fecha').value = reserva.fecha;
+    // Llenar el modal con los datos de la reserva de forma segura
+    const elId = document.getElementById('edit-reserva-id');
+    const elNombre = document.getElementById('edit-responsable-nombre');
+    const elRun = document.getElementById('edit-responsable-run');
+    const elTipo = document.getElementById('edit-responsable-tipo');
+    const elEspacio = document.getElementById('edit-codigo-espacio');
+    const elFecha = document.getElementById('edit-fecha');
+    const elHorarioFijo = document.getElementById('horario-original-fijo');
+
+    if (elId) elId.value = reserva.id;
+    if (elNombre) elNombre.textContent = reserva.nombre_responsable || 'Sin nombre';
+    if (elRun) elRun.textContent = reserva.run_responsable || 'N/A';
+    if (elTipo) elTipo.textContent = reserva.tipo_responsable || 'N/A';
+    if (elEspacio) elEspacio.value = reserva.id_espacio;
+    if (elFecha) elFecha.value = reserva.fecha;
     
     // Filtrar los módulos disponibles para esta fecha inmediatamente
     actualizarModulosPorFechaModal();
@@ -416,7 +441,7 @@ window.editarReserva = async function(idReserva) {
     const horarioOriginal = reserva.modulos_info && reserva.modulos_info.rango_horario 
         ? `Módulo ${reserva.modulos_info.modulo_inicial || '?'} a Módulo ${reserva.modulos_info.modulo_final || '?'} (${reserva.modulos_info.rango_horario})`
         : `Hora inicio: ${reserva.hora ? reserva.hora.substring(0, 5) : 'N/A'} - ${reserva.modulos || 1} módulo(s)`;
-    document.getElementById('horario-original-fijo').textContent = horarioOriginal;
+    if (elHorarioFijo) elHorarioFijo.textContent = horarioOriginal;
     
     // Configurar módulos basado en la reserva actual
     const cantModulos = parseInt(reserva.modulos || 1);
@@ -882,9 +907,117 @@ function procesarReservas() {
         return 0;
     });
     
-    // 3. Mostrar resultados
-    mostrarReservasEnTabla(reservasProcesadas);
-    actualizarEstadisticas(reservasProcesadas);
+    // 3. Guardar lista filtrada y renderizar con paginación de a 20
+    reservasFiltradas = reservasProcesadas;
+    paginaActual = 1;
+    renderizarPaginaActual();
+    actualizarEstadisticas(reservasFiltradas);
+}
+
+// Renderizar la página actual (20 elementos por página)
+function renderizarPaginaActual() {
+    const total = reservasFiltradas.length;
+    const totalPaginas = Math.max(1, Math.ceil(total / itemsPorPagina));
+
+    if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+    if (paginaActual < 1) paginaActual = 1;
+
+    const desdeIndex = (paginaActual - 1) * itemsPorPagina;
+    const hastaIndex = Math.min(desdeIndex + itemsPorPagina, total);
+    const itemsPagina = total > 0 ? reservasFiltradas.slice(desdeIndex, hastaIndex) : [];
+
+    mostrarReservasEnTabla(itemsPagina);
+    actualizarControlesPaginacion(total, totalPaginas, total > 0 ? desdeIndex + 1 : 0, hastaIndex);
+}
+
+// Cambiar de página
+window.irAPagina = function(num) {
+    paginaActual = num;
+    renderizarPaginaActual();
+    const contenedor = document.querySelector('.overflow-x-auto') || document.getElementById('tabla-reservas-body');
+    if (contenedor) {
+        contenedor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+};
+
+// Actualizar controles UI de paginación
+function actualizarControlesPaginacion(total, totalPaginas, desde, hasta) {
+    const pagContainer = document.getElementById('paginacion-reservas');
+    const elDesde = document.getElementById('pag-desde');
+    const elHasta = document.getElementById('pag-hasta');
+    const elTotal = document.getElementById('pag-total');
+    const botonesContainer = document.getElementById('paginacion-botones');
+
+    if (!pagContainer) return;
+
+    if (total === 0) {
+        if (elDesde) elDesde.textContent = '0';
+        if (elHasta) elHasta.textContent = '0';
+        if (elTotal) elTotal.textContent = '0';
+        if (botonesContainer) botonesContainer.innerHTML = '';
+        return;
+    }
+
+    if (elDesde) elDesde.textContent = desde;
+    if (elHasta) elHasta.textContent = hasta;
+    if (elTotal) elTotal.textContent = total;
+
+    if (!botonesContainer) return;
+
+    if (totalPaginas <= 1) {
+        botonesContainer.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+
+    // Botón Anterior
+    const prevDisabled = paginaActual === 1;
+    html += `
+        <button type="button" onclick="irAPagina(${paginaActual - 1})" ${prevDisabled ? 'disabled' : ''}
+                class="px-3 py-1.5 rounded-lg border text-xs font-semibold ${prevDisabled ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-gray-300 text-gray-700 hover:bg-gray-100'} transition">
+            <i class="fa-solid fa-chevron-left mr-1"></i> Anterior
+        </button>
+    `;
+
+    // Generar rango de páginas visibles
+    let inicioRango = Math.max(1, paginaActual - 2);
+    let finRango = Math.min(totalPaginas, paginaActual + 2);
+
+    if (inicioRango > 1) {
+        html += `<button type="button" onclick="irAPagina(1)" class="w-8 h-8 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">1</button>`;
+        if (inicioRango > 2) {
+            html += `<span class="px-1 text-gray-400">...</span>`;
+        }
+    }
+
+    for (let i = inicioRango; i <= finRango; i++) {
+        const activo = i === paginaActual;
+        html += `
+            <button type="button" onclick="irAPagina(${i})"
+                    class="w-8 h-8 rounded-lg text-xs font-bold transition ${activo ? 'bg-blue-600 text-white shadow-sm' : 'border border-gray-300 text-gray-700 hover:bg-gray-100'}">
+                ${i}
+            </button>
+        `;
+    }
+
+    if (finRango < totalPaginas) {
+        if (finRango < totalPaginas - 1) {
+            html += `<span class="px-1 text-gray-400">...</span>`;
+        }
+        html += `<button type="button" onclick="irAPagina(${totalPaginas})" class="w-8 h-8 rounded-lg border border-gray-300 text-xs font-semibold text-gray-700 hover:bg-gray-100 transition">${totalPaginas}</button>`;
+    }
+
+    // Botón Siguiente
+    const nextDisabled = paginaActual === totalPaginas;
+    html += `
+        <button type="button" onclick="irAPagina(${paginaActual + 1})" ${nextDisabled ? 'disabled' : ''}
+                class="px-3 py-1.5 rounded-lg border text-xs font-semibold ${nextDisabled ? 'border-gray-200 text-gray-300 cursor-not-allowed' : 'border-gray-300 text-gray-700 hover:bg-gray-100'} transition">
+            Siguiente <i class="fa-solid fa-chevron-right ml-1"></i>
+        </button>
+    `;
+
+    botonesContainer.innerHTML = html;
 }
 
 function extraerPrimeraHora(reserva) {

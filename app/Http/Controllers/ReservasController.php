@@ -19,7 +19,7 @@ class ReservasController extends Controller
 
     public function index()
     {
-        $reservas = Reserva::with(['user', 'espacio.piso.facultad.universidad'])->paginate(10);
+        $reservas = Reserva::with(['user', 'espacio.piso.facultad.universidad'])->paginate(20);
         $universidades = Universidad::all();
         $espaciosDisponibles = Espacio::where('estado', 'disponible')
             ->with('piso.facultad.universidad')
