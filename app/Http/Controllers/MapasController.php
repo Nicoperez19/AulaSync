@@ -79,8 +79,8 @@ class MapasController extends Controller
             
             foreach ($bloques as $index => $bloque) {
                 try {
-                    \App\Models\Bloque::create([
-                        'id_bloque' => \Illuminate\Support\Str::uuid(),
+                    Bloque::create([
+                        'id_bloque' => Str::uuid(),
                         'id_mapa' => $mapa->id_mapa,
                         'id_espacio' => $bloque['id_espacio'],
                         'posicion_x' => $bloque['posicion_x'],

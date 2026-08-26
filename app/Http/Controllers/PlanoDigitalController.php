@@ -6,7 +6,6 @@ use App\Helpers\SemesterHelper;
 use App\Mail\ConfirmacionDevolucion;
 use App\Mail\ConfirmacionReserva;
 use App\Models\Asistencia;
-use App\Models\Bloque;
 use App\Models\Espacio;
 use App\Models\Mapa;
 use App\Models\Modulo;
@@ -19,6 +18,7 @@ use App\Models\Reserva;
 use App\Models\Sede;
 use App\Models\Solicitante;
 use App\Models\Tenant;
+use App\Helpers\ModulosHelper;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -103,12 +103,12 @@ class PlanoDigitalController extends Controller
                 ];
             });
 
-            $diaActualNormalizado = \App\Helpers\ModulosHelper::normalizarDia(\Carbon\Carbon::now()->locale('es')->isoFormat('dddd'));
+            $diaActualNormalizado = ModulosHelper::normalizarDia(Carbon::now()->locale('es')->isoFormat('dddd'));
             return view('layouts.plano_digital.show', [
                 'mapa' => $mapa,
                 'bloques' => $bloques,
                 'pisos' => $pisosFormateados,
-                'horariosModulos' => \App\Helpers\ModulosHelper::getHorariosModulos()[$diaActualNormalizado] ?? []
+                'horariosModulos' => ModulosHelper::getHorariosModulos()[$diaActualNormalizado] ?? []
             ]);
         } catch (\Exception $e) {
             if (request()->wantsJson()) {
@@ -159,7 +159,7 @@ class PlanoDigitalController extends Controller
 
     private function obtenerCodigoDia(string $diaActual): ?string
     {
-        $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+        $diaLimpio = ModulosHelper::normalizarDia($diaActual);
         return match ($diaLimpio) {
             'lunes' => 'LU',
             'martes' => 'MA',
@@ -356,8 +356,8 @@ class PlanoDigitalController extends Controller
 
     private function obtenerModuloActual(array $estadoActual): ?Modulo
     {
-        $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($estadoActual['dia']);
-        $moduloNumero = \App\Helpers\ModulosHelper::obtenerModuloActual($estadoActual['hora'], $diaLimpio);
+        $diaLimpio = ModulosHelper::normalizarDia($estadoActual['dia']);
+        $moduloNumero = ModulosHelper::obtenerModuloActual($estadoActual['hora'], $diaLimpio);
 
         $codigoDia = $this->obtenerCodigoDia($estadoActual['dia']);
         if ($codigoDia && $moduloNumero) {
@@ -411,7 +411,7 @@ class PlanoDigitalController extends Controller
     {
         $horaActual = Carbon::parse($estadoActual['hora']);
         $diaActual = $estadoActual['dia'];
-        $diaLimpio = \App\Helpers\ModulosHelper::normalizarDia($diaActual);
+        $diaLimpio = ModulosHelper::normalizarDia($diaActual);
         $diasPosibles = array_unique([$diaActual, $diaLimpio, 'miércoles', 'miercoles', 'sábado', 'sabado']);
 
         $periodo = SemesterHelper::getCurrentPeriod();
@@ -503,7 +503,7 @@ class PlanoDigitalController extends Controller
                 'modulos' => []  // No mostrar módulos ya que es la clase actual
             ];
         } elseif ($planificacion) {
-            if ($planificacion instanceof \App\Models\PlanificacionProfesorColaborador) {
+            if ($planificacion instanceof PlanificacionProfesorColaborador) {
                 $detalles['planificacion'] = [
                     'asignatura' => $planificacion->profesorColaborador->nombre_asignatura ?? 'Sin asignatura',
                     'codigo_asignatura' => '-',
@@ -545,7 +545,7 @@ class PlanoDigitalController extends Controller
         }
 
         if ($planificacionProxima) {
-            if ($planificacionProxima instanceof \App\Models\PlanificacionProfesorColaborador) {
+            if ($planificacionProxima instanceof PlanificacionProfesorColaborador) {
                 $detalles['planificacion_proxima'] = [
                     'asignatura' => $planificacionProxima->profesorColaborador->nombre_asignatura ?? 'Sin asignatura',
                     'profesor' => ucwords($planificacionProxima->profesorColaborador->profesor->name ?? 'No asignado'),
@@ -676,7 +676,7 @@ class PlanoDigitalController extends Controller
                 })
                 ->get();
 
-            $colaboradoresActivosYProximos = \App\Models\PlanificacionProfesorColaborador::with(['modulo', 'espacio', 'profesorColaborador.profesor', 'profesorColaborador.asignatura'])
+            $colaboradoresActivosYProximos = PlanificacionProfesorColaborador::with(['modulo', 'espacio', 'profesorColaborador.profesor', 'profesorColaborador.asignatura'])
                 ->whereHas('modulo', function ($query) use ($diaActual, $horaActualStr, $horaLimite) {
                     $query->where('dia', $diaActual)
                         ->where(function($q) use ($horaActualStr, $horaLimite) {
@@ -832,10 +832,10 @@ class PlanoDigitalController extends Controller
                 if ($tieneClaseEnCurso) {
                     $curso = $claseEnCurso ?? $colaboradorEnCurso;
                     if ($curso) {
-                        $asignaturaNombre = ($curso instanceof \App\Models\Planificacion_Asignatura)
+                        $asignaturaNombre = ($curso instanceof Planificacion_Asignatura)
                             ? ($curso->asignatura->nombre_asignatura ?? 'Sin asignatura')
                             : ($curso->profesorColaborador->nombre_asignatura ?? 'Sin asignatura');
-                        $profesorNombre = ($curso instanceof \App\Models\Planificacion_Asignatura)
+                        $profesorNombre = ($curso instanceof Planificacion_Asignatura)
                             ? ($curso->horario->profesor->name ?? 'No especificado')
                             : ($curso->profesorColaborador->profesor->name ?? 'No especificado');
 
@@ -1353,8 +1353,8 @@ class PlanoDigitalController extends Controller
                         $nuevaReserva->id_asignatura = $planificacion->id_asignatura;
                         
                         // Encontrar bloques consecutivos de planificación
-                        $periodo = \App\Helpers\SemesterHelper::getCurrentPeriod();
-                        $planificacionesMismoBloque = \App\Models\Planificacion_Asignatura::with('modulo')
+                        $periodo = SemesterHelper::getCurrentPeriod();
+                        $planificacionesMismoBloque = Planificacion_Asignatura::with('modulo')
                             ->where('id_espacio', $idEspacio)
                             ->where('id_asignatura', $planificacion->id_asignatura)
                             ->whereHas('horario', function ($q) use ($periodo) {
@@ -1365,13 +1365,13 @@ class PlanoDigitalController extends Controller
                             })
                             ->get();
 
-                        $numModuloActual = \App\Helpers\ModulosHelper::getNumeroModulo($planificacion->id_modulo);
+                        $numModuloActual = ModulosHelper::getNumeroModulo($planificacion->id_modulo);
                         $moduloFin = $numModuloActual;
                         
                         $modulosAsociados = [];
                         foreach ($planificacionesMismoBloque as $planItem) {
                             if ($planItem->modulo) {
-                                $num = \App\Helpers\ModulosHelper::getNumeroModulo($planItem->id_modulo);
+                                $num = ModulosHelper::getNumeroModulo($planItem->id_modulo);
                                 $modulosAsociados[$num] = $planItem->modulo;
                             }
                         }
@@ -1563,8 +1563,8 @@ class PlanoDigitalController extends Controller
                 if ($reservaProgramada->modulo_inicio && $reservaProgramada->modulo_fin) {
                     // Verificar con la hora actual vs horarios de los módulos
                     $horaActualStr = $ahora->format('H:i:s');
-                    $diaActualNormalizado = \App\Helpers\ModulosHelper::normalizarDia($ahora->locale('es')->isoFormat('dddd'));
-                    $horarioModulos = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaActualNormalizado] ?? [];
+                    $diaActualNormalizado = ModulosHelper::normalizarDia($ahora->locale('es')->isoFormat('dddd'));
+                    $horarioModulos = ModulosHelper::getHorariosModulos()[$diaActualNormalizado] ?? [];
 
                     $horaInicioModulo = $horarioModulos[$reservaProgramada->modulo_inicio]['inicio'] ?? null;
                     $horaFinModulo = $horarioModulos[$reservaProgramada->modulo_fin]['fin'] ?? null;
@@ -1639,8 +1639,8 @@ class PlanoDigitalController extends Controller
 
                 if ($reservaProgramadaOtro && $reservaProgramadaOtro->modulo_inicio && $reservaProgramadaOtro->modulo_fin) {
                     $horaActualStr = Carbon::now()->format('H:i:s');
-                    $diaActualNormalizado = \App\Helpers\ModulosHelper::normalizarDia(Carbon::now()->locale('es')->isoFormat('dddd'));
-                    $horarioModulos = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaActualNormalizado] ?? [];
+                    $diaActualNormalizado = ModulosHelper::normalizarDia(Carbon::now()->locale('es')->isoFormat('dddd'));
+                    $horarioModulos = ModulosHelper::getHorariosModulos()[$diaActualNormalizado] ?? [];
                     $horaInicioMod = $horarioModulos[$reservaProgramadaOtro->modulo_inicio]['inicio'] ?? null;
                     $horaFinMod = $horarioModulos[$reservaProgramadaOtro->modulo_fin]['fin'] ?? null;
 
@@ -1839,8 +1839,8 @@ class PlanoDigitalController extends Controller
 
                     if ($reservaProgramadaScanner) {
                         // Verificar margen de 15 minutos para la reserva programada
-                        $diaActualNormalizado = \App\Helpers\ModulosHelper::normalizarDia(Carbon::now()->locale('es')->isoFormat('dddd'));
-                        $horarioModulos = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaActualNormalizado] ?? [];
+                        $diaActualNormalizado = ModulosHelper::normalizarDia(Carbon::now()->locale('es')->isoFormat('dddd'));
+                        $horarioModulos = ModulosHelper::getHorariosModulos()[$diaActualNormalizado] ?? [];
                         $horaInicioMod = $horarioModulos[$reservaProgramadaScanner->modulo_inicio]['inicio'] ?? null;
                         
                         if ($horaInicioMod) {
@@ -2099,7 +2099,7 @@ class PlanoDigitalController extends Controller
             ];
 
             $nombreDia = $diasSemana[$diaActual] ?? 'lunes';
-            $diaNormalizado = \App\Helpers\ModulosHelper::normalizarDia($nombreDia);
+            $diaNormalizado = ModulosHelper::normalizarDia($nombreDia);
             $diasPosibles = array_unique([$nombreDia, $diaNormalizado, 'lunes', 'martes', 'miércoles', 'miercoles', 'jueves', 'viernes', 'sábado', 'sabado']);
 
             // Obtener período actual

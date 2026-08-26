@@ -6,7 +6,6 @@ use App\Models\Espacio;
 use App\Models\Facultad;
 use App\Models\Piso;
 use App\Models\Universidad;
-use App\Models\Modulo;
 use App\Models\Planificacion_Asignatura;
 use App\Models\Solicitante;
 use App\Models\PlanificacionProfesorColaborador;
@@ -974,7 +973,7 @@ class EspacioController extends Controller
                 ->first();
 
             // 2.b. Planificación de colaborador actual
-            $planColaboradorActual = \App\Models\PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'profesorColaborador.asignatura', 'modulo'])
+            $planColaboradorActual = PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'profesorColaborador.asignatura', 'modulo'])
                 ->where('id_espacio', $idEspacio)
                 ->whereHas('modulo', fn($q) => $q->where('dia', $codigoDia)
                     ->where('hora_inicio', '<=', $horaActual)
@@ -994,7 +993,7 @@ class EspacioController extends Controller
                 ->first();
 
             // 3.b. Próxima planificación de colaborador
-            $planColaboradorProxima = \App\Models\PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'profesorColaborador.asignatura', 'modulo'])
+            $planColaboradorProxima = PlanificacionProfesorColaborador::with(['profesorColaborador.profesor', 'profesorColaborador.asignatura', 'modulo'])
                 ->where('id_espacio', $idEspacio)
                 ->whereHas('modulo', fn($q) => $q->where('dia', $codigoDia)->where('hora_inicio', '>', $horaActual))
                 ->whereHas('profesorColaborador', fn($q) => $q->where('estado', 'activo')
