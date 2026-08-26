@@ -39,9 +39,9 @@
             </canvas>
             
             <!-- Etiqueta flotante central 2D -->
-            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span class="text-3xl font-black text-slate-800 tracking-tight leading-none">{{ $pct_impartidas }}%</span>
-                <span class="text-[11px] font-extrabold text-emerald-600 uppercase tracking-wide mt-1">Cumplimiento</span>
+            <div id="status-clases-center-label" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none transition-all duration-200">
+                <span id="center-label-valor" class="text-3xl font-black text-slate-800 tracking-tight leading-none">{{ $pct_impartidas }}%</span>
+                <span id="center-label-sub" class="text-[11px] font-extrabold text-emerald-600 uppercase tracking-wide mt-1">Cumplimiento</span>
             </div>
         </div>
         @if($total_clases === 0)
