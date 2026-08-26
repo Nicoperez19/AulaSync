@@ -393,6 +393,7 @@ function initStatusClasesChart() {
             cutout: '74%',
             onHover: (event, activeElements) => {
                 if (!centerValor || !centerSub) return;
+                const centerDetail = document.getElementById('center-label-detail');
 
                 if (activeElements && activeElements.length > 0 && totalClases > 0) {
                     const idx = activeElements[0].index;
@@ -401,48 +402,36 @@ function initStatusClasesChart() {
                         centerValor.className = 'text-3xl font-black text-emerald-600 tracking-tight leading-none';
                         centerSub.textContent = `Impartidas (${pctImpartidas}%)`;
                         centerSub.className = 'text-[11px] font-extrabold text-emerald-700 uppercase tracking-wide mt-1';
+                        if (centerDetail) {
+                            centerDetail.textContent = `Norm. ${realizadas} + Recup. ${recuperadas}`;
+                            centerDetail.classList.remove('hidden');
+                        }
                     } else {
                         centerValor.textContent = `${noRegistradas}`;
                         centerValor.className = 'text-3xl font-black text-rose-600 tracking-tight leading-none';
                         centerSub.textContent = `Sin Registro (${pctNoRegistradas}%)`;
                         centerSub.className = 'text-[11px] font-extrabold text-rose-700 uppercase tracking-wide mt-1';
+                        if (centerDetail) {
+                            centerDetail.textContent = `de ${totalClases} clases totales`;
+                            centerDetail.classList.remove('hidden');
+                        }
                     }
                 } else {
                     centerValor.textContent = `${pctImpartidas}%`;
                     centerValor.className = 'text-3xl font-black text-slate-800 tracking-tight leading-none';
                     centerSub.textContent = 'Cumplimiento';
                     centerSub.className = 'text-[11px] font-extrabold text-emerald-600 uppercase tracking-wide mt-1';
+                    if (centerDetail) {
+                        centerDetail.classList.add('hidden');
+                        centerDetail.textContent = '';
+                    }
                 }
             },
             plugins: {
                 legend: { display: false },
                 tooltip: {
-                    enabled: totalClases > 0,
-                    position: 'nearest',
-                    yAlign: 'bottom',
-                    caretPadding: 16,
-                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                    titleFont: { size: 12, weight: 'bold' },
-                    bodyFont: { size: 11 },
-                    padding: 10,
-                    cornerRadius: 10,
-                    callbacks: {
-                        label: function(context) {
-                            const index = context.dataIndex;
-                            if (index === 0) {
-                                return [
-                                    ` Realizadas Normales: ${realizadas}`,
-                                    ` Recuperadas: ${recuperadas}`,
-                                    ` Total Impartidas: ${impartidasTotal} (${pctImpartidas}%)`
-                                ];
-                            } else {
-                                return [
-                                    ` Sin Registro / Ausentes: ${noRegistradas} (${pctNoRegistradas}%)`
-                                ];
-                            }
-                        }
-                    }
-                }
+                    enabled: false,
+                },
             }
         }
     });
