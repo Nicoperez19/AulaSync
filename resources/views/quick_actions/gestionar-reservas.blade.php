@@ -246,21 +246,47 @@
         <form id="form-editar-reserva-modal" onsubmit="guardarEdicionReserva(event)">
             <input type="hidden" id="edit-reserva-id">
             
-            <!-- Información del responsable (solo lectura) -->
-            <div class="mb-6 p-4 bg-gray-50 rounded-lg">
-                <h4 class="text-sm font-semibold text-gray-700 mb-3">Información del Responsable</h4>
+            <!-- Información del responsable y Reasignación -->
+            <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <h4 class="text-sm font-semibold text-gray-800 mb-3">Información del Responsable</h4>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                     <div>
-                        <span class="font-medium text-gray-600">Nombre:</span>
+                        <span class="font-medium text-gray-600 block text-xs">Nombre actual:</span>
                         <span class="text-gray-900 font-semibold" id="edit-responsable-nombre">-</span>
                     </div>
                     <div>
-                        <span class="font-medium text-gray-600">RUN:</span>
+                        <span class="font-medium text-gray-600 block text-xs">RUN:</span>
                         <span class="text-gray-900 font-semibold" id="edit-responsable-run">-</span>
                     </div>
                     <div>
-                        <span class="font-medium text-gray-600">Tipo:</span>
+                        <span class="font-medium text-gray-600 block text-xs">Tipo:</span>
                         <span class="text-gray-900 font-semibold" id="edit-responsable-tipo">-</span>
+                    </div>
+                </div>
+
+                <!-- Campo para reasignar docente -->
+                <div class="mt-4 pt-3 border-t border-gray-200">
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">
+                        <i class="fa-solid fa-user-pen text-blue-600 mr-1"></i> Reasignar a otro docente
+                        <span class="font-normal text-gray-500">(opcional — dejar vacío para mantener el actual)</span>
+                    </label>
+                    <div class="relative">
+                        <input id="edit-nuevo-docente-buscar"
+                               type="search"
+                               autocomplete="off"
+                               placeholder="Escribe nombre, correo o RUN del nuevo docente..."
+                               class="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white" />
+                        <input type="hidden" id="edit-nuevo-docente-run" name="edit_nuevo_run_profesor" />
+                        <div id="edit-nuevo-docente-sugerencias"
+                             class="absolute z-30 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-48 overflow-y-auto hidden">
+                        </div>
+                    </div>
+                    <div id="edit-nuevo-docente-confirmado" class="hidden mt-2 flex items-center justify-between gap-2 text-xs font-medium text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-md p-2">
+                        <span class="flex items-center gap-1.5 truncate">
+                            <i class="fa-solid fa-circle-check text-emerald-600"></i>
+                            <span id="edit-nuevo-docente-confirmado-texto"></span>
+                        </span>
+                        <button type="button" onclick="limpiarNuevoDocenteModal()" class="text-emerald-700 hover:text-emerald-900 font-bold px-1">✕</button>
                     </div>
                 </div>
             </div>
@@ -418,6 +444,9 @@ window.editarReserva = async function(idReserva) {
     await cargarEspaciosParaModal();
     await cargarModulosParaModal();
     
+    // Limpiar campo de reasignación de docente
+    limpiarNuevoDocenteModal();
+
     // Llenar el modal con los datos de la reserva de forma segura
     const elId = document.getElementById('edit-reserva-id');
     const elNombre = document.getElementById('edit-responsable-nombre');
@@ -486,6 +515,7 @@ window.editarReserva = async function(idReserva) {
 window.cerrarModalEditar = function() {
     document.getElementById('modal-editar-reserva').classList.add('hidden');
     document.getElementById('form-editar-reserva-modal').reset();
+    limpiarNuevoDocenteModal();
 }
 
 // Cargar espacios para el modal
@@ -705,21 +735,29 @@ window.guardarEdicionReserva = async function(event) {
     });
 
     try {
+        const nuevoRunProfesor = document.getElementById('edit-nuevo-docente-run')?.value || null;
+
+        const payload = {
+            id_espacio: codigoEspacio,
+            fecha: fecha,
+            hora: hora,
+            modulos: cantidadModulos,
+            modulo_inicio: parseInt(moduloInicialId.split('.').pop()) || parseInt(moduloInicialId),
+            modulo_fin: parseInt(moduloFinalId.split('.').pop()) || parseInt(moduloFinalId),
+            observaciones: observacionesFinales
+        };
+
+        if (nuevoRunProfesor) {
+            payload.nuevo_run_profesor = nuevoRunProfesor;
+        }
+
         const response = await fetch(`/quick-actions/api/reserva/${idReserva}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
             },
-            body: JSON.stringify({
-                id_espacio: codigoEspacio,
-                fecha: fecha,
-                hora: hora,
-                modulos: cantidadModulos,
-                modulo_inicio: parseInt(moduloInicialId.split('.').pop()) || parseInt(moduloInicialId),
-                modulo_fin: parseInt(moduloFinalId.split('.').pop()) || parseInt(moduloFinalId),
-                observaciones: observacionesFinales
-            })
+            body: JSON.stringify(payload)
         });
 
         const data = await response.json();
@@ -1825,10 +1863,93 @@ function formatearFecha(fecha) {
 
         return fecha;
     }
-}
+// ── Autocomplete para reasignar docente en modal de edición ───────────────────
+(function () {
+    const input = document.getElementById('edit-nuevo-docente-buscar');
+    const hiddenRun = document.getElementById('edit-nuevo-docente-run');
+    const sugerenciasBox = document.getElementById('edit-nuevo-docente-sugerencias');
+    const confirmadoBox = document.getElementById('edit-nuevo-docente-confirmado');
+    const confirmadoTexto = document.getElementById('edit-nuevo-docente-confirmado-texto');
 
+    if (!input) return;
+    let debounceTimer;
 
+    input.addEventListener('input', function () {
+        clearTimeout(debounceTimer);
+        const q = this.value.trim();
+        hiddenRun.value = '';
+        if (confirmadoBox) confirmadoBox.classList.add('hidden');
 
+        if (q.length < 2) {
+            if (sugerenciasBox) {
+                sugerenciasBox.innerHTML = '';
+                sugerenciasBox.classList.add('hidden');
+            }
+            return;
+        }
+
+        debounceTimer = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/usuarios/autocomplete?q=${encodeURIComponent(q)}`);
+                const data = await res.json();
+                if (!sugerenciasBox) return;
+                sugerenciasBox.innerHTML = '';
+
+                if (!Array.isArray(data) || data.length === 0) {
+                    sugerenciasBox.innerHTML = '<div class="p-3 text-xs text-gray-400">No se encontraron docentes o usuarios</div>';
+                    sugerenciasBox.classList.remove('hidden');
+                    return;
+                }
+
+                data.forEach(u => {
+                    const div = document.createElement('div');
+                    div.className = 'px-3 py-2 cursor-pointer hover:bg-blue-50 border-b last:border-b-0 text-left';
+                    div.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-bold text-gray-800">${u.nombre}</span>
+                            <span class="text-[11px] text-gray-400 font-mono">${u.id}</span>
+                        </div>
+                        <span class="text-[11px] text-gray-500">${u.email}</span>
+                    `;
+                    div.addEventListener('click', () => {
+                        hiddenRun.value = u.id;
+                        input.value = `${u.nombre} (${u.email})`;
+                        if (confirmadoTexto) confirmadoTexto.textContent = `Se reasignará a: ${u.nombre} (${u.id})`;
+                        if (confirmadoBox) confirmadoBox.classList.remove('hidden');
+                        sugerenciasBox.classList.add('hidden');
+                        sugerenciasBox.innerHTML = '';
+                    });
+                    sugerenciasBox.appendChild(div);
+                });
+
+                sugerenciasBox.classList.remove('hidden');
+            } catch (e) {
+                console.error('Error autocomplete docente:', e);
+            }
+        }, 300);
+    });
+
+    document.addEventListener('click', function (e) {
+        if (sugerenciasBox && !sugerenciasBox.contains(e.target) && e.target !== input) {
+            sugerenciasBox.classList.add('hidden');
+        }
+    });
+})();
+
+window.limpiarNuevoDocenteModal = function() {
+    const hiddenRun = document.getElementById('edit-nuevo-docente-run');
+    const input = document.getElementById('edit-nuevo-docente-buscar');
+    const confirmadoBox = document.getElementById('edit-nuevo-docente-confirmado');
+    const sugerenciasBox = document.getElementById('edit-nuevo-docente-sugerencias');
+
+    if (hiddenRun) hiddenRun.value = '';
+    if (input) input.value = '';
+    if (confirmadoBox) confirmadoBox.classList.add('hidden');
+    if (sugerenciasBox) {
+        sugerenciasBox.innerHTML = '';
+        sugerenciasBox.classList.add('hidden');
+    }
+};
 
 </script>
 @endpush
