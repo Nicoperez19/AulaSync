@@ -26,6 +26,11 @@ class AsistentesAcademicosTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -38,15 +43,28 @@ class AsistentesAcademicosTable extends Component
 
     public function render()
     {
+        $searchTerm = trim($this->search);
+
         $asistentesAcademicos = AsistenteAcademico::query()
             ->with(['areaAcademica.facultad.sede.universidad'])
-            ->where(function ($query) {
-                $query->where('nombre', 'like', '%' . $this->search . '%')
-                    ->orWhere('email', 'like', '%' . $this->search . '%')
-                    ->orWhereHas('areaAcademica', function ($q) {
-                        $q->where('nombre_area_academica', 'like', '%' . $this->search . '%')
-                          ->where('tipo_area_academica', 'escuela');
-                    });
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $termSinTilde = str_replace(
+                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                    $searchTerm
+                );
+                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+
+                $query->where(function ($q) use ($terms) {
+                    foreach ($terms as $t) {
+                        $q->orWhere('nombre', 'like', '%' . $t . '%')
+                          ->orWhere('email', 'like', '%' . $t . '%')
+                          ->orWhereHas('areaAcademica', function ($aq) use ($t) {
+                              $aq->where('nombre_area_academica', 'like', '%' . $t . '%')
+                                 ->where('tipo_area_academica', 'escuela');
+                          });
+                    }
+                });
             })
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);

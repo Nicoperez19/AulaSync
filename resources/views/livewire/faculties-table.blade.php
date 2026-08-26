@@ -81,7 +81,7 @@
             </thead>
             <tbody>
                 @forelse ($facultades as $index => $facultad)
-                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
+                    <tr wire:key="facultad-row-{{ $facultad->id_facultad }}" class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
                         <td class="p-3 text-sm font-semibold text-blue-600 border border-white dark:border-white dark:text-blue-400">
                             {{ $facultad->id_facultad }}
                         </td>
@@ -117,7 +117,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr>
+                    <tr wire:key="empty-facultades-row">
                         <td colspan="6" class="p-8 text-center text-gray-500">
                             <div class="flex flex-col items-center">
                                 <svg class="w-12 h-12 mb-4 text-gray-400" fill="none" stroke="currentColor"

@@ -77,8 +77,8 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach ($roles as $index => $role)
-                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50'  }}">
+                @forelse ($roles as $index => $role)
+                    <tr wire:key="role-row-{{ $role->id }}" class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50'  }}">
                         <td
                             class="p-3 text-sm font-semibold text-blue-600 border border-white dark:border-white dark:text-blue-400">
                             {{ $role->id }}</td>
@@ -101,9 +101,13 @@
                             </div>
                         </td>
                     </tr>
-                @endforeach
-
-
+                @empty
+                    <tr wire:key="empty-roles-row">
+                        <td colspan="3" class="p-6 text-center text-gray-500 dark:text-gray-400">
+                            No se encontraron roles que coincidan con la búsqueda "{{ $search }}".
+                        </td>
+                    </tr>
+                @endforelse
             </tbody>
         </table>
     </div>

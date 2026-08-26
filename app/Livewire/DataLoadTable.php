@@ -140,16 +140,51 @@ class DataLoadTable extends Component
         $this->dispatch('show-success', ['message' => 'Todos los registros de carga y su información asociada fueron eliminados correctamente.']);
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+        $this->selected = [];
+        $this->selectAll = false;
+    }
+
     public function render()
     {
+        $searchTerm = trim($this->search);
+
+        $matchingUserRuns = [];
+        if ($searchTerm !== '') {
+            $termSinTilde = str_replace(
+                ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                $searchTerm
+            );
+            $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+
+            try {
+                $matchingUserRuns = \App\Models\User::on('mysql')
+                    ->where(function($uq) use ($terms, $searchTerm) {
+                        $cleanRun = preg_replace('/[^0-9Kk]/', '', $searchTerm);
+                        if (!empty($cleanRun)) {
+                            $uq->where('run', 'like', '%' . $cleanRun . '%');
+                        }
+                        foreach ($terms as $t) {
+                            $uq->orWhere('name', 'like', '%' . $t . '%');
+                        }
+                    })
+                    ->pluck('run')
+                    ->toArray();
+            } catch (\Throwable $e) {
+                $matchingUserRuns = [];
+            }
+        }
+
         $dataLoads = DataLoad::query()
-            ->when($this->search, function ($query) {
-                $query->where(function ($query) {
-                    $query->where('nombre_archivo', 'like', '%' . $this->search . '%')
-                        ->orWhereHas('user', function ($query) {
-                            $query->where('name', 'like', '%' . $this->search . '%')
-                                ->orWhere('run', 'like', '%' . $this->search . '%');
-                        });
+            ->when($searchTerm !== '', function ($query) use ($searchTerm, $matchingUserRuns) {
+                $query->where(function ($q) use ($searchTerm, $matchingUserRuns) {
+                    $q->where('nombre_archivo', 'like', '%' . $searchTerm . '%');
+                    if (!empty($matchingUserRuns)) {
+                        $q->orWhereIn('usuario', $matchingUserRuns);
+                    }
                 });
             })
             ->orderBy($this->sortField, $this->sortDirection)

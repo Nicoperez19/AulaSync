@@ -25,6 +25,11 @@ class SpacesTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -37,20 +42,31 @@ class SpacesTable extends Component
 
     public function render()
     {
+        $searchTerm = trim($this->search);
+
         $espacios = Espacio::query()
             ->with('piso.facultad.sede')
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('id_espacio', 'like', '%' . $this->search . '%')
-                      ->orWhere('nombre_espacio', 'like', '%' . $this->search . '%')
-                      ->orWhere('tipo_espacio', 'like', '%' . $this->search . '%')
-                      ->orWhere('estado', 'like', '%' . $this->search . '%')
-                      ->orWhereHas('piso.facultad', function ($subQuery) {
-                          $subQuery->where('nombre_facultad', 'like', '%' . $this->search . '%');
-                      })
-                      ->orWhereHas('piso', function ($subQuery) {
-                          $subQuery->where('numero_piso', 'like', '%' . $this->search . '%');
-                      });
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $termSinTilde = str_replace(
+                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                    $searchTerm
+                );
+                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+
+                $query->where(function ($q) use ($terms, $searchTerm) {
+                    $q->where('id_espacio', 'like', '%' . $searchTerm . '%');
+                    foreach ($terms as $t) {
+                        $q->orWhere('nombre_espacio', 'like', '%' . $t . '%')
+                          ->orWhere('tipo_espacio', 'like', '%' . $t . '%')
+                          ->orWhere('estado', 'like', '%' . $t . '%')
+                          ->orWhereHas('piso.facultad', function ($subQuery) use ($t) {
+                              $subQuery->where('nombre_facultad', 'like', '%' . $t . '%');
+                          })
+                          ->orWhereHas('piso', function ($subQuery) use ($t) {
+                              $subQuery->where('numero_piso', 'like', '%' . $t . '%');
+                          });
+                    }
                 });
             })
             ->when($this->sortField, function ($query) {

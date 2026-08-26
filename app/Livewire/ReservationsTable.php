@@ -26,6 +26,11 @@ class ReservationsTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -43,25 +48,39 @@ class ReservationsTable extends Component
         $reservas = Reserva::query()
             ->with(['profesor', 'solicitante', 'espacio', 'asignatura'])
             ->when($searchTerm !== '', function ($query) use ($searchTerm) {
-                $query->where(function ($q) use ($searchTerm) {
+                $cleanRun = preg_replace('/[^0-9Kk]/', '', $searchTerm);
+                $termSinTilde = str_replace(
+                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                    $searchTerm
+                );
+                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+
+                $query->where(function ($q) use ($terms, $searchTerm, $cleanRun) {
                     $q->where('id_reserva', 'like', '%' . $searchTerm . '%')
                       ->orWhere('id_espacio', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('fecha_reserva', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('run_profesor', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('run_solicitante', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('estado', 'like', '%' . $searchTerm . '%')
-                      ->orWhereHas('profesor', function ($pq) use ($searchTerm) {
-                          $pq->where('name', 'like', '%' . $searchTerm . '%');
-                      })
-                      ->orWhereHas('solicitante', function ($sq) use ($searchTerm) {
-                          $sq->where('nombre', 'like', '%' . $searchTerm . '%');
-                      })
-                      ->orWhereHas('espacio', function ($eq) use ($searchTerm) {
-                          $eq->where('nombre_espacio', 'like', '%' . $searchTerm . '%');
-                      })
-                      ->orWhereHas('asignatura', function ($aq) use ($searchTerm) {
-                          $aq->where('nombre_asignatura', 'like', '%' . $searchTerm . '%');
-                      });
+                      ->orWhere('fecha_reserva', 'like', '%' . $searchTerm . '%');
+
+                    if (!empty($cleanRun)) {
+                        $q->orWhere('run_profesor', 'like', '%' . $cleanRun . '%')
+                          ->orWhere('run_solicitante', 'like', '%' . $cleanRun . '%');
+                    }
+
+                    foreach ($terms as $t) {
+                        $q->orWhere('estado', 'like', '%' . $t . '%')
+                          ->orWhereHas('profesor', function ($pq) use ($t) {
+                              $pq->where('name', 'like', '%' . $t . '%');
+                          })
+                          ->orWhereHas('solicitante', function ($sq) use ($t) {
+                              $sq->where('nombre', 'like', '%' . $t . '%');
+                          })
+                          ->orWhereHas('espacio', function ($eq) use ($t) {
+                              $eq->where('nombre_espacio', 'like', '%' . $t . '%');
+                          })
+                          ->orWhereHas('asignatura', function ($aq) use ($t) {
+                              $aq->where('nombre_asignatura', 'like', '%' . $t . '%');
+                          });
+                    }
                 });
             })
             ->orderBy($this->sortField, $this->sortDirection)

@@ -25,6 +25,11 @@ class ProfessorsTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -40,31 +45,47 @@ class ProfessorsTable extends Component
         $searchTerm = trim($this->search);
         $universidadIds = collect();
 
-        if ($searchTerm !== '') {
-            $universidadIds = \App\Models\Universidad::where('nombre_universidad', 'like', '%' . $searchTerm . '%')
-                ->pluck('id_universidad');
-        }
-
         $profesores = Profesor::query()
             ->with(['carrera', 'universidad', 'facultad', 'areaAcademica'])
-            ->when($searchTerm, function ($query) use ($searchTerm, $universidadIds) {
-                $query->where(function ($q) use ($searchTerm, $universidadIds) {
-                    $q->where('run_profesor', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('name', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('email', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('tipo_profesor', 'like', '%' . $searchTerm . '%')
-                      ->orWhereHas('carrera', function ($subQuery) use ($searchTerm) {
-                          $subQuery->where('nombre', 'like', '%' . $searchTerm . '%');
-                      })
-                      ->when($universidadIds->isNotEmpty(), function ($q2) use ($universidadIds) {
-                          $q2->orWhereIn('id_universidad', $universidadIds);
-                      })
-                      ->orWhereHas('facultad', function ($subQuery) use ($searchTerm) {
-                          $subQuery->where('nombre_facultad', 'like', '%' . $searchTerm . '%');
-                      })
-                      ->orWhereHas('areaAcademica', function ($subQuery) use ($searchTerm) {
-                          $subQuery->where('nombre_area_academica', 'like', '%' . $searchTerm . '%');
-                      });
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $cleanRun = preg_replace('/[^0-9Kk]/', '', $searchTerm);
+                $termSinTilde = str_replace(
+                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                    $searchTerm
+                );
+                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+
+                $universidadIds = \App\Models\Universidad::where(function($uq) use ($terms) {
+                    foreach ($terms as $t) {
+                        $uq->orWhere('nombre_universidad', 'like', '%' . $t . '%');
+                    }
+                })->pluck('id_universidad');
+
+                $query->where(function ($q) use ($terms, $cleanRun, $universidadIds) {
+                    if (!empty($cleanRun)) {
+                        $q->where('run_profesor', 'like', '%' . $cleanRun . '%')
+                          ->orWhereRaw("REPLACE(REPLACE(run_profesor, '.', ''), '-', '') LIKE ?", ['%' . $cleanRun . '%']);
+                    }
+
+                    foreach ($terms as $t) {
+                        $q->orWhere('name', 'like', '%' . $t . '%')
+                          ->orWhere('email', 'like', '%' . $t . '%')
+                          ->orWhere('tipo_profesor', 'like', '%' . $t . '%')
+                          ->orWhereHas('carrera', function ($subQuery) use ($t) {
+                              $subQuery->where('nombre', 'like', '%' . $t . '%');
+                          })
+                          ->orWhereHas('facultad', function ($subQuery) use ($t) {
+                              $subQuery->where('nombre_facultad', 'like', '%' . $t . '%');
+                          })
+                          ->orWhereHas('areaAcademica', function ($subQuery) use ($t) {
+                              $subQuery->where('nombre_area_academica', 'like', '%' . $t . '%');
+                          });
+                    }
+
+                    if ($universidadIds->isNotEmpty()) {
+                        $q->orWhereIn('id_universidad', $universidadIds);
+                    }
                 });
             })
             ->when($this->sortField, function ($query) {

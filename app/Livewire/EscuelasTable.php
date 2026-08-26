@@ -26,6 +26,11 @@ class EscuelasTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -38,15 +43,29 @@ class EscuelasTable extends Component
 
     public function render()
     {
+        $searchTerm = trim($this->search);
+
         $escuelas = AreaAcademica::query()
             ->where('tipo_area_academica', 'escuela')
             ->with(['facultad.sede.universidad', 'carreras'])
-            ->where(function ($query) {
-                $query->where('id_area_academica', 'like', '%' . $this->search . '%')
-                    ->orWhere('nombre_area_academica', 'like', '%' . $this->search . '%')
-                    ->orWhereHas('facultad', function ($q) {
-                        $q->where('nombre_facultad', 'like', '%' . $this->search . '%');
-                    });
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $termSinTilde = str_replace(
+                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                    $searchTerm
+                );
+                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+
+                $query->where(function ($q) use ($terms, $searchTerm) {
+                    $q->where('id_area_academica', 'like', '%' . $searchTerm . '%');
+
+                    foreach ($terms as $t) {
+                        $q->orWhere('nombre_area_academica', 'like', '%' . $t . '%')
+                          ->orWhereHas('facultad', function ($fq) use ($t) {
+                              $fq->where('nombre_facultad', 'like', '%' . $t . '%');
+                          });
+                    }
+                });
             })
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);

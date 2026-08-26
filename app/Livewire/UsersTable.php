@@ -26,6 +26,11 @@ class UsersTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -43,13 +48,41 @@ class UsersTable extends Component
         $users = User::query()
             ->with('roles')
             ->when($searchTerm !== '', function ($query) use ($searchTerm) {
-                $query->where(function ($q) use ($searchTerm) {
-                    $q->where('run', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('name', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('email', 'like', '%' . $searchTerm . '%')
-                      ->orWhereHas('roles', function ($rq) use ($searchTerm) {
-                          $rq->where('name', 'like', '%' . $searchTerm . '%');
-                      });
+                $cleanRun = preg_replace('/[^0-9Kk]/', '', $searchTerm);
+                $termSinTilde = str_replace(
+                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú', 'ü', 'Ü', 'ñ', 'Ñ'],
+                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U', 'u', 'U', 'n', 'N'],
+                    $searchTerm
+                );
+                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+
+                // Buscar usuarios que tengan el rol buscado (manejando multi-tenancy de forma segura)
+                $roleUserRuns = [];
+                try {
+                    $roleUserRuns = \Illuminate\Support\Facades\DB::connection('tenant')
+                        ->table('model_has_roles')
+                        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
+                        ->where('roles.name', 'like', '%' . $searchTerm . '%')
+                        ->pluck('model_id')
+                        ->toArray();
+                } catch (\Throwable $e) {
+                    // Si no está en contexto tenant o falla, ignorar
+                }
+
+                $query->where(function ($q) use ($terms, $cleanRun, $roleUserRuns) {
+                    if (!empty($cleanRun)) {
+                        $q->where('run', 'like', '%' . $cleanRun . '%')
+                          ->orWhereRaw("REPLACE(REPLACE(run, '.', ''), '-', '') LIKE ?", ['%' . $cleanRun . '%']);
+                    }
+
+                    foreach ($terms as $term) {
+                        $q->orWhere('name', 'like', '%' . $term . '%')
+                          ->orWhere('email', 'like', '%' . $term . '%');
+                    }
+
+                    if (!empty($roleUserRuns)) {
+                        $q->orWhereIn('run', $roleUserRuns);
+                    }
                 });
             })
             ->orderBy($this->sortField, $this->sortDirection)

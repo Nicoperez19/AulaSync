@@ -25,6 +25,11 @@ class SedesTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -37,15 +42,27 @@ class SedesTable extends Component
 
     public function render()
     {
+        $searchTerm = trim($this->search);
+
         $sedes = Sede::query()
             ->with('universidad')
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('id_sede', 'like', '%' . $this->search . '%')
-                      ->orWhere('nombre_sede', 'like', '%' . $this->search . '%')
-                      ->orWhereHas('universidad', function ($subQuery) {
-                          $subQuery->where('nombre_universidad', 'like', '%' . $this->search . '%');
-                      });
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $termSinTilde = str_replace(
+                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                    $searchTerm
+                );
+                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+
+                $query->where(function ($q) use ($terms, $searchTerm) {
+                    $q->where('id_sede', 'like', '%' . $searchTerm . '%');
+
+                    foreach ($terms as $t) {
+                        $q->orWhere('nombre_sede', 'like', '%' . $t . '%')
+                          ->orWhereHas('universidad', function ($subQuery) use ($t) {
+                              $subQuery->where('nombre_universidad', 'like', '%' . $t . '%');
+                          });
+                    }
                 });
             })
             ->when($this->sortField, function ($query) {

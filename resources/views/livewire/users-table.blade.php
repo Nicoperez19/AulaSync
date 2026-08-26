@@ -85,7 +85,7 @@
             </thead>
             <tbody>
                 @forelse ($users as $index => $user)
-                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-blue-50 dark:hover:bg-gray-800">
+                    <tr wire:key="user-row-{{ $user->run }}" class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-blue-50 dark:hover:bg-gray-800">
                         <td class="p-3 text-sm font-semibold text-blue-600 border border-white dark:border-gray-700 dark:text-blue-400">
                             {{ $user->run }}
                         </td>
@@ -122,7 +122,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr>
+                    <tr wire:key="empty-users-row">
                         <td colspan="5" class="p-6 text-center text-gray-500 dark:text-gray-400">
                             No se encontraron usuarios que coincidan con la búsqueda "{{ $search }}".
                         </td>
@@ -137,38 +137,6 @@
 </div>
 
 <script>
-    function sortTable(columnIndex) {
-        var table = document.getElementById("user-table");
-        var rows = Array.from(table.rows).slice(1);
-        var isAscending = table.rows[0].cells[columnIndex].classList.contains("asc");
-
-        // Remover clases de ordenamiento de todas las columnas
-        Array.from(table.rows[0].cells).forEach(cell => {
-            cell.classList.remove("asc", "desc");
-        });
-
-        rows.sort((rowA, rowB) => {
-            var cellA = rowA.cells[columnIndex].textContent.trim();
-            var cellB = rowB.cells[columnIndex].textContent.trim();
-
-            if (columnIndex === 5 || columnIndex === 6) {
-                cellA = new Date(cellA);
-                cellB = new Date(cellB);
-            }
-
-            if (cellA < cellB) {
-                return isAscending ? -1 : 1;
-            }
-            if (cellA > cellB) {
-                return isAscending ? 1 : -1;
-            }
-            return 0;
-        });
-
-        rows.forEach(row => table.appendChild(row));
-
-        table.rows[0].cells[columnIndex].classList.add(isAscending ? "desc" : "asc");
-    }
     function deleteUser(run, name) {
         Swal.fire({
             title: '¿Estás seguro?',
@@ -185,5 +153,4 @@
             }
         });
     }
-
 </script>

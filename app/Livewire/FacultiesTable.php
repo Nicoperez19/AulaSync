@@ -24,6 +24,11 @@ class FacultiesTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function render()
     {
         $searchTerm = trim($this->search ?? '');
@@ -32,27 +37,46 @@ class FacultiesTable extends Component
         $sedeIds = collect();
         $campusIds = collect();
 
-        if ($searchTerm !== '') {
-            $likeTerm = '%' . $searchTerm . '%';
-
-            $universidadIds = Universidad::where('nombre_universidad', 'like', $likeTerm)
-                ->pluck('id_universidad');
-
-            $sedeIds = Sede::where('nombre_sede', 'like', $likeTerm)
-                ->pluck('id_sede');
-
-            $campusIds = Campus::where('nombre_campus', 'like', $likeTerm)
-                ->pluck('id_campus');
-        }
-
         $facultades = Facultad::with(['universidad', 'sede', 'campus'])
-            ->when($searchTerm !== '', function ($query) use ($searchTerm, $universidadIds, $sedeIds, $campusIds) {
-                $likeTerm = '%' . $searchTerm . '%';
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $termSinTilde = str_replace(
+                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                    $searchTerm
+                );
+                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+
+                try {
+                    $universidadIds = Universidad::where(function($uq) use ($terms) {
+                        foreach ($terms as $t) {
+                            $uq->orWhere('nombre_universidad', 'like', '%' . $t . '%');
+                        }
+                    })->pluck('id_universidad');
+
+                    $sedeIds = Sede::where(function($sq) use ($terms) {
+                        foreach ($terms as $t) {
+                            $sq->orWhere('nombre_sede', 'like', '%' . $t . '%');
+                        }
+                    })->pluck('id_sede');
+
+                    $campusIds = Campus::where(function($cq) use ($terms) {
+                        foreach ($terms as $t) {
+                            $cq->orWhere('nombre_campus', 'like', '%' . $t . '%');
+                        }
+                    })->pluck('id_campus');
+                } catch (\Throwable $e) {
+                    $universidadIds = collect();
+                    $sedeIds = collect();
+                    $campusIds = collect();
+                }
 
                 // Apply tenant-side filters while honoring central search matches.
-                $query->where(function ($innerQuery) use ($likeTerm, $universidadIds, $sedeIds, $campusIds) {
-                    $innerQuery->where('nombre_facultad', 'like', $likeTerm)
-                        ->orWhere('id_facultad', 'like', $likeTerm);
+                $query->where(function ($innerQuery) use ($terms, $searchTerm, $universidadIds, $sedeIds, $campusIds) {
+                    $innerQuery->where('id_facultad', 'like', '%' . $searchTerm . '%');
+
+                    foreach ($terms as $t) {
+                        $innerQuery->orWhere('nombre_facultad', 'like', '%' . $t . '%');
+                    }
 
                     if ($universidadIds->isNotEmpty()) {
                         $innerQuery->orWhereIn('id_universidad', $universidadIds);

@@ -26,6 +26,11 @@ class SubjectsTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -38,20 +43,34 @@ class SubjectsTable extends Component
 
     public function render()
     {
+        $searchTerm = trim($this->search);
+
         $asignaturas = Asignatura::with(['profesor', 'carrera'])
-            ->where(function($query) {
-                $query->where('nombre_asignatura', 'like', '%' . $this->search . '%')
-                      ->orWhere('id_asignatura', 'like', '%' . $this->search . '%')
-                      ->orWhere('codigo_asignatura', 'like', '%' . $this->search . '%')
-                      ->orWhere('seccion', 'like', '%' . $this->search . '%')
-                      ->orWhere('area_conocimiento', 'like', '%' . $this->search . '%')
-                      ->orWhere('periodo', 'like', '%' . $this->search . '%')
-                      ->orWhereHas('profesor', function($q) {
-                          $q->where('name', 'like', '%' . $this->search . '%');
-                      })
-                      ->orWhereHas('carrera', function($q) {
-                          $q->where('nombre', 'like', '%' . $this->search . '%');
-                      });
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $termSinTilde = str_replace(
+                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                    $searchTerm
+                );
+                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+
+                $query->where(function($q) use ($terms, $searchTerm) {
+                    $q->where('id_asignatura', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('codigo_asignatura', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('seccion', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('periodo', 'like', '%' . $searchTerm . '%');
+
+                    foreach ($terms as $t) {
+                        $q->orWhere('nombre_asignatura', 'like', '%' . $t . '%')
+                          ->orWhere('area_conocimiento', 'like', '%' . $t . '%')
+                          ->orWhereHas('profesor', function($pq) use ($t) {
+                              $pq->where('name', 'like', '%' . $t . '%');
+                          })
+                          ->orWhereHas('carrera', function($cq) use ($t) {
+                              $cq->where('nombre', 'like', '%' . $t . '%');
+                          });
+                    }
+                });
             })
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);

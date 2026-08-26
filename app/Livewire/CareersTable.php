@@ -28,6 +28,11 @@ class CareersTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -43,39 +48,62 @@ class CareersTable extends Component
         $searchTerm = trim($this->search);
 
         $sedeIds = [];
+        $terms = [];
         if ($searchTerm !== '') {
-            // Buscar coincidencias en sedes y universidades usando conexión central
-            $sedeIds = Sede::on('mysql')
-                ->where('nombre_sede', 'like', "%{$searchTerm}%")
-                ->pluck('id_sede')
-                ->all();
+            $termSinTilde = str_replace(
+                ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                $searchTerm
+            );
+            $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
 
-            $universidadIds = Universidad::on('mysql')
-                ->where('nombre_universidad', 'like', "%{$searchTerm}%")
-                ->pluck('id_universidad');
-
-            if ($universidadIds->isNotEmpty()) {
-                $sedeIdsFromUniversidades = Sede::on('mysql')
-                    ->whereIn('id_universidad', $universidadIds)
+            try {
+                // Buscar coincidencias en sedes y universidades usando conexión central
+                $sedeIds = Sede::on('mysql')
+                    ->where(function($sq) use ($terms) {
+                        foreach ($terms as $t) {
+                            $sq->orWhere('nombre_sede', 'like', "%{$t}%");
+                        }
+                    })
                     ->pluck('id_sede')
                     ->all();
 
-                $sedeIds = array_values(array_unique(array_merge($sedeIds, $sedeIdsFromUniversidades)));
+                $universidadIds = Universidad::on('mysql')
+                    ->where(function($uq) use ($terms) {
+                        foreach ($terms as $t) {
+                            $uq->orWhere('nombre_universidad', 'like', "%{$t}%");
+                        }
+                    })
+                    ->pluck('id_universidad');
+
+                if ($universidadIds->isNotEmpty()) {
+                    $sedeIdsFromUniversidades = Sede::on('mysql')
+                        ->whereIn('id_universidad', $universidadIds)
+                        ->pluck('id_sede')
+                        ->all();
+
+                    $sedeIds = array_values(array_unique(array_merge($sedeIds, $sedeIdsFromUniversidades)));
+                }
+            } catch (\Throwable $e) {
+                // ignore
             }
         }
 
         $carreras = Carrera::query()
             ->with(['areaAcademica.facultad.sede.universidad'])
-            ->when($searchTerm !== '', function ($query) use ($searchTerm, $sedeIds) {
-                $query->where(function ($innerQuery) use ($searchTerm, $sedeIds) {
-                    $innerQuery->where('id_carrera', 'like', "%{$searchTerm}%")
-                        ->orWhere('nombre', 'like', "%{$searchTerm}%")
-                        ->orWhereHas('areaAcademica', function ($q) use ($searchTerm) {
-                            $q->where('nombre_area_academica', 'like', "%{$searchTerm}%");
-                        })
-                        ->orWhereHas('areaAcademica.facultad', function ($q) use ($searchTerm) {
-                            $q->where('nombre_facultad', 'like', "%{$searchTerm}%");
-                        });
+            ->when($searchTerm !== '', function ($query) use ($searchTerm, $terms, $sedeIds) {
+                $query->where(function ($innerQuery) use ($searchTerm, $terms, $sedeIds) {
+                    $innerQuery->where('id_carrera', 'like', "%{$searchTerm}%");
+
+                    foreach ($terms as $t) {
+                        $innerQuery->orWhere('nombre', 'like', "%{$t}%")
+                            ->orWhereHas('areaAcademica', function ($q) use ($t) {
+                                $q->where('nombre_area_academica', 'like', "%{$t}%");
+                            })
+                            ->orWhereHas('areaAcademica.facultad', function ($q) use ($t) {
+                                $q->where('nombre_facultad', 'like', "%{$t}%");
+                            });
+                    }
 
                     if (!empty($sedeIds)) {
                         $innerQuery->orWhereHas('areaAcademica.facultad', function ($q) use ($sedeIds) {

@@ -26,6 +26,11 @@ class JefesCarreraTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -38,14 +43,27 @@ class JefesCarreraTable extends Component
 
     public function render()
     {
+        $searchTerm = trim($this->search);
+
         $jefesCarrera = JefeCarrera::query()
             ->with(['carrera.areaAcademica.facultad.sede.universidad'])
-            ->where(function ($query) {
-                $query->where('nombre', 'like', '%' . $this->search . '%')
-                    ->orWhere('email', 'like', '%' . $this->search . '%')
-                    ->orWhereHas('carrera', function ($q) {
-                        $q->where('nombre', 'like', '%' . $this->search . '%');
-                    });
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $termSinTilde = str_replace(
+                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                    $searchTerm
+                );
+                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+
+                $query->where(function ($q) use ($terms) {
+                    foreach ($terms as $t) {
+                        $q->orWhere('nombre', 'like', '%' . $t . '%')
+                          ->orWhere('email', 'like', '%' . $t . '%')
+                          ->orWhereHas('carrera', function ($cq) use ($t) {
+                              $cq->where('nombre', 'like', '%' . $t . '%');
+                          });
+                    }
+                });
             })
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);

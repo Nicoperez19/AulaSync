@@ -57,7 +57,7 @@
             </thead>
             <tbody>
                 @forelse ($reservas as $index => $reserva)
-                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-blue-50 dark:hover:bg-gray-800">
+                    <tr wire:key="reserva-row-{{ $reserva->id_reserva }}" class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-blue-50 dark:hover:bg-gray-800">
                         <td class="p-3 font-semibold text-blue-600 border border-white dark:border-gray-700 dark:text-blue-400">
                             {{ $reserva->id_reserva }}
                         </td>
@@ -102,7 +102,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr>
+                    <tr wire:key="empty-reservas-row">
                         <td colspan="7" class="p-6 text-center text-gray-500 dark:text-gray-400">
                             No se encontraron reservas que coincidan con la búsqueda "{{ $search }}".
                         </td>

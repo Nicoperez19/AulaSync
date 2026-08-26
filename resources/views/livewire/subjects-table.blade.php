@@ -92,8 +92,8 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach ($asignaturas as $index => $asignatura)
-                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50'  }}">
+                @forelse ($asignaturas as $index => $asignatura)
+                    <tr wire:key="asignatura-row-{{ $asignatura->id_asignatura }}" class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50'  }}">
                         <td
                             class="p-3 text-sm font-semibold text-blue-600 border border-white dark:border-white dark:text-blue-400">
                             {{ $asignatura->id_asignatura }}
@@ -133,7 +133,13 @@
                             </div>
                         </td>
                     </tr>
-                @endforeach
+                @empty
+                    <tr wire:key="empty-asignaturas-row">
+                        <td colspan="7" class="p-8 text-center text-gray-500">
+                            No se encontraron asignaturas que coincidan con la búsqueda "{{ $search }}".
+                        </td>
+                    </tr>
+                @endforelse
             </tbody>
         </table>
     </div>

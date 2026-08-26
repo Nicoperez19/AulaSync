@@ -25,6 +25,11 @@ class RolesTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -41,9 +46,18 @@ class RolesTable extends Component
 
         $roles = Role::query()
             ->when($searchTerm !== '', function ($query) use ($searchTerm) {
-                $query->where(function ($q) use ($searchTerm) {
-                    $q->where('name', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('id', 'like', '%' . $searchTerm . '%');
+                $termSinTilde = str_replace(
+                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                    $searchTerm
+                );
+                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+
+                $query->where(function ($q) use ($terms, $searchTerm) {
+                    $q->where('id', 'like', '%' . $searchTerm . '%');
+                    foreach ($terms as $t) {
+                        $q->orWhere('name', 'like', '%' . $t . '%');
+                    }
                 });
             })
             ->orderBy($this->sortField, $this->sortDirection)

@@ -25,6 +25,11 @@ class UniversitysTable extends Component
         $this->resetPage();
     }
 
+    public function updatedSearch()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -37,13 +42,25 @@ class UniversitysTable extends Component
 
     public function render()
     {
+        $searchTerm = trim($this->search);
+
         $universidades = Universidad::query()
-            ->when($this->search, function ($query) {
-                $query->where(function ($q) {
-                    $q->where('nombre_universidad', 'like', '%' . $this->search . '%')
-                      ->orWhere('id_universidad', 'like', '%' . $this->search . '%')
-                      ->orWhere('direccion_universidad', 'like', '%' . $this->search . '%')
-                      ->orWhere('telefono_universidad', 'like', '%' . $this->search . '%');
+            ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                $termSinTilde = str_replace(
+                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                    $searchTerm
+                );
+                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+
+                $query->where(function ($q) use ($terms, $searchTerm) {
+                    $q->where('id_universidad', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('telefono_universidad', 'like', '%' . $searchTerm . '%');
+
+                    foreach ($terms as $t) {
+                        $q->orWhere('nombre_universidad', 'like', '%' . $t . '%')
+                          ->orWhere('direccion_universidad', 'like', '%' . $t . '%');
+                    }
                 });
             })
             ->orderBy($this->sortField, $this->sortDirection)
