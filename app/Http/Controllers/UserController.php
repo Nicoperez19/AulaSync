@@ -21,10 +21,9 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::all();
         $years = range(2010, date('Y'));
         $sedes = Sede::all();
-        return view('layouts.user.user_index', compact('users', 'years', 'sedes'));
+        return view('layouts.user.user_index', compact('years', 'sedes'));
     }
 
     public function create()

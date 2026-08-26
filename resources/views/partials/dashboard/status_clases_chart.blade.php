@@ -1,20 +1,20 @@
 <!-- Controles de Filtros por Rango de Fechas -->
-<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 bg-slate-50 border border-slate-200/80 p-4 rounded-2xl shadow-xs">
-    <div class="flex flex-wrap items-center gap-2">
-        <span class="text-xs font-black text-slate-500 uppercase tracking-wider mr-2">Período:</span>
-        <button onclick="filtrarStatusClases('semana')" id="btn-status-semana" class="px-3.5 py-1.5 text-xs font-extrabold rounded-lg transition {{ $rango === 'semana' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100' }}">
+<div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-6 bg-slate-50 border border-slate-200/80 p-3.5 sm:p-4 rounded-2xl shadow-xs">
+    <div class="flex flex-wrap items-center gap-2 w-full xl:w-auto">
+        <span class="text-xs font-black text-slate-500 uppercase tracking-wider mr-1">Período:</span>
+        <button onclick="filtrarStatusClases('semana')" id="btn-status-semana" class="px-3 sm:px-3.5 py-1.5 text-xs font-extrabold rounded-lg transition {{ $rango === 'semana' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100' }}">
             Esta Semana
         </button>
-        <button onclick="filtrarStatusClases('mes')" id="btn-status-mes" class="px-3.5 py-1.5 text-xs font-extrabold rounded-lg transition {{ $rango === 'mes' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100' }}">
+        <button onclick="filtrarStatusClases('mes')" id="btn-status-mes" class="px-3 sm:px-3.5 py-1.5 text-xs font-extrabold rounded-lg transition {{ $rango === 'mes' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100' }}">
             Este Mes
         </button>
-        <button onclick="filtrarStatusClases('hoy')" id="btn-status-hoy" class="px-3.5 py-1.5 text-xs font-extrabold rounded-lg transition {{ $rango === 'hoy' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100' }}">
+        <button onclick="filtrarStatusClases('hoy')" id="btn-status-hoy" class="px-3 sm:px-3.5 py-1.5 text-xs font-extrabold rounded-lg transition {{ $rango === 'hoy' ? 'bg-blue-600 text-white shadow-xs' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100' }}">
             Hoy
         </button>
     </div>
 
     <!-- Rango de fechas libre -->
-    <div class="flex flex-wrap items-center gap-2 text-xs">
+    <div class="flex flex-wrap items-center gap-2 text-xs w-full xl:w-auto">
         <span class="text-slate-500 font-bold">Desde:</span>
         <input type="date" id="status-fecha-inicio" value="{{ $fecha_inicio }}" class="bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
         <span class="text-slate-500 font-bold">Hasta:</span>

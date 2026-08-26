@@ -29,6 +29,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     actualizarModalReloj();
     setInterval(actualizarModalReloj, 1000);
+
+    // Restaurar estado minimizado del reloj si el usuario lo guardó
+    if (localStorage.getItem('dashboard_reloj_minimizado') === '1') {
+        toggleModalReloj(true);
+    }
 });
 
 function switchMainDashboardTab(tabName) {
@@ -157,12 +162,34 @@ function obtenerModuloActual(hora = null) {
     return null;
 }
 
+function toggleModalReloj(minimizar) {
+    const expandido = document.getElementById('reloj-expandido');
+    const minimizado = document.getElementById('reloj-minimizado');
+    if (!expandido || !minimizado) return;
+
+    if (minimizar) {
+        expandido.classList.add('hidden');
+        minimizado.classList.remove('hidden');
+        localStorage.setItem('dashboard_reloj_minimizado', '1');
+    } else {
+        expandido.classList.remove('hidden');
+        minimizado.classList.add('hidden');
+        localStorage.setItem('dashboard_reloj_minimizado', '0');
+    }
+}
+
 function actualizarModalReloj() {
     const ahora = new Date();
     const hora = ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    
     const clockEl = document.getElementById('modal-hora-actual');
     if (clockEl) {
         clockEl.textContent = hora;
+    }
+
+    const clockMinEl = document.getElementById('modal-hora-minimizada');
+    if (clockMinEl) {
+        clockMinEl.textContent = hora;
     }
     
     let modulo = '-';
@@ -431,3 +458,4 @@ window.filtrarStatusClasesPersonalizado = filtrarStatusClasesPersonalizado;
 window.cargarHorarioActual = cargarHorarioActual;
 window.cargarOcupacionGrid = cargarOcupacionGrid;
 window.cargarStatusClases = cargarStatusClases;
+window.toggleModalReloj = toggleModalReloj;

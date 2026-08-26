@@ -5,18 +5,21 @@ namespace App\Livewire;
 use App\Models\User;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Spatie\Permission\Models\Role;
 
 class UsersTable extends Component
 {
     use WithPagination;
 
     public $search = '';
+    public $roleFilter = '';
     public $sortField = 'name';
     public $sortDirection = 'asc';
     public $perPage = 10;
 
     protected $queryString = [
         'search' => ['except' => ''],
+        'roleFilter' => ['except' => ''],
         'sortField' => ['except' => 'name'],
         'sortDirection' => ['except' => 'asc'],
     ];
@@ -31,6 +34,16 @@ class UsersTable extends Component
         $this->resetPage();
     }
 
+    public function updatingRoleFilter()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedRoleFilter()
+    {
+        $this->resetPage();
+    }
+
     public function sortBy($field)
     {
         if ($this->sortField === $field) {
@@ -41,53 +54,84 @@ class UsersTable extends Component
         }
     }
 
+    public function clearFilters()
+    {
+        $this->search = '';
+        $this->roleFilter = '';
+        $this->resetPage();
+    }
+
     public function render()
     {
         $searchTerm = trim($this->search);
 
-        $users = User::query()
-            ->with('roles')
+        $query = User::query()
+            ->with(['roles', 'sede'])
+            ->when($this->roleFilter !== '', function ($q) {
+                $q->whereHas('roles', function ($rq) {
+                    $rq->where('name', $this->roleFilter);
+                });
+            })
             ->when($searchTerm !== '', function ($query) use ($searchTerm) {
+                // Limpiar RUN si contiene números/K (ej: 12.345.678-9 -> 123456789)
                 $cleanRun = preg_replace('/[^0-9Kk]/', '', $searchTerm);
-                $termSinTilde = str_replace(
-                    ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú', 'ü', 'Ü', 'ñ', 'Ñ'],
-                    ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U', 'u', 'U', 'n', 'N'],
-                    $searchTerm
-                );
-                $terms = array_unique(array_filter([$searchTerm, $termSinTilde, mb_strtoupper($searchTerm), mb_strtolower($searchTerm)]));
+                
+                // Dividir en palabras para búsquedas compuestas (ej: "Juan Perez", "Admin Juan", etc.)
+                $words = array_values(array_filter(explode(' ', $searchTerm)));
 
-                // Buscar usuarios que tengan el rol buscado (manejando multi-tenancy de forma segura)
-                $roleUserRuns = [];
-                try {
-                    $roleUserRuns = \Illuminate\Support\Facades\DB::connection('tenant')
-                        ->table('model_has_roles')
-                        ->join('roles', 'model_has_roles.role_id', '=', 'roles.id')
-                        ->where('roles.name', 'like', '%' . $searchTerm . '%')
-                        ->pluck('model_id')
-                        ->toArray();
-                } catch (\Throwable $e) {
-                    // Si no está en contexto tenant o falla, ignorar
-                }
-
-                $query->where(function ($q) use ($terms, $cleanRun, $roleUserRuns) {
-                    if (!empty($cleanRun)) {
+                $query->where(function ($q) use ($words, $searchTerm, $cleanRun) {
+                    // 1. Coincidencia por RUN directo o limpio
+                    if (!empty($cleanRun) && strlen($cleanRun) >= 2) {
                         $q->where('run', 'like', '%' . $cleanRun . '%')
                           ->orWhereRaw("REPLACE(REPLACE(run, '.', ''), '-', '') LIKE ?", ['%' . $cleanRun . '%']);
                     }
 
-                    foreach ($terms as $term) {
-                        $q->orWhere('name', 'like', '%' . $term . '%')
-                          ->orWhere('email', 'like', '%' . $term . '%');
-                    }
+                    // 2. Coincidencia por frase completa en nombre o email
+                    $q->orWhere('name', 'like', '%' . $searchTerm . '%')
+                      ->orWhere('email', 'like', '%' . $searchTerm . '%');
 
-                    if (!empty($roleUserRuns)) {
-                        $q->orWhereIn('run', $roleUserRuns);
+                    // 3. Coincidencia por cada palabra ingresada
+                    if (count($words) > 1) {
+                        $q->orWhere(function ($wordQuery) use ($words) {
+                            foreach ($words as $word) {
+                                $wordQuery->where(function ($subQ) use ($word) {
+                                    $cleanWordRun = preg_replace('/[^0-9Kk]/', '', $word);
+                                    if (!empty($cleanWordRun) && strlen($cleanWordRun) >= 2) {
+                                        $subQ->where('run', 'like', '%' . $cleanWordRun . '%')
+                                             ->orWhereRaw("REPLACE(REPLACE(run, '.', ''), '-', '') LIKE ?", ['%' . $cleanWordRun . '%']);
+                                    }
+
+                                    $subQ->orWhere('name', 'like', '%' . $word . '%')
+                                         ->orWhere('email', 'like', '%' . $word . '%')
+                                         ->orWhereHas('roles', function ($rq) use ($word) {
+                                             $rq->where('name', 'like', '%' . $word . '%');
+                                         })
+                                         ->orWhereHas('sede', function ($sq) use ($word) {
+                                             $sq->where('nombre_sede', 'like', '%' . $word . '%');
+                                         });
+                                });
+                            }
+                        });
+                    } else {
+                        // Búsqueda por rol si es una sola palabra
+                        $q->orWhereHas('roles', function ($rq) use ($searchTerm) {
+                            $rq->where('name', 'like', '%' . $searchTerm . '%');
+                        });
+                        // Búsqueda por sede si es una sola palabra
+                        $q->orWhereHas('sede', function ($sq) use ($searchTerm) {
+                            $sq->where('nombre_sede', 'like', '%' . $searchTerm . '%');
+                        });
                     }
                 });
-            })
-            ->orderBy($this->sortField, $this->sortDirection)
-            ->paginate($this->perPage);
+            });
 
-        return view('livewire.users-table', ['users' => $users]);
+        $roles = Role::orderBy('name')->get();
+        $users = $query->orderBy($this->sortField, $this->sortDirection)->paginate($this->perPage);
+
+        return view('livewire.users-table', [
+            'users' => $users,
+            'roles' => $roles,
+        ]);
     }
 }
+

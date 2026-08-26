@@ -148,12 +148,12 @@ $coloresTipo = [
                 <!-- Controls -->
                 @if($chunks->count() > 1)
                     <!-- Prev Button -->
-                    <button onclick="prevSlide()" class="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white/95 hover:bg-white text-gray-700 p-2.5 rounded-full shadow-md border border-gray-200 hover:text-blue-600 hover:scale-105 transition-all duration-150 z-10 -ml-5 flex items-center justify-center w-9 h-9" id="btn-prev">
-                        <i class="fas fa-chevron-left text-sm"></i>
+                    <button onclick="prevSlide()" class="absolute left-0 top-1/2 transform -translate-y-1/2 bg-white/95 hover:bg-white text-gray-700 p-2 rounded-full shadow-md border border-gray-200 hover:text-blue-600 hover:scale-105 transition-all duration-150 z-10 -ml-2 sm:-ml-4 flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9" id="btn-prev">
+                        <i class="fas fa-chevron-left text-xs sm:text-sm"></i>
                     </button>
                     <!-- Next Button -->
-                    <button onclick="nextSlide()" class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white/95 hover:bg-white text-gray-700 p-2.5 rounded-full shadow-md border border-gray-200 hover:text-blue-600 hover:scale-105 transition-all duration-150 z-10 -mr-5 flex items-center justify-center w-9 h-9" id="btn-next">
-                        <i class="fas fa-chevron-right text-sm"></i>
+                    <button onclick="nextSlide()" class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-white/95 hover:bg-white text-gray-700 p-2 rounded-full shadow-md border border-gray-200 hover:text-blue-600 hover:scale-105 transition-all duration-150 z-10 -mr-2 sm:-mr-4 flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9" id="btn-next">
+                        <i class="fas fa-chevron-right text-xs sm:text-sm"></i>
                     </button>
                 @endif
             </div>
