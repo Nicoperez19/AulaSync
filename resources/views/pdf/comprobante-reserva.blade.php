@@ -26,11 +26,11 @@
             padding: 18px 22px;
         }
 
-        /* Encabezado */
+        /* Encabezado con colores UCSC */
         .header-table {
             width: 100%;
             border-collapse: collapse;
-            border-bottom: 2px solid #1e3a8a;
+            border-bottom: 3px solid #D2091E;
             padding-bottom: 12px;
             margin-bottom: 14px;
         }
@@ -42,16 +42,18 @@
         }
 
         .system-badge-title {
-            font-size: 17px;
+            font-size: 18px;
             font-weight: bold;
-            color: #1e3a8a;
+            color: #002F6C;
             margin: 0;
             line-height: 1.1;
+            letter-spacing: -0.5px;
         }
 
         .system-badge-sub {
             font-size: 9.5px;
-            color: #64748b;
+            color: #D2091E;
+            font-weight: 600;
             margin-top: 2px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -65,7 +67,7 @@
         .voucher-title {
             font-size: 13px;
             font-weight: bold;
-            color: #0f172a;
+            color: #002F6C;
             margin: 0 0 4px 0;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -73,14 +75,14 @@
 
         .folio-box {
             display: inline-block;
-            background-color: #f1f5f9;
-            border: 1px solid #cbd5e1;
+            background-color: #fff5f5;
+            border: 1px solid #D2091E;
             border-radius: 4px;
             padding: 3px 8px;
             font-family: 'Courier New', Courier, monospace;
             font-size: 12px;
             font-weight: bold;
-            color: #1d4ed8;
+            color: #D2091E;
         }
 
         /* Banner de Estado */
@@ -103,8 +105,8 @@
 
         .status-programada {
             background-color: #eff6ff;
-            border-left: 4px solid #3b82f6;
-            color: #1e40af;
+            border-left: 4px solid #002F6C;
+            color: #002F6C;
         }
 
         .status-finalizada {
@@ -127,10 +129,11 @@
         .section-header {
             background-color: #f8fafc;
             border-bottom: 1px solid #e2e8f0;
+            border-left: 3px solid #D2091E;
             padding: 6px 12px;
             font-size: 10.5px;
             font-weight: bold;
-            color: #334155;
+            color: #002F6C;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
@@ -166,16 +169,17 @@
         }
 
         .highlight-text {
-            color: #1e40af;
+            color: #002F6C;
             font-weight: bold;
         }
 
         .espacio-badge {
             display: inline-block;
-            background-color: #dbeafe;
-            color: #1e40af;
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
             font-weight: bold;
-            font-size: 11.5px;
+            font-size: 11px;
             padding: 2px 7px;
             border-radius: 4px;
         }
@@ -214,6 +218,7 @@
             vertical-align: top;
             background-color: #f8fafc;
             border: 1px dashed #cbd5e1;
+            border-left: 3px solid #002F6C;
             border-radius: 6px;
             padding: 9px 12px;
         }
@@ -221,7 +226,7 @@
         .terms-title {
             font-weight: bold;
             font-size: 9.5px;
-            color: #334155;
+            color: #002F6C;
             margin-bottom: 3px;
             text-transform: uppercase;
         }
@@ -268,7 +273,7 @@
                         <td style="vertical-align: middle;">
                             <div class="system-badge-title">SIA</div>
                             <div class="system-badge-sub">Sistema de Información de Aulas</div>
-                            <div style="font-size: 9px; color: #334155; font-weight: bold; margin-top: 2px;">{{ $institucion }}</div>
+                            <div style="font-size: 9.5px; color: #002F6C; font-weight: bold; margin-top: 2px;">{{ $institucion }}</div>
                         </td>
                     </tr>
                 </table>
@@ -399,7 +404,7 @@
                                 </tr>
                                 <tr>
                                     <td class="kv-label">Horario:</td>
-                                    <td class="kv-value"><strong>{{ $hora_inicio }}</strong> a <strong>{{ $hora_fin }}</strong> hrs.</td>
+                                    <td class="kv-value"><strong style="color: #002F6C;">{{ $hora_inicio }}</strong> a <strong style="color: #002F6C;">{{ $hora_fin }}</strong> hrs.</td>
                                 </tr>
                                 <tr>
                                     <td class="kv-label">Módulos:</td>
@@ -430,7 +435,7 @@
 
                 @if($observaciones)
                 <div style="margin-top: 6px; padding-top: 5px; border-top: 1px dashed #e2e8f0; font-size: 9px; color: #475569;">
-                    <strong>Observaciones:</strong> {{ $observaciones }}
+                    <strong style="color: #002F6C;">Observaciones:</strong> {{ $observaciones }}
                 </div>
                 @endif
             </td>
@@ -445,7 +450,7 @@
                 <img src="{{ $qr_base64 }}" class="qr-image" alt="Código QR de Validación">
                 <div class="qr-caption">
                     Código de Validación<br>
-                    <strong>ID: {{ $id_reserva }}</strong>
+                    <strong style="color: #002F6C;">ID: {{ $id_reserva }}</strong>
                 </div>
             </td>
             @endif

@@ -56,7 +56,23 @@
     <!-- Filtros -->
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
         <div class="p-4 sm:p-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 sm:gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Solicitante</label>
+                    <div class="relative">
+                        <input 
+                            type="text"
+                            id="filtro-solicitante-reserva"
+                            placeholder="Nombre o RUN..."
+                            oninput="filtrarReservas()"
+                            class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                        />
+                        <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400">
+                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                     <select 
@@ -874,16 +890,26 @@ function procesarReservas() {
         return;
     }
 
+    const solicitanteFiltro = (document.getElementById('filtro-solicitante-reserva')?.value || '').toLowerCase().trim();
     const estadoFiltro = document.getElementById('filtro-estado-reserva').value;
     const espacioFiltro = document.getElementById('filtro-espacio-reserva').value;
     const moduloFiltro = document.getElementById('filtro-modulo-reserva').value;
     const fechaFiltro = document.getElementById('filtro-fecha-reserva').value;
     
-    console.log('🔍 Procesando reservas con filtros:', { estadoFiltro, espacioFiltro, moduloFiltro, fechaFiltro, orden: ordenActual });
+    console.log('🔍 Procesando reservas con filtros:', { solicitanteFiltro, estadoFiltro, espacioFiltro, moduloFiltro, fechaFiltro, orden: ordenActual });
 
     // 1. Aplicar filtros
     let reservasProcesadas = [...reservasOriginales];
     
+    if (solicitanteFiltro) {
+        reservasProcesadas = reservasProcesadas.filter(r => {
+            const nombre = (r.nombre_responsable || '').toLowerCase();
+            const run = (r.run_responsable || r.run || '').toLowerCase();
+            const id = (r.id || '').toString().toLowerCase();
+            return nombre.includes(solicitanteFiltro) || run.includes(solicitanteFiltro) || id.includes(solicitanteFiltro);
+        });
+    }
+
     if (estadoFiltro) {
         reservasProcesadas = reservasProcesadas.filter(r => r.estado === estadoFiltro);
     }

@@ -1636,18 +1636,18 @@ class QuickActionsController extends Controller
                 app('db')->disconnect('tenant');
             }
 
-            // Obtener espacios de tipo Sala de Estudio
+            // Obtener espacios exclusivamente de tipo Sala de Estudio
             $espaciosEstudio = Espacio::on('tenant')
-                ->where('tipo_espacio', 'like', '%estudio%')
-                ->orWhere('tipo_espacio', 'Sala de Estudio')
+                ->where(function ($q) {
+                    $q->where('tipo_espacio', 'like', '%estudio%')
+                      ->orWhere('tipo_espacio', 'like', '%Estudio%')
+                      ->orWhere('nombre_espacio', 'like', '%estudio%')
+                      ->orWhere('nombre_espacio', 'like', '%Estudio%');
+                })
                 ->pluck('id_espacio');
 
             $query = Reserva::on('tenant')
-                ->where(function($q) use ($espaciosEstudio) {
-                    $q->whereIn('id_espacio', $espaciosEstudio)
-                      ->orWhere('observaciones', 'like', '%Sala de estudio%')
-                      ->orWhere('tipo_reserva', 'espontanea');
-                })
+                ->whereIn('id_espacio', $espaciosEstudio)
                 ->orderBy('fecha_reserva', 'desc')
                 ->orderBy('hora', 'desc');
 
