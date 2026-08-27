@@ -705,6 +705,7 @@ class QuickActionsController extends Controller
                 'success' => true,
                 'mensaje' => $mensaje,
                 'id_reserva' => $reservasCreadas[0]->id_reserva,
+                'url_comprobante' => route('reservas.comprobante', $reservasCreadas[0]->id_reserva),
                 'total_creadas' => $cant,
                 'datos' => [
                     'responsable' => $request->nombre,

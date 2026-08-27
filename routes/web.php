@@ -383,6 +383,7 @@ Route::group(['middleware' => ['permission:mantenedor de reservas']], function (
     Route::get('/reservas', [ReservasController::class, 'index'])->name('reservas.index');
     Route::get('/reservas/create', [ReservasController::class, 'create'])->name('reservas.add');
     Route::post('/reservas', [ReservasController::class, 'store'])->name('reservas.store');
+    Route::get('/reservas/{id_reserva}/comprobante', [ReservasController::class, 'descargarComprobante'])->name('reservas.comprobante');
     Route::get('/reservas/{id_reserva}/edit', [ReservasController::class, 'edit'])->name('reservas.edit');
     Route::put('/reservas/{id_reserva}', [ReservasController::class, 'update'])->name('reservas.update');
     Route::delete('/reservas/{id_reserva}', [ReservasController::class, 'destroy'])->name('reservas.delete');

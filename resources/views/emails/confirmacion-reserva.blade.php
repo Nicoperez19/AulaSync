@@ -141,6 +141,16 @@
                 </div>
             </div>
 
+            <div style="text-align: center; margin: 25px 0;">
+                <a href="{{ $urlComprobante ?? url('/reservas/' . $idReserva . '/comprobante') }}"
+                   style="background-color: #4F46E5; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">
+                    📄 Descargar Comprobante Oficial (PDF)
+                </a>
+                <p style="font-size: 11px; color: #6b7280; margin-top: 8px;">
+                    También encontrará el archivo PDF adjunto a este correo electrónico.
+                </p>
+            </div>
+
             <p>Si tiene alguna consulta, contacte con administración.</p>
             <p>Saludos cordiales,<br><strong>Equipo SIA | Sistema de Información de Aulas</strong></p>
         </div>

@@ -9,6 +9,7 @@ use App\Models\Universidad;
 use App\Models\Espacio;
 use App\Mail\ConfirmacionReserva;
 use App\Mail\ConfirmacionDevolucion;
+use App\Services\ComprobanteReservaService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -263,5 +264,18 @@ class ReservasController extends Controller
             \Log::error('Error al verificar estados de espacios: ' . $e->getMessage());
             return false;
         }
+    }
+
+    /**
+     * Generar y descargar/visualizar comprobante de reserva en formato PDF
+     */
+    public function descargarComprobante($id_reserva, Request $request, ComprobanteReservaService $comprobanteService)
+    {
+        $reserva = Reserva::with(['profesor', 'solicitante', 'espacio.piso.facultad.universidad', 'asignatura'])
+            ->findOrFail($id_reserva);
+
+        $descargar = $request->boolean('download', false);
+
+        return $comprobanteService->responderPdf($reserva, $descargar);
     }
 }
