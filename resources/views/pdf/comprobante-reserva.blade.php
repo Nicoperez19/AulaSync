@@ -28,7 +28,7 @@
         }
 
         .header-inner {
-            padding: 12px 22px 12px 22px;
+            padding: 10px 22px 10px 22px;
         }
 
         .header-left {
@@ -54,8 +54,8 @@
         }
 
         .logo-cell img {
-            max-height: 48px;
-            max-width: 80px;
+            max-height: 70px;
+            max-width: 110px;
             object-fit: contain;
         }
 
@@ -313,7 +313,6 @@
                     <td class="header-right">
                         <div class="voucher-label">Comprobante de Reserva</div>
                         <div>
-                            <span style="font-size: 9px; color: rgba(255,255,255,0.75);">Folio: </span>
                             <span class="folio-box">{{ $id_reserva }}</span>
                         </div>
                     </td>
