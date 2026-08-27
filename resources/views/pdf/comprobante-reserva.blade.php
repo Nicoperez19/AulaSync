@@ -6,7 +6,7 @@
     <title>Comprobante de Reserva - {{ $id_reserva }}</title>
     <style>
         @page {
-            margin: 22px 28px 22px 28px;
+            margin: 0px 0px 20px 0px;
         }
 
         body {
@@ -18,71 +18,115 @@
             padding: 0;
         }
 
-        /* Contenedor Principal */
-        .voucher-container {
-            border: 1px solid #cbd5e1;
-            border-radius: 8px;
-            background-color: #ffffff;
-            padding: 18px 22px;
-        }
-
-        /* Encabezado con colores UCSC */
-        .header-table {
+        /* ===== ENCABEZADO INSTITUCIONAL ===== */
+        .header-band {
             width: 100%;
+            background-color: #002F6C;
             border-collapse: collapse;
-            border-bottom: 3px solid #D2091E;
-            padding-bottom: 12px;
-            margin-bottom: 14px;
-        }
-
-        .institute-logo {
-            max-height: 52px;
-            max-width: 200px;
-            object-fit: contain;
-        }
-
-        .system-badge-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #002F6C;
+            padding: 0;
             margin: 0;
-            line-height: 1.1;
-            letter-spacing: -0.5px;
         }
 
-        .system-badge-sub {
-            font-size: 9.5px;
-            color: #D2091E;
-            font-weight: 600;
-            margin-top: 2px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .header-inner {
+            padding: 14px 22px 12px 22px;
         }
 
-        .voucher-badge {
-            text-align: right;
+        .header-left {
+            width: 55%;
             vertical-align: middle;
         }
 
-        .voucher-title {
+        .header-right {
+            width: 45%;
+            vertical-align: middle;
+            text-align: right;
+        }
+
+        .header-logo-row {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .logo-cell {
+            width: 85px;
+            vertical-align: middle;
+            padding-right: 12px;
+        }
+
+        .logo-cell img {
+            max-height: 50px;
+            max-width: 80px;
+            object-fit: contain;
+            /* Efecto para logos oscuros sobre fondo azul: fondo blanco redondeado */
+            background: #ffffff;
+            border-radius: 5px;
+            padding: 3px 5px;
+        }
+
+        .system-name {
+            font-size: 22px;
+            font-weight: bold;
+            color: #ffffff;
+            margin: 0;
+            line-height: 1;
+            letter-spacing: 1px;
+        }
+
+        .system-sub {
+            font-size: 9.5px;
+            color: #D2091E;
+            font-weight: 700;
+            margin-top: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.7px;
+            background-color: #ffffff;
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 3px;
+        }
+
+        .system-inst {
+            font-size: 9px;
+            color: rgba(255,255,255,0.85);
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        .voucher-label {
             font-size: 13px;
             font-weight: bold;
-            color: #002F6C;
-            margin: 0 0 4px 0;
+            color: #ffffff;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
+            margin-bottom: 5px;
         }
 
         .folio-box {
             display: inline-block;
-            background-color: #fff5f5;
-            border: 1px solid #D2091E;
+            background-color: #D2091E;
             border-radius: 4px;
-            padding: 3px 8px;
+            padding: 4px 10px;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: bold;
-            color: #D2091E;
+            color: #ffffff;
+            letter-spacing: 0.5px;
+        }
+
+        /* Franja roja inferior del header */
+        .header-accent {
+            width: 100%;
+            background-color: #D2091E;
+            height: 5px;
+            border-collapse: collapse;
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        /* ===== CONTENIDO ===== */
+        .content-wrapper {
+            padding: 16px 22px;
         }
 
         /* Banner de Estado */
@@ -127,7 +171,7 @@
         }
 
         .section-header {
-            background-color: #f8fafc;
+            background-color: #f1f5f9;
             border-bottom: 1px solid #e2e8f0;
             border-left: 3px solid #D2091E;
             padding: 6px 12px;
@@ -143,26 +187,26 @@
             background-color: #ffffff;
         }
 
-        /* Tablas de pares Clave - Valor */
+        /* Tablas Clave - Valor */
         .kv-table {
             width: 100%;
             border-collapse: collapse;
         }
 
         .kv-table td {
-            padding: 3.5px 4px;
-            vertical-align: top;
+            padding: 3px 4px;
+            vertical-align: middle;
         }
 
         .kv-label {
-            width: 32%;
+            width: 33%;
             font-weight: 600;
             color: #475569;
-            font-size: 10px;
+            font-size: 9.5px;
         }
 
         .kv-value {
-            width: 68%;
+            width: 67%;
             color: #0f172a;
             font-weight: 500;
             font-size: 10.5px;
@@ -173,15 +217,29 @@
             font-weight: bold;
         }
 
+        /* Badge de espacio - alineado con texto */
+        .espacio-row {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
         .espacio-badge {
             display: inline-block;
-            background-color: #fee2e2;
-            color: #991b1b;
-            border: 1px solid #fca5a5;
+            background-color: #D2091E;
+            color: #ffffff;
             font-weight: bold;
-            font-size: 11px;
-            padding: 2px 7px;
+            font-size: 10.5px;
+            padding: 2px 8px;
             border-radius: 4px;
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+
+        .espacio-nombre {
+            font-size: 10px;
+            color: #475569;
+            vertical-align: middle;
+            padding-left: 5px;
         }
 
         /* Bloque inferior: QR + Instrucciones */
@@ -192,15 +250,15 @@
         }
 
         .qr-cell {
-            width: 120px;
+            width: 115px;
             text-align: center;
             vertical-align: top;
-            padding-right: 14px;
+            padding-right: 12px;
         }
 
         .qr-image {
-            width: 100px;
-            height: 100px;
+            width: 95px;
+            height: 95px;
             border: 1px solid #cbd5e1;
             padding: 3px;
             border-radius: 4px;
@@ -208,10 +266,10 @@
         }
 
         .qr-caption {
-            font-size: 8px;
+            font-size: 7.5px;
             color: #64748b;
             margin-top: 3px;
-            line-height: 1.2;
+            line-height: 1.3;
         }
 
         .terms-cell {
@@ -225,7 +283,7 @@
 
         .terms-title {
             font-weight: bold;
-            font-size: 9.5px;
+            font-size: 9px;
             color: #002F6C;
             margin-bottom: 3px;
             text-transform: uppercase;
@@ -234,9 +292,9 @@
         .terms-list {
             margin: 0;
             padding-left: 14px;
-            font-size: 8.5px;
+            font-size: 8px;
             color: #64748b;
-            line-height: 1.35;
+            line-height: 1.4;
         }
 
         .terms-list li {
@@ -250,40 +308,54 @@
             margin-top: 12px;
             padding-top: 8px;
             border-top: 1px solid #e2e8f0;
-            font-size: 8.5px;
+            font-size: 8px;
             color: #94a3b8;
         }
     </style>
 </head>
 <body>
 
-<div class="voucher-container">
+<!-- ===== ENCABEZADO INSTITUCIONAL (Fondo Azul UCSC) ===== -->
+<table class="header-band" cellpadding="0" cellspacing="0">
+    <tr>
+        <td class="header-inner">
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <!-- LOGO + NOMBRE SISTEMA -->
+                    <td class="header-left">
+                        <table class="header-logo-row">
+                            <tr>
+                                @if(!empty($logo_base64))
+                                <td class="logo-cell">
+                                    <img src="{{ $logo_base64 }}" alt="Logo Institucional">
+                                </td>
+                                @endif
+                                <td style="vertical-align: middle;">
+                                    <div class="system-name">SIA</div>
+                                    <div class="system-sub">Sistema de Información de Aulas</div>
+                                    <div class="system-inst">{{ $institucion }}</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                    <!-- TÍTULO COMPROBANTE + FOLIO -->
+                    <td class="header-right">
+                        <div class="voucher-label">Comprobante de Reserva</div>
+                        <div>
+                            <span style="font-size: 9px; color: rgba(255,255,255,0.7);">Folio: </span>
+                            <span class="folio-box">{{ $id_reserva }}</span>
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+<!-- Franja roja de acento inferior -->
+<table class="header-accent" cellpadding="0" cellspacing="0"><tr><td></td></tr></table>
 
-    <!-- Encabezado con Membrete y Logo Institucional -->
-    <table class="header-table">
-        <tr>
-            <td style="width: 55%; vertical-align: middle;">
-                <table style="width: 100%; border-collapse: collapse;">
-                    <tr>
-                        @if(!empty($logo_base64))
-                        <td style="width: 90px; vertical-align: middle; padding-right: 12px;">
-                            <img src="{{ $logo_base64 }}" class="institute-logo" alt="Logo Institucional">
-                        </td>
-                        @endif
-                        <td style="vertical-align: middle;">
-                            <div class="system-badge-title">SIA</div>
-                            <div class="system-badge-sub">Sistema de Información de Aulas</div>
-                            <div style="font-size: 9.5px; color: #002F6C; font-weight: bold; margin-top: 2px;">{{ $institucion }}</div>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-            <td class="voucher-badge" style="width: 45%; vertical-align: middle;">
-                <div class="voucher-title">Comprobante de Reserva</div>
-                <div>Folio: <span class="folio-box">{{ $id_reserva }}</span></div>
-            </td>
-        </tr>
-    </table>
+<!-- ===== CONTENIDO ===== -->
+<div class="content-wrapper">
 
     <!-- Estado de la Reserva -->
     <table class="status-banner">
@@ -329,7 +401,7 @@
                                 </tr>
                                 <tr>
                                     <td class="kv-label">Correo:</td>
-                                    <td class="kv-value" style="word-break: break-all;">{{ $email_responsable }}</td>
+                                    <td class="kv-value" style="word-break: break-all; font-size: 9.5px;">{{ $email_responsable }}</td>
                                 </tr>
                                 @if($telefono_responsable && $telefono_responsable !== 'No registrado')
                                 <tr>
@@ -355,12 +427,20 @@
                         <td class="section-content">
                             <table class="kv-table">
                                 <tr>
-                                    <td class="kv-label">Espacio:</td>
-                                    <td class="kv-value">
-                                        <span class="espacio-badge">{{ $id_espacio }}</span>
-                                        @if($nombre_espacio !== $id_espacio)
-                                            <span style="font-size: 9.5px; color: #475569;"> - {{ $nombre_espacio }}</span>
-                                        @endif
+                                    <td class="kv-label" style="vertical-align: middle;">Espacio:</td>
+                                    <td class="kv-value" style="vertical-align: middle;">
+                                        <table style="border-collapse: collapse; width: 100%;">
+                                            <tr>
+                                                <td style="padding: 0; vertical-align: middle; width: auto;">
+                                                    <span class="espacio-badge">{{ $id_espacio }}</span>
+                                                </td>
+                                                @if($nombre_espacio !== $id_espacio)
+                                                <td style="padding: 0 0 0 5px; vertical-align: middle;">
+                                                    <span class="espacio-nombre">{{ $nombre_espacio }}</span>
+                                                </td>
+                                                @endif
+                                            </tr>
+                                        </table>
                                     </td>
                                 </tr>
                                 <tr>
@@ -377,7 +457,7 @@
                                 </tr>
                                 <tr>
                                     <td class="kv-label">Sede / Campus:</td>
-                                    <td class="kv-value">{{ $institucion }}</td>
+                                    <td class="kv-value" style="font-size: 9.5px;">{{ $institucion }}</td>
                                 </tr>
                             </table>
                         </td>
@@ -404,7 +484,12 @@
                                 </tr>
                                 <tr>
                                     <td class="kv-label">Horario:</td>
-                                    <td class="kv-value"><strong style="color: #002F6C;">{{ $hora_inicio }}</strong> a <strong style="color: #002F6C;">{{ $hora_fin }}</strong> hrs.</td>
+                                    <td class="kv-value">
+                                        <strong style="color: #002F6C;">{{ $hora_inicio }}</strong>
+                                        <span style="color: #64748b;"> a </span>
+                                        <strong style="color: #002F6C;">{{ $hora_fin }}</strong>
+                                        <span style="color: #64748b;"> hrs.</span>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="kv-label">Módulos:</td>
@@ -421,7 +506,7 @@
                                 @if($descripcion_actividad)
                                 <tr>
                                     <td class="kv-label">Descripción:</td>
-                                    <td class="kv-value" style="font-size: 9.5px;">{{ $descripcion_actividad }}</td>
+                                    <td class="kv-value" style="font-size: 9px;">{{ $descripcion_actividad }}</td>
                                 </tr>
                                 @endif
                                 <tr>
@@ -434,7 +519,7 @@
                 </table>
 
                 @if($observaciones)
-                <div style="margin-top: 6px; padding-top: 5px; border-top: 1px dashed #e2e8f0; font-size: 9px; color: #475569;">
+                <div style="margin-top: 6px; padding-top: 5px; border-top: 1px dashed #e2e8f0; font-size: 8.5px; color: #475569;">
                     <strong style="color: #002F6C;">Observaciones:</strong> {{ $observaciones }}
                 </div>
                 @endif
