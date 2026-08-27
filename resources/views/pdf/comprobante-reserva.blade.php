@@ -54,18 +54,18 @@
         }
 
         .logo-cell img {
-            max-height: 70px;
-            max-width: 110px;
+            max-height: 92px;
+            max-width: 140px;
             object-fit: contain;
         }
 
         .system-name {
-            font-size: 19px;
-            font-weight: bold;
+            font-size: 15px;
+            font-weight: 600;
             color: #ffffff;
             margin: 0;
-            line-height: 1.2;
-            letter-spacing: 0.5px;
+            line-height: 1.3;
+            letter-spacing: 0.3px;
         }
 
         .system-inst {
@@ -303,7 +303,7 @@
                                 </td>
                                 @endif
                                 <td style="vertical-align: middle;">
-                                    <div class="system-name">SIA &nbsp;<span style="font-size: 13px; font-weight: 400; opacity: 0.9;">|&nbsp; Sistema de Información de Aulas</span></div>
+                                    <div class="system-name">SIA &nbsp;| &nbsp;Sistema de Información de Aulas</div>
                                     <div class="system-inst">{{ $institucion }}</div>
                                 </td>
                             </tr>
