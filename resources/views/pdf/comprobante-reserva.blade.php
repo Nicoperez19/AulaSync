@@ -21,14 +21,14 @@
         /* ===== ENCABEZADO INSTITUCIONAL ===== */
         .header-band {
             width: 100%;
-            background-color: #002F6C;
+            background-color: #D2091E;
             border-collapse: collapse;
             padding: 0;
             margin: 0;
         }
 
         .header-inner {
-            padding: 14px 22px 12px 22px;
+            padding: 12px 22px 12px 22px;
         }
 
         .header-left {
@@ -48,48 +48,31 @@
         }
 
         .logo-cell {
-            width: 85px;
+            width: auto;
             vertical-align: middle;
             padding-right: 12px;
         }
 
         .logo-cell img {
-            max-height: 50px;
+            max-height: 48px;
             max-width: 80px;
             object-fit: contain;
-            /* Efecto para logos oscuros sobre fondo azul: fondo blanco redondeado */
-            background: #ffffff;
-            border-radius: 5px;
-            padding: 3px 5px;
         }
 
         .system-name {
-            font-size: 22px;
+            font-size: 19px;
             font-weight: bold;
             color: #ffffff;
             margin: 0;
-            line-height: 1;
-            letter-spacing: 1px;
-        }
-
-        .system-sub {
-            font-size: 9.5px;
-            color: #D2091E;
-            font-weight: 700;
-            margin-top: 3px;
-            text-transform: uppercase;
-            letter-spacing: 0.7px;
-            background-color: #ffffff;
-            display: inline-block;
-            padding: 1px 6px;
-            border-radius: 3px;
+            line-height: 1.2;
+            letter-spacing: 0.5px;
         }
 
         .system-inst {
-            font-size: 9px;
-            color: rgba(255,255,255,0.85);
-            margin-top: 4px;
-            font-weight: 500;
+            font-size: 8.5px;
+            color: rgba(255,255,255,0.80);
+            margin-top: 3px;
+            font-weight: 400;
         }
 
         .voucher-label {
@@ -103,25 +86,14 @@
 
         .folio-box {
             display: inline-block;
-            background-color: #D2091E;
+            background-color: #ffffff;
             border-radius: 4px;
-            padding: 4px 10px;
+            padding: 3px 9px;
             font-family: 'Courier New', Courier, monospace;
-            font-size: 11.5px;
+            font-size: 11px;
             font-weight: bold;
-            color: #ffffff;
+            color: #D2091E;
             letter-spacing: 0.5px;
-        }
-
-        /* Franja roja inferior del header */
-        .header-accent {
-            width: 100%;
-            background-color: #D2091E;
-            height: 5px;
-            border-collapse: collapse;
-            border: none;
-            padding: 0;
-            margin: 0;
         }
 
         /* ===== CONTENIDO ===== */
@@ -315,7 +287,7 @@
 </head>
 <body>
 
-<!-- ===== ENCABEZADO INSTITUCIONAL (Fondo Azul UCSC) ===== -->
+<!-- ===== ENCABEZADO INSTITUCIONAL (Fondo Rojo UCSC) ===== -->
 <table class="header-band" cellpadding="0" cellspacing="0">
     <tr>
         <td class="header-inner">
@@ -331,8 +303,7 @@
                                 </td>
                                 @endif
                                 <td style="vertical-align: middle;">
-                                    <div class="system-name">SIA</div>
-                                    <div class="system-sub">Sistema de Información de Aulas</div>
+                                    <div class="system-name">SIA &nbsp;<span style="font-size: 13px; font-weight: 400; opacity: 0.9;">|&nbsp; Sistema de Información de Aulas</span></div>
                                     <div class="system-inst">{{ $institucion }}</div>
                                 </td>
                             </tr>
@@ -342,7 +313,7 @@
                     <td class="header-right">
                         <div class="voucher-label">Comprobante de Reserva</div>
                         <div>
-                            <span style="font-size: 9px; color: rgba(255,255,255,0.7);">Folio: </span>
+                            <span style="font-size: 9px; color: rgba(255,255,255,0.75);">Folio: </span>
                             <span class="folio-box">{{ $id_reserva }}</span>
                         </div>
                     </td>
@@ -351,8 +322,6 @@
         </td>
     </tr>
 </table>
-<!-- Franja roja de acento inferior -->
-<table class="header-accent" cellpadding="0" cellspacing="0"><tr><td></td></tr></table>
 
 <!-- ===== CONTENIDO ===== -->
 <div class="content-wrapper">
