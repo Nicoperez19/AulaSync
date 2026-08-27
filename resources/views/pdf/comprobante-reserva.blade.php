@@ -495,30 +495,19 @@
         </tr>
     </table>
 
-    <!-- QR de Validación y Normativa -->
-    <table class="bottom-table">
+    <!-- QR de Validación -->
+    @if(!empty($qr_base64))
+    <table style="width: 100%; border-collapse: collapse; margin-top: 8px;">
         <tr>
-            @if(!empty($qr_base64))
-            <td class="qr-cell">
-                <img src="{{ $qr_base64 }}" class="qr-image" alt="Código QR de Validación">
-                <div class="qr-caption">
-                    Código de Validación<br>
-                    <strong style="color: #002F6C;">ID: {{ $id_reserva }}</strong>
+            <td style="text-align: center; padding: 6px 0;">
+                <img src="{{ $qr_base64 }}" style="width: 80px; height: 80px; border: 1px solid #cbd5e1; padding: 3px; border-radius: 4px; background: #fff;" alt="QR">
+                <div style="font-size: 7.5px; color: #64748b; margin-top: 3px;">
+                    Código de Validación &nbsp;|&nbsp; <strong style="color: #002F6C;">{{ $id_reserva }}</strong>
                 </div>
-            </td>
-            @endif
-
-            <td class="terms-cell">
-                <div class="terms-title">Normas de Uso y Condiciones del Espacio</div>
-                <ul class="terms-list">
-                    <li>Presente este comprobante impreso o digital en portería/conserjería para solicitar la apertura del espacio o entrega de llaves.</li>
-                    <li>El responsable debe estar presente durante el uso del recinto y velar por el correcto cuidado del mobiliario y equipamiento.</li>
-                    <li>Al finalizar la actividad, el espacio debe entregarse ordenado, limpio, con luces y equipos apagados, y debidamente cerrado.</li>
-                    <li>Cualquier daño, avería o anomalía debe ser reportada de inmediato al personal de administración.</li>
-                </ul>
             </td>
         </tr>
     </table>
+    @endif
 
     <!-- Pie de Página -->
     <table class="footer-table">
