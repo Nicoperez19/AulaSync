@@ -664,22 +664,24 @@ class ModulosActualesTable extends Component
                 }
 
                 // Obtener reservas activas de solicitantes para el día actual
+                // groupBy en lugar de keyBy para retener TODAS las reservas del espacio y filtrar por módulo activo
                 $reservasSolicitantes = Reserva::with(['solicitante'])
                     ->where('fecha_reserva', Carbon::now()->toDateString())
                     ->whereIn('estado', ['activa', 'programada'])
                     ->whereNotNull('run_solicitante')
                     ->get()
-                    ->keyBy('id_espacio');  // Indexar por espacio para búsqueda rápida
+                    ->groupBy('id_espacio');
 
                 // Obtener reservas de profesores para el día actual
                 // Solo considerar las que tienen entrada registrada (hora) y están ACTIVAS
+                // groupBy en lugar de keyBy para retener TODAS las reservas del espacio y filtrar por módulo activo
                 $reservasProfesores = Reserva::with(['profesor', 'asignatura', 'asignatura.carrera'])
                     ->where('fecha_reserva', Carbon::now()->toDateString())
                     ->where('estado', 'activa')  // Solo activas, no finalizadas
                     ->whereNotNull('run_profesor')
                     ->whereNotNull('hora')  // Solo las que el profesor sí entró
                     ->get()
-                    ->keyBy('id_espacio');  // Indexar por espacio para búsqueda rápida
+                    ->groupBy('id_espacio');
 
                 // [NUEVO] Obtener reservas de profesores PROGRAMADAS (pendientes de entrada) para el día actual
                 $reservasProfesoresPendientes = Reserva::with(['profesor', 'asignatura', 'asignatura.carrera'])
@@ -691,7 +693,8 @@ class ModulosActualesTable extends Component
 
 
                 // Crear índice de profesores que registraron entrada (para detectar cambios de sala)
-                $profesoresConEntrada = $reservasProfesores->pluck('run_profesor')->unique();
+                // flatten() es necesario porque $reservasProfesores ahora es un groupBy (Collection de Collections)
+                $profesoresConEntrada = $reservasProfesores->flatten()->pluck('run_profesor')->unique();
 
                 // [OPTIMIZACIÓN] Pre-cargar TODAS las reservas del día con entrada de profesor (para lookups O(1) en el loop)
                 // Esto evita el N+1 de Reserva::exists() por espacio
@@ -727,15 +730,60 @@ class ModulosActualesTable extends Component
                         // Buscar si el espacio tiene una planificación activa (búsqueda O(1))
                         $planificacionActiva = $planificacionesActivas->get($espacio->id_espacio);
 
-                        // Buscar si el espacio tiene una reserva de solicitante (búsqueda O(1))
-                        $reservaSolicitante = $reservasSolicitantes->get($espacio->id_espacio);
+                        // Buscar si el espacio tiene una reserva de solicitante en el módulo actual
+                        // Se filtra por rango de módulos (o por hora como fallback) para evitar que
+                        // una reserva de otro bloque horario aparezca en el módulo que se está mostrando
+                        $reservaSolicitante = $reservasSolicitantes
+                            ->get($espacio->id_espacio, collect())
+                            ->first(function ($reserva) {
+                                $moduloActual = $this->moduloActual['numero'] ?? null;
+                                $ini = $reserva->modulo_inicio;
+                                $fin = $reserva->modulo_fin;
+                                if ($moduloActual !== null && $ini !== null && $fin !== null) {
+                                    return $moduloActual >= $ini && $moduloActual <= $fin;
+                                }
+                                // Fallback por hora si no tiene módulos definidos
+                                $horaActual = now()->format('H:i:s');
+                                $horaIni = $reserva->hora;
+                                $horaSal = $reserva->hora_salida;
+                                if ($horaIni && $horaSal) {
+                                    return $horaActual >= $horaIni && $horaActual <= $horaSal;
+                                }
+                                return true; // sin información de horario → incluir
+                            });
 
-                        // Buscar si el espacio tiene una reserva de profesor (búsqueda O(1))
-                        $reservaProfesor = $reservasProfesores->get($espacio->id_espacio);
+                        // Buscar si el espacio tiene una reserva activa de profesor en el módulo actual
+                        $reservaProfesor = $reservasProfesores
+                            ->get($espacio->id_espacio, collect())
+                            ->first(function ($reserva) {
+                                $moduloActual = $this->moduloActual['numero'] ?? null;
+                                $ini = $reserva->modulo_inicio;
+                                $fin = $reserva->modulo_fin;
+                                if ($moduloActual !== null && $ini !== null && $fin !== null) {
+                                    return $moduloActual >= $ini && $moduloActual <= $fin;
+                                }
+                                // Fallback por hora si no tiene módulos definidos
+                                $horaActual = now()->format('H:i:s');
+                                $horaIni = $reserva->hora;
+                                $horaSal = $reserva->hora_salida;
+                                if ($horaIni && $horaSal) {
+                                    return $horaActual >= $horaIni && $horaActual <= $horaSal;
+                                }
+                                return true; // sin información de horario → incluir
+                            });
 
-                        // [NUEVO] Buscar si el espacio tiene una reserva de profesor PENDIENTE (búsqueda O(1))
-                        $reservaProfesorPendiente = $reservasProfesoresPendientes->get($espacio->id_espacio)?->first();
-
+                        // Buscar si el espacio tiene una reserva de profesor PENDIENTE en el módulo actual
+                        $reservaProfesorPendiente = $reservasProfesoresPendientes
+                            ->get($espacio->id_espacio, collect())
+                            ->first(function ($reserva) {
+                                $moduloActual = $this->moduloActual['numero'] ?? null;
+                                $ini = $reserva->modulo_inicio;
+                                $fin = $reserva->modulo_fin;
+                                if ($moduloActual !== null && $ini !== null && $fin !== null) {
+                                    return $moduloActual >= $ini && $moduloActual <= $fin;
+                                }
+                                return true; // sin módulos definidos → incluir (comportamiento anterior)
+                            });
 
 
                         $tieneClase = false;

@@ -630,6 +630,37 @@ class QuickActionsController extends Controller
                     continue;
                 }
 
+                // VALIDAR QUE NO EXISTA UNA CLASE PROGRAMADA (Planificacion_Asignatura) EN ESTE ESPACIO Y MÓDULOS
+                if (!$request->input('forzar', false)) {
+                    $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
+                    $claseConflicto = Planificacion_Asignatura::with(['asignatura', 'modulo'])
+                        ->where('id_espacio', $request->espacio)
+                        ->whereIn('id_modulo', $modulosReserva)
+                        ->whereHas('horario', fn ($q) => $q->where('periodo', $periodoActual))
+                        ->first();
+
+                    if ($claseConflicto) {
+                        $nombreAsig = $claseConflicto->asignatura->nombre_asignatura ?? 'Clase programada';
+                        $idModulo   = $claseConflicto->modulo->id_modulo ?? '-';
+                        Log::info("⛔ Reserva bloqueada por clase programada en espacio {$request->espacio}, módulo {$idModulo}, período {$periodoActual}");
+
+                        if (!$esRecurrente) {
+                            return response()->json([
+                                'success'    => false,
+                                'tipo_error' => 'clase_programada',
+                                'mensaje'    => "No es posible realizar la reserva: la sala {$espacio->nombre_espacio} tiene una clase programada ({$nombreAsig}) en el módulo {$idModulo} del período {$periodoActual}.",
+                                'clase'      => [
+                                    'asignatura' => $nombreAsig,
+                                    'modulo'     => $idModulo,
+                                    'periodo'    => $periodoActual,
+                                ],
+                            ], 409);
+                        }
+                        // En reservas recurrentes, simplemente omitir esta fecha
+                        continue;
+                    }
+                }
+
                 $idReserva = 'RES-'.strtoupper(uniqid());
 
                 $rangoModulos = 'Módulos: '.$request->modulo_inicial.'-'.$request->modulo_final.' | ';

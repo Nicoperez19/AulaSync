@@ -7,6 +7,8 @@ use App\Models\Profesor;
 use Illuminate\Http\Request;
 use App\Models\Universidad;
 use App\Models\Espacio;
+use App\Models\Planificacion_Asignatura;
+use App\Helpers\SemesterHelper;
 use App\Mail\ConfirmacionReserva;
 use App\Mail\ConfirmacionDevolucion;
 use App\Services\ComprobanteReservaService;
@@ -88,6 +90,34 @@ class ReservasController extends Controller
         } else {
             // Si es usuario o solicitante, lo registramos como solicitante
             $reservaData['run_solicitante'] = $run;
+        }
+
+        // VALIDAR QUE NO EXISTA UNA CLASE PROGRAMADA EN ESTE ESPACIO Y HORARIO
+        $horaReserva = Carbon::parse($request->hora)->format('H:i:s');
+        $fechaReserva = Carbon::parse($request->fecha_reserva);
+        $diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+        $diaReserva = $diasSemana[$fechaReserva->dayOfWeek];
+        $periodoActual = SemesterHelper::getCurrentPeriod();
+
+        $claseConflicto = Planificacion_Asignatura::with(['asignatura', 'modulo', 'espacio'])
+            ->where('id_espacio', $request->id_espacio)
+            ->whereHas('horario', fn ($q) => $q->where('periodo', $periodoActual))
+            ->whereHas('modulo', fn ($q) => $q
+                ->where('dia', $diaReserva)
+                ->where('hora_inicio', '<=', $horaReserva)
+                ->where('hora_termino', '>', $horaReserva)
+            )
+            ->first();
+
+        if ($claseConflicto) {
+            $nombreAsig = $claseConflicto->asignatura->nombre_asignatura ?? 'Clase programada';
+            $horaInicio = $claseConflicto->modulo->hora_inicio ?? '-';
+            $horaTermino = $claseConflicto->modulo->hora_termino ?? '-';
+            Log::info("⛔ Reserva (store) bloqueada por clase programada en espacio {$request->id_espacio}, hora {$horaReserva}, período {$periodoActual}");
+
+            return redirect()->route('reservas.index')->withErrors([
+                'clase_programada' => "No es posible realizar la reserva: el espacio tiene una clase programada ({$nombreAsig}) en el horario {$horaInicio} - {$horaTermino} del período {$periodoActual}.",
+            ]);
         }
 
         $reserva = Reserva::create($reservaData);
