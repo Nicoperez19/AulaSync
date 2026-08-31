@@ -16,6 +16,8 @@ class CheckTenantInitialization
         'tenant.initialization.*',
         'logout',
         'login',
+        'sedes.selection',
+        'sedes.redirect',
     ];
 
     /**

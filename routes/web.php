@@ -76,6 +76,7 @@ Route::prefix('tenant/initialization')->name('tenant.initialization.')->group(fu
     Route::post('/complete', [TenantInitializationController::class, 'complete'])->name('complete');
     Route::get('/success', [TenantInitializationController::class, 'success'])->name('success');
     Route::get('/previous', [TenantInitializationController::class, 'previousStep'])->name('previous');
+    Route::get('/cancel', [TenantInitializationController::class, 'cancel'])->name('cancel');
     // Pisos - para agregar pisos en el wizard
     Route::post('/pisos', [PisoController::class, 'store'])->name('pisos.store');
     // Rutas API para obtener pisos y espacios en el wizard

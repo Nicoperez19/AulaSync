@@ -60,12 +60,29 @@
             </div>
         </div>
 
-        <div class="mt-8">
+        <div class="mt-8 space-y-3">
             <button type="submit" 
-                    class="w-full inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+                    class="w-full inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-sm">
                 <i class="fas fa-unlock-alt mr-2"></i>
                 Verificar y Continuar
             </button>
+
+            <a href="{{ route('tenant.initialization.cancel') }}" 
+               class="w-full inline-flex items-center justify-center px-6 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition text-sm">
+                <i class="fas fa-arrow-left mr-2 text-gray-500"></i>
+                Cancelar y volver a Selección de Sedes
+            </a>
+
+            @auth
+            <div class="text-center pt-2">
+                <form method="POST" action="{{ route('logout') }}" class="inline">
+                    @csrf
+                    <button type="submit" class="text-xs text-gray-500 hover:text-red-600 transition inline-flex items-center">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Cerrar sesión / Volver al Login
+                    </button>
+                </form>
+            </div>
+            @endauth
         </div>
     </form>
 </div>
