@@ -57,22 +57,14 @@
                         <span class="font-bold text-gray-800 text-base sm:text-lg">SIA</span>
                         <span class="text-gray-500 text-xs sm:text-sm hidden sm:inline">| Sistema de Información de Aulas</span>
                     </div>
-                    @auth
-                    <div class="flex items-center space-x-3">
-                        <span class="text-xs sm:text-sm text-gray-600 hidden sm:inline">
-                            {{ Auth::user()->name }}
-                        </span>
-                        <form method="POST" action="{{ route('logout') }}" class="inline">
-                            @csrf
-                            <button type="submit" 
-                                    class="inline-flex items-center px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 transition" 
-                                    title="Cerrar sesión">
-                                <i class="fas fa-sign-out-alt mr-1.5"></i>
-                                Cerrar Sesión
-                            </button>
-                        </form>
+                    <div>
+                        <a href="{{ route('logout') }}" 
+                           class="inline-flex items-center px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 transition" 
+                           title="Cerrar sesión y volver al login">
+                            <i class="fas fa-sign-out-alt mr-1.5"></i>
+                            Cerrar Sesión
+                        </a>
                     </div>
-                    @endauth
                 </div>
             </div>
         </header>
@@ -141,18 +133,6 @@
                             </a>
                         @endforeach
                     </div>
-
-                    <!-- Botón para cancelar y volver al login -->
-                    <div class="mt-8 text-center">
-                        <form method="POST" action="{{ route('logout') }}" class="inline">
-                            @csrf
-                            <button type="submit" 
-                                    class="inline-flex items-center justify-center px-6 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition">
-                                <i class="fas fa-arrow-left mr-2 text-gray-400"></i>
-                                Cancelar y volver al Login
-                            </button>
-                        </form>
-                    </div>
                 </div>
             @else
                 <div class="text-center py-12 max-w-md mx-auto">
@@ -161,14 +141,11 @@
                     </div>
                     <h3 class="text-xl font-semibold text-gray-600 mb-2">No hay sedes disponibles</h3>
                     <p class="text-gray-500 mb-6">Por favor, contacte al administrador del sistema.</p>
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
-                        @csrf
-                        <button type="submit" 
-                                class="inline-flex items-center justify-center px-5 py-2.5 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 hover:text-red-600 transition">
-                            <i class="fas fa-arrow-left mr-2 text-gray-400"></i>
-                            Volver al Login
-                        </button>
-                    </form>
+                    <a href="{{ route('logout') }}" 
+                       class="inline-flex items-center justify-center px-5 py-2.5 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 hover:text-red-600 transition">
+                        <i class="fas fa-arrow-left mr-2 text-gray-400"></i>
+                        Volver al Login
+                    </a>
                 </div>
             @endif
         </main>
