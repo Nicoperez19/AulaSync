@@ -472,10 +472,13 @@ class EspacioController extends Controller
         for ($i = $moduloActual; $i <= 15; $i++) {
             $moduloCodigo = $codigoDia . '.' . $i;
 
-            // Si existe planificación o reserva para este módulo, terminar
-            if (in_array($moduloCodigo, $modulosOcupados)) {
-                // Encontrar información de la próxima clase
-                if (in_array($moduloCodigo, $planificaciones)) {
+            $ocupadoPorReservaActiva = in_array($moduloCodigo, $modulosOcupadosPorReservas);
+            $ocupadoPorPlanificacion = in_array($moduloCodigo, $planificaciones);
+
+            // Si hay una reserva activa en este módulo, o si es un módulo futuro con planificación, terminar.
+            // Para el módulo actual, si no hay reserva activa (el docente programado no asistió), se permite ocupar espontáneamente.
+            if ($ocupadoPorReservaActiva || ($i > $moduloActual && $ocupadoPorPlanificacion)) {
+                if ($ocupadoPorPlanificacion) {
                     $proximaClase = $this->obtenerInfoProximaClase($moduloCodigo, $espacioId);
                 }
                 break;

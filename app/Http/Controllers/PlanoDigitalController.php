@@ -1698,8 +1698,9 @@ class PlanoDigitalController extends Controller
                 $runUsuarioLimpio = str_replace(['.', '-', ' '], '', $runUsuario);
 
                 $periodoActual = SemesterHelper::getCurrentPeriod();
+                $idEspacioLimpio = str_replace(['-', ' '], '', $idEspacio);
                 $claseProgramadaOtro = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo'])
-                    ->where('id_espacio', $idEspacio)
+                    ->whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$idEspacioLimpio])
                     ->whereHas('horario', function ($query) use ($periodoActual) {
                         $query->where('periodo', $periodoActual);
                     })
@@ -1717,7 +1718,7 @@ class PlanoDigitalController extends Controller
                     // Si no hay clase en curso, buscar si hay una clase que empiece en los próximos 15 minutos
                     $horaLimiteAnticipada = $horaActual->copy()->addMinutes(15)->format('H:i:s');
                     $claseProgramadaOtro = Planificacion_Asignatura::with(['asignatura.profesor', 'modulo'])
-                        ->where('id_espacio', $idEspacio)
+                        ->whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$idEspacioLimpio])
                         ->whereHas('horario', function ($query) use ($periodoActual) {
                             $query->where('periodo', $periodoActual);
                         })
@@ -1733,10 +1734,10 @@ class PlanoDigitalController extends Controller
                 }
 
                 if ($claseProgramadaOtro) {
-                    $nombreDocente = $claseProgramadaOtro->asignatura->profesor->name ?? 'Docente programado';
-                    $nombreAsignatura = $claseProgramadaOtro->asignatura->nombre_asignatura ?? 'Clase regular';
-                    $horaInicio = $claseProgramadaOtro->modulo->hora_inicio ?? '-';
-                    $horaTermino = $claseProgramadaOtro->modulo->hora_termino ?? '-';
+                    $nombreDocente = $claseProgramadaOtro->asignatura?->profesor?->name ?? 'Docente programado';
+                    $nombreAsignatura = $claseProgramadaOtro->asignatura?->nombre_asignatura ?? 'Clase regular';
+                    $horaInicio = $claseProgramadaOtro->modulo?->hora_inicio ?? '-';
+                    $horaTermino = $claseProgramadaOtro->modulo?->hora_termino ?? '-';
 
                     return response()->json([
                         'tipo' => 'clase_programada_otro_docente',

@@ -1049,7 +1049,7 @@
                     const originalFire = Swal.fire;
                     Swal.fire = (...args) => {
                         this.desactivarTodosLosInputs();
-                        const result = originalFire.apply(this, args);
+                        const result = originalFire.apply(Swal, args);
 
                         if (result && typeof result.then === 'function') {
                             result.then(() => {
@@ -2101,152 +2101,155 @@
             };
         });
 
-                    if (resultadoVerificacion.tipo === 'error') {
-            // Error al verificar estado - mostrar SweetAlert prominente
-            Swal.fire({
-                title: '❌ Error',
-                text: resultadoVerificacion.mensaje || 'Error al verificar el estado del espacio',
-                icon: 'error',
-                confirmButtonText: 'Entendido',
-                confirmButtonColor: '#dc2626',
-                allowOutsideClick: false,
-                allowEscapeKey: false
-            });
-            
-            // Resetear flujo y limpiar estado
-            limpiarEstadoLectura();
-            // Restaurar autofocus del qr-input después de error en verificación de espacio
-            setTimeout(() => {
-                if (qrInputManager) {
-                    qrInputManager.setActiveInput('main');
-                }
-            }, 500);
-            return;
-        }
-
-            if (resultadoVerificacion.tipo === 'devolucion') {
-                        // Procesando devolución...
-        // Evitar procesamiento múltiple
-        if (procesandoDevolucion) {
-            return 'devolucion_en_proceso';
-        }
-
-        procesandoDevolucion = true;
-
-        // El usuario tiene una reserva activa en este espacio - procesar devolución automáticamente
-
-        // Mostrar modal de devolución en proceso
-        Swal.fire({
-            title: 'Procesando devolución...',
-            text: 'Liberando espacio y registrando salida.',
-            allowOutsideClick: false,
-            allowEscapeKey: false,
-            showConfirmButton: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-
-        const devolucion = await devolverEspacio(usuarioEscaneado, espacio);
-
-        if (devolucion && devolucion.success) {
-            // Cerrar el modal de espera de llaves inmediatamente al detectar éxito
-            cerrarModalEsperaLlaves(false);
-
-            // Actualizar indicador en el mapa
-            const block = state.indicators.find(b => b.id === espacio);
-            if (block) {
-                block.estado = '#00FF00'; // Verde = Disponible
-                state.originalCoordinates = state.indicators.map(i => ({ ...i }));
-                drawIndicators();
-            }
-
-            // INVALIDAR CACHE Y REFRESCAR MODAL SI ESTÁ ABIERTO
-            // Esto asegura que la UI se sincronice inmediatamente con el servidor
-            sessionStorage.removeItem(`espacio_${espacio}`);
-            sessionStorage.removeItem(`espacio_${espacio}_time`);
-            sessionStorage.removeItem(`solicitante_espacio_${espacio}`);
-            sessionStorage.removeItem(`solicitante_espacio_${espacio}_time`);
-            
-            // Al devolver exitosamente: CERRAR el modal del espacio si está abierto
-            // NO reabrirlo - solo mostrar el mensaje de éxito
-            if (state.currentIndicatorId === espacio) {
-                // Cerrar el modal del espacio para no confundir al usuario
-                const modal = document.getElementById('modal-espacio');
-                if (modal) {
-                    modal.classList.add('hidden');
-                    state.currentIndicatorId = null;
-                }
-            }
-
-            // Verificar si es devolución en el primer módulo
-            if (devolucion.devolucion_primer_modulo && devolucion.info_clase) {
-                Swal.close(); // Cerrar modal de carga
-                // Mostrar modal para preguntar si hubo asistentes
-                mostrarModalAsistentes(devolucion.info_clase, devolucion.id_reserva, espacio);
+            if (resultadoVerificacion.tipo === 'error') {
+                // Error al verificar estado - mostrar SweetAlert prominente
+                Swal.close();
+                Swal.fire({
+                    title: '❌ Error',
+                    text: resultadoVerificacion.mensaje || 'Error al verificar el estado del espacio',
+                    icon: 'error',
+                    confirmButtonText: 'Entendido',
+                    confirmButtonColor: '#dc2626',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                });
                 
-                // Limpiar estado después de mostrar el modal
+                // Resetear flujo y limpiar estado
+                limpiarEstadoLectura();
+                // Restaurar autofocus del qr-input después de error en verificación de espacio
                 setTimeout(() => {
-                    limpiarEstadoLectura();
                     if (qrInputManager) {
                         qrInputManager.setActiveInput('main');
                     }
                 }, 500);
-            } else {
-                // Devolución normal - mostrar Sweet Alert de éxito
-                Swal.fire({
-                    title: '¡Devolución Exitosa!',
-                    text: 'Las llaves han sido devueltas correctamente.',
-                    icon: 'success',
-                    confirmButtonText: 'Aceptar',
-                    confirmButtonColor: '#059669',
-                    timer: 1500,
-                    timerProgressBar: true,
-                    showConfirmButton: false
-                });
-
-                // Mostrar mensaje de éxito
-                const statusElem = document.getElementById('qr-status');
-                if (statusElem) statusElem.innerHTML = 'Devolución exitosa';
-
-                // Limpiar solo el estado de lectura después de un delay
-                setTimeout(() => {
-                    limpiarEstadoLectura();
-                    // Restaurar autofocus del qr-input después de devolución exitosa
-                    if (qrInputManager) {
-                        qrInputManager.setActiveInput('main');
-                    }
-                }, 2000);
+                return;
             }
 
-            // IMPORTANTE: Detener completamente el procesamiento aquí y resetear flujo
-            procesandoDevolucion = false;
-            ordenEscaneo = 'usuario';
-            detenerWatchdog();
-            return 'devolucion_exitosa';
-        } else {
-            // Mostrar error específico de devolución
-            const mensajeError = devolucion?.mensaje || 'Error al devolver las llaves';
-            
-            Swal.fire({
-                title: 'Error',
-                text: mensajeError,
-                icon: 'error',
-                timer: 2500,
-                showConfirmButton: false
-            });
-
-            // Resetear el estado para permitir nuevo escaneo
-            procesandoDevolucion = false;
-            ordenEscaneo = 'usuario';
-            // Restaurar autofocus del qr-input después de error en devolución
-            setTimeout(() => {
-                if (qrInputManager) {
-                    qrInputManager.setActiveInput('main');
+            if (resultadoVerificacion.tipo === 'devolucion') {
+                // Procesando devolución...
+                // Evitar procesamiento múltiple
+                if (procesandoDevolucion) {
+                    return 'devolucion_en_proceso';
                 }
-            }, 100);
-            return;
-        }
+
+                procesandoDevolucion = true;
+
+                // El usuario tiene una reserva activa en este espacio - procesar devolución automáticamente
+                Swal.close();
+                // Mostrar modal de devolución en proceso
+                Swal.fire({
+                    title: 'Procesando devolución...',
+                    text: 'Liberando espacio y registrando salida.',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                const devolucion = await devolverEspacio(usuarioEscaneado, espacio);
+
+                if (devolucion && devolucion.success) {
+                    // Cerrar el modal de espera de llaves inmediatamente al detectar éxito
+                    cerrarModalEsperaLlaves(false);
+
+                    // Actualizar indicador en el mapa
+                    const block = state.indicators.find(b => b.id === espacio);
+                    if (block) {
+                        block.estado = '#00FF00'; // Verde = Disponible
+                        state.originalCoordinates = state.indicators.map(i => ({ ...i }));
+                        drawIndicators();
+                    }
+
+                    // INVALIDAR CACHE Y REFRESCAR MODAL SI ESTÁ ABIERTO
+                    // Esto asegura que la UI se sincronice inmediatamente con el servidor
+                    sessionStorage.removeItem(`espacio_${espacio}`);
+                    sessionStorage.removeItem(`espacio_${espacio}_time`);
+                    sessionStorage.removeItem(`solicitante_espacio_${espacio}`);
+                    sessionStorage.removeItem(`solicitante_espacio_${espacio}_time`);
+                    
+                    // Al devolver exitosamente: CERRAR el modal del espacio si está abierto
+                    // NO reabrirlo - solo mostrar el mensaje de éxito
+                    if (state.currentIndicatorId === espacio) {
+                        // Cerrar el modal del espacio para no confundir al usuario
+                        const modal = document.getElementById('modal-espacio');
+                        if (modal) {
+                            modal.classList.add('hidden');
+                            state.currentIndicatorId = null;
+                        }
+                    }
+
+                    // Verificar si es devolución en el primer módulo
+                    if (devolucion.devolucion_primer_modulo && devolucion.info_clase) {
+                        Swal.close(); // Cerrar modal de carga
+                        // Mostrar modal para preguntar si hubo asistentes
+                        mostrarModalAsistentes(devolucion.info_clase, devolucion.id_reserva, espacio);
+                        
+                        // Limpiar estado después de mostrar el modal
+                        setTimeout(() => {
+                            limpiarEstadoLectura();
+                            if (qrInputManager) {
+                                qrInputManager.setActiveInput('main');
+                            }
+                        }, 500);
+                    } else {
+                        // Devolución normal - mostrar Sweet Alert de éxito
+                        Swal.close();
+                        Swal.fire({
+                            title: '¡Devolución Exitosa!',
+                            text: 'Las llaves han sido devueltas correctamente.',
+                            icon: 'success',
+                            confirmButtonText: 'Aceptar',
+                            confirmButtonColor: '#059669',
+                            timer: 1500,
+                            timerProgressBar: true,
+                            showConfirmButton: false
+                        });
+
+                        // Mostrar mensaje de éxito
+                        const statusElem = document.getElementById('qr-status');
+                        if (statusElem) statusElem.innerHTML = 'Devolución exitosa';
+
+                        // Limpiar solo el estado de lectura después de un delay
+                        setTimeout(() => {
+                            limpiarEstadoLectura();
+                            // Restaurar autofocus del qr-input después de devolución exitosa
+                            if (qrInputManager) {
+                                qrInputManager.setActiveInput('main');
+                            }
+                        }, 2000);
+                    }
+
+                    // IMPORTANTE: Detener completamente el procesamiento aquí y resetear flujo
+                    procesandoDevolucion = false;
+                    ordenEscaneo = 'usuario';
+                    detenerWatchdog();
+                    return 'devolucion_exitosa';
+                } else {
+                    // Mostrar error específico de devolución
+                    const mensajeError = devolucion?.mensaje || 'Error al devolver las llaves';
+                    
+                    Swal.close();
+                    Swal.fire({
+                        title: 'Error',
+                        text: mensajeError,
+                        icon: 'error',
+                        timer: 2500,
+                        showConfirmButton: false
+                    });
+
+                    // Resetear el estado para permitir nuevo escaneo
+                    procesandoDevolucion = false;
+                    ordenEscaneo = 'usuario';
+                    // Restaurar autofocus del qr-input después de error en devolución
+                    setTimeout(() => {
+                        if (qrInputManager) {
+                            qrInputManager.setActiveInput('main');
+                        }
+                    }, 100);
+                    return;
+                }
             }
 
             if (resultadoVerificacion.tipo === 'reserva_existente') {
@@ -2254,7 +2257,7 @@
                 cerrarModalEsperaLlaves(false);
 
                 // Procesando reserva existente...
-
+                Swal.close();
                 // Mostrar Sweet Alert de reserva existente
                 Swal.fire({
                     title: 'Reserva Activa',
@@ -2296,6 +2299,7 @@
                     ? `<br><small class="text-gray-600">${resultadoVerificacion.reserva.nombre_actividad}</small>` 
                     : '';
 
+                Swal.close();
                 Swal.fire({
                     title: '¡Reserva Activada!',
                     html: `Tu reserva programada ha sido activada correctamente.${nombreActividad}`,
@@ -2324,6 +2328,7 @@
                 cerrarModalEsperaLlaves(false);
 
                 // El usuario tiene reserva programada pero no es el horario aún
+                Swal.close();
                 Swal.fire({
                     title: 'Reserva Programada',
                     html: `<div class="text-left">
@@ -2356,8 +2361,12 @@
             if (resultadoVerificacion.tipo === 'clase_programada_otro_docente') {
                 // Cerrar el modal de espera de llaves inmediatamente
                 cerrarModalEsperaLlaves(false);
+                Swal.close();
 
-                const clase = resultadoVerificacion.clase;
+                const clase = resultadoVerificacion.clase || {};
+                const docenteNombre = clase.docente || 'Docente programado';
+                const asignaturaNombre = clase.asignatura || 'Clase regular';
+                const horarioStr = (clase.hora_inicio && clase.hora_termino) ? `${clase.hora_inicio} - ${clase.hora_termino}` : 'Horario programado';
 
                 Swal.fire({
                     title: 'Clase Programada',
@@ -2365,9 +2374,9 @@
                         <div class="text-left">
                             <p class="mb-4 text-orange-600 font-semibold">Esta sala tiene una clase programada en este horario.</p>
                             <div class="p-3 mb-4 bg-orange-50 border-l-4 border-orange-500 rounded text-sm">
-                                <p><strong>Docente:</strong> ${clase.docente}</p>
-                                <p><strong>Asignatura:</strong> ${clase.asignatura}</p>
-                                <p><strong>Horario:</strong> ${clase.hora_inicio} - ${clase.hora_termino}</p>
+                                <p><strong>Docente:</strong> ${docenteNombre}</p>
+                                <p><strong>Asignatura:</strong> ${asignaturaNombre}</p>
+                                <p><strong>Horario:</strong> ${horarioStr}</p>
                             </div>
                             <p class="text-gray-700">El docente programado aún no ha asistido. ¿Deseas utilizar este espacio de todas formas?</p>
                         </div>
@@ -2405,17 +2414,18 @@
 
                 // NUEVA LÓGICA: Si puede forzar cierre, mostrar modal con botón de acción
                 if (resultadoVerificacion.puede_forzar_cierre) {
-                    const ocupante = resultadoVerificacion.ocupante;
+                    const ocupante = resultadoVerificacion.ocupante || {};
                     const idReservaAnterior = resultadoVerificacion.id_reserva_anterior;
                     
+                    Swal.close();
                     Swal.fire({
                         title: 'Sala Ocupada',
                         html: `
                             <div class="text-left">
                                 <p class="mb-4 text-orange-600 font-semibold">La sala aún figura ocupada por el docente anterior.</p>
                                 <div class="p-3 mb-4 bg-orange-50 border-l-4 border-orange-500 rounded text-sm">
-                                    <p><strong>Docente anterior:</strong> ${ocupante.nombre}</p>
-                                    <p><strong>Hora inicio:</strong> ${ocupante.hora_inicio}</p>
+                                    <p><strong>Docente anterior:</strong> ${ocupante.nombre || 'Docente anterior'}</p>
+                                    <p><strong>Hora inicio:</strong> ${ocupante.hora_inicio || '-'}</p>
                                 </div>
                                 <p class="text-gray-700">Usted tiene una clase programada en este bloque. ¿Desea forzar el cierre de la sesión anterior e iniciar su clase?</p>
                             </div>
@@ -2429,6 +2439,7 @@
                     }).then(async (result) => {
                         if (result.isConfirmed) {
                             // Mostrar cargando
+                            Swal.close();
                             Swal.fire({
                                 title: 'Procesando...',
                                 text: 'Realizando cierre forzado e iniciando su clase',
@@ -2440,6 +2451,7 @@
 
                             const forceResult = await forzarCierreYTomarEspacio(usuarioEscaneado, espacio, idReservaAnterior);
                             
+                            Swal.close();
                             if (forceResult && forceResult.success) {
                                 // Éxito
                                 Swal.fire({
@@ -2461,7 +2473,7 @@
                                 // Error
                                 Swal.fire({
                                     title: 'Error',
-                                    text: forceResult.mensaje || 'No se pudo realizar el cierre forzado',
+                                    text: forceResult?.mensaje || 'No se pudo realizar el cierre forzado',
                                     icon: 'error'
                                 });
                             }
@@ -2496,6 +2508,7 @@
                 htmlContent += `<p class="mt-4 text-sm text-gray-700 font-semibold">Si tienes una clase programada próximamente, recuerda que puedes tomar la sala hasta 15 minutos antes del inicio del módulo.</p></div>`;
 
                 // Mostrar SweetAlert
+                Swal.close();
                 Swal.fire({
                     title: 'Sala Ocupada',
                     html: htmlContent,
@@ -5257,46 +5270,47 @@
         }
 
         async function mostrarModalSeleccionarModulos(idEspacio, run) {
-                    const modulosDisponibles = await calcularModulosDisponibles(idEspacio);
+            Swal.close();
+            const modulosDisponibles = await calcularModulosDisponibles(idEspacio);
 
-        // Usar exactamente los módulos disponibles calculados por el servidor
-        maxModulosDisponibles = modulosDisponibles;
+            // Usar exactamente los módulos disponibles calculados por el servidor (mínimo 1 para reserva espontánea)
+            maxModulosDisponibles = Math.max(1, modulosDisponibles || 1);
 
-        // Actualizar elementos del modal si existen
-        const maxModulosElement = document.getElementById('max-modulos-disponibles');
-        const inputModulos = document.getElementById('input-cantidad-modulos');
+            // Actualizar elementos del modal si existen
+            const maxModulosElement = document.getElementById('max-modulos-disponibles');
+            const inputModulos = document.getElementById('input-cantidad-modulos');
 
-        if (maxModulosElement) {
-            maxModulosElement.textContent = maxModulosDisponibles;
-        }
+            if (maxModulosElement) {
+                maxModulosElement.textContent = maxModulosDisponibles;
+            }
 
-        if (inputModulos) {
-            inputModulos.max = maxModulosDisponibles;
-            inputModulos.value = 1;
-        }
+            if (inputModulos) {
+                inputModulos.max = maxModulosDisponibles;
+                inputModulos.value = 1;
+            }
 
-        espacioParaReserva = idEspacio;
-        runParaReserva = run;
+            espacioParaReserva = idEspacio;
+            runParaReserva = run;
 
-                    // Mostrar información detallada si está disponible
-        if (window.modulosInfo) {
-            mostrarInformacionModulos(window.modulosInfo);
-        }
+            // Mostrar información detallada si está disponible
+            if (window.modulosInfo) {
+                mostrarInformacionModulos(window.modulosInfo);
+            }
 
-        // Mostrar el modal directamente
-        const modal = document.getElementById('modal-seleccionar-modulos');
-        if (modal) {
-            Swal.close(); // Cerrar SweetAlert de verificación antes de mostrar modal
-            modal.classList.remove('hidden');
-            // Desactivar todos los inputs QR cuando se abre el modal
-            qrInputManager.desactivarTodosLosInputs();
-            // Enfocar el input
-            setTimeout(() => {
-                if (inputModulos) {
-                    inputModulos.focus();
-                }
-            }, 100);
-        }
+            // Mostrar el modal directamente
+            const modal = document.getElementById('modal-seleccionar-modulos');
+            if (modal) {
+                Swal.close(); // Cerrar SweetAlert de verificación antes de mostrar modal
+                modal.classList.remove('hidden');
+                // Desactivar todos los inputs QR cuando se abre el modal
+                qrInputManager.desactivarTodosLosInputs();
+                // Enfocar el input
+                setTimeout(() => {
+                    if (inputModulos) {
+                        inputModulos.focus();
+                    }
+                }, 100);
+            }
         }
 
         function mostrarInformacionModulos(info) {
@@ -5429,6 +5443,7 @@
         if (data.success) {
             // Cerrar el modal inmediatamente
             cerrarModalModulos();
+            Swal.close();
 
             // Mostrar Sweet Alert de éxito para reserva creada (Sin programación)
             Swal.fire({
@@ -5465,6 +5480,7 @@
                 });
             }
 
+            Swal.close();
             // Mostrar SweetAlert de error
             Swal.fire({
                 title: 'Error al Crear Reserva',
