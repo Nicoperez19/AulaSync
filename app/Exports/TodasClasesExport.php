@@ -333,8 +333,17 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                                 if (!$reserva) {
                                     foreach ($reservasDelDia as $r) {
                                         $horaAcceso = Carbon::parse($r->hora);
+                                        $horaSalida = $r->hora_salida ? Carbon::parse($r->hora_salida) : null;
                                         $margenInicio = $horaInicioModulo->copy()->subMinutes($minutosMargenIngreso);
+                                        
+                                        // Caso 1: Ingreso durante el módulo (incluyendo margen previo)
                                         if ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFinModulo) {
+                                            $reserva = $r;
+                                            break;
+                                        }
+                                        
+                                        // Caso 2: Ingreso antes del margen, pero la sesión cubre el módulo (no salió antes de que empezara)
+                                        if ($horaAcceso < $margenInicio && (!$horaSalida || $horaSalida >= $horaInicioModulo)) {
                                             $reserva = $r;
                                             break;
                                         }
