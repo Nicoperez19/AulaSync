@@ -545,4 +545,25 @@ class TenantInitializationController extends Controller
 
         return redirect()->route('tenant.initialization.index');
     }
+
+    /**
+     * Cancelar la inicialización y volver a la selección de sedes o login
+     */
+    public function cancel(Request $request)
+    {
+        // Limpiar contexto del tenant en sesión
+        session()->forget(['tenant_id', 'tenant']);
+        session()->save();
+
+        if (app()->bound('tenant')) {
+            app()->forgetInstance('tenant');
+        }
+
+        if (auth()->check()) {
+            return redirect()->route('sedes.selection')
+                ->with('info', 'Has cancelado la configuración de la sede.');
+        }
+
+        return redirect()->route('login');
+    }
 }

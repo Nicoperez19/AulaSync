@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head>
@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'SIA | Sistema de Informaci�n de Aulas') }} - Selección de Sede</title>
+    <title>{{ config('app.name', 'SIA | Sistema de Información de Aulas') }} - Selección de Sede</title>
 
     <!-- Fuentes -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -47,29 +47,53 @@
     </style>
 </head>
 
-<body class="font-sans min-h-screen">
+<body class="font-sans min-h-screen bg-gray-50">
     <div class="min-h-screen flex flex-col">
-        <!-- Header
-        <header class="shadow-md">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                <div class="flex items-center justify-center">
-                    <img src="" alt="SIA | Sistema de Informaci�n de Aulas" class="h-12 sm:h-16">
+        <!-- Header -->
+        <header class="bg-white border-b border-gray-200 shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="font-bold text-gray-800 text-base sm:text-lg">SIA</span>
+                        <span class="text-gray-500 text-xs sm:text-sm hidden sm:inline">| Sistema de Información de Aulas</span>
+                    </div>
+                    <div>
+                        <a href="{{ route('logout') }}" 
+                           class="inline-flex items-center px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 transition" 
+                           title="Cerrar sesión y volver al login">
+                            <i class="fas fa-sign-out-alt mr-1.5"></i>
+                            Cerrar Sesión
+                        </a>
+                    </div>
                 </div>
             </div>
         </header>
--->
+
         <!-- Main Content -->
         <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div class="text-center mb-12">
-                <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-4">
-                    <i class="fas fa-building mr-3 text-blue-600"></i>
+            <div class="text-center mb-10">
+                <h1 class="text-3xl sm:text-4xl font-bold text-gray-800 mb-4 flex items-center justify-center">
+                    <span class="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-100 text-blue-600 mr-3">
+                        <i class="fas fa-building text-2xl"></i>
+                    </span>
                     Seleccione su Sede
                 </h1>
                 <p class="text-lg text-gray-600 max-w-2xl mx-auto">
                     Elija la sede a la que desea acceder para continuar con su sesión en el Sistema de Información de
-                    Aulas (SIA). 
+                    Aulas (SIA).
                 </p>
             </div>
+
+            @if(session('info'))
+                <div class="max-w-md mx-auto mb-6">
+                    <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 rounded shadow-sm" role="alert">
+                        <div class="flex items-center">
+                            <i class="fas fa-info-circle mr-2"></i>
+                            <p>{{ session('info') }}</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             @if(session('error'))
                 <div class="max-w-md mx-auto mb-8">
@@ -82,10 +106,10 @@
 
             @if($sedes->count() > 0)
                 <div class="max-w-2xl mx-auto">
-                    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden border border-gray-100 divide-y divide-gray-100">
                         @foreach($sedes as $sede)
                             <a href="{{ route('sedes.redirect', $sede->id_sede) }}"
-                                class="sede-item block border-b last:border-b-0 px-6 py-4 hover:no-underline">
+                                class="sede-item block px-6 py-4 hover:no-underline">
                                 <div class="flex items-center justify-between">
                                     <div class="flex-grow">
                                         <h2 class="text-lg font-semibold text-gray-800">
@@ -93,7 +117,7 @@
                                         </h2>
                                         @if($sede->universidad)
                                             <p class="text-sm text-gray-600">
-                                                Instituto Tecnólogico {{ $sede->universidad->nombre_universidad }}
+                                                Instituto Tecnológico {{ $sede->universidad->nombre_universidad }}
                                             </p>
                                         @endif
                                         @if($sede->comuna)
@@ -111,12 +135,17 @@
                     </div>
                 </div>
             @else
-                <div class="text-center py-12">
+                <div class="text-center py-12 max-w-md mx-auto">
                     <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gray-100 mb-6">
                         <i class="fas fa-building text-4xl text-gray-400"></i>
                     </div>
                     <h3 class="text-xl font-semibold text-gray-600 mb-2">No hay sedes disponibles</h3>
-                    <p class="text-gray-500">Por favor, contacte al administrador del sistema.</p>
+                    <p class="text-gray-500 mb-6">Por favor, contacte al administrador del sistema.</p>
+                    <a href="{{ route('logout') }}" 
+                       class="inline-flex items-center justify-center px-5 py-2.5 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 hover:text-red-600 transition">
+                        <i class="fas fa-arrow-left mr-2 text-gray-400"></i>
+                        Volver al Login
+                    </a>
                 </div>
             @endif
         </main>
@@ -125,7 +154,7 @@
         <footer class="bg-gray-800 text-white py-6">
             <div class="container mx-auto px-4 text-center">
                 <p class="text-gray-400">
-                    &copy; {{ date('Y') }} SIA | Sistema de Información de Aulas .
+                    &copy; {{ date('Y') }} SIA | Sistema de Información de Aulas.
                 </p>
             </div>
         </footer>

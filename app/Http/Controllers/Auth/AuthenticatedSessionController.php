@@ -120,10 +120,14 @@ class AuthenticatedSessionController extends Controller
     {
         Auth::guard('web')->logout();
 
+        $request->session()->forget(['tenant_id', 'tenant', 'url.intended']);
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        if (app()->bound('tenant')) {
+            app()->forgetInstance('tenant');
+        }
+
+        return redirect()->route('login');
     }
 }

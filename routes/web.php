@@ -76,6 +76,7 @@ Route::prefix('tenant/initialization')->name('tenant.initialization.')->group(fu
     Route::post('/complete', [TenantInitializationController::class, 'complete'])->name('complete');
     Route::get('/success', [TenantInitializationController::class, 'success'])->name('success');
     Route::get('/previous', [TenantInitializationController::class, 'previousStep'])->name('previous');
+    Route::get('/cancel', [TenantInitializationController::class, 'cancel'])->name('cancel');
     // Pisos - para agregar pisos en el wizard
     Route::post('/pisos', [PisoController::class, 'store'])->name('pisos.store');
     // Rutas API para obtener pisos y espacios en el wizard
@@ -383,6 +384,7 @@ Route::group(['middleware' => ['permission:mantenedor de reservas']], function (
     Route::get('/reservas', [ReservasController::class, 'index'])->name('reservas.index');
     Route::get('/reservas/create', [ReservasController::class, 'create'])->name('reservas.add');
     Route::post('/reservas', [ReservasController::class, 'store'])->name('reservas.store');
+    Route::get('/reservas/{id_reserva}/comprobante', [ReservasController::class, 'descargarComprobante'])->name('reservas.comprobante');
     Route::get('/reservas/{id_reserva}/edit', [ReservasController::class, 'edit'])->name('reservas.edit');
     Route::put('/reservas/{id_reserva}', [ReservasController::class, 'update'])->name('reservas.update');
     Route::delete('/reservas/{id_reserva}', [ReservasController::class, 'destroy'])->name('reservas.delete');

@@ -630,6 +630,37 @@ class QuickActionsController extends Controller
                     continue;
                 }
 
+                // VALIDAR QUE NO EXISTA UNA CLASE PROGRAMADA (Planificacion_Asignatura) EN ESTE ESPACIO Y MÓDULOS
+                if (!$request->input('forzar', false)) {
+                    $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
+                    $claseConflicto = Planificacion_Asignatura::with(['asignatura', 'modulo'])
+                        ->where('id_espacio', $request->espacio)
+                        ->whereIn('id_modulo', $modulosReserva)
+                        ->whereHas('horario', fn ($q) => $q->where('periodo', $periodoActual))
+                        ->first();
+
+                    if ($claseConflicto) {
+                        $nombreAsig = $claseConflicto->asignatura->nombre_asignatura ?? 'Clase programada';
+                        $idModulo   = $claseConflicto->modulo->id_modulo ?? '-';
+                        Log::info("⛔ Reserva bloqueada por clase programada en espacio {$request->espacio}, módulo {$idModulo}, período {$periodoActual}");
+
+                        if (!$esRecurrente) {
+                            return response()->json([
+                                'success'    => false,
+                                'tipo_error' => 'clase_programada',
+                                'mensaje'    => "No es posible realizar la reserva: la sala {$espacio->nombre_espacio} tiene una clase programada ({$nombreAsig}) en el módulo {$idModulo} del período {$periodoActual}.",
+                                'clase'      => [
+                                    'asignatura' => $nombreAsig,
+                                    'modulo'     => $idModulo,
+                                    'periodo'    => $periodoActual,
+                                ],
+                            ], 409);
+                        }
+                        // En reservas recurrentes, simplemente omitir esta fecha
+                        continue;
+                    }
+                }
+
                 $idReserva = 'RES-'.strtoupper(uniqid());
 
                 $rangoModulos = 'Módulos: '.$request->modulo_inicial.'-'.$request->modulo_final.' | ';
@@ -705,6 +736,7 @@ class QuickActionsController extends Controller
                 'success' => true,
                 'mensaje' => $mensaje,
                 'id_reserva' => $reservasCreadas[0]->id_reserva,
+                'url_comprobante' => route('reservas.comprobante', $reservasCreadas[0]->id_reserva),
                 'total_creadas' => $cant,
                 'datos' => [
                     'responsable' => $request->nombre,
@@ -1635,18 +1667,18 @@ class QuickActionsController extends Controller
                 app('db')->disconnect('tenant');
             }
 
-            // Obtener espacios de tipo Sala de Estudio
+            // Obtener espacios exclusivamente de tipo Sala de Estudio
             $espaciosEstudio = Espacio::on('tenant')
-                ->where('tipo_espacio', 'like', '%estudio%')
-                ->orWhere('tipo_espacio', 'Sala de Estudio')
+                ->where(function ($q) {
+                    $q->where('tipo_espacio', 'like', '%estudio%')
+                      ->orWhere('tipo_espacio', 'like', '%Estudio%')
+                      ->orWhere('nombre_espacio', 'like', '%estudio%')
+                      ->orWhere('nombre_espacio', 'like', '%Estudio%');
+                })
                 ->pluck('id_espacio');
 
             $query = Reserva::on('tenant')
-                ->where(function($q) use ($espaciosEstudio) {
-                    $q->whereIn('id_espacio', $espaciosEstudio)
-                      ->orWhere('observaciones', 'like', '%Sala de estudio%')
-                      ->orWhere('tipo_reserva', 'espontanea');
-                })
+                ->whereIn('id_espacio', $espaciosEstudio)
                 ->orderBy('fecha_reserva', 'desc')
                 ->orderBy('hora', 'desc');
 

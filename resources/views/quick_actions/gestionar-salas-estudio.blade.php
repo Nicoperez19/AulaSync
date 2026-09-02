@@ -42,7 +42,17 @@
     <!-- Filtros -->
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
         <div class="p-4 sm:p-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 sm:gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Solicitante</label>
+                    <div class="relative">
+                        <input type="text" id="filtro-solicitante" oninput="aplicarFiltrosLocales()" placeholder="Nombre o RUN..." class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
+                        <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400">
+                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                     <select id="filtro-estado" onchange="cargarReservas()" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base">
@@ -140,6 +150,22 @@
                 <div class="flex flex-col items-center justify-center py-12 text-gray-500">
                     <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
                     <p>Cargando reservas...</p>
+                </div>
+            </div>
+
+            <!-- Controles de Paginación (20 por página) -->
+            <div id="paginacion-salas-estudio" class="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-gray-200">
+                <div class="text-sm text-gray-600">
+                    Mostrando <span id="paginacion-desde" class="font-semibold text-gray-900">0</span> a <span id="paginacion-hasta" class="font-semibold text-gray-900">0</span> de <span id="paginacion-total" class="font-semibold text-gray-900">0</span> reservas
+                </div>
+                <div class="flex items-center gap-1.5">
+                    <button id="btn-pagina-anterior" onclick="cambiarPagina(paginaActual - 1)" class="px-3 py-1.5 border border-gray-300 rounded-md text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                        <i class="fa-solid fa-chevron-left mr-1"></i> Anterior
+                    </button>
+                    <div id="paginacion-numeros" class="flex items-center gap-1"></div>
+                    <button id="btn-pagina-siguiente" onclick="cambiarPagina(paginaActual + 1)" class="px-3 py-1.5 border border-gray-300 rounded-md text-xs sm:text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition">
+                        Siguiente <i class="fa-solid fa-chevron-right ml-1"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -506,6 +532,10 @@
         }, 120);
     }
 
+    let reservasFiltradas = [];
+    let paginaActual = 1;
+    const ITEMS_PER_PAGE = 20;
+
     async function cargarEspaciosEstudio() {
         try {
             const res = await fetch("{{ route('quick-actions.api.espacios') }}");
@@ -517,12 +547,13 @@
                 selectFiltro.innerHTML = '<option value="todos">Todos los espacios</option>';
                 selectManual.innerHTML = '';
 
+                // Filtrar exclusivamente salas de estudio
                 const salas = data.espacios.filter(e => 
                     (e.tipo_espacio && e.tipo_espacio.toLowerCase().includes('estudio')) ||
                     (e.nombre_espacio && e.nombre_espacio.toLowerCase().includes('estudio'))
                 );
 
-                salasEstudioGlobales = salas.length > 0 ? salas : data.espacios;
+                salasEstudioGlobales = salas;
 
                 salasEstudioGlobales.forEach(sala => {
                     const optFiltro = document.createElement('option');
@@ -532,7 +563,7 @@
 
                     const optMan = document.createElement('option');
                     optMan.value = sala.id_espacio;
-                    optMan.textContent = `${sala.id_espacio} - ${sala.nombre_espacio || 'Sala de Estudio'} (Cap: ${sala.capacidad_alumnos || 'N/A'})`;
+                    optMan.textContent = `${sala.id_espacio} - ${sala.nombre_espacio || 'Sala de Estudio'} (Cap: ${sala.capacidad_alumnos || sala.capacidad_maxima || 'N/A'})`;
                     selectManual.appendChild(optMan);
                 });
             }
@@ -575,7 +606,7 @@
 
             if (data.success) {
                 reservasGlobales = data.reservas || [];
-                renderizarTabla(reservasGlobales);
+                aplicarFiltrosLocales();
             } else {
                 tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-4 text-center text-red-500">Error al cargar datos</td></tr>`;
             }
@@ -585,15 +616,36 @@
         }
     }
 
-    function renderizarTabla(reservas) {
+    function aplicarFiltrosLocales() {
+        const solicitanteFiltro = (document.getElementById('filtro-solicitante')?.value || '').toLowerCase().trim();
+
+        if (solicitanteFiltro) {
+            reservasFiltradas = reservasGlobales.filter(r => {
+                const nombre = (r.nombre_responsable || '').toLowerCase();
+                const run = (r.run_responsable || '').toLowerCase();
+                const id = (r.id_reserva || '').toLowerCase();
+                return nombre.includes(solicitanteFiltro) || run.includes(solicitanteFiltro) || id.includes(solicitanteFiltro);
+            });
+        } else {
+            reservasFiltradas = [...reservasGlobales];
+        }
+
+        paginaActual = 1;
+        renderizarPaginaActual();
+    }
+
+    function renderizarPaginaActual() {
         const tbody = document.getElementById('tabla-reservas-body');
         const cardsContainer = document.getElementById('tabla-reservas-cards');
+        const paginacionContainer = document.getElementById('paginacion-salas-estudio');
 
-        if (!reservas || reservas.length === 0) {
+        const total = reservasFiltradas.length;
+
+        if (total === 0) {
             tbody.innerHTML = `
                 <tr>
                     <td colspan="7" class="px-6 py-8 text-center text-gray-500 font-medium">
-                        No hay reservas de salas de estudio registradas
+                        No hay reservas de salas de estudio que coincidan con los filtros
                     </td>
                 </tr>`;
             if (cardsContainer) {
@@ -602,10 +654,60 @@
                         No hay reservas de salas de estudio registradas
                     </div>`;
             }
+            if (paginacionContainer) paginacionContainer.classList.add('hidden');
             return;
         }
 
-        tbody.innerHTML = reservas.map(r => {
+        if (paginacionContainer) paginacionContainer.classList.remove('hidden');
+
+        const totalPaginas = Math.ceil(total / ITEMS_PER_PAGE) || 1;
+        if (paginaActual > totalPaginas) paginaActual = totalPaginas;
+        if (paginaActual < 1) paginaActual = 1;
+
+        const inicio = (paginaActual - 1) * ITEMS_PER_PAGE;
+        const fin = Math.min(inicio + ITEMS_PER_PAGE, total);
+        const reservasPagina = reservasFiltradas.slice(inicio, fin);
+
+        // Actualizar contadores
+        const elDesde = document.getElementById('paginacion-desde');
+        const elHasta = document.getElementById('paginacion-hasta');
+        const elTotal = document.getElementById('paginacion-total');
+        if (elDesde) elDesde.textContent = (inicio + 1).toLocaleString();
+        if (elHasta) elHasta.textContent = fin.toLocaleString();
+        if (elTotal) elTotal.textContent = total.toLocaleString();
+
+        // Botones anterior / siguiente
+        const btnAnt = document.getElementById('btn-pagina-anterior');
+        const btnSig = document.getElementById('btn-pagina-siguiente');
+        if (btnAnt) btnAnt.disabled = (paginaActual <= 1);
+        if (btnSig) btnSig.disabled = (paginaActual >= totalPaginas);
+
+        // Botones de números de página
+        const numerosCont = document.getElementById('paginacion-numeros');
+        if (numerosCont) {
+            numerosCont.innerHTML = '';
+            const maxVisible = 5;
+            let startPage = Math.max(1, paginaActual - Math.floor(maxVisible / 2));
+            let endPage = Math.min(totalPaginas, startPage + maxVisible - 1);
+            if (endPage - startPage + 1 < maxVisible) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                const btn = document.createElement('button');
+                btn.textContent = i;
+                btn.onclick = () => cambiarPagina(i);
+                btn.className = `px-3 py-1.5 border text-xs sm:text-sm font-semibold rounded-md transition ${
+                    i === paginaActual
+                        ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
+                        : 'border-gray-300 text-gray-700 bg-white hover:bg-gray-50'
+                }`;
+                numerosCont.appendChild(btn);
+            }
+        }
+
+        // Renderizar tabla desktop
+        tbody.innerHTML = reservasPagina.map(r => {
             let badgeEstado = '';
             if (r.estado === 'activa') {
                 if (r.vencida) {
@@ -649,6 +751,12 @@
                                     <i class="fas fa-undo mr-1"></i> Devolver
                                 </button>
                             ` : ''}
+                            <a href="/reservas/${r.id_reserva}/comprobante" 
+                               target="_blank"
+                               class="p-1.5 border border-blue-200 text-xs font-medium rounded text-blue-600 hover:bg-blue-50 transition-colors"
+                               title="Descargar Comprobante PDF">
+                                <i class="fa-solid fa-file-pdf"></i>
+                            </a>
                             <button onclick="cambiarEstadoReserva('${r.id_reserva}', 'cancelada')" 
                                     class="p-1.5 border border-gray-200 text-xs font-medium rounded text-gray-400 hover:text-red-600 hover:border-red-300 bg-white transition-colors"
                                     title="Cancelar reserva">
@@ -659,8 +767,9 @@
                 </tr>`;
         }).join('');
 
+        // Renderizar tarjetas mobile
         if (cardsContainer) {
-            cardsContainer.innerHTML = reservas.map(r => `
+            cardsContainer.innerHTML = reservasPagina.map(r => `
                 <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 space-y-2">
                     <div class="flex items-center justify-between">
                         <span class="font-bold text-gray-900 text-base">${r.id_espacio}</span>
@@ -668,16 +777,24 @@
                     </div>
                     <div class="text-sm font-semibold text-gray-800">${r.nombre_responsable}</div>
                     <div class="text-xs text-gray-500">RUN: ${r.run_responsable} • ${r.fecha_reserva}</div>
-                    ${r.estado === 'activa' ? `
-                        <div class="pt-2 flex justify-end">
-                            <button onclick="devolverSalaDirecta('${r.id_espacio}', '${r.run_responsable}')" class="w-full py-2 bg-amber-600 text-white text-xs font-bold rounded-lg shadow">
+                    <div class="pt-2 flex gap-2 justify-end">
+                        ${r.estado === 'activa' ? `
+                            <button onclick="devolverSalaDirecta('${r.id_espacio}', '${r.run_responsable}')" class="flex-1 py-2 bg-amber-600 text-white text-xs font-bold rounded-lg shadow">
                                 Devolver Sala
                             </button>
-                        </div>
-                    ` : ''}
+                        ` : ''}
+                        <a href="/reservas/${r.id_reserva}/comprobante" target="_blank" class="px-3 py-2 bg-blue-50 border border-blue-300 text-blue-700 text-xs font-bold rounded-lg flex items-center justify-center">
+                            <i class="fa-solid fa-file-pdf mr-1"></i> PDF
+                        </a>
+                    </div>
                 </div>
             `).join('');
         }
+    }
+
+    function cambiarPagina(nuevaPagina) {
+        paginaActual = nuevaPagina;
+        renderizarPaginaActual();
     }
 
     // PROCESAMIENTO PRINCIPAL DE LECTURA DE PLANO DIGITAL

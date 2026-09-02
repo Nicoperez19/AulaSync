@@ -56,7 +56,23 @@
     <!-- Filtros -->
     <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
         <div class="p-4 sm:p-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 sm:gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Solicitante</label>
+                    <div class="relative">
+                        <input 
+                            type="text"
+                            id="filtro-solicitante-reserva"
+                            placeholder="Nombre o RUN..."
+                            oninput="filtrarReservas()"
+                            class="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm sm:text-base"
+                        />
+                        <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none text-gray-400">
+                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
                     <select 
@@ -874,16 +890,26 @@ function procesarReservas() {
         return;
     }
 
+    const solicitanteFiltro = (document.getElementById('filtro-solicitante-reserva')?.value || '').toLowerCase().trim();
     const estadoFiltro = document.getElementById('filtro-estado-reserva').value;
     const espacioFiltro = document.getElementById('filtro-espacio-reserva').value;
     const moduloFiltro = document.getElementById('filtro-modulo-reserva').value;
     const fechaFiltro = document.getElementById('filtro-fecha-reserva').value;
     
-    console.log('🔍 Procesando reservas con filtros:', { estadoFiltro, espacioFiltro, moduloFiltro, fechaFiltro, orden: ordenActual });
+    console.log('🔍 Procesando reservas con filtros:', { solicitanteFiltro, estadoFiltro, espacioFiltro, moduloFiltro, fechaFiltro, orden: ordenActual });
 
     // 1. Aplicar filtros
     let reservasProcesadas = [...reservasOriginales];
     
+    if (solicitanteFiltro) {
+        reservasProcesadas = reservasProcesadas.filter(r => {
+            const nombre = (r.nombre_responsable || '').toLowerCase();
+            const run = (r.run_responsable || r.run || '').toLowerCase();
+            const id = (r.id || '').toString().toLowerCase();
+            return nombre.includes(solicitanteFiltro) || run.includes(solicitanteFiltro) || id.includes(solicitanteFiltro);
+        });
+    }
+
     if (estadoFiltro) {
         reservasProcesadas = reservasProcesadas.filter(r => r.estado === estadoFiltro);
     }
@@ -1279,6 +1305,11 @@ function verDetalleReserva(reservaId) {
                 <div><strong>Fecha:</strong> ${formatearFecha(reserva.fecha)}</div>
                 <div><strong>Módulos y Horario:</strong> ${infoModulos}</div>
                 <div><strong>Observaciones:</strong> ${reserva.observaciones || 'Sin observaciones'}</div>
+                <div class="mt-4 pt-3 border-t flex justify-end">
+                    <a href="/reservas/${reserva.id}/comprobante" target="_blank" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md shadow-sm transition">
+                        <i class="fa-solid fa-file-pdf mr-2"></i> Descargar Comprobante PDF
+                    </a>
+                </div>
             </div>
         `,
         confirmButtonText: 'Cerrar',
@@ -1524,6 +1555,12 @@ function mostrarReservasEnTabla(reservas) {
                         title="Ver detalle">
                         <i class="fa-solid fa-eye w-3 h-3"></i>
                     </button>
+                    <a href="/reservas/${reserva.id}/comprobante"
+                       target="_blank"
+                       class="inline-flex items-center justify-center p-1.5 border border-blue-300 text-xs font-medium rounded text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors"
+                       title="Descargar Comprobante PDF">
+                        <i class="fa-solid fa-file-pdf w-3 h-3"></i>
+                    </a>
                 </div>
             </td>
         </tr>
@@ -1599,26 +1636,32 @@ function mostrarReservasEnTabla(reservas) {
                     ? `<button 
                         type="button"
                         onclick="editarReserva('${reserva.id}')"
-                        class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
-                        <i class="fa-solid fa-edit w-4 h-4 mr-1"></i>
+                        class="flex-1 inline-flex items-center justify-center px-2 py-2 border border-transparent text-xs font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors">
+                        <i class="fa-solid fa-edit w-3.5 h-3.5 mr-1"></i>
                         Editar
                     </button>
                     <button 
                         type="button"
                         onclick="cambiarEstadoReserva('${reserva.id}', 'finalizada')"
-                        class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors">
-                        <i class="fa-solid fa-xmark w-4 h-4 mr-1"></i>
+                        class="flex-1 inline-flex items-center justify-center px-2 py-2 border border-transparent text-xs font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors">
+                        <i class="fa-solid fa-xmark w-3.5 h-3.5 mr-1"></i>
                         Finalizar
                     </button>`
-                    : `<div class="flex-1 text-center text-sm text-gray-500 italic py-2">Finalizada</div>`
+                    : `<div class="flex-1 text-center text-xs text-gray-500 italic py-2">Finalizada</div>`
                 }
                 <button 
                     type="button"
                     onclick="verDetalleReserva('${reserva.id}')"
-                    class="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-                    <i class="fa-solid fa-eye w-4 h-4 mr-1"></i>
-                    Ver Detalle
+                    class="flex-1 inline-flex items-center justify-center px-2 py-2 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                    <i class="fa-solid fa-eye w-3.5 h-3.5 mr-1"></i>
+                    Detalle
                 </button>
+                <a href="/reservas/${reserva.id}/comprobante"
+                   target="_blank"
+                   class="inline-flex items-center justify-center px-2.5 py-2 border border-blue-300 text-xs font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors"
+                   title="Descargar Comprobante PDF">
+                    <i class="fa-solid fa-file-pdf w-3.5 h-3.5"></i>
+                </a>
             </div>
         </div>
     `).join('');

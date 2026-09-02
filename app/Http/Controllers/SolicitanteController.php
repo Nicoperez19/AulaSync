@@ -410,9 +410,12 @@ class SolicitanteController extends Controller
             for ($i = $moduloActual; $i <= 15; $i++) {
                 $moduloCodigo = $codigoDia . '.' . $i;
 
-                if (in_array($moduloCodigo, $modulosOcupados)) {
+                $ocupadoPorReservaActiva = in_array($moduloCodigo, $modulosOcupadosPorReservas);
+                $ocupadoPorPlanificacion = in_array($moduloCodigo, $planificaciones);
+
+                if ($ocupadoPorReservaActiva || ($i > $moduloActual && $ocupadoPorPlanificacion)) {
                     // Encontrar información de la próxima clase si es una planificación
-                    if (in_array($moduloCodigo, $planificaciones)) {
+                    if ($ocupadoPorPlanificacion) {
                         $proximaClase = $this->obtenerInfoProximaClase($moduloCodigo, $request->id_espacio);
                     }
                     break;
