@@ -4,12 +4,11 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\Espacio;
+use App\Models\LlaveNoDevuelta;
 use App\Models\Reserva;
 use App\Models\Tenant;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 
 class LiberarEspaciosCommand extends Command
 {
@@ -25,20 +24,16 @@ class LiberarEspaciosCommand extends Command
      *
      * @var string
      */
-    protected $description = 'Libera todos los espacios ocupados y finaliza las reservas activas a las 12 de la noche';
+    protected $description = 'Libera todos los espacios ocupados al cierre del día y registra las llaves no devueltas';
 
     /**
      * Execute the console command.
      */
     public function handle()
     {
-        $this->info('Iniciando proceso de liberación de espacios y reservas...');
-
-        // Obtener todos los tenants
         $tenants = Tenant::all();
 
         if ($tenants->isEmpty()) {
-            $this->warn('No se encontraron tenants configurados.');
             return 0;
         }
 
@@ -51,54 +46,75 @@ class LiberarEspaciosCommand extends Command
 
     protected function processTenant(Tenant $tenant)
     {
-        $this->info("\nProcesando tenant: {$tenant->name} ({$tenant->domain})");
-
         try {
-            // Establecer este tenant como el actual (configura conexión y scopes)
             $tenant->makeCurrent();
 
-            // 1. Finalizar todas las reservas activas o programadas del día (o anteriores)
-            // Usamos withoutGlobalScopes() para asegurar que procesamos todos los registros del tenant
-            $reservasActualizadas = Reserva::withoutGlobalScopes()
-                ->whereIn('estado', ['activa', 'programada'])
-                ->where('fecha_reserva', '<=', Carbon::now()->toDateString())
+            $ahora        = Carbon::now();
+            // Si corre de madrugada (00:00 - 05:59), limpia hasta el día de ayer.
+            // Si se ejecuta tarde en la noche (ej. 23:00), limpia hasta el día de hoy.
+            $fechaLimite  = ($ahora->hour < 6) ? $ahora->copy()->subDay()->toDateString() : $ahora->toDateString();
+            $cerradoEn    = $ahora;
+
+            // ── 1. Reservas ACTIVAS de días anteriores (llave no devuelta / sin cierre) ──
+            $reservasActivas = Reserva::withoutGlobalScopes()
+                ->where('estado', 'activa')
+                ->where('fecha_reserva', '<=', $fechaLimite)
                 ->get();
 
-            $totalReservas = 0;
-            foreach ($reservasActualizadas as $reserva) {
-                $motivo = $reserva->estado === 'activa' 
-                    ? 'Reserva finalizada automáticamente por reset diario (posible olvido de check-out).' 
-                    : 'Reserva cancelada automáticamente por reset diario (el usuario no asistió).';
-
-                $reserva->update([
-                    'estado' => 'finalizada',
-                    'hora_salida' => $reserva->estado === 'activa' ? Carbon::now()->format('H:i:s') : $reserva->hora_salida,
-                    'observaciones' => trim(($reserva->observaciones ?? '') . "\n" . $motivo),
-                    'updated_at' => Carbon::now()
+            foreach ($reservasActivas as $reserva) {
+                // Registrar en la tabla de trazabilidad (sin logs)
+                LlaveNoDevuelta::create([
+                    'id_reserva'           => $reserva->id_reserva,
+                    'id_espacio'           => $reserva->id_espacio,
+                    'run_profesor'         => $reserva->run_profesor ?? $reserva->run_solicitante,
+                    'id_asignatura'        => $reserva->id_asignatura,
+                    'fecha_clase'          => $reserva->fecha_reserva,
+                    'hora_entrada'         => $reserva->hora,
+                    'hora_termino_esperada'=> $reserva->hora_salida,
+                    'cerrado_en'           => $cerradoEn,
                 ]);
-                $totalReservas++;
+
+                // Cerrar la reserva con observación clara
+                $usuarioTipo = $reserva->run_profesor ? 'Profesor ' . $reserva->run_profesor : 'Solicitante ' . ($reserva->run_solicitante ?? 'Desconocido');
+                $reserva->update([
+                    'estado'        => 'finalizada',
+                    'hora_salida'   => $reserva->hora_salida ?? '23:59:59',
+                    'observaciones' => trim(
+                        ($reserva->observaciones ?? '') .
+                        "\n⚠️ Llave no devuelta — Espacio liberado automáticamente al cierre del día {$reserva->fecha_reserva} ({$usuarioTipo})."
+                    ),
+                    'updated_at'    => $ahora,
+                ]);
             }
 
-            $this->line("  Se finalizaron {$totalReservas} reservas (activas/programadas).");
+            // ── 2. Reservas PROGRAMADAS sin uso de días anteriores (no se presentó) ──
+            $reservasProgramadas = Reserva::withoutGlobalScopes()
+                ->whereIn('estado', ['programada'])
+                ->where('fecha_reserva', '<=', $fechaLimite)
+                ->get();
 
-            // 2. Cambiar todos los espacios ocupados o reservados a disponibles
-            $espaciosLiberados = Espacio::withoutGlobalScopes()
+            foreach ($reservasProgramadas as $reserva) {
+                $reserva->update([
+                    'estado'        => 'finalizada',
+                    'observaciones' => trim(
+                        ($reserva->observaciones ?? '') .
+                        "\nReserva cancelada automáticamente — usuario no se presentó ({$reserva->fecha_reserva})."
+                    ),
+                    'updated_at'    => $ahora,
+                ]);
+            }
+
+            // ── 3. Liberar espacios físicos que quedaron en estado Ocupado/Reservado ──
+            Espacio::withoutGlobalScopes()
                 ->whereIn('estado', ['Ocupado', 'Reservado'])
                 ->update([
-                    'estado' => 'Disponible',
-                    'updated_at' => Carbon::now()
+                    'estado'     => 'Disponible',
+                    'updated_at' => $ahora,
                 ]);
 
-            $this->line("  Se liberaron {$espaciosLiberados} espacios (Ocupados/Reservados).");
-
-            $this->info("  ✅ Proceso completado: {$totalReservas} reservas procesadas + {$espaciosLiberados} espacios liberados");
         } catch (\Exception $e) {
-            $this->error("  Error procesando tenant {$tenant->name}: " . $e->getMessage());
-            Log::error("Error en LiberarEspaciosCommand para tenant {$tenant->name}", [
-                'tenant' => $tenant->domain,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
+            // Solo mostramos en consola, nunca en logs de archivo
+            $this->error("Error procesando tenant {$tenant->name}: " . $e->getMessage());
         }
     }
 }

@@ -112,6 +112,7 @@ class ClasesNoRealizadasTable extends Component
             }
         }
         
+        $this->cachedEstadisticas = null;
         $this->resetPage();
     }
 
@@ -415,11 +416,6 @@ class ClasesNoRealizadasTable extends Component
             ->when($this->fecha_inicio && $this->fecha_fin, function($q) {
                 $q->whereBetween('fecha_clase', [$this->fecha_inicio, $this->fecha_fin]);
             })
-            ->where(function($q) use ($hoy) {
-                $q->where('estado', 'pendiente')
-                    ->orWhereDate('fecha_clase', '<', $hoy)
-                    ->orWhereDate('fecha_clase', $hoy);
-            })
             ->first();
 
         $this->cachedEstadisticas = [
@@ -466,11 +462,6 @@ class ClasesNoRealizadasTable extends Component
             })
             ->when($this->estado, function($q) {
                 $q->where('clases_no_realizadas.estado', $this->estado);
-            })
-            ->where(function($q) use ($hoy) {
-                $q->where('clases_no_realizadas.estado', 'pendiente')
-                    ->orWhereDate('clases_no_realizadas.fecha_clase', '<', $hoy)
-                    ->orWhereDate('clases_no_realizadas.fecha_clase', $hoy);
             });
 
         // Búsqueda optimizada para Asignatura, Profesor, Espacio y Motivo

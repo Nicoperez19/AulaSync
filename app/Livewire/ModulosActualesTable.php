@@ -1108,6 +1108,20 @@ class ModulosActualesTable extends Component
                                         return isset($moduloParts[1]) ? (int) $moduloParts[1] : 0;
                                     });
 
+                                // Si no hay planificación regular, buscar en planificaciones de profesores colaboradores
+                                if ($planificacionesReserva->isEmpty()) {
+                                    $planificacionesReserva = PlanificacionProfesorColaborador::where('id_espacio', $reservaProfesor->id_espacio)
+                                        ->whereHas('profesorColaborador', function ($q) use ($reservaProfesor) {
+                                            $q->where('id_asignatura', $reservaProfesor->id_asignatura);
+                                        })
+                                        ->with('modulo')
+                                        ->get()
+                                        ->sortBy(function ($planificacion) {
+                                            $moduloParts = explode('.', $planificacion->id_modulo);
+                                            return isset($moduloParts[1]) ? (int) $moduloParts[1] : 0;
+                                        });
+                                }
+
                                 $inscritos = $planificacionesReserva->first()->inscritos ?? null;
 
                                 // Obtener el rango de módulos de la clase que está dando

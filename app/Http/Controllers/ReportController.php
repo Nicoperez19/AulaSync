@@ -1198,12 +1198,67 @@ class ReportController extends Controller
                     $tipoUsuario = 'desconocido';
                 }
 
+                // Obtener Asignatura vinculada o buscarla por planificación (incluyendo profesores colaboradores)
+                $asignaturaModel = $reserva->asignatura;
+                if (!$asignaturaModel && $esProfesor && !empty($reserva->run_profesor)) {
+                    $diaSemana = Carbon::parse($reserva->fecha_reserva)->format('l');
+                    $diasMap = [
+                        'Monday' => 'Lunes', 'Tuesday' => 'Martes', 'Wednesday' => 'Miércoles',
+                        'Thursday' => 'Jueves', 'Friday' => 'Viernes', 'Saturday' => 'Sábado', 'Sunday' => 'Domingo'
+                    ];
+                    $diaEsp = $diasMap[$diaSemana] ?? $diaSemana;
+                    $diaNorm = \App\Helpers\ModulosHelper::normalizarDia($diaEsp);
+                    $diasPosibles = array_unique([strtolower($diaEsp), $diaNorm, 'miércoles', 'miercoles', 'sábado', 'sabado']);
+
+                    // 1. Buscar en planificación regular del profesor
+                    $planAsig = Planificacion_Asignatura::withoutGlobalScope('tenant')
+                        ->with(['asignatura.carrera.areaAcademica', 'modulo'])
+                        ->where('id_espacio', $reserva->id_espacio)
+                        ->whereHas('horario', function ($q) use ($reserva) {
+                            $q->where('run_profesor', $reserva->run_profesor);
+                        })
+                        ->whereHas('modulo', function ($q) use ($diasPosibles) {
+                            $q->whereIn('dia', $diasPosibles);
+                        })
+                        ->first();
+
+                    if ($planAsig && $planAsig->asignatura) {
+                        $asignaturaModel = $planAsig->asignatura;
+                    } else {
+                        // 2. Buscar en planificación de profesor colaborador
+                        $planColab = \App\Models\PlanificacionProfesorColaborador::withoutGlobalScope('tenant')
+                            ->with(['profesorColaborador.asignatura.carrera.areaAcademica', 'modulo'])
+                            ->where('id_espacio', $reserva->id_espacio)
+                            ->whereHas('profesorColaborador', function ($q) use ($reserva) {
+                                $q->where('run_profesor_colaborador', $reserva->run_profesor);
+                            })
+                            ->whereHas('modulo', function ($q) use ($diasPosibles) {
+                                $q->whereIn('dia', $diasPosibles);
+                            })
+                            ->first();
+
+                        if ($planColab && $planColab->profesorColaborador?->asignatura) {
+                            $asignaturaModel = $planColab->profesorColaborador->asignatura;
+                        } else {
+                            // 3. Buscar si el profesor colaborador está asociado a alguna asignatura directamente
+                            $colabDirecto = \App\Models\ProfesorColaborador::withoutGlobalScope('tenant')
+                                ->with(['asignatura.carrera.areaAcademica'])
+                                ->where('run_profesor_colaborador', $reserva->run_profesor)
+                                ->first();
+
+                            if ($colabDirecto && $colabDirecto->asignatura) {
+                                $asignaturaModel = $colabDirecto->asignatura;
+                            }
+                        }
+                    }
+                }
+
                 // Obtener Asignatura
                 $asignatura = 'N/A';
-                if ($reserva->asignatura) {
-                    $nombreAsig = $reserva->asignatura->nombre_asignatura;
-                    $codAsig = $reserva->asignatura->codigo_asignatura;
-                    $secAsig = $reserva->asignatura->seccion;
+                if ($asignaturaModel) {
+                    $nombreAsig = $asignaturaModel->nombre_asignatura;
+                    $codAsig = $asignaturaModel->codigo_asignatura;
+                    $secAsig = $asignaturaModel->seccion;
                     if ($codAsig && $secAsig) {
                         $asignatura = "{$nombreAsig} ({$codAsig}-{$secAsig})";
                     } elseif ($codAsig) {
@@ -1215,24 +1270,16 @@ class ReportController extends Controller
                     $asignatura = $reserva->id_asignatura;
                 }
 
-                // Obtener UA (Unidad Académica / Área Académica / Carrera)
+                // Obtener Carrera / UA: Priorizar la Carrera de la asignatura o profesor
                 $ua = 'N/A';
-                if ($reserva->asignatura && $reserva->asignatura->carrera) {
-                    if ($reserva->asignatura->carrera->areaAcademica) {
-                        $ua = $reserva->asignatura->carrera->areaAcademica->nombre_area_academica;
-                    } else {
-                        $ua = $reserva->asignatura->carrera->nombre;
-                    }
-                } elseif ($esProfesor && $reserva->profesor) {
-                    if ($reserva->profesor->areaAcademica) {
-                        $ua = $reserva->profesor->areaAcademica->nombre_area_academica;
-                    } elseif ($reserva->profesor->carrera) {
-                        if ($reserva->profesor->carrera->areaAcademica) {
-                            $ua = $reserva->profesor->carrera->areaAcademica->nombre_area_academica;
-                        } else {
-                            $ua = $reserva->profesor->carrera->nombre;
-                        }
-                    }
+                if ($asignaturaModel && $asignaturaModel->carrera && !empty($asignaturaModel->carrera->nombre)) {
+                    $ua = $asignaturaModel->carrera->nombre;
+                } elseif ($esProfesor && $reserva->profesor && $reserva->profesor->carrera && !empty($reserva->profesor->carrera->nombre)) {
+                    $ua = $reserva->profesor->carrera->nombre;
+                } elseif ($asignaturaModel && $asignaturaModel->carrera && $asignaturaModel->carrera->areaAcademica) {
+                    $ua = $asignaturaModel->carrera->areaAcademica->nombre_area_academica;
+                } elseif ($esProfesor && $reserva->profesor && $reserva->profesor->areaAcademica) {
+                    $ua = $reserva->profesor->areaAcademica->nombre_area_academica;
                 }
 
                 if ($ua === 'N/A' && isset($reserva->espacio->piso->facultad->nombre_facultad)) {

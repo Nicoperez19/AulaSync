@@ -166,12 +166,21 @@ class ClaseNoRealizada extends Model
      */
     public static function limpiarRegistrosIncorrectos($idEspacio, $fechaReserva, $horaEntrada = null, $runProfesor = null)
     {
-        // Buscar TODOS los registros de hoy para este espacio (sin importar estado)
-        // Si el profesor llegó tarde, la clase SÍ se realizó, así que todos los registros
-        // relacionados deben eliminarse de clases_no_realizadas
-        $registros = static::where('id_espacio', $idEspacio)
-            ->where('fecha_clase', $fechaReserva)
-            ->get();
+        // Buscar registros de hoy para este espacio.
+        // Si se especifica el profesor, solo limpiar los registros de ESE profesor
+        // para no borrar las clases no realizadas de otros profesores en la misma sala.
+        $query = static::where('id_espacio', $idEspacio)
+            ->where('fecha_clase', $fechaReserva);
+
+        if ($runProfesor) {
+            $runLimpio = preg_replace('/[^0-9kK]/', '', $runProfesor);
+            $query->where(function($q) use ($runProfesor, $runLimpio) {
+                $q->where('run_profesor', $runProfesor)
+                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+            });
+        }
+
+        $registros = $query->get();
 
         $contadorMovidos = 0;
 

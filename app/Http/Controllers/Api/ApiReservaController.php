@@ -51,6 +51,7 @@ class ApiReservaController extends Controller
 
             $run = $usuario->run;
             $runLimpio = preg_replace('/[^0-9kK]/', '', $run);
+            $ahoraMas60 = $ahora->copy()->addMinutes(60)->format('H:i:s');
 
             $tieneClaseProgramada = DB::connection('tenant')
                 ->table('planificacion_asignaturas as pa')
@@ -63,9 +64,46 @@ class ApiReservaController extends Controller
                       ->orWhereRaw("REPLACE(REPLACE(REPLACE(h.run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                 })
                 ->whereIn('m.dia', $diasPosibles)
-                ->where('m.hora_inicio', '<=', $ahora->format('H:i:s'))
+                ->where('m.hora_inicio', '<=', $ahoraMas60)
                 ->where('m.hora_termino', '>=', $ahora->format('H:i:s'))
                 ->exists();
+
+            if (!$tieneClaseProgramada) {
+                $tieneClaseProgramada = DB::connection('tenant')
+                    ->table('planificaciones_profesores_colaboradores as ppc')
+                    ->join('profesores_colaboradores as pc', 'ppc.id_profesor_colaborador', '=', 'pc.id')
+                    ->join('modulos as m', 'ppc.id_modulo', '=', 'm.id_modulo')
+                    ->where('ppc.id_espacio', $espacioId)
+                    ->where(function ($q) use ($run, $runLimpio) {
+                        $q->where('pc.run_profesor_colaborador', $run)
+                          ->orWhere('pc.run_profesor_colaborador', $runLimpio)
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                    })
+                    ->where('pc.estado', 'activo')
+                    ->whereIn('m.dia', $diasPosibles)
+                    ->where('m.hora_inicio', '<=', $ahoraMas60)
+                    ->where('m.hora_termino', '>=', $ahora->format('H:i:s'))
+                    ->exists();
+            }
+
+            if (!$tieneClaseProgramada) {
+                $tieneClaseProgramada = DB::connection('tenant')
+                    ->table('planificacion_asignaturas as pa')
+                    ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
+                    ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
+                    ->join('profesores_colaboradores as pc', 'a.id_asignatura', '=', 'pc.id_asignatura')
+                    ->where('pa.id_espacio', $espacioId)
+                    ->where(function ($q) use ($run, $runLimpio) {
+                        $q->where('pc.run_profesor_colaborador', $run)
+                          ->orWhere('pc.run_profesor_colaborador', $runLimpio)
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                    })
+                    ->where('pc.estado', 'activo')
+                    ->whereIn('m.dia', $diasPosibles)
+                    ->where('m.hora_inicio', '<=', $ahoraMas60)
+                    ->where('m.hora_termino', '>=', $ahora->format('H:i:s'))
+                    ->exists();
+            }
 
             return response()->json([
                 'estado' => 'disponible',
@@ -102,6 +140,10 @@ class ApiReservaController extends Controller
             $espacio = Espacio::findOrFail($request->espacio_id);
 
             // 1. Verificar si tiene clase programada (antes del check de ocupado para permitir el cierre forzado)
+            // Ventana: permite que el profesor llegue hasta 60 min antes del inicio del módulo
+            // y que el módulo aún no haya terminado.
+            $horaMaximaInicio = $horaActual->copy()->addMinutes(60)->toTimeString();
+
             $tieneClase = DB::connection('tenant')
                 ->table('planificacion_asignaturas as pa')
                 ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
@@ -115,15 +157,62 @@ class ApiReservaController extends Controller
                       ->orWhereRaw("REPLACE(REPLACE(REPLACE(h.run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                 })
                 ->whereIn('m.dia', $diasPosibles)
-                ->where(function ($query) use ($horaActual, $horaActualStr) {
-                    $tiempoMas20 = $horaActual->copy()->addMinutes(20)->toTimeString();
-                    $tiempoMas40 = $horaActual->copy()->addMinutes(40)->toTimeString();
-                    
-                    $query->whereRaw("m.hora_inicio <= CASE WHEN m.hora_inicio LIKE '08:10%' THEN ? ELSE ? END", [$tiempoMas40, $tiempoMas20])
-                          ->where('m.hora_termino', '>=', $horaActualStr);
-                })
+                ->where('m.hora_inicio', '<=', $horaMaximaInicio)
+                ->where('m.hora_termino', '>=', $horaActualStr)
+                ->orderBy('m.hora_inicio', 'asc')
                 ->select('a.id_asignatura', 'a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino')
                 ->first();
+
+            // 1.b. Si no se encontró en planificación regular, verificar si es Profesor Colaborador en este espacio
+            if (!$tieneClase) {
+                $tieneClase = DB::connection('tenant')
+                    ->table('planificaciones_profesores_colaboradores as ppc')
+                    ->join('profesores_colaboradores as pc', 'ppc.id_profesor_colaborador', '=', 'pc.id')
+                    ->join('modulos as m', 'ppc.id_modulo', '=', 'm.id_modulo')
+                    ->leftJoin('asignaturas as a', 'pc.id_asignatura', '=', 'a.id_asignatura')
+                    ->where('ppc.id_espacio', $request->espacio_id)
+                    ->where(function ($q) use ($runNormalizado, $request, $runLimpio) {
+                        $q->where('pc.run_profesor_colaborador', $runNormalizado)
+                          ->orWhere('pc.run_profesor_colaborador', $request->run)
+                          ->orWhere('pc.run_profesor_colaborador', $runLimpio)
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                    })
+                    ->where('pc.estado', 'activo')
+                    ->whereIn('m.dia', $diasPosibles)
+                    ->where('m.hora_inicio', '<=', $horaMaximaInicio)
+                    ->where('m.hora_termino', '>=', $horaActualStr)
+                    ->orderBy('m.hora_inicio', 'asc')
+                    ->select(
+                        DB::raw('COALESCE(a.id_asignatura, pc.id_asignatura) as id_asignatura'),
+                        DB::raw('COALESCE(a.nombre_asignatura, pc.nombre_asignatura_temporal, "Clase Colaborador") as nombre_asignatura'),
+                        'm.hora_inicio',
+                        'm.hora_termino'
+                    )
+                    ->first();
+            }
+
+            // 1.c. Si aún no se encuentra, verificar si está registrado como colaborador de la asignatura dictada en este espacio
+            if (!$tieneClase) {
+                $tieneClase = DB::connection('tenant')
+                    ->table('planificacion_asignaturas as pa')
+                    ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
+                    ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
+                    ->join('profesores_colaboradores as pc', 'a.id_asignatura', '=', 'pc.id_asignatura')
+                    ->where('pa.id_espacio', $request->espacio_id)
+                    ->where(function ($q) use ($runNormalizado, $request, $runLimpio) {
+                        $q->where('pc.run_profesor_colaborador', $runNormalizado)
+                          ->orWhere('pc.run_profesor_colaborador', $request->run)
+                          ->orWhere('pc.run_profesor_colaborador', $runLimpio)
+                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                    })
+                    ->where('pc.estado', 'activo')
+                    ->whereIn('m.dia', $diasPosibles)
+                    ->where('m.hora_inicio', '<=', $horaMaximaInicio)
+                    ->where('m.hora_termino', '>=', $horaActualStr)
+                    ->orderBy('m.hora_inicio', 'asc')
+                    ->select('a.id_asignatura', 'a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino')
+                    ->first();
+            }
 
             $forzado = false;
 

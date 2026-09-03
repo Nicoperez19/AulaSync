@@ -251,6 +251,11 @@ class DataLoadController extends Controller
             // No se crean espacios durante la importación, solo se usan los existentes
             Log::info('✓ Espacios existentes en BD del tenant: ' . Espacio::count() . ' (no se crearán nuevos)');
 
+            $prefijoTenantFiltro = '';
+            if (isset($tenant) && $tenant && $tenant->prefijo_espacios) {
+                $prefijoTenantFiltro = strtoupper(trim($tenant->prefijo_espacios));
+            }
+
             // Encabezados de la primera fila
             $headers = isset($rows[0]) ? array_map(function($h) {
                 return strtoupper(trim(preg_replace('/[^A-Za-z0-9_]/', '', (string)$h)));
@@ -417,15 +422,38 @@ class DataLoadController extends Controller
                         $processedUsersCount++;
                     }
 
-                    // Los profesores colaboradores NO generan asignatura/horario/planificación propia.
-                    // Se registran en la tabla profesores_colaboradores vinculados a la asignatura.
+                    // Los profesores colaboradores se registran vinculados a la asignatura y con su planificación de módulos/espacios
                     if (stripos($tipoProfesor, 'colaborador') !== false) {
                         $idAsignaturaColaborador = isset($row[$colMap['id_asignatura']]) ? trim($row[$colMap['id_asignatura']]) : '';
                         $nombreAsignaturaColaborador = isset($row[$colMap['nombre_asignatura']]) ? preg_replace('/^[a-z]{2}:\s*/i', '', trim($row[$colMap['nombre_asignatura']])) : '';
                         $inscritosColaborador = isset($row[$colMap['inscritos']]) ? (int) $row[$colMap['inscritos']] : 0;
+                        $codigoAsignaturaColab = isset($row[$colMap['codigo_asignatura']]) ? trim($row[$colMap['codigo_asignatura']]) : '';
+                        $numeroSeccionColab = isset($row[$colMap['seccion']]) ? trim($row[$colMap['seccion']]) : '1';
+
+                        // 1. Asegurar que la asignatura exista con su carrera vinculada
+                        if (!empty($idAsignaturaColaborador)) {
+                            $asigExistente = Asignatura::withoutGlobalScope('tenant')->where('id_asignatura', $idAsignaturaColaborador)->first();
+                            if (!$asigExistente) {
+                                Asignatura::create([
+                                    'id_asignatura'     => $idAsignaturaColaborador,
+                                    'codigo_asignatura' => $codigoAsignaturaColab,
+                                    'nombre_asignatura' => $nombreAsignaturaColaborador,
+                                    'seccion'           => $numeroSeccionColab,
+                                    'run_profesor'      => $run,
+                                    'id_carrera'        => !empty($idCarrera) ? $idCarrera : null
+                                ]);
+                            } elseif (empty($asigExistente->id_carrera) && !empty($idCarrera)) {
+                                $asigExistente->update(['id_carrera' => $idCarrera]);
+                            }
+                        }
+
+                        // 2. Asegurar que el profesor tenga su carrera asignada si no la tenía
+                        if ($existingProfesor && empty($existingProfesor->id_carrera) && !empty($idCarrera)) {
+                            $existingProfesor->update(['id_carrera' => $idCarrera]);
+                        }
 
                         try {
-                            ProfesorColaborador::updateOrCreate(
+                            $colaboradorModel = ProfesorColaborador::updateOrCreate(
                                 [
                                     'run_profesor_colaborador' => $run,
                                     'id_asignatura'           => !empty($idAsignaturaColaborador) ? $idAsignaturaColaborador : null,
@@ -438,6 +466,46 @@ class DataLoadController extends Controller
                                     'estado'                    => 'activo',
                                 ]
                             );
+
+                            // 3. Registrar la planificación del colaborador en el espacio correspondiente
+                            $horarioProfesorColab = isset($row[$colMap['horario']]) ? trim($row[$colMap['horario']]) : '';
+                            if (!empty($horarioProfesorColab)) {
+                                $horarioProfesorColab = preg_replace('/[\x00-\x1F\x7F]/u', '', $horarioProfesorColab);
+                                $horarioNormalizadoColab = preg_replace('/(?<!-)\s*([a-z]{2}:\s*)/i', ' - $1', $horarioProfesorColab);
+
+                                preg_match_all('/([A-Za-z]{2})\s*\.\s*(\d{1,2})(?:\s*\/G:(\d+))?\s*\(([^)]+)\)/', $horarioNormalizadoColab, $matchesColabList, PREG_SET_ORDER);
+
+                                foreach ($matchesColabList as $mColab) {
+                                    $diaC = strtoupper($mColab[1]);
+                                    $moduloC = $mColab[2];
+                                    $espacioNombreExcelC = trim($mColab[4]);
+
+                                    $espacioModelC = Espacio::withoutGlobalScope('tenant')
+                                        ->where('id_espacio', $espacioNombreExcelC)
+                                        ->first();
+
+                                    if (!$espacioModelC && $prefijoTenantFiltro) {
+                                        $espacioModelC = Espacio::withoutGlobalScope('tenant')
+                                            ->where('id_espacio', $prefijoTenantFiltro . '-' . $espacioNombreExcelC)
+                                            ->first();
+                                    }
+
+                                    if (!$espacioModelC) {
+                                        $espacioModelC = Espacio::withoutGlobalScope('tenant')
+                                            ->where('nombre_espacio', $espacioNombreExcelC)
+                                            ->first();
+                                    }
+
+                                    if ($espacioModelC) {
+                                        $idModuloC = $diaC . '.' . $moduloC;
+                                        \App\Models\PlanificacionProfesorColaborador::firstOrCreate([
+                                            'id_profesor_colaborador' => $colaboradorModel->id,
+                                            'id_modulo'               => $idModuloC,
+                                            'id_espacio'              => $espacioModelC->id_espacio,
+                                        ]);
+                                    }
+                                }
+                            }
                         } catch (\Exception $e) {
                             Log::warning("Fila {$index}: no se pudo registrar colaborador RUN={$run}: " . $e->getMessage());
                         }
