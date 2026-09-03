@@ -139,15 +139,17 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
         // y durante el bucle se resolverían erróneamente como 'No Registradas'.
         // El filtro de estado se aplica correctamente a nivel de colección dentro del bucle.
 
-        $this->clasesNoRealizadasCache = $clasesNoRealizadasQuery->get()
-            ->mapWithKeys(function($clase) {
-                $key = Carbon::parse($clase->fecha_clase)->format('Y-m-d') . '_' . 
-                       $clase->id_espacio . '_' . 
-                       $clase->id_modulo . '_' . 
-                       $this->normalizeRun($clase->run_profesor);
-                return [$key => $clase];
-            })
-            ->all();
+        $this->clasesNoRealizadasCache = [];
+        foreach ($clasesNoRealizadasQuery->get() as $clase) {
+            $fecha = Carbon::parse($clase->fecha_clase)->format('Y-m-d');
+            $runNorm = $this->normalizeRun($clase->run_profesor);
+            $modulos = explode(',', $clase->id_modulo);
+            foreach ($modulos as $mod) {
+                $modTrim = trim($mod);
+                $key = "{$fecha}_{$clase->id_espacio}_{$modTrim}_{$runNorm}";
+                $this->clasesNoRealizadasCache[$key] = $clase;
+            }
+        }
 
         // Pre-cargar reservas en caché (solo campos necesarios)
         $this->reservasCache = Reserva::selectRaw('
@@ -347,6 +349,12 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                                             $reserva = $r;
                                             break;
                                         }
+
+                                        // Caso 3: Reserva multi-módulo que empezó antes en el día para este profesor/sala
+                                        if (($r->modulos ?? 1) > 1 && $horaAcceso <= $horaFinModulo) {
+                                            $reserva = $r;
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -498,6 +506,17 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                 if ($horaSalidaBloque !== null) {
                     $horaSalidaReal = Carbon::parse($horaSalidaBloque);
                     $posicionN = 0;
+                    $totalModulosBloque = count($bloqueItems);
+
+                    // Calcular cuántos módulos completó efectivamente el docente
+                    $modulosCompletados = 0;
+                    foreach ($bloqueItems as $bItem) {
+                        $horarioCanon = ModulosHelper::getHorarioModulo($bItem['dia'], (int) $bItem['modulo']);
+                        $finModulo = Carbon::parse($horarioCanon ? $horarioCanon['fin'] : $bItem['hora_fin']);
+                        if ($horaSalidaReal->gte($finModulo->subMinutes(10))) {
+                            $modulosCompletados++;
+                        }
+                    }
 
                     $itemsActualizados = collect();
                     foreach ($bloqueItems as $item) {
@@ -512,18 +531,20 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
 
                             if ($horaSalidaReal->lt($horaMinimaSalida)) {
                                 // Si la salida se registró en los primeros minutos de la clase (dentro del primer módulo),
-                                // corresponde a un doble escaneo accidental en el tótem, no a un retiro anticipado real de los módulos posteriores.
+                                // corresponde a un doble escaneo accidental en el tótem, no a un retiro anticipado real.
                                 $horaPrimerModulo = Carbon::parse($bloqueItems->first()['hora_inicio'] ?? $horaSalidaBloque);
                                 $minutosDesdeInicio = $horaPrimerModulo->diffInMinutes($horaSalidaReal);
 
                                 if ($minutosDesdeInicio > 40) {
                                     $minutosAntes = $horaSalidaReal->diffInMinutes($horaMinimaSalida);
                                     if ($minutosAntes >= 5) {
-                                        $item['estado']        = 'No Registrada';
-                                        $item['motivo']        = 'Retiro anticipado del docente';
-                                        $item['observaciones'] = "El docente se retiró {$minutosAntes} min antes del mínimo requerido para el módulo {$posicionN}";
-                                        $item['hora_entrada']  = null;
-                                        $item['hora_salida']   = null;
+                                        // La clase se mantiene como Realizada porque el docente asistió al bloque,
+                                        // pero se añade la observación del retiro anticipado y módulos completados.
+                                        $item['estado'] = 'Realizada';
+                                        $obsRetiro = "Retiro anticipado: Se retiró {$minutosAntes} min antes del mínimo (completó {$modulosCompletados} de {$totalModulosBloque} módulos)";
+                                        $item['observaciones'] = !empty($item['observaciones']) 
+                                            ? $item['observaciones'] . " | " . $obsRetiro 
+                                            : $obsRetiro;
                                     }
                                 }
                             }
