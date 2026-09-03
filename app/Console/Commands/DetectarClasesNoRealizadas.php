@@ -273,6 +273,8 @@ class DetectarClasesNoRealizadas extends Command
                 $runLimpio = preg_replace('/[^0-9]/', '', $runLimpio);
 
                 // Verificar si el profesor tiene reserva activa en el espacio esperado
+                // Priorizar reservas activas sobre finalizadas (por si hubo doble escaneo)
+                // y dentro del mismo estado, la más reciente.
                 $reserva = Reserva::where('fecha_reserva', $fechaActual)
                     ->where('id_espacio', $primerModulo->id_espacio)
                     ->where(function($q) use ($runProfesor, $runLimpio) {
@@ -285,6 +287,8 @@ class DetectarClasesNoRealizadas extends Command
                     })
                     ->whereIn('estado', ['activa', 'finalizada'])
                     ->whereNotNull('hora')
+                    ->orderByRaw("CASE WHEN estado = 'activa' THEN 0 ELSE 1 END")
+                    ->orderByDesc('id_reserva')
                     ->first();
 
                 if ($reserva) {

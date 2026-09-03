@@ -385,7 +385,9 @@ class ProfesorController extends Controller
             $reserva->id_espacio = $espacio->id_espacio;
             $reserva->id_asignatura = $programacion->id_asignatura;
             $reserva->fecha_reserva = $fechaActual;
-            $reserva->hora = $programacion->modulo->hora_inicio ?? null;
+            // ✓ Hora real del escaneo (no la hora programada del módulo)
+            $reserva->hora = now()->format('H:i:s');
+            // ✓ Fin del último módulo consecutivo (para auto-finalización correcta)
             $reserva->hora_salida = $moduloFinalObj->hora_termino ?? null;
             $reserva->modulo_inicio = $numModuloActual;
             $reserva->modulo_fin = $moduloFin;

@@ -1080,22 +1080,45 @@ class PlanoDigitalController extends Controller
 
             // Actualizar la reserva activa del usuario: establecer hora_salida y cambiar estado a finalizada
             if ($reservaActiva) {
-                $reservaActiva->hora_salida = now()->format('H:i:s');
-                $reservaActiva->estado = 'finalizada';
-                $reservaActiva->clase_finalizada_anticipadamente = true;
+                $horaActualSalida = now()->format('H:i:s');
 
-                // Si es una desocupación forzosa, agregar información adicional
-                if ($tipoDesocupacion === 'forzosa') {
-                    $reservaActiva->observaciones = ($reservaActiva->observaciones ?? '')
-                        . "; DESOCUPACIÓN FORZOSA por administrador RUN: {$runAdministrador} el " . now()->format('Y-m-d H:i:s');
+                // Si estamos en medio de un bloque multi-módulo (y no es forzosa),
+                // NO sobreescribir hora_salida programada para no invalidar módulos siguientes.
+                // Registrar la salida real en observaciones y marcar anticipadamente.
+                $esSalidaEnBloqueMulti = $devolucionPrimerModulo
+                    && $tipoDesocupacion !== 'forzosa'
+                    && !empty($reservaActiva->hora_salida)
+                    && $horaActualSalida < $reservaActiva->hora_salida;
+
+                if ($esSalidaEnBloqueMulti) {
+                    // Preservar hora_salida programada: la evaluación de retiro anticipado
+                    // se hará al comparar observaciones vs planificación real del profesor.
+                    $reservaActiva->clase_finalizada_anticipadamente = true;
+                    $reservaActiva->observaciones = trim(
+                        ($reservaActiva->observaciones ?? '') .
+                        "\nSalida anticipada registrada a las {$horaActualSalida} (bloque multi-módulo, hora_salida programada conservada)"
+                    );
+                } else {
+                    // Fuera del bloque o desocupación forzosa: actualizar hora_salida normalmente
+                    $reservaActiva->hora_salida = $horaActualSalida;
+                    $reservaActiva->clase_finalizada_anticipadamente = true;
+
+                    // Si es una desocupación forzosa, agregar información adicional
+                    if ($tipoDesocupacion === 'forzosa') {
+                        $reservaActiva->observaciones = ($reservaActiva->observaciones ?? '')
+                            . "; DESOCUPACIÓN FORZOSA por administrador RUN: {$runAdministrador} el " . now()->format('Y-m-d H:i:s');
+                    }
+
+                    $reservaActiva->observaciones = trim(($reservaActiva->observaciones ?? '') . "\nFinalizada por el usuario a las " . $horaActualSalida);
                 }
 
-                $reservaActiva->observaciones = trim(($reservaActiva->observaciones ?? '') . "\nFinalizada por el usuario a las " . now()->format('H:i:s'));
+                $reservaActiva->estado = 'finalizada';
                 $reservaActiva->save();
 
                 // Enviar correo de confirmación de devolución
                 $this->enviarCorreoDevolucion($reservaActiva);
             }
+
 
             // Buscar si hay reservas finalizadas automáticamente que el profesor está devolviendo tarde
             $reservaAutoFinalizada = Reserva::where(function ($query) use ($runUsuario) {
