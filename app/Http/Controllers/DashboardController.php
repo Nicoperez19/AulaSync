@@ -369,14 +369,18 @@ class DashboardController extends Controller
             }
         }
 
-        // 2. Pre-cargar clases no realizadas en mapa rápido
-        $clasesNoRealizadasCache = ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicioYmd, $fechaFinYmd])
-            ->get()
-            ->keyBy(function ($clase) {
-                $fecha = Carbon::parse($clase->fecha_clase)->format('Y-m-d');
-                $runNorm = $this->normalizeRun($clase->run_profesor);
-                return "{$fecha}_{$clase->id_espacio}_{$clase->id_modulo}_{$runNorm}";
-            });
+        // 2. Pre-cargar clases no realizadas en mapa por módulo individual
+        $clasesNoRealizadas = ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicioYmd, $fechaFinYmd])->get();
+        $clasesNoRealizadasCache = [];
+        foreach ($clasesNoRealizadas as $cnr) {
+            $fecha = Carbon::parse($cnr->fecha_clase)->format('Y-m-d');
+            $modulos = explode(',', $cnr->id_modulo);
+            foreach ($modulos as $mod) {
+                $modTrim = trim($mod);
+                $clasesNoRealizadasCache["{$fecha}_{$cnr->id_espacio}_{$modTrim}"] = $cnr;
+                $clasesNoRealizadasCache["{$fecha}_{$cnr->id_asignatura}_{$modTrim}"] = $cnr;
+            }
+        }
 
         // 3. Pre-cargar reservas efectivas de clase en el rango
         $reservasCache = Reserva::whereBetween('fecha_reserva', [$fechaInicioYmd, $fechaFinYmd])
@@ -435,27 +439,44 @@ class DashboardController extends Controller
                 continue;
             }
 
-            foreach ($planificaciones as $plan) {
-                if (!$plan->modulo || !$plan->horario) {
+            // Filtrar planificaciones del día
+            $planificacionesDelDia = $planificaciones->filter(function ($plan) use ($diaNombre) {
+                return ModulosHelper::normalizarDia($plan->modulo->dia) === $diaNombre;
+            });
+
+            // Agrupar por Espacio y Asignatura (1 clase = 1 bloque docente consecutivo)
+            $clasesAgrupadas = $planificacionesDelDia->groupBy(function ($plan) {
+                return $plan->id_espacio . '_' . $plan->id_asignatura;
+            });
+
+            foreach ($clasesAgrupadas as $grupoKey => $modulosClase) {
+                $primerModulo = $modulosClase->sortBy(fn($p) => $p->modulo->hora_inicio)->first();
+                $ultimoModulo = $modulosClase->sortBy(fn($p) => $p->modulo->hora_termino)->last();
+
+                if (!$primerModulo || !$primerModulo->modulo || !$ultimoModulo || !$ultimoModulo->modulo) {
                     continue;
                 }
 
-                $diaModuloNorm = ModulosHelper::normalizarDia($plan->modulo->dia);
-                if ($diaModuloNorm !== $diaNombre) {
-                    continue;
+                $horaInicioClase = Carbon::parse($primerModulo->modulo->hora_inicio);
+                $horaFinClase    = Carbon::parse($ultimoModulo->modulo->hora_termino);
+                $fechaHoraFinClase = $fechaObj->copy()->setTimeFromTimeString($horaFinClase->format('H:i:s'));
+
+                // 1. Verificar si esta clase está oficialmente registrada en ClaseNoRealizada
+                $registroCNR = null;
+                foreach ($modulosClase as $mItem) {
+                    $keyEspacio = "{$fechaYmd}_{$mItem->id_espacio}_{$mItem->id_modulo}";
+                    $keyAsig    = "{$fechaYmd}_{$mItem->id_asignatura}_{$mItem->id_modulo}";
+                    if (isset($clasesNoRealizadasCache[$keyEspacio])) {
+                        $registroCNR = $clasesNoRealizadasCache[$keyEspacio];
+                        break;
+                    }
+                    if (isset($clasesNoRealizadasCache[$keyAsig])) {
+                        $registroCNR = $clasesNoRealizadasCache[$keyAsig];
+                        break;
+                    }
                 }
 
-                $runProfesor = $this->normalizeRun($plan->horario->run_profesor ?? $plan->asignatura->run_profesor ?? null);
-                $claveClase = "{$fechaYmd}_{$plan->id_espacio}_{$plan->id_modulo}_{$runProfesor}";
-                $claveReserva = "{$fechaYmd}_{$plan->id_espacio}";
-
-                $horaFin = Carbon::parse($plan->modulo->hora_termino);
-                $horaInicio = Carbon::parse($plan->modulo->hora_inicio);
-                $fechaHoraFinClase = $fechaObj->copy()->setTimeFromTimeString($horaFin->format('H:i:s'));
-
-                // Verificar si hay registro formal en ClaseNoRealizada
-                if (isset($clasesNoRealizadasCache[$claveClase])) {
-                    $registroCNR = $clasesNoRealizadasCache[$claveClase];
+                if ($registroCNR) {
                     if ($registroCNR->estado === 'recuperada') {
                         $recuperadas++;
                     } elseif ($registroCNR->estado === 'justificado') {
@@ -466,49 +487,31 @@ class DashboardController extends Controller
                     continue;
                 }
 
-                // Verificar si hay reserva/asistencia en el espacio
+                // 2. Verificar si hubo reserva / escaneo en el espacio para este bloque
+                $claveReserva = "{$fechaYmd}_{$primerModulo->id_espacio}";
                 $reservaEncontrada = null;
-                if (isset($reservasCache[$claveReserva])) {
-                    $reservasDelDia = $reservasCache[$claveReserva]->filter(function ($r) use ($runProfesor) {
-                        $rProf = $this->normalizeRun($r->run_profesor);
-                        $rSoli = $this->normalizeRun($r->run_solicitante);
-                        return (!empty($rProf) && $rProf === $runProfesor) || (!empty($rSoli) && $rSoli === $runProfesor);
-                    });
 
-                    if ($reservasDelDia->isNotEmpty()) {
-                        // 1. Coincidencia por asignatura
+                if (isset($reservasCache[$claveReserva])) {
+                    $reservasDelDia = $reservasCache[$claveReserva];
+
+                    // Coincidencia por asignatura
+                    foreach ($reservasDelDia as $r) {
+                        if ($r->id_asignatura == $primerModulo->id_asignatura) {
+                            $reservaEncontrada = $r;
+                            break;
+                        }
+                    }
+
+                    // Coincidencia por horario
+                    if (!$reservaEncontrada) {
+                        $minutosMargen = ModulosHelper::getMargenIngresoMinutos($primerModulo->id_modulo);
+                        $margenInicio = $horaInicioClase->copy()->subMinutes($minutosMargen);
+
                         foreach ($reservasDelDia as $r) {
-                            if ($r->id_asignatura == $plan->id_asignatura) {
+                            $horaAcceso = Carbon::parse($r->hora);
+                            if ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFinClase) {
                                 $reservaEncontrada = $r;
                                 break;
-                            }
-                        }
-
-                        // 2. Coincidencia por horario / sesión continua (módulos supeditados)
-                        if (!$reservaEncontrada) {
-                            $minutosMargen = ModulosHelper::getMargenIngresoMinutos($plan->id_modulo);
-                            $margenInicio = $horaInicio->copy()->subMinutes($minutosMargen);
-                            foreach ($reservasDelDia as $r) {
-                                $horaAcceso = Carbon::parse($r->hora);
-                                $horaSalida = $r->hora_salida ? Carbon::parse($r->hora_salida) : null;
-
-                                // Caso 1: Ingreso durante el módulo (incluyendo margen previo)
-                                if ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFin) {
-                                    $reservaEncontrada = $r;
-                                    break;
-                                }
-
-                                // Caso 2: Ingreso antes del módulo pero la reserva cubre el horario (sesión continua)
-                                if ($horaAcceso < $margenInicio && (!$horaSalida || $horaSalida >= $horaInicio)) {
-                                    $reservaEncontrada = $r;
-                                    break;
-                                }
-
-                                // Caso 3: Reserva multi-módulo iniciada antes para este profesor en esta sala hoy
-                                if (($r->modulos ?? 1) > 1 && $horaAcceso <= $horaFin) {
-                                    $reservaEncontrada = $r;
-                                    break;
-                                }
                             }
                         }
                     }
@@ -517,12 +520,12 @@ class DashboardController extends Controller
                 if ($reservaEncontrada) {
                     $realizadas++;
                 } else {
-                    // Si ya pasó el horario de término de la clase
-                    if ($fechaHoraFinClase < $ahora) {
-                        $noRegistradas++;
-                    } else {
-                        // Es una clase programada que aún no ocurre
+                    // Si aún no termina el horario de la clase, queda pendiente
+                    if ($fechaHoraFinClase >= $ahora) {
                         $futurasPendientes++;
+                    } else {
+                        // Concluyó y no tiene inasistencia oficial registrada en Control de Clases
+                        $realizadas++;
                     }
                 }
             }
