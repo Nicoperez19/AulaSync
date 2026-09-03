@@ -399,7 +399,7 @@ class DashboardController extends Controller
         $planificaciones = Planificacion_Asignatura::with([
                 'modulo:id_modulo,dia,hora_inicio,hora_termino',
                 'horario:id_horario,run_profesor,periodo',
-                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura'
+                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,run_profesor'
             ])
             ->whereHas('modulo')
             ->whereHas('horario')
@@ -445,7 +445,7 @@ class DashboardController extends Controller
                     continue;
                 }
 
-                $runProfesor = $this->normalizeRun($plan->horario->run_profesor);
+                $runProfesor = $this->normalizeRun($plan->horario->run_profesor ?? $plan->asignatura->run_profesor ?? null);
                 $claveClase = "{$fechaYmd}_{$plan->id_espacio}_{$plan->id_modulo}_{$runProfesor}";
                 $claveReserva = "{$fechaYmd}_{$plan->id_espacio}";
 
@@ -476,7 +476,7 @@ class DashboardController extends Controller
                     });
 
                     if ($reservasDelDia->isNotEmpty()) {
-                        // Coincidencia por asignatura
+                        // 1. Coincidencia por asignatura
                         foreach ($reservasDelDia as $r) {
                             if ($r->id_asignatura == $plan->id_asignatura) {
                                 $reservaEncontrada = $r;
@@ -484,13 +484,28 @@ class DashboardController extends Controller
                             }
                         }
 
-                        // Coincidencia por horario
+                        // 2. Coincidencia por horario / sesión continua (módulos supeditados)
                         if (!$reservaEncontrada) {
                             $minutosMargen = ModulosHelper::getMargenIngresoMinutos($plan->id_modulo);
                             $margenInicio = $horaInicio->copy()->subMinutes($minutosMargen);
                             foreach ($reservasDelDia as $r) {
                                 $horaAcceso = Carbon::parse($r->hora);
+                                $horaSalida = $r->hora_salida ? Carbon::parse($r->hora_salida) : null;
+
+                                // Caso 1: Ingreso durante el módulo (incluyendo margen previo)
                                 if ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFin) {
+                                    $reservaEncontrada = $r;
+                                    break;
+                                }
+
+                                // Caso 2: Ingreso antes del módulo pero la reserva cubre el horario (sesión continua)
+                                if ($horaAcceso < $margenInicio && (!$horaSalida || $horaSalida >= $horaInicio)) {
+                                    $reservaEncontrada = $r;
+                                    break;
+                                }
+
+                                // Caso 3: Reserva multi-módulo iniciada antes para este profesor en esta sala hoy
+                                if (($r->modulos ?? 1) > 1 && $horaAcceso <= $horaFin) {
                                     $reservaEncontrada = $r;
                                     break;
                                 }

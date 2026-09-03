@@ -365,7 +365,11 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                                 $ingresoPrevio = ($horaInicioReserva < $margenInicio && 
                                                  (!$horaFinReserva || $horaFinReserva >= $horaInicioModulo));
                                 
-                                if ($ingresoDirecto || $ingresoPrevio) {
+                                // Caso 3: Módulo consecutivo supeditado al mismo bloque de clase iniciado por el profesor
+                                $mismoBloqueClase = ($reserva->id_asignatura == $planificacion->id_asignatura)
+                                    && ($horaInicioReserva <= $horaFinModulo);
+
+                                if ($ingresoDirecto || $ingresoPrevio || $mismoBloqueClase) {
                                     $estado = 'Realizada';
                                     $horaEntrada = $reserva->hora;
                                     $horaSalida = $reserva->hora_salida;
@@ -507,13 +511,20 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                             $horaMinimaSalida = Carbon::parse($horaFinCanonica)->subMinutes($toleranciaMinutos);
 
                             if ($horaSalidaReal->lt($horaMinimaSalida)) {
-                                $minutosAntes = $horaSalidaReal->diffInMinutes($horaMinimaSalida);
-                                if ($minutosAntes >= 5) {
-                                    $item['estado']        = 'No Registrada';
-                                    $item['motivo']        = 'Retiro anticipado del docente';
-                                    $item['observaciones'] = "El docente se retiró {$minutosAntes} min antes del mínimo requerido para el módulo {$posicionN}";
-                                    $item['hora_entrada']  = null;
-                                    $item['hora_salida']   = null;
+                                // Si la salida se registró en los primeros minutos de la clase (dentro del primer módulo),
+                                // corresponde a un doble escaneo accidental en el tótem, no a un retiro anticipado real de los módulos posteriores.
+                                $horaPrimerModulo = Carbon::parse($bloqueItems->first()['hora_inicio'] ?? $horaSalidaBloque);
+                                $minutosDesdeInicio = $horaPrimerModulo->diffInMinutes($horaSalidaReal);
+
+                                if ($minutosDesdeInicio > 40) {
+                                    $minutosAntes = $horaSalidaReal->diffInMinutes($horaMinimaSalida);
+                                    if ($minutosAntes >= 5) {
+                                        $item['estado']        = 'No Registrada';
+                                        $item['motivo']        = 'Retiro anticipado del docente';
+                                        $item['observaciones'] = "El docente se retiró {$minutosAntes} min antes del mínimo requerido para el módulo {$posicionN}";
+                                        $item['hora_entrada']  = null;
+                                        $item['hora_salida']   = null;
+                                    }
                                 }
                             }
                         }
