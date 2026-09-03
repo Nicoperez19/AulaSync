@@ -60,125 +60,131 @@ class ReconciliarReservasEspontaneas extends Command
             $clasesLimpiadas = 0;
 
             foreach ($reservas as $reserva) {
-                $run = $reserva->run_profesor;
-                $runLimpio = preg_replace('/[^0-9kK]/', '', $run);
-                $horaReserva = $reserva->hora;
-                $fechaReserva = $reserva->fecha_reserva;
+                try {
+                    $run = $reserva->run_profesor;
+                    if (!$run || !$reserva->hora || !$reserva->fecha_reserva) {
+                        continue;
+                    }
 
-                if (!$horaReserva) {
-                    continue;
-                }
+                    $runLimpio = preg_replace('/[^0-9kK]/', '', $run);
 
-                $diaSemana = Carbon::parse($fechaReserva)->format('l');
-                $diasMap = [
-                    'Monday' => 'Lunes', 'Tuesday' => 'Martes', 'Wednesday' => 'Miércoles',
-                    'Thursday' => 'Jueves', 'Friday' => 'Viernes', 'Saturday' => 'Sábado', 'Sunday' => 'Domingo'
-                ];
-                $diaEsp = $diasMap[$diaSemana] ?? $diaSemana;
-                $diaNorm = ModulosHelper::normalizarDia($diaEsp);
-                $diasPosibles = array_unique([strtolower($diaEsp), $diaNorm, 'miércoles', 'miercoles', 'sábado', 'sabado']);
+                    $fechaCarbon = Carbon::parse($reserva->fecha_reserva);
+                    $fechaStr = $fechaCarbon->format('Y-m-d');
+                    $horaStr = Carbon::parse($reserva->hora)->format('H:i:s');
 
-                $horaCarbon = Carbon::parse($fechaReserva . ' ' . $horaReserva);
-                $horaMaxInicio = $horaCarbon->copy()->addMinutes(60)->toTimeString();
+                    $diaSemana = $fechaCarbon->format('l');
+                    $diasMap = [
+                        'Monday' => 'Lunes', 'Tuesday' => 'Martes', 'Wednesday' => 'Miércoles',
+                        'Thursday' => 'Jueves', 'Friday' => 'Viernes', 'Saturday' => 'Sábado', 'Sunday' => 'Domingo'
+                    ];
+                    $diaEsp = $diasMap[$diaSemana] ?? $diaSemana;
+                    $diaNorm = ModulosHelper::normalizarDia($diaEsp);
+                    $diasPosibles = array_unique([strtolower($diaEsp), $diaNorm, 'miércoles', 'miercoles', 'sábado', 'sabado']);
 
-                // 1. Buscar en planificación regular del profesor
-                $clasePlanificada = DB::connection('tenant')
-                    ->table('planificacion_asignaturas as pa')
-                    ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
-                    ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
-                    ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
-                    ->where('pa.id_espacio', $reserva->id_espacio)
-                    ->where(function ($q) use ($run, $runLimpio) {
-                        $q->where('h.run_profesor', $run)
-                          ->orWhere('h.run_profesor', $runLimpio)
-                          ->orWhereRaw("REPLACE(REPLACE(REPLACE(h.run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
-                    })
-                    ->whereIn('m.dia', $diasPosibles)
-                    ->where('m.hora_inicio', '<=', $horaMaxInicio)
-                    ->where('m.hora_termino', '>=', $horaReserva)
-                    ->select('a.id_asignatura', 'a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino')
-                    ->orderBy('m.hora_inicio', 'asc')
-                    ->first();
+                    $horaCarbon = Carbon::parse($fechaStr . ' ' . $horaStr);
+                    $horaMaxInicio = $horaCarbon->copy()->addMinutes(60)->toTimeString();
 
-                // 2. Si no se encuentra, buscar en profesores colaboradores
-                if (!$clasePlanificada) {
-                    $clasePlanificada = DB::connection('tenant')
-                        ->table('planificaciones_profesores_colaboradores as ppc')
-                        ->join('profesores_colaboradores as pc', 'ppc.id_profesor_colaborador', '=', 'pc.id')
-                        ->join('modulos as m', 'ppc.id_modulo', '=', 'm.id_modulo')
-                        ->leftJoin('asignaturas as a', 'pc.id_asignatura', '=', 'a.id_asignatura')
-                        ->where('ppc.id_espacio', $reserva->id_espacio)
-                        ->where(function ($q) use ($run, $runLimpio) {
-                            $q->where('pc.run_profesor_colaborador', $run)
-                              ->orWhere('pc.run_profesor_colaborador', $runLimpio)
-                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
-                        })
-                        ->where('pc.estado', 'activo')
-                        ->whereIn('m.dia', $diasPosibles)
-                        ->where('m.hora_inicio', '<=', $horaMaxInicio)
-                        ->where('m.hora_termino', '>=', $horaReserva)
-                        ->select(
-                            DB::raw('COALESCE(a.id_asignatura, pc.id_asignatura) as id_asignatura'),
-                            DB::raw('COALESCE(a.nombre_asignatura, pc.nombre_asignatura_temporal, "Clase Colaborador") as nombre_asignatura'),
-                            'm.hora_inicio',
-                            'm.hora_termino'
-                        )
-                        ->orderBy('m.hora_inicio', 'asc')
-                        ->first();
-                }
-
-                // 3. Fallback adicional: verificar si es colaborador de la asignatura dictada en este espacio y horario
-                if (!$clasePlanificada) {
+                    // 1. Buscar en planificación regular del profesor
                     $clasePlanificada = DB::connection('tenant')
                         ->table('planificacion_asignaturas as pa')
+                        ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
                         ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                         ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
-                        ->join('profesores_colaboradores as pc', 'a.id_asignatura', '=', 'pc.id_asignatura')
                         ->where('pa.id_espacio', $reserva->id_espacio)
                         ->where(function ($q) use ($run, $runLimpio) {
-                            $q->where('pc.run_profesor_colaborador', $run)
-                              ->orWhere('pc.run_profesor_colaborador', $runLimpio)
-                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                            $q->where('h.run_profesor', $run)
+                              ->orWhere('h.run_profesor', $runLimpio)
+                              ->orWhereRaw("REPLACE(REPLACE(REPLACE(h.run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
                         })
-                        ->where('pc.estado', 'activo')
                         ->whereIn('m.dia', $diasPosibles)
                         ->where('m.hora_inicio', '<=', $horaMaxInicio)
-                        ->where('m.hora_termino', '>=', $horaReserva)
+                        ->where('m.hora_termino', '>=', $horaStr)
                         ->select('a.id_asignatura', 'a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino')
                         ->orderBy('m.hora_inicio', 'asc')
                         ->first();
-                }
 
-                if ($clasePlanificada && !empty($clasePlanificada->id_asignatura)) {
-                    $this->line("  ✓ Reconciliando Reserva {$reserva->id_reserva} (Fecha: {$fechaReserva}, Sala: {$reserva->id_espacio}) -> Asignatura: {$clasePlanificada->nombre_asignatura} ({$clasePlanificada->id_asignatura})");
-
-                    if (!$dryRun) {
-                        // Actualizar reserva
-                        $reserva->update([
-                            'tipo_reserva'  => 'clase',
-                            'id_asignatura' => $clasePlanificada->id_asignatura,
-                            'observaciones' => trim(($reserva->observaciones ?? '') . "\n[Reconciliado con clase programada: {$clasePlanificada->nombre_asignatura}]"),
-                        ]);
-
-                        // Actualizar asistencias de estudiantes que estaban sin asignatura
-                        $asistenciasAfectadas = Asistencia::withoutGlobalScopes()
-                            ->where('id_reserva', $reserva->id_reserva)
-                            ->whereNull('id_asignatura')
-                            ->update(['id_asignatura' => $clasePlanificada->id_asignatura]);
-
-                        $asistenciasActualizadas += $asistenciasAfectadas;
-
-                        // Limpiar registros incorrectos de clases no realizadas si se habían generado por error
-                        $limpiadas = ClaseNoRealizada::withoutGlobalScopes()
-                            ->where('id_espacio', $reserva->id_espacio)
-                            ->where('fecha_clase', $fechaReserva)
-                            ->where('id_asignatura', $clasePlanificada->id_asignatura)
-                            ->delete();
-
-                        $clasesLimpiadas += $limpiadas;
+                    // 2. Si no se encuentra, buscar en profesores colaboradores
+                    if (!$clasePlanificada) {
+                        $clasePlanificada = DB::connection('tenant')
+                            ->table('planificaciones_profesores_colaboradores as ppc')
+                            ->join('profesores_colaboradores as pc', 'ppc.id_profesor_colaborador', '=', 'pc.id')
+                            ->join('modulos as m', 'ppc.id_modulo', '=', 'm.id_modulo')
+                            ->leftJoin('asignaturas as a', 'pc.id_asignatura', '=', 'a.id_asignatura')
+                            ->where('ppc.id_espacio', $reserva->id_espacio)
+                            ->where(function ($q) use ($run, $runLimpio) {
+                                $q->where('pc.run_profesor_colaborador', $run)
+                                  ->orWhere('pc.run_profesor_colaborador', $runLimpio)
+                                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                            })
+                            ->where('pc.estado', 'activo')
+                            ->whereIn('m.dia', $diasPosibles)
+                            ->where('m.hora_inicio', '<=', $horaMaxInicio)
+                            ->where('m.hora_termino', '>=', $horaStr)
+                            ->select(
+                                DB::raw('COALESCE(a.id_asignatura, pc.id_asignatura) as id_asignatura'),
+                                DB::raw('COALESCE(a.nombre_asignatura, pc.nombre_asignatura_temporal, "Clase Colaborador") as nombre_asignatura'),
+                                'm.hora_inicio',
+                                'm.hora_termino'
+                            )
+                            ->orderBy('m.hora_inicio', 'asc')
+                            ->first();
                     }
 
-                    $reconciliadas++;
+                    // 3. Fallback adicional: verificar si es colaborador de la asignatura dictada en este espacio y horario
+                    if (!$clasePlanificada) {
+                        $clasePlanificada = DB::connection('tenant')
+                            ->table('planificacion_asignaturas as pa')
+                            ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
+                            ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
+                            ->join('profesores_colaboradores as pc', 'a.id_asignatura', '=', 'pc.id_asignatura')
+                            ->where('pa.id_espacio', $reserva->id_espacio)
+                            ->where(function ($q) use ($run, $runLimpio) {
+                                $q->where('pc.run_profesor_colaborador', $run)
+                                  ->orWhere('pc.run_profesor_colaborador', $runLimpio)
+                                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(pc.run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+                            })
+                            ->where('pc.estado', 'activo')
+                            ->whereIn('m.dia', $diasPosibles)
+                            ->where('m.hora_inicio', '<=', $horaMaxInicio)
+                            ->where('m.hora_termino', '>=', $horaStr)
+                            ->select('a.id_asignatura', 'a.nombre_asignatura', 'm.hora_inicio', 'm.hora_termino')
+                            ->orderBy('m.hora_inicio', 'asc')
+                            ->first();
+                    }
+
+                    if ($clasePlanificada && !empty($clasePlanificada->id_asignatura)) {
+                        $this->line("  ✓ Reconciliando Reserva {$reserva->id_reserva} (Fecha: {$fechaStr}, Sala: {$reserva->id_espacio}) -> Asignatura: {$clasePlanificada->nombre_asignatura} ({$clasePlanificada->id_asignatura})");
+
+                        if (!$dryRun) {
+                            // Actualizar reserva
+                            $reserva->update([
+                                'tipo_reserva'  => 'clase',
+                                'id_asignatura' => $clasePlanificada->id_asignatura,
+                                'observaciones' => trim(($reserva->observaciones ?? '') . "\n[Reconciliado con clase programada: {$clasePlanificada->nombre_asignatura}]"),
+                            ]);
+
+                            // Actualizar asistencias de estudiantes que estaban sin asignatura
+                            $asistenciasAfectadas = Asistencia::withoutGlobalScopes()
+                                ->where('id_reserva', $reserva->id_reserva)
+                                ->whereNull('id_asignatura')
+                                ->update(['id_asignatura' => $clasePlanificada->id_asignatura]);
+
+                            $asistenciasActualizadas += $asistenciasAfectadas;
+
+                            // Limpiar registros incorrectos de clases no realizadas si se habían generado por error
+                            $limpiadas = ClaseNoRealizada::withoutGlobalScopes()
+                                ->where('id_espacio', $reserva->id_espacio)
+                                ->where('fecha_clase', $fechaStr)
+                                ->where('id_asignatura', $clasePlanificada->id_asignatura)
+                                ->delete();
+
+                            $clasesLimpiadas += $limpiadas;
+                        }
+
+                        $reconciliadas++;
+                    }
+                } catch (\Exception $e) {
+                    $this->warn("  ⚠ Error al procesar reserva {$reserva->id_reserva}: " . $e->getMessage());
                 }
             }
 
