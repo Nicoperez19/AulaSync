@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\EspacioAliasHelper;
 use App\Models\Asignatura;
 use App\Models\Carrera;
 use App\Models\DataLoad;
@@ -479,6 +480,14 @@ class DataLoadController extends Controller
                                     $diaC = strtoupper($mColab[1]);
                                     $moduloC = $mColab[2];
                                     $espacioNombreExcelC = trim($mColab[4]);
+                                    $espacioNombreExcelC = EspacioAliasHelper::normalizar(
+                                        $espacioNombreExcelC,
+                                        $sedeActual ? $sedeActual->id_sede : ($prefijoTenantFiltro ?: null),
+                                        [
+                                            'carrera' => $carrera ? $carrera->nombre : '',
+                                            'asignatura' => $nombreAsignaturaColaborador,
+                                        ]
+                                    );
 
                                     $espacioModelC = Espacio::withoutGlobalScope('tenant')
                                         ->where('id_espacio', $espacioNombreExcelC)
@@ -643,6 +652,14 @@ class DataLoadController extends Controller
                                 $modulo = $matches[2];
                                 $grupo = !empty($matches[3]) ? $matches[3] : '1';
                                 $espacioNombreExcel = trim($matches[4]);
+                                $espacioNombreExcel = EspacioAliasHelper::normalizar(
+                                    $espacioNombreExcel,
+                                    $sedeActual ? $sedeActual->id_sede : ($prefijoTenantFiltro ?: null),
+                                    [
+                                        'carrera' => $carrera ? $carrera->nombre : '',
+                                        'asignatura' => $nombreAsignatura,
+                                    ]
+                                );
 
                                 $espacioNombreUpper = strtoupper($espacioNombreExcel);
 
