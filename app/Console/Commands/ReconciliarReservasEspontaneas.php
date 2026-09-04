@@ -44,21 +44,27 @@ class ReconciliarReservasEspontaneas extends Command
         }
 
         if (!$dryRun && !empty($backupData['tenants'])) {
-            $backupDir = storage_path('app/backups');
-            if (!File::exists($backupDir)) {
-                File::makeDirectory($backupDir, 0755, true);
-            }
-            $filename = 'reconciliacion_backup_' . Carbon::now()->format('Y-m-d_His') . '.json';
-            $fullPath = $backupDir . DIRECTORY_SEPARATOR . $filename;
-            File::put($fullPath, json_encode($backupData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            try {
+                $backupDir = storage_path('app/backups');
+                if (!File::exists($backupDir)) {
+                    @File::makeDirectory($backupDir, 0755, true);
+                }
+                $filename = 'reconciliacion_backup_' . Carbon::now()->format('Y-m-d_His') . '.json';
+                $fullPath = $backupDir . DIRECTORY_SEPARATOR . $filename;
+                @File::put($fullPath, json_encode($backupData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
-            $this->newLine();
-            $this->info("==================================================================");
-            $this->info("🛡  RESPALDO GENERADO AUTOMÁTICAMENTE:");
-            $this->info("   Archivo: {$fullPath}");
-            $this->info("   Si necesitas revertir estos cambios, ejecuta:");
-            $this->line("   <fg=yellow>php artisan reservas:revertir-reconciliacion</>");
-            $this->info("==================================================================");
+                $this->newLine();
+                $this->info("==================================================================");
+                $this->info("🛡  RESPALDO GENERADO AUTOMÁTICAMENTE:");
+                $this->info("   Archivo: {$fullPath}");
+                $this->info("   Si necesitas revertir estos cambios, ejecuta:");
+                $this->line("   <fg=yellow>php artisan reservas:revertir-reconciliacion</>");
+                $this->info("==================================================================");
+            } catch (\Throwable $e) {
+                // Omitir si hay problemas de permisos en storage de Linux
+                $this->newLine();
+                $this->warn("Nota: No se pudo escribir el archivo físico de respaldo por permisos de Linux en storage/ (omitido).");
+            }
         }
 
         $this->info("Proceso de reconciliación finalizado exitosamente.");

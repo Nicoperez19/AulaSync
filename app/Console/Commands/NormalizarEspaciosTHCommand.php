@@ -68,23 +68,29 @@ class NormalizarEspaciosTHCommand extends Command
         $this->info("\n3. Normalizando planificaciones de profesores colaboradores...");
         $this->normalizarPlanificacionesColaboradores($dryRun, $backup);
 
-        // Guardar archivo de respaldo si se aplicaron cambios
+        // Guardar archivo de respaldo si se aplicaron cambios (silenciando si hay problemas de permisos en el servidor)
         if (!$dryRun) {
-            $backupDir = storage_path('app/backups');
-            if (!\Illuminate\Support\Facades\File::exists($backupDir)) {
-                \Illuminate\Support\Facades\File::makeDirectory($backupDir, 0755, true);
-            }
-            $filename = 'normalizacion_th_backup_' . Carbon::now()->format('Y-m-d_His') . '.json';
-            $fullPath = $backupDir . DIRECTORY_SEPARATOR . $filename;
-            \Illuminate\Support\Facades\File::put($fullPath, json_encode($backup, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+            try {
+                $backupDir = storage_path('app/backups');
+                if (!\Illuminate\Support\Facades\File::exists($backupDir)) {
+                    @\Illuminate\Support\Facades\File::makeDirectory($backupDir, 0755, true);
+                }
+                $filename = 'normalizacion_th_backup_' . Carbon::now()->format('Y-m-d_His') . '.json';
+                $fullPath = $backupDir . DIRECTORY_SEPARATOR . $filename;
+                @\Illuminate\Support\Facades\File::put($fullPath, json_encode($backup, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 
-            $this->newLine();
-            $this->info("==================================================================");
-            $this->info("🛡  RESPALDO GENERADO AUTOMÁTICAMENTE:");
-            $this->info("   Archivo: {$fullPath}");
-            $this->info("   Si necesitas revertir estos cambios en cualquier momento, ejecuta:");
-            $this->line("   <fg=yellow>php artisan espacios:normalizar-th --revertir</>");
-            $this->info("==================================================================");
+                $this->newLine();
+                $this->info("==================================================================");
+                $this->info("🛡  RESPALDO GENERADO AUTOMÁTICAMENTE:");
+                $this->info("   Archivo: {$fullPath}");
+                $this->info("   Si necesitas revertir estos cambios en cualquier momento, ejecuta:");
+                $this->line("   <fg=yellow>php artisan espacios:normalizar-th --revertir</>");
+                $this->info("==================================================================");
+            } catch (\Throwable $e) {
+                // Omitir si hay restricciones de permisos en storage de Linux
+                $this->newLine();
+                $this->warn("Nota: No se pudo escribir el archivo físico de respaldo por permisos de Linux en storage/ (omitido).");
+            }
         }
 
         // 5. Reconciliación opcional de reservas
