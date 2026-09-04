@@ -548,6 +548,44 @@ class DashboardController extends Controller
             }
         }
 
+        // 6. Asegurar concordancia total con Control de Clases:
+        // Si hay registros oficiales en ClaseNoRealizada para el rango evaluado que no se asociaron
+        // a una planificación actual en el loop anterior (por ejemplo, clases en espacios históricos como TH-30),
+        // sumarlos al conteo correspondiente para que Dashboard y Control de Clases coincidan al 100%.
+        $cnrsTotales = ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicioYmd, $fechaFinYmd])->get();
+        // Agrupar por fecha, espacio y asignatura para contar 1 por bloque (igual que en Control de Clases)
+        $cnrsBloques = $cnrsTotales->groupBy(function($c) {
+            $fecha = Carbon::parse($c->fecha_clase)->format('Y-m-d');
+            return "{$fecha}_{$c->id_espacio}_{$c->id_asignatura}";
+        });
+
+        $cnrBloquesNoRegistradas = 0;
+        $cnrBloquesRecuperadas = 0;
+        $cnrBloquesJustificadas = 0;
+
+        foreach ($cnrsBloques as $bloqueKey => $items) {
+            $primerItem = $items->first();
+            if ($primerItem->estado === 'recuperada') {
+                $cnrBloquesRecuperadas++;
+            } elseif ($primerItem->estado === 'justificado') {
+                $cnrBloquesJustificadas++;
+            } else {
+                $cnrBloquesNoRegistradas++;
+            }
+        }
+
+        // Si el total registrado en Control de Clases es mayor que lo capturado en el loop de planificaciones,
+        // actualizar con el valor oficial del Control de Clases para garantizar coincidencia exacta.
+        if ($cnrBloquesNoRegistradas > $noRegistradas) {
+            $noRegistradas = $cnrBloquesNoRegistradas;
+        }
+        if ($cnrBloquesRecuperadas > $recuperadas) {
+            $recuperadas = $cnrBloquesRecuperadas;
+        }
+        if ($cnrBloquesJustificadas > $justificadas) {
+            $justificadas = $cnrBloquesJustificadas;
+        }
+
         $totalImpartidas = $realizadas + $recuperadas;
         $totalClasesEvaluadas = $totalImpartidas + $noRegistradas + $justificadas;
 
