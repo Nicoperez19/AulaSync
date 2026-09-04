@@ -138,6 +138,7 @@ class ApiReservaController extends Controller
             $runLimpio = preg_replace('/[^0-9kK]/', '', $request->run);
 
             $espacio = Espacio::findOrFail($request->espacio_id);
+            $espaciosEquivalentes = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($request->espacio_id);
 
             // 1. Verificar si tiene clase programada (antes del check de ocupado para permitir el cierre forzado)
             // Ventana: permite que el profesor llegue hasta 60 min antes del inicio del módulo
@@ -149,7 +150,7 @@ class ApiReservaController extends Controller
                 ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
                 ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                 ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
-                ->where('pa.id_espacio', $request->espacio_id)
+                ->whereIn('pa.id_espacio', $espaciosEquivalentes)
                 ->where(function ($q) use ($runNormalizado, $request, $runLimpio) {
                     $q->where('h.run_profesor', $runNormalizado)
                       ->orWhere('h.run_profesor', $request->run)
@@ -170,7 +171,7 @@ class ApiReservaController extends Controller
                     ->join('profesores_colaboradores as pc', 'ppc.id_profesor_colaborador', '=', 'pc.id')
                     ->join('modulos as m', 'ppc.id_modulo', '=', 'm.id_modulo')
                     ->leftJoin('asignaturas as a', 'pc.id_asignatura', '=', 'a.id_asignatura')
-                    ->where('ppc.id_espacio', $request->espacio_id)
+                    ->whereIn('ppc.id_espacio', $espaciosEquivalentes)
                     ->where(function ($q) use ($runNormalizado, $request, $runLimpio) {
                         $q->where('pc.run_profesor_colaborador', $runNormalizado)
                           ->orWhere('pc.run_profesor_colaborador', $request->run)
@@ -198,7 +199,7 @@ class ApiReservaController extends Controller
                     ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                     ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
                     ->join('profesores_colaboradores as pc', 'a.id_asignatura', '=', 'pc.id_asignatura')
-                    ->where('pa.id_espacio', $request->espacio_id)
+                    ->whereIn('pa.id_espacio', $espaciosEquivalentes)
                     ->where(function ($q) use ($runNormalizado, $request, $runLimpio) {
                         $q->where('pc.run_profesor_colaborador', $runNormalizado)
                           ->orWhere('pc.run_profesor_colaborador', $request->run)

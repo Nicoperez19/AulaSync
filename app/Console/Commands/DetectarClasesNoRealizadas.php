@@ -272,11 +272,12 @@ class DetectarClasesNoRealizadas extends Command
                 }
                 $runLimpio = preg_replace('/[^0-9]/', '', $runLimpio);
 
-                // Verificar si el profesor tiene reserva activa en el espacio esperado
+                // Verificar si el profesor tiene reserva activa en el espacio esperado (o sus equivalentes)
                 // Priorizar reservas activas sobre finalizadas (por si hubo doble escaneo)
                 // y dentro del mismo estado, la más reciente.
+                $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($primerModulo->id_espacio, $tenant->sede_id ?? 'TH');
                 $reserva = Reserva::where('fecha_reserva', $fechaActual)
-                    ->where('id_espacio', $primerModulo->id_espacio)
+                    ->whereIn('id_espacio', $espaciosEquiv)
                     ->where(function($q) use ($runProfesor, $runLimpio) {
                         $q->where('run_profesor', $runProfesor)
                           ->orWhere('run_solicitante', $runProfesor)

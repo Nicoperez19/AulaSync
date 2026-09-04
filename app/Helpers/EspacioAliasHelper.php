@@ -28,30 +28,55 @@ class EspacioAliasHelper
     }
 
     /**
+     * Devuelve la lista de identificadores equivalentes para un espacio dado.
+     * Permite hacer búsquedas bidireccionales donde cualquiera de los alias sea reconocido.
+     *
+     * @param string $espacioId
+     * @param string|null $sedeId
+     * @return array
+     */
+    public static function obtenerEquivalentes(string $espacioId, ?string $sedeId = 'TH'): array
+    {
+        $espacioUpper = strtoupper(trim($espacioId));
+
+        // Grupo Termodinámica / Refrigeración: TH-30 <-> TH-L09
+        if (in_array($espacioUpper, ['TH-30', '30', 'TH-L09', 'L09', 'TH-LAB09', 'TH-LAB9'])) {
+            return ['TH-L09', 'TH-30'];
+        }
+
+        // Grupo Taller de Construcción: TH-09 <-> TH-L08
+        if (in_array($espacioUpper, ['TH-L08', 'L08', 'TH-LA8', 'LA8', 'TH-LAB08', 'TH-LAB8', 'TH-09', '09'])) {
+            return ['TH-L08', 'TH-09', 'TH-LA8'];
+        }
+
+        return [$espacioId];
+    }
+
+    /**
      * Lógica de equivalencias para la sede Talcahuano (TH)
      */
     private static function normalizarTalcahuano(string $espacioUpper, array $contexto): string
     {
         // 1. Laboratorio de Termodinámica / Refrigeración y Climatización
-        // En la universidad aparece como TH-30 o 30, pero en AulaSync es TH-LAB09.
-        if (in_array($espacioUpper, ['TH-30', '30', 'TH-L09', 'L09'])) {
-            return 'TH-LAB09';
+        // En la universidad aparece como TH-30 o 30, pero en AulaSync es TH-L09.
+        if (in_array($espacioUpper, ['TH-30', '30', 'TH-LAB09', 'TH-LAB9', 'LAB09', 'LAB9'])) {
+            return 'TH-L09';
         }
 
         // 2. Laboratorio / Taller de Construcción
-        // Códigos históricos o variantes que corresponden directamente a TH-LAB08.
-        if (in_array($espacioUpper, ['TH-L08', 'L08', 'TH-LA8', 'LA8', 'TH-LAB8'])) {
-            return 'TH-LAB08';
+        // En AulaSync es TH-L08 (variantes históricas o alias LA8, LAB08, etc.)
+        if (in_array($espacioUpper, ['TH-LA8', 'LA8', 'TH-LAB08', 'TH-LAB8', 'LAB08', 'LAB8'])) {
+            return 'TH-L08';
         }
 
         // 3. Caso especial TH-09:
         // En la sede TH existen físicamente:
         //   - TH-09: Sala de Clases teórica (Piso 2)
-        //   - TH-LAB08: Laboratorio / Taller de Construcción (Piso 1)
+        //   - TH-L08: Laboratorio / Taller de Construcción (Piso 1)
         // En la universidad, las clases de construcción vienen codificadas como TH-09.
         if (in_array($espacioUpper, ['TH-09', '09'])) {
             if (self::esAsignaturaDeConstruccion($contexto)) {
-                return 'TH-LAB08';
+                return 'TH-L08';
             }
             return 'TH-09';
         }

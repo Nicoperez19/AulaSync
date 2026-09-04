@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ModulosHelper;
 use App\Helpers\SemesterHelper;
+use App\Helpers\EspacioAliasHelper;
 use App\Models\Espacio;
 use App\Models\Planificacion_Asignatura;
 use App\Models\PlanificacionProfesorColaborador;
@@ -87,7 +88,14 @@ class DashboardController extends Controller
             $runProfesor = $asig->horario->run_profesor ?? $asig->asignatura->run_profesor ?? null;
             $runProfesorNorm = $runProfesor ? $this->normalizeRun($runProfesor) : null;
 
-            $reservasEspacio = $reservasActivasHoy->get($asig->espacio->id_espacio, collect());
+            $espaciosEquiv = EspacioAliasHelper::obtenerEquivalentes($asig->espacio->id_espacio);
+            $reservasEspacio = collect();
+            foreach ($espaciosEquiv as $espId) {
+                if ($reservasActivasHoy->has($espId)) {
+                    $reservasEspacio = $reservasEspacio->concat($reservasActivasHoy->get($espId));
+                }
+            }
+
             $profesorPresente = false;
             if ($runProfesorNorm) {
                 $profesorPresente = $reservasEspacio->contains(function ($reserva) use ($runProfesorNorm) {
@@ -113,7 +121,14 @@ class DashboardController extends Controller
             $runProfesor = $asig->profesorColaborador->run_profesor_colaborador ?? null;
             $runProfesorNorm = $runProfesor ? $this->normalizeRun($runProfesor) : null;
 
-            $reservasEspacio = $reservasActivasHoy->get($asig->espacio->id_espacio, collect());
+            $espaciosEquiv = EspacioAliasHelper::obtenerEquivalentes($asig->espacio->id_espacio);
+            $reservasEspacio = collect();
+            foreach ($espaciosEquiv as $espId) {
+                if ($reservasActivasHoy->has($espId)) {
+                    $reservasEspacio = $reservasEspacio->concat($reservasActivasHoy->get($espId));
+                }
+            }
+
             $profesorPresente = false;
             if ($runProfesorNorm) {
                 $profesorPresente = $reservasEspacio->contains(function ($reserva) use ($runProfesorNorm) {
@@ -463,13 +478,16 @@ class DashboardController extends Controller
 
                 // 1. Verificar si esta clase está oficialmente registrada en ClaseNoRealizada
                 $registroCNR = null;
+                $espaciosClaseEquiv = EspacioAliasHelper::obtenerEquivalentes($primerModulo->id_espacio);
                 foreach ($modulosClase as $mItem) {
-                    $keyEspacio = "{$fechaYmd}_{$mItem->id_espacio}_{$mItem->id_modulo}";
-                    $keyAsig    = "{$fechaYmd}_{$mItem->id_asignatura}_{$mItem->id_modulo}";
-                    if (isset($clasesNoRealizadasCache[$keyEspacio])) {
-                        $registroCNR = $clasesNoRealizadasCache[$keyEspacio];
-                        break;
+                    foreach ($espaciosClaseEquiv as $espIdEq) {
+                        $keyEspacio = "{$fechaYmd}_{$espIdEq}_{$mItem->id_modulo}";
+                        if (isset($clasesNoRealizadasCache[$keyEspacio])) {
+                            $registroCNR = $clasesNoRealizadasCache[$keyEspacio];
+                            break 2;
+                        }
                     }
+                    $keyAsig = "{$fechaYmd}_{$mItem->id_asignatura}_{$mItem->id_modulo}";
                     if (isset($clasesNoRealizadasCache[$keyAsig])) {
                         $registroCNR = $clasesNoRealizadasCache[$keyAsig];
                         break;
@@ -487,31 +505,30 @@ class DashboardController extends Controller
                     continue;
                 }
 
-                // 2. Verificar si hubo reserva / escaneo en el espacio para este bloque
-                $claveReserva = "{$fechaYmd}_{$primerModulo->id_espacio}";
+                // 2. Verificar si hubo reserva / escaneo en el espacio (o equivalentes) para este bloque
                 $reservaEncontrada = null;
+                $minutosMargen = ModulosHelper::getMargenIngresoMinutos($primerModulo->id_modulo);
+                $margenInicio = $horaInicioClase->copy()->subMinutes($minutosMargen);
 
-                if (isset($reservasCache[$claveReserva])) {
-                    $reservasDelDia = $reservasCache[$claveReserva];
+                foreach ($espaciosClaseEquiv as $espIdEq) {
+                    $claveReserva = "{$fechaYmd}_{$espIdEq}";
+                    if (isset($reservasCache[$claveReserva])) {
+                        $reservasDelDia = $reservasCache[$claveReserva];
 
-                    // Coincidencia por asignatura
-                    foreach ($reservasDelDia as $r) {
-                        if ($r->id_asignatura == $primerModulo->id_asignatura) {
-                            $reservaEncontrada = $r;
-                            break;
+                        // Coincidencia por asignatura
+                        foreach ($reservasDelDia as $r) {
+                            if ($r->id_asignatura == $primerModulo->id_asignatura) {
+                                $reservaEncontrada = $r;
+                                break 2;
+                            }
                         }
-                    }
 
-                    // Coincidencia por horario
-                    if (!$reservaEncontrada) {
-                        $minutosMargen = ModulosHelper::getMargenIngresoMinutos($primerModulo->id_modulo);
-                        $margenInicio = $horaInicioClase->copy()->subMinutes($minutosMargen);
-
+                        // Coincidencia por horario
                         foreach ($reservasDelDia as $r) {
                             $horaAcceso = Carbon::parse($r->hora);
                             if ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFinClase) {
                                 $reservaEncontrada = $r;
-                                break;
+                                break 2;
                             }
                         }
                     }

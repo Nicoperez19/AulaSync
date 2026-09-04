@@ -2,7 +2,7 @@
 
 return [
     [
-        'id_espacio' => 'TH-LAB09',
+        'id_espacio' => 'TH-L09',
         'nombre_espacio' => 'Laboratorio Termodinámica',
         'piso_id' => 1,
         'tipo_espacio' => 'Laboratorio',
@@ -10,7 +10,7 @@ return [
         'puestos_disponibles' => 38,
     ],
     [
-        'id_espacio' => 'TH-LAB08',
+        'id_espacio' => 'TH-L08',
         'nombre_espacio' => 'Taller de Construcción',
         'piso_id' => 1,
         'tipo_espacio' => 'Taller',

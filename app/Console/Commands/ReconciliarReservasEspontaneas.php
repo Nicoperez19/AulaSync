@@ -118,13 +118,15 @@ class ReconciliarReservasEspontaneas extends Command
                     $horaCarbon = Carbon::parse($fechaStr . ' ' . $horaStr);
                     $horaMaxInicio = $horaCarbon->copy()->addMinutes(60)->toTimeString();
 
+                    $espaciosEquiv = \App\Helpers\EspacioAliasHelper::obtenerEquivalentes($reserva->id_espacio, $tenant->sede_id ?? 'TH');
+
                     // 1. Buscar en planificación regular del profesor
                     $clasePlanificada = DB::connection('tenant')
                         ->table('planificacion_asignaturas as pa')
                         ->join('horarios as h', 'pa.id_horario', '=', 'h.id_horario')
                         ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                         ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
-                        ->where('pa.id_espacio', $reserva->id_espacio)
+                        ->whereIn('pa.id_espacio', $espaciosEquiv)
                         ->where(function ($q) use ($run, $runLimpio) {
                             $q->where('h.run_profesor', $run)
                               ->orWhere('h.run_profesor', $runLimpio)
@@ -144,7 +146,7 @@ class ReconciliarReservasEspontaneas extends Command
                             ->join('profesores_colaboradores as pc', 'ppc.id_profesor_colaborador', '=', 'pc.id')
                             ->join('modulos as m', 'ppc.id_modulo', '=', 'm.id_modulo')
                             ->leftJoin('asignaturas as a', 'pc.id_asignatura', '=', 'a.id_asignatura')
-                            ->where('ppc.id_espacio', $reserva->id_espacio)
+                            ->whereIn('ppc.id_espacio', $espaciosEquiv)
                             ->where(function ($q) use ($run, $runLimpio) {
                                 $q->where('pc.run_profesor_colaborador', $run)
                                   ->orWhere('pc.run_profesor_colaborador', $runLimpio)
@@ -171,7 +173,7 @@ class ReconciliarReservasEspontaneas extends Command
                             ->join('modulos as m', 'pa.id_modulo', '=', 'm.id_modulo')
                             ->join('asignaturas as a', 'pa.id_asignatura', '=', 'a.id_asignatura')
                             ->join('profesores_colaboradores as pc', 'a.id_asignatura', '=', 'pc.id_asignatura')
-                            ->where('pa.id_espacio', $reserva->id_espacio)
+                            ->whereIn('pa.id_espacio', $espaciosEquiv)
                             ->where(function ($q) use ($run, $runLimpio) {
                                 $q->where('pc.run_profesor_colaborador', $run)
                                   ->orWhere('pc.run_profesor_colaborador', $runLimpio)
@@ -214,7 +216,7 @@ class ReconciliarReservasEspontaneas extends Command
 
                             // 3. Guardar registros de clases no realizadas antes de borrarlas
                             $clasesParaBorrar = ClaseNoRealizada::withoutGlobalScopes()
-                                ->where('id_espacio', $reserva->id_espacio)
+                                ->whereIn('id_espacio', $espaciosEquiv)
                                 ->where('fecha_clase', $fechaStr)
                                 ->where('id_asignatura', $clasePlanificada->id_asignatura)
                                 ->get()
@@ -244,7 +246,7 @@ class ReconciliarReservasEspontaneas extends Command
 
                             // Limpiar registros incorrectos de clases no realizadas si se habían generado por error
                             $limpiadas = ClaseNoRealizada::withoutGlobalScopes()
-                                ->where('id_espacio', $reserva->id_espacio)
+                                ->whereIn('id_espacio', $espaciosEquiv)
                                 ->where('fecha_clase', $fechaStr)
                                 ->where('id_asignatura', $clasePlanificada->id_asignatura)
                                 ->delete();
