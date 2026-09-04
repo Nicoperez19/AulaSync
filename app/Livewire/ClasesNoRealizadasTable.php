@@ -543,7 +543,6 @@ class ClasesNoRealizadasTable extends Component
         
         $estadisticas = $this->getEstadisticasOptimizadas();
 
-        $this->lastRecordCount = $currentTotal;
 
         return view('livewire.clases-no-realizadas-table', [
             'clasesNoRealizadas' => $clasesNoRealizadas,
