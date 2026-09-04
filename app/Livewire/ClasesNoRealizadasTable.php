@@ -543,16 +543,6 @@ class ClasesNoRealizadasTable extends Component
         
         $estadisticas = $this->getEstadisticasOptimizadas();
 
-        // Detectar cambios en los datos para notificaciones
-        $currentTotal = $estadisticas['total'];
-        if ($this->lastRecordCount > 0 && $currentTotal !== $this->lastRecordCount && $this->autoRefresh) {
-            if ($currentTotal > $this->lastRecordCount) {
-                $nuevos = $currentTotal - $this->lastRecordCount;
-                $this->dispatch('show-info', [
-                    'message' => "Se detectaron {$nuevos} nueva(s) clase(s) no registrada(s)"
-                ]);
-            }
-        }
         $this->lastRecordCount = $currentTotal;
 
         return view('livewire.clases-no-realizadas-table', [

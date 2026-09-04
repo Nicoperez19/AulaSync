@@ -743,24 +743,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    Livewire.on('show-info', (data) => {
-        const message = data[0].message;
-        
-        // Toast notification para cambios automáticos
-        Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'info',
-            title: message,
-            showConfirmButton: false,
-            timer: 4000,
-            timerProgressBar: true,
-            didOpen: (toast) => {
-                toast.addEventListener('mouseenter', Swal.stopTimer);
-                toast.addEventListener('mouseleave', Swal.resumeTimer);
-            }
-        });
-    });
 
     Livewire.on('show-error', (data) => {
         const message = data[0].message;
