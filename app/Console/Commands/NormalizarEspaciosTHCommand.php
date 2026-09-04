@@ -15,7 +15,9 @@ class NormalizarEspaciosTHCommand extends Command
 {
     protected $signature = 'espacios:normalizar-th 
                             {--dry-run : Solo simula las correcciones sin aplicarlas}
-                            {--reconciliar : Ejecuta también la reconciliación de reservas espontáneas}';
+                            {--reconciliar : Ejecuta también la reconciliación de reservas espontáneas}
+                            {--revertir : Revierte los cambios aplicados usando el último archivo de respaldo}
+                            {--archivo= : Archivo específico de respaldo a revertir}';
 
     protected $description = 'Normaliza los identificadores de espacios de la sede Talcahuano (TH-30 -> TH-L09 y TH-09 -> TH-L08 para construcción) y reasigna planificaciones';
 
@@ -23,8 +25,7 @@ class NormalizarEspaciosTHCommand extends Command
     {
         $dryRun = $this->option('dry-run');
         $ejecutarReconciliar = $this->option('reconciliar');
-
-        $this->info("=== NORMALIZACIÓN DE ESPACIOS TALCAHUANO (TH) ===" . ($dryRun ? ' (MODO SIMULACIÓN)' : ''));
+        $revertir = $this->option('revertir');
 
         // 1. Buscar tenant de Talcahuano
         $tenant = Tenant::where('sede_id', 'TH')
@@ -37,8 +38,23 @@ class NormalizarEspaciosTHCommand extends Command
             return 1;
         }
 
-        $this->line("Tenant encontrado: {$tenant->name} ({$tenant->domain})");
         $tenant->makeCurrent();
+
+        // Si se pide revertir
+        if ($revertir) {
+            return $this->revertirNormalizacion($tenant);
+        }
+
+        $this->info("=== NORMALIZACIÓN DE ESPACIOS TALCAHUANO (TH) ===" . ($dryRun ? ' (MODO SIMULACIÓN)' : ''));
+        $this->line("Tenant encontrado: {$tenant->name} ({$tenant->domain})");
+
+        // Estructura de respaldo
+        $backup = [
+            'created_at' => Carbon::now()->toDateTimeString(),
+            'tenant_id'  => $tenant->id,
+            'planificaciones_regulares' => [],
+            'planificaciones_colaboradores' => [],
+        ];
 
         // 2. Verificar y asegurar que existan los espacios oficiales en la BD
         $this->info("\n1. Verificando espacios físicos en BD...");
@@ -46,11 +62,30 @@ class NormalizarEspaciosTHCommand extends Command
 
         // 3. Normalizar planificaciones regulares (planificacion_asignaturas)
         $this->info("\n2. Normalizando planificaciones regulares...");
-        $this->normalizarPlanificacionesRegulares($dryRun);
+        $this->normalizarPlanificacionesRegulares($dryRun, $backup);
 
         // 4. Normalizar planificaciones de colaboradores
         $this->info("\n3. Normalizando planificaciones de profesores colaboradores...");
-        $this->normalizarPlanificacionesColaboradores($dryRun);
+        $this->normalizarPlanificacionesColaboradores($dryRun, $backup);
+
+        // Guardar archivo de respaldo si se aplicaron cambios
+        if (!$dryRun) {
+            $backupDir = storage_path('app/backups');
+            if (!\Illuminate\Support\Facades\File::exists($backupDir)) {
+                \Illuminate\Support\Facades\File::makeDirectory($backupDir, 0755, true);
+            }
+            $filename = 'normalizacion_th_backup_' . Carbon::now()->format('Y-m-d_His') . '.json';
+            $fullPath = $backupDir . DIRECTORY_SEPARATOR . $filename;
+            \Illuminate\Support\Facades\File::put($fullPath, json_encode($backup, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+
+            $this->newLine();
+            $this->info("==================================================================");
+            $this->info("🛡  RESPALDO GENERADO AUTOMÁTICAMENTE:");
+            $this->info("   Archivo: {$fullPath}");
+            $this->info("   Si necesitas revertir estos cambios en cualquier momento, ejecuta:");
+            $this->line("   <fg=yellow>php artisan espacios:normalizar-th --revertir</>");
+            $this->info("==================================================================");
+        }
 
         // 5. Reconciliación opcional de reservas
         if ($ejecutarReconciliar) {
@@ -120,7 +155,6 @@ class NormalizarEspaciosTHCommand extends Command
             }
         } else {
             $this->line("  ✓ Espacio TH-L09 ya existe.");
-            // Si por error existía un TH-30 o TH-LAB09 duplicado, limpiarlo
             if (!$dryRun) {
                 Espacio::withoutGlobalScope('tenant')->whereIn('id_espacio', ['TH-30', 'TH-LAB09'])->delete();
             }
@@ -165,7 +199,6 @@ class NormalizarEspaciosTHCommand extends Command
             }
         } else {
             $this->line("  ✓ Espacio TH-L08 ya existe.");
-            // Si por error existía un TH-LA8 o TH-LAB08 duplicado, limpiarlo
             if (!$dryRun) {
                 Espacio::withoutGlobalScope('tenant')->whereIn('id_espacio', ['TH-LA8', 'TH-LAB08'])->delete();
             }
@@ -175,7 +208,7 @@ class NormalizarEspaciosTHCommand extends Command
     /**
      * Normaliza las planificaciones en planificacion_asignaturas
      */
-    private function normalizarPlanificacionesRegulares(bool $dryRun): void
+    private function normalizarPlanificacionesRegulares(bool $dryRun, array &$backup): void
     {
         // 1. Reasignar TH-30 y TH-LAB09 -> TH-L09
         $planificaciones30 = Planificacion_Asignatura::withoutGlobalScope('tenant')
@@ -183,6 +216,16 @@ class NormalizarEspaciosTHCommand extends Command
             ->get();
 
         $this->line("  → Planificaciones en TH-30 / TH-LAB09 a mover a TH-L09: " . $planificaciones30->count());
+        foreach ($planificaciones30 as $p) {
+            $backup['planificaciones_regulares'][] = [
+                'id' => $p->id ?? $p->id_planificacion,
+                'id_asignatura' => $p->id_asignatura,
+                'id_modulo' => $p->id_modulo,
+                'id_espacio_anterior' => $p->id_espacio,
+                'id_espacio_nuevo' => 'TH-L09',
+            ];
+        }
+
         if (!$dryRun && $planificaciones30->isNotEmpty()) {
             Planificacion_Asignatura::withoutGlobalScope('tenant')
                 ->whereIn('id_espacio', ['TH-30', 'TH-LAB09'])
@@ -195,6 +238,16 @@ class NormalizarEspaciosTHCommand extends Command
             ->get();
 
         $this->line("  → Planificaciones en TH-LA8 / TH-LAB08 a mover a TH-L08: " . $planificaciones08Antiguas->count());
+        foreach ($planificaciones08Antiguas as $p) {
+            $backup['planificaciones_regulares'][] = [
+                'id' => $p->id ?? $p->id_planificacion,
+                'id_asignatura' => $p->id_asignatura,
+                'id_modulo' => $p->id_modulo,
+                'id_espacio_anterior' => $p->id_espacio,
+                'id_espacio_nuevo' => 'TH-L08',
+            ];
+        }
+
         if (!$dryRun && $planificaciones08Antiguas->isNotEmpty()) {
             Planificacion_Asignatura::withoutGlobalScope('tenant')
                 ->whereIn('id_espacio', ['TH-LA8', 'TH-LAB08'])
@@ -221,6 +274,14 @@ class NormalizarEspaciosTHCommand extends Command
                 $this->line("    • Moviendo: {$asigNombre} ({$carreraNombre}) -> TH-L08");
                 $movidasConstruccion++;
 
+                $backup['planificaciones_regulares'][] = [
+                    'id' => $plan->id ?? $plan->id_planificacion,
+                    'id_asignatura' => $plan->id_asignatura,
+                    'id_modulo' => $plan->id_modulo,
+                    'id_espacio_anterior' => 'TH-09',
+                    'id_espacio_nuevo' => 'TH-L08',
+                ];
+
                 if (!$dryRun) {
                     $plan->id_espacio = 'TH-L08';
                     $plan->save();
@@ -234,14 +295,21 @@ class NormalizarEspaciosTHCommand extends Command
     /**
      * Normaliza las planificaciones de profesores colaboradores
      */
-    private function normalizarPlanificacionesColaboradores(bool $dryRun): void
+    private function normalizarPlanificacionesColaboradores(bool $dryRun, array &$backup): void
     {
         $ppc30 = PlanificacionProfesorColaborador::withoutGlobalScope('tenant')
             ->whereIn('id_espacio', ['TH-30', 'TH-LAB09'])
-            ->count();
+            ->get();
 
-        if ($ppc30 > 0) {
-            $this->line("  → Planificaciones de colaboradores en TH-30 / TH-LAB09 a mover a TH-L09: {$ppc30}");
+        if ($ppc30->isNotEmpty()) {
+            $this->line("  → Planificaciones de colaboradores en TH-30 / TH-LAB09 a mover a TH-L09: " . $ppc30->count());
+            foreach ($ppc30 as $p) {
+                $backup['planificaciones_colaboradores'][] = [
+                    'id' => $p->id,
+                    'id_espacio_anterior' => $p->id_espacio,
+                    'id_espacio_nuevo' => 'TH-L09',
+                ];
+            }
             if (!$dryRun) {
                 PlanificacionProfesorColaborador::withoutGlobalScope('tenant')
                     ->whereIn('id_espacio', ['TH-30', 'TH-LAB09'])
@@ -251,15 +319,96 @@ class NormalizarEspaciosTHCommand extends Command
 
         $ppc08 = PlanificacionProfesorColaborador::withoutGlobalScope('tenant')
             ->whereIn('id_espacio', ['TH-LA8', 'TH-LAB08'])
-            ->count();
+            ->get();
 
-        if ($ppc08 > 0) {
-            $this->line("  → Planificaciones de colaboradores en TH-LA8 / TH-LAB08 a mover a TH-L08: {$ppc08}");
+        if ($ppc08->isNotEmpty()) {
+            $this->line("  → Planificaciones de colaboradores en TH-LA8 / TH-LAB08 a mover a TH-L08: " . $ppc08->count());
+            foreach ($ppc08 as $p) {
+                $backup['planificaciones_colaboradores'][] = [
+                    'id' => $p->id,
+                    'id_espacio_anterior' => $p->id_espacio,
+                    'id_espacio_nuevo' => 'TH-L08',
+                ];
+            }
             if (!$dryRun) {
                 PlanificacionProfesorColaborador::withoutGlobalScope('tenant')
                     ->whereIn('id_espacio', ['TH-LA8', 'TH-LAB08'])
                     ->update(['id_espacio' => 'TH-L08']);
             }
         }
+    }
+
+    /**
+     * Revierte los cambios aplicados según un archivo de respaldo
+     */
+    private function revertirNormalizacion(Tenant $tenant): int
+    {
+        $archivo = $this->option('archivo');
+
+        if (!$archivo) {
+            $backupDir = storage_path('app/backups');
+            if (!\Illuminate\Support\Facades\File::exists($backupDir)) {
+                $this->error("No se encontró el directorio de respaldos en: {$backupDir}");
+                return 1;
+            }
+
+            $archivos = \Illuminate\Support\Facades\File::glob($backupDir . DIRECTORY_SEPARATOR . 'normalizacion_th_backup_*.json');
+            if (empty($archivos)) {
+                $this->error("No se encontraron archivos de respaldo en {$backupDir}.");
+                return 1;
+            }
+
+            rsort($archivos);
+            $archivo = $archivos[0];
+        }
+
+        if (!\Illuminate\Support\Facades\File::exists($archivo)) {
+            $this->error("El archivo de respaldo especificado no existe: {$archivo}");
+            return 1;
+        }
+
+        $this->warn("==================================================================");
+        $this->warn(" REVERSIÓN DE NORMALIZACIÓN DE ESPACIOS TH");
+        $this->warn(" Archivo de respaldo: {$archivo}");
+        $this->warn("==================================================================");
+
+        $contenido = json_decode(\Illuminate\Support\Facades\File::get($archivo), true);
+        if (!$contenido || !isset($contenido['planificaciones_regulares'])) {
+            $this->error("El archivo de respaldo no tiene una estructura válida.");
+            return 1;
+        }
+
+        $revertidasRegulares = 0;
+        foreach ($contenido['planificaciones_regulares'] as $item) {
+            $q = Planificacion_Asignatura::withoutGlobalScope('tenant');
+            if (!empty($item['id'])) {
+                $q->where('id', $item['id']);
+            } else {
+                $q->where('id_asignatura', $item['id_asignatura'])
+                  ->where('id_modulo', $item['id_modulo'])
+                  ->where('id_espacio', $item['id_espacio_nuevo']);
+            }
+
+            $actualizado = $q->update(['id_espacio' => $item['id_espacio_anterior']]);
+            if ($actualizado) {
+                $revertidasRegulares++;
+            }
+        }
+
+        $revertidasColab = 0;
+        foreach ($contenido['planificaciones_colaboradores'] ?? [] as $item) {
+            $actualizado = PlanificacionProfesorColaborador::withoutGlobalScope('tenant')
+                ->where('id', $item['id'])
+                ->update(['id_espacio' => $item['id_espacio_anterior']]);
+            if ($actualizado) {
+                $revertidasColab++;
+            }
+        }
+
+        $this->info("✓ Planificaciones regulares revertidas: {$revertidasRegulares}");
+        $this->info("✓ Planificaciones de colaboradores revertidas: {$revertidasColab}");
+        $this->info("Reversión completada exitosamente.");
+
+        return 0;
     }
 }
