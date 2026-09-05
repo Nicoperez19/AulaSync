@@ -211,7 +211,7 @@
 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Módulo final *</label>
-                                    <select id="modulo-final" required
+                                    <select id="modulo-final" required onchange="verificarConflictosReserva()"
                                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500">
                                         <option value="">Seleccione módulo final</option>
                                     </select>
@@ -240,14 +240,13 @@
                                                 <i class="fa-solid fa-lock mr-1"></i> Espacio Ocupado — Conflicto de Horario
                                             </h4>
                                             <div id="conflicto-detalles" class="text-sm text-red-700 space-y-1"></div>
-                                            <p class="text-xs text-red-600 mt-2">La sala está bloqueada. Si necesita
-                                                reservar igualmente, use la opción de forzar debajo.</p>
+                                            <p class="text-xs text-red-600 mt-2">La sala tiene programación activa. Si la sala está físicamente desocupada, puede forzar la reserva a continuación.</p>
                                         </div>
                                     </div>
 
-                                    <!-- Checkbox forzar con hold de 3 segundos -->
+                                    <!-- Checkbox forzar con hold de 3 segundos y botón directo -->
                                     <div class="mt-4 pt-3 border-t border-red-200">
-                                        <div class="flex items-center gap-3">
+                                        <div class="flex flex-wrap items-center gap-3">
                                             <div class="relative">
                                                 <button type="button" id="btn-forzar"
                                                     class="relative flex items-center gap-2 px-4 py-2 bg-white border-2 border-red-300 rounded-lg text-red-700 text-sm font-medium hover:bg-red-50 transition-colors select-none cursor-pointer"
@@ -266,6 +265,12 @@
                                                     </span>
                                                 </button>
                                             </div>
+                                            <button type="button" onclick="activarForzar()"
+                                                class="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-lg text-amber-800 text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                                                title="Forzar el uso de la sala sin esperar">
+                                                <i class="fa-solid fa-unlock-keyhole text-amber-600"></i>
+                                                <span>Forzar inmediatamente</span>
+                                            </button>
                                             <input type="hidden" id="forzar-reserva" value="0" />
                                         </div>
                                         <p id="forzar-estado" class="text-xs text-gray-500 mt-2 hidden">
@@ -430,18 +435,40 @@
                     return;
                 }
 
-                // Validar conflictos: si hay conflictos y no se ha forzado, bloquear
+                // Validar conflictos: si hay conflictos y no se ha forzado, preguntar interactivamente si desea forzar
                 if (tieneConflictos && !forzarActivo) {
-                    Swal.fire({
-                        title: 'Espacio Bloqueado',
-                        html: 'Este espacio tiene clases o reservas programadas en los módulos seleccionados.<br><br>Para continuar, use el botón <strong>"Mantener presionado 3s para forzar"</strong> que aparece en el banner de conflicto.',
+                    const confirmacionPrevia = await Swal.fire({
+                        title: '⚠️ Espacio con Conflicto de Horario',
+                        html: `
+                            <div class="text-left text-sm text-gray-700 space-y-2">
+                                <p>Este espacio registra <strong>clases programadas o reservas activas</strong> en los módulos seleccionados.</p>
+                                <div class="p-3 bg-amber-50 border-l-4 border-amber-500 rounded text-xs text-amber-900">
+                                    <strong>¿Desea forzar la reserva de todas formas?</strong><br>
+                                    Si la sala se encuentra físicamente desocupada, puede forzar su uso. La reserva quedará guardada con registro de auditoría <em>⚠️ RESERVA FORZADA</em>.
+                                </div>
+                            </div>
+                        `,
                         icon: 'warning',
-                        confirmButtonText: 'Entendido',
-                        confirmButtonColor: '#EF4444',
+                        showCancelButton: true,
+                        confirmButtonText: '⚠️ Sí, Forzar y Crear Reserva',
+                        cancelButtonText: 'Cancelar y Revisar',
+                        confirmButtonColor: '#D97706',
+                        cancelButtonColor: '#6B7280',
                     });
-                    return;
+
+                    if (confirmacionPrevia.isConfirmed) {
+                        activarForzar();
+                        formData.forzar = true;
+                    } else {
+                        return;
+                    }
                 }
 
+                await enviarCreacionReserva(formData);
+            }
+
+            // Función para enviar la petición de creación de reserva con soporte de reintento forzado
+            async function enviarCreacionReserva(formData) {
                 try {
                     // Mostrar loading
                     Swal.fire({
@@ -456,100 +483,101 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json'
                         },
                         body: JSON.stringify(formData)
                     });
 
                     const result = await response.json();
 
-                    if (result.success) {
+                    if (response.ok && result.success) {
                         Swal.fire({
                             title: '¡Reserva Creada Exitosamente!',
                             html: `
-                                                            <div class="text-left bg-green-50 p-4 rounded-lg border-l-4 border-green-500">
-                                                                <div class="flex items-center mb-3">
-                                                                    <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                                    </svg>
-                                                                    <span class="font-semibold text-green-800">Detalles de la Reserva</span>
-                                                                </div>
-                                                                <div class="space-y-2 text-sm">
-                                                                    <div class="flex items-center">
-                                                                        <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
-                                                                        </svg>
-                                                                        <strong>ID Reserva:</strong> <span class="text-blue-600 font-mono ml-1">${result.id_reserva}</span>
-                                                                    </div>
-                                                                    <div class="flex items-center">
-                                                                        <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                                                        </svg>
-                                                                        <strong>Responsable:</strong> <span class="ml-1">${result.datos.responsable}</span>
-                                                                    </div>
-                                                                    <div class="flex items-center">
-                                                                        <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                                                                        </svg>
-                                                                        <strong>Espacio:</strong> <span class="ml-1">${result.datos.espacio} (${result.datos.id_espacio})</span>
-                                                                    </div>
-                                                                    <div class="flex items-center">
-                                                                        <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a4 4 0 118 0v4m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
-                                                                        </svg>
-                                                                        <strong>Fecha:</strong> <span class="ml-1">${result.datos.fecha}</span>
-                                                                    </div>
-                                                                    <div class="flex items-center">
-                                                                        <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                                        </svg>
-                                                                        <strong>Módulos:</strong> <span class="ml-1">${result.datos.modulos}</span>
-                                                                    </div>
-                                                                    <div class="flex items-center">
-                                                                        <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                                        </svg>
-                                                                        <strong>Hora inicio:</strong> 
-                                                                        <span class="ml-1">
-                                                                            ${result.datos.hora.slice(0, 5)} hrs.
-                                                                        </span>
-                                                                    </div>
-                                                                    <div class="flex items-center">
-                                                                        <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                                        </svg>
-                                                                        <strong>Tipo:</strong> <span class="px-2 py-1 rounded text-xs ml-1 ${result.datos.tipo === 'Académica' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}">${result.datos.tipo}</span>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
-                                                                    <div class="flex items-center text-blue-800 text-sm font-medium">
-                                                                        <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                                                        </svg>
-                                                                        <span>Comprobante Oficial (PDF)</span>
-                                                                    </div>
-                                                                    <a href="${result.url_comprobante || ('/reservas/' + result.id_reserva + '/comprobante')}" target="_blank"
-                                                                       class="inline-flex items-center px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md shadow-sm transition">
-                                                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-                                                                        </svg>
-                                                                        Descargar PDF
-                                                                    </a>
-                                                                </div>
+                                <div class="text-left bg-green-50 p-4 rounded-lg border-l-4 border-green-500">
+                                    <div class="flex items-center mb-3">
+                                        <svg class="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                        </svg>
+                                        <span class="font-semibold text-green-800">Detalles de la Reserva</span>
+                                    </div>
+                                    <div class="space-y-2 text-sm">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"></path>
+                                            </svg>
+                                            <strong>ID Reserva:</strong> <span class="text-blue-600 font-mono ml-1">${result.id_reserva}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                            </svg>
+                                            <strong>Responsable:</strong> <span class="ml-1">${result.datos.responsable}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                            </svg>
+                                            <strong>Espacio:</strong> <span class="ml-1">${result.datos.espacio} (${result.datos.id_espacio})</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3a4 4 0 118 0v4m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
+                                            </svg>
+                                            <strong>Fecha:</strong> <span class="ml-1">${result.datos.fecha}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            <strong>Módulos:</strong> <span class="ml-1">${result.datos.modulos}</span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                            <strong>Hora inicio:</strong> 
+                                            <span class="ml-1">
+                                                ${result.datos.hora.slice(0, 5)} hrs.
+                                            </span>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            </svg>
+                                            <strong>Tipo:</strong> <span class="px-2 py-1 rounded text-xs ml-1 ${result.datos.tipo === 'Académica' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}">${result.datos.tipo}</span>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg flex items-center justify-between">
+                                        <div class="flex items-center text-blue-800 text-sm font-medium">
+                                            <svg class="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                            </svg>
+                                            <span>Comprobante Oficial (PDF)</span>
+                                        </div>
+                                        <a href="${result.url_comprobante || ('/reservas/' + result.id_reserva + '/comprobante')}" target="_blank"
+                                           class="inline-flex items-center px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md shadow-sm transition">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                                            </svg>
+                                            Descargar PDF
+                                        </a>
+                                    </div>
 
-                                                                <div class="mt-3 p-3 bg-yellow-50 border-l-2 border-yellow-400 rounded">
-                                                                    <div class="flex items-center">
-                                                                        <svg class="w-4 h-4 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                                        </svg>
-                                                                        <span class="text-sm font-medium text-yellow-800">Creado por: ${result.datos.creado_por}</span>
-                                                                    </div>
-                                                                    <p class="text-xs text-gray-600 mt-1 ml-6">Esta reserva incluye observaciones automáticas de trazabilidad</p>
-                                                                </div>
-                                                            </div>
-                                                        `,
+                                    <div class="mt-3 p-3 bg-yellow-50 border-l-2 border-yellow-400 rounded">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            </svg>
+                                            <span class="text-sm font-medium text-yellow-800">Creado por: ${result.datos.creado_por}</span>
+                                        </div>
+                                        <p class="text-xs text-gray-600 mt-1 ml-6">Esta reserva incluye observaciones automáticas de trazabilidad</p>
+                                    </div>
+                                </div>
+                            `,
                             icon: 'success',
                             confirmButtonText: 'Ir a Gestión de Reservas',
                             showDenyButton: true,
@@ -571,20 +599,46 @@
                                 document.getElementById('form-crear-reserva').reset();
                                 document.getElementById('resultado-busqueda').innerHTML = '';
                                 document.getElementById('fecha-reserva').value = new Date().toISOString().split('T')[0];
+                                resetearForzar();
                                 cargarEspaciosDisponibles();
                                 cargarModulosParaSeleccion();
                             }
                         });
+                    } else if (response.status === 409 || result.tipo_error === 'clase_programada' || result.tipo_error === 'reserva_existente' || (result.mensaje && result.mensaje.toLowerCase().includes('clase programada'))) {
+                        // En caso de conflicto de programación (409), ofrecer forzar interactivamente
+                        const confirmacionConflicto = await Swal.fire({
+                            title: '⚠️ Espacio con Programación Activa',
+                            html: `
+                                <div class="text-left text-sm text-gray-700 space-y-3">
+                                    <p>${result.mensaje || 'Existe una clase o reserva programada en este espacio.'}</p>
+                                    <div class="p-3 bg-amber-50 border-l-4 border-amber-500 rounded text-xs text-amber-900">
+                                        <strong>¿Desea forzar el uso del espacio?</strong><br>
+                                        Si la sala se encuentra físicamente desocupada, puede forzar la reserva para permitir el ingreso. Se registrará la etiqueta <em>⚠️ RESERVA FORZADA</em> para trazabilidad y auditoría.
+                                    </div>
+                                </div>
+                            `,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: '⚠️ Forzar y Crear Reserva',
+                            cancelButtonText: 'Cancelar',
+                            confirmButtonColor: '#D97706',
+                            cancelButtonColor: '#6B7280',
+                            width: '550px'
+                        });
+
+                        if (confirmacionConflicto.isConfirmed) {
+                            activarForzar();
+                            formData.forzar = true;
+                            await enviarCreacionReserva(formData);
+                        }
                     } else {
                         Swal.fire('Error', result.mensaje || 'Error al crear la reserva', 'error');
                     }
                 } catch (error) {
-
+                    console.error('Error al enviar creación de reserva:', error);
                     Swal.fire('Error', 'Error de conexión al crear la reserva', 'error');
                 }
             }
-
-
 
             // Variables para autocompletado
             let timeoutId = null;
@@ -761,35 +815,7 @@
 
 
 
-                // Agregar listener para filtrar módulos finales según el inicial seleccionado
-                moduloInicialSelect.addEventListener('change', function () {
-                    const moduloInicialSeleccionado = parseInt(this.value);
-
-                    if (moduloInicialSeleccionado) {
-                        // Limpiar y recargar módulo final con opciones válidas
-                        moduloFinalSelect.innerHTML = '<option value="">Seleccionar módulo final</option>';
-
-                        // Obtener prefijo según la fecha seleccionada
-                        const fechaSeleccionada = document.getElementById('fecha-reserva').value;
-                        const prefijo = obtenerPrefijoDia(fechaSeleccionada);
-
-                        // Solo mostrar módulos finales >= al inicial
-                        for (let i = moduloInicialSeleccionado; i <= 15; i++) {
-                            const horario = horariosModulosCrearReserva[i];
-                            const optionText = `${prefijo}.${i} (${horario})`;
-
-                            const option = document.createElement('option');
-                            option.value = i;
-                            option.textContent = optionText;
-                            moduloFinalSelect.appendChild(option);
-                        }
-
-
-                    } else {
-                        // Si no hay módulo inicial, mostrar todos los módulos finales
-                        cargarModulosParaSeleccion();
-                    }
-                });
+                }
             }
 
             // Función para mostrar/ocultar el campo de asignatura
@@ -1038,8 +1064,38 @@
             // Función para actualizar módulos finales
             function actualizarModulosFinales() {
                 console.log('🔄 Actualizando módulos finales...');
-                // Dar un pequeño delay para que el select se actualice antes de verificar
-                setTimeout(() => verificarConflictosReserva(), 100);
+                const moduloInicialSelect = document.getElementById('modulo-inicial');
+                const moduloFinalSelect = document.getElementById('modulo-final');
+                if (!moduloInicialSelect || !moduloFinalSelect) return;
+
+                const moduloInicialSeleccionado = parseInt(moduloInicialSelect.value);
+                if (moduloInicialSeleccionado) {
+                    const moduloFinalActual = parseInt(moduloFinalSelect.value);
+                    moduloFinalSelect.innerHTML = '<option value="">Seleccionar módulo final</option>';
+
+                    const fechaSeleccionada = document.getElementById('fecha-reserva')?.value;
+                    const prefijo = obtenerPrefijoDia(fechaSeleccionada);
+
+                    for (let i = moduloInicialSeleccionado; i <= 15; i++) {
+                        const horario = horariosModulosCrearReserva[i] || '';
+                        const optionText = `${prefijo}.${i} (${horario})`;
+
+                        const option = document.createElement('option');
+                        option.value = i;
+                        option.textContent = optionText;
+                        moduloFinalSelect.appendChild(option);
+                    }
+
+                    if (moduloFinalActual && moduloFinalActual >= moduloInicialSeleccionado) {
+                        moduloFinalSelect.value = moduloFinalActual;
+                    } else {
+                        moduloFinalSelect.value = moduloInicialSeleccionado;
+                    }
+                } else {
+                    cargarModulosParaSeleccion();
+                }
+
+                verificarConflictosReserva();
             }
 
             // =====================================================
@@ -1319,11 +1375,13 @@
                 configurarAutocompletado();
                 configurarForzarCheckbox();
 
-                // Verificar conflictos cuando cambie la fecha
-                const fechaInput = document.getElementById('fecha-reserva');
-                if (fechaInput) {
-                    fechaInput.addEventListener('change', () => verificarConflictosReserva());
-                }
+                // Verificar conflictos cuando cambien los inputs relevantes
+                ['fecha-reserva', 'espacio-reserva', 'modulo-inicial', 'modulo-final'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.addEventListener('change', () => verificarConflictosReserva());
+                    }
+                });
 
                 // Keep-Alive de sesión y refresco de CSRF cada 5 minutos
                 async function ejecutarKeepAlive() {
