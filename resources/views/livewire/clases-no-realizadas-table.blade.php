@@ -1,4 +1,4 @@
-<div class="p-6" wire:poll.60s>
+<div wire:poll.60s>
 
     @if($periodoNoIniciado)
         <!-- Mensaje cuando el periodo no ha iniciado -->
