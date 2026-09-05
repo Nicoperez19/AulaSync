@@ -21,136 +21,161 @@
         </div>
     @else
 
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-2xl font-bold text-gray-900">Estadísticas de Control de Clases</h1>
-        
-        <!-- Botones de Exportación -->
-        <div class="flex gap-3">
-            <a href="{{ route('clases-no-realizadas.export-all-excel', [
-                    'search' => $search,
-                    'estado' => $estado,
-                    'fecha_inicio' => $fecha_inicio,
-                    'fecha_fin' => $fecha_fin,
-                    'periodo' => $periodo
-                ]) }}" 
-               class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow-sm transition-colors duration-200">
-                <i class="fas fa-file-excel mr-2"></i>
-                Exportar Todas las Clases
-            </a>
+    <!-- Título Clases Realizadas -->
+    <div class="mb-4">
+        <span class="inline-flex items-center gap-3 px-5 py-2.5 bg-white border border-gray-200 rounded-xl shadow-sm text-base sm:text-lg font-bold text-gray-900">
+            <i class="fas fa-calendar-check text-blue-600 text-xl"></i>
+            <span>Clases Realizadas</span>
+        </span>
+    </div>
+
+    <!-- Navpills / Estadísticas (por fuera) -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Total realizadas -->
+        <div class="stat-card bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-blue-700 text-xs font-semibold uppercase tracking-wider">Total realizadas</p>
+                    <p class="text-3xl font-black text-blue-950 mt-1">{{ $estadisticas['total'] }}</p>
+                </div>
+                <div class="p-3 bg-blue-100 rounded-lg text-blue-600">
+                    <i class="fas fa-calendar-check text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- No registradas -->
+        <div class="stat-card bg-red-50 border border-red-200 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-red-700 text-xs font-semibold uppercase tracking-wider">No registradas</p>
+                    <p class="text-3xl font-black text-red-950 mt-1">{{ $estadisticas['no_realizadas'] }}</p>
+                </div>
+                <div class="p-3 bg-red-100 rounded-lg text-red-600">
+                    <i class="fas fa-times-circle text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Registradas -->
+        <div class="stat-card bg-indigo-50 border border-indigo-200 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-indigo-700 text-xs font-semibold uppercase tracking-wider">Registradas</p>
+                    <p class="text-3xl font-black text-indigo-950 mt-1">{{ $estadisticas['realizadas'] ?? 0 }}</p>
+                </div>
+                <div class="p-3 bg-indigo-100 rounded-lg text-indigo-600">
+                    <i class="fas fa-check-circle text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Justificadas -->
+        <div class="stat-card bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-amber-700 text-xs font-semibold uppercase tracking-wider">Justificadas</p>
+                    <p class="text-3xl font-black text-amber-950 mt-1">{{ $estadisticas['justificados'] }}</p>
+                </div>
+                <div class="p-3 bg-amber-100 rounded-lg text-amber-600">
+                    <i class="fas fa-shield-alt text-xl"></i>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Estadísticas Generales -->
-    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <div class="stat-card bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div class="text-blue-600 text-sm font-medium">Total</div>
-            <div class="text-2xl font-bold text-blue-900">{{ $estadisticas['total'] }}</div>
+    <!-- Sección FILTROS -->
+    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                <i class="fas fa-filter text-blue-600"></i> FILTROS
+            </h3>
         </div>
-        <div class="stat-card bg-red-50 border border-red-200 rounded-lg p-4">
-            <div class="text-red-600 text-sm font-medium">No Registradas</div>
-            <div class="text-2xl font-bold text-red-900">{{ $estadisticas['no_realizadas'] }}</div>
-        </div>
-        <div class="stat-card bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-            <div class="text-indigo-600 text-sm font-medium flex items-center gap-1">
-                <i class="fas fa-check-circle text-xs"></i>
-                Registradas
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <!-- Semestre -->
+            <div>
+                <label for="periodo_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Semestre</label>
+                <select wire:model.live="periodo" 
+                        id="periodo_filtro"
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                    @foreach($periodosDisponibles as $p)
+                        <option value="{{ $p->codigo }}">
+                            {{ $p->display_label }}
+                        </option>
+                    @endforeach
+                    <option value="">Todos los semestres</option>
+                </select>
             </div>
-            <div class="text-2xl font-bold text-indigo-900">{{ $estadisticas['realizadas'] ?? 0 }}</div>
-        </div>
-        <div class="stat-card bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-            <div class="text-yellow-600 text-sm font-medium flex items-center gap-1">
-                <i class="fas fa-clock text-xs"></i>
-                Pendientes
-            </div>
-            <div class="text-2xl font-bold text-yellow-900">{{ $estadisticas['pendientes'] ?? 0 }}</div>
-        </div>
-        <div class="stat-card bg-green-50 border border-green-200 rounded-lg p-4">
-            <div class="text-green-600 text-sm font-medium">Justificados</div>
-            <div class="text-2xl font-bold text-green-900">{{ $estadisticas['justificados'] }}</div>
-        </div>
-    </div>
 
-    <!-- Contenido Principal: Filtros a la izquierda, Tabla a la derecha -->
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        
-        <!-- Panel de Filtros (Izquierda) -->
-        <div class="lg:col-span-1">
-            <div class="filter-panel bg-white rounded-lg shadow p-4 sticky top-4">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">
-                    <i class="fas fa-filter mr-2 icon-animate"></i>Filtros
-                </h3>
-
-                <!-- Búsqueda -->
-                <div class="mb-4">
-                    <label for="search" class="block text-sm font-medium text-gray-700 mb-2">Buscar</label>
-                    <div class="relative">
-                        <input type="text" 
-                               wire:model.live.debounce.300ms="search" 
-                               id="search"
-                               class="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                               placeholder="Profesor, Asignatura, RUN, Sala...">
-                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
-                    </div>
-                </div>
-
-                <!-- Estado -->
-                <div class="mb-4">
-                    <label for="estado" class="block text-sm font-medium text-gray-700 mb-2">Estado</label>
-                    <select wire:model.live.debounce.300ms="estado" 
-                            id="estado"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                        <option value="">Todos</option>
-                        <option value="no_realizada">No registrada</option>
-                        <option value="realizada">Registrada (Clase realizada)</option>
-                        <option value="pendiente">Pendiente de recuperación</option>
-                        <option value="justificado">Justificado</option>
-                    </select>
-                </div>
-
-                <!-- Período -->
-                <div class="mb-4">
-                    <label for="periodo" class="block text-sm font-medium text-gray-700 mb-2">Período</label>
+            <!-- Buscar -->
+            <div>
+                <label for="search" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Buscar</label>
+                <div class="relative">
                     <input type="text" 
-                           wire:model.live.debounce.300ms="periodo" 
-                           id="periodo"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                           placeholder="2024-1">
+                           wire:model.live.debounce.300ms="search" 
+                           id="search"
+                           class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Profesor, asignatura, RUN o espacio...">
+                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
                 </div>
+            </div>
 
-                <!-- Fecha Inicio -->
-                <div class="mb-4">
-                    <label for="fecha_inicio" class="block text-sm font-medium text-gray-700 mb-2">Fecha Inicio</label>
-                    <input type="date" 
-                           wire:model.live.debounce.300ms="fecha_inicio" 
-                           id="fecha_inicio"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                </div>
+            <!-- Estado -->
+            <div>
+                <label for="estado" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Estado</label>
+                <select wire:model.live.debounce.300ms="estado" 
+                        id="estado"
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                    <option value="">Todos</option>
+                    <option value="no_realizada">No registrada</option>
+                    <option value="realizada">Registrada (Clase realizada)</option>
+                    <option value="pendiente">Pendiente de recuperación</option>
+                    <option value="justificado">Justificado</option>
+                </select>
+            </div>
 
-                <!-- Fecha Fin -->
-                <div class="mb-4">
-                    <label for="fecha_fin" class="block text-sm font-medium text-gray-700 mb-2">Fecha Fin</label>
-                    <input type="date" 
-                           wire:model.live.debounce.300ms="fecha_fin" 
-                           id="fecha_fin"
-                           class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
-                </div>
+            <!-- Desde -->
+            <div>
+                <label for="fecha_inicio" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Desde</label>
+                <input type="date" 
+                       wire:model.live.debounce.300ms="fecha_inicio" 
+                       id="fecha_inicio"
+                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
 
-                <!-- Botones de Acción -->
-                <div class="flex gap-2 mt-6">
-                    <button wire:click="aplicarFiltros" 
-                            class="flex-1 px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        <i class="fas fa-filter mr-2"></i>Aplicar
-                    </button>
-                    <button wire:click="limpiarFiltros" 
-                            class="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">
-                        <i class="fas fa-times mr-2"></i>Limpiar
-                    </button>
-                </div>
+            <!-- Hasta -->
+            <div>
+                <label for="fecha_fin" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Hasta</label>
+                <input type="date" 
+                       wire:model.live.debounce.300ms="fecha_fin" 
+                       id="fecha_fin"
+                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
             </div>
         </div>
 
-        <!-- Tabla (Derecha) -->
-        <div class="lg:col-span-3">
+        <!-- Botones de Acción -->
+        <div class="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+            <button type="button" wire:click="limpiarFiltros" 
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors inline-flex items-center gap-2">
+                <i class="fas fa-undo text-xs"></i> Limpiar
+            </button>
+            <button type="button" wire:click="aplicarFiltros" 
+                    class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors inline-flex items-center gap-2">
+                <i class="fas fa-check text-xs"></i> Aplicar filtros
+            </button>
+        </div>
+    </div>
+
+    <!-- Botón Exportar -->
+    <div class="flex justify-end mb-4">
+        <a href="{{ route('clases-no-realizadas.export-all-excel', ['periodo' => $periodo]) }}"
+           class="inline-flex items-center justify-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200 gap-2">
+            <i class="fas fa-file-excel"></i>
+            <span>Exportar todas las clases</span>
+        </a>
+    </div>
+
             
             <!-- Mensaje Flash -->
             @if (session()->has('message'))
@@ -315,8 +340,6 @@
                     </div>
                 @endif
             </div>
-        </div>
-    </div>
 
 </div>
 

@@ -14,17 +14,19 @@ class ClasesNoRealizadasController extends Controller
     public function index()
     {
         $periodo = SemesterHelper::getCurrentPeriod();
+        $user = auth()->user();
+        $isSuperAdmin = $user && $user->isSuperAdmin();
         
         // Verificar si el periodo académico ha iniciado
         $periodoActual = SemesterHelper::getPeriodoActual();
         $periodoNoIniciado = $periodoActual && $periodoActual->noHaIniciado();
         
-        // Si el periodo no ha iniciado, las estadísticas son 0
-        if ($periodoNoIniciado) {
+        // Si el periodo no ha iniciado o el usuario no es superadmin, no se calculan atrasos
+        if ($periodoNoIniciado || !$isSuperAdmin) {
             $totalAtrasos = 0;
             $promedioMinutosAtraso = 0;
         } else {
-            // Obtener estadísticas de atrasos (simplificado)
+            // Obtener estadísticas de atrasos (solo para superadmin)
             $totalAtrasos = ProfesorAtraso::where('periodo', $periodo)->count();
             $promedioMinutosAtraso = ProfesorAtraso::where('periodo', $periodo)
                 ->avg('minutos_atraso') ?? 0;
@@ -33,7 +35,8 @@ class ClasesNoRealizadasController extends Controller
         return view('admin.clases-no-realizadas', compact(
             'totalAtrasos',
             'promedioMinutosAtraso',
-            'periodo'
+            'periodo',
+            'isSuperAdmin'
         ));
     }
 
@@ -63,7 +66,7 @@ class ClasesNoRealizadasController extends Controller
         $periodo = $request->input('periodo');
 
         // Generar nombre de archivo descriptivo
-        $nombreArchivo = 'Todas_Las_Clases';
+        $nombreArchivo = 'Control_De_Clases';
         
         if ($fechaInicio && $fechaFin) {
             $nombreArchivo .= '_' . Carbon::parse($fechaInicio)->format('d-m-Y');

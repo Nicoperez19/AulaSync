@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use Livewire\WithPagination;
+use App\Models\PeriodoAcademico;
 use App\Models\ClaseNoRealizada;
 use App\Models\Asignatura;
 use App\Models\Profesor;
@@ -53,8 +54,14 @@ class ClasesNoRealizadasTable extends Component
     public function mount()
     {
         $this->periodo = SemesterHelper::getCurrentPeriod();
-        $this->fecha_inicio = Carbon::now()->startOfMonth()->format('Y-m-d');
-        $this->fecha_fin = Carbon::now()->endOfMonth()->format('Y-m-d');
+        $this->fecha_fin = Carbon::today()->format('Y-m-d');
+        
+        $periodoActual = SemesterHelper::getPeriodoActual();
+        if ($periodoActual && $periodoActual->fecha_inicio) {
+            $this->fecha_inicio = Carbon::parse($periodoActual->fecha_inicio)->format('Y-m-d');
+        } else {
+            $this->fecha_inicio = Carbon::now()->startOfMonth()->format('Y-m-d');
+        }
         
         // Inicializar el conteo de registros usando cache
         $this->lastRecordCount = $this->getEstadisticasOptimizadas()['total'];
@@ -83,6 +90,29 @@ class ClasesNoRealizadasTable extends Component
         $this->resetPage();
     }
 
+    public function updatedPeriodo($value)
+    {
+        $this->cachedEstadisticas = null;
+        $this->resetPage();
+
+        if ($value) {
+            $partes = explode('-', $value);
+            if (count($partes) === 2) {
+                $periodoModel = PeriodoAcademico::where('anio', (int)$partes[0])
+                    ->where('semestre', (int)$partes[1])
+                    ->first();
+                if ($periodoModel) {
+                    $this->fecha_inicio = Carbon::parse($periodoModel->fecha_inicio)->format('Y-m-d');
+                    $fin = Carbon::parse($periodoModel->fecha_fin);
+                    $this->fecha_fin = $fin->gt(Carbon::today()) ? Carbon::today()->format('Y-m-d') : $fin->format('Y-m-d');
+                }
+            }
+        } else {
+            $this->fecha_inicio = '';
+            $this->fecha_fin = Carbon::today()->format('Y-m-d');
+        }
+    }
+
     public function updatingFechaInicio()
     {
         $this->cachedEstadisticas = null;
@@ -93,6 +123,17 @@ class ClasesNoRealizadasTable extends Component
     {
         $this->cachedEstadisticas = null;
         $this->resetPage();
+    }
+
+    public function getEstadoNombreProperty()
+    {
+        return match($this->estado) {
+            'no_realizada' => 'No registradas',
+            'realizada' => 'Registradas',
+            'justificado' => 'Justificadas',
+            'pendiente' => 'Pendientes de recuperación',
+            default => 'Todos los estados'
+        };
     }
 
     public function refresh()
@@ -120,11 +161,32 @@ class ClasesNoRealizadasTable extends Component
     {
         $this->search = '';
         $this->estado = '';
-        $this->periodo = '';
-        $this->fecha_inicio = Carbon::now()->startOfMonth()->format('Y-m-d');
-        $this->fecha_fin = Carbon::now()->endOfMonth()->format('Y-m-d');
+        $this->periodo = SemesterHelper::getCurrentPeriod();
+        $this->fecha_fin = Carbon::today()->format('Y-m-d');
+        
+        $periodoActual = SemesterHelper::getPeriodoActual();
+        if ($periodoActual && $periodoActual->fecha_inicio) {
+            $this->fecha_inicio = Carbon::parse($periodoActual->fecha_inicio)->format('Y-m-d');
+        } else {
+            $this->fecha_inicio = Carbon::now()->startOfMonth()->format('Y-m-d');
+        }
+
         $this->cachedEstadisticas = null; // Limpiar cache
         $this->resetPage();
+    }
+
+    public function getHayFiltrosActivosProperty(): bool
+    {
+        $periodoActual = SemesterHelper::getPeriodoActual();
+        $fechaInicioDefecto = $periodoActual && $periodoActual->fecha_inicio 
+            ? Carbon::parse($periodoActual->fecha_inicio)->format('Y-m-d') 
+            : Carbon::now()->startOfMonth()->format('Y-m-d');
+        $fechaFinDefecto = Carbon::today()->format('Y-m-d');
+
+        return !empty(trim($this->search ?? ''))
+            || !empty($this->estado)
+            || ($this->fecha_inicio && $this->fecha_inicio !== $fechaInicioDefecto)
+            || ($this->fecha_fin && $this->fecha_fin !== $fechaFinDefecto);
     }
 
     public function sortBy($field)
@@ -413,6 +475,7 @@ class ClasesNoRealizadasTable extends Component
             ->when($this->periodo, function($q) {
                 $q->where('periodo', $this->periodo);
             })
+            ->where('fecha_clase', '<=', Carbon::today()->toDateString())
             ->when($this->fecha_inicio && $this->fecha_fin, function($q) {
                 $q->whereBetween('fecha_clase', [$this->fecha_inicio, $this->fecha_fin]);
             })
@@ -457,6 +520,7 @@ class ClasesNoRealizadasTable extends Component
             ->when($this->periodo, function($q) {
                 $q->where('clases_no_realizadas.periodo', $this->periodo);
             })
+            ->where('clases_no_realizadas.fecha_clase', '<=', Carbon::today()->toDateString())
             ->when($this->fecha_inicio && $this->fecha_fin, function($q) {
                 $q->whereBetween('clases_no_realizadas.fecha_clase', [$this->fecha_inicio, $this->fecha_fin]);
             })
@@ -502,9 +566,22 @@ class ClasesNoRealizadasTable extends Component
 
     public function render()
     {        
-        // Verificar si el periodo académico ha iniciado
-        $periodoActual = SemesterHelper::getPeriodoActual();
-        $periodoNoIniciado = $periodoActual && $periodoActual->noHaIniciado();
+        $periodosDisponibles = SemesterHelper::getPeriodosDisponibles();
+
+        // Verificar si el periodo seleccionado ha iniciado
+        $periodoModel = null;
+        if ($this->periodo) {
+            $partes = explode('-', $this->periodo);
+            if (count($partes) === 2) {
+                $periodoModel = PeriodoAcademico::where('anio', (int)$partes[0])
+                    ->where('semestre', (int)$partes[1])
+                    ->first();
+            }
+        } else {
+            $periodoModel = SemesterHelper::getPeriodoActual();
+        }
+
+        $periodoNoIniciado = $periodoModel && $periodoModel->noHaIniciado();
         
         // Si el periodo no ha iniciado, no mostrar datos
         if ($periodoNoIniciado) {
@@ -518,7 +595,8 @@ class ClasesNoRealizadasTable extends Component
                     'porcentaje_recuperadas' => 0,
                 ],
                 'periodoNoIniciado' => true,
-                'nombrePeriodo' => $periodoActual->nombre_completo,
+                'nombrePeriodo' => $periodoModel->nombre_completo ?? 'Período',
+                'periodosDisponibles' => $periodosDisponibles,
             ]);
         }
         
@@ -543,12 +621,12 @@ class ClasesNoRealizadasTable extends Component
         
         $estadisticas = $this->getEstadisticasOptimizadas();
 
-
         return view('livewire.clases-no-realizadas-table', [
             'clasesNoRealizadas' => $clasesNoRealizadas,
             'estadisticas' => $estadisticas,
             'periodoNoIniciado' => false,
             'nombrePeriodo' => '',
+            'periodosDisponibles' => $periodosDisponibles,
         ]);
     }
 
