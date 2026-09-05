@@ -169,7 +169,7 @@
 
     <!-- Botón Exportar -->
     <div class="flex justify-end mb-4">
-        <a href="{{ route('clases-no-realizadas.export-all-excel', ['periodo' => $periodo]) }}"
+        <a href="{{ route('clases-no-realizadas.export-all-excel', array_filter(['periodo' => $periodo, 'fecha_inicio' => $fecha_inicio, 'fecha_fin' => $fecha_fin, 'estado' => $estado, 'search' => $search])) }}"
            class="inline-flex items-center justify-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200 gap-2">
             <i class="fas fa-file-excel"></i>
             <span>Exportar todas las clases</span>

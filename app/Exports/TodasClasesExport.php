@@ -77,6 +77,13 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
             $fechaFin = $fechaFin ?? Carbon::now()->endOfMonth();
         }
 
+        // En el Control de Clases, el reporte debe ser hasta la fecha actual (hoy)
+        // evitando generar clases futuras que aún no se han realizado
+        $hoy = Carbon::today();
+        if ($fechaFin->gt($hoy)) {
+            $fechaFin = $hoy->copy();
+        }
+
         // Días de la semana para mapeo (0=Domingo, 1=Lunes, etc. según Carbon)
         $dias = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 
@@ -410,7 +417,10 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                             $motivo = 'Sin registro de acceso';
                             $observaciones = 'No se detectó ingreso durante el horario de clase';
                         }
-                        // Si la clase aún no ha pasado, mantener como Planificada
+                        // Si la clase aún no ha pasado (sigue Planificada), excluirla del reporte de control de clases
+                        if ($estado === 'Planificada') {
+                            continue;
+                        }
                         
                         // Aplicar filtro de estado si viene especificado
                         if ($this->estado && $estado !== $this->transformEstado($this->estado)) {
