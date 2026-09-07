@@ -812,10 +812,6 @@
                     optionFinal.textContent = optionTextFinal;
                     moduloFinalSelect.appendChild(optionFinal);
                 }
-
-
-
-                }
             }
 
             // Función para mostrar/ocultar el campo de asignatura
