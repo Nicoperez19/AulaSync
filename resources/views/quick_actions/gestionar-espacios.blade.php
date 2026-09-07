@@ -368,8 +368,8 @@ function filtrarEspacios() {
     
     if (busquedaFiltro) {
         espaciosFiltrados = espaciosFiltrados.filter(e => 
-            e.codigo.toLowerCase().includes(busquedaFiltro) ||
-            e.nombre.toLowerCase().includes(busquedaFiltro)
+            String(e.codigo || '').toLowerCase().includes(busquedaFiltro) ||
+            String(e.nombre || '').toLowerCase().includes(busquedaFiltro)
         );
     }
     
