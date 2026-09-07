@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     cargarHorarioActual();
     cargarOcupacionGrid(activeTabOcupacion);
-    cargarStatusClases('semana');
+    cargarStatusClases('hoy');
 
     setInterval(function() {
         cargarHorarioActual();
@@ -70,10 +70,10 @@ function startCarouselAutoplay() {
     stopCarouselAutoplay();
     const container = document.getElementById('carousel-container');
     if (!container) return;
-    
+
     const total = parseInt(container.getAttribute('data-total-slides') || '1');
     if (total <= 1) return;
-    
+
     window.carouselAutoplayInterval = setInterval(nextSlide, 7500);
 }
 
@@ -87,12 +87,12 @@ function stopCarouselAutoplay() {
 function prevSlide() {
     const container = document.getElementById('carousel-container');
     if (!container) return;
-    
+
     let current = parseInt(container.getAttribute('data-current-slide') || '0');
     const total = parseInt(container.getAttribute('data-total-slides') || '1');
-    
+
     current = current > 0 ? current - 1 : total - 1;
-    
+
     container.setAttribute('data-current-slide', current);
     updateCarouselState(container, current, total);
     startCarouselAutoplay();
@@ -101,12 +101,12 @@ function prevSlide() {
 function nextSlide() {
     const container = document.getElementById('carousel-container');
     if (!container) return;
-    
+
     let current = parseInt(container.getAttribute('data-current-slide') || '0');
     const total = parseInt(container.getAttribute('data-total-slides') || '1');
-    
+
     current = current < total - 1 ? current + 1 : 0;
-    
+
     container.setAttribute('data-current-slide', current);
     updateCarouselState(container, current, total);
     startCarouselAutoplay();
@@ -115,9 +115,9 @@ function nextSlide() {
 function goToSlide(index) {
     const container = document.getElementById('carousel-container');
     if (!container) return;
-    
+
     const total = parseInt(container.getAttribute('data-total-slides') || '1');
-    
+
     container.setAttribute('data-current-slide', index);
     updateCarouselState(container, index, total);
     startCarouselAutoplay();
@@ -128,7 +128,7 @@ function updateCarouselState(container, current, total) {
     if (slides) {
         slides.style.transform = `translateX(-${current * 100}%)`;
     }
-    
+
     for (let i = 0; i < total; i++) {
         const ind = document.getElementById(`indicator-${i}`);
         if (ind) {
@@ -181,7 +181,7 @@ function toggleModalReloj(minimizar) {
 function actualizarModalReloj() {
     const ahora = new Date();
     const hora = ahora.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-    
+
     const clockEl = document.getElementById('modal-hora-actual');
     if (clockEl) {
         clockEl.textContent = hora;
@@ -191,13 +191,13 @@ function actualizarModalReloj() {
     if (clockMinEl) {
         clockMinEl.textContent = hora;
     }
-    
+
     let modulo = '-';
     const moduloNum = obtenerModuloActual();
     if (moduloNum) {
         modulo = moduloNum;
     }
-    
+
     const moduloEl = document.getElementById('modal-modulo-actual');
     if (moduloEl) {
         moduloEl.textContent = 'Módulo actual: ' + modulo;
@@ -207,7 +207,7 @@ function actualizarModalReloj() {
 function cargarHorarioActual() {
     const container = document.getElementById('horarios-actual-container');
     const syncIcon = document.getElementById('btn-sync-icon');
-    
+
     if (syncIcon) {
         syncIcon.classList.add('animate-spin');
     }
@@ -257,20 +257,20 @@ function cargarHorarioActual() {
 
 function cambiarTabOcupacion(tipo) {
     if (activeTabOcupacion === tipo) return;
-    
+
     // Resetear todos los botones al estado inactivo
     document.querySelectorAll('.tab-ocupacion-btn').forEach(btn => {
         btn.classList.remove('bg-[#D2091E]', 'text-white', 'shadow-sm');
         btn.classList.add('text-gray-600', 'hover:bg-white', 'hover:text-[#D2091E]', 'hover:shadow-sm');
     });
-    
+
     // Activar el botón seleccionado
     const selectedBtn = document.getElementById(`tab-ocupacion-${tipo}`);
     if (selectedBtn) {
         selectedBtn.classList.remove('text-gray-600', 'hover:bg-white', 'hover:text-[#D2091E]', 'hover:shadow-sm');
         selectedBtn.classList.add('bg-[#D2091E]', 'text-white', 'shadow-sm');
     }
-    
+
     activeTabOcupacion = tipo;
     cargarOcupacionGrid(tipo, false);
 }
@@ -278,7 +278,7 @@ function cambiarTabOcupacion(tipo) {
 function cargarOcupacionGrid(tipo, silencioso = false) {
     const container = document.getElementById('ocupacion-grid-container');
     if (!container) return;
-    
+
     if (!silencioso) {
         container.innerHTML = `
             <div class="flex flex-col items-center justify-center py-20 text-gray-400">
@@ -287,10 +287,10 @@ function cargarOcupacionGrid(tipo, silencioso = false) {
             </div>
         `;
     }
-    
+
     const baseRoute = window.DashboardConfig ? window.DashboardConfig.ocupacionDatosRoute : '/dashboard/ocupacion-datos';
     const url = `${baseRoute}?tipo=${tipo}`;
-    
+
     fetch(url)
         .then(response => {
             if (!response.ok) {
