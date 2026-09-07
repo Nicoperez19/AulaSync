@@ -71,10 +71,15 @@ class DashboardController extends Controller
             })
             ->get();
 
-        // Obtener todas las reservas activas de hoy por espacio para optimizar consultas
-        $reservasActivasHoy = Reserva::where('fecha_reserva', $fechaHoy)
+        // Obtener todas las reservas activas en curso de hoy por espacio para optimizar consultas
+        $reservasActivasHoy = Reserva::with(['profesor', 'asignatura', 'solicitante', 'espacio.piso'])
+            ->where('fecha_reserva', $fechaHoy)
             ->where('estado', 'activa')
-            ->whereNull('hora_salida')
+            ->where('hora', '<=', $horaAhora)
+            ->where(function ($q) use ($horaAhora) {
+                $q->whereNull('hora_salida')
+                  ->orWhere('hora_salida', '>=', $horaAhora);
+            })
             ->get()
             ->groupBy('id_espacio');
 
@@ -97,18 +102,38 @@ class DashboardController extends Controller
             }
 
             $profesorPresente = false;
-            if ($runProfesorNorm) {
-                $profesorPresente = $reservasEspacio->contains(function ($reserva) use ($runProfesorNorm) {
-                    $reservaRunNorm = $reserva->run_profesor ? $this->normalizeRun($reserva->run_profesor) : null;
-                    return $reservaRunNorm === $runProfesorNorm;
-                });
+            $nombreAsignatura = $asig->asignatura->nombre_asignatura ?? '-';
+            $profesorName = $asig->horario->profesor->name ?? $asig->asignatura->profesor->name ?? '-';
+            $profesorEmail = $asig->horario->profesor->email ?? $asig->asignatura->profesor->email ?? '-';
+
+            if ($reservasEspacio->isNotEmpty()) {
+                $reservaCoincidente = null;
+                if ($runProfesorNorm) {
+                    $reservaCoincidente = $reservasEspacio->first(function ($reserva) use ($runProfesorNorm) {
+                        $reservaRunNorm = $reserva->run_profesor ? $this->normalizeRun($reserva->run_profesor) : null;
+                        return $reservaRunNorm === $runProfesorNorm;
+                    });
+                }
+
+                $reservaActiva = $reservaCoincidente ?: $reservasEspacio->first();
+
+                if ($reservaActiva) {
+                    $profesorPresente = true;
+                    if ($reservaActiva->asignatura && !empty($reservaActiva->asignatura->nombre_asignatura)) {
+                        $nombreAsignatura = $reservaActiva->asignatura->nombre_asignatura;
+                    }
+                    if ($reservaActiva->profesor) {
+                        $profesorName = $reservaActiva->profesor->name;
+                        $profesorEmail = $reservaActiva->profesor->email ?? $profesorEmail;
+                    }
+                }
             }
 
             $asignacionesMapeadas->push((object) [
                 'espacio' => $asig->espacio,
-                'nombre_asignatura' => $asig->asignatura->nombre_asignatura ?? '-',
-                'profesor_name' => $asig->horario->profesor->name ?? $asig->asignatura->profesor->name ?? '-',
-                'profesor_email' => $asig->horario->profesor->email ?? $asig->asignatura->profesor->email ?? '-',
+                'nombre_asignatura' => $nombreAsignatura,
+                'profesor_name' => $profesorName,
+                'profesor_email' => $profesorEmail,
                 'profesor_presente' => $profesorPresente,
             ]);
         }
@@ -130,20 +155,58 @@ class DashboardController extends Controller
             }
 
             $profesorPresente = false;
-            if ($runProfesorNorm) {
-                $profesorPresente = $reservasEspacio->contains(function ($reserva) use ($runProfesorNorm) {
-                    $reservaRunNorm = $reserva->run_profesor ? $this->normalizeRun($reserva->run_profesor) : null;
-                    return $reservaRunNorm === $runProfesorNorm;
-                });
+            $nombreAsignatura = $asig->profesorColaborador->nombre_asignatura ?? '-';
+            $profesorName = $asig->profesorColaborador->profesor->name ?? '-';
+            $profesorEmail = $asig->profesorColaborador->profesor->email ?? '-';
+
+            if ($reservasEspacio->isNotEmpty()) {
+                $reservaCoincidente = null;
+                if ($runProfesorNorm) {
+                    $reservaCoincidente = $reservasEspacio->first(function ($reserva) use ($runProfesorNorm) {
+                        $reservaRunNorm = $reserva->run_profesor ? $this->normalizeRun($reserva->run_profesor) : null;
+                        return $reservaRunNorm === $runProfesorNorm;
+                    });
+                }
+
+                $reservaActiva = $reservaCoincidente ?: $reservasEspacio->first();
+
+                if ($reservaActiva) {
+                    $profesorPresente = true;
+                    if ($reservaActiva->asignatura && !empty($reservaActiva->asignatura->nombre_asignatura)) {
+                        $nombreAsignatura = $reservaActiva->asignatura->nombre_asignatura;
+                    }
+                    if ($reservaActiva->profesor) {
+                        $profesorName = $reservaActiva->profesor->name;
+                        $profesorEmail = $reservaActiva->profesor->email ?? $profesorEmail;
+                    }
+                }
             }
 
             $asignacionesMapeadas->push((object) [
                 'espacio' => $asig->espacio,
-                'nombre_asignatura' => $asig->profesorColaborador->nombre_asignatura ?? '-',
-                'profesor_name' => $asig->profesorColaborador->profesor->name ?? '-',
-                'profesor_email' => $asig->profesorColaborador->profesor->email ?? '-',
+                'nombre_asignatura' => $nombreAsignatura,
+                'profesor_name' => $profesorName,
+                'profesor_email' => $profesorEmail,
                 'profesor_presente' => $profesorPresente,
             ]);
+        }
+
+        // Agregar espacios que no tienen planificación en este módulo pero sí una reserva activa en curso
+        $espaciosConAsignacion = $asignacionesMapeadas->pluck('espacio.id_espacio')->filter()->toArray();
+        foreach ($reservasActivasHoy as $idEspacio => $reservas) {
+            if (!in_array($idEspacio, $espaciosConAsignacion)) {
+                $reservaExtra = $reservas->first();
+                $espacioExtra = $reservaExtra->espacio ?? \App\Models\Espacio::with('piso')->where('id_espacio', $idEspacio)->first();
+                if ($espacioExtra) {
+                    $asignacionesMapeadas->push((object) [
+                        'espacio' => $espacioExtra,
+                        'nombre_asignatura' => $reservaExtra->asignatura->nombre_asignatura ?? ($reservaExtra->tipo_reserva === 'espontanea' ? 'Reserva Espontánea' : 'En Uso'),
+                        'profesor_name' => $reservaExtra->profesor->name ?? $reservaExtra->solicitante->nombre ?? '-',
+                        'profesor_email' => $reservaExtra->profesor->email ?? $reservaExtra->solicitante->correo ?? '-',
+                        'profesor_presente' => true,
+                    ]);
+                }
+            }
         }
 
         // Ordenar por número de piso (sumando offset de 100 para admitir subterráneos) y luego por código de espacio
