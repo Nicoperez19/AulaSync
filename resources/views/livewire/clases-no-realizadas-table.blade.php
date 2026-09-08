@@ -282,11 +282,11 @@
                                         </div>
                                     </td>
                                     <td class="px-4 py-4 text-sm font-medium w-32 sticky right-0 bg-white">
-                                        @if(!empty($clase['id']))
+                                        @if(!empty($clase['id']) || !in_array($clase['estado'], ['Realizada', 'Feriado/Justificado']))
                                             <div class="flex space-x-1">
                                                 @if($clase['estado'] === 'No Registrada')
                                                     <div class="custom-tooltip">
-                                                        <button wire:click="showReagendarModal({{ $clase['id'] }})" 
+                                                        <button wire:click="prepararAccion('reagendar', {{ json_encode($clase) }})" 
                                                                 class="action-button reagendar p-1"
                                                                 title="Reagendar Clase">
                                                             <i class="fas fa-calendar-plus icon-animate text-xs"></i>
@@ -296,7 +296,7 @@
                                                 @endif
                                                 @if($clase['estado'] === 'Pendiente de Recuperación')
                                                     <div class="custom-tooltip">
-                                                        <button wire:click="marcarComoRecuperada({{ $clase['id'] }})" 
+                                                        <button wire:click="prepararAccion('recuperada', {{ json_encode($clase) }})" 
                                                                 class="p-1 bg-green-100 hover:bg-green-200 text-green-700 rounded transition-colors duration-200"
                                                                 title="Marcar como recuperada">
                                                             <i class="fas fa-check-circle icon-animate text-xs"></i>
@@ -305,7 +305,7 @@
                                                     </div>
                                                 @endif
                                                 <div class="custom-tooltip">
-                                                    <button wire:click="showEditModal({{ $clase['id'] }})" 
+                                                    <button wire:click="prepararAccion('editar', {{ json_encode($clase) }})" 
                                                             class="action-button editar p-1"
                                                             title="Editar">
                                                         <i class="fas fa-edit icon-animate text-xs"></i>
@@ -313,7 +313,7 @@
                                                     <span class="tooltip-text">Editar</span>
                                                 </div>
                                                 <div class="custom-tooltip">
-                                                    <button wire:click="showDeleteModal({{ $clase['id'] }})" 
+                                                    <button wire:click="prepararAccion('eliminar', {{ json_encode($clase) }})" 
                                                             class="action-button eliminar p-1"
                                                             title="Eliminar">
                                                         <i class="fas fa-trash icon-animate text-xs"></i>

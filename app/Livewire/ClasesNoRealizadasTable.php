@@ -194,6 +194,56 @@ class ClasesNoRealizadasTable extends Component
         $this->sortField = $field;
     }
 
+    public function prepararAccion($accion, $claseData)
+    {
+        $id = $claseData['id'] ?? null;
+        
+        if (!$id) {
+            // Reconstruir id_modulo (ej: "Lunes" -> "LU", "Martes" -> "MA")
+            $diaStr = strtolower($claseData['dia'] ?? '');
+            $prefijoDia = match($diaStr) {
+                'lunes' => 'LU',
+                'martes' => 'MA',
+                'miércoles', 'miercoles' => 'MI',
+                'jueves' => 'JU',
+                'viernes' => 'VI',
+                'sábado', 'sabado' => 'SA',
+                'domingo' => 'DO',
+                default => 'LU'
+            };
+            
+            $idModulo = $prefijoDia . '.' . $claseData['modulo'];
+
+            // Crear el registro físico para que los modales puedan interactuar con él
+            $clase = ClaseNoRealizada::firstOrCreate(
+                [
+                    'id_asignatura' => $claseData['id_asignatura'],
+                    'id_espacio' => $claseData['espacio'],
+                    'id_modulo' => $idModulo,
+                    'fecha_clase' => Carbon::parse($claseData['fecha'])->format('Y-m-d'),
+                    'run_profesor' => $claseData['run_profesor']
+                ],
+                [
+                    'periodo' => $claseData['periodo'] ?? SemesterHelper::getCurrentPeriod(),
+                    'estado' => $claseData['estado'] === 'No Registrada' ? 'no_realizada' : 'realizada',
+                    'motivo' => $claseData['motivo'] ?? 'Generado para acción manual',
+                    'hora_deteccion' => Carbon::now(),
+                ]
+            );
+            $id = $clase->id;
+        }
+
+        if ($accion === 'reagendar') {
+            $this->showReagendarModal($id);
+        } elseif ($accion === 'editar') {
+            $this->showEditModal($id);
+        } elseif ($accion === 'eliminar') {
+            $this->showDeleteModal($id);
+        } elseif ($accion === 'recuperada') {
+            $this->marcarComoRecuperada($id);
+        }
+    }
+
     public function showEditModal($id)
     {
         $clase = ClaseNoRealizada::with(['asignatura', 'profesor'])->findOrFail($id);
