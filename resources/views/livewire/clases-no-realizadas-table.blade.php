@@ -113,7 +113,7 @@
                 <label for="search" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Buscar</label>
                 <div class="relative">
                     <input type="text" 
-                           wire:model.live.debounce.300ms="search" 
+                           wire:model.live.debounce.800ms="search" 
                            id="search"
                            class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                            placeholder="Profesor, asignatura, RUN o espacio...">
@@ -124,7 +124,7 @@
             <!-- Estado -->
             <div>
                 <label for="estado" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Estado</label>
-                <select wire:model.live.debounce.300ms="estado" 
+                <select wire:model.live.debounce.800ms="estado" 
                         id="estado"
                         class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
                     <option value="">Todos</option>
@@ -139,7 +139,7 @@
             <div>
                 <label for="fecha_inicio" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Desde</label>
                 <input type="date" 
-                       wire:model.live.debounce.300ms="fecha_inicio" 
+                       wire:model.live.debounce.800ms="fecha_inicio" 
                        id="fecha_inicio"
                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
             </div>
@@ -148,7 +148,7 @@
             <div>
                 <label for="fecha_fin" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Hasta</label>
                 <input type="date" 
-                       wire:model.live.debounce.300ms="fecha_fin" 
+                       wire:model.live.debounce.800ms="fecha_fin" 
                        id="fecha_fin"
                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
             </div>
@@ -216,31 +216,31 @@
                             @forelse($clasesNoRealizadas as $clase)
                                 @php
                                     // Parsear módulos inicio y fin
-                                    $modulos = explode(',', $clase->id_modulo);
+                                    $modulos = explode(',', $clase['modulo']);
                                     $moduloInicio = preg_replace('/^[A-Z]{2}\./', '', $modulos[0]);
                                     $moduloFin = count($modulos) > 1 ? preg_replace('/^[A-Z]{2}\./', '', end($modulos)) : $moduloInicio;
                                 @endphp
-                                <tr class="table-row hover:bg-gray-50 {{ $clase->estado === 'pendiente' ? 'bg-yellow-50' : '' }}">
+                                <tr class="table-row hover:bg-gray-50 {{ $clase['estado'] === 'Pendiente de Recuperación' ? 'bg-yellow-50' : '' }}">
                                     <td class="px-3 py-4 text-sm text-gray-900 w-24">
                                         <div class="flex items-center gap-1">
-                                            {{ $clase->fecha_clase->format('d/m/Y') }}
-                                            @if($clase->estado === 'pendiente')
+                                            {{ \Carbon\Carbon::parse($clase['fecha'])->format('d/m/Y') }}
+                                            @if($clase['estado'] === 'Pendiente de Recuperación')
                                                 <i class="fas fa-clock text-yellow-600 text-xs cursor-help" 
                                                    title="Clase reagendada - Pendiente de recuperación"></i>
                                             @endif
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 text-sm text-gray-900 w-32">
-                                        <div class="break-words">{{ $clase->profesor->name ?? 'N/A' }}</div>
+                                        <div class="break-words">{{ $clase['profesor'] ?? 'N/A' }}</div>
                                     </td>
                                     <td class="px-3 py-4 text-sm text-gray-900 w-40">
                                         <div class="break-words">
-                                            <div class="font-medium">{{ $clase->asignatura->nombre_asignatura ?? 'N/A' }}</div>
-                                            <div class="text-xs text-gray-500">{{ $clase->asignatura->codigo_asignatura ?? '' }}</div>
+                                            <div class="font-medium">{{ $clase['asignatura'] ?? 'N/A' }}</div>
+                                            <div class="text-xs text-gray-500">{{ $clase['codigo_asignatura'] ?? '' }}</div>
                                         </div>
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                                        {{ $clase->id_espacio }}
+                                        {{ $clase['espacio'] }}
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                                         {{ $moduloInicio }}
@@ -250,72 +250,78 @@
                                     </td>
                                     <td class="px-4 py-4 whitespace-nowrap">
                                         <div class="flex flex-col gap-1">
-                                            @if($clase->estado === 'no_realizada')
+                                            @if($clase['estado'] === 'No Registrada')
                                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
                                                     No Registrada
                                                 </span>
-                                            @elseif($clase->estado === 'realizada' || $clase->estado === 'registrada')
+                                            @elseif($clase['estado'] === 'Realizada' || $clase['estado'] === 'Registrada')
                                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800 flex items-center gap-1">
                                                     <i class="fas fa-check-circle text-[10px]"></i>
                                                     Registrada
                                                 </span>
-                                            @elseif($clase->estado === 'pendiente')
+                                            @elseif($clase['estado'] === 'Pendiente de Recuperación')
                                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800 flex items-center gap-1">
                                                     <i class="fas fa-clock text-[10px]"></i>
                                                     Pendiente Recuperación
                                                 </span>
-                                            @elseif($clase->estado === 'justificado')
+                                            @elseif($clase['estado'] === 'Justificada' || $clase['estado'] === 'Feriado/Justificado')
                                                 <span class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
-                                                    Justificado
+                                                    {{ $clase['estado'] }}
                                                 </span>
                                             @endif
                                         </div>
                                     </td>
                                     <td class="px-3 py-4 text-sm text-gray-500 w-28">
                                         <div class="break-words">
-                                            <div>{{ $clase->hora_deteccion->format('d/m/Y') }}</div>
-                                            <div class="text-xs">{{ $clase->hora_deteccion->format('H:i') }}</div>
+                                            @if(isset($clase['hora_deteccion']))
+                                                <div>{{ \Carbon\Carbon::parse($clase['hora_deteccion'])->format('d/m/Y') }}</div>
+                                                <div class="text-xs">{{ \Carbon\Carbon::parse($clase['hora_deteccion'])->format('H:i') }}</div>
+                                            @else
+                                                <span class="text-xs text-gray-400">N/A</span>
+                                            @endif
                                         </div>
                                     </td>
                                     <td class="px-4 py-4 text-sm font-medium w-32 sticky right-0 bg-white">
-                                        <div class="flex space-x-1">
-                                            @if($clase->estado === 'no_realizada')
+                                        @if(!empty($clase['id']))
+                                            <div class="flex space-x-1">
+                                                @if($clase['estado'] === 'No Registrada')
+                                                    <div class="custom-tooltip">
+                                                        <button wire:click="showReagendarModal({{ $clase['id'] }})" 
+                                                                class="action-button reagendar p-1"
+                                                                title="Reagendar Clase">
+                                                            <i class="fas fa-calendar-plus icon-animate text-xs"></i>
+                                                        </button>
+                                                        <span class="tooltip-text">Reagendar</span>
+                                                    </div>
+                                                @endif
+                                                @if($clase['estado'] === 'Pendiente de Recuperación')
+                                                    <div class="custom-tooltip">
+                                                        <button wire:click="marcarComoRecuperada({{ $clase['id'] }})" 
+                                                                class="p-1 bg-green-100 hover:bg-green-200 text-green-700 rounded transition-colors duration-200"
+                                                                title="Marcar como recuperada">
+                                                            <i class="fas fa-check-circle icon-animate text-xs"></i>
+                                                        </button>
+                                                        <span class="tooltip-text">Recuperada</span>
+                                                    </div>
+                                                @endif
                                                 <div class="custom-tooltip">
-                                                    <button wire:click="showReagendarModal({{ $clase->id }})" 
-                                                            class="action-button reagendar p-1"
-                                                            title="Reagendar Clase">
-                                                        <i class="fas fa-calendar-plus icon-animate text-xs"></i>
+                                                    <button wire:click="showEditModal({{ $clase['id'] }})" 
+                                                            class="action-button editar p-1"
+                                                            title="Editar">
+                                                        <i class="fas fa-edit icon-animate text-xs"></i>
                                                     </button>
-                                                    <span class="tooltip-text">Reagendar</span>
+                                                    <span class="tooltip-text">Editar</span>
                                                 </div>
-                                            @endif
-                                            @if($clase->estado === 'pendiente')
                                                 <div class="custom-tooltip">
-                                                    <button wire:click="marcarComoRecuperada({{ $clase->id }})" 
-                                                            class="p-1 bg-green-100 hover:bg-green-200 text-green-700 rounded transition-colors duration-200"
-                                                            title="Marcar como recuperada">
-                                                        <i class="fas fa-check-circle icon-animate text-xs"></i>
+                                                    <button wire:click="showDeleteModal({{ $clase['id'] }})" 
+                                                            class="action-button eliminar p-1"
+                                                            title="Eliminar">
+                                                        <i class="fas fa-trash icon-animate text-xs"></i>
                                                     </button>
-                                                    <span class="tooltip-text">Recuperada</span>
+                                                    <span class="tooltip-text">Eliminar</span>
                                                 </div>
-                                            @endif
-                                            <div class="custom-tooltip">
-                                                <button wire:click="showEditModal({{ $clase->id }})" 
-                                                        class="action-button editar p-1"
-                                                        title="Editar">
-                                                    <i class="fas fa-edit icon-animate text-xs"></i>
-                                                </button>
-                                                <span class="tooltip-text">Editar</span>
                                             </div>
-                                            <div class="custom-tooltip">
-                                                <button wire:click="showDeleteModal({{ $clase->id }})" 
-                                                        class="action-button eliminar p-1"
-                                                        title="Eliminar">
-                                                    <i class="fas fa-trash icon-animate text-xs"></i>
-                                                </button>
-                                                <span class="tooltip-text">Eliminar</span>
-                                            </div>
-                                        </div>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty

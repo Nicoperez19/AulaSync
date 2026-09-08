@@ -409,152 +409,10 @@ class ClasesNoRealizadasTable extends Component
         }
     }
 
-    /**
-     * Obtener estadísticas de forma optimizada usando una sola consulta con agregación
-     */
-    private function getEstadisticasOptimizadas()
-    {
-        // Retornar cache si existe
-        if ($this->cachedEstadisticas !== null) {
-            return $this->cachedEstadisticas;
-        }
-
-        $hoy = Carbon::now()->toDateString();
-        
-        // Una sola consulta con agregación condicional
-        // Usar conexión 'tenant' explícitamente para bases de datos multi-tenant
-        $stats = DB::connection('tenant')->table('clases_no_realizadas')
-            ->select([
-                DB::raw('COUNT(DISTINCT CONCAT(id_asignatura, "_", run_profesor, "_", id_espacio, "_", id_modulo, "_", fecha_clase)) as total'),
-                DB::raw("SUM(CASE WHEN estado = 'no_realizada' THEN 1 ELSE 0 END) as no_realizadas"),
-                DB::raw("SUM(CASE WHEN estado = 'pendiente' THEN 1 ELSE 0 END) as pendientes"),
-                DB::raw("SUM(CASE WHEN estado = 'justificado' THEN 1 ELSE 0 END) as justificados"),
-                DB::raw("SUM(CASE WHEN estado = 'realizada' OR estado = 'registrada' THEN 1 ELSE 0 END) as realizadas"),
-            ])
-            // Solo excluir de atrasos si el estado es 'no_realizada' (porque si es un atraso, la clase sí se realizó)
-            ->where(function($q) {
-                $q->where('clases_no_realizadas.estado', '!=', 'no_realizada')
-                  ->orWhereNotExists(function($subQuery) {
-                      $subQuery->select(DB::raw(1))
-                          ->from('profesor_atrasos')
-                          ->whereColumn('profesor_atrasos.id_asignatura', 'clases_no_realizadas.id_asignatura')
-                          ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio')
-                          ->whereColumn('profesor_atrasos.id_modulo', 'clases_no_realizadas.id_modulo')
-                          ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase');
-                  });
-            })
-            // Excluir registros que caen en feriados o periodos sin actividad
-            ->whereNotExists(function($subQuery) {
-                $subQuery->select(DB::raw(1))
-                    ->from('dias_feriados')
-                    ->whereColumn('clases_no_realizadas.fecha_clase', '>=', 'dias_feriados.fecha_inicio')
-                    ->whereColumn('clases_no_realizadas.fecha_clase', '<=', 'dias_feriados.fecha_fin');
-            })
-            ->when($this->periodo, function($q) {
-                $q->where('periodo', $this->periodo);
-            })
-            ->where('fecha_clase', '<=', Carbon::today()->toDateString())
-            ->when($this->fecha_inicio && $this->fecha_fin, function($q) {
-                $q->whereBetween('fecha_clase', [$this->fecha_inicio, $this->fecha_fin]);
-            })
-            ->first();
-
-        $this->cachedEstadisticas = [
-            'total' => (int) ($stats->total ?? 0),
-            'no_realizadas' => (int) ($stats->no_realizadas ?? 0),
-            'pendientes' => (int) ($stats->pendientes ?? 0),
-            'justificados' => (int) ($stats->justificados ?? 0),
-            'realizadas' => (int) ($stats->realizadas ?? 0),
-        ];
-
-        return $this->cachedEstadisticas;
-    }
-
-    /**
-     * Construir la query base con filtros aplicados (reutilizable)
-     */
-    private function buildBaseQuery()
-    {
-        $hoy = Carbon::now()->toDateString();
-        
-        $query = ClaseNoRealizada::query()
-            ->select('clases_no_realizadas.*')
-            ->distinct() // Eliminar duplicados exactos
-            // Solo excluir de atrasos si el estado es 'no_realizada' (porque si es un atraso, la clase sí se realizó)
-            ->where(function($q) {
-                $q->where('clases_no_realizadas.estado', '!=', 'no_realizada')
-                  ->orWhereNotExists(function($subQuery) {
-                      $subQuery->select(DB::raw(1))
-                          ->from('profesor_atrasos')
-                          ->whereColumn('profesor_atrasos.id_asignatura', 'clases_no_realizadas.id_asignatura')
-                          ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio')
-                          ->whereColumn('profesor_atrasos.id_modulo', 'clases_no_realizadas.id_modulo')
-                          ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase');
-                  });
-            })
-            // Excluir registros que caen en feriados o periodos sin actividad
-            ->whereNotExists(function($subQuery) {
-                $subQuery->select(DB::raw(1))
-                    ->from('dias_feriados')
-                    ->whereColumn('clases_no_realizadas.fecha_clase', '>=', 'dias_feriados.fecha_inicio')
-                    ->whereColumn('clases_no_realizadas.fecha_clase', '<=', 'dias_feriados.fecha_fin');
-            })
-            ->when($this->periodo, function($q) {
-                $q->where('clases_no_realizadas.periodo', $this->periodo);
-            })
-            ->where('clases_no_realizadas.fecha_clase', '<=', Carbon::today()->toDateString())
-            ->when($this->fecha_inicio && $this->fecha_fin, function($q) {
-                $q->whereBetween('clases_no_realizadas.fecha_clase', [$this->fecha_inicio, $this->fecha_fin]);
-            })
-            ->when($this->estado, function($q) {
-                if ($this->estado === 'realizada') {
-                    $q->whereIn('clases_no_realizadas.estado', ['realizada', 'registrada']);
-                } else {
-                    $q->where('clases_no_realizadas.estado', $this->estado);
-                }
-            });
-
-        // Búsqueda optimizada para Asignatura, Profesor, Espacio y Motivo
-        if ($this->search) {
-            $searchTerm = '%' . trim($this->search) . '%';
-            
-            // Subquery para obtener IDs de asignaturas que coincidan
-            $asignaturasIds = Asignatura::where('nombre_asignatura', 'like', $searchTerm)
-                ->orWhere('codigo_asignatura', 'like', $searchTerm)
-                ->pluck('id_asignatura')
-                ->toArray();
-
-            // Subquery para obtener RUNs de profesores que coincidan por nombre, rut o email
-            $profesoresRuns = Profesor::where('name', 'like', $searchTerm)
-                ->orWhere('run_profesor', 'like', $searchTerm)
-                ->orWhere('email', 'like', $searchTerm)
-                ->pluck('run_profesor')
-                ->toArray();
-            
-            // Aplicar búsqueda completa
-            $query->where(function($q) use ($searchTerm, $asignaturasIds, $profesoresRuns) {
-                $q->where('clases_no_realizadas.run_profesor', 'like', $searchTerm)
-                  ->orWhere('clases_no_realizadas.id_espacio', 'like', $searchTerm)
-                  ->orWhere('clases_no_realizadas.motivo', 'like', $searchTerm);
-
-                if (!empty($asignaturasIds)) {
-                    $q->orWhereIn('clases_no_realizadas.id_asignatura', $asignaturasIds);
-                }
-
-                if (!empty($profesoresRuns)) {
-                    $q->orWhereIn('clases_no_realizadas.run_profesor', $profesoresRuns);
-                }
-            });
-        }
-
-        return $query;
-    }
-
     public function render()
     {        
         $periodosDisponibles = SemesterHelper::getPeriodosDisponibles();
 
-        // Verificar si el periodo seleccionado ha iniciado
         $periodoModel = null;
         if ($this->periodo) {
             $partes = explode('-', $this->periodo);
@@ -569,16 +427,15 @@ class ClasesNoRealizadasTable extends Component
 
         $periodoNoIniciado = $periodoModel && $periodoModel->noHaIniciado();
         
-        // Si el periodo no ha iniciado, no mostrar datos
         if ($periodoNoIniciado) {
             return view('livewire.clases-no-realizadas-table', [
                 'clasesNoRealizadas' => new \Illuminate\Pagination\LengthAwarePaginator([], 0, $this->perPage),
                 'estadisticas' => [
                     'total' => 0,
+                    'no_realizadas' => 0,
                     'pendientes' => 0,
-                    'justificadas' => 0,
-                    'recuperadas' => 0,
-                    'porcentaje_recuperadas' => 0,
+                    'justificados' => 0,
+                    'realizadas' => 0,
                 ],
                 'periodoNoIniciado' => true,
                 'nombrePeriodo' => $periodoModel->nombre_completo ?? 'Período',
@@ -586,29 +443,86 @@ class ClasesNoRealizadasTable extends Component
             ]);
         }
         
-        // Limpiar cache de estadísticas para este render
-        $this->cachedEstadisticas = null;
-        
-        $query = $this->buildBaseQuery();
+        // Usar el servicio para obtener todas las clases del rango (sin filtros de búsqueda/estado)
+        // para poder calcular las estadísticas globales del periodo
+        $servicio = new \App\Services\TodasClasesService();
+        $todasLasClases = $servicio->obtenerTodasLasClases(
+            $this->fecha_inicio,
+            $this->fecha_fin,
+            $this->periodo,
+            null,
+            null
+        );
 
-        // Ordenamiento con prefijo de tabla para evitar ambigüedad
-        $sortField = $this->sortField;
-        if (!str_contains($sortField, '.')) {
-            $sortField = 'clases_no_realizadas.' . $sortField;
+        // Aplicar filtro de estado en memoria
+        if ($this->estado) {
+            $estadoStr = match($this->estado) {
+                'no_realizada' => 'No Registrada',
+                'realizada', 'registrada' => 'Realizada',
+                'justificado' => 'Justificada',
+                'pendiente' => 'Pendiente de Recuperación',
+                default => null
+            };
+            if ($estadoStr) {
+                if ($estadoStr === 'Realizada') {
+                    $todasLasClases = $todasLasClases->whereIn('estado', ['Realizada', 'Registrada']);
+                } else {
+                    $todasLasClases = $todasLasClases->where('estado', $estadoStr);
+                }
+            }
         }
-        $query->orderBy($sortField, $this->sortDirection);
-
-        // Eager loading optimizado
-        $clasesNoRealizadas = $query->with([
-            'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura',
-            'profesor:run_profesor,name',
-            'espacio:id_espacio,nombre_espacio'
-        ])->paginate($this->perPage);
         
-        $estadisticas = $this->getEstadisticasOptimizadas();
+        // Aplicar filtro de búsqueda en memoria
+        if ($this->search) {
+            $searchTerm = strtolower($this->search);
+            $todasLasClases = $todasLasClases->filter(function($item) use ($searchTerm) {
+                return str_contains(strtolower($item['profesor'] ?? ''), $searchTerm) ||
+                       str_contains(strtolower($item['asignatura'] ?? ''), $searchTerm) ||
+                       str_contains(strtolower($item['codigo_asignatura'] ?? ''), $searchTerm) ||
+                       str_contains(strtolower($item['run_profesor'] ?? ''), $searchTerm) ||
+                       str_contains(strtolower($item['espacio'] ?? ''), $searchTerm);
+            });
+        }
+
+        // Calcular estadísticas a partir de la colección ya filtrada
+        $estadisticas = [
+            'total' => $todasLasClases->count(),
+            'no_realizadas' => $todasLasClases->where('estado', 'No Registrada')->count(),
+            'pendientes' => $todasLasClases->where('estado', 'Pendiente de Recuperación')->count(),
+            'justificados' => $todasLasClases->where('estado', 'Justificada')->count(),
+            'realizadas' => $todasLasClases->whereIn('estado', ['Realizada', 'Feriado/Justificado', 'Recuperada'])->count(),
+        ];
+
+        // Ordenamiento dinámico sobre la colección filtrada
+        $sortField = $this->sortField;
+        // Quitar prefijo si existe
+        if (str_contains($sortField, '.')) {
+            $sortField = explode('.', $sortField)[1];
+        }
+
+        // Mapear algunos nombres de campo si difieren entre tabla y array devuelto
+        if ($sortField === 'fecha_clase') $sortField = 'fecha';
+        
+        if ($this->sortDirection === 'asc') {
+            $todasLasClases = $todasLasClases->sortBy($sortField)->values();
+        } else {
+            $todasLasClases = $todasLasClases->sortByDesc($sortField)->values();
+        }
+
+        // Paginación manual
+        $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
+        $items = $todasLasClases->forPage($currentPage, $this->perPage);
+        
+        $paginator = new \Illuminate\Pagination\LengthAwarePaginator(
+            $items,
+            $todasLasClases->count(),
+            $this->perPage,
+            $currentPage,
+            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+        );
 
         return view('livewire.clases-no-realizadas-table', [
-            'clasesNoRealizadas' => $clasesNoRealizadas,
+            'clasesNoRealizadas' => $paginator,
             'estadisticas' => $estadisticas,
             'periodoNoIniciado' => false,
             'nombrePeriodo' => '',
