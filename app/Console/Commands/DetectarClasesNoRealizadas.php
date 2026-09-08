@@ -22,6 +22,9 @@ class DetectarClasesNoRealizadas extends Command
      * @var string
      */
     protected $signature = 'clases:detectar-no-realizadas 
+                            {--fecha= : Fecha específica a evaluar (formato YYYY-MM-DD)}
+                            {--desde= : Fecha inicio para rango (YYYY-MM-DD)}
+                            {--hasta= : Fecha fin para rango (YYYY-MM-DD)}
                             {--force : Forzar detección ignorando el tiempo de gracia}
                             {--dry-run : Solo mostrar qué se detectaría sin registrar}';
 
@@ -133,6 +136,15 @@ class DetectarClasesNoRealizadas extends Command
             4 => ['inicio' => '11:10:00', 'fin' => '12:00:00'],
             5 => ['inicio' => '12:10:00', 'fin' => '13:00:00'],
             6 => ['inicio' => '13:10:00', 'fin' => '14:00:00'],
+            7 => ['inicio' => '14:10:00', 'fin' => '15:00:00'],
+            8 => ['inicio' => '15:10:00', 'fin' => '16:00:00'],
+            9 => ['inicio' => '16:10:00', 'fin' => '17:00:00'],
+            10 => ['inicio' => '17:10:00', 'fin' => '18:00:00'],
+            11 => ['inicio' => '18:10:00', 'fin' => '19:00:00'],
+            12 => ['inicio' => '19:10:00', 'fin' => '20:00:00'],
+            13 => ['inicio' => '20:10:00', 'fin' => '21:00:00'],
+            14 => ['inicio' => '21:10:00', 'fin' => '22:00:00'],
+            15 => ['inicio' => '22:10:00', 'fin' => '23:00:00'],
         ],
     ];
 
@@ -144,43 +156,65 @@ class DetectarClasesNoRealizadas extends Command
         $this->info('Iniciando detección de clases no realizadas...');
         $this->info('Tiempo de gracia: ' . self::TIEMPO_GRACIA_MINUTOS . ' minutos');
 
-        $hoy = Carbon::now();
-        $diaActual = strtolower($hoy->locale('es')->isoFormat('dddd'));
-        $horaActual = $hoy->format('H:i:s');
-        $fechaActual = $hoy->toDateString();
+        $fechaEspecifica = $this->option('fecha');
+        $desde = $this->option('desde');
+        $hasta = $this->option('hasta');
 
-        // Normalizar día
-        $diaKey = $this->normalizarDia($diaActual);
-        
-        // Solo ejecutar en días laborales
-        if ($diaActual === 'domingo') {
-            $this->info('Hoy es domingo, no se ejecuta la detección.');
-            return 0;
+        $fechasAProcesar = [];
+        if ($fechaEspecifica) {
+            $fechasAProcesar[] = Carbon::parse($fechaEspecifica);
+        } elseif ($desde && $hasta) {
+            $curr = Carbon::parse($desde);
+            $end = Carbon::parse($hasta);
+            while ($curr <= $end) {
+                $fechasAProcesar[] = $curr->copy();
+                $curr->addDay();
+            }
+        } else {
+            $fechasAProcesar[] = Carbon::now();
         }
 
-        // Verificar si hay horarios para este día
-        if (!isset($this->horariosModulos[$diaKey])) {
-            $this->info("No hay horarios definidos para el día: $diaKey");
-            return 0;
-        }
-
-        // Obtener el período actual
         $periodo = SemesterHelper::getCurrentPeriod();
         $this->info("Período académico: $periodo");
-        $this->info("Día: $diaActual ($diaKey), Hora actual: $horaActual");
-
-        // Mapear el día a su prefijo
-        $prefijoDia = $this->obtenerPrefijoDia($diaActual);
-        if (!$prefijoDia) {
-            $this->error('No se pudo determinar el prefijo del día.');
-            return 1;
-        }
-
-        // Obtener todos los tenants
         $tenants = Tenant::all();
-        
-        foreach ($tenants as $tenant) {
-            $this->procesarTenant($tenant, $diaKey, $prefijoDia, $periodo, $fechaActual);
+
+        foreach ($fechasAProcesar as $fechaObj) {
+            $diaActual = strtolower($fechaObj->locale('es')->isoFormat('dddd'));
+            $diaKey = $this->normalizarDia($diaActual);
+            $fechaActual = $fechaObj->toDateString();
+            $esHoy = $fechaObj->isToday();
+
+            // Si es un día pasado o se especificó --force, evaluar todos los módulos del día
+            if (!$esHoy || $this->option('force')) {
+                $horaActual = '23:59:59';
+            } else {
+                $horaActual = Carbon::now()->format('H:i:s');
+            }
+
+            // Solo ejecutar en días laborales (lunes a sábado)
+            if ($diaActual === 'domingo') {
+                $this->info("Fecha $fechaActual es domingo, se omite.");
+                continue;
+            }
+
+            // Verificar si hay horarios para este día
+            if (!isset($this->horariosModulos[$diaKey])) {
+                $this->info("No hay horarios definidos para el día: $diaKey ($fechaActual)");
+                continue;
+            }
+
+            // Mapear el día a su prefijo
+            $prefijoDia = $this->obtenerPrefijoDia($diaActual);
+            if (!$prefijoDia) {
+                $this->error("No se pudo determinar el prefijo del día: $diaActual ($fechaActual)");
+                continue;
+            }
+
+            $this->info("Procesando fecha: $fechaActual | Día: $diaActual ($diaKey) | Hora límite: $horaActual");
+
+            foreach ($tenants as $tenant) {
+                $this->procesarTenant($tenant, $diaKey, $prefijoDia, $periodo, $fechaActual, $horaActual);
+            }
         }
 
         return 0;
@@ -189,7 +223,7 @@ class DetectarClasesNoRealizadas extends Command
     /**
      * Procesar detección para un tenant específico
      */
-    private function procesarTenant($tenant, $diaKey, $prefijoDia, $periodo, $fechaActual)
+    private function procesarTenant($tenant, $diaKey, $prefijoDia, $periodo, $fechaActual, $horaActual = null)
     {
         try {
             // Establecer este tenant como el actual
@@ -197,8 +231,10 @@ class DetectarClasesNoRealizadas extends Command
 
             $this->info("Procesando tenant: {$tenant->name} ({$tenant->database})");
 
-            $hoy = Carbon::now();
-            $horaActual = $hoy->format('H:i:s');
+            if (!$horaActual) {
+                $hoy = Carbon::now();
+                $horaActual = $hoy->format('H:i:s');
+            }
 
             // Verificar si hoy es feriado o día sin actividad para este tenant
             if (\App\Models\DiaFeriado::esFeriado($fechaActual)) {
@@ -295,12 +331,13 @@ class DetectarClasesNoRealizadas extends Command
                 if ($reserva) {
                     // El profesor SÍ hizo la reserva/registro
                     $horaEntrada = $reserva->hora;
+                    $minutosAtraso = 0;
 
                     // Verificar si llegó con atraso (después de los 15 minutos)
                     if ($horaEntrada > $horaLimite) {
                         $minutosAtraso = Carbon::parse($horaInicioClase)->diffInMinutes(Carbon::parse($horaEntrada));
                     
-                    // Registrar atraso si existe la tabla
+                        // Registrar atraso si existe la tabla
                         $this->registrarAtraso($primerModulo, $runProfesor, $fechaActual, $horaEntrada, $minutosAtraso, $periodo);
                         $atrasosDetectados++;
                         
@@ -312,6 +349,28 @@ class DetectarClasesNoRealizadas extends Command
                         ));
                     } else {
                         $clasesRealizadas++;
+                    }
+
+                    // Registrar cada módulo de la clase como REALIZADA / REGISTRADA
+                    if (!$this->option('dry-run')) {
+                        foreach ($modulosClase as $modulo) {
+                            ClaseNoRealizada::updateOrCreate(
+                                [
+                                    'id_asignatura' => $modulo->id_asignatura,
+                                    'id_espacio' => $modulo->id_espacio,
+                                    'id_modulo' => $modulo->id_modulo,
+                                    'fecha_clase' => $fechaActual,
+                                ],
+                                [
+                                    'run_profesor' => $runProfesor,
+                                    'periodo' => $periodo,
+                                    'motivo' => $minutosAtraso > 0 ? "Clase realizada con atraso de {$minutosAtraso} min" : "Clase realizada (ingreso a las {$horaEntrada})",
+                                    'observaciones' => "Profesor registró ingreso a las {$horaEntrada}",
+                                    'estado' => 'realizada',
+                                    'hora_deteccion' => $fechaActual === Carbon::today()->toDateString() ? now() : Carbon::parse($fechaActual . ' ' . $horaEntrada),
+                                ]
+                            );
+                        }
                     }
 
                     // Verificar retiros anticipados si la reserva está finalizada
@@ -342,7 +401,7 @@ class DetectarClasesNoRealizadas extends Command
                                 'fecha_clase' => $fechaActual,
                                 'periodo' => $periodo,
                                 'motivo' => 'No se registró ingreso del profesor después de ' . self::TIEMPO_GRACIA_MINUTOS . ' minutos (detección automática)',
-                                'hora_deteccion' => now(),
+                                'hora_deteccion' => $fechaActual === Carbon::today()->toDateString() ? now() : Carbon::parse($fechaActual . ' 23:59:59'),
                             ]);
 
                             if ($claseNoRealizada && $claseNoRealizada->wasRecentlyCreated) {

@@ -27,8 +27,6 @@ class ClasesNoRealizadasTable extends Component
     public $perPage = 15;
     public $sortField = 'created_at';
     public $sortDirection = 'desc';
-    private $autoRefresh = true; // Auto-refresh siempre activo
-    public $lastRecordCount = 0;
     
     // Cache para estadísticas (evitar múltiples consultas)
     private $cachedEstadisticas = null;
@@ -62,9 +60,6 @@ class ClasesNoRealizadasTable extends Component
         } else {
             $this->fecha_inicio = Carbon::now()->startOfMonth()->format('Y-m-d');
         }
-        
-        // Inicializar el conteo de registros usando cache
-        $this->lastRecordCount = $this->getEstadisticasOptimizadas()['total'];
         
         // Si viene un reagendar_id desde URL, abrir modal automáticamente
         if ($this->reagendar_id) {
@@ -401,22 +396,6 @@ class ClasesNoRealizadasTable extends Component
         ]);
     }
 
-    public function toggleEstado($id)
-    {
-        try {
-            $clase = ClaseNoRealizada::findOrFail($id);
-            
-            // Cambiar entre los dos estados: no_realizada -> justificado -> no_realizada
-            $nuevoEstado = $clase->estado === 'no_realizada' ? 'justificado' : 'no_realizada';
-            
-            $clase->update(['estado' => $nuevoEstado]);
-            
-            session()->flash('message', "Estado cambiado a: " . ($nuevoEstado === 'no_realizada' ? 'Clase no registrada' : 'Justificado'));
-        } catch (\Exception $e) {
-            session()->flash('error', 'Error al cambiar el estado: ' . $e->getMessage());
-        }
-    }
-
     public function confirmDelete($id)
     {
         try {
@@ -428,11 +407,6 @@ class ClasesNoRealizadasTable extends Component
         } catch (\Exception $e) {
             $this->dispatch('show-error', ['message' => 'Error al eliminar el registro: ' . $e->getMessage()]);
         }
-    }
-
-    public function getEstadisticas()
-    {
-        return $this->getEstadisticasOptimizadas();
     }
 
     /**
@@ -447,7 +421,7 @@ class ClasesNoRealizadasTable extends Component
 
         $hoy = Carbon::now()->toDateString();
         
-        // Una sola consulta con agregación condicional, excluyendo atrasos
+        // Una sola consulta con agregación condicional
         // Usar conexión 'tenant' explícitamente para bases de datos multi-tenant
         $stats = DB::connection('tenant')->table('clases_no_realizadas')
             ->select([
@@ -457,13 +431,17 @@ class ClasesNoRealizadasTable extends Component
                 DB::raw("SUM(CASE WHEN estado = 'justificado' THEN 1 ELSE 0 END) as justificados"),
                 DB::raw("SUM(CASE WHEN estado = 'realizada' OR estado = 'registrada' THEN 1 ELSE 0 END) as realizadas"),
             ])
-            ->whereNotExists(function($subQuery) {
-                $subQuery->select(DB::raw(1))
-                    ->from('profesor_atrasos')
-                    ->whereColumn('profesor_atrasos.id_asignatura', 'clases_no_realizadas.id_asignatura')
-                    ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio')
-                    ->whereColumn('profesor_atrasos.id_modulo', 'clases_no_realizadas.id_modulo')
-                    ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase');
+            // Solo excluir de atrasos si el estado es 'no_realizada' (porque si es un atraso, la clase sí se realizó)
+            ->where(function($q) {
+                $q->where('clases_no_realizadas.estado', '!=', 'no_realizada')
+                  ->orWhereNotExists(function($subQuery) {
+                      $subQuery->select(DB::raw(1))
+                          ->from('profesor_atrasos')
+                          ->whereColumn('profesor_atrasos.id_asignatura', 'clases_no_realizadas.id_asignatura')
+                          ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio')
+                          ->whereColumn('profesor_atrasos.id_modulo', 'clases_no_realizadas.id_modulo')
+                          ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase');
+                  });
             })
             // Excluir registros que caen en feriados o periodos sin actividad
             ->whereNotExists(function($subQuery) {
@@ -502,13 +480,17 @@ class ClasesNoRealizadasTable extends Component
         $query = ClaseNoRealizada::query()
             ->select('clases_no_realizadas.*')
             ->distinct() // Eliminar duplicados exactos
-            ->whereNotExists(function($subQuery) {
-                $subQuery->select(DB::raw(1))
-                    ->from('profesor_atrasos')
-                    ->whereColumn('profesor_atrasos.id_asignatura', 'clases_no_realizadas.id_asignatura')
-                    ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio')
-                    ->whereColumn('profesor_atrasos.id_modulo', 'clases_no_realizadas.id_modulo')
-                    ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase');
+            // Solo excluir de atrasos si el estado es 'no_realizada' (porque si es un atraso, la clase sí se realizó)
+            ->where(function($q) {
+                $q->where('clases_no_realizadas.estado', '!=', 'no_realizada')
+                  ->orWhereNotExists(function($subQuery) {
+                      $subQuery->select(DB::raw(1))
+                          ->from('profesor_atrasos')
+                          ->whereColumn('profesor_atrasos.id_asignatura', 'clases_no_realizadas.id_asignatura')
+                          ->whereColumn('profesor_atrasos.id_espacio', 'clases_no_realizadas.id_espacio')
+                          ->whereColumn('profesor_atrasos.id_modulo', 'clases_no_realizadas.id_modulo')
+                          ->whereColumn('profesor_atrasos.fecha', 'clases_no_realizadas.fecha_clase');
+                  });
             })
             // Excluir registros que caen en feriados o periodos sin actividad
             ->whereNotExists(function($subQuery) {
@@ -525,7 +507,11 @@ class ClasesNoRealizadasTable extends Component
                 $q->whereBetween('clases_no_realizadas.fecha_clase', [$this->fecha_inicio, $this->fecha_fin]);
             })
             ->when($this->estado, function($q) {
-                $q->where('clases_no_realizadas.estado', $this->estado);
+                if ($this->estado === 'realizada') {
+                    $q->whereIn('clases_no_realizadas.estado', ['realizada', 'registrada']);
+                } else {
+                    $q->where('clases_no_realizadas.estado', $this->estado);
+                }
             });
 
         // Búsqueda optimizada para Asignatura, Profesor, Espacio y Motivo
@@ -628,86 +614,5 @@ class ClasesNoRealizadasTable extends Component
             'nombrePeriodo' => '',
             'periodosDisponibles' => $periodosDisponibles,
         ]);
-    }
-
-    /**
-     * Filtrar clases que ya terminaron para el día de hoy
-     * Solo ocultar las clases de hoy que aún no han terminado su horario
-     */
-    private function filtrarClasesFinalizadasDeHoy($query)
-    {
-        // Obtener el módulo actual
-        $moduloActual = $this->obtenerModuloActual();
-        
-        if (!$moduloActual) {
-            // Si no estamos en horario de clases (fuera de módulos), mostrar todo
-            return;
-        }
-
-        // Para clases de HOY, solo mostrar las que:
-        // 1. Ya pasó su último módulo programado (la clase terminó su horario)
-        // 2. O que pasaron más de 20 minutos desde el inicio del primer módulo
-        $query->where(function($q) use ($moduloActual) {
-            // Opción 1: La clase ya terminó su horario
-            // Manejar tanto módulos simples "LU.1" como múltiples "LU.1,LU.2,LU.3"
-            $q->where(function($subQ) use ($moduloActual) {
-                // Si id_modulo contiene comas, extraer el último módulo
-                $subQ->whereRaw("CASE 
-                    WHEN id_modulo LIKE '%,%' THEN CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(id_modulo, ',', -1), '.', -1) AS UNSIGNED)
-                    ELSE CAST(SUBSTRING_INDEX(id_modulo, '.', -1) AS UNSIGNED)
-                END < ?", [$moduloActual['numero']]);
-            })
-            // Opción 2: O han pasado más de 20 minutos desde la detección
-            ->orWhere(function($subQ) {
-                $subQ->where('hora_deteccion', '<=', Carbon::now()->subMinutes(20));
-            });
-        });
-    }
-
-    /**
-     * Obtener el módulo actual basado en la hora y día actual
-     */
-    private function obtenerModuloActual()
-    {
-        $dias = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
-        $diaActual = $dias[Carbon::now()->dayOfWeek];
-        $horaActual = Carbon::now()->format('H:i:s');
-
-        // Si es fin de semana, no hay módulos
-        if ($diaActual === 'domingo') {
-            return null;
-        }
-
-        $horariosDelDia = \App\Helpers\ModulosHelper::getHorariosModulos()[$diaActual] ?? null;
-        if (!$horariosDelDia) {
-            return null;
-        }
-
-        // Buscar en qué módulo estamos
-        foreach ($horariosDelDia as $numeroModulo => $modulo) {
-            if ($horaActual >= $modulo['inicio'] && $horaActual < $modulo['fin']) {
-                return [
-                    'numero' => $numeroModulo,
-                    'inicio' => $modulo['inicio'],
-                    'fin' => $modulo['fin'],
-                    'tipo' => 'modulo'
-                ];
-            }
-        }
-
-        // Si no estamos en un módulo, buscar el próximo módulo (estamos en break)
-        foreach ($horariosDelDia as $numeroModulo => $modulo) {
-            if ($horaActual < $modulo['inicio']) {
-                return [
-                    'numero' => $numeroModulo,
-                    'inicio' => $modulo['inicio'],
-                    'fin' => $modulo['fin'],
-                    'tipo' => 'break',
-                    'mensaje' => 'Próximo Módulo'
-                ];
-            }
-        }
-
-        return null;
     }
 }

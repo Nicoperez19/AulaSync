@@ -230,12 +230,12 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                     continue;
                 }
 
-                $diaModulo = strtolower($planificacion->modulo->dia);
+                $diaModulo = \App\Helpers\ModulosHelper::normalizarDia($planificacion->modulo->dia);
                 
                 // Para cada fecha en el rango
                 foreach ($fechas as $fechaStr) {
                     $fecha = Carbon::parse($fechaStr);
-                    $diaFecha = $dias[$fecha->dayOfWeek];
+                    $diaFecha = \App\Helpers\ModulosHelper::normalizarDia($dias[$fecha->dayOfWeek]);
                     
                     // Solo procesar si el día coincide con el módulo
                     if ($diaFecha === $diaModulo) {
@@ -309,6 +309,7 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
                             $claseNoRealizada = $this->clasesNoRealizadasCache[$claveClase];
                             $estado = match($claseNoRealizada->estado) {
                                 'no_realizada' => 'No Registrada',
+                                'realizada', 'registrada' => 'Realizada',
                                 'justificado'  => 'Justificada',
                                 'recuperada'   => 'Recuperada',
                                 'pendiente'    => 'Pendiente de Recuperación',
@@ -609,12 +610,13 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
     private function transformEstado($estado)
     {
         return match($estado) {
-            'no_realizada'      => 'No Registrada',
-            'justificado'       => 'Justificada',
-            'recuperada'        => 'Recuperada',
-            'pendiente'         => 'Pendiente de Recuperación',
-            'feriado'           => 'Feriado/Justificado',
-            default             => $estado,
+            'no_realizada'            => 'No Registrada',
+            'realizada', 'registrada' => 'Realizada',
+            'justificado'             => 'Justificada',
+            'recuperada'              => 'Recuperada',
+            'pendiente'               => 'Pendiente de Recuperación',
+            'feriado'                 => 'Feriado/Justificado',
+            default                   => $estado,
         };
     }
 

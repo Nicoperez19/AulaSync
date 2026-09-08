@@ -252,11 +252,15 @@ class ClaseNoRealizada extends Model
                 }
             }
 
-            // Eliminar el registro de clases_no_realizadas (siempre, porque la clase SÍ se realizó)
+            // Actualizar el registro a estado 'realizada' (porque la clase SÍ se realizó)
             try {
-                $registro->delete();
+                $registro->update([
+                    'estado' => 'realizada',
+                    'motivo' => ($minutosAtraso ?? 0) > 0 ? "Clase realizada con atraso de {$minutosAtraso} min" : "Clase realizada",
+                    'observaciones' => "Profesor registró ingreso a las " . ($horaEntrada ?? now()->format('H:i:s')),
+                ]);
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::warning("No se pudo eliminar registro: " . $e->getMessage());
+                \Illuminate\Support\Facades\Log::warning("No se pudo actualizar registro a realizada: " . $e->getMessage());
             }
         }
 
