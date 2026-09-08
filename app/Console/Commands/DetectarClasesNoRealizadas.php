@@ -430,9 +430,13 @@ class DetectarClasesNoRealizadas extends Command
 
         } catch (\Exception $e) {
             $this->error("Error procesando tenant {$tenant->database}: " . $e->getMessage());
-            Log::error("Error en DetectarClasesNoRealizadas para tenant {$tenant->database}: " . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
+            try {
+                Log::error("Error en DetectarClasesNoRealizadas para tenant {$tenant->database}: " . $e->getMessage(), [
+                    'trace' => $e->getTraceAsString()
+                ]);
+            } catch (\Throwable $logEx) {
+                // Ignorar errores de log — no bloquear el flujo por permisos de archivo
+            }
         }
     }
 
