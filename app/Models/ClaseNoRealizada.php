@@ -166,12 +166,21 @@ class ClaseNoRealizada extends Model
      */
     public static function limpiarRegistrosIncorrectos($idEspacio, $fechaReserva, $horaEntrada = null, $runProfesor = null)
     {
-        // Buscar TODOS los registros de hoy para este espacio (sin importar estado)
-        // Si el profesor llegó tarde, la clase SÍ se realizó, así que todos los registros
-        // relacionados deben eliminarse de clases_no_realizadas
-        $registros = static::where('id_espacio', $idEspacio)
-            ->where('fecha_clase', $fechaReserva)
-            ->get();
+        // Buscar registros de hoy para este espacio.
+        // Si se especifica el profesor, solo limpiar los registros de ESE profesor
+        // para no borrar las clases no realizadas de otros profesores en la misma sala.
+        $query = static::where('id_espacio', $idEspacio)
+            ->where('fecha_clase', $fechaReserva);
+
+        if ($runProfesor) {
+            $runLimpio = preg_replace('/[^0-9kK]/', '', $runProfesor);
+            $query->where(function($q) use ($runProfesor, $runLimpio) {
+                $q->where('run_profesor', $runProfesor)
+                  ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio]);
+            });
+        }
+
+        $registros = $query->get();
 
         $contadorMovidos = 0;
 
@@ -243,11 +252,15 @@ class ClaseNoRealizada extends Model
                 }
             }
 
-            // Eliminar el registro de clases_no_realizadas (siempre, porque la clase SÍ se realizó)
+            // Actualizar el registro a estado 'realizada' (porque la clase SÍ se realizó)
             try {
-                $registro->delete();
+                $registro->update([
+                    'estado' => 'realizada',
+                    'motivo' => ($minutosAtraso ?? 0) > 0 ? "Clase realizada con atraso de {$minutosAtraso} min" : "Clase realizada",
+                    'observaciones' => "Profesor registró ingreso a las " . ($horaEntrada ?? now()->format('H:i:s')),
+                ]);
             } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::warning("No se pudo eliminar registro: " . $e->getMessage());
+                \Illuminate\Support\Facades\Log::warning("No se pudo actualizar registro a realizada: " . $e->getMessage());
             }
         }
 

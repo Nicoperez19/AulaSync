@@ -3,7 +3,7 @@
 namespace App\Livewire;
 
 use App\Helpers\SemesterHelper;
-use App\Helpers\ModulosHelper;
+use App\Helpers\EspacioAliasHelper;
 use App\Models\Asistencia;
 use App\Models\ClaseNoRealizada;
 use App\Models\DiaFeriado;
@@ -754,8 +754,15 @@ class ModulosActualesTable extends Component
                             });
 
                         // Buscar si el espacio tiene una reserva activa de profesor en el módulo actual
-                        $reservaProfesor = $reservasProfesores
-                            ->get($espacio->id_espacio, collect())
+                        // Incluye espacios equivalentes (ej: TH-L08 y TH-09, TH-L09 y TH-30)
+                        $espaciosEquivActual = EspacioAliasHelper::obtenerEquivalentes($espacio->id_espacio);
+                        $reservasProfesorEspacio = collect();
+                        foreach ($espaciosEquivActual as $espIdEq) {
+                            if ($reservasProfesores->has($espIdEq)) {
+                                $reservasProfesorEspacio = $reservasProfesorEspacio->concat($reservasProfesores->get($espIdEq));
+                            }
+                        }
+                        $reservaProfesor = $reservasProfesorEspacio
                             ->first(function ($reserva) {
                                 $moduloActual = $this->moduloActual['numero'] ?? null;
                                 $ini = $reserva->modulo_inicio;
@@ -774,8 +781,13 @@ class ModulosActualesTable extends Component
                             });
 
                         // Buscar si el espacio tiene una reserva de profesor PENDIENTE en el módulo actual
-                        $reservaProfesorPendiente = $reservasProfesoresPendientes
-                            ->get($espacio->id_espacio, collect())
+                        $reservasProfesorPendEspacio = collect();
+                        foreach ($espaciosEquivActual as $espIdEq) {
+                            if ($reservasProfesoresPendientes->has($espIdEq)) {
+                                $reservasProfesorPendEspacio = $reservasProfesorPendEspacio->concat($reservasProfesoresPendientes->get($espIdEq));
+                            }
+                        }
+                        $reservaProfesorPendiente = $reservasProfesorPendEspacio
                             ->first(function ($reserva) {
                                 $moduloActual = $this->moduloActual['numero'] ?? null;
                                 $ini = $reserva->modulo_inicio;
@@ -1108,6 +1120,20 @@ class ModulosActualesTable extends Component
                                         $moduloParts = explode('.', $planificacion->id_modulo);
                                         return isset($moduloParts[1]) ? (int) $moduloParts[1] : 0;
                                     });
+
+                                // Si no hay planificación regular, buscar en planificaciones de profesores colaboradores
+                                if ($planificacionesReserva->isEmpty()) {
+                                    $planificacionesReserva = PlanificacionProfesorColaborador::where('id_espacio', $reservaProfesor->id_espacio)
+                                        ->whereHas('profesorColaborador', function ($q) use ($reservaProfesor) {
+                                            $q->where('id_asignatura', $reservaProfesor->id_asignatura);
+                                        })
+                                        ->with('modulo')
+                                        ->get()
+                                        ->sortBy(function ($planificacion) {
+                                            $moduloParts = explode('.', $planificacion->id_modulo);
+                                            return isset($moduloParts[1]) ? (int) $moduloParts[1] : 0;
+                                        });
+                                }
 
                                 $inscritos = $planificacionesReserva->first()->inscritos ?? null;
 

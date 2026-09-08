@@ -3485,8 +3485,9 @@
                         </div>
                     `;
                 } else if (data.tipo_reserva === 'espontanea') {
-                    const horario = data.hora_inicio && data.hora_termino ? 
-                        `${data.hora_inicio.substring(0, 5)} - ${data.hora_termino.substring(0, 5)}` : 
+                    const horaFin = data.hora_termino || data.hora_salida;
+                    const horario = data.hora_inicio && horaFin ? 
+                        `${data.hora_inicio.substring(0, 5)} - ${horaFin.substring(0, 5)}` : 
                         (data.hora_inicio ? data.hora_inicio.substring(0, 5) : '');
                     elements.pasoEstadoActual.innerHTML = `
                         <div class="text-center">
@@ -3496,9 +3497,10 @@
                         </div>
                     `;
                 } else if (data.asignatura) {
-                    const horario = data.hora_inicio && data.hora_termino ? 
-                        `${data.hora_inicio.substring(0, 5)} - ${data.hora_termino.substring(0, 5)}` : 
-                        (data.hora_inicio || '');
+                    const horaFin = data.hora_termino || data.hora_salida;
+                    const horario = data.hora_inicio && horaFin ? 
+                        `${data.hora_inicio.substring(0, 5)} - ${horaFin.substring(0, 5)}` : 
+                        (data.hora_inicio ? data.hora_inicio.substring(0, 5) : '');
                     elements.pasoEstadoActual.innerHTML = `
                         <div class="text-center">
                             <div class="font-semibold text-blue-700 mb-1">${data.asignatura}</div>
@@ -3508,11 +3510,15 @@
                     `;
                 } else if (data.tipo_ocupacion === 'solicitante' && (indicator?.estado === 'Ocupado' || indicator?.estado === 'Programado' || indicator?.estado === 'Reserva Espontánea' || indicator?.estado === 'Clase registrada')) {
                     // Solicitante (persona externa, no profesor)
+                    const horaFin = data.hora_termino || data.hora_salida;
+                    const horario = data.hora_inicio && horaFin ? 
+                        `${data.hora_inicio.substring(0, 5)} - ${horaFin.substring(0, 5)}` : 
+                        (data.hora_inicio ? data.hora_inicio.substring(0, 5) : '');
                     elements.pasoEstadoActual.innerHTML = `
                         <div class="text-center">
                             <div class="font-semibold text-blue-700 mb-1">${data.nombre || 'Solicitante'}</div>
                             <div class="text-xs text-gray-500">${data.tipo_solicitante || 'Solicitante externo'}</div>
-                            ${data.hora_inicio ? `<div class="text-xs text-blue-600">${data.hora_inicio.substring(0, 5)}</div>` : ''}
+                            ${horario ? `<div class="text-xs text-blue-600">${horario}</div>` : ''}
                         </div>
                     `;
                 } else if ((indicator?.estado === 'Ocupado' || indicator?.estado === 'Reservado' || indicator?.estado === 'Programado' || indicator?.estado === 'Reserva Espontánea' || indicator?.estado === 'Clase registrada') && data.nombre) {
@@ -3524,11 +3530,16 @@
                     if (data.tipo_reserva === 'programada') etiqueta = 'Reserva programada';
                     if (data.tipo_reserva === 'programada_docente') etiqueta = 'Clase programada';
 
+                    const horaFin = data.hora_termino || data.hora_salida;
+                    const horario = data.hora_inicio && horaFin ? 
+                        `${data.hora_inicio.substring(0, 5)} - ${horaFin.substring(0, 5)}` : 
+                        (data.hora_inicio ? data.hora_inicio.substring(0, 5) : '');
+
                     elements.pasoEstadoActual.innerHTML = `
                         <div class="text-center">
                             <div class="font-semibold text-blue-700 mb-1">${data.nombre}</div>
                             <div class="text-xs text-gray-500">${etiqueta}</div>
-                            ${data.hora_inicio ? `<div class="text-xs text-blue-600">${data.hora_inicio.substring(0, 5)}</div>` : ''}
+                            ${horario ? `<div class="text-xs text-blue-600">${horario}</div>` : ''}
                         </div>
                     `;
                 } else {

@@ -7,74 +7,73 @@
                 </div>
 
                 <div>
-                    <h2 class="text-2xl font-bold leading-tight">Control de Clases y Atrasos</h2>
-                    <p class="text-sm text-gray-500">Administra los registros de asistencia de clases y atrasos de profesores - Período: {{ $periodo ?? 'N/A' }}</p>
+                    @if($isSuperAdmin ?? false)
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h2 class="text-2xl font-bold leading-tight">CONTROL DE CLASES Y ATRASOS</h2>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 border border-amber-300" title="La sección de Atrasos está oculta para los demás usuarios y solo visible para Superadministradores">
+                                <i class="fas fa-shield-alt mr-1"></i> Modo Superadmin (Atrasos privado)
+                            </span>
+                        </div>
+                    @else
+                        <h2 class="text-2xl font-bold leading-tight">CONTROL DE CLASES</h2>
+                    @endif
+                    @php
+                        $partesPeriodo = explode('-', $periodo ?? '');
+                        $periodoFormateado = (count($partesPeriodo) === 2)
+                            ? $partesPeriodo[1] . '° Semestre ' . $partesPeriodo[0]
+                            : (\App\Helpers\SemesterHelper::getCurrentSemester() . '° Semestre ' . \App\Helpers\SemesterHelper::getCurrentAcademicYear());
+                    @endphp
+                    <div class="flex items-center gap-1.5 text-sm font-bold text-red-700 mt-1">
+                        <i class="fa-solid fa-calendar-days text-red-600"></i>
+                        <span>Período: {{ $periodoFormateado }}</span>
+                    </div>
                 </div>
             </div>
         </div>
     </x-slot>
  
-    <!-- Toggle para cambiar entre tablas -->
-    <div x-data="{ activeTab: 'no-realizadas' }" class="space-y-6">
-        <!-- Tabs de navegación -->
-        <div class="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
-            <button 
-                @click="activeTab = 'no-realizadas'"
-                :class="activeTab === 'no-realizadas' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900'"
-                class="px-4 py-2 rounded-md font-medium transition-all duration-200 flex items-center gap-2"
-            >
-                <i class="fas fa-times-circle" :class="activeTab === 'no-realizadas' ? 'text-red-500' : ''"></i>
-                Control de Clases
-            </button>
-            <button 
-                @click="activeTab = 'atrasos'"
-                :class="activeTab === 'atrasos' ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900'"
-                class="px-4 py-2 rounded-md font-medium transition-all duration-200 flex items-center gap-2"
-            >
-                <i class="fas fa-clock" :class="activeTab === 'atrasos' ? 'text-orange-500' : ''"></i>
-                Atrasos de Profesores
-                @if(($totalAtrasos ?? 0) > 0)
-                    <span class="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">{{ $totalAtrasos }}</span>
-                @endif
-            </button>
-        </div>
-
-        <!-- KPIs de Atrasos (solo visible en tab atrasos) -->
-        <div x-show="activeTab === 'atrasos'" x-transition class="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div class="p-4 bg-white rounded-lg shadow border border-gray-200">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600">Total Atrasos</p>
-                        <p class="text-2xl font-bold text-orange-600">{{ $totalAtrasos ?? 0 }}</p>
-                        <p class="text-xs text-gray-500">En el período actual</p>
-                    </div>
-                    <div class="p-3 bg-orange-100 rounded-lg">
-                        <i class="fas fa-clock text-orange-600 text-xl"></i>
-                    </div>
-                </div>
+    @if($isSuperAdmin ?? false)
+        <!-- Vista con pestañas para Superadministrador -->
+        <div x-data="{ activeTab: 'no-realizadas' }" class="space-y-6">
+            <!-- Tabs de navegación (Navpills grandes) -->
+            <div class="flex flex-wrap sm:inline-flex items-center gap-2 bg-gray-200/80 p-1.5 rounded-2xl border border-gray-300/70 shadow-sm">
+                <button 
+                    type="button"
+                    @click="activeTab = 'no-realizadas'"
+                    :class="activeTab === 'no-realizadas' ? 'bg-white shadow-md text-gray-900 font-bold border border-gray-200' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60 font-medium'"
+                    class="px-6 py-3 rounded-xl text-base sm:text-lg transition-all duration-200 flex items-center gap-3 cursor-pointer"
+                >
+                    <i class="fas fa-calendar-check text-xl" :class="activeTab === 'no-realizadas' ? 'text-blue-600' : 'text-gray-400'"></i>
+                    <span>Control de Clases</span>
+                </button>
+                <button 
+                    type="button"
+                    @click="activeTab = 'atrasos'"
+                    :class="activeTab === 'atrasos' ? 'bg-white shadow-md text-gray-900 font-bold border border-gray-200' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60 font-medium'"
+                    class="px-6 py-3 rounded-xl text-base sm:text-lg transition-all duration-200 flex items-center gap-3 cursor-pointer"
+                >
+                    <i class="fas fa-clock text-xl" :class="activeTab === 'atrasos' ? 'text-orange-500' : 'text-gray-400'"></i>
+                    <span>Atrasos de Profesores</span>
+                    <span class="text-xs uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-purple-100 text-purple-700 border border-purple-200">Solo Superadmin</span>
+                    @if(($totalAtrasos ?? 0) > 0)
+                        <span class="bg-orange-500 text-white text-xs px-2.5 py-0.5 rounded-full font-bold shadow-sm">{{ $totalAtrasos }}</span>
+                    @endif
+                </button>
             </div>
 
-            <div class="p-4 bg-white rounded-lg shadow border border-gray-200">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <p class="text-sm text-gray-600">Promedio de Atraso</p>
-                        <p class="text-2xl font-bold text-purple-600">{{ round($promedioMinutosAtraso ?? 0) }} min</p>
-                        <p class="text-xs text-gray-500">Por llegada tardía</p>
-                    </div>
-                    <div class="p-3 bg-purple-100 rounded-lg">
-                        <i class="fas fa-hourglass-half text-purple-600 text-xl"></i>
-                    </div>
-                </div>
+            <!-- Contenido de las tablas -->
+            <div x-show="activeTab === 'no-realizadas'" x-transition>
+                @livewire('clases-no-realizadas-table')
+            </div>
+
+            <div x-show="activeTab === 'atrasos'" x-transition>
+                @livewire('profesor-atrasos-table')
             </div>
         </div>
-
-        <!-- Contenido de las tablas -->
-        <div x-show="activeTab === 'no-realizadas'" x-transition>
+    @else
+        <!-- Vista para usuarios regulares: únicamente Control de Clases -->
+        <div>
             @livewire('clases-no-realizadas-table')
         </div>
-
-        <div x-show="activeTab === 'atrasos'" x-transition>
-            @livewire('profesor-atrasos-table')
-        </div>
-    </div>
+    @endif
 </x-app-layout>

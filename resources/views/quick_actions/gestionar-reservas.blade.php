@@ -903,9 +903,9 @@ function procesarReservas() {
     
     if (solicitanteFiltro) {
         reservasProcesadas = reservasProcesadas.filter(r => {
-            const nombre = (r.nombre_responsable || '').toLowerCase();
-            const run = (r.run_responsable || r.run || '').toLowerCase();
-            const id = (r.id || '').toString().toLowerCase();
+            const nombre = String(r.nombre_responsable || '').toLowerCase();
+            const run = String(r.run_responsable || r.run || '').toLowerCase();
+            const id = String(r.id || '').toLowerCase();
             return nombre.includes(solicitanteFiltro) || run.includes(solicitanteFiltro) || id.includes(solicitanteFiltro);
         });
     }
@@ -931,7 +931,7 @@ function procesarReservas() {
     if (fechaFiltro) {
         reservasProcesadas = reservasProcesadas.filter(r => {
             // Normalizar fecha (quitar parte de tiempo si existe)
-            const fechaReserva = r.fecha && r.fecha.includes('T') ? r.fecha.split('T')[0] : r.fecha;
+            const fechaReserva = r.fecha && typeof r.fecha === 'string' && r.fecha.includes('T') ? r.fecha.split('T')[0] : String(r.fecha || '');
             return fechaReserva === fechaFiltro;
         });
     }
@@ -946,16 +946,16 @@ function procesarReservas() {
                 valorB = new Date(b.fecha);
                 break;
             case 'responsable':
-                valorA = (a.nombre_responsable || '').toLowerCase();
-                valorB = (b.nombre_responsable || '').toLowerCase();
+                valorA = String(a.nombre_responsable || '').toLowerCase();
+                valorB = String(b.nombre_responsable || '').toLowerCase();
                 break;
             case 'espacio':
-                valorA = (a.id_espacio || '').toLowerCase();
-                valorB = (b.id_espacio || '').toLowerCase();
+                valorA = String(a.id_espacio || a.nombre_espacio || '').toLowerCase();
+                valorB = String(b.id_espacio || b.nombre_espacio || '').toLowerCase();
                 break;
             case 'estado':
-                valorA = a.estado;
-                valorB = b.estado;
+                valorA = String(a.estado || '').toLowerCase();
+                valorB = String(b.estado || '').toLowerCase();
                 break;
             case 'hora':
             case 'modulo':

@@ -256,4 +256,48 @@ class SemesterHelper
             'periodo_actual' => $periodoActual,
         ];
     }
+
+    /**
+     * Obtiene los períodos disponibles para selección:
+     * El semestre actual y los semestres efectivamente cargados con datos en el sistema.
+     *
+     * @return \Illuminate\Support\Collection
+     */
+    public static function getPeriodosDisponibles()
+    {
+        $periodoActualStr = self::getCurrentPeriod();
+
+        // Obtener períodos únicos cargados en horarios
+        $periodosCargados = \App\Models\Horario::select('periodo')
+            ->whereNotNull('periodo')
+            ->where('periodo', '!=', '')
+            ->distinct()
+            ->pluck('periodo')
+            ->toArray();
+
+        // Combinar con el período actual y descartar duplicados o vacíos
+        $codigosValidos = array_unique(array_filter(array_merge([$periodoActualStr], $periodosCargados)));
+        $periodosModels = PeriodoAcademico::all();
+
+        return collect($codigosValidos)->map(function($codigo) use ($periodosModels, $periodoActualStr) {
+            $partes = explode('-', $codigo);
+            $anio = (int)($partes[0] ?? 0);
+            $semestre = (int)($partes[1] ?? 0);
+            $model = $periodosModels->first(fn($p) => $p->anio === $anio && $p->semestre === $semestre);
+            $esActual = ($codigo === $periodoActualStr);
+
+            return (object)[
+                'codigo' => $codigo,
+                'anio' => $anio,
+                'semestre' => $semestre,
+                'es_actual' => $esActual,
+                'display_label' => $semestre . '° Semestre ' . $anio . ($esActual ? ' (Semestre actual)' : ''),
+                'fecha_inicio' => $model ? $model->fecha_inicio : null,
+                'fecha_fin' => $model ? $model->fecha_fin : null,
+                'model' => $model,
+            ];
+        })->sortByDesc(function($p) {
+            return ($p->anio * 10) + $p->semestre;
+        })->values();
+    }
 } 

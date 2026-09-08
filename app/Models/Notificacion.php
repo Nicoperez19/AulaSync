@@ -101,7 +101,11 @@ class Notificacion extends Model
             // Obtener usuarios supervisores y administradores
             $usuarios = User::role(['Supervisor', 'Administrador'])->get();
 
-            \Log::info('Creando notificaciones de clase no realizada - Usuarios encontrados: ' . $usuarios->count());
+            try {
+                \Log::info('Creando notificaciones de clase no realizada - Usuarios encontrados: ' . $usuarios->count());
+            } catch (\Throwable $logEx) {
+                // Ignorar errores de log — no bloquear el flujo por permisos de archivo
+            }
 
             // Cargar relaciones necesarias con eager loading
             $claseNoRealizada->load(['asignatura', 'profesor', 'espacio', 'modulo']);
@@ -159,10 +163,18 @@ class Notificacion extends Model
                     ],
                 ]);
 
-                \Log::info('Notificación creada para usuario: ' . $usuario->run);
+                try {
+                    \Log::info('Notificación creada para usuario: ' . $usuario->run);
+                } catch (\Throwable $logEx) {
+                    // Ignorar errores de log — no bloquear el flujo por permisos de archivo
+                }
             }
         } catch (\Exception $e) {
-            \Log::error('Error al crear notificación de clase no realizada: ' . $e->getMessage());
+            try {
+                \Log::error('Error al crear notificación de clase no realizada: ' . $e->getMessage());
+            } catch (\Throwable $logEx) {
+                // Ignorar errores de log — no bloquear el flujo por permisos de archivo
+            }
         }
     }
 

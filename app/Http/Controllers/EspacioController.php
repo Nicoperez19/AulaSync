@@ -1036,9 +1036,15 @@ class EspacioController extends Controller
             }
 
             // 4. Planificación anterior (una query)
+            $horaCorteAnterior = $horaActual;
+            $reservaEnCursoParaCorte = $reservaHoy->first(fn($r) => $r->estado === 'activa' && $r->hora <= $horaActual && ($r->hora_salida === null || $r->hora_salida > $horaActual));
+            if ($reservaEnCursoParaCorte && $reservaEnCursoParaCorte->hora) {
+                $horaCorteAnterior = min($horaActual, $reservaEnCursoParaCorte->hora);
+            }
+
             $planAnterior = Planificacion_Asignatura::with(['asignatura:id_asignatura,nombre_asignatura', 'modulo', 'horario.profesor'])
                 ->where('id_espacio', $idEspacio)
-                ->whereHas('modulo', fn($q) => $q->where('dia', $codigoDia)->where('hora_termino', '<=', $horaActual))
+                ->whereHas('modulo', fn($q) => $q->where('dia', $codigoDia)->where('hora_termino', '<=', $horaCorteAnterior))
                 ->join('modulos', 'planificacion_asignaturas.id_modulo', '=', 'modulos.id_modulo')
                 ->orderBy('modulos.hora_termino', 'desc')
                 ->select('planificacion_asignaturas.*')
@@ -1062,6 +1068,7 @@ class EspacioController extends Controller
                 'asignatura' => null,
                 'hora_inicio' => null,
                 'hora_salida' => null,
+                'hora_termino' => null,
                 'tipo_reserva' => null,
                 'detalles' => null,
                 'proxima_clase' => null,
@@ -1095,6 +1102,7 @@ class EspacioController extends Controller
                         'asignatura' => null,
                         'hora_inicio' => $reservaActiva->hora,
                         'hora_salida' => $reservaActiva->hora_salida,
+                        'hora_termino' => $reservaActiva->hora_salida,
                         'run_profesor' => null,
                         'run_solicitante' => null,
                         'id_reserva' => $reservaActiva->id_reserva,
@@ -1124,6 +1132,7 @@ class EspacioController extends Controller
                         'asignatura' => $planActual->asignatura->nombre_asignatura ?? 'Sin asignatura',
                         'hora_inicio' => $planActual->modulo->hora_inicio,
                         'hora_salida' => $planActual->modulo->hora_termino,
+                        'hora_termino' => $planActual->modulo->hora_termino,
                         'tipo_reserva' => 'clase_regular',
                     ];
                 } elseif ($planColaboradorActual) {
@@ -1135,6 +1144,7 @@ class EspacioController extends Controller
                         'asignatura' => $planColaboradorActual->profesorColaborador->nombre_asignatura ?? 'Sin asignatura',
                         'hora_inicio' => $planColaboradorActual->modulo->hora_inicio,
                         'hora_salida' => $planColaboradorActual->modulo->hora_termino,
+                        'hora_termino' => $planColaboradorActual->modulo->hora_termino,
                         'tipo_reserva' => 'clase_colaborador',
                     ];
                 }
@@ -1157,6 +1167,7 @@ class EspacioController extends Controller
                             'asignatura' => null,
                             'hora_inicio' => $fallback->hora,
                             'hora_salida' => $fallback->hora_salida,
+                            'hora_termino' => $fallback->hora_salida,
                             'run_profesor' => null,
                             'run_solicitante' => null,
                         ];
@@ -1196,7 +1207,10 @@ class EspacioController extends Controller
             }
 
             // ── Clase anterior ───────────────────────────────────────────────────────
-            if ($reservaAnterior) {
+            $idAsignaturaActual = $response['id_asignatura'] ?? ($reservaActiva->id_asignatura ?? ($planActual->id_asignatura ?? null));
+            $nombreAsignaturaActual = $response['asignatura'] ?? null;
+
+            if ($reservaAnterior && (!$idAsignaturaActual || $reservaAnterior->id_asignatura !== $idAsignaturaActual)) {
                 $esEspontanea = $reservaAnterior->tipo_reserva === 'espontanea';
                 $response['clase_anterior'] = [
                     'asignatura' => $esEspontanea ? 'Reserva espontánea' : ($reservaAnterior->asignatura?->nombre_asignatura ?? 'Reserva sin asignatura'),
@@ -1206,13 +1220,22 @@ class EspacioController extends Controller
                     'hora_termino' => $reservaAnterior->hora_salida ?? null,
                 ];
             } elseif ($planAnterior) {
-                $response['clase_anterior'] = [
-                    'asignatura' => $planAnterior->asignatura->nombre_asignatura ?? 'Sin asignatura',
-                    'profesor' => $planAnterior->horario->profesor->name ?? 'No especificado',
-                    'profesor_run' => $planAnterior->horario->profesor->run_profesor ?? null,
-                    'hora_inicio' => $planAnterior->modulo->hora_inicio ?? null,
-                    'hora_termino' => $planAnterior->modulo->hora_termino ?? null,
-                ];
+                $esMismaClaseEnCurso = false;
+                if ($idAsignaturaActual && $planAnterior->id_asignatura === $idAsignaturaActual) {
+                    $esMismaClaseEnCurso = true;
+                } elseif ($nombreAsignaturaActual && $planAnterior->asignatura?->nombre_asignatura === $nombreAsignaturaActual) {
+                    $esMismaClaseEnCurso = true;
+                }
+
+                if (!$esMismaClaseEnCurso) {
+                    $response['clase_anterior'] = [
+                        'asignatura' => $planAnterior->asignatura->nombre_asignatura ?? 'Sin asignatura',
+                        'profesor' => $planAnterior->horario->profesor->name ?? 'No especificado',
+                        'profesor_run' => $planAnterior->horario->profesor->run_profesor ?? null,
+                        'hora_inicio' => $planAnterior->modulo->hora_inicio ?? null,
+                        'hora_termino' => $planAnterior->modulo->hora_termino ?? null,
+                    ];
+                }
             }
 
             $this->safeCache($cacheKey, $response, 30);
@@ -1268,8 +1291,10 @@ class EspacioController extends Controller
             'nombre' => $profesorNombre,
             'run_profesor' => $runProfesor,
             'asignatura' => $asignatura,
+            'id_asignatura' => $reserva->id_asignatura ?? null,
             'hora_inicio' => $reserva->hora,
             'hora_salida' => $reserva->hora_salida,
+            'hora_termino' => $reserva->hora_salida,
             'tipo_reserva' => $reserva->tipo_reserva,
         ];
     }
@@ -1295,6 +1320,7 @@ class EspacioController extends Controller
                 'fecha_registro' => $solicitante->fecha_registro ?? null,
                 'hora_inicio' => $reserva->hora,
                 'hora_salida' => $reserva->hora_salida,
+                'hora_termino' => $reserva->hora_salida,
                 'tipo_reserva' => $reserva->tipo_reserva,
             ];
         }
@@ -1314,6 +1340,7 @@ class EspacioController extends Controller
                 'fecha_registro' => $usuario->created_at ?? null,
                 'hora_inicio' => $reserva->hora,
                 'hora_salida' => $reserva->hora_salida,
+                'hora_termino' => $reserva->hora_salida,
                 'tipo_reserva' => $reserva->tipo_reserva,
             ];
         }
@@ -1326,6 +1353,7 @@ class EspacioController extends Controller
             'asignatura' => null,
             'hora_inicio' => $reserva->hora,
             'hora_salida' => $reserva->hora_salida,
+            'hora_termino' => $reserva->hora_salida,
         ];
     }
 

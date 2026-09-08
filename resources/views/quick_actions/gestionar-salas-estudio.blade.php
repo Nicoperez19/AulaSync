@@ -621,9 +621,9 @@
 
         if (solicitanteFiltro) {
             reservasFiltradas = reservasGlobales.filter(r => {
-                const nombre = (r.nombre_responsable || '').toLowerCase();
-                const run = (r.run_responsable || '').toLowerCase();
-                const id = (r.id_reserva || '').toLowerCase();
+                const nombre = String(r.nombre_responsable || '').toLowerCase();
+                const run = String(r.run_responsable || r.run || '').toLowerCase();
+                const id = String(r.id_reserva || r.id || '').toLowerCase();
                 return nombre.includes(solicitanteFiltro) || run.includes(solicitanteFiltro) || id.includes(solicitanteFiltro);
             });
         } else {

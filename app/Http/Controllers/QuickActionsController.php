@@ -618,10 +618,13 @@ class QuickActionsController extends Controller
                     })
                     ->first();
 
-                if ($reservaExistente && !$request->input('forzar', false)) {
+                $esForzado = $request->boolean('forzar');
+
+                if ($reservaExistente && !$esForzado) {
                     if (!$esRecurrente) {
                         return response()->json([
                             'success' => false,
+                            'tipo_error' => 'reserva_existente',
                             'mensaje' => 'Ya existe una reserva activa para el espacio '.$request->espacio
                                 .' el día '.$fechaObjStr.' en los módulos solicitados.',
                             'reserva_conflicto' => $reservaExistente->id_reserva,
@@ -631,8 +634,8 @@ class QuickActionsController extends Controller
                 }
 
                 // VALIDAR QUE NO EXISTA UNA CLASE PROGRAMADA (Planificacion_Asignatura) EN ESTE ESPACIO Y MÓDULOS
-                if (!$request->input('forzar', false)) {
-                    $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod();
+                if (!$esForzado) {
+                    $periodoActual = \App\Helpers\SemesterHelper::getCurrentPeriod(\Carbon\Carbon::parse($fechaObjStr));
                     $claseConflicto = Planificacion_Asignatura::with(['asignatura', 'modulo'])
                         ->where('id_espacio', $request->espacio)
                         ->whereIn('id_modulo', $modulosReserva)
@@ -664,7 +667,7 @@ class QuickActionsController extends Controller
                 $idReserva = 'RES-'.strtoupper(uniqid());
 
                 $rangoModulos = 'Módulos: '.$request->modulo_inicial.'-'.$request->modulo_final.' | ';
-                $forzadoTag = $request->input('forzar', false) ? '⚠️ RESERVA FORZADA | ' : '';
+                $forzadoTag = $esForzado ? '⚠️ RESERVA FORZADA | ' : '';
                 $tipoTag = $esRecurrente ? '🔁 RESERVA RECURRENTE SEMESTRAL | ' : '';
                 $observacionesAutomaticas = $tipoTag.$forzadoTag.'RESERVA CREADA MANUALMENTE por '.($usuario->name ?? 'Administrador').' el '.now()->format('d/m/Y H:i:s').' | '.$rangoModulos;
                 $observacionesCompletas = $observacionesAutomaticas.($request->observaciones ?? '');

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ModulosHelper;
 use App\Helpers\SemesterHelper;
+use App\Helpers\EspacioAliasHelper;
 use App\Models\Espacio;
 use App\Models\Planificacion_Asignatura;
 use App\Models\PlanificacionProfesorColaborador;
@@ -70,10 +71,15 @@ class DashboardController extends Controller
             })
             ->get();
 
-        // Obtener todas las reservas activas de hoy por espacio para optimizar consultas
-        $reservasActivasHoy = Reserva::where('fecha_reserva', $fechaHoy)
+        // Obtener todas las reservas activas en curso de hoy por espacio para optimizar consultas
+        $reservasActivasHoy = Reserva::with(['profesor', 'asignatura', 'solicitante', 'espacio.piso'])
+            ->where('fecha_reserva', $fechaHoy)
             ->where('estado', 'activa')
-            ->whereNull('hora_salida')
+            ->where('hora', '<=', $horaAhora)
+            ->where(function ($q) use ($horaAhora) {
+                $q->whereNull('hora_salida')
+                  ->orWhere('hora_salida', '>=', $horaAhora);
+            })
             ->get()
             ->groupBy('id_espacio');
 
@@ -87,20 +93,47 @@ class DashboardController extends Controller
             $runProfesor = $asig->horario->run_profesor ?? $asig->asignatura->run_profesor ?? null;
             $runProfesorNorm = $runProfesor ? $this->normalizeRun($runProfesor) : null;
 
-            $reservasEspacio = $reservasActivasHoy->get($asig->espacio->id_espacio, collect());
+            $espaciosEquiv = EspacioAliasHelper::obtenerEquivalentes($asig->espacio->id_espacio);
+            $reservasEspacio = collect();
+            foreach ($espaciosEquiv as $espId) {
+                if ($reservasActivasHoy->has($espId)) {
+                    $reservasEspacio = $reservasEspacio->concat($reservasActivasHoy->get($espId));
+                }
+            }
+
             $profesorPresente = false;
-            if ($runProfesorNorm) {
-                $profesorPresente = $reservasEspacio->contains(function ($reserva) use ($runProfesorNorm) {
-                    $reservaRunNorm = $reserva->run_profesor ? $this->normalizeRun($reserva->run_profesor) : null;
-                    return $reservaRunNorm === $runProfesorNorm;
-                });
+            $nombreAsignatura = $asig->asignatura->nombre_asignatura ?? '-';
+            $profesorName = $asig->horario->profesor->name ?? $asig->asignatura->profesor->name ?? '-';
+            $profesorEmail = $asig->horario->profesor->email ?? $asig->asignatura->profesor->email ?? '-';
+
+            if ($reservasEspacio->isNotEmpty()) {
+                $reservaCoincidente = null;
+                if ($runProfesorNorm) {
+                    $reservaCoincidente = $reservasEspacio->first(function ($reserva) use ($runProfesorNorm) {
+                        $reservaRunNorm = $reserva->run_profesor ? $this->normalizeRun($reserva->run_profesor) : null;
+                        return $reservaRunNorm === $runProfesorNorm;
+                    });
+                }
+
+                $reservaActiva = $reservaCoincidente ?: $reservasEspacio->first();
+
+                if ($reservaActiva) {
+                    $profesorPresente = true;
+                    if ($reservaActiva->asignatura && !empty($reservaActiva->asignatura->nombre_asignatura)) {
+                        $nombreAsignatura = $reservaActiva->asignatura->nombre_asignatura;
+                    }
+                    if ($reservaActiva->profesor) {
+                        $profesorName = $reservaActiva->profesor->name;
+                        $profesorEmail = $reservaActiva->profesor->email ?? $profesorEmail;
+                    }
+                }
             }
 
             $asignacionesMapeadas->push((object) [
                 'espacio' => $asig->espacio,
-                'nombre_asignatura' => $asig->asignatura->nombre_asignatura ?? '-',
-                'profesor_name' => $asig->horario->profesor->name ?? $asig->asignatura->profesor->name ?? '-',
-                'profesor_email' => $asig->horario->profesor->email ?? $asig->asignatura->profesor->email ?? '-',
+                'nombre_asignatura' => $nombreAsignatura,
+                'profesor_name' => $profesorName,
+                'profesor_email' => $profesorEmail,
                 'profesor_presente' => $profesorPresente,
             ]);
         }
@@ -113,22 +146,67 @@ class DashboardController extends Controller
             $runProfesor = $asig->profesorColaborador->run_profesor_colaborador ?? null;
             $runProfesorNorm = $runProfesor ? $this->normalizeRun($runProfesor) : null;
 
-            $reservasEspacio = $reservasActivasHoy->get($asig->espacio->id_espacio, collect());
+            $espaciosEquiv = EspacioAliasHelper::obtenerEquivalentes($asig->espacio->id_espacio);
+            $reservasEspacio = collect();
+            foreach ($espaciosEquiv as $espId) {
+                if ($reservasActivasHoy->has($espId)) {
+                    $reservasEspacio = $reservasEspacio->concat($reservasActivasHoy->get($espId));
+                }
+            }
+
             $profesorPresente = false;
-            if ($runProfesorNorm) {
-                $profesorPresente = $reservasEspacio->contains(function ($reserva) use ($runProfesorNorm) {
-                    $reservaRunNorm = $reserva->run_profesor ? $this->normalizeRun($reserva->run_profesor) : null;
-                    return $reservaRunNorm === $runProfesorNorm;
-                });
+            $nombreAsignatura = $asig->profesorColaborador->nombre_asignatura ?? '-';
+            $profesorName = $asig->profesorColaborador->profesor->name ?? '-';
+            $profesorEmail = $asig->profesorColaborador->profesor->email ?? '-';
+
+            if ($reservasEspacio->isNotEmpty()) {
+                $reservaCoincidente = null;
+                if ($runProfesorNorm) {
+                    $reservaCoincidente = $reservasEspacio->first(function ($reserva) use ($runProfesorNorm) {
+                        $reservaRunNorm = $reserva->run_profesor ? $this->normalizeRun($reserva->run_profesor) : null;
+                        return $reservaRunNorm === $runProfesorNorm;
+                    });
+                }
+
+                $reservaActiva = $reservaCoincidente ?: $reservasEspacio->first();
+
+                if ($reservaActiva) {
+                    $profesorPresente = true;
+                    if ($reservaActiva->asignatura && !empty($reservaActiva->asignatura->nombre_asignatura)) {
+                        $nombreAsignatura = $reservaActiva->asignatura->nombre_asignatura;
+                    }
+                    if ($reservaActiva->profesor) {
+                        $profesorName = $reservaActiva->profesor->name;
+                        $profesorEmail = $reservaActiva->profesor->email ?? $profesorEmail;
+                    }
+                }
             }
 
             $asignacionesMapeadas->push((object) [
                 'espacio' => $asig->espacio,
-                'nombre_asignatura' => $asig->profesorColaborador->nombre_asignatura ?? '-',
-                'profesor_name' => $asig->profesorColaborador->profesor->name ?? '-',
-                'profesor_email' => $asig->profesorColaborador->profesor->email ?? '-',
+                'nombre_asignatura' => $nombreAsignatura,
+                'profesor_name' => $profesorName,
+                'profesor_email' => $profesorEmail,
                 'profesor_presente' => $profesorPresente,
             ]);
+        }
+
+        // Agregar espacios que no tienen planificación en este módulo pero sí una reserva activa en curso
+        $espaciosConAsignacion = $asignacionesMapeadas->pluck('espacio.id_espacio')->filter()->toArray();
+        foreach ($reservasActivasHoy as $idEspacio => $reservas) {
+            if (!in_array($idEspacio, $espaciosConAsignacion)) {
+                $reservaExtra = $reservas->first();
+                $espacioExtra = $reservaExtra->espacio ?? \App\Models\Espacio::with('piso')->where('id_espacio', $idEspacio)->first();
+                if ($espacioExtra) {
+                    $asignacionesMapeadas->push((object) [
+                        'espacio' => $espacioExtra,
+                        'nombre_asignatura' => $reservaExtra->asignatura->nombre_asignatura ?? ($reservaExtra->tipo_reserva === 'espontanea' ? 'Reserva Espontánea' : 'En Uso'),
+                        'profesor_name' => $reservaExtra->profesor->name ?? $reservaExtra->solicitante->nombre ?? '-',
+                        'profesor_email' => $reservaExtra->profesor->email ?? $reservaExtra->solicitante->correo ?? '-',
+                        'profesor_presente' => true,
+                    ]);
+                }
+            }
         }
 
         // Ordenar por número de piso (sumando offset de 100 para admitir subterráneos) y luego por código de espacio
@@ -369,14 +447,18 @@ class DashboardController extends Controller
             }
         }
 
-        // 2. Pre-cargar clases no realizadas en mapa rápido
-        $clasesNoRealizadasCache = ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicioYmd, $fechaFinYmd])
-            ->get()
-            ->keyBy(function ($clase) {
-                $fecha = Carbon::parse($clase->fecha_clase)->format('Y-m-d');
-                $runNorm = $this->normalizeRun($clase->run_profesor);
-                return "{$fecha}_{$clase->id_espacio}_{$clase->id_modulo}_{$runNorm}";
-            });
+        // 2. Pre-cargar clases no realizadas en mapa por módulo individual
+        $clasesNoRealizadas = ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicioYmd, $fechaFinYmd])->get();
+        $clasesNoRealizadasCache = [];
+        foreach ($clasesNoRealizadas as $cnr) {
+            $fecha = Carbon::parse($cnr->fecha_clase)->format('Y-m-d');
+            $modulos = explode(',', $cnr->id_modulo);
+            foreach ($modulos as $mod) {
+                $modTrim = trim($mod);
+                $clasesNoRealizadasCache["{$fecha}_{$cnr->id_espacio}_{$modTrim}"] = $cnr;
+                $clasesNoRealizadasCache["{$fecha}_{$cnr->id_asignatura}_{$modTrim}"] = $cnr;
+            }
+        }
 
         // 3. Pre-cargar reservas efectivas de clase en el rango
         $reservasCache = Reserva::whereBetween('fecha_reserva', [$fechaInicioYmd, $fechaFinYmd])
@@ -399,7 +481,7 @@ class DashboardController extends Controller
         $planificaciones = Planificacion_Asignatura::with([
                 'modulo:id_modulo,dia,hora_inicio,hora_termino',
                 'horario:id_horario,run_profesor,periodo',
-                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura'
+                'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura,run_profesor'
             ])
             ->whereHas('modulo')
             ->whereHas('horario')
@@ -435,27 +517,47 @@ class DashboardController extends Controller
                 continue;
             }
 
-            foreach ($planificaciones as $plan) {
-                if (!$plan->modulo || !$plan->horario) {
+            // Filtrar planificaciones del día
+            $planificacionesDelDia = $planificaciones->filter(function ($plan) use ($diaNombre) {
+                return ModulosHelper::normalizarDia($plan->modulo->dia) === $diaNombre;
+            });
+
+            // Agrupar por Espacio y Asignatura (1 clase = 1 bloque docente consecutivo)
+            $clasesAgrupadas = $planificacionesDelDia->groupBy(function ($plan) {
+                return $plan->id_espacio . '_' . $plan->id_asignatura;
+            });
+
+            foreach ($clasesAgrupadas as $grupoKey => $modulosClase) {
+                $primerModulo = $modulosClase->sortBy(fn($p) => $p->modulo->hora_inicio)->first();
+                $ultimoModulo = $modulosClase->sortBy(fn($p) => $p->modulo->hora_termino)->last();
+
+                if (!$primerModulo || !$primerModulo->modulo || !$ultimoModulo || !$ultimoModulo->modulo) {
                     continue;
                 }
 
-                $diaModuloNorm = ModulosHelper::normalizarDia($plan->modulo->dia);
-                if ($diaModuloNorm !== $diaNombre) {
-                    continue;
+                $horaInicioClase = Carbon::parse($primerModulo->modulo->hora_inicio);
+                $horaFinClase    = Carbon::parse($ultimoModulo->modulo->hora_termino);
+                $fechaHoraFinClase = $fechaObj->copy()->setTimeFromTimeString($horaFinClase->format('H:i:s'));
+
+                // 1. Verificar si esta clase está oficialmente registrada en ClaseNoRealizada
+                $registroCNR = null;
+                $espaciosClaseEquiv = EspacioAliasHelper::obtenerEquivalentes($primerModulo->id_espacio);
+                foreach ($modulosClase as $mItem) {
+                    foreach ($espaciosClaseEquiv as $espIdEq) {
+                        $keyEspacio = "{$fechaYmd}_{$espIdEq}_{$mItem->id_modulo}";
+                        if (isset($clasesNoRealizadasCache[$keyEspacio])) {
+                            $registroCNR = $clasesNoRealizadasCache[$keyEspacio];
+                            break 2;
+                        }
+                    }
+                    $keyAsig = "{$fechaYmd}_{$mItem->id_asignatura}_{$mItem->id_modulo}";
+                    if (isset($clasesNoRealizadasCache[$keyAsig])) {
+                        $registroCNR = $clasesNoRealizadasCache[$keyAsig];
+                        break;
+                    }
                 }
 
-                $runProfesor = $this->normalizeRun($plan->horario->run_profesor);
-                $claveClase = "{$fechaYmd}_{$plan->id_espacio}_{$plan->id_modulo}_{$runProfesor}";
-                $claveReserva = "{$fechaYmd}_{$plan->id_espacio}";
-
-                $horaFin = Carbon::parse($plan->modulo->hora_termino);
-                $horaInicio = Carbon::parse($plan->modulo->hora_inicio);
-                $fechaHoraFinClase = $fechaObj->copy()->setTimeFromTimeString($horaFin->format('H:i:s'));
-
-                // Verificar si hay registro formal en ClaseNoRealizada
-                if (isset($clasesNoRealizadasCache[$claveClase])) {
-                    $registroCNR = $clasesNoRealizadasCache[$claveClase];
+                if ($registroCNR) {
                     if ($registroCNR->estado === 'recuperada') {
                         $recuperadas++;
                     } elseif ($registroCNR->estado === 'justificado') {
@@ -466,34 +568,30 @@ class DashboardController extends Controller
                     continue;
                 }
 
-                // Verificar si hay reserva/asistencia en el espacio
+                // 2. Verificar si hubo reserva / escaneo en el espacio (o equivalentes) para este bloque
                 $reservaEncontrada = null;
-                if (isset($reservasCache[$claveReserva])) {
-                    $reservasDelDia = $reservasCache[$claveReserva]->filter(function ($r) use ($runProfesor) {
-                        $rProf = $this->normalizeRun($r->run_profesor);
-                        $rSoli = $this->normalizeRun($r->run_solicitante);
-                        return (!empty($rProf) && $rProf === $runProfesor) || (!empty($rSoli) && $rSoli === $runProfesor);
-                    });
+                $minutosMargen = ModulosHelper::getMargenIngresoMinutos($primerModulo->id_modulo);
+                $margenInicio = $horaInicioClase->copy()->subMinutes($minutosMargen);
 
-                    if ($reservasDelDia->isNotEmpty()) {
+                foreach ($espaciosClaseEquiv as $espIdEq) {
+                    $claveReserva = "{$fechaYmd}_{$espIdEq}";
+                    if (isset($reservasCache[$claveReserva])) {
+                        $reservasDelDia = $reservasCache[$claveReserva];
+
                         // Coincidencia por asignatura
                         foreach ($reservasDelDia as $r) {
-                            if ($r->id_asignatura == $plan->id_asignatura) {
+                            if ($r->id_asignatura == $primerModulo->id_asignatura) {
                                 $reservaEncontrada = $r;
-                                break;
+                                break 2;
                             }
                         }
 
                         // Coincidencia por horario
-                        if (!$reservaEncontrada) {
-                            $minutosMargen = ModulosHelper::getMargenIngresoMinutos($plan->id_modulo);
-                            $margenInicio = $horaInicio->copy()->subMinutes($minutosMargen);
-                            foreach ($reservasDelDia as $r) {
-                                $horaAcceso = Carbon::parse($r->hora);
-                                if ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFin) {
-                                    $reservaEncontrada = $r;
-                                    break;
-                                }
+                        foreach ($reservasDelDia as $r) {
+                            $horaAcceso = Carbon::parse($r->hora);
+                            if ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFinClase) {
+                                $reservaEncontrada = $r;
+                                break 2;
                             }
                         }
                     }
@@ -502,15 +600,53 @@ class DashboardController extends Controller
                 if ($reservaEncontrada) {
                     $realizadas++;
                 } else {
-                    // Si ya pasó el horario de término de la clase
-                    if ($fechaHoraFinClase < $ahora) {
-                        $noRegistradas++;
-                    } else {
-                        // Es una clase programada que aún no ocurre
+                    // Si aún no termina el horario de la clase, queda pendiente
+                    if ($fechaHoraFinClase >= $ahora) {
                         $futurasPendientes++;
+                    } else {
+                        // Concluyó y no tiene inasistencia oficial registrada en Control de Clases
+                        $realizadas++;
                     }
                 }
             }
+        }
+
+        // 6. Asegurar concordancia total con Control de Clases:
+        // Si hay registros oficiales en ClaseNoRealizada para el rango evaluado que no se asociaron
+        // a una planificación actual en el loop anterior (por ejemplo, clases en espacios históricos como TH-30),
+        // sumarlos al conteo correspondiente para que Dashboard y Control de Clases coincidan al 100%.
+        $cnrsTotales = ClaseNoRealizada::whereBetween('fecha_clase', [$fechaInicioYmd, $fechaFinYmd])->get();
+        // Agrupar por fecha, espacio y asignatura para contar 1 por bloque (igual que en Control de Clases)
+        $cnrsBloques = $cnrsTotales->groupBy(function($c) {
+            $fecha = Carbon::parse($c->fecha_clase)->format('Y-m-d');
+            return "{$fecha}_{$c->id_espacio}_{$c->id_asignatura}";
+        });
+
+        $cnrBloquesNoRegistradas = 0;
+        $cnrBloquesRecuperadas = 0;
+        $cnrBloquesJustificadas = 0;
+
+        foreach ($cnrsBloques as $bloqueKey => $items) {
+            $primerItem = $items->first();
+            if ($primerItem->estado === 'recuperada') {
+                $cnrBloquesRecuperadas++;
+            } elseif ($primerItem->estado === 'justificado') {
+                $cnrBloquesJustificadas++;
+            } else {
+                $cnrBloquesNoRegistradas++;
+            }
+        }
+
+        // Si el total registrado en Control de Clases es mayor que lo capturado en el loop de planificaciones,
+        // actualizar con el valor oficial del Control de Clases para garantizar coincidencia exacta.
+        if ($cnrBloquesNoRegistradas > $noRegistradas) {
+            $noRegistradas = $cnrBloquesNoRegistradas;
+        }
+        if ($cnrBloquesRecuperadas > $recuperadas) {
+            $recuperadas = $cnrBloquesRecuperadas;
+        }
+        if ($cnrBloquesJustificadas > $justificadas) {
+            $justificadas = $cnrBloquesJustificadas;
         }
 
         $totalImpartidas = $realizadas + $recuperadas;
