@@ -190,7 +190,9 @@ class ClasesNoRealizadasExport implements FromCollection, WithHeadings, WithMapp
         $titulo = 'Clases No Realizadas';
         
         if ($this->fechaInicio && $this->fechaFin) {
-            $titulo .= ' ' . $this->fechaInicio->format('d-m-Y') . ' a ' . $this->fechaFin->format('d-m-Y');
+            $inicio = $this->fechaInicio instanceof Carbon ? $this->fechaInicio : Carbon::parse($this->fechaInicio);
+            $fin = $this->fechaFin instanceof Carbon ? $this->fechaFin : Carbon::parse($this->fechaFin);
+            $titulo .= ' ' . $inicio->format('d-m-Y') . ' a ' . $fin->format('d-m-Y');
         } elseif ($this->periodo) {
             $titulo .= ' Periodo ' . $this->periodo;
         }
