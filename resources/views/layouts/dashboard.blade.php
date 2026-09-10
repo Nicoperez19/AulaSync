@@ -32,7 +32,7 @@
         </div>
 
         <!-- Estado Minimizado -->
-        <div id="reloj-minimizado" 
+        <div id="reloj-minimizado"
             onclick="toggleModalReloj(false)"
             title="Mostrar reloj y módulo actual"
             class="hidden cursor-pointer bg-gradient-to-br from-[#d2091e]/95 to-[#b10718]/95 backdrop-blur-md shadow-xl hover:shadow-2xl rounded-full border border-white/20 px-3.5 py-2 flex items-center gap-2 text-white hover:scale-105 transition-all duration-200">
@@ -49,7 +49,7 @@
                 <i class="fas fa-percent mr-2 text-blue-600"></i>
                 Porcentaje de Ocupación Semanal
             </h3>
-            
+
             <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-4 sm:p-6">
                 <!-- Nav Pills + Leyenda -->
                 <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 mb-6">
@@ -76,7 +76,7 @@
                             <span>Salas de Estudio</span>
                         </button>
                     </div>
-                    
+
                     <!-- Leyenda (Niveles de Ocupación) -->
                     <div class="flex flex-wrap items-center gap-2 text-xs md:text-sm bg-slate-50 border border-slate-200/80 rounded-xl px-3 sm:px-4 py-2 shadow-xs shrink-0">
                         <span class="font-extrabold text-slate-500 mr-1">Ocupación:</span>
@@ -94,7 +94,7 @@
                         </span>
                     </div>
                 </div>
-                               
+
                 <!-- Contenedor dinámico de la grilla -->
                 <div id="ocupacion-grid-container" class="overflow-x-auto relative min-h-[200px]">
                     <div class="flex flex-col items-center justify-center py-20 text-gray-400">
@@ -105,23 +105,30 @@
             </div>
         </div>
 
-        <!-- Sección de 2 Columnas: Estado de Clases a la Izquierda | Reportes a la Derecha -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 mb-8">
-            <!-- Widget Izquierda: Estado de Clases (Control de Asistencia) -->
-            <div class="lg:col-span-7 flex flex-col">
-                <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
-                    <i class="fas fa-chart-pie mr-2 text-blue-600"></i>
-                    Estado de Clases (Control de Asistencia)
-                </h3>
-                <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-4 sm:p-6 flex-1">
-                    <div id="status-clases-container">
-                        <div class="flex flex-col items-center justify-center py-16 text-slate-400">
-                            <div class="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-                            <p class="text-sm">Cargando estado de clases...</p>
-                        </div>
-                    </div>
+   <!-- Sección de 2 Columnas: Estado de Clases a la Izquierda | Reportes a la Derecha -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 mb-8">
+
+    <!-- Widget Izquierda: Estado de Clases -->
+    <div class="lg:col-span-7 flex flex-col min-w-0">
+
+        <h3 class="text-lg font-bold text-gray-700 mb-4 flex items-center">
+            <i class="fas fa-chart-pie mr-2 text-blue-600"></i>
+            Estado de Clases (Control de Asistencia)
+        </h3>
+
+        <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-4 sm:p-6 flex-1 min-w-0 overflow-hidden">
+
+            <div id="status-clases-container" class="w-full min-w-0">
+
+                <div class="flex flex-col items-center justify-center py-16 text-slate-400">
+                    <div class="inline-block w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+                    <p class="text-sm">Cargando estado de clases...</p>
                 </div>
+
             </div>
+
+        </div>
+    </div>
 
             <!-- Widget Derecha: Reportes de Uso de Espacios -->
             @can('reportes')
@@ -146,7 +153,7 @@
                         <div class="text-gray-400 group-hover:text-purple-600 transition duration-200 ml-2">
                             <i class="fas fa-chevron-right text-sm"></i>
                         </div>
-                    </a>    
+                    </a>
 
                     <!-- Control de Clases -->
                     <a href="{{ route('clases-no-realizadas.index') }}"
@@ -222,7 +229,7 @@
     </div>
 
     <!-- Script de Chart.js -->
-    
+
     <!-- Configuración para el script JS externo -->
     <div id="dashboard-config"
          data-horarios-actual-route="{{ route('dashboard.horarios-actual') }}"
