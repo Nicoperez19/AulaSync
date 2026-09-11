@@ -71,17 +71,36 @@ class DashboardController extends Controller
             })
             ->get();
 
-        // Obtener todas las reservas activas en curso de hoy por espacio para optimizar consultas
-        $reservasActivasHoy = Reserva::with(['profesor', 'asignatura', 'solicitante', 'espacio.piso'])
+        // Obtener todas las reservas de hoy (activas y finalizadas) por espacio para optimizar consultas
+        $reservasHoy = Reserva::with(['profesor', 'asignatura', 'solicitante', 'espacio.piso'])
             ->where('fecha_reserva', $fechaHoy)
-            ->where('estado', 'activa')
-            ->where('hora', '<=', $horaAhora)
-            ->where(function ($q) use ($horaAhora) {
-                $q->whereNull('hora_salida')
-                  ->orWhere('hora_salida', '>=', $horaAhora);
-            })
+            ->whereIn('estado', ['activa', 'finalizada'])
             ->get()
             ->groupBy('id_espacio');
+
+        // Filtrar reservas activas en curso
+        $reservasActivasHoy = $reservasHoy->map(function ($reservas) use ($horaAhora) {
+            return $reservas->filter(function ($r) use ($horaAhora) {
+                return $r->estado === 'activa'
+                    && $r->hora <= $horaAhora
+                    && ($r->hora_salida === null || $r->hora_salida >= $horaAhora);
+            });
+        })->filter(function ($group) {
+            return $group->isNotEmpty();
+        });
+
+        // Pre-cargar clases no realizadas de hoy agrupadas por espacio
+        $clasesNoRealizadasHoy = ClaseNoRealizada::where('fecha_clase', $fechaHoy)
+            ->get()
+            ->groupBy('id_espacio');
+
+        // Horario y tolerancia del módulo actual
+        $inicioModulo = $moduloActualHorario['inicio'] ?? null;
+        $finModulo = $moduloActualHorario['fin'] ?? null;
+        $margenMinutos = $moduloActualNum ? ModulosHelper::getMargenIngresoMinutos($idModulo) : 15;
+        $horaLimiteTolerancia = ($inicioModulo && $moduloActualNum)
+            ? Carbon::parse($fechaHoy . ' ' . $inicioModulo)->addMinutes($margenMinutos)->format('H:i:s')
+            : null;
 
         $asignacionesMapeadas = collect();
 
@@ -96,35 +115,102 @@ class DashboardController extends Controller
             $espaciosEquiv = EspacioAliasHelper::obtenerEquivalentes($asig->espacio->id_espacio);
             $reservasEspacio = collect();
             foreach ($espaciosEquiv as $espId) {
-                if ($reservasActivasHoy->has($espId)) {
-                    $reservasEspacio = $reservasEspacio->concat($reservasActivasHoy->get($espId));
+                if ($reservasHoy->has($espId)) {
+                    $reservasEspacio = $reservasEspacio->concat($reservasHoy->get($espId));
                 }
             }
 
-            $profesorPresente = false;
             $nombreAsignatura = $asig->asignatura->nombre_asignatura ?? '-';
             $profesorName = $asig->horario->profesor->name ?? $asig->asignatura->profesor->name ?? '-';
             $profesorEmail = $asig->horario->profesor->email ?? $asig->asignatura->profesor->email ?? '-';
+            $estadoPresencia = 'ausente';
+            $profesorPresente = false;
+            $horaSalida = null;
 
-            if ($reservasEspacio->isNotEmpty()) {
-                $reservaCoincidente = null;
-                if ($runProfesorNorm) {
-                    $reservaCoincidente = $reservasEspacio->first(function ($reserva) use ($runProfesorNorm) {
-                        $reservaRunNorm = $reserva->run_profesor ? $this->normalizeRun($reserva->run_profesor) : null;
-                        return $reservaRunNorm === $runProfesorNorm;
-                    });
+            // 1. Buscar reserva activa en curso para este espacio/asignatura
+            $reservaActiva = $reservasEspacio->first(function ($r) use ($horaAhora, $runProfesorNorm, $asig) {
+                if ($r->estado !== 'activa') return false;
+                if ($r->hora > $horaAhora) return false;
+                if ($r->hora_salida !== null && $r->hora_salida < $horaAhora) return false;
+
+                if ($r->id_asignatura && $asig->id_asignatura && $r->id_asignatura == $asig->id_asignatura) {
+                    return true;
                 }
+                if ($runProfesorNorm && $r->run_profesor) {
+                    return $this->normalizeRun($r->run_profesor) === $runProfesorNorm;
+                }
+                return true;
+            });
 
-                $reservaActiva = $reservaCoincidente ?: $reservasEspacio->first();
+            if ($reservaActiva) {
+                $estadoPresencia = 'en_sala';
+                $profesorPresente = true;
+                if ($reservaActiva->asignatura && !empty($reservaActiva->asignatura->nombre_asignatura)) {
+                    $nombreAsignatura = $reservaActiva->asignatura->nombre_asignatura;
+                }
+                if ($reservaActiva->profesor) {
+                    $profesorName = $reservaActiva->profesor->name;
+                    $profesorEmail = $reservaActiva->profesor->email ?? $profesorEmail;
+                }
+            } else {
+                // 2. Buscar si la clase ya fue impartida y finalizada hoy
+                $reservaFinalizada = $reservasEspacio->first(function ($r) use ($asig, $runProfesorNorm, $inicioModulo, $finModulo) {
+                    if ($r->estado !== 'finalizada') return false;
 
-                if ($reservaActiva) {
-                    $profesorPresente = true;
-                    if ($reservaActiva->asignatura && !empty($reservaActiva->asignatura->nombre_asignatura)) {
-                        $nombreAsignatura = $reservaActiva->asignatura->nombre_asignatura;
+                    // Coincidencia directa por asignatura
+                    if ($r->id_asignatura && $asig->id_asignatura && $r->id_asignatura == $asig->id_asignatura) {
+                        return true;
                     }
-                    if ($reservaActiva->profesor) {
-                        $profesorName = $reservaActiva->profesor->name;
-                        $profesorEmail = $reservaActiva->profesor->email ?? $profesorEmail;
+
+                    // Coincidencia por profesor y solapamiento horario con este módulo
+                    $esMismoProfesor = $runProfesorNorm && $r->run_profesor && ($this->normalizeRun($r->run_profesor) === $runProfesorNorm);
+                    $solapaHorario = (!$inicioModulo || !$finModulo) || ($r->hora <= $finModulo && ($r->hora_salida === null || $r->hora_salida >= $inicioModulo));
+
+                    if ($esMismoProfesor && $solapaHorario) {
+                        return true;
+                    }
+
+                    if ($r->clase_finalizada_anticipadamente && $solapaHorario) {
+                        return true;
+                    }
+
+                    return false;
+                });
+
+                if ($reservaFinalizada) {
+                    $estadoPresencia = 'finalizada';
+                    $profesorPresente = true;
+                    $horaSalida = $reservaFinalizada->hora_salida;
+                    if ($reservaFinalizada->asignatura && !empty($reservaFinalizada->asignatura->nombre_asignatura)) {
+                        $nombreAsignatura = $reservaFinalizada->asignatura->nombre_asignatura;
+                    }
+                    if ($reservaFinalizada->profesor) {
+                        $profesorName = $reservaFinalizada->profesor->name;
+                        $profesorEmail = $reservaFinalizada->profesor->email ?? $profesorEmail;
+                    }
+                } else {
+                    // 3. Verificar si está registrada como ClaseNoRealizada
+                    $esCNR = false;
+                    foreach ($espaciosEquiv as $espId) {
+                        $cnrs = $clasesNoRealizadasHoy->get($espId, collect());
+                        foreach ($cnrs as $cnr) {
+                            if ($cnr->id_asignatura == $asig->id_asignatura || str_contains($cnr->id_modulo, $idModulo)) {
+                                $esCNR = true;
+                                break 2;
+                            }
+                        }
+                    }
+
+                    if ($esCNR) {
+                        $estadoPresencia = 'ausente';
+                        $profesorPresente = false;
+                    } elseif ($horaLimiteTolerancia && $horaAhora < $horaLimiteTolerancia) {
+                        // Aún dentro del margen de tolerancia inicial
+                        $estadoPresencia = 'espera';
+                        $profesorPresente = false;
+                    } else {
+                        $estadoPresencia = 'ausente';
+                        $profesorPresente = false;
                     }
                 }
             }
@@ -135,6 +221,8 @@ class DashboardController extends Controller
                 'profesor_name' => $profesorName,
                 'profesor_email' => $profesorEmail,
                 'profesor_presente' => $profesorPresente,
+                'estado_presencia' => $estadoPresencia,
+                'hora_salida' => $horaSalida,
             ]);
         }
 
@@ -145,39 +233,103 @@ class DashboardController extends Controller
 
             $runProfesor = $asig->profesorColaborador->run_profesor_colaborador ?? null;
             $runProfesorNorm = $runProfesor ? $this->normalizeRun($runProfesor) : null;
+            $idAsignaturaColab = $asig->profesorColaborador->id_asignatura ?? null;
 
             $espaciosEquiv = EspacioAliasHelper::obtenerEquivalentes($asig->espacio->id_espacio);
             $reservasEspacio = collect();
             foreach ($espaciosEquiv as $espId) {
-                if ($reservasActivasHoy->has($espId)) {
-                    $reservasEspacio = $reservasEspacio->concat($reservasActivasHoy->get($espId));
+                if ($reservasHoy->has($espId)) {
+                    $reservasEspacio = $reservasEspacio->concat($reservasHoy->get($espId));
                 }
             }
 
-            $profesorPresente = false;
             $nombreAsignatura = $asig->profesorColaborador->nombre_asignatura ?? '-';
             $profesorName = $asig->profesorColaborador->profesor->name ?? '-';
             $profesorEmail = $asig->profesorColaborador->profesor->email ?? '-';
+            $estadoPresencia = 'ausente';
+            $profesorPresente = false;
+            $horaSalida = null;
 
-            if ($reservasEspacio->isNotEmpty()) {
-                $reservaCoincidente = null;
-                if ($runProfesorNorm) {
-                    $reservaCoincidente = $reservasEspacio->first(function ($reserva) use ($runProfesorNorm) {
-                        $reservaRunNorm = $reserva->run_profesor ? $this->normalizeRun($reserva->run_profesor) : null;
-                        return $reservaRunNorm === $runProfesorNorm;
-                    });
+            // 1. Buscar reserva activa en curso
+            $reservaActiva = $reservasEspacio->first(function ($r) use ($horaAhora, $runProfesorNorm, $idAsignaturaColab) {
+                if ($r->estado !== 'activa') return false;
+                if ($r->hora > $horaAhora) return false;
+                if ($r->hora_salida !== null && $r->hora_salida < $horaAhora) return false;
+
+                if ($r->id_asignatura && $idAsignaturaColab && $r->id_asignatura == $idAsignaturaColab) {
+                    return true;
                 }
+                if ($runProfesorNorm && $r->run_profesor) {
+                    return $this->normalizeRun($r->run_profesor) === $runProfesorNorm;
+                }
+                return true;
+            });
 
-                $reservaActiva = $reservaCoincidente ?: $reservasEspacio->first();
+            if ($reservaActiva) {
+                $estadoPresencia = 'en_sala';
+                $profesorPresente = true;
+                if ($reservaActiva->asignatura && !empty($reservaActiva->asignatura->nombre_asignatura)) {
+                    $nombreAsignatura = $reservaActiva->asignatura->nombre_asignatura;
+                }
+                if ($reservaActiva->profesor) {
+                    $profesorName = $reservaActiva->profesor->name;
+                    $profesorEmail = $reservaActiva->profesor->email ?? $profesorEmail;
+                }
+            } else {
+                // 2. Buscar si ya fue finalizada hoy
+                $reservaFinalizada = $reservasEspacio->first(function ($r) use ($idAsignaturaColab, $runProfesorNorm, $inicioModulo, $finModulo) {
+                    if ($r->estado !== 'finalizada') return false;
 
-                if ($reservaActiva) {
-                    $profesorPresente = true;
-                    if ($reservaActiva->asignatura && !empty($reservaActiva->asignatura->nombre_asignatura)) {
-                        $nombreAsignatura = $reservaActiva->asignatura->nombre_asignatura;
+                    if ($r->id_asignatura && $idAsignaturaColab && $r->id_asignatura == $idAsignaturaColab) {
+                        return true;
                     }
-                    if ($reservaActiva->profesor) {
-                        $profesorName = $reservaActiva->profesor->name;
-                        $profesorEmail = $reservaActiva->profesor->email ?? $profesorEmail;
+
+                    $esMismoProfesor = $runProfesorNorm && $r->run_profesor && ($this->normalizeRun($r->run_profesor) === $runProfesorNorm);
+                    $solapaHorario = (!$inicioModulo || !$finModulo) || ($r->hora <= $finModulo && ($r->hora_salida === null || $r->hora_salida >= $inicioModulo));
+
+                    if ($esMismoProfesor && $solapaHorario) {
+                        return true;
+                    }
+
+                    if ($r->clase_finalizada_anticipadamente && $solapaHorario) {
+                        return true;
+                    }
+
+                    return false;
+                });
+
+                if ($reservaFinalizada) {
+                    $estadoPresencia = 'finalizada';
+                    $profesorPresente = true;
+                    $horaSalida = $reservaFinalizada->hora_salida;
+                    if ($reservaFinalizada->asignatura && !empty($reservaFinalizada->asignatura->nombre_asignatura)) {
+                        $nombreAsignatura = $reservaFinalizada->asignatura->nombre_asignatura;
+                    }
+                    if ($reservaFinalizada->profesor) {
+                        $profesorName = $reservaFinalizada->profesor->name;
+                        $profesorEmail = $reservaFinalizada->profesor->email ?? $profesorEmail;
+                    }
+                } else {
+                    $esCNR = false;
+                    foreach ($espaciosEquiv as $espId) {
+                        $cnrs = $clasesNoRealizadasHoy->get($espId, collect());
+                        foreach ($cnrs as $cnr) {
+                            if (($idAsignaturaColab && $cnr->id_asignatura == $idAsignaturaColab) || str_contains($cnr->id_modulo, $idModulo)) {
+                                $esCNR = true;
+                                break 2;
+                            }
+                        }
+                    }
+
+                    if ($esCNR) {
+                        $estadoPresencia = 'ausente';
+                        $profesorPresente = false;
+                    } elseif ($horaLimiteTolerancia && $horaAhora < $horaLimiteTolerancia) {
+                        $estadoPresencia = 'espera';
+                        $profesorPresente = false;
+                    } else {
+                        $estadoPresencia = 'ausente';
+                        $profesorPresente = false;
                     }
                 }
             }
@@ -188,6 +340,8 @@ class DashboardController extends Controller
                 'profesor_name' => $profesorName,
                 'profesor_email' => $profesorEmail,
                 'profesor_presente' => $profesorPresente,
+                'estado_presencia' => $estadoPresencia,
+                'hora_salida' => $horaSalida,
             ]);
         }
 
@@ -204,6 +358,8 @@ class DashboardController extends Controller
                         'profesor_name' => $reservaExtra->profesor->name ?? $reservaExtra->solicitante->nombre ?? '-',
                         'profesor_email' => $reservaExtra->profesor->email ?? $reservaExtra->solicitante->correo ?? '-',
                         'profesor_presente' => true,
+                        'estado_presencia' => 'en_sala',
+                        'hora_salida' => null,
                     ]);
                 }
             }

@@ -19,7 +19,7 @@ class NormalizarEspaciosTHCommand extends Command
                             {--revertir : Revierte los cambios aplicados usando el último archivo de respaldo}
                             {--archivo= : Archivo específico de respaldo a revertir}';
 
-    protected $description = 'Normaliza los identificadores de espacios de la sede Talcahuano (TH-30 -> TH-L09 y TH-09 -> TH-L08 para construcción) y reasigna planificaciones';
+    protected $description = 'Normaliza los identificadores de espacios de la sede Talcahuano (TH-30 -> TH-L09) y reasigna planificaciones';
 
     public function handle()
     {
@@ -259,43 +259,6 @@ class NormalizarEspaciosTHCommand extends Command
                 ->whereIn('id_espacio', ['TH-LA8', 'TH-LAB08'])
                 ->update(['id_espacio' => 'TH-L08']);
         }
-
-        // 3. Reasignar clases de Construcción que quedaron en TH-09
-        $planificacionesTH09 = Planificacion_Asignatura::withoutGlobalScope('tenant')
-            ->with(['asignatura.carrera'])
-            ->where('id_espacio', 'TH-09')
-            ->get();
-
-        $movidasConstruccion = 0;
-        foreach ($planificacionesTH09 as $plan) {
-            $carreraNombre = $plan->asignatura?->carrera?->nombre ?? '';
-            $asigNombre = $plan->asignatura?->nombre_asignatura ?? '';
-
-            $espacioResuelto = EspacioAliasHelper::normalizar('TH-09', 'TH', [
-                'carrera' => $carreraNombre,
-                'asignatura' => $asigNombre,
-            ]);
-
-            if ($espacioResuelto === 'TH-L08') {
-                $this->line("    • Moviendo: {$asigNombre} ({$carreraNombre}) -> TH-L08");
-                $movidasConstruccion++;
-
-                $backup['planificaciones_regulares'][] = [
-                    'id' => $plan->id ?? $plan->id_planificacion,
-                    'id_asignatura' => $plan->id_asignatura,
-                    'id_modulo' => $plan->id_modulo,
-                    'id_espacio_anterior' => 'TH-09',
-                    'id_espacio_nuevo' => 'TH-L08',
-                ];
-
-                if (!$dryRun) {
-                    $plan->id_espacio = 'TH-L08';
-                    $plan->save();
-                }
-            }
-        }
-
-        $this->line("  → Clases de Construcción en TH-09 reasignadas a TH-L08: {$movidasConstruccion}");
     }
 
     /**
