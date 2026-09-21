@@ -360,9 +360,9 @@ class DetectarClasesNoRealizadas extends Command
                                     'id_espacio' => $modulo->id_espacio,
                                     'id_modulo' => $modulo->id_modulo,
                                     'fecha_clase' => $fechaActual,
+                                    'run_profesor' => $runProfesor,
                                 ],
                                 [
-                                    'run_profesor' => $runProfesor,
                                     'periodo' => $periodo,
                                     'motivo' => $minutosAtraso > 0 ? "Clase realizada con atraso de {$minutosAtraso} min" : "Clase realizada (ingreso a las {$horaEntrada})",
                                     'observaciones' => "Profesor registró ingreso a las {$horaEntrada}",
@@ -387,6 +387,7 @@ class DetectarClasesNoRealizadas extends Command
                                 ->where('id_espacio', $modulo->id_espacio)
                                 ->where('id_modulo', $modulo->id_modulo)
                                 ->where('fecha_clase', $fechaActual)
+                                ->where('run_profesor', $runProfesor)
                                 ->exists();
 
                             if ($yaRegistrada) {
@@ -475,6 +476,7 @@ class DetectarClasesNoRealizadas extends Command
                     ->where('id_espacio', $modulo->id_espacio)
                     ->where('id_modulo', $modulo->id_modulo)
                     ->where('fecha_clase', $fechaActual)
+                    ->where('run_profesor', $runProfesor)
                     ->exists();
 
                 if (!$yaRegistrado) {

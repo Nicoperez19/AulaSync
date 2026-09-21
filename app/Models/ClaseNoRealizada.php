@@ -89,6 +89,7 @@ class ClaseNoRealizada extends Model
                 ->where('id_espacio', $datosClase['id_espacio'])
                 ->where('id_modulo', $datosClase['id_modulo'])
                 ->where('fecha_clase', $datosClase['fecha_clase'])
+                ->where('run_profesor', $datosClase['run_profesor'])
                 ->first();
 
             if (! $registroExistente) {
@@ -116,6 +117,7 @@ class ClaseNoRealizada extends Model
             ->where('id_espacio', $datosClase['id_espacio'])
             ->where('id_modulo', $datosClase['id_modulo'])
             ->where('fecha_clase', $datosClase['fecha_clase'])
+            ->where('run_profesor', $datosClase['run_profesor'])
             ->first();
 
         // Si ya existe, no crear duplicado
@@ -129,9 +131,17 @@ class ClaseNoRealizada extends Model
         $ignorarEntrada = $datosClase['ignorar_entrada'] ?? false;
 
         if (!$esRetiroAnticipado && !$ignorarEntrada) {
+            $runBuscado = $datosClase['run_profesor'] ?? null;
             $tuvoEntrada = \App\Models\Reserva::where('id_espacio', $datosClase['id_espacio'])
                 ->where('fecha_reserva', $datosClase['fecha_clase'])
-                ->whereNotNull('run_profesor')
+                ->where(function($q) use ($runBuscado) {
+                    if ($runBuscado) {
+                        $q->where('run_profesor', $runBuscado)
+                          ->orWhere('run_solicitante', $runBuscado);
+                    } else {
+                        $q->whereNotNull('run_profesor');
+                    }
+                })
                 ->whereNotNull('hora') // hora es la hora de entrada en la tabla reservas
                 ->exists();
 
