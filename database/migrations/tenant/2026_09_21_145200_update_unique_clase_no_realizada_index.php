@@ -1,7 +1,6 @@
 <?php
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -11,16 +10,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('clases_no_realizadas', function (Blueprint $table) {
-            // Eliminar la clave única anterior que no incluía al profesor
-            $table->dropUnique('unique_clase_no_realizada');
+        $conn = Schema::getConnection();
 
-            // Crear la nueva clave única incluyendo run_profesor para permitir colaboradores / co-docentes
-            $table->unique(
-                ['id_asignatura', 'id_espacio', 'id_modulo', 'fecha_clase', 'run_profesor'],
-                'unique_clase_no_realizada_profesor'
-            );
-        });
+        // 1. Eliminar la clave única anterior si todavía existe (evitar error si ya fue eliminada)
+        $oldIndex = $conn->select("SHOW INDEX FROM clases_no_realizadas WHERE Key_name = 'unique_clase_no_realizada'");
+        if (!empty($oldIndex)) {
+            $conn->statement('ALTER TABLE clases_no_realizadas DROP INDEX unique_clase_no_realizada');
+        }
+
+        // 2. Crear la nueva clave única especificando longitudes para evitar el error MySQL 1071 (max key length 3072 bytes en utf8mb4)
+        $newIndex = $conn->select("SHOW INDEX FROM clases_no_realizadas WHERE Key_name = 'unique_clase_no_realizada_profesor'");
+        if (empty($newIndex)) {
+            $conn->statement('ALTER TABLE clases_no_realizadas ADD UNIQUE unique_clase_no_realizada_profesor (id_asignatura(50), id_espacio(50), id_modulo(50), fecha_clase, run_profesor(20))');
+        }
     }
 
     /**
@@ -28,12 +30,16 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('clases_no_realizadas', function (Blueprint $table) {
-            $table->dropUnique('unique_clase_no_realizada_profesor');
-            $table->unique(
-                ['id_asignatura', 'id_espacio', 'id_modulo', 'fecha_clase'],
-                'unique_clase_no_realizada'
-            );
-        });
+        $conn = Schema::getConnection();
+
+        $newIndex = $conn->select("SHOW INDEX FROM clases_no_realizadas WHERE Key_name = 'unique_clase_no_realizada_profesor'");
+        if (!empty($newIndex)) {
+            $conn->statement('ALTER TABLE clases_no_realizadas DROP INDEX unique_clase_no_realizada_profesor');
+        }
+
+        $oldIndex = $conn->select("SHOW INDEX FROM clases_no_realizadas WHERE Key_name = 'unique_clase_no_realizada'");
+        if (empty($oldIndex)) {
+            $conn->statement('ALTER TABLE clases_no_realizadas ADD UNIQUE unique_clase_no_realizada (id_asignatura(50), id_espacio(50), id_modulo(50), fecha_clase)');
+        }
     }
 };
