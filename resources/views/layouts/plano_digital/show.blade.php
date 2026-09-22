@@ -2416,23 +2416,35 @@
                 if (resultadoVerificacion.puede_forzar_cierre) {
                     const ocupante = resultadoVerificacion.ocupante || {};
                     const idReservaAnterior = resultadoVerificacion.id_reserva_anterior;
+                    const esProgramada = resultadoVerificacion.es_reserva_programada || false;
+                    const textoTitulo = esProgramada ? 'Reserva Temporal Programada' : 'Sala Ocupada';
+                    const etiquetaOcupante = esProgramada 
+                        ? (ocupante.tipo === 'profesor' ? 'Docente con reserva' : 'Solicitante con reserva')
+                        : (ocupante.tipo === 'profesor' ? 'Docente anterior' : 'Solicitante anterior');
+                    const subtituloAviso = esProgramada
+                        ? 'La sala tiene una reserva temporal programada en este horario.'
+                        : 'La sala aún figura ocupada por el usuario anterior.';
+                    const textoPregunta = esProgramada
+                        ? 'Usted tiene una clase oficial en este bloque. ¿Desea iniciar su clase oficial ahora?'
+                        : 'Usted tiene una clase programada en este bloque. ¿Desea forzar el cierre de la sesión anterior e iniciar su clase?';
+                    const botonConfirmar = esProgramada ? 'Sí, Iniciar Clase Oficial' : 'Sí, Forzar Cierre e Iniciar Clase';
                     
                     Swal.close();
                     Swal.fire({
-                        title: 'Sala Ocupada',
+                        title: textoTitulo,
                         html: `
                             <div class="text-left">
-                                <p class="mb-4 text-orange-600 font-semibold">La sala aún figura ocupada por el docente anterior.</p>
+                                <p class="mb-4 text-orange-600 font-semibold">${subtituloAviso}</p>
                                 <div class="p-3 mb-4 bg-orange-50 border-l-4 border-orange-500 rounded text-sm">
-                                    <p><strong>Docente anterior:</strong> ${ocupante.nombre || 'Docente anterior'}</p>
+                                    <p><strong>${etiquetaOcupante}:</strong> ${ocupante.nombre || 'Usuario'}</p>
                                     <p><strong>Hora inicio:</strong> ${ocupante.hora_inicio || '-'}</p>
                                 </div>
-                                <p class="text-gray-700">Usted tiene una clase programada en este bloque. ¿Desea forzar el cierre de la sesión anterior e iniciar su clase?</p>
+                                <p class="text-gray-700">${textoPregunta}</p>
                             </div>
                         `,
                         icon: 'warning',
                         showCancelButton: true,
-                        confirmButtonText: 'Sí, Forzar Cierre e Iniciar Clase',
+                        confirmButtonText: botonConfirmar,
                         cancelButtonText: 'Cancelar',
                         confirmButtonColor: '#059669',
                         cancelButtonColor: '#6B7280',

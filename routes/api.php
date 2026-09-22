@@ -392,9 +392,13 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
         $runLimpio = strtoupper(preg_replace('/[^0-9Kk]/', '', $usuario));
         $runSinDv = strlen($runLimpio) > 1 ? substr($runLimpio, 0, -1) : $runLimpio;
 
-        // Buscar la clase programada en este espacio usando Eloquent
+        // Buscar la clase programada en este espacio usando Eloquent (con coincidencia robusta de espacio)
+        $espacioLimpio = str_replace(['-', ' '], '', $espacio);
         $programacion = \App\Models\Planificacion_Asignatura::with(['modulo', 'asignatura'])
-            ->where('id_espacio', $espacio)
+            ->where(function ($eq) use ($espacio, $espacioLimpio) {
+                $eq->where('id_espacio', $espacio)
+                   ->orWhereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio]);
+            })
             ->where(function ($qPrincipal) use ($usuario, $runLimpio, $runSinDv) {
                 $qPrincipal->whereHas('asignatura', function ($q) use ($usuario, $runLimpio, $runSinDv) {
                     $q->where('run_profesor', $usuario)
@@ -433,8 +437,51 @@ Route::get('/verificar-programacion/{espacio}/{usuario}', function ($espacio, $u
                 'id_modulo' => $programacion->id_modulo,
                 'hora_inicio' => $programacion->modulo->hora_inicio,
                 'hora_termino' => $programacion->modulo->hora_termino,
-                'id_asignatura' => $programacion->id_asignatura
+                'id_asignatura' => $programacion->id_asignatura,
+                'es_temporal' => false
             ];
+        } else {
+            // Si no tiene clase regular, buscar si tiene una clase temporal activa (PlanificacionProfesorColaborador)
+            $hoyFecha = \Carbon\Carbon::today()->toDateString();
+            $planColaborador = \App\Models\PlanificacionProfesorColaborador::with(['modulo', 'profesorColaborador.asignatura'])
+                ->whereRaw("REPLACE(REPLACE(id_espacio, '-', ''), ' ', '') = ?", [$espacioLimpio])
+                ->whereHas('profesorColaborador', function ($q) use ($usuario, $runLimpio, $runSinDv, $hoyFecha) {
+                    $q->where('estado', 'activo')
+                      ->where('fecha_inicio', '<=', $hoyFecha)
+                      ->where('fecha_termino', '>=', $hoyFecha)
+                      ->where(function ($subQ) use ($usuario, $runLimpio, $runSinDv) {
+                          $subQ->where('run_profesor_colaborador', $usuario)
+                               ->orWhere('run_profesor_colaborador', $runLimpio)
+                               ->orWhere('run_profesor_colaborador', $runSinDv)
+                               ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runLimpio])
+                               ->orWhereRaw("REPLACE(REPLACE(REPLACE(run_profesor_colaborador, '.', ''), '-', ''), ' ', '') = ?", [$runSinDv]);
+                      });
+                })
+                ->whereHas('modulo', function ($q) use ($diasPosibles, $horaActualStr, $horaConAnticipacion) {
+                    $q->whereIn('dia', $diasPosibles)
+                      ->where(function ($subQ) use ($horaActualStr, $horaConAnticipacion) {
+                          $subQ->where(function ($sq1) use ($horaActualStr) {
+                              $sq1->where('hora_inicio', '<=', $horaActualStr)
+                                  ->where('hora_termino', '>=', $horaActualStr);
+                          })->orWhere(function ($sq2) use ($horaActualStr, $horaConAnticipacion) {
+                              $sq2->where('hora_inicio', '>', $horaActualStr)
+                                  ->where('hora_inicio', '<=', $horaConAnticipacion);
+                          });
+                      });
+                })
+                ->first();
+
+            if ($planColaborador && $planColaborador->modulo) {
+                $tieneProgramacion = true;
+                $modulosInfo = [
+                    'id_modulo' => $planColaborador->id_modulo,
+                    'hora_inicio' => $planColaborador->modulo->hora_inicio,
+                    'hora_termino' => $planColaborador->modulo->hora_termino,
+                    'id_asignatura' => $planColaborador->profesorColaborador->id_asignatura ?? null,
+                    'es_temporal' => true,
+                    'nombre_asignatura' => $planColaborador->profesorColaborador->nombre_asignatura_temporal ?? null,
+                ];
+            }
         }
 
         return response()->json([

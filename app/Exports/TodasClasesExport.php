@@ -76,9 +76,12 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
     public function map($clase): array
     {
         // Optimizar formato de fecha (evitar parsear si ya es string)
-        $fecha = is_string($clase['fecha']) 
-            ? Carbon::parse($clase['fecha'])->format('d/m/Y')
-            : $clase['fecha']->format('d/m/Y');
+        $fecha = 'N/A';
+        if (!empty($clase['fecha'])) {
+            $fecha = is_string($clase['fecha']) 
+                ? Carbon::parse($clase['fecha'])->format('d/m/Y')
+                : $clase['fecha']->format('d/m/Y');
+        }
             
         return [
             $fecha,
