@@ -29,8 +29,14 @@ class ClasesNoRealizadasTable extends Component
     public $sortField = 'created_at';
     public $sortDirection = 'desc';
     
-    // Cache para estadísticas (evitar múltiples consultas)
+    // Cache para estadísticas y colecciones filtradas
     private $cachedEstadisticas = null;
+    private $todasLasClasesFiltradasCache = null;
+
+    // Propiedades de selección múltiple (Justificación Masiva)
+    public $selectedClases = [];
+    public $selectAllPage = false;
+    public $selectAllFiltered = false;
 
     public $reagendar_id = null; // ID de clase para abrir modal automáticamente
 
@@ -47,7 +53,8 @@ class ClasesNoRealizadasTable extends Component
         'updateClase',
         'confirmDelete',
         'reagendarClase',
-        'marcarComoRecuperada'
+        'marcarComoRecuperada',
+        'ejecutarJustificacionMasiva',
     ];
 
     public function mount()
@@ -71,24 +78,32 @@ class ClasesNoRealizadasTable extends Component
     public function updatingSearch()
     {
         $this->cachedEstadisticas = null;
+        $this->todasLasClasesFiltradasCache = null;
+        $this->limpiarSeleccion();
         $this->resetPage();
     }
 
     public function updatingEstado()
     {
         $this->cachedEstadisticas = null;
+        $this->todasLasClasesFiltradasCache = null;
+        $this->limpiarSeleccion();
         $this->resetPage();
     }
 
     public function updatingPeriodo()
     {
         $this->cachedEstadisticas = null;
+        $this->todasLasClasesFiltradasCache = null;
+        $this->limpiarSeleccion();
         $this->resetPage();
     }
 
     public function updatedPeriodo($value)
     {
         $this->cachedEstadisticas = null;
+        $this->todasLasClasesFiltradasCache = null;
+        $this->limpiarSeleccion();
         $this->resetPage();
 
         if ($value) {
@@ -112,12 +127,16 @@ class ClasesNoRealizadasTable extends Component
     public function updatingFechaInicio()
     {
         $this->cachedEstadisticas = null;
+        $this->todasLasClasesFiltradasCache = null;
+        $this->limpiarSeleccion();
         $this->resetPage();
     }
 
     public function updatingFechaFin()
     {
         $this->cachedEstadisticas = null;
+        $this->todasLasClasesFiltradasCache = null;
+        $this->limpiarSeleccion();
         $this->resetPage();
     }
 
@@ -136,6 +155,7 @@ class ClasesNoRealizadasTable extends Component
     {
         // Método para refrescar manualmente los datos
         $this->cachedEstadisticas = null; // Limpiar cache
+        $this->todasLasClasesFiltradasCache = null;
         $this->resetPage();
     }
 
@@ -150,6 +170,8 @@ class ClasesNoRealizadasTable extends Component
         }
         
         $this->cachedEstadisticas = null;
+        $this->todasLasClasesFiltradasCache = null;
+        $this->limpiarSeleccion();
         $this->resetPage();
     }
 
@@ -168,7 +190,299 @@ class ClasesNoRealizadasTable extends Component
         }
 
         $this->cachedEstadisticas = null; // Limpiar cache
+        $this->todasLasClasesFiltradasCache = null;
+        $this->limpiarSeleccion();
         $this->resetPage();
+    }
+
+    // ==========================================
+    // MÉTODOS DE SELECCIÓN Y JUSTIFICACIÓN MASIVA
+    // ==========================================
+
+    public function updatedSelectAllPage($value)
+    {
+        $todasLasClases = $this->getClasesFiltradasCollection();
+        $currentPage = method_exists($this, 'getPage') ? $this->getPage() : (\Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1);
+        $items = $todasLasClases->forPage($currentPage, $this->perPage);
+        $keysPagina = $items->where('estado', 'No Registrada')->pluck('unique_key')->toArray();
+
+        if ($value) {
+            $this->selectedClases = array_values(array_unique(array_merge($this->selectedClases, $keysPagina)));
+            $totalNoRealizadas = $todasLasClases->where('estado', 'No Registrada')->count();
+            if ($totalNoRealizadas > 0 && count($this->selectedClases) === $totalNoRealizadas) {
+                $this->selectAllFiltered = true;
+            }
+        } else {
+            $this->selectedClases = array_values(array_diff($this->selectedClases, $keysPagina));
+            $this->selectAllFiltered = false;
+        }
+    }
+
+    public function updatedSelectedClases()
+    {
+        $todasLasClases = $this->getClasesFiltradasCollection();
+        $totalNoRealizadas = $todasLasClases->where('estado', 'No Registrada')->count();
+        if ($totalNoRealizadas > 0 && count($this->selectedClases) === $totalNoRealizadas) {
+            $this->selectAllFiltered = true;
+        } else {
+            $this->selectAllFiltered = false;
+        }
+    }
+
+    public function seleccionarTodoElFiltro()
+    {
+        $this->selectAllFiltered = true;
+        $todasLasClases = $this->getClasesFiltradasCollection();
+        $this->selectedClases = $todasLasClases
+            ->where('estado', 'No Registrada')
+            ->pluck('unique_key')
+            ->toArray();
+    }
+
+    public function limpiarSeleccion()
+    {
+        $this->selectedClases = [];
+        $this->selectAllPage = false;
+        $this->selectAllFiltered = false;
+    }
+
+    public function abrirModalJustificarMasivo()
+    {
+        $clasesFiltradas = $this->getClasesFiltradasCollection();
+        $noRealizadas = $clasesFiltradas->where('estado', 'No Registrada');
+
+        if ($this->selectAllFiltered) {
+            $cantidad = $noRealizadas->count();
+        } else {
+            $cantidad = $noRealizadas->whereIn('unique_key', $this->selectedClases)->count();
+        }
+
+        if ($cantidad === 0) {
+            $this->dispatch('show-error', ['message' => 'No hay clases no registradas seleccionadas para justificar.']);
+            return;
+        }
+
+        $this->dispatch('show-bulk-justify-modal', [
+            'cantidad' => $cantidad,
+        ]);
+    }
+
+    public function ejecutarJustificacionMasiva($motivo, $observaciones, $sobrescribir = false)
+    {
+        $motivo = trim($motivo);
+        if (empty($motivo)) {
+            $motivo = 'Supervisión de Prácticas / Terreno';
+        }
+
+        $observaciones = trim($observaciones);
+
+        try {
+            $clasesFiltradas = $this->getClasesFiltradasCollection();
+            $candidatas = $clasesFiltradas->where('estado', 'No Registrada');
+
+            if (!$this->selectAllFiltered) {
+                $candidatas = $candidatas->whereIn('unique_key', $this->selectedClases);
+            }
+
+            if ($candidatas->isEmpty()) {
+                $this->dispatch('show-error', ['message' => 'No se encontraron clases válidas para justificar.']);
+                return;
+            }
+
+            $usuarioActual = auth()->user()->name ?? 'Administrador';
+            $fechaHora = Carbon::now()->format('d/m/Y H:i');
+            $notaAuditoria = "✓ Justificación Masiva aplicada por {$usuarioActual} el {$fechaHora}. Motivo: {$motivo}";
+            if (!empty($observaciones)) {
+                $notaAuditoria .= " - Detalle: {$observaciones}";
+            }
+
+            $procesadas = 0;
+
+            DB::beginTransaction();
+
+            foreach ($candidatas as $claseData) {
+                $claseModel = $this->materializarClaseNoRealizada($claseData);
+
+                $nuevaObs = $notaAuditoria;
+                if (!$sobrescribir && !empty($claseModel->observaciones)) {
+                    $nuevaObs = $claseModel->observaciones . "\n\n" . $notaAuditoria;
+                }
+
+                $claseModel->update([
+                    'estado' => 'justificado',
+                    'motivo' => $motivo,
+                    'observaciones' => $nuevaObs,
+                ]);
+
+                $procesadas++;
+            }
+
+            DB::commit();
+
+            $this->limpiarSeleccion();
+            $this->refresh();
+
+            $this->dispatch('show-success', [
+                'message' => "Se justificaron exitosamente {$procesadas} clases con estado Justificada."
+            ]);
+
+            Log::info("Justificación masiva completada exitosamente", [
+                'usuario' => $usuarioActual,
+                'clases_justificadas' => $procesadas,
+                'motivo' => $motivo,
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Error en justificación masiva: " . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+            ]);
+            $this->dispatch('show-error', [
+                'message' => 'Error al procesar la justificación masiva: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    public function generarUniqueKey($clase): string
+    {
+        if (empty($clase['fecha'])) {
+            $fecha = Carbon::today()->format('Y-m-d');
+        } elseif (is_string($clase['fecha'])) {
+            $fecha = Carbon::parse($clase['fecha'])->format('Y-m-d');
+        } else {
+            $fecha = $clase['fecha']->format('Y-m-d');
+        }
+        $idAsignatura = $clase['id_asignatura'] ?? '';
+        $espacio = $clase['espacio'] ?? '';
+        $modulo = $clase['modulo'] ?? '';
+        $run = $clase['run_profesor'] ?? '';
+        
+        return "{$idAsignatura}_{$espacio}_{$modulo}_{$fecha}_{$run}";
+    }
+
+    public function materializarClaseNoRealizada($claseData): ClaseNoRealizada
+    {
+        $id = $claseData['id'] ?? null;
+        if ($id) {
+            return ClaseNoRealizada::findOrFail($id);
+        }
+
+        // Reconstruir id_modulo (ej: "Lunes" -> "LU", "Martes" -> "MA")
+        $diaStr = strtolower($claseData['dia'] ?? '');
+        $prefijoDia = match($diaStr) {
+            'lunes' => 'LU',
+            'martes' => 'MA',
+            'miércoles', 'miercoles' => 'MI',
+            'jueves' => 'JU',
+            'viernes' => 'VI',
+            'sábado', 'sabado' => 'SA',
+            'domingo' => 'DO',
+            default => 'LU'
+        };
+
+        $modulo = (string)($claseData['modulo'] ?? '');
+        if (!str_contains($modulo, '.')) {
+            $partesModulo = explode(',', $modulo);
+            $modulosConPrefijo = array_map(function($m) use ($prefijoDia) {
+                $m = trim($m);
+                return str_contains($m, '.') ? $m : $prefijoDia . '.' . $m;
+            }, $partesModulo);
+            $idModulo = implode(',', $modulosConPrefijo);
+        } else {
+            $idModulo = $modulo;
+        }
+
+        $fecha = is_string($claseData['fecha']) 
+            ? Carbon::parse($claseData['fecha'])->format('Y-m-d')
+            : $claseData['fecha']->format('Y-m-d');
+
+        $periodo = (!empty($claseData['periodo']) && $claseData['periodo'] !== 'N/A') 
+            ? $claseData['periodo'] 
+            : ($this->periodo ?: SemesterHelper::getCurrentPeriod());
+
+        return ClaseNoRealizada::firstOrCreate(
+            [
+                'id_asignatura' => $claseData['id_asignatura'],
+                'id_espacio' => $claseData['espacio'],
+                'id_modulo' => $idModulo,
+                'fecha_clase' => $fecha,
+                'run_profesor' => $claseData['run_profesor'],
+            ],
+            [
+                'periodo' => $periodo,
+                'estado' => ($claseData['estado'] ?? '') === 'No Registrada' ? 'no_realizada' : 'realizada',
+                'motivo' => $claseData['motivo'] ?? 'Generado para acción manual',
+                'hora_deteccion' => Carbon::now(),
+            ]
+        );
+    }
+
+    protected function getClasesFiltradasCollection()
+    {
+        if ($this->todasLasClasesFiltradasCache !== null) {
+            return $this->todasLasClasesFiltradasCache;
+        }
+
+        $servicio = new \App\Services\TodasClasesService();
+        $todasLasClases = $servicio->obtenerTodasLasClases(
+            $this->fecha_inicio,
+            $this->fecha_fin,
+            $this->periodo,
+            null,
+            null
+        );
+
+        // Asignar clave única a cada clase
+        $todasLasClases = $todasLasClases->map(function($item) {
+            $item['unique_key'] = $this->generarUniqueKey($item);
+            return $item;
+        });
+
+        // Aplicar filtro de estado en memoria
+        if ($this->estado) {
+            $estadoStr = match($this->estado) {
+                'no_realizada' => 'No Registrada',
+                'realizada', 'registrada' => 'Realizada',
+                'justificado' => 'Justificada',
+                'pendiente' => 'Pendiente de Recuperación',
+                default => null
+            };
+            if ($estadoStr) {
+                if ($estadoStr === 'Realizada') {
+                    $todasLasClases = $todasLasClases->whereIn('estado', ['Realizada', 'Registrada']);
+                } else {
+                    $todasLasClases = $todasLasClases->where('estado', $estadoStr);
+                }
+            }
+        }
+        
+        // Aplicar filtro de búsqueda en memoria
+        if ($this->search) {
+            $searchTerm = strtolower($this->search);
+            $todasLasClases = $todasLasClases->filter(function($item) use ($searchTerm) {
+                return str_contains(strtolower($item['profesor'] ?? ''), $searchTerm) ||
+                       str_contains(strtolower($item['asignatura'] ?? ''), $searchTerm) ||
+                       str_contains(strtolower($item['codigo_asignatura'] ?? ''), $searchTerm) ||
+                       str_contains(strtolower($item['run_profesor'] ?? ''), $searchTerm) ||
+                       str_contains(strtolower($item['espacio'] ?? ''), $searchTerm);
+            });
+        }
+
+        // Ordenamiento dinámico sobre la colección filtrada
+        $sortField = $this->sortField;
+        if (str_contains($sortField, '.')) {
+            $sortField = explode('.', $sortField)[1];
+        }
+        if ($sortField === 'fecha_clase') $sortField = 'fecha';
+        
+        if ($this->sortDirection === 'asc') {
+            $todasLasClases = $todasLasClases->sortBy($sortField)->values();
+        } else {
+            $todasLasClases = $todasLasClases->sortByDesc($sortField)->values();
+        }
+
+        $this->todasLasClasesFiltradasCache = $todasLasClases;
+        return $this->todasLasClasesFiltradasCache;
     }
 
     public function getHayFiltrosActivosProperty(): bool
@@ -198,39 +512,8 @@ class ClasesNoRealizadasTable extends Component
     public function prepararAccion($accion, $claseData)
     {
         $id = $claseData['id'] ?? null;
-        
         if (!$id) {
-            // Reconstruir id_modulo (ej: "Lunes" -> "LU", "Martes" -> "MA")
-            $diaStr = strtolower($claseData['dia'] ?? '');
-            $prefijoDia = match($diaStr) {
-                'lunes' => 'LU',
-                'martes' => 'MA',
-                'miércoles', 'miercoles' => 'MI',
-                'jueves' => 'JU',
-                'viernes' => 'VI',
-                'sábado', 'sabado' => 'SA',
-                'domingo' => 'DO',
-                default => 'LU'
-            };
-            
-            $idModulo = $prefijoDia . '.' . $claseData['modulo'];
-
-            // Crear el registro físico para que los modales puedan interactuar con él
-            $clase = ClaseNoRealizada::firstOrCreate(
-                [
-                    'id_asignatura' => $claseData['id_asignatura'],
-                    'id_espacio' => $claseData['espacio'],
-                    'id_modulo' => $idModulo,
-                    'fecha_clase' => Carbon::parse($claseData['fecha'])->format('Y-m-d'),
-                    'run_profesor' => $claseData['run_profesor'],
-                ],
-                [
-                    'periodo' => $claseData['periodo'] ?? SemesterHelper::getCurrentPeriod(),
-                    'estado' => $claseData['estado'] === 'No Registrada' ? 'no_realizada' : 'realizada',
-                    'motivo' => $claseData['motivo'] ?? 'Generado para acción manual',
-                    'hora_deteccion' => Carbon::now(),
-                ]
-            );
+            $clase = $this->materializarClaseNoRealizada($claseData);
             $id = $clase->id;
         }
 
@@ -491,49 +774,12 @@ class ClasesNoRealizadasTable extends Component
                 'periodoNoIniciado' => true,
                 'nombrePeriodo' => $periodoModel->nombre_completo ?? 'Período',
                 'periodosDisponibles' => $periodosDisponibles,
+                'totalNoRealizadasFiltradas' => 0,
+                'currentPageNoRealizadasKeys' => [],
             ]);
         }
         
-        // Usar el servicio para obtener todas las clases del rango (sin filtros de búsqueda/estado)
-        // para poder calcular las estadísticas globales del periodo
-        $servicio = new \App\Services\TodasClasesService();
-        $todasLasClases = $servicio->obtenerTodasLasClases(
-            $this->fecha_inicio,
-            $this->fecha_fin,
-            $this->periodo,
-            null,
-            null
-        );
-
-        // Aplicar filtro de estado en memoria
-        if ($this->estado) {
-            $estadoStr = match($this->estado) {
-                'no_realizada' => 'No Registrada',
-                'realizada', 'registrada' => 'Realizada',
-                'justificado' => 'Justificada',
-                'pendiente' => 'Pendiente de Recuperación',
-                default => null
-            };
-            if ($estadoStr) {
-                if ($estadoStr === 'Realizada') {
-                    $todasLasClases = $todasLasClases->whereIn('estado', ['Realizada', 'Registrada']);
-                } else {
-                    $todasLasClases = $todasLasClases->where('estado', $estadoStr);
-                }
-            }
-        }
-        
-        // Aplicar filtro de búsqueda en memoria
-        if ($this->search) {
-            $searchTerm = strtolower($this->search);
-            $todasLasClases = $todasLasClases->filter(function($item) use ($searchTerm) {
-                return str_contains(strtolower($item['profesor'] ?? ''), $searchTerm) ||
-                       str_contains(strtolower($item['asignatura'] ?? ''), $searchTerm) ||
-                       str_contains(strtolower($item['codigo_asignatura'] ?? ''), $searchTerm) ||
-                       str_contains(strtolower($item['run_profesor'] ?? ''), $searchTerm) ||
-                       str_contains(strtolower($item['espacio'] ?? ''), $searchTerm);
-            });
-        }
+        $todasLasClases = $this->getClasesFiltradasCollection();
 
         // Calcular estadísticas a partir de la colección ya filtrada
         $estadisticas = [
@@ -543,22 +789,6 @@ class ClasesNoRealizadasTable extends Component
             'justificados' => $todasLasClases->where('estado', 'Justificada')->count(),
             'realizadas' => $todasLasClases->whereIn('estado', ['Realizada', 'Feriado/Justificado', 'Recuperada'])->count(),
         ];
-
-        // Ordenamiento dinámico sobre la colección filtrada
-        $sortField = $this->sortField;
-        // Quitar prefijo si existe
-        if (str_contains($sortField, '.')) {
-            $sortField = explode('.', $sortField)[1];
-        }
-
-        // Mapear algunos nombres de campo si difieren entre tabla y array devuelto
-        if ($sortField === 'fecha_clase') $sortField = 'fecha';
-        
-        if ($this->sortDirection === 'asc') {
-            $todasLasClases = $todasLasClases->sortBy($sortField)->values();
-        } else {
-            $todasLasClases = $todasLasClases->sortByDesc($sortField)->values();
-        }
 
         // Paginación manual
         $currentPage = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
@@ -572,12 +802,26 @@ class ClasesNoRealizadasTable extends Component
             ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
         );
 
+        $currentPageNoRealizadasKeys = $items->where('estado', 'No Registrada')->pluck('unique_key')->toArray();
+        $totalNoRealizadasFiltradas = $todasLasClases->where('estado', 'No Registrada')->count();
+
+        // Sincronizar estado del checkbox maestro de la página actual
+        if ($this->selectAllFiltered) {
+            $this->selectAllPage = true;
+        } elseif (!empty($currentPageNoRealizadasKeys) && empty(array_diff($currentPageNoRealizadasKeys, $this->selectedClases))) {
+            $this->selectAllPage = true;
+        } else {
+            $this->selectAllPage = false;
+        }
+
         return view('livewire.clases-no-realizadas-table', [
             'clasesNoRealizadas' => $paginator,
             'estadisticas' => $estadisticas,
             'periodoNoIniciado' => false,
             'nombrePeriodo' => '',
             'periodosDisponibles' => $periodosDisponibles,
+            'totalNoRealizadasFiltradas' => $totalNoRealizadasFiltradas,
+            'currentPageNoRealizadasKeys' => $currentPageNoRealizadasKeys,
         ]);
     }
 }

@@ -184,11 +184,76 @@
                 </div>
             @endif
 
+            {{-- Barra de Acciones Masivas --}}
+            @if(count($selectedClases) > 0 || $selectAllFiltered)
+                <div class="mb-4 bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 text-white px-5 py-3.5 rounded-xl shadow-lg flex flex-wrap items-center justify-between gap-3 border border-blue-700/60 transition-all duration-300">
+                    <div class="flex items-center gap-3">
+                        <div class="p-2.5 bg-blue-600/40 rounded-lg text-amber-400 border border-amber-400/30">
+                            <i class="fas fa-check-double text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="font-bold text-base text-white flex items-center gap-2">
+                                @if($selectAllFiltered)
+                                    <span>{{ $totalNoRealizadasFiltradas }} clases seleccionadas</span>
+                                    <span class="text-xs px-2.5 py-0.5 bg-amber-400 text-gray-950 rounded-full font-extrabold uppercase tracking-wide">Filtro completo</span>
+                                @else
+                                    <span>{{ count($selectedClases) }} {{ count($selectedClases) === 1 ? 'clase seleccionada' : 'clases seleccionadas' }}</span>
+                                @endif
+                            </p>
+                            <p class="text-xs text-blue-200">
+                                Aplica una justificación en lote a todas las clases seleccionadas con un único motivo y detalle.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2.5">
+                        <button type="button" wire:click="limpiarSeleccion" 
+                                class="px-3.5 py-2 text-xs font-semibold text-gray-300 hover:text-white bg-white/10 hover:bg-white/20 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="button" wire:click="abrirModalJustificarMasivo" 
+                                class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-gray-950 text-xs sm:text-sm font-black rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer transform hover:-translate-y-0.5">
+                            <i class="fas fa-shield-alt text-base"></i>
+                            <span>Justificar Seleccionadas</span>
+                        </button>
+                    </div>
+                </div>
+            @endif
+
             <div class="bg-white shadow rounded-lg overflow-hidden">
+                {{-- Banner de Selección Global (Estilo Gmail) --}}
+                @if($selectAllPage && $totalNoRealizadasFiltradas > count($currentPageNoRealizadasKeys))
+                    <div class="bg-blue-50 border-b border-blue-200 text-blue-900 px-4 py-2.5 text-xs sm:text-sm flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <i class="fas fa-info-circle text-blue-600 text-base"></i>
+                            @if($selectAllFiltered)
+                                <span>Están seleccionadas <strong>todas las {{ $totalNoRealizadasFiltradas }} clases no registradas</strong> de esta búsqueda.</span>
+                            @else
+                                <span>Has seleccionado las <strong>{{ count($currentPageNoRealizadasKeys) }}</strong> clases no registradas de esta página.</span>
+                                <button type="button" wire:click="seleccionarTodoElFiltro" class="font-bold underline text-blue-700 hover:text-blue-950 cursor-pointer ml-1">
+                                    Seleccionar las {{ $totalNoRealizadasFiltradas }} clases encontradas en esta búsqueda
+                                </button>
+                            @endif
+                        </div>
+                        @if($selectAllFiltered)
+                            <button type="button" wire:click="limpiarSeleccion" class="text-xs font-semibold text-blue-700 hover:text-blue-900 underline cursor-pointer">
+                                Deshacer selección global
+                            </button>
+                        @endif
+                    </div>
+                @endif
+
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
+                                <th class="px-3 py-3 text-center w-10">
+                                    <input type="checkbox" 
+                                           wire:model.live="selectAllPage" 
+                                           class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500 cursor-pointer"
+                                           title="Seleccionar todas las clases no registradas de esta página"
+                                           @if(empty($currentPageNoRealizadasKeys)) disabled @endif>
+                                </th>
                                 <th class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer w-24" 
                                     wire:click="sortBy('fecha_clase')">
                                     Fecha
@@ -221,6 +286,16 @@
                                     $moduloFin = count($modulos) > 1 ? preg_replace('/^[A-Z]{2}\./', '', end($modulos)) : $moduloInicio;
                                 @endphp
                                 <tr class="table-row hover:bg-gray-50 {{ $clase['estado'] === 'Pendiente de Recuperación' ? 'bg-yellow-50' : '' }}">
+                                    <td class="px-3 py-4 text-center w-10">
+                                        @if($clase['estado'] === 'No Registrada')
+                                            <input type="checkbox" 
+                                                   wire:model.live="selectedClases" 
+                                                   value="{{ $clase['unique_key'] }}" 
+                                                   class="rounded border-gray-300 text-blue-600 shadow-sm focus:ring-blue-500 cursor-pointer">
+                                        @else
+                                            <input type="checkbox" disabled class="rounded border-gray-200 text-gray-300 cursor-not-allowed opacity-30" title="Solo se pueden justificar clases no registradas">
+                                        @endif
+                                    </td>
                                     <td class="px-3 py-4 text-sm text-gray-900 w-24">
                                         <div class="flex items-center gap-1">
                                             {{ \Carbon\Carbon::parse($clase['fecha'])->format('d/m/Y') }}
@@ -326,7 +401,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="px-6 py-12 text-center text-gray-500">
+                                    <td colspan="9" class="px-6 py-12 text-center text-gray-500">
                                         <div class="flex flex-col items-center">
                                             <i class="fas fa-calendar-times text-4xl text-gray-300 mb-4"></i>
                                             <p class="text-lg font-medium">No se encontraron registros</p>
@@ -360,6 +435,107 @@ document.addEventListener('DOMContentLoaded', function() {
                 window.Livewire.find('{{ $this->getId() }}').call('showReagendarModal', id);
             }, 500);
         }
+    });
+
+    // Listener para abrir modal de justificación masiva
+    Livewire.on('show-bulk-justify-modal', (data) => {
+        const payload = Array.isArray(data) ? data[0] : data;
+        const cantidad = payload?.cantidad || 0;
+
+        Swal.fire({
+            title: '<strong><i class="fas fa-shield-alt text-amber-500"></i> Justificación Masiva</strong>',
+            html: `
+                <div class="text-left space-y-4">
+                    <div class="bg-amber-50 border border-amber-200 p-3.5 rounded-lg flex items-center gap-3">
+                        <div class="p-2 bg-amber-100 rounded-lg text-amber-700">
+                            <i class="fas fa-tasks text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-amber-950">Vas a justificar ${cantidad} ${cantidad === 1 ? 'clase no registrada' : 'clases no registradas'}</p>
+                            <p class="text-xs text-amber-800">Todas pasarán al estado <strong>Justificada</strong> y se reflejarán inmediatamente en las estadísticas y reportes.</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Motivo Principal</label>
+                        <select id="swal-bulk-motivo-select" class="w-full p-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500">
+                            <option value="Supervisión de Prácticas / Terreno" selected>Supervisión de Prácticas / Terreno (Campos clínicos, visitas, prácticas)</option>
+                            <option value="Licencia Médica / Permiso Administrativo">Licencia Médica / Permiso Administrativo</option>
+                            <option value="Comisión de Servicio / Actividad Institucional">Comisión de Servicio / Actividad Institucional</option>
+                            <option value="Suspensión de Actividades Académicas">Suspensión de Actividades Académicas</option>
+                            <option value="Problema Técnico / Ajuste de Registro">Problema Técnico / Ajuste de Registro</option>
+                            <option value="__OTRO__">Otro motivo (especificar)...</option>
+                        </select>
+                        <input type="text" id="swal-bulk-motivo-custom" class="w-full p-2 text-sm border border-gray-300 rounded-lg mt-2 hidden" placeholder="Escribe el motivo personalizado...">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Observaciones / Detalle</label>
+                        <textarea id="swal-bulk-observaciones" rows="3" class="w-full p-2.5 text-sm border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500" placeholder="Ej: Docente asignado a supervisión de prácticas clínicas según programación del semestre..."></textarea>
+                        <p class="text-[11px] text-gray-500 mt-1">Este texto quedará registrado en las observaciones de cada una de las clases seleccionadas.</p>
+                    </div>
+
+                    <div class="pt-2 border-t border-gray-200">
+                        <label class="inline-flex items-center gap-2 cursor-pointer select-none">
+                            <input type="checkbox" id="swal-bulk-sobrescribir" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                            <span class="text-xs text-gray-700">Reemplazar observaciones previas (si no se marca, se añadirá al final)</span>
+                        </label>
+                    </div>
+                </div>
+            `,
+            width: 580,
+            showCancelButton: true,
+            confirmButtonText: `<i class="fas fa-check-circle mr-1"></i> Justificar ${cantidad} ${cantidad === 1 ? 'Clase' : 'Clases'}`,
+            cancelButtonText: '<i class="fas fa-times mr-1"></i> Cancelar',
+            confirmButtonColor: '#F59E0B',
+            cancelButtonColor: '#6B7280',
+            didOpen: () => {
+                const select = document.getElementById('swal-bulk-motivo-select');
+                const customInput = document.getElementById('swal-bulk-motivo-custom');
+                select.addEventListener('change', () => {
+                    if (select.value === '__OTRO__') {
+                        customInput.classList.remove('hidden');
+                        customInput.focus();
+                    } else {
+                        customInput.classList.add('hidden');
+                    }
+                });
+            },
+            preConfirm: () => {
+                const select = document.getElementById('swal-bulk-motivo-select');
+                const customInput = document.getElementById('swal-bulk-motivo-custom');
+                let motivo = select.value === '__OTRO__' ? customInput.value.trim() : select.value;
+                const observaciones = document.getElementById('swal-bulk-observaciones').value.trim();
+                const sobrescribir = document.getElementById('swal-bulk-sobrescribir').checked;
+
+                if (!motivo) {
+                    Swal.showValidationMessage('Por favor especifica un motivo');
+                    return false;
+                }
+
+                if (observaciones.length > 1000) {
+                    Swal.showValidationMessage('Las observaciones no pueden exceder 1000 caracteres');
+                    return false;
+                }
+
+                return { motivo, observaciones, sobrescribir };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const { motivo, observaciones, sobrescribir } = result.value;
+
+                Swal.fire({
+                    title: 'Aplicando justificación masiva...',
+                    text: `Actualizando ${cantidad} clases, por favor espera.`,
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                window.Livewire.find('{{ $this->getId() }}').call('ejecutarJustificacionMasiva', motivo, observaciones, sobrescribir);
+            }
+        });
     });
 
     Livewire.on('show-edit-modal', (data) => {
@@ -759,7 +935,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     Livewire.on('show-success', (data) => {
-        const message = data[0].message;
+        const payload = Array.isArray(data) ? data[0] : data;
+        const message = payload?.message || 'Operación realizada exitosamente';
         
         Swal.fire({
             title: '¡Éxito!',
@@ -772,9 +949,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-
     Livewire.on('show-error', (data) => {
-        const message = data[0].message;
+        const payload = Array.isArray(data) ? data[0] : data;
+        const message = payload?.message || 'Ha ocurrido un error inesperado';
         
         Swal.fire({
             title: 'Error',
