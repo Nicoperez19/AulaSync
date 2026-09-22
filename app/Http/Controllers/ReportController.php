@@ -8,6 +8,7 @@ use App\Models\Asignatura;
 use App\Models\Espacio;
 use App\Models\Piso;
 use App\Models\Planificacion_Asignatura;
+use App\Models\PlanificacionProfesorColaborador;
 use App\Models\Reserva;
 use App\Services\OccupancyService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -65,6 +66,14 @@ class ReportController extends Controller
             })
             ->get();
 
+        $planificacionesColab = PlanificacionProfesorColaborador::with(['modulo'])
+            ->whereHas('profesorColaborador', function ($q) use ($inicioMes, $finMes) {
+                $q->where('estado', 'activo')
+                  ->where('fecha_inicio', '<=', $finMes)
+                  ->where('fecha_termino', '>=', $inicioMes);
+            })
+            ->get();
+
         // Calcular horas de planificaciones para el mes
         for ($fecha = $inicioMes->copy(); $fecha->lte($finMes); $fecha->addDay()) {
             if (!$fecha->isWeekday() && !$fecha->isSaturday())
@@ -74,8 +83,19 @@ class ReportController extends Controller
             $planificacionesDia = $planificaciones->filter(function ($plan) use ($diaSemana) {
                 return $plan->modulo && strtolower($plan->modulo->dia) === $diaSemana;
             });
+            $planificacionesColabDia = $planificacionesColab->filter(function ($plan) use ($diaSemana) {
+                return $plan->modulo && strtolower($plan->modulo->dia) === $diaSemana;
+            });
 
             foreach ($planificacionesDia as $plan) {
+                if ($plan->modulo && $plan->modulo->hora_inicio && $plan->modulo->hora_termino) {
+                    $inicio = Carbon::parse($plan->modulo->hora_inicio);
+                    $fin = Carbon::parse($plan->modulo->hora_termino);
+                    $horas_planificaciones += $inicio->diffInHours($fin, true);
+                }
+            }
+
+            foreach ($planificacionesColabDia as $plan) {
                 if ($plan->modulo && $plan->modulo->hora_inicio && $plan->modulo->hora_termino) {
                     $inicio = Carbon::parse($plan->modulo->hora_inicio);
                     $fin = Carbon::parse($plan->modulo->hora_termino);

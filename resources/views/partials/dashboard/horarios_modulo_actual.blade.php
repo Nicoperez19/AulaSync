@@ -41,6 +41,14 @@ $coloresTipo = [
             <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
             <span class="text-emerald-700 font-bold">En Sala</span>
         </span>
+        <span class="flex items-center gap-1.5 mr-4">
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+            <span class="text-blue-700 font-bold">Finalizada</span>
+        </span>
+        <span class="flex items-center gap-1.5 mr-4">
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+            <span class="text-amber-700 font-bold">En Espera</span>
+        </span>
         <span class="flex items-center gap-1.5">
             <span class="inline-block w-2.5 h-2.5 rounded-full bg-rose-500"></span>
             <span class="text-rose-700 font-bold">Ausente</span>
@@ -100,8 +108,13 @@ $coloresTipo = [
                                             }
 
                                             // Definir colores de borde y fondo de tarjeta según presencia del docente
-                                            if ($asig->profesor_presente) {
+                                            $estadoPres = $asig->estado_presencia ?? ($asig->profesor_presente ? 'en_sala' : 'ausente');
+                                            if ($estadoPres === 'en_sala') {
                                                 $cardStyles = 'border-emerald-200 bg-emerald-50/20 hover:border-emerald-400 hover:shadow-emerald-100/40';
+                                            } elseif ($estadoPres === 'finalizada') {
+                                                $cardStyles = 'border-blue-200 bg-blue-50/25 hover:border-blue-400 hover:shadow-blue-100/40';
+                                            } elseif ($estadoPres === 'espera') {
+                                                $cardStyles = 'border-amber-200 bg-amber-50/20 hover:border-amber-400 hover:shadow-amber-100/40';
                                             } else {
                                                 $cardStyles = 'border-rose-200 bg-rose-50/20 hover:border-rose-400 hover:shadow-rose-100/40';
                                             }
@@ -114,10 +127,20 @@ $coloresTipo = [
                                                         <span class="font-bold text-base text-gray-800 leading-none">{{ $asig->espacio->id_espacio }}</span>
                                                         <span class="text-[11px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded ml-2">Piso {{ $asig->espacio->piso->numero_piso ?? '-' }}</span>
                                                     </div>
-                                                    @if($asig->profesor_presente)
+                                                    @if($estadoPres === 'en_sala')
                                                         <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100/80 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
                                                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                                             En Sala
+                                                        </span>
+                                                    @elseif($estadoPres === 'finalizada')
+                                                        <span class="text-[10px] font-bold text-blue-700 bg-blue-100/80 border border-blue-200 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0" title="{{ !empty($asig->hora_salida) ? 'Finalizada a las ' . substr($asig->hora_salida, 0, 5) : 'Clase finalizada' }}">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                                            Finalizada{{ !empty($asig->hora_salida) ? ' (' . substr($asig->hora_salida, 0, 5) . ')' : '' }}
+                                                        </span>
+                                                    @elseif($estadoPres === 'espera')
+                                                        <span class="text-[10px] font-bold text-amber-700 bg-amber-100/80 border border-amber-200 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">
+                                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                                            En Espera
                                                         </span>
                                                     @else
                                                         <span class="text-[10px] font-bold text-rose-700 bg-rose-100/80 border border-rose-200 px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0">

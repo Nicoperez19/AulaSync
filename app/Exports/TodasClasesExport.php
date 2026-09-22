@@ -25,8 +25,8 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
 
     public function __construct($fechaInicio = null, $fechaFin = null, $periodo = null, $search = null, $estado = null)
     {
-        $this->fechaInicio = $fechaInicio;
-        $this->fechaFin = $fechaFin;
+        $this->fechaInicio = $fechaInicio ? Carbon::parse($fechaInicio) : null;
+        $this->fechaFin = $fechaFin ? Carbon::parse($fechaFin) : null;
         $this->periodo = $periodo;
         $this->search = $search;
         $this->estado = $estado;
@@ -192,7 +192,9 @@ class TodasClasesExport implements FromCollection, WithHeadings, WithMapping, Wi
         $titulo = 'Todas las Clases';
         
         if ($this->fechaInicio && $this->fechaFin) {
-            $titulo .= ' ' . $this->fechaInicio->format('d-m-Y') . ' a ' . $this->fechaFin->format('d-m-Y');
+            $inicio = $this->fechaInicio instanceof Carbon ? $this->fechaInicio : Carbon::parse($this->fechaInicio);
+            $fin = $this->fechaFin instanceof Carbon ? $this->fechaFin : Carbon::parse($this->fechaFin);
+            $titulo .= ' ' . $inicio->format('d-m-Y') . ' a ' . $fin->format('d-m-Y');
         } elseif ($this->periodo) {
             $titulo .= ' ' . $this->periodo;
         }

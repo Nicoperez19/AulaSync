@@ -222,7 +222,7 @@ class ClasesNoRealizadasTable extends Component
                     'id_espacio' => $claseData['espacio'],
                     'id_modulo' => $idModulo,
                     'fecha_clase' => Carbon::parse($claseData['fecha'])->format('Y-m-d'),
-                    'run_profesor' => $claseData['run_profesor']
+                    'run_profesor' => $claseData['run_profesor'],
                 ],
                 [
                     'periodo' => $claseData['periodo'] ?? SemesterHelper::getCurrentPeriod(),

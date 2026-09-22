@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Planificacion_Asignatura;
+use App\Models\PlanificacionProfesorColaborador;
 use App\Models\ClaseNoRealizada;
 use App\Models\Reserva;
 use App\Models\DiaFeriado;
@@ -382,6 +383,241 @@ class TodasClasesService
             }
             
             unset($planificaciones);
+            gc_collect_cycles();
+        });
+
+        // ── PROCESAR PLANIFICACIONES DE PROFESORES COLABORADORES (LABORATORIOS / TALLERES) ──
+        $queryColab = PlanificacionProfesorColaborador::select([
+                'id',
+                'id_profesor_colaborador',
+                'id_espacio',
+                'id_modulo'
+            ])
+            ->with([
+                'modulo:id_modulo,dia,hora_inicio,hora_termino',
+                'profesorColaborador' => function($q) {
+                    $q->select('id', 'run_profesor_colaborador', 'id_asignatura', 'nombre_asignatura_temporal')
+                      ->with([
+                          'profesor:run_profesor,name',
+                          'asignatura:id_asignatura,nombre_asignatura,codigo_asignatura'
+                      ]);
+                }
+            ])
+            ->whereHas('modulo')
+            ->whereHas('profesorColaborador.profesor');
+
+        if ($search) {
+            $searchTerm = '%' . $search . '%';
+            $queryColab->where(function($q) use ($searchTerm) {
+                $q->whereHas('profesorColaborador.asignatura', function($aq) use ($searchTerm) {
+                    $aq->where('nombre_asignatura', 'like', $searchTerm)
+                       ->orWhere('codigo_asignatura', 'like', $searchTerm);
+                })
+                ->orWhereHas('profesorColaborador.profesor', function($pq) use ($searchTerm) {
+                    $pq->where('name', 'like', $searchTerm)
+                       ->orWhere('run_profesor', 'like', $searchTerm);
+                })
+                ->orWhere('id_espacio', 'like', $searchTerm);
+            });
+        }
+
+        $queryColab->chunk(100, function($planificacionesColab) use (&$clasesData, $fechas, $dias, $fechasFeriado, $periodo, $estado) {
+            foreach ($planificacionesColab as $planificacion) {
+                $colab = $planificacion->profesorColaborador;
+                if (!$planificacion->modulo || !$colab || !$colab->profesor) {
+                    continue;
+                }
+
+                $diaModulo = \App\Helpers\ModulosHelper::normalizarDia($planificacion->modulo->dia);
+                $profesorModel = $colab->profesor;
+                $asignaturaNombre = $colab->asignatura->nombre_asignatura ?? $colab->nombre_asignatura_temporal ?? 'N/A';
+                $asignaturaCodigo = $colab->asignatura->codigo_asignatura ?? 'N/A';
+                $idAsignatura = $colab->id_asignatura;
+
+                foreach ($fechas as $fechaStr) {
+                    $fecha = Carbon::parse($fechaStr);
+                    $diaFecha = \App\Helpers\ModulosHelper::normalizarDia($dias[$fecha->dayOfWeek]);
+
+                    if ($diaFecha === $diaModulo) {
+                        $runProfesor = $this->normalizeRun($profesorModel->run_profesor);
+
+                        $claveClase = $fechaStr . '_' . 
+                                      $planificacion->id_espacio . '_' . 
+                                      $planificacion->id_modulo . '_' . 
+                                      $runProfesor;
+
+                        $claveReserva = $fechaStr . '_' . $planificacion->id_espacio;
+
+                        $estadoStr = 'Planificada';
+                        $horaEntrada = null;
+                        $horaSalida = null;
+                        $motivo = null;
+                        $observaciones = null;
+                        $claseId = null;
+
+                        // 1. Feriados
+                        if (isset($fechasFeriado[$fechaStr])) {
+                            $estadoStr = 'Feriado/Justificado';
+                            $motivo = $fechasFeriado[$fechaStr];
+                            $observaciones = 'Clase no realizada por día feriado o período sin actividades';
+
+                            if ($estado && $estadoStr !== $this->transformEstado($estado)) {
+                                continue;
+                            }
+
+                            $clasesData->push([
+                                'id'                => null,
+                                'fecha'             => clone $fecha,
+                                'dia'               => ucfirst($diaFecha),
+                                'periodo'           => $periodo ?? '2026-2',
+                                'profesor'          => $profesorModel->name,
+                                'run_profesor'      => $runProfesor,
+                                'asignatura'        => $asignaturaNombre,
+                                'codigo_asignatura' => $asignaturaCodigo,
+                                'id_asignatura'     => $idAsignatura,
+                                'espacio'           => $planificacion->id_espacio,
+                                'modulo'            => preg_replace('/^[A-Z]{2}\./', '', $planificacion->id_modulo),
+                                'hora_inicio'       => $planificacion->modulo->hora_inicio,
+                                'hora_fin'          => $planificacion->modulo->hora_termino,
+                                'estado'            => $estadoStr,
+                                'hora_entrada'      => null,
+                                'hora_salida'       => null,
+                                'motivo'            => $motivo,
+                                'observaciones'     => $observaciones,
+                            ]);
+                            continue;
+                        }
+
+                        $ahora = Carbon::now();
+                        $fechaClase = Carbon::parse($fechaStr);
+                        $horaFinModulo = Carbon::parse($planificacion->modulo->hora_termino);
+                        $horaInicioModulo = Carbon::parse($planificacion->modulo->hora_inicio);
+                        $minutosMargenIngreso = ModulosHelper::getMargenIngresoMinutos($planificacion->id_modulo);
+                        $fechaHoraFinClase = $fechaClase->copy()->setTimeFromTimeString($horaFinModulo->format('H:i:s'));
+
+                        // 2. Clases no realizadas registradas
+                        if (isset($this->clasesNoRealizadasCache[$claveClase])) {
+                            $claseNoRealizada = $this->clasesNoRealizadasCache[$claveClase];
+                            $claseId = $claseNoRealizada->id;
+                            $estadoStr = match($claseNoRealizada->estado) {
+                                'no_realizada' => 'No Registrada',
+                                'realizada', 'registrada' => 'Realizada',
+                                'justificado'  => 'Justificada',
+                                'recuperada'   => 'Recuperada',
+                                'pendiente'    => 'Pendiente de Recuperación',
+                                default        => 'No Registrada',
+                            };
+                            $motivo = $claseNoRealizada->motivo;
+                            $observaciones = $claseNoRealizada->observaciones;
+                        }
+                        // 3. Reservas / Ingreso QR
+                        elseif (isset($this->reservasCache[$claveReserva])) {
+                            $reservasDelDia = collect($this->reservasCache[$claveReserva])->filter(function($r) use ($runProfesor) {
+                                $reservaRunProfesor = $this->normalizeRun($r->run_profesor);
+                                $reservaRunSolicitante = $this->normalizeRun($r->run_solicitante);
+                                return (!empty($reservaRunProfesor) && $reservaRunProfesor === $runProfesor) || 
+                                       (!empty($reservaRunSolicitante) && $reservaRunSolicitante === $runProfesor);
+                            });
+
+                            $reserva = null;
+                            if ($reservasDelDia->isNotEmpty()) {
+                                foreach ($reservasDelDia as $r) {
+                                    if ($idAsignatura && $r->id_asignatura == $idAsignatura) {
+                                        $reserva = $r;
+                                        break;
+                                    }
+                                }
+                                if (!$reserva) {
+                                    foreach ($reservasDelDia as $r) {
+                                        $horaAcceso = Carbon::parse($r->hora);
+                                        $horaSalidaTemp = $r->hora_salida ? Carbon::parse($r->hora_salida) : null;
+                                        $margenInicio = $horaInicioModulo->copy()->subMinutes($minutosMargenIngreso);
+                                        if ($horaAcceso >= $margenInicio && $horaAcceso <= $horaFinModulo) {
+                                            $reserva = $r;
+                                            break;
+                                        }
+                                        if ($horaAcceso < $margenInicio && (!$horaSalidaTemp || $horaSalidaTemp >= $horaInicioModulo)) {
+                                            $reserva = $r;
+                                            break;
+                                        }
+                                        if (($r->modulos ?? 1) > 1 && $horaAcceso <= $horaFinModulo) {
+                                            $reserva = $r;
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if ($reserva) {
+                                $horaInicioReserva = Carbon::parse($reserva->hora);
+                                $horaFinReserva = $reserva->hora_salida ? Carbon::parse($reserva->hora_salida) : null;
+                                $margenInicio = $horaInicioModulo->copy()->subMinutes($minutosMargenIngreso);
+                                $ingresoDirecto = ($horaInicioReserva >= $margenInicio && $horaInicioReserva <= $horaFinModulo);
+                                $ingresoPrevio = ($horaInicioReserva < $margenInicio && 
+                                                 (!$horaFinReserva || $horaFinReserva >= $horaInicioModulo));
+                                $mismoBloqueClase = ($idAsignatura && $reserva->id_asignatura == $idAsignatura)
+                                    && ($horaInicioReserva <= $horaFinModulo);
+
+                                if ($ingresoDirecto || $ingresoPrevio || $mismoBloqueClase) {
+                                    $estadoStr = 'Realizada';
+                                    $horaEntrada = $reserva->hora;
+                                    $horaSalida = $reserva->hora_salida;
+                                    if ($ingresoDirecto) {
+                                        $diferencia = $horaInicioReserva->diffInMinutes($horaInicioModulo, false);
+                                        if ($diferencia > 15) {
+                                            $observaciones = "Atraso de {$diferencia} minutos";
+                                        }
+                                    }
+                                } elseif ($fechaHoraFinClase < $ahora) {
+                                    $estadoStr = 'No Registrada';
+                                    $motivo = 'Sin registro de acceso';
+                                    $observaciones = 'No se detectó ingreso durante el horario de clase';
+                                }
+                            } elseif ($fechaHoraFinClase < $ahora) {
+                                $estadoStr = 'No Registrada';
+                                $motivo = 'Sin registro de acceso';
+                                $observaciones = 'No se detectó ingreso durante el horario de clase';
+                            }
+                        } elseif ($fechaHoraFinClase < $ahora) {
+                            $estadoStr = 'No Registrada';
+                            $motivo = 'Sin registro de acceso';
+                            $observaciones = 'No se detectó ingreso durante el horario de clase';
+                        }
+
+                        if ($estadoStr === 'Planificada') {
+                            continue;
+                        }
+
+                        if ($estado && $estadoStr !== $this->transformEstado($estado)) {
+                            continue;
+                        }
+
+                        $clasesData->push([
+                            'id'                => $claseId,
+                            'fecha'             => clone $fecha,
+                            'dia'               => ucfirst($diaFecha),
+                            'periodo'           => $periodo ?? '2026-2',
+                            'profesor'          => $profesorModel->name,
+                            'run_profesor'      => $runProfesor,
+                            'asignatura'        => $asignaturaNombre,
+                            'codigo_asignatura' => $asignaturaCodigo,
+                            'id_asignatura'     => $idAsignatura,
+                            'espacio'           => $planificacion->id_espacio,
+                            'modulo'            => preg_replace('/^[A-Z]{2}\./', '', $planificacion->id_modulo),
+                            'hora_inicio'       => $planificacion->modulo->hora_inicio,
+                            'hora_fin'          => $planificacion->modulo->hora_termino,
+                            'estado'            => $estadoStr,
+                            'hora_entrada'      => $horaEntrada,
+                            'hora_salida'       => $horaSalida,
+                            'motivo'            => $motivo,
+                            'observaciones'     => $observaciones,
+                            'hora_deteccion'    => $fechaHoraFinClase,
+                        ]);
+                    }
+                }
+            }
+
+            unset($planificacionesColab);
             gc_collect_cycles();
         });
 
