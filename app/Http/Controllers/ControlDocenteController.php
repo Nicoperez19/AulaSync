@@ -12,6 +12,6 @@ class ControlDocenteController extends Controller
      */
     public function ausenciasRecuperacion()
     {
-        return view('layouts.control-docente.ausencias-recuperacion');
+        return view('control-docente.ausencias-recuperacion');
     }
 }

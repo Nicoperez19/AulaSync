@@ -15,7 +15,7 @@ class TableController extends Controller
             ?? $tenantActual?->name
             ?? 'Sede';
 
-        return view('layouts.table.index', compact('nombreSedeActual'));
+        return view('modulos-actuales.index', compact('nombreSedeActual'));
     }
 
     public function actualizarDatos()

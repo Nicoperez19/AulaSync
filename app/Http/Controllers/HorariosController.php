@@ -126,7 +126,7 @@ class HorariosController extends Controller
 
         $horarios = $horarios->groupBy('run_profesor');
 
-        return view('layouts.schedules.schedules_index', compact(
+        return view('horarios.profesores', compact(
             'profesores',
             'horarios',
             'semestresDisponibles',
@@ -432,7 +432,7 @@ class HorariosController extends Controller
         $semestre = $semestreFiltro ?: SemesterHelper::getCurrentSemester();
         $anioActual = $anioFiltro;
 
-        return view('layouts.spacetime.spacetime_show', compact(
+        return view('horarios.espacios', compact(
             'pisos',
             'horariosPorEspacio',
             'semestre',

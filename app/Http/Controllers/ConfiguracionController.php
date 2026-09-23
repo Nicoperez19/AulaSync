@@ -16,7 +16,7 @@ class ConfiguracionController extends Controller
     {
         try {
             $configuraciones = Configuracion::all();
-            return view('layouts.configuracion.configuracion_index', compact('configuraciones'));
+            return view('configuracion.index', compact('configuraciones'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar las configuraciones.'])->withInput();
         }
@@ -107,7 +107,7 @@ class ConfiguracionController extends Controller
     {
         try {
             $configuracion = Configuracion::findOrFail($id);
-            return view('layouts.configuracion.configuracion_edit', compact('configuracion'));
+            return view('configuracion.edit', compact('configuracion'));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('configuracion.index')->withErrors(['error' => 'Configuración no encontrada.']);
         } catch (\Exception $e) {

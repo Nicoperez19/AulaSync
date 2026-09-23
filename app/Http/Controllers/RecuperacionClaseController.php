@@ -12,6 +12,6 @@ class RecuperacionClaseController extends Controller
      */
     public function index()
     {
-        return view('layouts.recuperacion-clases.index');
+        return view('recuperacion-clases.index');
     }
 }

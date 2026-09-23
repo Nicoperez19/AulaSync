@@ -92,8 +92,17 @@ class EspacioSeeder extends Seeder
             return [];
         }
 
+        // Obtener IDs de facultad asociadas a la sede del tenant para no cruzar pisos de otras sedes
+        $facultadIds = DB::connection('tenant')->table('facultades')
+            ->where('id_sede', $tenant->sede_id)
+            ->pluck('id_facultad');
+
         // Usar DB directo para evitar global scopes
-        $pisos = collect(DB::connection('tenant')->table('pisos')->get());
+        $pisosQuery = DB::connection('tenant')->table('pisos');
+        if ($facultadIds->isNotEmpty()) {
+            $pisosQuery->whereIn('id_facultad', $facultadIds);
+        }
+        $pisos = collect($pisosQuery->get());
         $this->command->info("Pisos encontrados para tenant {$tenant->sede_id}: " . $pisos->count());
 
         $map = [];

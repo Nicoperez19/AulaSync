@@ -16,7 +16,7 @@ class FacultadController extends Controller
         $universidades = Universidad::all();
         $sedes = Sede::all();
         $campuses = Campus::all();
-        return view('layouts.faculty.facultad_index', compact('universidades', 'sedes', 'campuses'));
+        return view('facultades.index', compact('universidades', 'sedes', 'campuses'));
     }
 
     public function store(Request $request)
@@ -52,7 +52,7 @@ class FacultadController extends Controller
         $universidades = Universidad::all();
         $sedes = Sede::all();
         $campuses = Campus::all();
-        return view('layouts.faculty.facultad_edit', compact('facultad', 'universidades', 'sedes', 'campuses'));
+        return view('facultades.edit', compact('facultad', 'universidades', 'sedes', 'campuses'));
     }
 
     public function update(Request $request, $id)

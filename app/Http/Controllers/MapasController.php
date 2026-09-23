@@ -31,7 +31,7 @@ class MapasController extends Controller
         
 
 
-        return view('layouts.maps.map_edit', compact('mapa', 'pisos', 'sede', 'facultad'));
+        return view('mapas.edit', compact('mapa', 'pisos', 'sede', 'facultad'));
     }
     public function update(Request $request, $id)
     {
@@ -115,7 +115,7 @@ class MapasController extends Controller
     {
         $mapas = Mapa::withoutGlobalScopes()->with(['piso.espacios'])->latest()->get();
 
-        return view('layouts.maps.map_index', compact('mapas'));
+        return view('mapas.index', compact('mapas'));
     }
 
         public function add()
@@ -132,7 +132,7 @@ class MapasController extends Controller
         
 
 
-        return view('layouts.maps.map_add', compact('universidades', 'sede', 'facultad'));
+        return view('mapas.add', compact('universidades', 'sede', 'facultad'));
     }
 
     public function store(Request $request)

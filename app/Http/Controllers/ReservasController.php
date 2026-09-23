@@ -28,7 +28,7 @@ class ReservasController extends Controller
             ->with('piso.facultad.universidad')
             ->get();
 
-        return view('layouts.reservations.reservations_index', compact('reservas', 'universidades', 'espaciosDisponibles'));
+        return view('reservas.index', compact('reservas', 'universidades', 'espaciosDisponibles'));
     }
 
     public function create()
@@ -38,7 +38,7 @@ class ReservasController extends Controller
             ->with('piso.facultad.universidad')
             ->get();
 
-        return view('layouts.reservations.reservations_create', compact('universidades', 'espaciosDisponibles'));
+        return view('reservas.index', compact('universidades', 'espaciosDisponibles'));
     }
 
 

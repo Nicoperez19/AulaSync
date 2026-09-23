@@ -17,7 +17,7 @@ class PisoController extends Controller
             return $query->where('id_universidad', $universidadId);
         })->withCount('pisos')->get();
 
-        return view('layouts.floors.floors_index', [
+        return view('pisos.index', [
             'universidades' => Universidad::all(),
             'facultades' => $facultades,
         ]);

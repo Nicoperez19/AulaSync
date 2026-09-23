@@ -84,7 +84,7 @@ class ProfesorColaboradorController extends Controller
 
         $profesores = Profesor::orderBy('name')->get();
 
-        return view('layouts.clases_temporales.index', compact('profesoresColaboradores', 'profesores'));
+        return view('clases-temporales.index', compact('profesoresColaboradores', 'profesores'));
     }
 
     /**
@@ -99,7 +99,7 @@ class ProfesorColaboradorController extends Controller
         $asignaturas = Asignatura::with('carrera')->orderBy('nombre_asignatura')->get();
         $espacios = Espacio::with('piso')->orderBy('nombre_espacio')->get();
 
-        return view('layouts.clases_temporales.create', compact('profesores', 'asignaturas', 'espacios'));
+        return view('clases-temporales.create', compact('profesores', 'asignaturas', 'espacios'));
     }
 
     /**
@@ -210,7 +210,7 @@ class ProfesorColaboradorController extends Controller
     {
         $profesorColaborador->load(['profesor', 'asignatura', 'planificaciones.modulo', 'planificaciones.espacio.piso']);
 
-        return view('layouts.clases_temporales.show', compact('profesorColaborador'));
+        return view('clases-temporales.show', compact('profesorColaborador'));
     }
 
     /**
@@ -234,7 +234,7 @@ class ProfesorColaboradorController extends Controller
                 return [$idx + 1 => "{$inicio} - {$fin}"];
             })->all();
 
-        return view('layouts.clases_temporales.edit', compact('profesorColaborador', 'profesores', 'asignaturas', 'espacios', 'modulos'));
+        return view('clases-temporales.edit', compact('profesorColaborador', 'profesores', 'asignaturas', 'espacios', 'modulos'));
     }
 
     /**

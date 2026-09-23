@@ -12,13 +12,13 @@
         <!-- Info Box -->
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div class="flex items-start">
-                <i class="fas fa-info-circle text-blue-500 mt-1 mr-3"></i>
+                <i class="fas fa-info-circle text-blue-500 mt-1 mr-3 flex-shrink-0"></i>
                 <div>
-                    <h4 class="font-semibold text-blue-800">¿Qué puede cargar?</h4>
+                    <h4 class="font-semibold text-blue-800">&iquest;Qu&eacute; puede cargar?</h4>
                     <ul class="text-sm text-blue-700 mt-2 space-y-1">
                         <li><i class="fas fa-check mr-2"></i>Datos de profesores (RUN, nombre, email, carrera)</li>
                         <li><i class="fas fa-check mr-2"></i>Asignaturas y secciones</li>
-                        <li><i class="fas fa-check mr-2"></i>Horarios y planificación semanal</li>
+                        <li><i class="fas fa-check mr-2"></i>Horarios y planificaci&oacute;n semanal</li>
                     </ul>
                 </div>
             </div>
@@ -53,18 +53,18 @@
                 </div>
                 
                 <p class="text-xs text-gray-500 mt-4">
-                    Formatos: Excel (.xlsx, .xls) o CSV. Máximo 10MB.
+                    Formatos: Excel (.xlsx, .xls) o CSV. M&aacute;ximo 10MB.
                 </p>
             </div>
             
             <!-- Semestre Selection -->
             <div class="mt-4" id="semestre-section" style="display: none;">
                 <label for="semestre_selector" class="block text-sm font-medium text-gray-700 mb-2">
-                    <i class="fas fa-calendar mr-2"></i>Semestre Académico <span class="text-red-500">*</span>
+                    <i class="fas fa-calendar mr-2"></i>Semestre Acad&eacute;mico <span class="text-red-500">*</span>
                 </label>
                 <select name="semestre_selector" id="semestre_selector" required
                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
-                    <option value="" disabled selected>-- Seleccione el Semestre Académico --</option>
+                    <option value="" disabled selected>-- Seleccione el Semestre Acad&eacute;mico --</option>
                     <option value="1">Primer Semestre {{ date('Y') }} ({{ date('Y') }}-1)</option>
                     <option value="2">Segundo Semestre {{ date('Y') }} ({{ date('Y') }}-2)</option>
                 </select>
@@ -89,7 +89,7 @@
             <!-- Upload Button -->
             <div class="mt-4 text-center" id="upload-button-section" style="display: none;">
                 <button type="button" id="upload-btn" onclick="uploadBulkFile()"
-                        class="inline-flex items-center px-6 py-3 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition">
+                        class="inline-flex items-center px-6 py-3 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition shadow-sm">
                     <i class="fas fa-cloud-upload-alt mr-2"></i>
                     Cargar Datos
                 </button>
@@ -99,9 +99,9 @@
         <!-- Skip Option -->
         <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div class="flex items-center">
-                <i class="fas fa-exclamation-triangle text-yellow-500 mr-3"></i>
+                <i class="fas fa-exclamation-triangle text-yellow-500 mr-3 flex-shrink-0"></i>
                 <p class="text-sm text-yellow-800">
-                    Este paso es <strong>opcional</strong>. Puede omitirlo y realizar la carga de datos posteriormente desde el menú <strong>Carga Masiva</strong>.
+                    Este paso es <strong>opcional</strong>. Puede omitirlo y realizar la carga de datos posteriormente desde el men&uacute; <strong>Carga Masiva</strong>.
                 </p>
             </div>
         </div>
@@ -116,7 +116,7 @@
         <form action="{{ route('tenant.initialization.skip-bulk') }}" method="POST" class="inline" id="skip-form">
             @csrf
             <button type="submit" id="skip-btn"
-                    class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition">
+                    class="inline-flex items-center px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition shadow-sm">
                 Omitir y Continuar
                 <i class="fas fa-arrow-right ml-2"></i>
             </button>
@@ -141,7 +141,7 @@ function handleBulkFileSelect(input) {
         }
         
         if (file.size > 10 * 1024 * 1024) {
-            showError('El archivo es demasiado grande. El tamaño máximo permitido es 10MB.');
+            showError('El archivo es demasiado grande. El tama\u00f1o m\u00e1ximo permitido es 10MB.');
             input.value = '';
             return;
         }
@@ -239,7 +239,6 @@ function uploadBulkFile() {
                 const totalProcesado = (data.profesores_procesados || 0) + (data.asignaturas_procesadas || 0) + (data.horarios_procesados || 0);
                 
                 if (totalProcesado === 0) {
-                    // No se procesó nada
                     let message = 'El archivo no contiene datos de esta sede.<br>';
                     message += '<strong>Filas omitidas:</strong> ' + (data.filas_omitidas || 0) + ' (pertenecen a otras sedes)';
                     showError(message);
@@ -257,9 +256,7 @@ function uploadBulkFile() {
                 
                 showSuccess(message);
                 
-                // Esperar 2 segundos y luego avanzar usando complete-bulk
                 setTimeout(function() {
-                    // Crear formulario para enviar a complete-bulk
                     const form = document.createElement('form');
                     form.method = 'POST';
                     form.action = '{{ route("tenant.initialization.complete-bulk") }}';
@@ -282,7 +279,7 @@ function uploadBulkFile() {
                 const response = JSON.parse(xhr.responseText);
                 showError(response.message || 'Error al procesar el archivo.');
             } catch (e) {
-                showError('Error al subir el archivo. Código: ' + xhr.status);
+                showError('Error al subir el archivo. C\u00f3digo: ' + xhr.status);
             }
         }
     };
@@ -293,16 +290,14 @@ function uploadBulkFile() {
         uploadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
         skipBtn.disabled = false;
         skipBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        showError('Error de conexión. Por favor, intente nuevamente.');
+        showError('Error de conexi\u00f3n. Por favor, intente nuevamente.');
     };
     
     xhr.send(formData);
 }
 
-// Event listener para el selector de semestre
 document.getElementById('semestre_selector').addEventListener('change', checkFormComplete);
 
-// Drag and drop
 const dropZone = document.getElementById('drop-zone');
 if (dropZone) {
     dropZone.addEventListener('dragover', function(e) {

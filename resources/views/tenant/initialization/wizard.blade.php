@@ -83,8 +83,8 @@
         }
     </style>
 </head>
-<body class="font-sans antialiased bg-gradient-to-br  min-h-screen">
-    <div class="min-h-screen flex flex-col">
+<body class="font-sans antialiased bg-gray-50 min-h-screen">
+    <div class="min-h-screen flex flex-col justify-between">
         <!-- Header -->
         <header class="bg-white/80 backdrop-blur-sm border-b border-gray-200">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
@@ -124,9 +124,9 @@
         </header>
 
         <!-- Main Content -->
-        <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8 {{ $step === 6 ? '!p-0 !container-none !max-w-full' : '' }}">
+        <main class="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <!-- Step Indicators (solo mostrar después del paso 0) -->
-            @if($step > 0 && $step !== 5)
+            @if($step > 0)
             <div class="max-w-4xl mx-auto mb-8">
                 <!-- Fila de círculos y líneas -->
                 <div class="flex items-center justify-between mb-3">
@@ -162,13 +162,13 @@
                 <!-- Fila de textos -->
                 <div class="flex items-center justify-between">
                     @foreach($steps as $stepNum => $stepInfo)
-                        <div class="flex items-center {{ $stepNum < 7 ? 'flex-1' : '' }}">
+                        <div class="flex items-center {{ $stepNum < 6 ? 'flex-1' : '' }}">
                             <div class="w-10 sm:w-14 flex-shrink-0 text-center">
                                 <span class="text-xs sm:text-sm font-medium {{ $step >= $stepNum ? 'text-blue-600' : 'text-gray-500' }} hidden sm:inline-block">
                                     {{ $stepInfo['title'] }}
                                 </span>
                             </div>
-                            @if($stepNum < 7)
+                            @if($stepNum < 6)
                                 <div class="flex-1 mx-1 sm:mx-2"></div>
                             @endif
                         </div>
@@ -214,8 +214,8 @@
             @endif
 
             <!-- Step Content -->
-            <div class="fade-in {{ $step === 5 ? 'h-screen' : 'max-w-2xl mx-auto' }}">
-                <div class="bg-white {{ $step === 5 ? 'h-full flex flex-col' : 'rounded-xl shadow-lg overflow-hidden' }}">
+            <div class="fade-in max-w-2xl mx-auto">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                     @switch($step)
                         @case(0)
                             @include('tenant.initialization.steps.step0-password')
@@ -246,7 +246,7 @@
         </main>
 
         <!-- Footer -->
-        <footer class="bg-gray-800 text-white py-4">
+        <footer class="bg-gray-800 text-white py-4 mt-auto">
             <div class="container mx-auto px-4 text-center">
                 <p class="text-gray-400 text-sm">
                     &copy; {{ date('Y') }} SIA | Sistema de Información de Aulas - Configuración Inicial de Sede

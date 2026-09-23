@@ -83,7 +83,7 @@ class DataLoadController extends Controller
 
         $dataLoads = $query->paginate(10);
 
-        return view('layouts.data.data_index', compact(
+        return view('data.index', compact(
             'dataLoads',
             'aniosDisponibles',
             'semestresDisponibles',
@@ -256,7 +256,8 @@ class DataLoadController extends Controller
                 'tipo_profesor' => 16,
                 'id_carrera' => 17,
                 'nombre_carrera' => 18,
-                'horario' => 20,
+                'horario' => 19,
+                'horario_profesor' => 20,
             ];
 
             // Ajustar dinámicamente si los encabezados varían ligeramente en el formato estándar
@@ -264,6 +265,7 @@ class DataLoadController extends Controller
                 if (in_array($headerName, ['RUN_PROFESOR', 'RUN_PROF', 'RUT_PROFESOR'])) $colMap['run_profesor'] = $colIdx;
                 if (in_array($headerName, ['NOMBRE_PROFESOR', 'NOMBRE_PROF'])) $colMap['nombre_profesor'] = $colIdx;
                 if (in_array($headerName, ['HORARIO', 'HORARIOS', 'BLOQUES'])) $colMap['horario'] = $colIdx;
+                if (in_array($headerName, ['HORARIO_PROFESOR', 'HORARIO_DOCENTE', 'HORARIOPROFESOR', 'HORARIODOCENTE', 'HORARIO_PROF'])) $colMap['horario_profesor'] = $colIdx;
                 if (in_array($headerName, ['SEDE', 'NOMBRE_SEDE'])) $colMap['sede'] = $colIdx;
             }
             Log::info('→ Carga estándar aplicada para todas las sedes.');
@@ -449,7 +451,9 @@ class DataLoadController extends Controller
                             );
 
                             // 3. Registrar la planificación del colaborador en el espacio correspondiente
-                            $horarioProfesorColab = isset($row[$colMap['horario']]) ? trim($row[$colMap['horario']]) : '';
+                            $horarioProfesorColab = (isset($colMap['horario_profesor']) && !empty(trim($row[$colMap['horario_profesor']] ?? '')))
+                                ? trim($row[$colMap['horario_profesor']])
+                                : (isset($row[$colMap['horario']]) ? trim($row[$colMap['horario']]) : '');
                             if (!empty($horarioProfesorColab)) {
                                 $horarioProfesorColab = preg_replace('/[\x00-\x1F\x7F]/u', '', $horarioProfesorColab);
                                 $horarioNormalizadoColab = preg_replace('/(?<!-)\s*([a-z]{2}:\s*)/i', ' - $1', $horarioProfesorColab);
@@ -547,7 +551,9 @@ class DataLoadController extends Controller
 
                     $processedAsignaturasCount++;
 
-                    $horarioProfesor = isset($row[$colMap['horario']]) ? trim($row[$colMap['horario']]) : null;
+                    $horarioProfesor = (isset($colMap['horario_profesor']) && !empty(trim($row[$colMap['horario_profesor']] ?? '')))
+                        ? trim($row[$colMap['horario_profesor']])
+                        : (isset($row[$colMap['horario']]) ? trim($row[$colMap['horario']]) : null);
 
                     $periodo = $periodoSeleccionado;
 

@@ -16,7 +16,7 @@ class RoleController extends Controller
         $roles = Role::all();
         $permissions = Permission::all();
 
-        return view('layouts.rol.rol_index', compact('roles', 'permissions'));
+        return view('roles.index', compact('roles', 'permissions'));
 
     }
 
@@ -68,7 +68,7 @@ class RoleController extends Controller
         $permissions = Permission::all();
         $rolePermissions = $role->permissions->pluck('id')->toArray();
 
-        return view('layouts.rol.rol_update', compact('role', 'permissions', 'rolePermissions'));
+        return view('roles.edit', compact('role', 'permissions', 'rolePermissions'));
     }
 
     /**

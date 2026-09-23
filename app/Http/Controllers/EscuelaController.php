@@ -22,7 +22,7 @@ class EscuelaController extends Controller
             $facultades = Facultad::with('sede.universidad')->get();
             $universidades = Universidad::all();
             
-            return view('layouts.escuelas.escuela_index', compact('escuelas', 'facultades', 'universidades'));
+            return view('escuelas.index', compact('escuelas', 'facultades', 'universidades'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar las escuelas.'])->withInput();
         }
@@ -77,7 +77,7 @@ class EscuelaController extends Controller
             $facultades = Facultad::with('sede.universidad')->get();
             $universidades = Universidad::all();
             
-            return view('layouts.escuelas.escuela_edit', compact('escuela', 'facultades', 'universidades'));
+            return view('escuelas.edit', compact('escuela', 'facultades', 'universidades'));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('escuelas.index')->withErrors(['error' => 'Escuela no encontrada.']);
         } catch (\Exception $e) {

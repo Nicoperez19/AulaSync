@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Helpers\SemesterHelper;
 use App\Helpers\EspacioAliasHelper;
+use App\Helpers\ModulosHelper;
 use App\Models\Asistencia;
 use App\Models\ClaseNoRealizada;
 use App\Models\DiaFeriado;
@@ -971,14 +972,27 @@ class ModulosActualesTable extends Component
                                     $horaFin = substr($horaFin, 0, 5);
                                 }
 
+                                $codigoAsignatura = ($colaborador->asignatura && $colaborador->asignatura->codigo_asignatura)
+                                    ? $colaborador->asignatura->codigo_asignatura
+                                    : 'TEMP';
+                                $nombreAsignatura = ($colaborador->asignatura && $colaborador->asignatura->nombre_asignatura)
+                                    ? $colaborador->asignatura->nombre_asignatura
+                                    : ($colaborador->nombre_asignatura ?? $colaborador->nombre_asignatura_temporal ?? '-');
+                                $seccion = ($colaborador->asignatura && $colaborador->asignatura->seccion)
+                                    ? $colaborador->asignatura->seccion
+                                    : '-';
+                                $carrera = ($colaborador->asignatura && $colaborador->asignatura->carrera)
+                                    ? $colaborador->asignatura->carrera->nombre
+                                    : 'Asignatura Temporal';
+
                                 $datosClase = [
-                                    'codigo_asignatura' => 'TEMP',
-                                    'nombre_asignatura' => $colaborador->nombre_asignatura ?? $colaborador->nombre_asignatura_temporal ?? '-',
-                                    'seccion' => '-',
+                                    'codigo_asignatura' => $codigoAsignatura,
+                                    'nombre_asignatura' => $nombreAsignatura,
+                                    'seccion' => $seccion,
                                     'profesor' => [
                                         'name' => $colaborador->profesor ? $colaborador->profesor->name : '-',
                                     ],
-                                    'carrera' => ($colaborador->asignatura && $colaborador->asignatura->carrera) ? $colaborador->asignatura->carrera->nombre : 'Asignatura Temporal',
+                                    'carrera' => $carrera,
                                     'modulo_inicio' => $this->moduloActual['numero'] ?? '--',
                                     'modulo_fin' => $this->moduloActual['numero'] ?? '--',
                                     'hora_inicio' => $horaInicio,
@@ -1000,9 +1014,9 @@ class ModulosActualesTable extends Component
                             }
                         }
 
-                        // PRIORIDAD 2: Solo procesar planificación del espacio si NO hay reserva de profesor
-                        // Esto evita confusión cuando el profesor está dando otra clase
-                        if ($planificacionActiva && $planificacionActiva->asignatura && !$reservaProfesor) {
+                        // PRIORIDAD 2: Solo procesar planificación del espacio si NO hay reserva de profesor y NO hay colaborador asignado
+                        // Esto evita confusión cuando el profesor está dando otra clase o la sala la dicta un colaborador
+                        if (!$datosClase && $planificacionActiva && $planificacionActiva->asignatura && !$reservaProfesor) {
                             $tieneClase = true;
 
                             // Obtener todas las planificaciones de esta asignatura usando datos pre-cargados

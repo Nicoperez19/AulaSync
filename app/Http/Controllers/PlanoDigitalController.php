@@ -53,7 +53,7 @@ class PlanoDigitalController extends Controller
             ->count();
         $tieneMapas = $mapasDisponibles > 0;
 
-        return view('layouts.plano_digital.index', compact('sedes', 'tieneMapas', 'mapasDisponibles'));
+        return view('plano-digital.index', compact('sedes', 'tieneMapas', 'mapasDisponibles'));
     }
 
     public function show($id)
@@ -104,7 +104,7 @@ class PlanoDigitalController extends Controller
             });
 
             $diaActualNormalizado = ModulosHelper::normalizarDia(Carbon::now()->locale('es')->isoFormat('dddd'));
-            return view('layouts.plano_digital.show', [
+            return view('plano-digital.show', [
                 'mapa' => $mapa,
                 'bloques' => $bloques,
                 'pisos' => $pisosFormateados,

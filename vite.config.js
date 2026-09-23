@@ -7,7 +7,7 @@ import { resolve } from 'path';
  * Plugin que procesa docs/MANUAL.md en cada build y genera
  * public/manual-meta.json con la fecha de actualización y lista
  * de capítulos, garantizando que la vista siempre muestre el
- * contenido más reciente tras un `pnpm run build`.
+ * contenido más reciente tras un `npm run build`.
  */
 function manualProcessorPlugin() {
     return {
@@ -47,6 +47,9 @@ function manualProcessorPlugin() {
 }
 
 export default defineConfig({
+    esbuild: {
+        drop: ['console', 'debugger'],
+    },
     plugins: [
         manualProcessorPlugin(),
         laravel({

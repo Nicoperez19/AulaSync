@@ -20,12 +20,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     cargarHorarioActual();
     cargarOcupacionGrid(activeTabOcupacion);
-    cargarStatusClases('semana');
+    cargarStatusClases('hoy');
 
     setInterval(function() {
+        if (document.hidden) return;
         cargarHorarioActual();
         cargarOcupacionGrid(activeTabOcupacion, true);
-    }, 3000);
+    }, 20000);
 
     actualizarModalReloj();
     setInterval(actualizarModalReloj, 1000);
@@ -62,7 +63,7 @@ function switchMainDashboardTab(tabName) {
     activeMainTab = tabName;
 
     if (tabName === 'status-clases') {
-        cargarStatusClases('semana');
+        cargarStatusClases('hoy');
     }
 }
 
@@ -315,9 +316,30 @@ function cargarOcupacionGrid(tipo, silencioso = false) {
         });
 }
 
+let statusClasesAbortController = null;
+
 function cargarStatusClases(rango = 'semana', fechaInicio = '', fechaFin = '') {
     const container = document.getElementById('status-clases-container');
     if (!container) return;
+
+    if (statusClasesAbortController) {
+        statusClasesAbortController.abort();
+    }
+    statusClasesAbortController = new AbortController();
+
+    // Actualización visual inmediata de los botones para respuesta instantánea (0ms)
+    const btnHoy = document.getElementById('btn-status-hoy');
+    const btnSemana = document.getElementById('btn-status-semana');
+    const btnMes = document.getElementById('btn-status-mes');
+    const activeClasses = 'shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-extrabold transition sm:text-xs bg-blue-600 text-white shadow-xs border-blue-600';
+    const inactiveClasses = 'shrink-0 rounded-lg border px-2.5 py-1.5 text-[10px] font-extrabold transition sm:text-xs border-slate-200 bg-white text-slate-700 hover:bg-slate-100';
+
+    if (btnHoy) btnHoy.className = (rango === 'hoy') ? activeClasses : inactiveClasses;
+    if (btnSemana) btnSemana.className = (rango === 'semana') ? activeClasses : inactiveClasses;
+    if (btnMes) btnMes.className = (rango === 'mes') ? activeClasses : inactiveClasses;
+
+    container.style.opacity = '0.6';
+    container.style.pointerEvents = 'none';
 
     let route = window.DashboardConfig ? window.DashboardConfig.statusClasesRoute : '/dashboard/status-clases';
     let url = `${route}?rango=${rango}`;
@@ -325,15 +347,20 @@ function cargarStatusClases(rango = 'semana', fechaInicio = '', fechaFin = '') {
         url += `&fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`;
     }
 
-    fetch(url)
+    fetch(url, { signal: statusClasesAbortController.signal })
         .then(response => response.text())
         .then(html => {
             container.innerHTML = html;
             setTimeout(initStatusClasesChart, 50);
         })
         .catch(err => {
+            if (err.name === 'AbortError') return;
             console.error('Error cargando status clases:', err);
             container.innerHTML = `<div class="text-center py-8 text-rose-500">Error al cargar el status de clases.</div>`;
+        })
+        .finally(() => {
+            container.style.opacity = '1';
+            container.style.pointerEvents = 'auto';
         });
 }
 

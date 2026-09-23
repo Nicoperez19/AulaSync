@@ -36,7 +36,7 @@ class EspacioController extends Controller
         $espacios = Espacio::with('piso.facultad')->get();
         $universidades = Universidad::all();
 
-        return view('layouts.spaces.spaces_index', compact('espacios', 'universidades'));
+        return view('espacios.index', compact('espacios', 'universidades'));
     }
 
     /**
@@ -96,7 +96,7 @@ class EspacioController extends Controller
         $facultades = Facultad::where('id_sede', $espacio->piso->facultad->id_sede)->get();
         $pisos = Piso::where('id_facultad', $espacio->piso->id_facultad)->get();
 
-        return view('layouts.spaces.spaces_edit', compact('espacio', 'universidades', 'sedes', 'facultades', 'pisos'));
+        return view('espacios.edit', compact('espacio', 'universidades', 'sedes', 'facultades', 'pisos'));
     }
 
     /**

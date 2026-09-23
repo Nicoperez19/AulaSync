@@ -13,7 +13,7 @@ class PermisionController extends Controller
      */
     public function index()
     {
-        return view('layouts.permission.permission_index');
+        return view('permisos.index');
     }
 
     /**
@@ -61,7 +61,7 @@ class PermisionController extends Controller
     public function edit(string $id)
     {
         $permission = Permission::findOrFail($id);
-        return view('layouts.permission.permission_index', compact('permission'));
+        return view('permisos.index', compact('permission'));
     }
 
     /**

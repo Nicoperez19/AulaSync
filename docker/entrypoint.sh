@@ -24,9 +24,9 @@ until php -r ' $s=@fsockopen(getenv("DB_HOST")?:"db", getenv("DB_PORT")?:3306, $
   sleep 1
 done
 
-# Ensure Node.js / pnpm available and build JS assets at container start.
+# Ensure Node.js and npm are available and build JS assets at container start.
 # This allows the container to install dependencies and build assets if needed.
-echo "Ensuring Node.js and pnpm are available"
+echo "Ensuring Node.js and npm are available"
 if ! command -v node >/dev/null 2>&1; then
   echo "Node not found — installing Node.js (non-interactive)"
   apt-get update -y && apt-get install -y curl ca-certificates gnupg lsb-release || true
@@ -36,26 +36,19 @@ if ! command -v node >/dev/null 2>&1; then
   fi
 fi
 
-if command -v corepack >/dev/null 2>&1; then
-  corepack enable || true
-  corepack prepare pnpm@7 --activate || true
-elif command -v npm >/dev/null 2>&1; then
-  npm i -g pnpm@7 --no-audit --no-fund || true
-fi
-
-if command -v pnpm >/dev/null 2>&1; then
+if command -v npm >/dev/null 2>&1; then
   # Only run heavy install/build when necessary to avoid repeating on container restarts.
   if [ ! -f /var/www/public/build/manifest.json ]; then
-    echo "Installing JS dependencies with pnpm (first-time or missing build)"
-    pnpm install --unsafe-perm || echo "pnpm install failed"
+    echo "Installing JS dependencies with npm (first-time or missing build)"
+    npm install || echo "npm install failed"
 
-    echo "Building assets with pnpm build"
-    pnpm build || echo "pnpm build failed"
+    echo "Building assets with npm run build"
+    npm run build || echo "npm run build failed"
   else
-    echo "public/build/manifest.json exists — skipping pnpm install/build"
+    echo "public/build/manifest.json exists — skipping npm install/build"
   fi
 else
-  echo "pnpm not available — skipping JS install/build"
+  echo "npm not available — skipping JS install/build"
 fi
 
 # Always ensure storage symlink exists (user requested this run always)

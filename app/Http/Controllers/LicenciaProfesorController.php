@@ -12,6 +12,6 @@ class LicenciaProfesorController extends Controller
      */
     public function index()
     {
-        return view('layouts.licencias.index');
+        return view('licencias.index');
     }
 }

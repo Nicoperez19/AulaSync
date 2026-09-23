@@ -34,7 +34,7 @@ class QuickActionsController extends Controller
      */
     public function index()
     {
-        return view('quick_actions.index');
+        return view('acciones-rapidas.index');
     }
 
     /**
@@ -42,7 +42,7 @@ class QuickActionsController extends Controller
      */
     public function crearReserva()
     {
-        return view('quick_actions.crear-reserva');
+        return view('acciones-rapidas.crear-reserva');
     }
 
     /**
@@ -50,7 +50,7 @@ class QuickActionsController extends Controller
      */
     public function gestionarReservas()
     {
-        return view('quick_actions.gestionar-reservas');
+        return view('acciones-rapidas.gestionar-reservas');
     }
 
     /**
@@ -58,7 +58,7 @@ class QuickActionsController extends Controller
      */
     public function gestionarEspacios()
     {
-        return view('quick_actions.gestionar-espacios');
+        return view('acciones-rapidas.gestionar-espacios');
     }
 
     /**
@@ -1461,7 +1461,7 @@ class QuickActionsController extends Controller
                 ->orderBy('id_espacio')
                 ->get();
 
-            return view('quick_actions.editar-reserva', compact('reserva', 'espacios'));
+            return view('acciones-rapidas.editar-reserva', compact('reserva', 'espacios'));
         } catch (\Exception $e) {
             Log::error('Error al cargar formulario de edición de reserva: '.$e->getMessage());
 
@@ -1654,7 +1654,7 @@ class QuickActionsController extends Controller
      */
     public function gestionarSalasEstudio()
     {
-        return view('quick_actions.gestionar-salas-estudio');
+        return view('acciones-rapidas.gestionar-salas-estudio');
     }
 
     /**

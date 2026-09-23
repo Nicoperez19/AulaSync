@@ -313,24 +313,25 @@
                                                 </div>
                                             @elseif (($espacio['tiene_clase'] ?? false) && !empty($espacio['datos_clase']))
                                                 @if($esColaborador)
-                                                    <!-- Clase Colaboradora: mostrar información básica con etiqueta a la derecha -->
+                                                    <!-- Clase Colaboradora: mostrar información básica sin etiqueta temporal -->
                                                     @php
-                                                        $tipoClase = $espacio['datos_clase']['tipo_clase'] ?? 'temporal';
+                                                        $tipoClase = $espacio['datos_clase']['tipo_clase'] ?? null;
                                                         $etiquetaConfig = [
-                                                            'temporal' => ['bg' => 'bg-purple-200', 'text' => 'text-purple-700', 'label' => 'TEMPORAL'],
                                                             'reforzamiento' => ['bg' => 'bg-orange-200', 'text' => 'text-orange-700', 'label' => 'REFORZAMIENTO'],
                                                             'recuperacion' => ['bg' => 'bg-green-200', 'text' => 'text-green-700', 'label' => 'RECUPERACIÓN'],
                                                             'actividad_externa' => ['bg' => 'bg-sky-200', 'text' => 'text-sky-700', 'label' => 'ACT. EXTERNA'],
                                                             'actividad_interna' => ['bg' => 'bg-indigo-200', 'text' => 'text-indigo-700', 'label' => 'ACT. INTERNA'],
                                                         ];
-                                                        $etiqueta = $etiquetaConfig[$tipoClase] ?? $etiquetaConfig['temporal'];
+                                                        $etiqueta = ($tipoClase && $tipoClase !== 'temporal') ? ($etiquetaConfig[$tipoClase] ?? null) : null;
                                                     @endphp
                                                     <div class="font-medium text-gray-900 text-sm flex items-start justify-between gap-2">
                                                         <div class="flex-1">
-                                                            <div>{{ $asignatura ?? 'Clase Temporal' }}</div>
+                                                            <div>{{ $asignatura ?? 'Sin asignatura' }}</div>
                                                             <div>Prof: {{ $espacio['datos_clase']['profesor']['name'] ?? 'N/A' }}</div>
                                                         </div>
-                                                        <span class="px-2 py-0.5 {{ $etiqueta['bg'] }} {{ $etiqueta['text'] }} text-xs font-semibold rounded whitespace-nowrap">{{ $etiqueta['label'] }}</span>
+                                                        @if(!empty($etiqueta))
+                                                            <span class="px-2 py-0.5 {{ $etiqueta['bg'] }} {{ $etiqueta['text'] }} text-xs font-semibold rounded whitespace-nowrap">{{ $etiqueta['label'] }}</span>
+                                                        @endif
                                                     </div>
                                                 @else
                                                     <!-- Clase Regular -->
@@ -467,6 +468,19 @@
                             </table>
                         </div>
                     @endfor
+                </div>
+            @else
+                <!-- Mensaje cuando hay pisos pero no espacios -->
+                <div class="flex items-center justify-center min-h-96 bg-gray-50 p-8">
+                    <div class="text-center">
+                        <div class="mb-4 flex justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-16 h-16 text-gray-400">
+                                <path fill-rule="evenodd" d="M2.25 6a3 3 0 0 1 3-3h13.5a3 3 0 0 1 3 3v12a3 3 0 0 1-3 3H5.25a3 3 0 0 1-3-3V6Zm3.97.97a.75.75 0 1 1 1.06-1.06l2.25 2.25 4.25-4.25a.75.75 0 1 1 1.06 1.06l-4.83 4.83a.75.75 0 0 1-1.06 0L6.22 6.97Z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-2">No hay espacios registrados en esta sede</h3>
+                        <p class="text-gray-600 mb-4">No se encontraron espacios asociados a los pisos de la sede seleccionada.</p>
+                    </div>
                 </div>
             @endif
         </div>

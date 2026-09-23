@@ -12,7 +12,7 @@ class UniversidadController extends Controller
     public function index()
     {
         $comunas = Comuna::all();
-        return view('layouts.university.university_index', compact('comunas'));
+        return view('universidades.index', compact('comunas'));
     }
 
     public function store(Request $request)
@@ -68,7 +68,7 @@ class UniversidadController extends Controller
     {
         $universidad = Universidad::findOrFail($id);
         $comunas = Comuna::orderBy('nombre_comuna', 'asc')->get();
-        return view('layouts.university.university_edit', compact('universidad', 'comunas'));
+        return view('universidades.edit', compact('universidad', 'comunas'));
     }
 
     public function update(Request $request, $id)

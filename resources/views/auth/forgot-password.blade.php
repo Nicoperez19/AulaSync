@@ -45,9 +45,6 @@
                 </form>
     </x-auth-card>
 
-    <!-- SweetAlert2 CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('forgotPasswordForm');

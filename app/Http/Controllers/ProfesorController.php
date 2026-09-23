@@ -32,7 +32,7 @@ class ProfesorController extends Controller
             $carreras = Carrera::with('areaAcademica.facultad.sede.universidad')->get();
             $areasAcademicas = AreaAcademica::with('facultad.sede.universidad')->get();
 
-            return view('layouts.professor.professor_index', compact('universidades', 'facultades', 'carreras', 'areasAcademicas'));
+            return view('profesores.index', compact('universidades', 'facultades', 'carreras', 'areasAcademicas'));
         } catch (\Exception $e) {
             return redirect()->back()->withErrors(['error' => 'Hubo un problema al cargar los profesores.'])->withInput();
         }
@@ -601,7 +601,7 @@ class ProfesorController extends Controller
                 ->orderBy('fecha_termino', 'desc')
                 ->get();
 
-            return view('layouts.professor.professor_edit', compact('profesor', 'universidades', 'facultades', 'carreras', 'areasAcademicas', 'clasesTemporales'));
+            return view('profesores.edit', compact('profesor', 'universidades', 'facultades', 'carreras', 'areasAcademicas', 'clasesTemporales'));
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return redirect()->route('professors.index')->withErrors(['error' => 'Profesor no encontrado.']);
         } catch (\Exception $e) {
