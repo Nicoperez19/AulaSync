@@ -12,6 +12,8 @@ use App\Helpers\SemesterHelper;
 use App\Mail\ConfirmacionReserva;
 use App\Mail\ConfirmacionDevolucion;
 use App\Services\ComprobanteReservaService;
+use App\Exports\ReservasExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -307,5 +309,92 @@ class ReservasController extends Controller
         $descargar = $request->boolean('download', false);
 
         return $comprobanteService->responderPdf($reserva, $descargar);
+    }
+
+    /**
+     * Exportar reservas filtradas a Excel
+     */
+    public function exportExcel(Request $request)
+    {
+        $fechaInicio = $request->get('fecha_inicio');
+        $fechaFin = $request->get('fecha_fin');
+        $tipoEspacio = $request->get('tipo_espacio');
+        $estado = $request->get('estado');
+        $search = trim($request->get('search', ''));
+
+        $query = Reserva::query()
+            ->with(['profesor', 'solicitante', 'espacio.piso.facultad', 'asignatura']);
+
+        if (!empty($fechaInicio)) {
+            $query->whereDate('fecha_reserva', '>=', $fechaInicio);
+        }
+        if (!empty($fechaFin)) {
+            $query->whereDate('fecha_reserva', '<=', $fechaFin);
+        }
+
+        if (!empty($tipoEspacio)) {
+            if ($tipoEspacio === 'Laboratorios') {
+                $query->whereHas('espacio', function ($q) {
+                    $q->where('tipo_espacio', 'like', 'Laboratorio%');
+                });
+            } else {
+                $query->whereHas('espacio', function ($q) use ($tipoEspacio) {
+                    $q->where('tipo_espacio', $tipoEspacio);
+                });
+            }
+        }
+
+        if (!empty($estado)) {
+            $query->where('estado', $estado);
+        }
+
+        if ($search !== '') {
+            $cleanRun = preg_replace('/[^0-9Kk]/', '', $search);
+            $termSinTilde = str_replace(
+                ['á', 'é', 'í', 'ó', 'ú', 'Á', 'É', 'Í', 'Ó', 'Ú'],
+                ['a', 'e', 'i', 'o', 'u', 'A', 'E', 'I', 'O', 'U'],
+                $search
+            );
+            $terms = array_unique(array_filter([$search, $termSinTilde, mb_strtoupper($search), mb_strtolower($search)]));
+
+            $query->where(function ($q) use ($terms, $search, $cleanRun) {
+                $q->where('id_reserva', 'like', '%' . $search . '%')
+                  ->orWhere('id_espacio', 'like', '%' . $search . '%')
+                  ->orWhere('fecha_reserva', 'like', '%' . $search . '%');
+
+                if (!empty($cleanRun)) {
+                    $q->orWhere('run_profesor', 'like', '%' . $cleanRun . '%')
+                      ->orWhere('run_solicitante', 'like', '%' . $cleanRun . '%');
+                }
+
+                foreach ($terms as $t) {
+                    $q->orWhere('estado', 'like', '%' . $t . '%')
+                      ->orWhereHas('profesor', function ($pq) use ($t) {
+                          $pq->where('name', 'like', '%' . $t . '%');
+                      })
+                      ->orWhereHas('solicitante', function ($sq) use ($t) {
+                          $sq->where('nombre', 'like', '%' . $t . '%');
+                      })
+                      ->orWhereHas('espacio', function ($eq) use ($t) {
+                          $eq->where('nombre_espacio', 'like', '%' . $t . '%');
+                      })
+                      ->orWhereHas('asignatura', function ($aq) use ($t) {
+                          $aq->where('nombre_asignatura', 'like', '%' . $t . '%');
+                      });
+                }
+            });
+        }
+
+        $reservas = $query->orderBy('fecha_reserva', 'desc')
+                          ->orderBy('hora', 'asc')
+                          ->get();
+
+        $tipoEtiqueta = $tipoEspacio ? strtolower(str_replace(' ', '_', $tipoEspacio)) . '_' : '';
+        $nombreArchivo = 'reporte_reservas_' . $tipoEtiqueta . now()->format('Ymd_His') . '.xlsx';
+
+        return Excel::download(
+            new ReservasExport($reservas, $tipoEspacio, $fechaInicio, $fechaFin),
+            $nombreArchivo
+        );
     }
 }

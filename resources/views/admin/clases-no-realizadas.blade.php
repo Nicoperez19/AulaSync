@@ -34,7 +34,7 @@
  
     @if($isSuperAdmin ?? false)
         <!-- Vista con pestañas para Superadministrador -->
-        <div x-data="{ activeTab: 'no-realizadas' }" class="space-y-6">
+        <div x-data="{ activeTab: (new URLSearchParams(window.location.search)).get('tab') || 'no-realizadas' }" class="space-y-6">
             <!-- Tabs de navegación (Navpills grandes) -->
             <div class="flex flex-wrap sm:inline-flex items-center gap-2 bg-gray-200/80 p-1.5 rounded-2xl border border-gray-300/70 shadow-sm">
                 <button 
@@ -59,6 +59,15 @@
                         <span class="bg-orange-500 text-white text-xs px-2.5 py-0.5 rounded-full font-bold shadow-sm">{{ $totalAtrasos }}</span>
                     @endif
                 </button>
+                <button 
+                    type="button"
+                    @click="activeTab = 'reservas'"
+                    :class="activeTab === 'reservas' ? 'bg-white shadow-md text-gray-900 font-bold border border-gray-200' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60 font-medium'"
+                    class="px-6 py-3 rounded-xl text-base sm:text-lg transition-all duration-200 flex items-center gap-3 cursor-pointer"
+                >
+                    <i class="fas fa-calendar-check text-xl" :class="activeTab === 'reservas' ? 'text-blue-600' : 'text-gray-400'"></i>
+                    <span>Solicitudes y Reservas</span>
+                </button>
             </div>
 
             <!-- Contenido de las tablas -->
@@ -69,11 +78,42 @@
             <div x-show="activeTab === 'atrasos'" x-transition>
                 @livewire('profesor-atrasos-table')
             </div>
+
+            <div x-show="activeTab === 'reservas'" x-transition>
+                @livewire('reservations-table')
+            </div>
         </div>
     @else
-        <!-- Vista para usuarios regulares: únicamente Control de Clases -->
-        <div>
-            @livewire('clases-no-realizadas-table')
+        <!-- Vista para usuarios regulares con pestañas Control de Clases y Solicitudes y Reservas -->
+        <div x-data="{ activeTab: (new URLSearchParams(window.location.search)).get('tab') || 'no-realizadas' }" class="space-y-6">
+            <div class="flex flex-wrap sm:inline-flex items-center gap-2 bg-gray-200/80 p-1.5 rounded-2xl border border-gray-300/70 shadow-sm">
+                <button 
+                    type="button"
+                    @click="activeTab = 'no-realizadas'"
+                    :class="activeTab === 'no-realizadas' ? 'bg-white shadow-md text-gray-900 font-bold border border-gray-200' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60 font-medium'"
+                    class="px-6 py-3 rounded-xl text-base sm:text-lg transition-all duration-200 flex items-center gap-3 cursor-pointer"
+                >
+                    <i class="fas fa-calendar-check text-xl" :class="activeTab === 'no-realizadas' ? 'text-blue-600' : 'text-gray-400'"></i>
+                    <span>Control de Clases</span>
+                </button>
+                <button 
+                    type="button"
+                    @click="activeTab = 'reservas'"
+                    :class="activeTab === 'reservas' ? 'bg-white shadow-md text-gray-900 font-bold border border-gray-200' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60 font-medium'"
+                    class="px-6 py-3 rounded-xl text-base sm:text-lg transition-all duration-200 flex items-center gap-3 cursor-pointer"
+                >
+                    <i class="fas fa-calendar-check text-xl" :class="activeTab === 'reservas' ? 'text-blue-600' : 'text-gray-400'"></i>
+                    <span>Solicitudes y Reservas</span>
+                </button>
+            </div>
+
+            <div x-show="activeTab === 'no-realizadas'" x-transition>
+                @livewire('clases-no-realizadas-table')
+            </div>
+
+            <div x-show="activeTab === 'reservas'" x-transition>
+                @livewire('reservations-table')
+            </div>
         </div>
     @endif
 </x-app-layout>

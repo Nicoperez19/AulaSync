@@ -1,26 +1,151 @@
 <div>
-    <div class="flex flex-col gap-4 mb-4 md:flex-row md:items-center md:justify-between">
-        <div class="relative w-full md:w-1/2">
-            <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
+    <!-- Título Solicitudes y Reservas -->
+    <div class="mb-4">
+        <span class="inline-flex items-center gap-3 px-5 py-2.5 bg-white border border-gray-200 rounded-xl shadow-sm text-base sm:text-lg font-bold text-gray-900">
+            <i class="fas fa-calendar-check text-blue-600 text-xl"></i>
+            <span>Solicitudes y Reservas</span>
+        </span>
+    </div>
+
+    <!-- Navpills / Estadísticas idénticas a Control de Clases -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <!-- Total reservas -->
+        <div class="stat-card bg-blue-50 border border-blue-200 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-blue-700 text-xs font-semibold uppercase tracking-wider">Total Reservas</p>
+                    <p class="text-3xl font-black text-blue-950 mt-1">{{ number_format($kpis['total'] ?? 0) }}</p>
+                </div>
+                <div class="p-3 bg-blue-100 rounded-lg text-blue-600">
+                    <i class="fas fa-calendar-check text-xl"></i>
+                </div>
             </div>
-            <input type="text"
-                   wire:model.live.debounce.300ms="search"
-                   placeholder="Buscar por ID, Espacio, Docente/Solicitante o Fecha..."
-                   class="w-full py-2 pl-10 pr-4 text-sm text-gray-900 bg-white border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400" />
-            @if(!empty($search))
-                <button wire:click="$set('search', '')" class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-            @endif
         </div>
-        <div class="flex items-center text-sm text-gray-500 dark:text-gray-400">
-            <span>Total: <strong>{{ $reservas->total() }}</strong> reservas</span>
+
+        <!-- Auditorio -->
+        <div class="stat-card bg-indigo-50 border border-indigo-200 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-indigo-700 text-xs font-semibold uppercase tracking-wider">Auditorio</p>
+                    <p class="text-3xl font-black text-indigo-950 mt-1">{{ number_format($kpis['auditorio'] ?? 0) }}</p>
+                </div>
+                <div class="p-3 bg-indigo-100 rounded-lg text-indigo-600">
+                    <i class="fas fa-landmark text-xl"></i>
+                </div>
+            </div>
         </div>
+
+        <!-- Salas de Estudio -->
+        <div class="stat-card bg-sky-50 border border-sky-200 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sky-700 text-xs font-semibold uppercase tracking-wider">Salas de Estudio</p>
+                    <p class="text-3xl font-black text-sky-950 mt-1">{{ number_format($kpis['salas_estudio'] ?? 0) }}</p>
+                </div>
+                <div class="p-3 bg-sky-100 rounded-lg text-sky-600">
+                    <i class="fas fa-book-reader text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Laboratorios -->
+        <div class="stat-card bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-amber-700 text-xs font-semibold uppercase tracking-wider">Laboratorios</p>
+                    <p class="text-3xl font-black text-amber-950 mt-1">{{ number_format($kpis['laboratorios'] ?? 0) }}</p>
+                </div>
+                <div class="p-3 bg-amber-100 rounded-lg text-amber-600">
+                    <i class="fas fa-flask text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección FILTROS idéntica a Control de Clases -->
+    <div class="bg-white p-5 rounded-xl border border-gray-200 shadow-sm mb-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                <i class="fas fa-filter text-blue-600"></i> FILTROS
+            </h3>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            {{-- Tipo de Espacio (sin emojis) --}}
+            <div>
+                <label for="tipo_espacio_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Tipo de Espacio</label>
+                <select id="tipo_espacio_filtro" wire:model.live="tipoEspacio"
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                    <option value="">Todos los espacios</option>
+                    <option value="Auditorio">Auditorio</option>
+                    <option value="Sala de Estudio">Salas de Estudio</option>
+                    <option value="Laboratorios">Laboratorios (Todos)</option>
+                    <option value="Sala de Clases">Salas de Clases</option>
+                    <option value="Sala de Reuniones">Salas de Reuniones</option>
+                </select>
+            </div>
+
+            {{-- Buscar --}}
+            <div>
+                <label for="search_input" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Buscar</label>
+                <div class="relative">
+                    <input type="text"
+                           id="search_input"
+                           wire:model.live.debounce.400ms="search"
+                           placeholder="Profesor, solicitante, RUN o espacio..."
+                           class="w-full pl-9 pr-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                    <i class="fas fa-search absolute left-3 top-2.5 text-gray-400 text-xs"></i>
+                </div>
+            </div>
+
+            {{-- Estado --}}
+            <div>
+                <label for="estado_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Estado</label>
+                <select id="estado_filtro" wire:model.live="estado"
+                        class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white">
+                    <option value="">Todos</option>
+                    <option value="activa">Activa</option>
+                    <option value="finalizada">Finalizada</option>
+                    <option value="programada">Programada</option>
+                    <option value="cancelada">Cancelada</option>
+                </select>
+            </div>
+
+            {{-- Desde --}}
+            <div>
+                <label for="fecha_inicio_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Desde</label>
+                <input type="date"
+                       id="fecha_inicio_filtro"
+                       wire:model.live="fechaInicio"
+                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+
+            {{-- Hasta --}}
+            <div>
+                <label for="fecha_fin_filtro" class="block text-xs font-semibold text-gray-700 uppercase mb-1">Hasta</label>
+                <input type="date"
+                       id="fecha_fin_filtro"
+                       wire:model.live="fechaFin"
+                       class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            </div>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+            <button type="button" wire:click="limpiarFiltros" 
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg transition-colors inline-flex items-center gap-2">
+                <i class="fas fa-undo text-xs"></i> Limpiar
+            </button>
+        </div>
+    </div>
+
+    <!-- Botón Exportar al estilo Control de Clases -->
+    <div class="flex justify-end mb-4">
+        <a href="{{ route('reservas.export-excel', array_filter(['tipo_espacio' => $tipoEspacio, 'fecha_inicio' => $fechaInicio, 'fecha_fin' => $fechaFin, 'estado' => $estado, 'search' => $search])) }}"
+           class="inline-flex items-center justify-center px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow transition-all duration-200 gap-2">
+            <i class="fas fa-file-excel"></i>
+            <span>Exportar todas las reservas</span>
+        </a>
     </div>
 
     <div class="mt-2 mb-4">
@@ -68,7 +193,12 @@
                             {{ substr($reserva->hora, 0, 5) }} - {{ substr($reserva->hora_salida, 0, 5) }}
                         </td>
                         <td class="p-3 border border-white dark:border-gray-700 whitespace-nowrap font-medium">
-                            {{ $reserva->id_espacio }}
+                            <div class="text-gray-900 dark:text-white font-semibold">{{ $reserva->espacio->nombre_espacio ?? $reserva->id_espacio }}</div>
+                            @if($reserva->espacio && $reserva->espacio->tipo_espacio)
+                                <span class="inline-block mt-0.5 px-2 py-0.5 text-[11px] font-medium rounded-md bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300">
+                                    {{ $reserva->espacio->tipo_espacio }}
+                                </span>
+                            @endif
                         </td>
                         <td class="p-3 border border-white dark:border-gray-700 whitespace-nowrap">
                             <div class="flex flex-col items-center">
@@ -145,8 +275,16 @@
                     </tr>
                 @empty
                     <tr wire:key="empty-reservas-row">
-                        <td colspan="7" class="p-6 text-center text-gray-500 dark:text-gray-400">
-                            No se encontraron reservas que coincidan con la búsqueda "{{ $search }}".
+                        <td colspan="7" class="p-8 text-center text-gray-500 dark:text-gray-400">
+                            <div class="flex flex-col items-center justify-center">
+                                <i class="fas fa-calendar-times text-3xl text-gray-300 dark:text-gray-600 mb-2"></i>
+                                <p class="text-sm font-medium">No se encontraron reservas con los filtros seleccionados.</p>
+                                @if(!empty($search) || !empty($tipoEspacio) || !empty($fechaInicio) || !empty($fechaFin) || !empty($estado))
+                                    <button type="button" wire:click="limpiarFiltros" class="mt-2 text-xs text-blue-600 hover:text-blue-800 underline font-medium">
+                                        Restablecer todos los filtros
+                                    </button>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                 @endforelse

@@ -11,12 +11,20 @@ class ReservationsTable extends Component
     use WithPagination;
 
     public $search = '';
+    public $tipoEspacio = '';
+    public $fechaInicio = '';
+    public $fechaFin = '';
+    public $estado = '';
     public $sortField = 'fecha_reserva';
     public $sortDirection = 'desc';
     public $perPage = 20;
 
     protected $queryString = [
         'search' => ['except' => ''],
+        'tipoEspacio' => ['except' => ''],
+        'fechaInicio' => ['except' => ''],
+        'fechaFin' => ['except' => ''],
+        'estado' => ['except' => ''],
         'sortField' => ['except' => 'fecha_reserva'],
         'sortDirection' => ['except' => 'desc'],
     ];
@@ -28,6 +36,32 @@ class ReservationsTable extends Component
 
     public function updatedSearch()
     {
+        $this->resetPage();
+    }
+
+    public function updatedTipoEspacio()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFechaInicio()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFechaFin()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedEstado()
+    {
+        $this->resetPage();
+    }
+
+    public function limpiarFiltros()
+    {
+        $this->reset(['search', 'tipoEspacio', 'fechaInicio', 'fechaFin', 'estado']);
         $this->resetPage();
     }
 
@@ -45,8 +79,16 @@ class ReservationsTable extends Component
     {
         $searchTerm = trim($this->search);
 
-        $reservas = Reserva::query()
-            ->with(['profesor', 'solicitante', 'espacio', 'asignatura'])
+        $baseQuery = Reserva::query()
+            ->when($this->fechaInicio, function ($q) {
+                $q->whereDate('fecha_reserva', '>=', $this->fechaInicio);
+            })
+            ->when($this->fechaFin, function ($q) {
+                $q->whereDate('fecha_reserva', '<=', $this->fechaFin);
+            })
+            ->when($this->estado, function ($q) {
+                $q->where('estado', $this->estado);
+            })
             ->when($searchTerm !== '', function ($query) use ($searchTerm) {
                 $cleanRun = preg_replace('/[^0-9Kk]/', '', $searchTerm);
                 $termSinTilde = str_replace(
@@ -82,10 +124,35 @@ class ReservationsTable extends Component
                           });
                     }
                 });
-            })
+            });
+
+        // KPIs calculados sobre el filtro general de fecha/búsqueda
+        $kpis = [
+            'total' => (clone $baseQuery)->count(),
+            'auditorio' => (clone $baseQuery)->whereHas('espacio', fn($q) => $q->where('tipo_espacio', 'Auditorio'))->count(),
+            'salas_estudio' => (clone $baseQuery)->whereHas('espacio', fn($q) => $q->where('tipo_espacio', 'Sala de Estudio'))->count(),
+            'laboratorios' => (clone $baseQuery)->whereHas('espacio', fn($q) => $q->where('tipo_espacio', 'like', 'Laboratorio%'))->count(),
+        ];
+
+        // Consulta final aplicando tipo de espacio
+        $reservasQuery = (clone $baseQuery)
+            ->with(['profesor', 'solicitante', 'espacio.piso.facultad', 'asignatura'])
+            ->when($this->tipoEspacio, function ($q) {
+                if ($this->tipoEspacio === 'Laboratorios') {
+                    $q->whereHas('espacio', function ($eq) {
+                        $eq->where('tipo_espacio', 'like', 'Laboratorio%');
+                    });
+                } else {
+                    $q->whereHas('espacio', function ($eq) {
+                        $eq->where('tipo_espacio', $this->tipoEspacio);
+                    });
+                }
+            });
+
+        $reservas = $reservasQuery
             ->orderBy($this->sortField, $this->sortDirection)
             ->paginate($this->perPage);
 
-        return view('livewire.reservations-table', compact('reservas'));
+        return view('livewire.reservations-table', compact('reservas', 'kpis'));
     }
 }

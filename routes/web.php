@@ -381,6 +381,7 @@ Route::group(['middleware' => ['permission:mantenedor de espacios']], function (
 });
 
 Route::group(['middleware' => ['permission:mantenedor de reservas']], function () {
+    Route::get('/reservas/export-excel', [ReservasController::class, 'exportExcel'])->name('reservas.export-excel');
     Route::get('/reservas', [ReservasController::class, 'index'])->name('reservas.index');
     Route::get('/reservas/create', [ReservasController::class, 'create'])->name('reservas.add');
     Route::post('/reservas', [ReservasController::class, 'store'])->name('reservas.store');

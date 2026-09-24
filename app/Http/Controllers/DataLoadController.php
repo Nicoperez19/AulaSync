@@ -146,7 +146,11 @@ class DataLoadController extends Controller
             $horariosDelPeriodo = Horario::where('periodo', $periodoSeleccionado)->pluck('id_horario');
             $planificacionesEliminadas = Planificacion_Asignatura::whereIn('id_horario', $horariosDelPeriodo)->delete();
             $horariosEliminados = Horario::where('periodo', $periodoSeleccionado)->delete();
-            Log::info("Limpieza previa del período {$periodoSeleccionado}: {$planificacionesEliminadas} planificaciones y {$horariosEliminados} horarios eliminados.");
+
+            // Limpiar también planificaciones de colaboradores previas para evitar duplicados en recargas
+            $colabsTenantIds = ProfesorColaborador::pluck('id');
+            $planifColabsEliminadas = \App\Models\PlanificacionProfesorColaborador::whereIn('id_profesor_colaborador', $colabsTenantIds)->delete();
+            Log::info("Limpieza previa del período {$periodoSeleccionado}: {$planificacionesEliminadas} planificaciones titulares, {$planifColabsEliminadas} planificaciones de colaboradores y {$horariosEliminados} horarios eliminados.");
 
             // GARANTIZAR QUE EXISTAN MÓDULOS: Sin ellos la FK falla y 0 planificaciones se crean
             $modulosExistentes = Modulo::count();
@@ -460,6 +464,10 @@ class DataLoadController extends Controller
 
                                 preg_match_all('/([A-Za-z]{2})\s*\.\s*(\d{1,2})(?:\s*\/G:(\d+))?\s*\(([^)]+)\)/', $horarioNormalizadoColab, $matchesColabList, PREG_SET_ORDER);
 
+                                // Recopilar primero todos los espacios resueltos
+                                $slotsColabCandidatos = [];
+                                $tieneEspaciosPracticos = false;
+
                                 foreach ($matchesColabList as $mColab) {
                                     $diaC = strtoupper($mColab[1]);
                                     $moduloC = $mColab[2];
@@ -490,13 +498,33 @@ class DataLoadController extends Controller
                                     }
 
                                     if ($espacioModelC) {
-                                        $idModuloC = $diaC . '.' . $moduloC;
-                                        \App\Models\PlanificacionProfesorColaborador::firstOrCreate([
-                                            'id_profesor_colaborador' => $colaboradorModel->id,
-                                            'id_modulo'               => $idModuloC,
-                                            'id_espacio'              => $espacioModelC->id_espacio,
-                                        ]);
+                                        $esPractico = false;
+                                        $tipoEsp = strtolower($espacioModelC->tipo_espacio ?? '');
+                                        $nomEsp = strtolower($espacioModelC->nombre_espacio ?? '');
+                                        if (str_contains($tipoEsp, 'taller') || str_contains($tipoEsp, 'lab') || str_contains($nomEsp, 'taller') || str_contains($nomEsp, 'lab') || str_contains($nomEsp, 'simulac') || str_contains($espacioModelC->id_espacio, '-211')) {
+                                            $esPractico = true;
+                                            $tieneEspaciosPracticos = true;
+                                        }
+
+                                        $slotsColabCandidatos[] = [
+                                            'id_modulo' => $diaC . '.' . $moduloC,
+                                            'id_espacio' => $espacioModelC->id_espacio,
+                                            'es_practico' => $esPractico
+                                        ];
                                     }
+                                }
+
+                                // Si el horario trae espacios prácticos (talleres/labs), el colaborador solo toma los prácticos
+                                foreach ($slotsColabCandidatos as $slotC) {
+                                    if ($tieneEspaciosPracticos && !$slotC['es_practico']) {
+                                        continue; // Omitir salas de teoría para el docente de taller
+                                    }
+
+                                    \App\Models\PlanificacionProfesorColaborador::firstOrCreate([
+                                        'id_profesor_colaborador' => $colaboradorModel->id,
+                                        'id_modulo'               => $slotC['id_modulo'],
+                                        'id_espacio'              => $slotC['id_espacio'],
+                                    ]);
                                 }
                             }
                         } catch (\Exception $e) {
@@ -738,6 +766,29 @@ class DataLoadController extends Controller
                     Log::error($errorMsg);
                     $errors[] = $errorMsg;
                 }
+            }
+
+            // DESACOPLAMIENTO AUTOMÁTICO CÁTEDRA VS TALLER/LABORATORIO:
+            // Si una asignatura tiene colaboradores asignados a talleres/laboratorios,
+            // remover de la planificación titular esos mismos bloques para no duplicarlos
+            $planifsTitularesDesacopladas = 0;
+            $colaboradoresCargados = ProfesorColaborador::whereNotNull('id_asignatura')
+                ->with('planificaciones')
+                ->get();
+
+            foreach ($colaboradoresCargados as $colabItem) {
+                if ($colabItem->planificaciones->isNotEmpty()) {
+                    foreach ($colabItem->planificaciones as $planColab) {
+                        $eliminados = Planificacion_Asignatura::where('id_asignatura', $colabItem->id_asignatura)
+                            ->where('id_espacio', $planColab->id_espacio)
+                            ->where('id_modulo', $planColab->id_modulo)
+                            ->delete();
+                        $planifsTitularesDesacopladas += $eliminados;
+                    }
+                }
+            }
+            if ($planifsTitularesDesacopladas > 0) {
+                Log::info("✓ Desacoplamiento automático: {$planifsTitularesDesacopladas} bloques de taller/laboratorio removidos de profesores titulares a favor de los colaboradores.");
             }
 
             $dataLoad->update([
