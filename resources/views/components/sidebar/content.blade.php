@@ -1,4 +1,4 @@
-<nav aria-label="main" class="flex flex-col gap-4 my-[2rem] pt-2" style="color:white;">
+<nav aria-label="main" class="flex flex-col gap-1.5 py-1 text-white">
     <!-- Dashboard - Solo Administrador y Supervisor (NO Usuario) -->
     @role('Administrador|Supervisor')
     <x-sidebar.link title="Dashboard" href="{{ route('dashboard') }}" :isActive="request()->routeIs('dashboard')">

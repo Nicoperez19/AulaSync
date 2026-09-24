@@ -21,7 +21,7 @@
                 Agregar Universidad
             </x-button>
         </div>
-        <livewire:universitys-table />
+        <livewire:universities-table />
     </div>
 
     <!-- Modal para agregar universidad -->

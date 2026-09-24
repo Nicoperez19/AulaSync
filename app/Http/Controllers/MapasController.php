@@ -132,7 +132,12 @@ class MapasController extends Controller
         
 
 
-        return view('mapas.add', compact('universidades', 'sede', 'facultad'));
+        return view('mapas.create', compact('universidades', 'sede', 'facultad'));
+    }
+
+    public function create()
+    {
+        return $this->add();
     }
 
     public function store(Request $request)
