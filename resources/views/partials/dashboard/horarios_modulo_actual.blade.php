@@ -87,8 +87,8 @@ $coloresTipo = [
             <div class="relative w-full">
                 <!-- Hidden overflow viewport -->
                 <div class="overflow-hidden w-full" id="carousel-viewport">
-                    <!-- Slides Wrapper (Slower 1200ms transition) -->
-                    <div class="flex transition-transform duration-[1200ms] ease-in-out" id="carousel-slides" style="transform: translateX(0%);">
+                    <!-- Slides Wrapper (Slower 1200ms transition con aceleración GPU) -->
+                    <div class="flex transition-transform duration-[1200ms] ease-in-out transform-gpu will-change-transform" id="carousel-slides" style="transform: translateX(0%);">
                         @foreach($chunks as $index => $chunk)
                             <div class="w-full flex-shrink-0 px-2 pb-2">
                                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">

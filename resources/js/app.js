@@ -1,8 +1,6 @@
 import collapse from '@alpinejs/collapse'
 import focus from '@alpinejs/focus'
 import mask from '@alpinejs/mask'
-import PerfectScrollbar from 'perfect-scrollbar'
-import 'perfect-scrollbar/css/perfect-scrollbar.css'
 
 document.addEventListener('alpine:init', () => {
     const Alpine = window.Alpine
@@ -18,13 +16,9 @@ document.addEventListener('alpine:init', () => {
                     (!localStorage.getItem('dark') && window.matchMedia('(prefers-color-scheme: dark)').matches),
         isSidebarOpen: false,
         isSidebarHovered: false,
-        scrollingDown: false,
-        scrollingUp: false,
-        lastScrollTop: 0,
 
         init() {
             this.handleWindowResize()
-            window.addEventListener('scroll', this.handleScroll.bind(this))
             window.addEventListener('resize', this.handleWindowResize.bind(this))
         },
 
@@ -46,17 +40,6 @@ document.addEventListener('alpine:init', () => {
             if (window.innerWidth < 1024) {
                 this.isSidebarOpen = false
             }
-        },
-
-        handleScroll() {
-            const st = window.pageYOffset || document.documentElement.scrollTop
-            this.scrollingDown = st > this.lastScrollTop
-            this.scrollingUp = st < this.lastScrollTop
-            if (st === 0) {
-                this.scrollingDown = false
-                this.scrollingUp = false
-            }
-            this.lastScrollTop = st <= 0 ? 0 : st
         }
     }))
 })
@@ -237,17 +220,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return originalXHRSend.apply(this, arguments);
     };
-
-    // Perfect Scrollbar
-    const containers = document.querySelectorAll('.ps');
-    containers.forEach(container => {
-        if (typeof PerfectScrollbar !== 'undefined') {
-            new PerfectScrollbar(container, {
-                suppressScrollX: true,
-                wheelPropagation: false
-            });
-        }
-    });
 
     // Lazy load images
     const images = document.querySelectorAll('img[loading="lazy"]');

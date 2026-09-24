@@ -1,12 +1,7 @@
 @import './tailwind.css';
 @import './clases-no-realizadas.css';
-@import './table-styles.css';
 
 @layer base {
-    html {
-        scroll-behavior: smooth;
-    }
-
     body {
         @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100;
     }
@@ -68,43 +63,6 @@
 
     .scrollbar-hide::-webkit-scrollbar {
         display: none;  /* Chrome, Safari and Opera */
-    }
-
-    /* Optimizaciones de scroll */
-    .ps {
-        @apply overflow-hidden relative;
-        overflow-anchor: none;
-        -ms-overflow-style: none;
-    }
-
-    .ps__rail-y {
-        @apply bg-transparent opacity-0 transition-opacity duration-200;
-        width: 9px !important;
-        right: 0 !important;
-    }
-
-    .ps:hover > .ps__rail-y,
-    .ps--focus > .ps__rail-y,
-    .ps--scrolling-y > .ps__rail-y {
-        @apply opacity-100;
-    }
-
-    .ps__thumb-y {
-        @apply bg-gray-400 dark:bg-gray-600 rounded-full;
-        width: 6px !important;
-        right: 2px !important;
-    }
-
-    .ps__rail-y:hover > .ps__thumb-y,
-    .ps__rail-y:focus > .ps__thumb-y,
-    .ps__rail-y.ps--clicking .ps__thumb-y {
-        @apply bg-gray-500 dark:bg-gray-500;
-        width: 8px !important;
-    }
-
-    .dark .ps__rail-y,
-    .dark .ps__thumb-y {
-        @apply bg-gray-600 dark:bg-gray-400;
     }
 }
 

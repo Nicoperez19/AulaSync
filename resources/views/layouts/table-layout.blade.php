@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
 <head class="h-full bg-gray-100">
@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'SIA | Sistema de Informaci�n de Aulas') }}</title>
+    <title>{{ config('app.name', 'SIA | Sistema de Información de Aulas') }}</title>
 
     <!-- Estilos de Livewire -->
     @livewireStyles
@@ -28,7 +28,6 @@
         [x-cloak] {
             display: none !important;
         }
-        
     </style>
 </head>
 
@@ -42,9 +41,9 @@
                     {{ $header }}
                 </div>
             </header>
-            <div class="flex flex-col transition-all duration-300 ease-in-out bg-white">
+            <div class="flex flex-col bg-white">
                 <!-- Main content -->
-                <main class="flex-1 px-4 overflow-x-auto transition-all duration-300 ease-in-out sm:px-6 bg-gray">
+                <main class="flex-1 px-4 overflow-x-auto sm:px-6 bg-gray">
                     {{ $slot }}
                 </main>
             </div>

@@ -24,22 +24,7 @@
             }
         }));
 
-        // Animación inicial
-        setTimeout(() => {
-            const initialPage = document.querySelector('[data-pagina=\'0\']');
-            if (initialPage) {
-                Array.from(initialPage.querySelectorAll('tbody tr')).forEach((row, idx) => {
-                    row.style.opacity = '0';
-                    row.style.transform = 'translateX(-100%)';
-                    setTimeout(() => {
-                        row.style.opacity = '1';
-                        row.style.transform = 'translateX(0)';
-                    }, idx * 150);
-                });
-            }
-        }, 100);
-
-        // Actualizar página cada 12 segundos con animación
+        // Actualizar página cada 12 segundos
         setInterval(() => {
             if (totalPaginas > 1) {
                 paginaAnterior = pagina;
@@ -133,33 +118,12 @@
                     @for ($i = 0; $i < $totalPaginas; $i++)
                         <div x-show="pagina === {{ $i }}"
                              data-pagina="{{ $i }}"
-                             x-init="$watch('pagina', value => {
-                                 if (value === {{ $i }}) {
-                                     $nextTick(() => {
-                                         Array.from($el.querySelectorAll('tbody tr')).forEach((row, idx) => {
-                                             row.style.opacity = '0';
-                                             row.style.transform = 'translateX(-100%)';
-                                             setTimeout(() => {
-                                                 row.style.opacity = '1';
-                                                 row.style.transform = 'translateX(0)';
-                                             }, idx * 150);
-                                         });
-                                     });
-                                 }
-                             })"
-                             x-transition:leave="transition-opacity ease-in-out duration-500 absolute inset-0"
-                             x-transition:leave-start="opacity-100"
-                             x-transition:leave-end="opacity-0"
-                             @transitionstart.self="
-                                 if ($event.propertyName === 'opacity' && getComputedStyle($el).opacity === '1') {
-                                     Array.from($el.querySelectorAll('tbody tr')).forEach((row, idx) => {
-                                         setTimeout(() => {
-                                             row.style.transform = 'translateX(150%)';
-                                             row.style.opacity = '0';
-                                         }, idx * 120);
-                                     });
-                                 }
-                             "
+                             x-transition:enter="transition-all duration-300 ease-out transform-gpu"
+                             x-transition:enter-start="opacity-0 translate-x-3"
+                             x-transition:enter-end="opacity-100 translate-x-0"
+                             x-transition:leave="transition-all duration-200 ease-in transform-gpu absolute inset-0"
+                             x-transition:leave-start="opacity-100 translate-x-0"
+                             x-transition:leave-end="opacity-0 -translate-x-3"
                              class="w-full">
                             <table class="w-full table-fixed">
                                 <colgroup>
@@ -173,7 +137,7 @@
                                 </colgroup>
                                 <tbody class="divide-y divide-gray-200">
                                 @foreach (array_slice($this->getTodosLosEspacios(), $i * 13, 13) as $index => $espacio)
-                                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-gray-100 h-10 border-b border-gray-200 transition-all duration-1000 ease-in-out">
+                                    <tr class="{{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }} hover:bg-gray-100 h-10 border-b border-gray-200 transition-colors duration-150">
                                         <!-- Columna 1: Modulo -->
                                             <td class="px-3 py-1 text-sm align-middle border-r border-gray-200">
                                                 @if($espacio['estado'] === 'Disponible' && !empty($espacio['rango_disponibilidad']))

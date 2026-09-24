@@ -34,7 +34,6 @@
     background-color: #fef2f2;
     color: #dc2626;
     border: 1px solid #fca5a5;
-    animation: pulse-red 2s infinite;
 }
 
 .estado-justificado {
@@ -43,18 +42,9 @@
     border: 1px solid #86efac;
 }
 
-@keyframes pulse-red {
-    0%, 100% {
-        background-color: #fef2f2;
-    }
-    50% {
-        background-color: #fee2e2;
-    }
-}
-
-/* Botones de acción mejorados - versión compacta */
+/* Botones de acción mejorados - versión compacta con aceleración GPU */
 .action-button {
-    transition: all 0.2s ease-in-out;
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
     border-radius: 6px;
     width: 28px;
     height: 28px;
@@ -104,7 +94,7 @@
 
 /* Mejoras para las estadísticas */
 .stat-card {
-    transition: all 0.3s ease-in-out;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
     position: relative;
     overflow: hidden;
 }
@@ -132,7 +122,7 @@
 
 /* Mejoras para la tabla */
 .table-row {
-    transition: all 0.2s ease-in-out;
+    transition: background-color 0.15s ease;
 }
 
 .table-row:hover {
