@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Horario;
 use App\Models\Profesor;
 use App\Models\Planificacion_Asignatura;
+use App\Models\PlanificacionProfesorColaborador;
+use App\Models\ProfesorColaborador;
 use App\Models\Sede;
 use App\Models\Asignatura;
 use App\Models\Modulo;
@@ -398,32 +400,77 @@ class HorariosController extends Controller
         if ($semestreFiltro) {
             $periodo = $anioFiltro . '-' . $semestreFiltro;
 
-            // Cargar horarios solo para el período seleccionado
+            // Cargar horarios para el período seleccionado (Titulares)
             $planificaciones = Planificacion_Asignatura::with(['asignatura', 'modulo', 'espacio', 'horario.profesor'])
                 ->whereHas('horario', function ($q) use ($periodo) {
                     $q->where('periodo', $periodo);
                 })
                 ->get();
 
+            // Cargar horarios de Colaboradores (Laboratorios, Talleres y Clínicas)
+            $planificacionesColab = PlanificacionProfesorColaborador::with([
+                'modulo',
+                'espacio',
+                'profesorColaborador.profesor',
+                'profesorColaborador.asignatura'
+            ])
+            ->whereHas('modulo')
+            ->whereHas('profesorColaborador')
+            ->get();
 
+            $partesPeriodo = explode('-', $periodo);
+            $anioP = $partesPeriodo[0] ?? null;
 
-            // Agrupar por espacio
-            $horariosPorEspacio = $planificaciones->groupBy('id_espacio')->map(function ($items) {
-                return $items->map(function ($plan) {
-                    return [
-                        'asignatura' => $plan->asignatura->nombre_asignatura ?? '',
-                        'codigo_asignatura' => $plan->asignatura->codigo_asignatura ?? '',
-                        'profesor' => $plan->horario->profesor ? [
-                            'name' => $plan->horario->profesor->name
-                        ] : null,
-                        'dia' => $plan->modulo->dia ?? '',
-                        'hora_inicio' => $plan->modulo->hora_inicio ?? '',
-                        'hora_termino' => $plan->modulo->hora_termino ?? '',
-                        'espacio' => $plan->espacio->nombre_espacio ?? '',
-                        'periodo' => $plan->horario->periodo ?? '',
-                    ];
-                })->unique(function ($item) {
-                    return json_encode($item);
+            $itemsColab = $planificacionesColab->filter(function ($plan) use ($periodo, $anioP) {
+                $colab = $plan->profesorColaborador;
+                if (!$colab) return false;
+                if ($colab->asignatura && !empty($colab->asignatura->periodo)) {
+                    return $colab->asignatura->periodo === $periodo;
+                }
+                if ($anioP && $colab->fecha_inicio) {
+                    return \Carbon\Carbon::parse($colab->fecha_inicio)->year == $anioP;
+                }
+                return true;
+            })->map(function ($plan) use ($periodo) {
+                $colab = $plan->profesorColaborador;
+                return [
+                    'id_espacio' => $plan->id_espacio,
+                    'asignatura' => $colab->asignatura->nombre_asignatura ?? $colab->nombre_asignatura_temporal ?? '',
+                    'codigo_asignatura' => $colab->asignatura->codigo_asignatura ?? '',
+                    'profesor' => ($colab && $colab->profesor) ? [
+                        'name' => $colab->profesor->name
+                    ] : null,
+                    'dia' => $plan->modulo->dia ?? '',
+                    'hora_inicio' => $plan->modulo->hora_inicio ?? '',
+                    'hora_termino' => $plan->modulo->hora_termino ?? '',
+                    'espacio' => $plan->espacio->nombre_espacio ?? '',
+                    'periodo' => $periodo,
+                ];
+            });
+
+            $itemsTitulares = $planificaciones->map(function ($plan) {
+                return [
+                    'id_espacio' => $plan->id_espacio,
+                    'asignatura' => $plan->asignatura->nombre_asignatura ?? '',
+                    'codigo_asignatura' => $plan->asignatura->codigo_asignatura ?? '',
+                    'profesor' => $plan->horario->profesor ? [
+                        'name' => $plan->horario->profesor->name
+                    ] : null,
+                    'dia' => $plan->modulo->dia ?? '',
+                    'hora_inicio' => $plan->modulo->hora_inicio ?? '',
+                    'hora_termino' => $plan->modulo->hora_termino ?? '',
+                    'espacio' => $plan->espacio->nombre_espacio ?? '',
+                    'periodo' => $plan->horario->periodo ?? '',
+                ];
+            });
+
+            // Agrupar ambos por espacio asegurando que no se dupliquen
+            $horariosPorEspacio = $itemsTitulares->concat($itemsColab)->groupBy('id_espacio')->map(function ($items) {
+                return $items->unique(function ($item) {
+                    return ($item['codigo_asignatura'] ?? '') . '_' .
+                           ($item['dia'] ?? '') . '_' .
+                           ($item['hora_inicio'] ?? '') . '_' .
+                           ($item['profesor']['name'] ?? '');
                 })->values();
             });
         }
@@ -459,35 +506,77 @@ class HorariosController extends Controller
             $tenant = tenant();
 
 
-            // Verificar datos en BD
+            // Verificar datos en BD (Titulares)
             $planificaciones = Planificacion_Asignatura::with(['asignatura', 'modulo', 'espacio', 'horario.profesor'])
                 ->whereHas('horario', function ($q) use ($periodo) {
                     $q->where('periodo', $periodo);
                 })
                 ->get();
 
-            $totalPlanificaciones = $planificaciones->count();
-            $espaciosUnicos = $planificaciones->pluck('id_espacio')->unique()->count();
-            
+            // Cargar horarios de Colaboradores (Laboratorios, Talleres y Clínicas)
+            $planificacionesColab = PlanificacionProfesorColaborador::with([
+                'modulo',
+                'espacio',
+                'profesorColaborador.profesor',
+                'profesorColaborador.asignatura'
+            ])
+            ->whereHas('modulo')
+            ->whereHas('profesorColaborador')
+            ->get();
 
+            $partesPeriodo = explode('-', $periodo);
+            $anioP = $partesPeriodo[0] ?? null;
 
-            // Agrupar por espacio
-            $horariosPorEspacio = $planificaciones->groupBy('id_espacio')->map(function ($items) {
-                return $items->map(function ($plan) {
-                    return [
-                        'asignatura' => $plan->asignatura->nombre_asignatura ?? '',
-                        'codigo_asignatura' => $plan->asignatura->codigo_asignatura ?? '',
-                        'profesor' => $plan->horario->profesor ? [
-                            'name' => $plan->horario->profesor->name
-                        ] : null,
-                        'dia' => $plan->modulo->dia ?? '',
-                        'hora_inicio' => $plan->modulo->hora_inicio ?? '',
-                        'hora_termino' => $plan->modulo->hora_termino ?? '',
-                        'espacio' => $plan->espacio->nombre_espacio ?? '',
-                        'periodo' => $plan->horario->periodo ?? '',
-                    ];
-                })->unique(function ($item) {
-                    return json_encode($item);
+            $itemsColab = $planificacionesColab->filter(function ($plan) use ($periodo, $anioP) {
+                $colab = $plan->profesorColaborador;
+                if (!$colab) return false;
+                if ($colab->asignatura && !empty($colab->asignatura->periodo)) {
+                    return $colab->asignatura->periodo === $periodo;
+                }
+                if ($anioP && $colab->fecha_inicio) {
+                    return \Carbon\Carbon::parse($colab->fecha_inicio)->year == $anioP;
+                }
+                return true;
+            })->map(function ($plan) use ($periodo) {
+                $colab = $plan->profesorColaborador;
+                return [
+                    'id_espacio' => $plan->id_espacio,
+                    'asignatura' => $colab->asignatura->nombre_asignatura ?? $colab->nombre_asignatura_temporal ?? '',
+                    'codigo_asignatura' => $colab->asignatura->codigo_asignatura ?? '',
+                    'profesor' => ($colab && $colab->profesor) ? [
+                        'name' => $colab->profesor->name
+                    ] : null,
+                    'dia' => $plan->modulo->dia ?? '',
+                    'hora_inicio' => $plan->modulo->hora_inicio ?? '',
+                    'hora_termino' => $plan->modulo->hora_termino ?? '',
+                    'espacio' => $plan->espacio->nombre_espacio ?? '',
+                    'periodo' => $periodo,
+                ];
+            });
+
+            $itemsTitulares = $planificaciones->map(function ($plan) {
+                return [
+                    'id_espacio' => $plan->id_espacio,
+                    'asignatura' => $plan->asignatura->nombre_asignatura ?? '',
+                    'codigo_asignatura' => $plan->asignatura->codigo_asignatura ?? '',
+                    'profesor' => $plan->horario->profesor ? [
+                        'name' => $plan->horario->profesor->name
+                    ] : null,
+                    'dia' => $plan->modulo->dia ?? '',
+                    'hora_inicio' => $plan->modulo->hora_inicio ?? '',
+                    'hora_termino' => $plan->modulo->hora_termino ?? '',
+                    'espacio' => $plan->espacio->nombre_espacio ?? '',
+                    'periodo' => $plan->horario->periodo ?? '',
+                ];
+            });
+
+            // Agrupar ambos por espacio
+            $horariosPorEspacio = $itemsTitulares->concat($itemsColab)->groupBy('id_espacio')->map(function ($items) {
+                return $items->unique(function ($item) {
+                    return ($item['codigo_asignatura'] ?? '') . '_' .
+                           ($item['dia'] ?? '') . '_' .
+                           ($item['hora_inicio'] ?? '') . '_' .
+                           ($item['profesor']['name'] ?? '');
                 })->values();
             });
 
@@ -527,7 +616,7 @@ class HorariosController extends Controller
                 $periodo = SemesterHelper::getCurrentPeriod();
             }
 
-            // Obtener las planificaciones del espacio
+            // Obtener las planificaciones del espacio (Titulares)
             $planificaciones = Planificacion_Asignatura::with(['asignatura', 'horario.profesor', 'modulo'])
                 ->where('id_espacio', $idEspacio)
                 ->whereHas('horario', function ($q) use ($periodo) {
@@ -535,10 +624,42 @@ class HorariosController extends Controller
                 })
                 ->get();
 
+            // Obtener planificaciones del espacio (Colaboradores)
+            $planificacionesColab = PlanificacionProfesorColaborador::with(['modulo', 'profesorColaborador.profesor', 'profesorColaborador.asignatura'])
+                ->where('id_espacio', $idEspacio)
+                ->whereHas('modulo')
+                ->whereHas('profesorColaborador')
+                ->get();
 
+            $partesPeriodo = explode('-', $periodo);
+            $anioP = $partesPeriodo[0] ?? null;
 
-            // Formatear los horarios
-            $horarios = $planificaciones->map(function ($plan) {
+            $horariosColab = $planificacionesColab->filter(function ($plan) use ($periodo, $anioP) {
+                $colab = $plan->profesorColaborador;
+                if (!$colab) return false;
+                if ($colab->asignatura && !empty($colab->asignatura->periodo)) {
+                    return $colab->asignatura->periodo === $periodo;
+                }
+                if ($anioP && $colab->fecha_inicio) {
+                    return \Carbon\Carbon::parse($colab->fecha_inicio)->year == $anioP;
+                }
+                return true;
+            })->map(function ($plan) {
+                $colab = $plan->profesorColaborador;
+                return [
+                    'asignatura' => $colab->asignatura->nombre_asignatura ?? $colab->nombre_asignatura_temporal ?? '',
+                    'codigo_asignatura' => $colab->asignatura->codigo_asignatura ?? '',
+                    'profesor' => ($colab && $colab->profesor) ? [
+                        'name' => $colab->profesor->name
+                    ] : null,
+                    'dia' => $plan->modulo->dia ?? '',
+                    'hora_inicio' => $plan->modulo->hora_inicio ?? '',
+                    'hora_termino' => $plan->modulo->hora_termino ?? '',
+                ];
+            });
+
+            // Formatear los horarios titulares
+            $horariosTitulares = $planificaciones->map(function ($plan) {
                 return [
                     'asignatura' => $plan->asignatura->nombre_asignatura ?? '',
                     'codigo_asignatura' => $plan->asignatura->codigo_asignatura ?? '',
@@ -549,8 +670,13 @@ class HorariosController extends Controller
                     'hora_inicio' => $plan->modulo->hora_inicio ?? '',
                     'hora_termino' => $plan->modulo->hora_termino ?? '',
                 ];
-            })->unique(function ($item) {
-                return json_encode($item);
+            });
+
+            $horarios = $horariosTitulares->concat($horariosColab)->unique(function ($item) {
+                return ($item['codigo_asignatura'] ?? '') . '_' .
+                       ($item['dia'] ?? '') . '_' .
+                       ($item['hora_inicio'] ?? '') . '_' .
+                       ($item['profesor']['name'] ?? '');
             })->values()->toArray();
 
             // Obtener TODOS los módulos disponibles desde las 8:10 hasta el último horario
